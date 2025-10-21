@@ -22,22 +22,19 @@ ResultNodeMismatch()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
+  auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
-  auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
-
-  auto & argument =
-      TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
+  auto input = structuralNode1->addInputWithArguments(import);
 
   // Act
   bool outputErrorHandlerCalled = false;
   try
   {
     // Region mismatch
-    structuralNode2->AddOutputWithResults({ &argument });
+    structuralNode2->addOutputWithResults({ input.argument[0] });
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
@@ -74,7 +71,7 @@ ResultInputTypeMismatch()
     auto simpleNode1 = TestOperation::create(structuralNode->subregion(1), {}, { valueType });
 
     // Type mismatch between simple node output and structural output
-    structuralNode->AddOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) });
+    structuralNode->addOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) });
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

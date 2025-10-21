@@ -118,12 +118,12 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        linkage::external_linkage);
+        Linkage::externalLinkage);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "global", linkage::external_linkage, "", false));
+        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(globalDelta.subregion(), pointerType);
@@ -135,7 +135,7 @@ private:
     // Create the global variable "local", that is not exported
     auto & localDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "local", linkage::internal_linkage, "", false));
+        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(localDelta.subregion(), pointerType);
@@ -143,18 +143,14 @@ private:
     }
     Outputs_.Local = &localDelta.output();
 
-    Outputs_.Imported = &GraphImport::Create(
-        rvsdg,
-        pointerType,
-        pointerType,
-        "imported",
-        linkage::external_linkage);
+    Outputs_.Imported =
+        &GraphImport::Create(rvsdg, pointerType, pointerType, "imported", Linkage::externalLinkage);
 
     // Setup the function "func"
     {
       auto & lambdaNode = *rvsdg::LambdaNode::Create(
           rvsdg.GetRootRegion(),
-          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
 
       Outputs_.P = lambdaNode.GetFunctionArguments()[0];
       auto ioState = lambdaNode.GetFunctionArguments()[1];
@@ -388,20 +384,16 @@ private:
         { ioStateType, memoryStateType });
 
     Outputs_.GlobalInt =
-        &GraphImport::Create(rvsdg, int32Type, pointerType, "globalInt", linkage::external_linkage);
+        &GraphImport::Create(rvsdg, int32Type, pointerType, "globalInt", Linkage::externalLinkage);
 
-    Outputs_.GlobalLong = &GraphImport::Create(
-        rvsdg,
-        int64Type,
-        pointerType,
-        "globalLong",
-        linkage::external_linkage);
+    Outputs_.GlobalLong =
+        &GraphImport::Create(rvsdg, int64Type, pointerType, "globalLong", Linkage::externalLinkage);
 
     // Setup the function "func"
     {
       auto & lambdaNode = *rvsdg::LambdaNode::Create(
           rvsdg.GetRootRegion(),
-          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
 
       Outputs_.P = lambdaNode.GetFunctionArguments()[0];
       Outputs_.Offset = lambdaNode.GetFunctionArguments()[1];

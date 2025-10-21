@@ -137,7 +137,7 @@ BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
   auto region = &rm.Rvsdg().GetRootRegion();
   auto ln = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
-  if (region->nnodes() == 1 && ln)
+  if (region->numNodes() == 1 && ln)
   {
     return ln;
   }

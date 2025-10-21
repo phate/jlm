@@ -1477,7 +1477,7 @@ Writer::Finalize()
 }
 
 void
-Writer::OutputAllGraphs(std::ostream & out, OutputFormat format)
+Writer::outputAllGraphs(std::ostream & out, OutputFormat format)
 {
   Finalize();
 

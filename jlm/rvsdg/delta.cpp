@@ -13,10 +13,11 @@ namespace jlm::rvsdg
 DeltaOperation::~DeltaOperation() noexcept = default;
 
 DeltaNode::ContextVar
-DeltaNode::AddContextVar(jlm::rvsdg::Output & origin)
+DeltaNode::AddContextVar(rvsdg::Output & origin)
 {
-  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
-  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
+  const auto input =
+      addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
+  const auto argument = &RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
 }
 
@@ -137,8 +138,7 @@ DeltaNode::finalize(jlm::rvsdg::Output * origin)
 
   rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return *append_output(
-      std::make_unique<rvsdg::StructuralOutput>(this, Operation_->ReferenceType()));
+  return *addOutput(std::make_unique<StructuralOutput>(this, Operation_->ReferenceType()));
 }
 
 }

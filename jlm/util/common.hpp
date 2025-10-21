@@ -47,7 +47,7 @@ namespace jlm::util
 
 template<class To, class From>
 static inline To *
-AssertedCast(From * value)
+assertedCast(From * value)
 {
   JLM_ASSERT(dynamic_cast<To *>(value));
   return static_cast<To *>(value);

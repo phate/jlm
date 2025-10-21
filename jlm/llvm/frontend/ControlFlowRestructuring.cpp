@@ -107,7 +107,7 @@ static void
 AppendBranch(BasicBlock & basicBlock, const Variable * operand)
 {
   const auto numAlternatives =
-      util::AssertedCast<const rvsdg::ControlType>(&operand->type())->nalternatives();
+      util::assertedCast<const rvsdg::ControlType>(&operand->type())->nalternatives();
   basicBlock.append_last(BranchOperation::create(numAlternatives, operand));
 }
 
@@ -118,7 +118,7 @@ AppendConstantAssignment(
     const size_t value)
 {
   const auto numAlternatives =
-      util::AssertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
+      util::assertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
 
   const rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, numAlternatives));
   basicBlock.append_last(ThreeAddressCode::create(op, {}));
@@ -344,10 +344,10 @@ ComputeDominatorGraph(const ControlFlowGraphEdge * edge)
 
     if (accept)
     {
-      nodes.Insert(node);
+      nodes.insert(node);
       for (auto & outedge : node->OutEdges())
       {
-        edges.Insert(&outedge);
+        edges.insert(&outedge);
         toVisit.push_back(outedge.sink());
       }
     }
@@ -377,8 +377,8 @@ ComputeContinuation(const ControlFlowGraphNode & headBranch)
     auto & dominatorGraph = dominatorGraphs[&outedge];
     if (dominatorGraph.IsEmpty())
     {
-      c.edges[&outedge].Insert(&outedge);
-      c.points.Insert(outedge.sink());
+      c.edges[&outedge].insert(&outedge);
+      c.points.insert(outedge.sink());
       continue;
     }
 
@@ -388,8 +388,8 @@ ComputeContinuation(const ControlFlowGraphNode & headBranch)
       {
         if (!dominatorGraph.Contains(outedge2.sink()))
         {
-          c.edges[&outedge].Insert(&outedge2);
-          c.points.Insert(outedge2.sink());
+          c.edges[&outedge].insert(&outedge2);
+          c.points.insert(outedge2.sink());
         }
       }
     }

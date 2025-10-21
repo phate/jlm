@@ -100,7 +100,7 @@ public:
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
@@ -123,7 +123,7 @@ public:
   [[nodiscard]] static rvsdg::Node::InputIteratorRange
   MemoryStateInputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };
@@ -302,23 +302,6 @@ public:
   copy() const override;
 
   /**
-   * \brief Swaps a memory state merge operation and a load operation.
-   *
-   * sx1 = MemStateMergeOperation si1 ... siM
-   * v sl1 = LoadNonVolatileOperation a sx1
-   * =>
-   * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
-   * sx1 = MemStateMergeOperation sl1 ... slM
-   *
-   * @return If the normalization could be applied, then the results of the load operation after
-   * the transformation. Otherwise, std::nullopt.
-   */
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoadMemoryStateMerge(
-      const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  /**
    * \brief If the producer of a load's address is an alloca operation, then we can remove all
    * state edges originating from other alloca operations.
    *
@@ -401,28 +384,6 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeDuplicateStates(
-      const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  /**
-   * \brief Avoid sequentialization of load operations.
-   *
-   * _ so1 = LoadNonVolatileOperation _ si1
-   * _ so2 = LoadNonVolatileOperation _ so1
-   * _ so3 = LoadNonVolatileOperation _ so2
-   * =>
-   * _ so1 = LoadNonVolatileOperation _ si1
-   * _ so2 = LoadNonVolatileOperation _ si1
-   * _ so3 = LoadNonVolatileOperation _ si1
-   *
-   * @param operation The load operation on which the transformation is performed.
-   * @param operands The operands of the load node.
-   *
-   * @return If the normalization could be applied, then the results of the load operation after
-   * the transformation. Otherwise, std::nullopt.
-   */
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoadLoadState(
       const LoadNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 

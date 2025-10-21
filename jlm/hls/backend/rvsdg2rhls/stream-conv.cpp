@@ -54,9 +54,19 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
 static void
 stream_conv(rvsdg::RvsdgModule & rm)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
+  const auto & graph = rm.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambda = dynamic_cast<rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambda)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
+
   auto stream_enqs = find_function_arguments(lambda, "hls_stream_enq");
   auto stream_deqs = find_function_arguments(lambda, "hls_stream_deq");
   if (stream_enqs.empty())

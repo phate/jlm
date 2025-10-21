@@ -80,7 +80,7 @@ public:
   theta() const noexcept
   {
     auto node = idv()->region()->node();
-    return util::AssertedCast<rvsdg::ThetaNode>(node);
+    return util::assertedCast<rvsdg::ThetaNode>(node);
   }
 
   inline bool
@@ -210,7 +210,7 @@ private:
   bool
   is_known(const rvsdg::Output * output) const noexcept
   {
-    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*output);
+    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
     return constantOperation && constantOperation->value().is_known();
@@ -222,7 +222,7 @@ private:
     if (!is_known(output))
       return nullptr;
 
-    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*output);
+    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
     return constantOperation == nullptr ? nullptr : &constantOperation->value();

@@ -125,7 +125,7 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
     if (is<rvsdg::MatchOperation>(matchNode))
     {
       const auto matchOperation =
-          util::AssertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+          util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
       JLM_ASSERT(matchOperation->nalternatives() == 2);
       JLM_ASSERT(std::distance(matchOperation->begin(), matchOperation->end()) == 1);
 

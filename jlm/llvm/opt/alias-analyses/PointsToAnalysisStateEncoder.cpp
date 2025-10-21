@@ -7,14 +7,12 @@
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -60,8 +58,5 @@ template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarize
 template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<
-    Andersen,
-    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
 
 }

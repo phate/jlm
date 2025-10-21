@@ -125,51 +125,66 @@ public:
 
   /**
    * \brief Returns the path to the file or directory's parent directory.
+   * Emulates the behavior of the GNU coreutil "dirname".
    *
-   * If the current path does not contain a parent directory, either "/" or "" is returned,
+   * If the current path does not contain a parent directory, either "/" or "." is returned,
    * depending on whether this is an absolute or relative path.
    *
-   * This function does not respect ".." and instead treats it like any other folder,
-   * just like the GNU coreutil "dirname"
+   * This function does not respect ".." and instead treats it like any other folder.
    *
    * Examples:
-   *    "/tmp/archive.tar.gz" => "/tmp/"
-   *    "/tmp/jlm/" => "/tmp/"
-   *    "dir/file.txt" => "dir/"
-   *    "test.txt" => ""
+   *    "/tmp/archive.tar.gz" => "/tmp"
+   *    "/tmp/jlm/" => "/tmp"
+   *    "/a" => "/"
+   *    "a/.." => "a"
+   *    "dir/file.txt" => "dir"
+   *    "test.txt" => "."
    * Special cases:
    *    "/" => "/"
-   *    "." => ""
-   *    "" => ""
+   *    "." => "."
+   *    "" => "."
    */
   [[nodiscard]] FilePath
   Dirname() const noexcept
   {
     if (path_.empty())
-      return FilePath("");
+      return FilePath(".");
     if (path_ == "/")
       return FilePath("/");
 
-    // Ignore a potential trailing '/'
-    auto pos = path_.find_last_of("/", path_.size() - 2);
+    // Find the last '/' char, ignoring a trailing '/'
+    size_t lastSlash = std::string::npos;
+    if (path_.size() >= 1)
+      lastSlash = path_.find_last_of('/', path_.size() - 2);
 
-    // If no / was found, path_ is a file in the current working directory
-    if (pos == std::string::npos)
-      return FilePath("");
+    // If no '/' was found, path_ is a file in the current working directory, or is "." itself
+    if (lastSlash == std::string::npos)
+      return FilePath(".");
 
-    return FilePath(path_.substr(0, pos + 1));
+    // The only '/' was at the very beginning of the path. We must keep it.
+    if (lastSlash == 0)
+      return FilePath("/");
+
+    // Return the path of the parent directory, without a trailing '/'
+    return FilePath(path_.substr(0, lastSlash));
   }
 
   /**
-   * Creates a new file path "this / other".
+   * Creates a new file path \p this / \p other.
    *
-   * If other is an absolute path, the "this"-part is completely ignored.
+   * If \p other is an absolute path, the \p this-part is completely ignored.
    * What constitutes an absolute path is platform specific.
+   *
+   * Any "." or ".." in paths are kept as is.
+   * Except if the \p this-part is equal to ".", in which case \p other is returned directly.
    *
    * Examples:
    *  "/tmp/" join "a.txt"    => "/tmp/a.txt"
    *  "a/b" join "c/d"        => "a/b/c/d"
    *  "a/b" join "/tmp/x"     => "/tmp/x"
+   *  "." join "e.txt"        => "e.txt"
+   *  "" join "e.txt"         => "e.txt"
+   *  "a/." join "../e.txt"   => "a/./../e.txt"
    *
    * @param other the second part of the path
    * @return the joined file path
@@ -177,7 +192,7 @@ public:
   [[nodiscard]] FilePath
   Join(const std::string & other) const
   {
-    std::filesystem::path t(to_str());
+    std::filesystem::path t(path_ == "." ? "" : path_.c_str());
     t.append(other);
     return FilePath(t.string());
   }
@@ -226,7 +241,7 @@ public:
    * @return True if the file path is a file, otherwise false.
    */
   [[nodiscard]] bool
-  IsFile() const noexcept
+  isFile() const noexcept
   {
     auto fileStatus = std::filesystem::status(path_);
     return std::filesystem::is_regular_file(fileStatus);
@@ -242,7 +257,7 @@ public:
   void
   CreateDirectory() const
   {
-    if (IsFile())
+    if (isFile())
       throw Error("file already exists: " + path_);
 
     FilePath baseDir(Dirname());
@@ -283,7 +298,7 @@ public:
    * @return A unique file
    */
   static FilePath
-  CreateUniqueFileName(
+  createUniqueFileName(
       const FilePath & directory,
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)

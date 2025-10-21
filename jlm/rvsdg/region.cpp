@@ -5,7 +5,6 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -17,8 +16,6 @@ namespace jlm::rvsdg
 
 RegionArgument::~RegionArgument() noexcept
 {
-  on_output_destroy(this);
-
   if (input())
     input()->arguments.erase(this);
 }
@@ -62,15 +59,11 @@ RegionArgument::Create(
     StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  auto argument = new RegionArgument(&region, input, std::move(type));
-  region.append_argument(argument);
-  return *argument;
+  return region.addArgument(std::make_unique<RegionArgument>(&region, input, std::move(type)));
 }
 
 RegionResult::~RegionResult() noexcept
 {
-  on_input_destroy(this);
-
   if (output())
     output()->results.erase(this);
 }
@@ -116,74 +109,91 @@ RegionResult::Create(
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  auto result = new RegionResult(&region, &origin, output, std::move(type));
-  region.append_result(result);
-  return *result;
+  return region.addResult(
+      std::make_unique<RegionResult>(&region, &origin, output, std::move(type)));
 }
 
 Region::~Region() noexcept
 {
-  on_region_destroy(this);
-
   while (results_.size())
     RemoveResult(results_.size() - 1);
 
   prune(false);
-  JLM_ASSERT(nnodes() == 0);
-  JLM_ASSERT(NumTopNodes() == 0);
-  JLM_ASSERT(NumBottomNodes() == 0);
+  JLM_ASSERT(numNodes() == 0);
+  JLM_ASSERT(numTopNodes() == 0);
+  JLM_ASSERT(numBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
+
+  // Disconnect observers
+  while (observers_)
+  {
+    RegionObserver * head = observers_;
+    observers_ = head->next_;
+    head->pprev_ = &head->next_;
+    head->next_ = nullptr;
+  }
 }
 
 Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
-      NodeId_(0),
-      node_(nullptr)
-{
-  on_region_create(this);
-}
+      nextNodeId_(0),
+      node_(nullptr),
+      numTopNodes_(0),
+      numBottomNodes_(0),
+      numNodes_(0)
+{}
 
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
-      NodeId_(0),
-      node_(node)
+      nextNodeId_(0),
+      node_(node),
+      numTopNodes_(0),
+      numBottomNodes_(0),
+      numNodes_(0)
+{}
+
+bool
+Region::IsRootRegion() const noexcept
 {
-  on_region_create(this);
+  return &this->graph()->GetRootRegion() == this;
 }
 
-void
-Region::append_argument(RegionArgument * argument)
+RegionArgument &
+Region::addArgument(std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
     throw util::Error("Appending argument to wrong region.");
 
-  auto index = argument->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && narguments() > 0 && this->argument(0) == argument))
-    return;
-
   argument->index_ = narguments();
-  arguments_.push_back(argument);
-  on_output_create(argument);
+  arguments_.push_back(argument.release());
+  return *arguments_.back();
 }
 
-void
-Region::insert_argument(size_t index, RegionArgument * argument)
+RegionArgument &
+Region::insertArgument(size_t index, std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
     throw util::Error("Inserting argument to wrong region.");
 
-  JLM_ASSERT(argument->index() == 0);
+  if (index > narguments())
+    throw util::Error("Inserting argument after end of region.");
 
-  argument->index_ = index;
-  arguments_.insert(arguments_.begin() + index, argument);
-  for (size_t n = index + 1; n < arguments_.size(); ++n)
+  arguments_.push_back(nullptr);
+
+  // Move everything at index or above one index up
+  for (size_t n = narguments() - 1; n > index; n--)
+  {
+    arguments_[n] = arguments_[n - 1];
     arguments_[n]->index_ = n;
-  on_output_create(argument);
+  }
+  arguments_[index] = argument.release();
+  arguments_[index]->index_ = index;
+
+  return *arguments_[index];
 }
 
 void
@@ -201,24 +211,20 @@ Region::RemoveArgument(size_t index)
   arguments_.pop_back();
 }
 
-void
-Region::append_result(RegionResult * result)
+RegionResult &
+Region::addResult(std::unique_ptr<RegionResult> result)
 {
-  if (result->region() != this)
+  const auto resultPtr = result.release();
+
+  if (resultPtr->region() != this)
     throw util::Error("Appending result to wrong region.");
 
-  /*
-    Check if result was already appended to this region. This check
-    relies on the fact that an unappended result has an index of zero.
-  */
-  auto index = result->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && nresults() > 0 && this->result(0) == result))
-    return;
+  resultPtr->index_ = nresults();
+  results_.push_back(resultPtr);
 
-  result->index_ = nresults();
-  results_.push_back(result);
-  on_input_create(result);
+  notifyInputCreate(resultPtr);
+
+  return *resultPtr;
 }
 
 void
@@ -226,6 +232,8 @@ Region::RemoveResult(size_t index)
 {
   JLM_ASSERT(index < results_.size());
   RegionResult * result = results_[index];
+
+  notifyInputDestory(result);
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -237,74 +245,11 @@ Region::RemoveResult(size_t index)
 }
 
 void
-Region::remove_node(Node * node)
+Region::removeNode(Node * node)
 {
+  JLM_ASSERT(node->region() == this);
+  // The node's destructor handles informing the region about removal
   delete node;
-}
-
-bool
-Region::AddTopNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  if (node.ninputs() != 0)
-    return false;
-
-  // FIXME: We should check that a node is not already part of the top nodes before adding it.
-  TopNodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::AddBottomNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  if (!node.IsDead())
-    return false;
-
-  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
-  BottomNodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::AddNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  Nodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::RemoveBottomNode(Node & node)
-{
-  auto numBottomNodes = NumBottomNodes();
-  BottomNodes_.erase(&node);
-  return numBottomNodes != NumBottomNodes();
-}
-
-bool
-Region::RemoveTopNode(Node & node)
-{
-  auto numTopNodes = NumTopNodes();
-  TopNodes_.erase(&node);
-  return numTopNodes != NumTopNodes();
-}
-
-bool
-Region::RemoveNode(Node & node)
-{
-  auto numNodes = nnodes();
-  Nodes_.erase(&node);
-  return numNodes != nnodes();
 }
 
 void
@@ -313,7 +258,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   smap.insert(this, target);
 
   // order nodes top-down
-  std::vector<std::vector<const Node *>> context(nnodes());
+  std::vector<std::vector<const Node *>> context(numNodes());
   for (const auto & node : Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
@@ -357,8 +302,8 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 void
 Region::prune(bool recursive)
 {
-  while (BottomNodes_.first())
-    remove_node(BottomNodes_.first());
+  while (bottomNodes_.first())
+    removeNode(bottomNodes_.first());
 
   if (!recursive)
     return;
@@ -373,10 +318,99 @@ Region::prune(bool recursive)
   }
 }
 
-bool
-Region::IsRootRegion() const noexcept
+void
+Region::onTopNodeAdded(Node & node)
 {
-  return &this->graph()->GetRootRegion() == this;
+  JLM_ASSERT(node.region() == this);
+  JLM_ASSERT(node.ninputs() == 0);
+  topNodes_.push_back(&node);
+  numTopNodes_++;
+}
+
+void
+Region::onTopNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  topNodes_.erase(&node);
+  numTopNodes_--;
+}
+
+void
+Region::onBottomNodeAdded(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  JLM_ASSERT(node.IsDead());
+  bottomNodes_.push_back(&node);
+  numBottomNodes_++;
+}
+
+void
+Region::onBottomNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  bottomNodes_.erase(&node);
+  numBottomNodes_--;
+}
+
+void
+Region::onNodeAdded(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  nodes_.push_back(&node);
+  numNodes_++;
+}
+
+void
+Region::onNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  nodes_.erase(&node);
+  numNodes_--;
+}
+
+void
+Region::notifyNodeCreate(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onNodeCreate(node);
+  }
+}
+
+void
+Region::notifyNodeDestroy(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onNodeDestroy(node);
+  }
+}
+
+void
+Region::notifyInputCreate(Input * input)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputCreate(input);
+  }
+}
+
+void
+Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputChange(input, old_origin, new_origin);
+  }
+}
+
+void
+Region::notifyInputDestory(Input * input)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputDestroy(input);
+  }
 }
 
 size_t
@@ -515,10 +549,30 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
+RegionObserver::~RegionObserver() noexcept
+{
+  *pprev_ = next_;
+  if (next_)
+  {
+    next_->pprev_ = pprev_;
+  }
+}
+
+RegionObserver::RegionObserver(const Region & region)
+{
+  next_ = region.observers_;
+  if (next_)
+  {
+    next_->pprev_ = &next_;
+  }
+  pprev_ = &region.observers_;
+  region.observers_ = this;
+}
+
 size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept
 {
-  size_t n = region->nnodes();
+  size_t n = region->numNodes();
   for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))

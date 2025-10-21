@@ -24,6 +24,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
     jlm/llvm/ir/LambdaMemoryState.cpp \
+    jlm/llvm/ir/Linkage.cpp \
     jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
@@ -44,6 +45,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
+    jlm/llvm/ir/trace.cpp \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
@@ -59,7 +61,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
@@ -100,7 +101,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
@@ -122,7 +122,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
     jlm/llvm/ir/RvsdgModule.hpp \
-    jlm/llvm/ir/linkage.hpp \
+    jlm/llvm/ir/Linkage.hpp \
     jlm/llvm/ir/Annotation.hpp \
     jlm/llvm/ir/attribute.hpp \
     jlm/llvm/ir/CallSummary.hpp \
@@ -137,6 +137,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/variable.hpp \
     jlm/llvm/ir/basic-block.hpp \
     jlm/llvm/ir/print.hpp \
+    jlm/llvm/ir/trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/operators.hpp \
@@ -202,6 +203,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestAnnotation \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
+    tests/jlm/llvm/ir/TraceTests \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
@@ -214,7 +216,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
-    tests/jlm/llvm/opt/alias-analyses/TopDownModRefEliminatorTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \

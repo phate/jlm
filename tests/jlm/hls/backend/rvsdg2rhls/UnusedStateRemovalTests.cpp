@@ -143,7 +143,7 @@ TestLambda()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto argument0 = lambdaNode->GetFunctionArguments()[0];
   auto argument1 = lambdaNode->GetFunctionArguments()[1];
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
@@ -170,7 +170,7 @@ TestLambda()
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto & newLambdaNode =
       dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);
@@ -214,7 +214,7 @@ TestUsedMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -237,7 +237,7 @@ TestUsedMemoryState()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
@@ -261,7 +261,7 @@ TestUnusedMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -283,7 +283,7 @@ TestUnusedMemoryState()
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
@@ -309,7 +309,7 @@ TestInvariantMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 
@@ -342,7 +342,7 @@ TestInvariantMemoryState()
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);

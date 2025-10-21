@@ -35,7 +35,7 @@ GammaSubregionUsage()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto controlArgument = lambdaNode->GetFunctionArguments()[0];
 
   auto & constantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 5);
@@ -68,24 +68,24 @@ GammaSubregionUsage()
   view(rvsdg, stdout);
 
   // Assert
-  assert(lambdaNode->subregion()->nnodes() == 2);
+  assert(lambdaNode->subregion()->numNodes() == 2);
   assert(constantNode.output(0)->IsDead());
 
   {
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(0)->nnodes() == 2);
+    assert(gammaNode->subregion(0)->numNodes() == 2);
     assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
     // check subregion 1 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(1)->nnodes() == 2);
+    assert(gammaNode->subregion(1)->numNodes() == 2);
     assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode1->input(0)->origin()));
   }
 
   {
     // check subregion 2 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(2)->nnodes() == 1);
+    assert(gammaNode->subregion(2)->numNodes() == 1);
     assert(IsOwnerNodeOperation<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin()));
   }
 }
@@ -113,7 +113,7 @@ NestedGammas()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto controlArgument = lambdaNode->GetFunctionArguments()[0];
 
   auto & constantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 5);
@@ -152,11 +152,11 @@ NestedGammas()
   view(rvsdg, stdout);
 
   // Assert
-  assert(lambdaNode->subregion()->nnodes() == 3);
+  assert(lambdaNode->subregion()->numNodes() == 3);
 
   {
     // check gammaNodeOuter subregion 0
-    assert(gammaNodeOuter->subregion(0)->nnodes() == 2);
+    assert(gammaNodeOuter->subregion(0)->numNodes() == 2);
     assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
@@ -164,18 +164,18 @@ NestedGammas()
     // check gammaNodeOuter subregion 1
     // The constantNode was copied into this region (even though it does not have a user), so we
     // expect one more node than before the transformation.
-    assert(gammaNodeOuter->subregion(1)->nnodes() == 3);
+    assert(gammaNodeOuter->subregion(1)->numNodes() == 3);
 
     {
       // check gammaNodeInner subregion 0
-      assert(gammaNodeInner->subregion(0)->nnodes() == 1);
+      assert(gammaNodeInner->subregion(0)->numNodes() == 1);
       assert(IsOwnerNodeOperation<IntegerConstantOperation>(
           *exitVariableInner.branchResult[0]->origin()));
     }
 
     {
       // check gammaNodeInner subregion 1
-      assert(gammaNodeInner->subregion(1)->nnodes() == 1);
+      assert(gammaNodeInner->subregion(1)->numNodes() == 1);
       assert(IsOwnerNodeOperation<IntegerConstantOperation>(
           *exitVariableInner.branchResult[1]->origin()));
     }
@@ -207,7 +207,7 @@ Theta()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto & constantNode0 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
   auto & constantNode2 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
@@ -242,10 +242,10 @@ Theta()
 
   // Arrange
   // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion
-  assert(lambdaNode->subregion()->nnodes() == 5);
+  assert(lambdaNode->subregion()->numNodes() == 5);
 
   // We expect constantNode2 to be distributed from the lambda subregion to the theta subregion
-  assert(thetaNode->subregion()->nnodes() == 5);
+  assert(thetaNode->subregion()->numNodes() == 5);
 
   {
     // We expect no changes with loopVar0
