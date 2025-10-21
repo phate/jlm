@@ -475,4 +475,44 @@ ScalarEvolution::HasCycleThroughOthers(
   recursionStack.erase(current);
   return false;
 }
+
+bool
+ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
+{
+  if (typeid(a) != typeid(b))
+    return false;
+
+  if (auto * ca = dynamic_cast<const SCEVConstant *>(&a))
+  {
+    auto * cb = dynamic_cast<const SCEVConstant *>(&b);
+    return ca->GetValue() == cb->GetValue();
+  }
+
+  if (dynamic_cast<const SCEVUnknown *>(&a))
+    return true;
+
+  if (auto * aa = dynamic_cast<const SCEVAddExpr *>(&a))
+  {
+    auto * ab = dynamic_cast<const SCEVAddExpr *>(&b);
+    return StructurallyEqual(*aa->GetLeftOperand(), *ab->GetLeftOperand())
+        && StructurallyEqual(*aa->GetRightOperand(), *ab->GetRightOperand());
+  }
+
+  if (auto * cha = dynamic_cast<const SCEVChrecExpr *>(&a))
+  {
+    auto * chb = dynamic_cast<const SCEVChrecExpr *>(&b);
+    if (cha->GetLoop() != chb->GetLoop())
+      return false;
+    if (cha->Operands_.size() != chb->Operands_.size())
+      return false;
+    for (size_t i = 0; i < cha->Operands_.size(); ++i)
+    {
+      if (!StructurallyEqual(*cha->Operands_[i], *chb->Operands_[i]))
+        return false;
+    }
+    return true;
+  }
+
+  return false;
+}
 }

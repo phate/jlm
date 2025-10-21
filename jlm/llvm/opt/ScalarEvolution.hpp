@@ -256,6 +256,9 @@ public:
       const InductionVariableSet & inductionVariableCandidates,
       const rvsdg::ThetaNode & thetaNode);
 
+  static bool
+  StructurallyEqual(const SCEV & a, const SCEV & b);
+
 private:
   std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> UniqueSCEVs_;
