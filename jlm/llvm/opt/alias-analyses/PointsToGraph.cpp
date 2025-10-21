@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
 #include <typeindex>
@@ -607,6 +608,76 @@ std::string
 PointsToGraph::ExternalMemoryNode::DebugString() const
 {
   return "ExternalMemory";
+}
+
+std::optional<size_t>
+getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
+{
+  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
+  {
+    // Functions should never be read from or written to, so they have no size
+    return 0;
+  }
+  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
+  {
+    return GetTypeSize(*delta->GetDeltaNode().GetOperation().Type());
+  }
+  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
+  {
+    auto size = GetTypeSize(*import->GetArgument().ValueType());
+
+    // C code can contain declarations like this:
+    //     extern char myArray[];
+    // which means there is an array of unknown size defined in a different module.
+    // In the LLVM IR the import gets an array length of 0, but that is not correct.
+    if (size == 0)
+      return std::nullopt;
+
+    return size;
+  }
+  if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&memoryNode))
+  {
+    const auto & allocaNode = alloca->GetAllocaNode();
+    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+
+    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
+    if (elementCount.has_value())
+      return *elementCount * GetTypeSize(*allocaOp->ValueType());
+
+    return std::nullopt;
+  }
+  if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&memoryNode))
+  {
+    const auto & mallocNode = malloc->GetMallocNode();
+
+    return tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+  }
+  if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&memoryNode))
+  {
+    return std::nullopt;
+  }
+
+  throw std::logic_error("Unknown memory node type.");
+}
+
+bool
+isMemoryNodeConstant(const PointsToGraph::MemoryNode & memoryNode)
+{
+  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
+  {
+    // Functions are always constant memory
+    return true;
+  }
+  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
+  {
+    return delta->GetDeltaNode().constant();
+  }
+  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
+  {
+    return import->GetArgument().isConstant();
+  }
+  return false;
 }
 
 }
