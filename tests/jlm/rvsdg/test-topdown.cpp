@@ -108,6 +108,38 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testOrderEnforcement", te
 static void
 testInsertion()
 {
+  /**
+   * Creates a graph that looks like
+   *      n1
+   *     |  |
+   *     v  v
+   *      n2
+   *       |
+   *       v
+   *      n3
+   *       |
+   *       v
+   *     Export
+   *
+   * When visiting n1, the graph is changed to
+   *
+   *      n1
+   *     |  |
+   *     v  v
+   *    nX  n3
+   *     |  |
+   *     |  v
+   *     |  nY
+   *     |  |
+   *     v  v
+   *      n2
+   *      |
+   *      v
+   *     Export
+   *
+   * Which forces the traverser to visit n3 before n2. None of nX or nY are visited.
+   */
+
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
 
@@ -116,8 +148,9 @@ testInsertion()
       &graph.GetRootRegion(),
       { n1->output(0), n1->output(1) },
       { type });
+  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
-  jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
+  auto & graphExport = jlm::rvsdg::GraphExport::Create(*n3->output(0), "dummy");
 
   {
     const jlm::rvsdg::Node * node = nullptr;
@@ -126,40 +159,27 @@ testInsertion()
     node = trav.next();
     assert(node == n1);
 
-    /* At this point, n1 has been visited, now create some nodes */
+    /* At this point, n1 has been visited, make the transformation */
 
-    auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-    auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, {});
-    auto n5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, {});
+    auto nX =
+        jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+    n3->input(0)->divert_to(n1->output(1));
+    auto nY =
+        jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, { type });
 
-    /*
-      The newly created nodes n3 and n4 will not be visited,
-      as they were not created as descendants of unvisited
-      nodes. n5 must be visited, as n2 has not been visited yet.
-    */
+    n2->input(0)->divert_to(nX->output(0));
+    n2->input(1)->divert_to(nY->output(0));
 
-    std::cout << "start test\n";
-    bool visited_n2 = false, visited_n3 = false, visited_n4 = false, visited_n5 = false;
-    for (;;)
-    {
-      node = trav.next();
-      std::cout << "visiting " << node << "\n";
-      if (!node)
-        break;
-      if (node == n2)
-        visited_n2 = true;
-      if (node == n3)
-        visited_n3 = true;
-      if (node == n4)
-        visited_n4 = true;
-      if (node == n5)
-        visited_n5 = true;
-    }
+    graphExport.divert_to(n2->output(0));
 
-    assert(visited_n2);
-    assert(!visited_n3);
-    assert(!visited_n4);
-    assert(visited_n5);
+    // The newly created nX and nY should not be visited, but n3 must come before n2
+
+    node = trav.next();
+    assert(node == n3);
+    node = trav.next();
+    assert(node == n2);
+    node = trav.next();
+    assert(node == nullptr);
   }
 }
 
@@ -257,8 +277,7 @@ testReplacement()
   //   \-> nX -> nY -> n4 -> GraphExport
   //         \-> n5 -> GraphExport
   //
-  // Since nX is created as a successor of only visited nodes, it is not visited.
-  // nY is not visited either, as its predecessor nX is already "visited".
+  // Since nX and nY are new, they are not visited.
   // n3, n4 and n5 should be visited, however.
 
   jlm::rvsdg::Graph graph;

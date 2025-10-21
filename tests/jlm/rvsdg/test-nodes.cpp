@@ -429,10 +429,10 @@ TraceOutputIntraProcedural_Gamma()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedX0 = TraceOutputIntraProcedurally(*x0.origin());
-  const auto & tracedX1 = TraceOutputIntraProcedurally(*x1.origin());
-  const auto & traceGammaEntry = TraceOutputIntraProcedurally(*entryVar1.branchArgument[0]);
-  const auto & tracedNodeInput = TraceOutputIntraProcedurally(*node->input(0)->origin());
+  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin());
+  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin());
+  const auto & traceGammaEntry = traceOutputIntraProcedurally(*entryVar1.branchArgument[0]);
+  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
 
   // Assert
   assert(&tracedX0 == &i1);
@@ -471,10 +471,10 @@ TraceOutputIntraProcedural_Theta()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedX0 = TraceOutputIntraProcedurally(*x0.origin());
-  const auto & tracedX1 = TraceOutputIntraProcedurally(*x1.origin());
-  const auto & traceGammaEntry = TraceOutputIntraProcedurally(*loopVar0.pre);
-  const auto & tracedNodeInput = TraceOutputIntraProcedurally(*node->input(0)->origin());
+  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin());
+  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin());
+  const auto & traceGammaEntry = traceOutputIntraProcedurally(*loopVar0.pre);
+  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
 
   // Assert
   assert(&tracedX0 == &i0);

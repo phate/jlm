@@ -8,14 +8,13 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <llvm/IR/Instruction.h>
 #include <numeric>
 #include <queue>
 
@@ -71,8 +70,8 @@ struct LocalAliasAnalysis::TraceCollection
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = NormalizeOutput(p1);
-  const auto & p2Norm = NormalizeOutput(p2);
+  const auto & p1Norm = llvm::traceOutput(p1);
+  const auto & p2Norm = llvm::traceOutput(p2);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)
@@ -202,7 +201,7 @@ CalculateIntraTypeGepOffset(
   JLM_ASSERT(inputIndex >= 2);
 
   auto & gepInput = *gepNode.input(inputIndex)->origin();
-  auto indexingValue = TryGetConstantSignedInteger(gepInput);
+  auto indexingValue = tryGetConstantSignedInteger(gepInput);
 
   // Any unknown indexing value means the GEP offset is unknown overall
   if (!indexingValue.has_value())
@@ -248,7 +247,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   const auto & pointeeType = gep->GetPointeeType();
 
   const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
-  const auto wholeTypeIndexing = TryGetConstantSignedInteger(wholeTypeIndexingOrigin);
+  const auto wholeTypeIndexing = tryGetConstantSignedInteger(wholeTypeIndexingOrigin);
 
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
@@ -273,7 +272,7 @@ LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &NormalizeOutput(*base);
+    base = &llvm::traceOutput(*base);
 
     if (const auto [node, gep] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -330,7 +329,7 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  p.BasePointer = &NormalizeOutput(*p.BasePointer);
+  p.BasePointer = &llvm::traceOutput(*p.BasePointer);
 
   auto it = traceCollection.AllTracedOutputs.find(p.BasePointer);
   if (it != traceCollection.AllTracedOutputs.end())
@@ -480,14 +479,14 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
       allocaOp)
   {
-    const auto elementCount = TryGetConstantSignedInteger(*node->input(0)->origin());
+    const auto elementCount = tryGetConstantSignedInteger(*node->input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = TryGetConstantSignedInteger(*node->input(0)->origin());
+    const auto mallocSize = tryGetConstantSignedInteger(*node->input(0)->origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }
