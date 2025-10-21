@@ -511,7 +511,7 @@ traceOutput(const Output & startingOutput)
       return traceOutput(*fixVar->result->origin());
     }
 
-    JLM_UNREACHABLE("Unknown phi argument type");
+    throw std::logic_error("Unknown phi argument type");
   }
 
   return output;

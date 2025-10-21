@@ -1185,7 +1185,8 @@ traceOutput(const Output & output);
  * in addition to:
  *
  * 1. From lambda context variables out of the lambda
- * 2. Phi node recursion variables and context variables
+ * 2. From delta context variables out of the delta
+ * 3. Phi node recursion variables and context variables
  *
  * @param output the output to trace.
  * @return the final value of the tracing
