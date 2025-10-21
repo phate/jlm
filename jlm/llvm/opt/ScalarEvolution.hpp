@@ -226,6 +226,9 @@ public:
       InductionVariableSet; // Stores the pointers to the output result from the subregion for the
                             // induction variables
 
+  typedef std::unordered_map<const rvsdg::Output *, std::unordered_map<const rvsdg::Output *, int>>
+      IVDependencyGraph;
+
   ~ScalarEvolution() noexcept override;
 
   ScalarEvolution()
@@ -248,9 +251,9 @@ public:
   static InductionVariableSet
   FindInductionVariables(const rvsdg::ThetaNode & thetaNode);
 
-  void
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
   CreateChainRecurrences(
-      const InductionVariableSet & inductionVariables,
+      const InductionVariableSet & inductionVariableCandidates,
       const rvsdg::ThetaNode & thetaNode);
 
 private:
@@ -268,6 +271,34 @@ private:
 
   std::optional<const SCEV *>
   TryGetSCEVForOutput(const rvsdg::Output & output);
+
+  IVDependencyGraph
+  CreateDependencyGraph(
+      const InductionVariableSet & inductionVariables,
+      const rvsdg::ThetaNode & thetaNode) const;
+
+  static std::unordered_map<const rvsdg::Output *, int>
+  FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV);
+
+  static std::vector<const rvsdg::Output *>
+  TopologicalSort(const IVDependencyGraph & dependencyGraph);
+
+  std::unique_ptr<SCEV>
+  ReplacePlaceholders(
+      const SCEV & scevTree,
+      const rvsdg::Output & currentIV,
+      const rvsdg::ThetaNode & thetaNode,
+      const InductionVariableSet & validIVs);
+
+  static bool
+  IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
+
+  static bool
+  HasCycleThroughOthers(
+      const rvsdg::Output * current,
+      IVDependencyGraph & dependencyGraph,
+      std::unordered_set<const rvsdg::Output *> & visited,
+      std::unordered_set<const rvsdg::Output *> & recursionStack);
 };
 
 }
