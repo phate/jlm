@@ -558,7 +558,7 @@ RegionObserver::~RegionObserver() noexcept
   }
 }
 
-RegionObserver::RegionObserver(Region & region)
+RegionObserver::RegionObserver(const Region & region)
 {
   next_ = region.observers_;
   if (next_)
