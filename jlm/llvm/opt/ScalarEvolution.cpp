@@ -366,9 +366,7 @@ ScalarEvolution::CreateChainRecurrences(
   {
     const auto loopVar = thetaNode.MapPreLoopVar(*indVarPre);
     const auto post = loopVar.post;
-    const auto scev = GetOrCreateSCEVForOutput(*post->origin());
-
-    std::cout << scev->DebugString() << '\n';
+    GetOrCreateSCEVForOutput(*post->origin());
   }
   auto dependencyGraph = CreateDependencyGraph(inductionVariableCandidates, thetaNode);
   InductionVariableSet validIVs{ inductionVariableCandidates };
@@ -415,13 +413,10 @@ ScalarEvolution::CreateChainRecurrences(
     UniqueSCEVs_.insert_or_assign(indVarPre, std::move(replacedSCEV));
   }
 
-  std::cout << "Final scevs: " << '\n';
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> chrecMap{};
   for (auto indVar : inductionVariableCandidates.Items())
-  {
     chrecMap[indVar] = UniqueSCEVs_.at(indVar)->Clone();
-    std::cout << UniqueSCEVs_.at(indVar)->DebugString() << '\n';
-  }
+
   return chrecMap;
 }
 
