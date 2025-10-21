@@ -185,6 +185,7 @@ TestNodeIterators()
     }
   }
 }
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestNodeIterators", TestNodeIterators)
 
 static void
 TestRegisterNodeIteration()
@@ -209,6 +210,7 @@ TestRegisterNodeIteration()
   // Assert
   assert(numIteratedRegisterNodes == pointsToGraph->NumRegisterNodes());
 }
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestRegisterNodeIteration", TestRegisterNodeIteration)
 
 static void
 TestIsSupergraphOf()
@@ -319,13 +321,67 @@ TestIsSupergraphOf()
   assert(graph0->IsSupergraphOf(*graph1));
   assert(graph1->IsSupergraphOf(*graph0));
 }
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestIsSupergraphOf", TestIsSupergraphOf)
 
-static void
-TestPointsToGraph()
+static void testMemoryNodeSize()
 {
-  TestNodeIterators();
-  TestRegisterNodeIteration();
-  TestIsSupergraphOf();
-}
+  using namespace jlm::llvm;
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph", TestPointsToGraph)
+  {
+    // Arrange
+    jlm::tests::DeltaTest3 test;
+    test.InitializeTest();
+
+    auto ptg = aa::PointsToGraph::Create();
+    const auto & deltaG1 = aa::PointsToGraph::DeltaNode::Create(*ptg, test.DeltaG1());
+    const auto & deltaG2 = aa::PointsToGraph::DeltaNode::Create(*ptg, test.DeltaG2());
+    const auto & f = aa::PointsToGraph::LambdaNode::Create(*ptg, test.LambdaF());
+
+    // Assert
+    assert(aa::tryGetMemoryNodeSize(deltaG1) == 4);
+    assert(aa::tryGetMemoryNodeSize(deltaG2) == 8);
+    assert(aa::tryGetMemoryNodeSize(f) == 0);
+  }
+
+  {
+    // Arrange 2
+    jlm::tests::StoreTest1 test;
+    test.InitializeTest();
+
+    auto ptg = aa::PointsToGraph::Create();
+    const auto & allocaD = aa::PointsToGraph::AllocaNode::Create(*ptg, *test.alloca_d);
+    const auto & allocaC = aa::PointsToGraph::AllocaNode::Create(*ptg, *test.alloca_c);
+
+    // Assert 2
+    assert(aa::tryGetMemoryNodeSize(allocaD) == 4);
+    assert(aa::tryGetMemoryNodeSize(allocaC) == 8); // Pointers are 8 bytes
+  }
+
+  {
+    // Arrange 3
+    jlm::tests::AllMemoryNodesTest test;
+    test.InitializeTest();
+    
+    auto ptg = aa::PointsToGraph::Create();
+    const auto & allocaNode = aa::PointsToGraph::AllocaNode::Create(*ptg, test.GetAllocaNode());
+    const auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*ptg, test.GetMallocNode());
+    const auto & deltaNode = aa::PointsToGraph::DeltaNode::Create(*ptg, test.GetDeltaNode());
+    const auto & lambdaNode = aa::PointsToGraph::LambdaNode::Create(*ptg, test.GetLambdaNode());
+    const auto & importNode = aa::PointsToGraph::ImportNode::Create(*ptg, test.GetImportOutput());
+    const auto & externalNode = ptg->GetExternalMemoryNode();
+    
+    // Assert 3
+    assert(aa::tryGetMemoryNodeSize(allocaNode) == 8);
+    assert(aa::tryGetMemoryNodeSize(mallocNode) == 4);
+    assert(aa::tryGetMemoryNodeSize(deltaNode) == 8);
+    assert(aa::tryGetMemoryNodeSize(importNode) == 4);
+    // Function nodes have size 0
+    assert(aa::tryGetMemoryNodeSize(lambdaNode) == 0);
+
+    // We can not give a size to the external node
+    assert(aa::tryGetMemoryNodeSize(externalNode) == std::nullopt);
+  }
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-testMemoryNodeSize",
+    testMemoryNodeSize)

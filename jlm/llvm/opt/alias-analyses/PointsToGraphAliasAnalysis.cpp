@@ -48,7 +48,7 @@ PointsToGraphAliasAnalysis::Query(
     const auto p2SingleTarget = TryGetSingleTarget(p2RegisterNode, s2);
     if (p1SingleTarget && p1SingleTarget == p2SingleTarget
         && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
-        && getMemoryNodeSize(*p1SingleTarget) == s1)
+        && tryGetMemoryNodeSize(*p1SingleTarget) == s1)
     {
       return MustAlias;
     }
@@ -61,7 +61,7 @@ PointsToGraphAliasAnalysis::Query(
   for (auto & target : p1RegisterNode.Targets())
   {
     // Skip memory locations that are too small
-    const auto targetSize = getMemoryNodeSize(target);
+    const auto targetSize = tryGetMemoryNodeSize(target);
     if (targetSize.has_value() && *targetSize < neededSize)
       continue;
 
@@ -81,7 +81,7 @@ PointsToGraphAliasAnalysis::TryGetSingleTarget(
   for (auto & target : node.Targets())
   {
     // Skip memory locations that are too small to hold size
-    const auto targetSize = getMemoryNodeSize(target);
+    const auto targetSize = tryGetMemoryNodeSize(target);
     if (targetSize.has_value() && *targetSize < size)
       continue;
 

@@ -611,7 +611,7 @@ PointsToGraph::ExternalMemoryNode::DebugString() const
 }
 
 std::optional<size_t>
-getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
+tryGetMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
 {
   if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
   {

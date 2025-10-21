@@ -1154,7 +1154,7 @@ private:
  * @return the static size of the location(s) represented by the node, or nullopt if unknown.
  */
 std::optional<size_t>
-getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode);
+tryGetMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode);
 
 /**
  * Checks if the given \p memoryNode represents memory locations that never change during execution.
