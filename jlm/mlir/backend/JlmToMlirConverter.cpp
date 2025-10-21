@@ -785,7 +785,7 @@ JlmToMlirConverter::ConvertSimpleNode(
           dynamic_cast<const jlm::llvm::CallEntryMemoryStateMergeOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
-            memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->GetMemoryNodeIds());
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->GetMemoryNodeIds());
 
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < callStateMerge->nresults(); i++)
