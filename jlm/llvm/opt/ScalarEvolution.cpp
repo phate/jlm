@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <queue>
+
 namespace jlm::llvm
 {
 class ScalarEvolution::Statistics final : public util::Statistics
