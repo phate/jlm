@@ -83,7 +83,7 @@ test_predicate_reduction()
   assert(r.origin() == v1);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().nnodes() == 0);
+  assert(graph.GetRootRegion().numNodes() == 0);
 }
 
 static void
@@ -115,7 +115,7 @@ test_invariant_reduction()
   assert(ex.origin() == value);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().nnodes() == 0);
+  assert(graph.GetRootRegion().numNodes() == 0);
 }
 
 static void

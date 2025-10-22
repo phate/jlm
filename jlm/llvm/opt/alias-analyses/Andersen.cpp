@@ -717,7 +717,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 {
-  const auto allocaOp = util::AssertedCast<const AllocaOperation>(&node.GetOperation());
+  const auto allocaOp = util::assertedCast<const AllocaOperation>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -1042,7 +1042,7 @@ Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<IOBarrierOperation>(node.GetOperation()));
 
-  const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
+  const auto operation = util::assertedCast<const IOBarrierOperation>(&node.GetOperation());
   if (!IsOrContainsPointerType(*operation->Type()))
     return;
 
@@ -1320,7 +1320,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
   // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
-    auto & argument = *util::AssertedCast<GraphImport>(rootRegion.argument(n));
+    auto & argument = *util::assertedCast<GraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
     if (!IsOrContainsPointerType(*argument.Type()))
@@ -1465,7 +1465,7 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + config.ToString());
-    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
@@ -1599,7 +1599,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
     auto root = set.GetUnificationRoot(registerIdx);
-    outputsInRegister[root].Insert(outputNode);
+    outputsInRegister[root].insert(outputNode);
   }
 
   // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges

@@ -42,11 +42,11 @@ public:
   {
     if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
-      SimpleNodes_.Insert(simpleNode);
+      SimpleNodes_.insert(simpleNode);
       return;
     }
 
-    Outputs_.Insert(&output);
+    Outputs_.insert(&output);
   }
 
   bool
@@ -304,7 +304,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
-    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    const auto argument = util::assertedCast<const rvsdg::RegionArgument>(&output);
     MarkOutput(*argument->input()->origin());
     return;
   }
@@ -341,7 +341,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
+  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.numNodes());
   for (auto & node : region.Nodes())
   {
     nodesTopDown[node.depth()].push_back(&node);
@@ -364,7 +364,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
     }
   }
 
-  JLM_ASSERT(region.NumBottomNodes() == 0);
+  JLM_ASSERT(region.numBottomNodes() == 0);
 }
 
 void

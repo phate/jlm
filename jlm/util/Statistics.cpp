@@ -44,7 +44,6 @@ GetStatisticsIdNames()
     { Statistics::Id::ScalarEvolution, "ScalarEvolution" },
     { Statistics::Id::SteensgaardAnalysis, "SteensgaardAnalysis" },
     { Statistics::Id::ThetaGammaInversion, "IVT" },
-    { Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
   };
   // Make sure every Statistic is mentioned in the mapping
   auto lastIdx = static_cast<size_t>(Statistics::Id::LastEnumValue);
@@ -168,7 +167,7 @@ StatisticsCollector::PrintStatistics()
   if (NumCollectedStatistics() == 0)
     return;
 
-  auto file = CreateOutputFile("statistics.log");
+  auto file = createOutputFile("statistics.log");
   file.open("w");
 
   for (auto & statistics : CollectedStatistics())
@@ -178,7 +177,7 @@ StatisticsCollector::PrintStatistics()
 }
 
 File
-StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCount)
+StatisticsCollector::createOutputFile(std::string fileNameSuffix, bool includeCount)
 {
   JLM_ASSERT(Settings_.HasOutputDirectory());
 
@@ -196,8 +195,12 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
         strfmt(fileNameSuffix.substr(0, firstDot), "-", count, fileNameSuffix.substr(firstDot));
   }
 
-  const auto fileName =
-      strfmt(Settings_.GetModuleName(), '-', Settings_.GetUniqueString(), '-', fileNameSuffix);
+  std::string fileName;
+  if (!Settings_.GetModuleName().empty())
+    fileName += Settings_.GetModuleName() + "-";
+  if (!Settings_.GetUniqueString().empty())
+    fileName += Settings_.GetUniqueString() + "-";
+  fileName += fileNameSuffix;
 
   auto fullPath = directory.Join(fileName);
   if (fullPath.Exists())

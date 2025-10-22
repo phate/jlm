@@ -92,7 +92,7 @@ public:
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {
-    const auto storeOperation = util::AssertedCast<const StoreOperation>(&node.GetOperation());
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
     if (storeOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
@@ -257,6 +257,23 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeIOBarrierAllocaAddress(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Redirect the users of the \ref StoreNonVolatileOperation results to its memory state operands
+   * if it can be shown that the \ref StoreNonVolatileOperation is the only user of an \ref
+   * AllocaOperation.
+   *
+   * a s1 = AllocaOperation ...
+   * s2 = StoreNonVolatileOperation a v s1
+   * ... = AnyOperation s2
+   * =>
+   * a s1 = AllocaOperation ...
+   * ... = AnyOperation s1
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeStoreAllocaSingleUser(
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 

@@ -92,7 +92,7 @@ NormalizeUnaryOperation_Success()
   assert(success == true);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == nullaryNode);
@@ -127,7 +127,7 @@ NormalizeUnaryOperation_Failure()
   assert(success == false);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == unaryNode);

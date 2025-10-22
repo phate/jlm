@@ -30,7 +30,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
     if (ThetaLoopVarIsInvariant(loopvar)
         && !jlm::rvsdg::is<jlm::llvm::MemoryStateType>(loopvar.input->Type()))
     {
-      smap.insert(loopvar.pre, loop->add_loopconst(loopvar.input->origin()));
+      smap.insert(loopvar.pre, loop->addLoopConstant(loopvar.input->origin()));
       branches.push_back(nullptr);
       // The HLS loop has no output for this input. The users of the theta output is
       // therefore redirected to the input origin, as the value is loop invariant.

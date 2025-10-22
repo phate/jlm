@@ -6,6 +6,7 @@
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -137,9 +138,9 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   // If an aliasing graph was constructed during the evaluation, print it out now
   if (IsAliasingGraphEnabled())
   {
-    auto out = statisticsCollector.CreateOutputFile("AliasingGraph.dot", true);
+    auto out = statisticsCollector.createOutputFile("AliasingGraph.dot", true);
     std::ofstream fd(out.path().to_str());
-    gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
+    gw.outputAllGraphs(fd, util::graph::OutputFormat::Dot);
     statistics->AddAliasingGraphOutputFile(out.path());
   }
 
@@ -148,7 +149,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   if (IsPerFunctionOutputEnabled())
   {
     perFunctionOutputFile =
-        statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true).path();
+        statisticsCollector.createOutputFile("AAPrecisionEvaluation.log", true).path();
     statistics->AddPerFunctionOutputFile(*perFunctionOutputFile);
   }
 
@@ -318,7 +319,7 @@ AliasAnalysisPrecisionEvaluator::NormalizePointerValues()
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
     auto & pointer = std::get<0>(Context_.PointerOperations[i]);
-    pointer = &NormalizeOutput(*pointer);
+    pointer = &llvm::traceOutput(*pointer);
   }
 }
 

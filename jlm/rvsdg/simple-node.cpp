@@ -4,7 +4,6 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/strfmt.hpp>
@@ -14,7 +13,7 @@ namespace jlm::rvsdg
 
 SimpleNode::~SimpleNode()
 {
-  on_node_destroy(this);
+  region()->notifyNodeDestroy(this);
 }
 
 SimpleNode::SimpleNode(
@@ -34,14 +33,15 @@ SimpleNode::SimpleNode(
 
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
-    add_input(
-        std::make_unique<NodeInput>(operands[n], this, SimpleNode::GetOperation().argument(n)));
+    addInput(
+        std::make_unique<NodeInput>(operands[n], this, SimpleNode::GetOperation().argument(n)),
+        false);
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
+    addOutput(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
 
-  on_node_create(this);
+  region.notifyNodeCreate(this);
 }
 
 const SimpleOperation &
@@ -54,7 +54,7 @@ Node *
 SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   std::unique_ptr<SimpleOperation> operation(
-      util::AssertedCast<SimpleOperation>(GetOperation().copy().release()));
+      util::assertedCast<SimpleOperation>(GetOperation().copy().release()));
   return &Create(*region, std::move(operation), operands);
 }
 

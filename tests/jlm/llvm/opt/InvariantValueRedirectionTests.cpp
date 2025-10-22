@@ -48,7 +48,7 @@ TestGamma()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -100,7 +100,7 @@ TestTheta()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -157,7 +157,7 @@ TestCall()
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", Linkage::externalLinkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
@@ -193,7 +193,7 @@ TestCall()
 
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::externalLinkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto yArgument = lambdaNode->GetFunctionArguments()[1];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
@@ -246,32 +246,33 @@ TestCallWithMemoryStateNodes()
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", Linkage::externalLinkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
 
-    auto lambdaEntrySplitResults =
-        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 2, { 0, 1 });
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
     auto gammaInputX = gammaNode->AddEntryVar(xArgument);
-    auto gammaInputMemoryState1 = gammaNode->AddEntryVar(lambdaEntrySplitResults[0]);
-    auto gammaInputMemoryState2 = gammaNode->AddEntryVar(lambdaEntrySplitResults[1]);
+    auto gammaInputMemoryState1 = gammaNode->AddEntryVar(lambdaEntrySplitNode.output(0));
+    auto gammaInputMemoryState2 = gammaNode->AddEntryVar(lambdaEntrySplitNode.output(1));
 
     auto gammaOutputX = gammaNode->AddExitVar(gammaInputX.branchArgument);
     auto gammaOutputMemoryState1 = gammaNode->AddExitVar(gammaInputMemoryState2.branchArgument);
     auto gammaOutputMemoryState2 = gammaNode->AddExitVar(gammaInputMemoryState1.branchArgument);
 
-    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
-        { gammaOutputMemoryState1.output, gammaOutputMemoryState2.output });
+        { gammaOutputMemoryState1.output, gammaOutputMemoryState2.output },
+        { 0, 1 });
 
-    lambdaOutputTest1 =
-        lambdaNode->finalize({ gammaOutputX.output, ioStateArgument, &lambdaExitMergeResult });
+    lambdaOutputTest1 = lambdaNode->finalize(
+        { gammaOutputX.output, ioStateArgument, lambdaExitMergeNode.output(0) });
   }
 
   jlm::rvsdg::Output * lambdaOutputTest2 = nullptr;
@@ -282,18 +283,18 @@ TestCallWithMemoryStateNodes()
 
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::externalLinkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
     auto lambdaArgumentTest1 = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
-    auto lambdaEntrySplitResults =
-        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 2, { 0, 1 });
 
     auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
         *lambdaNode->subregion(),
-        lambdaEntrySplitResults);
+        outputs(&lambdaEntrySplitNode));
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
@@ -302,14 +303,18 @@ TestCallWithMemoryStateNodes()
         functionTypeTest1,
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
 
-    auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 2);
+    auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNode),
+        { 0, 1 });
 
-    auto & lambdaExitMergeResult =
-        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        outputs(&callExitSplitNode),
+        { 0, 1 });
 
-    lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
+    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
+                                               &CallOperation::GetIOStateOutput(callNode),
+                                               lambdaExitMergeNode.output(0) });
     jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
@@ -357,7 +362,7 @@ TestCallWithMissingMemoryStateNodes()
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
@@ -373,44 +378,49 @@ TestCallWithMissingMemoryStateNodes()
         { memoryStateArgument },
         4);
 
-    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
-        { storeNode.output(0) });
+        { storeNode.output(0) },
+        { 0 });
 
-    lambdaOutputTest1 =
-        lambdaNode->finalize({ zeroNode.output(0), ioStateArgument, &lambdaExitMergeResult });
+    lambdaOutputTest1 = lambdaNode->finalize(
+        { zeroNode.output(0), ioStateArgument, lambdaExitMergeNode.output(0) });
   }
 
   Output * lambdaOutputTest2 = nullptr;
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::externalLinkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
     auto lambdaArgumentTest = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
-    auto lambdaEntrySplitResults =
-        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 1);
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 1, { 0 });
 
     auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
         *lambdaNode->subregion(),
-        lambdaEntrySplitResults);
+        outputs(&lambdaEntrySplitNode));
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest,
         functionType,
         { xArgument, ioStateArgument, &callEntryMergeResult });
 
-    auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 1);
+    auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNode),
+        { 0 });
 
-    auto & lambdaExitMergeResult =
-        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        outputs(&callExitSplitNode),
+        { 0 });
 
-    lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
+    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
+                                               &CallOperation::GetIOStateOutput(callNode),
+                                               lambdaExitMergeNode.output(0) });
     GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 

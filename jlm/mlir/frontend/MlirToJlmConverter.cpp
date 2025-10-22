@@ -124,7 +124,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
-          llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
@@ -397,6 +397,17 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   {
     return nullptr;
   }
+}
+
+static std::vector<llvm::MemoryNodeId>
+arrayAttrToMemoryNodeIds(::mlir::ArrayAttr arrayAttr)
+{
+  std::vector<llvm::MemoryNodeId> memoryNodeIds;
+  for (auto memoryNodeId : arrayAttr)
+  {
+    memoryNodeIds.push_back(memoryNodeId.cast<::mlir::IntegerAttr>().getInt());
+  }
+  return memoryNodeIds;
 }
 
 std::vector<jlm::rvsdg::Output *>
@@ -708,36 +719,51 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (
       auto LambdaEntryMemstateSplitOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplit>(&mlirOperation))
   {
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaEntryMemstateSplitOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+    return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        LambdaEntryMemstateSplitOp.getNumResults());
+        LambdaEntryMemstateSplitOp.getNumResults(),
+        std::move(memoryNodeIds)));
   }
-  else if (
-      auto LambdaExitMemstateMergeOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+  if (auto LambdaExitMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaExitMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallEntryMemstateMergeOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallEntryMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallEntryMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::CallEntryMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::CallEntryMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallExitMemstateSplitOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
+    return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        CallExitMemstateSplitOp.getNumResults());
-    return outputs;
+        std::move(memoryNodeIds)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {
@@ -754,13 +780,6 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
     return jlm::llvm::MallocOperation::create(inputs[0]);
-  }
-  else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
-  {
-    auto type = IOBarrierOp.getResult().getType();
-    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
-        std::vector(inputs.begin(), inputs.end()),
-        ConvertType(type)));
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
@@ -956,7 +975,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
       {
-        auto op = util::AssertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
+        auto op = util::assertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
         jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
     }
@@ -1007,52 +1026,52 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
   }
 }
 
-llvm::linkage
+llvm::Linkage
 MlirToJlmConverter::ConvertLinkage(std::string stringValue)
 {
   if (!stringValue.compare("external_linkage"))
   {
-    return llvm::linkage::external_linkage;
+    return llvm::Linkage::externalLinkage;
   }
   else if (!stringValue.compare("available_externally_linkage"))
   {
-    return llvm::linkage::available_externally_linkage;
+    return llvm::Linkage::availableExternallyLinkage;
   }
   else if (!stringValue.compare("link_once_any_linkage"))
   {
-    return llvm::linkage::link_once_any_linkage;
+    return llvm::Linkage::linkOnceAnyLinkage;
   }
   else if (!stringValue.compare("link_once_odr_linkage"))
   {
-    return llvm::linkage::link_once_odr_linkage;
+    return llvm::Linkage::linkOnceOdrLinkage;
   }
   else if (!stringValue.compare("weak_any_linkage"))
   {
-    return llvm::linkage::weak_any_linkage;
+    return llvm::Linkage::weakAnyLinkage;
   }
   else if (!stringValue.compare("weak_odr_linkage"))
   {
-    return llvm::linkage::weak_odr_linkage;
+    return llvm::Linkage::weakOdrLinkage;
   }
   else if (!stringValue.compare("appending_linkage"))
   {
-    return llvm::linkage::appending_linkage;
+    return llvm::Linkage::appendingLinkage;
   }
   else if (!stringValue.compare("internal_linkage"))
   {
-    return llvm::linkage::internal_linkage;
+    return llvm::Linkage::internalLinkage;
   }
   else if (!stringValue.compare("private_linkage"))
   {
-    return llvm::linkage::private_linkage;
+    return llvm::Linkage::privateLinkage;
   }
   else if (!stringValue.compare("external_weak_linkage"))
   {
-    return llvm::linkage::external_weak_linkage;
+    return llvm::Linkage::externalWeakLinkage;
   }
   else if (!stringValue.compare("common_linkage"))
   {
-    return llvm::linkage::common_linkage;
+    return llvm::Linkage::commonLinkage;
   }
   auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
   JLM_UNREACHABLE(message.c_str());
@@ -1096,7 +1115,7 @@ MlirToJlmConverter::ConvertLambda(
       llvm::LlvmLambdaOperation::Create(
           functionType,
           functionName.getValue().str(),
-          llvm::linkage::external_linkage));
+          llvm::Linkage::externalLinkage));
 
   for (auto input : inputs)
   {

@@ -28,7 +28,7 @@ TestDeadLoopNode()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::linkage::external_linkage));
+          jlm::llvm::Linkage::externalLinkage));
 
   LoopNode::create(lambdaNode->subregion());
 
@@ -38,7 +38,7 @@ TestDeadLoopNode()
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  assert(lambdaNode->subregion()->nnodes() == 0);
+  assert(lambdaNode->subregion()->numNodes() == 0);
 }
 
 static void
@@ -60,7 +60,7 @@ TestDeadLoopNodeOutput()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::linkage::external_linkage));
+          jlm::llvm::Linkage::externalLinkage));
 
   auto p = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];

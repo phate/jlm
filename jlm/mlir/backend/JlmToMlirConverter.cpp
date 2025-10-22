@@ -80,12 +80,12 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     auto arg = region.argument(i);
     if (isRoot) // Omega arguments are treated separately
     {
-      auto imp = util::AssertedCast<llvm::GraphImport>(arg);
+      auto imp = util::assertedCast<llvm::GraphImport>(arg);
       block.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
           Builder_->getUnknownLoc(),
           ConvertType(*imp->ImportedType()),
           ConvertType(*imp->ValueType()),
-          Builder_->getStringAttr(llvm::ToString(imp->Linkage())),
+          Builder_->getStringAttr(llvm::linkageToString(imp->linkage())),
           Builder_->getStringAttr(imp->Name())));
       valueMap[arg] = block.back().getResult(0); // Add the output of the omega argument
     }
@@ -394,6 +394,27 @@ JlmToMlirConverter::ConvertPointerCompareNode(
       inputs[0],
       inputs[1]);
   return MlirOp;
+}
+
+/**
+ * Converts a list of memory node ids into an ArrayAttr,
+ * containing one IntegerAttr for each memory node id.
+ * @param context the MLIR context
+ * @param memoryNodeIndices the list of indices to convert into an ArrayAttr
+ * @return the created ArrayAttr
+ */
+static ::mlir::ArrayAttr
+memoryNodeIndicesToArrayAttr(
+    ::mlir::MLIRContext * context,
+    const std::vector<llvm::MemoryNodeId> & memoryNodeIndices)
+{
+  auto int64Type = ::mlir::IntegerType::get(context, 64);
+  ::llvm::SmallVector<::mlir::Attribute> intAttributes;
+  for (auto memoryNodeId : memoryNodeIndices)
+  {
+    intAttributes.push_back(::mlir::IntegerAttr::get(int64Type, memoryNodeId));
+  }
+  return ::mlir::ArrayAttr::get(context, intAttributes);
 }
 
 ::mlir::Operation *
@@ -707,67 +728,75 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (
       auto lambdaStateSplit =
-          dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
+          dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
   {
+    auto memoryNodeIndicesAttr =
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateSplit->getMemoryNodeIds());
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateSplit->nresults(); i++)
     {
       resultTypes.push_back(ConvertType(*lambdaStateSplit->result(i).get()));
     }
-    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
-    MlirOp = Builder_->create<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(
+    MlirOp = Builder_->create<::mlir::rvsdg::LambdaEntryMemoryStateSplit>(
         Builder_->getUnknownLoc(),
         ::llvm::ArrayRef(resultTypes), // output types
         inputs[0],                     // input
-        ::llvm::ArrayRef(attributes));
+        memoryNodeIndicesAttr);
   }
   else if (
       auto lambdaStateMerge =
           dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(&operation))
   {
+    auto memoryNodeIndicesAttr =
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateMerge->GetMemoryNodeIds());
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateMerge->nresults(); i++)
     {
       resultTypes.push_back(ConvertType(*lambdaStateMerge->result(i).get()));
     }
-    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
-    MlirOp = Builder_->create<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(
+    MlirOp = Builder_->create<::mlir::rvsdg::LambdaExitMemoryStateMerge>(
         Builder_->getUnknownLoc(),
         ::llvm::ArrayRef(resultTypes), // output type
         ::mlir::ValueRange(inputs),    // inputs
-        ::llvm::ArrayRef(attributes));
+        memoryNodeIndicesAttr);
   }
   else if (
       auto callStateSplit =
           dynamic_cast<const jlm::llvm::CallExitMemoryStateSplitOperation *>(&operation))
   {
+    auto memoryNodeIndicesAttr =
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateSplit->getMemoryNodeIds());
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < callStateSplit->nresults(); i++)
     {
       resultTypes.push_back(ConvertType(*callStateSplit->result(i).get()));
     }
-    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
     MlirOp = Builder_->create<::mlir::rvsdg::CallExitMemoryStateSplit>(
         Builder_->getUnknownLoc(),
         ::llvm::ArrayRef(resultTypes), // output types
         inputs[0],                     // input
-        ::llvm::ArrayRef(attributes));
+        memoryNodeIndicesAttr);
   }
   else if (
       auto callStateMerge =
           dynamic_cast<const jlm::llvm::CallEntryMemoryStateMergeOperation *>(&operation))
   {
+    auto memoryNodeIndicesAttr =
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->GetMemoryNodeIds());
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < callStateMerge->nresults(); i++)
     {
       resultTypes.push_back(ConvertType(*callStateMerge->result(i).get()));
     }
-    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
     MlirOp = Builder_->create<::mlir::rvsdg::CallEntryMemoryStateMerge>(
         Builder_->getUnknownLoc(),
         ::llvm::ArrayRef(resultTypes), // output type
         ::mlir::ValueRange(inputs),    // inputs
-        ::llvm::ArrayRef(attributes));
+        memoryNodeIndicesAttr);
   }
   else if (auto memoryStateJoin = dynamic_cast<const llvm::MemoryStateJoinOperation *>(&operation))
   {
@@ -815,7 +844,7 @@ JlmToMlirConverter::ConvertLambda(
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(
+      Builder_->getStringAttr(llvm::linkageToString(
           dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
@@ -841,7 +870,7 @@ JlmToMlirConverter::ConvertGamma(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
+  auto & gammaOp = *util::assertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
 
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
@@ -912,13 +941,13 @@ JlmToMlirConverter::ConvertDelta(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto op = util::AssertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
+  auto op = util::assertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
   auto delta = Builder_->create<::mlir::rvsdg::DeltaNode>(
       Builder_->getUnknownLoc(),
       Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
       ::llvm::StringRef(op->name()),
-      ::llvm::StringRef(llvm::ToString(op->linkage())),
+      ::llvm::StringRef(llvm::linkageToString(op->linkage())),
       ::llvm::StringRef(op->Section()),
       op->constant());
   block.push_back(delta);

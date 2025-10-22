@@ -56,7 +56,7 @@ MultipleReductionsPerRegion()
   // the add operation
   // 2. Constant folding on the add operation
   // The result is that a single constant node with value 8 is left in the graph.
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*sumExport.origin());
   auto constantOperation = dynamic_cast<const bitconstant_op *>(&constantNode->GetOperation());

@@ -7,7 +7,7 @@
 #define JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
 
 #include <jlm/llvm/ir/attribute.hpp>
-#include <jlm/llvm/ir/linkage.hpp>
+#include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
@@ -34,7 +34,7 @@ public:
   LlvmLambdaOperation(
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
-      const jlm::llvm::linkage & linkage,
+      const jlm::llvm::Linkage & linkage,
       jlm::llvm::AttributeSet attributes);
 
   [[nodiscard]] const std::string &
@@ -43,7 +43,7 @@ public:
     return name_;
   }
 
-  [[nodiscard]] const jlm::llvm::linkage &
+  [[nodiscard]] const jlm::llvm::Linkage &
   linkage() const noexcept
   {
     return linkage_;
@@ -70,11 +70,14 @@ public:
   void
   SetArgumentAttributes(std::size_t index, const jlm::llvm::AttributeSet & attributes);
 
+  [[nodiscard]] static rvsdg::Output &
+  getIOStateArgument(const rvsdg::LambdaNode & lambdaNode) noexcept;
+
   static std::unique_ptr<LlvmLambdaOperation>
   Create(
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
-      const jlm::llvm::linkage & linkage,
+      const jlm::llvm::Linkage & linkage,
       jlm::llvm::AttributeSet attributes)
   {
     return std::make_unique<LlvmLambdaOperation>(
@@ -88,7 +91,7 @@ public:
   Create(
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
-      const jlm::llvm::linkage & linkage)
+      const jlm::llvm::Linkage & linkage)
   {
     return std::make_unique<LlvmLambdaOperation>(
         std::move(type),
@@ -99,7 +102,7 @@ public:
 
 private:
   std::string name_;
-  jlm::llvm::linkage linkage_;
+  jlm::llvm::Linkage linkage_;
   jlm::llvm::AttributeSet attributes_;
   std::vector<jlm::llvm::AttributeSet> ArgumentAttributes_;
 };

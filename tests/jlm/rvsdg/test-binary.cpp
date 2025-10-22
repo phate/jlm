@@ -110,7 +110,7 @@ ReduceFlattenedBinaryReductionParallel()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<jlm::tests::TestBinaryOperation>(node0));
@@ -157,7 +157,7 @@ ReduceFlattenedBinaryReductionLinear()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<jlm::tests::TestBinaryOperation>(node0));

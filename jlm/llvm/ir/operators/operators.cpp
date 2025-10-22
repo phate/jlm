@@ -393,7 +393,7 @@ ZExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  auto & tracedOperand = rvsdg::TraceOutputIntraProcedurally(*operand);
+  auto & tracedOperand = rvsdg::traceOutputIntraProcedurally(*operand);
   if (rvsdg::IsOwnerNodeOperation<rvsdg::bitconstant_op>(tracedOperand))
     return rvsdg::unop_reduction_constant;
 
@@ -405,7 +405,7 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto & tracedOperand = rvsdg::TraceOutputIntraProcedurally(*operand);
+    auto & tracedOperand = rvsdg::traceOutputIntraProcedurally(*operand);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOperand);
     JLM_ASSERT(constantOperation);

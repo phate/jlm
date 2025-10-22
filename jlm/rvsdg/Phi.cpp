@@ -39,13 +39,11 @@ PhiNode::GetOperation() const noexcept
 PhiNode::ContextVar
 PhiNode::AddContextVar(rvsdg::Output & origin)
 {
-  Node::add_input(std::make_unique<jlm::rvsdg::StructuralInput>(this, &origin, origin.Type()));
-  auto input = static_cast<jlm::rvsdg::StructuralInput *>(Node::input(ninputs() - 1));
+  auto input = addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
+  auto & argument =
+      subregion()->addArgument(std::make_unique<RegionArgument>(subregion(), input, origin.Type()));
 
-  auto argument = new jlm::rvsdg::RegionArgument(subregion(), input, origin.Type());
-  subregion()->append_argument(argument);
-
-  return ContextVar{ input, argument };
+  return ContextVar{ input, &argument };
 }
 
 [[nodiscard]] std::vector<PhiNode::ContextVar>
@@ -164,7 +162,7 @@ PhiNode::RemoveContextVars(std::vector<ContextVar> vars)
   for (const auto & var : vars)
   {
     subregion()->RemoveArgument(var.inner->index());
-    RemoveInput(var.input->index());
+    removeInput(var.input->index(), true);
   }
 }
 
@@ -183,7 +181,7 @@ PhiNode::RemoveFixVars(std::vector<FixVar> vars)
   {
     subregion()->RemoveResult(var.result->index());
     subregion()->RemoveArgument(var.recref->index());
-    RemoveOutput(var.output->index());
+    removeOutput(var.output->index());
   }
 }
 
@@ -259,15 +257,14 @@ PhiBuilder::AddContextVar(rvsdg::Output & origin)
 PhiNode::FixVar
 PhiBuilder::AddFixVar(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
-  node_->add_output(std::make_unique<jlm::rvsdg::StructuralOutput>(node_, type));
-  auto output = node_->output(node_->noutputs() - 1);
+  auto output = node_->addOutput(std::make_unique<StructuralOutput>(node_, type));
+  auto & argument = subregion()->insertArgument(
+      subregion()->nresults(),
+      std::make_unique<RegionArgument>(subregion(), nullptr, type));
+  auto & result =
+      subregion()->addResult(std::make_unique<RegionResult>(subregion(), &argument, output, type));
 
-  auto argument = new jlm::rvsdg::RegionArgument(subregion(), nullptr, type);
-  subregion()->insert_argument(subregion()->nresults(), argument);
-  auto result = new jlm::rvsdg::RegionResult(subregion(), argument, output, type);
-  subregion()->append_result(result);
-
-  return PhiNode::FixVar{ argument, result, output };
+  return PhiNode::FixVar{ &argument, &result, output };
 }
 
 PhiNode *

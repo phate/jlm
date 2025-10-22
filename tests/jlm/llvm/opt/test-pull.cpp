@@ -53,8 +53,8 @@ testPullInTop()
   pullin_top(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(gamma->subregion(0)->nnodes() == 2);
-  assert(gamma->subregion(1)->nnodes() == 2);
+  assert(gamma->subregion(0)->numNodes() == 2);
+  assert(gamma->subregion(1)->numNodes() == 2);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInTop", testPullInTop)
@@ -145,7 +145,7 @@ testPull()
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPull", testPull)

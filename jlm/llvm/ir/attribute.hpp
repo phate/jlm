@@ -331,25 +331,25 @@ public:
   void
   InsertEnumAttribute(const EnumAttribute & attribute)
   {
-    EnumAttributes_.Insert(attribute);
+    EnumAttributes_.insert(attribute);
   }
 
   void
   InsertIntAttribute(const IntAttribute & attribute)
   {
-    IntAttributes_.Insert(attribute);
+    IntAttributes_.insert(attribute);
   }
 
   void
   InsertTypeAttribute(const TypeAttribute & attribute)
   {
-    TypeAttributes_.Insert(attribute);
+    TypeAttributes_.insert(attribute);
   }
 
   void
   InsertStringAttribute(const StringAttribute & attribute)
   {
-    StringAttributes_.Insert(attribute);
+    StringAttributes_.insert(attribute);
   }
 
   bool
