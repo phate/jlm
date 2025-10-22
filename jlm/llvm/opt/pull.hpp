@@ -38,7 +38,7 @@ public:
    * Sink all nodes that are dependent on \p gammaNode and are from the same region as \p gammaNode
    * into the gamma node's subregions.
    *
-   * @param gammaNode A \ref GammaNode
+   * @param gammaNode A \ref rvsdg::GammaNode
    * @return The number of dependent nodes that were sunk into the gamma node.
    */
   static size_t
