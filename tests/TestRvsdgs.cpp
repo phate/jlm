@@ -25,12 +25,12 @@ StoreTest1::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
+  auto constantOne = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto d = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
-  auto c = AllocaOperation::create(pointerType, csize, 4);
-  auto b = AllocaOperation::create(pointerType, csize, 4);
-  auto a = AllocaOperation::create(pointerType, csize, 4);
+  auto d = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+  auto c = AllocaOperation::create(pointerType, constantOne, 4);
+  auto b = AllocaOperation::create(pointerType, constantOne, 4);
+  auto a = AllocaOperation::create(pointerType, constantOne, 4);
 
   auto merge_d = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ d[1], fct->GetFunctionArguments()[0] });
@@ -53,7 +53,7 @@ StoreTest1::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*constantOne);
 
   this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
   this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
@@ -80,13 +80,13 @@ StoreTest2::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
+  auto constantOne = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
-  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
-  auto x = AllocaOperation::create(pointerType, csize, 4);
-  auto y = AllocaOperation::create(pointerType, csize, 4);
-  auto p = AllocaOperation::create(pointerType, csize, 4);
+  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+  auto x = AllocaOperation::create(pointerType, constantOne, 4);
+  auto y = AllocaOperation::create(pointerType, constantOne, 4);
+  auto p = AllocaOperation::create(pointerType, constantOne, 4);
 
   auto merge_a = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ a[1], fct->GetFunctionArguments()[0] });
@@ -112,7 +112,7 @@ StoreTest2::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*constantOne);
 
   this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
   this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
@@ -182,13 +182,13 @@ LoadTest2::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
+  auto constantOne = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
-  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
-  auto x = AllocaOperation::create(pointerType, csize, 4);
-  auto y = AllocaOperation::create(pointerType, csize, 4);
-  auto p = AllocaOperation::create(pointerType, csize, 4);
+  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+  auto x = AllocaOperation::create(pointerType, constantOne, 4);
+  auto y = AllocaOperation::create(pointerType, constantOne, 4);
+  auto p = AllocaOperation::create(pointerType, constantOne, 4);
 
   auto merge_a = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ a[1], fct->GetFunctionArguments()[0] });
@@ -217,7 +217,7 @@ LoadTest2::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*constantOne);
 
   this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
   this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
@@ -575,11 +575,11 @@ CallTest1::SetupRvsdg()
     auto cvf = lambda->AddContextVar(*f->output()).inner;
     auto cvg = lambda->AddContextVar(*g->output()).inner;
 
-    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto x = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
-    auto y = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
-    auto z = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
+    auto x = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+    auto y = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+    auto z = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
 
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ x[1], memoryStateArgument }));
@@ -1045,10 +1045,10 @@ IndirectCallTest2::SetupRvsdg()
     auto globalG1Cv = lambda->AddContextVar(globalG1).inner;
     auto globalG2Cv = lambda->AddContextVar(globalG2).inner;
 
-    auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto pxAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
-    auto pyAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
+    auto pxAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
+    auto pyAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
 
     auto pxMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ pxAlloca[1], memoryStateArgument });
@@ -1109,9 +1109,9 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto pzAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
+    auto pzAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pzMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ pzAlloca[1], memoryStateArgument });
 
@@ -1221,10 +1221,10 @@ ExternalCallTest1::SetupRvsdg()
 
     auto functionGCv = lambda->AddContextVar(*functionG).inner;
 
-    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto allocaPath = AllocaOperation::create(pointerType, size, 4);
-    auto allocaMode = AllocaOperation::create(pointerType, size, 4);
+    auto allocaPath = AllocaOperation::create(pointerType, constantOne, 4);
+    auto allocaMode = AllocaOperation::create(pointerType, constantOne, 4);
 
     auto mergePath = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaPath[1], memoryStateArgument });
@@ -1322,9 +1322,10 @@ ExternalCallTest2::SetupRvsdg()
   auto llvmLifetimeEndArgument = LambdaG_->AddContextVar(*llvmLifetimeEnd).inner;
   auto lambdaFArgument = LambdaG_->AddContextVar(*ExternalFArgument_).inner;
 
+  auto constantOne = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 1);
   auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 24);
 
-  auto allocaResults = AllocaOperation::create(structType, twentyFour, 16);
+  auto allocaResults = AllocaOperation::create(structType, constantOne, 16);
   auto memoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
 
@@ -1521,9 +1522,9 @@ GammaTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[3];
     auto memoryStateArgument = lambda->GetFunctionArguments()[4];
 
-    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto allocaZResults = AllocaOperation::create(pointerType, size, 4);
+    auto allocaZResults = AllocaOperation::create(pointerType, constantOne, 4);
 
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaZResults[1], memoryStateArgument });
@@ -1575,10 +1576,10 @@ GammaTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto lambdaFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    auto allocaXResults = AllocaOperation::create(rvsdg::BitType::Create(32), size, 4);
-    auto allocaYResults = AllocaOperation::create(pointerType, size, 4);
+    auto allocaXResults = AllocaOperation::create(rvsdg::BitType::Create(32), constantOne, 4);
+    auto allocaYResults = AllocaOperation::create(pointerType, constantOne, 4);
 
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaXResults[1], memoryStateArgument });
@@ -2251,16 +2252,20 @@ PhiTest1::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto fibcv = lambda->AddContextVar(*phiNode->output(0)).inner;
 
-    auto ten = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 10);
-    auto allocaResults = AllocaOperation::create(at, ten, 16);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 1);
+    auto constantTen = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 10);
+
+    auto allocaResults = AllocaOperation::create(at, constantOne, 16);
     auto state = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
 
     auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 0);
     auto gep = GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, at, pbit64);
 
-    auto & call =
-        CallOperation::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
+    auto & call = CallOperation::CreateNode(
+        fibcv,
+        fibFunctionType,
+        { constantTen, gep, iOStateArgument, state });
 
     auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambdaOutput, "test");
@@ -2374,8 +2379,9 @@ PhiTest2::SetupRvsdg()
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
-    auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto paAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+
+    auto paAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto paMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ paAlloca[1], storeNode[0] }));
 
@@ -2425,8 +2431,9 @@ PhiTest2::SetupRvsdg()
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
-    auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pbAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+
+    auto pbAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pbMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pbAlloca[1], storeNode[0] }));
 
@@ -2474,8 +2481,8 @@ PhiTest2::SetupRvsdg()
     auto storeNode =
         StoreNonVolatileOperation::Create(xArgument, three, { memoryStateArgument }, 4);
 
-    auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pcAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
+    auto constanOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+    auto pcAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constanOne, 4);
     auto pcMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pcAlloca[1], storeNode[0] }));
 
@@ -2516,7 +2523,8 @@ PhiTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto storeNode = StoreNonVolatileOperation::Create(xArgument, four, { memoryStateArgument }, 4);
 
-    auto pdAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+    auto pdAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pdMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pdAlloca[1], storeNode[0] }));
 
@@ -2595,8 +2603,8 @@ PhiTest2::SetupRvsdg()
 
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
-    auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pTestAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+    auto pTestAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pTestMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pTestAlloca[1], memoryStateArgument }));
 
@@ -3452,7 +3460,8 @@ MemcpyTest3::SetupRvsdg()
   auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
   auto three = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 3);
 
-  auto allocaResults = AllocaOperation::create(structType, eight, 8);
+  auto constantOne = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 1);
+  auto allocaResults = AllocaOperation::create(structType, constantOne, 8);
   auto memoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
 
@@ -3529,9 +3538,9 @@ LinkedListTest::SetupRvsdg()
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
     auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
-    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+    auto constantOne = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = AllocaOperation::create(pointerType, size, 4);
+    auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
     auto mergedMemoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ alloca[1], memoryStateArgument });
 
@@ -3684,13 +3693,13 @@ NAllocaNodesTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto allocaSize = jlm::rvsdg::create_bitconstant(Function_->subregion(), 32, 1);
+  auto constantOne = jlm::rvsdg::create_bitconstant(Function_->subregion(), 32, 1);
 
   jlm::rvsdg::Output * latestMemoryState = Function_->GetFunctionArguments()[0];
 
   for (size_t i = 0; i < NumAllocaNodes_; i++)
   {
-    auto allocaOutputs = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), allocaSize, 4);
+    auto allocaOutputs = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
     AllocaNodes_.push_back(allocaNode);
@@ -3738,8 +3747,8 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   LocalFuncParam_ = LocalFunc_->GetFunctionArguments()[0];
 
-  const auto allocaSize = rvsdg::create_bitconstant(LocalFunc_->subregion(), 32, 1);
-  const auto allocaOutputs = AllocaOperation::create(uint32Type, allocaSize, 4);
+  const auto constantOne = rvsdg::create_bitconstant(LocalFunc_->subregion(), 32, 1);
+  const auto allocaOutputs = AllocaOperation::create(uint32Type, constantOne, 4);
   LocalFuncParamAllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
   // Merge function's input Memory State and alloca node's memory state

@@ -399,6 +399,17 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   }
 }
 
+static std::vector<llvm::MemoryNodeId>
+arrayAttrToMemoryNodeIds(::mlir::ArrayAttr arrayAttr)
+{
+  std::vector<llvm::MemoryNodeId> memoryNodeIds;
+  for (auto memoryNodeId : arrayAttr)
+  {
+    memoryNodeIds.push_back(memoryNodeId.cast<::mlir::IntegerAttr>().getInt());
+  }
+  return memoryNodeIds;
+}
+
 std::vector<jlm::rvsdg::Output *>
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
@@ -708,46 +719,52 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (
       auto LambdaEntryMemstateSplitOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplit>(&mlirOperation))
   {
-    // FIXME: the MLIR LambdaEntryMemoryStateSplitOperation does not support the memoryNodeIds
-    // parameter at the moment
-    size_t numMemoryStates = LambdaEntryMemstateSplitOp.getNumResults();
-    std::vector<llvm::MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numMemoryStates; ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaEntryMemstateSplitOp.getMemoryStateIndices());
 
     auto operands = std::vector(inputs.begin(), inputs.end());
     return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
         LambdaEntryMemstateSplitOp.getNumResults(),
-        memoryNodeIds));
+        std::move(memoryNodeIds)));
   }
   else if (
       auto LambdaExitMemstateMergeOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaExitMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallEntryMemstateMergeOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallEntryMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallEntryMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::CallEntryMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::CallEntryMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallExitMemstateSplitOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
+    return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        CallExitMemstateSplitOp.getNumResults());
-    return outputs;
+        std::move(memoryNodeIds)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {
@@ -764,13 +781,6 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
     return jlm::llvm::MallocOperation::create(inputs[0]);
-  }
-  else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
-  {
-    auto type = IOBarrierOp.getResult().getType();
-    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
-        std::vector(inputs.begin(), inputs.end()),
-        ConvertType(type)));
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
