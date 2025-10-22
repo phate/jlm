@@ -11,7 +11,13 @@ namespace jlm::llvm
 GraphImport &
 GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
 {
-  return GraphImport::Create(*region.graph(), ValueType(), ImportedType(), Name(), linkage());
+  return GraphImport::Create(
+      *region.graph(),
+      ValueType(),
+      ImportedType(),
+      Name(),
+      linkage(),
+      isConstant());
 }
 
 }

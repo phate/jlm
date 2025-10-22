@@ -49,7 +49,7 @@ PointsToGraphAliasAnalysis::Query(
     const auto p2SingleTarget = TryGetSingleTarget(p2RegisterNode, s2);
     if (p1SingleTarget && p1SingleTarget == p2SingleTarget
         && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
-        && GetMemoryNodeSize(*p1SingleTarget) == s1)
+        && getMemoryNodeSize(*p1SingleTarget) == s1)
     {
       return MustAlias;
     }
@@ -62,7 +62,7 @@ PointsToGraphAliasAnalysis::Query(
   for (auto & target : p1RegisterNode.Targets())
   {
     // Skip memory locations that are too small
-    const auto targetSize = GetMemoryNodeSize(target);
+    const auto targetSize = getMemoryNodeSize(target);
     if (targetSize.has_value() && *targetSize < neededSize)
       continue;
 
@@ -82,7 +82,7 @@ PointsToGraphAliasAnalysis::TryGetSingleTarget(
   for (auto & target : node.Targets())
   {
     // Skip memory locations that are too small to hold size
-    const auto targetSize = GetMemoryNodeSize(target);
+    const auto targetSize = getMemoryNodeSize(target);
     if (targetSize.has_value() && *targetSize < size)
       continue;
 
@@ -94,42 +94,6 @@ PointsToGraphAliasAnalysis::TryGetSingleTarget(
   }
 
   return singleTarget;
-}
-
-std::optional<size_t>
-PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & node)
-{
-  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&node))
-    return GetTypeSize(*delta->GetDeltaNode().GetOperation().Type());
-  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&node))
-  {
-    auto size = GetTypeSize(*import->GetArgument().ValueType());
-    // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
-    if (size == 0)
-      return std::nullopt;
-
-    return size;
-  }
-  if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
-  {
-    const auto & allocaNode = alloca->GetAllocaNode();
-    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
-
-    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
-    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
-    if (elementCount.has_value())
-      return *elementCount * GetTypeSize(*allocaOp->ValueType());
-  }
-  if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&node))
-  {
-    const auto & mallocNode = malloc->GetMallocNode();
-
-    const auto mallocSize = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
-    if (mallocSize.has_value())
-      return *mallocSize;
-  }
-
-  return std::nullopt;
 }
 
 bool

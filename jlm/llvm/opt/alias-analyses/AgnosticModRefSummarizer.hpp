@@ -13,6 +13,8 @@
 namespace jlm::llvm::aa
 {
 
+class AgnosticModRefSummary;
+
 /** \brief Agnostic mod/ref summarizer
  *
  * The key idea of the agnostic mod/ref summarizer is that \b all memory states are routed through
@@ -33,17 +35,12 @@ public:
 
   ~AgnosticModRefSummarizer() override;
 
-  AgnosticModRefSummarizer() = default;
+  AgnosticModRefSummarizer();
 
   AgnosticModRefSummarizer(const AgnosticModRefSummarizer &) = delete;
 
-  AgnosticModRefSummarizer(AgnosticModRefSummarizer &&) = delete;
-
   AgnosticModRefSummarizer &
   operator=(const AgnosticModRefSummarizer &) = delete;
-
-  AgnosticModRefSummarizer &
-  operator=(AgnosticModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(
@@ -76,6 +73,49 @@ public:
    */
   static std::unique_ptr<ModRefSummary>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
+
+private:
+  /**
+   * Creates a set containing all MemoryNodes in the given \p pointsToGraph
+   */
+  [[nodiscard]] static util::HashSet<const PointsToGraph::MemoryNode *>
+  GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
+
+  /**
+   * Helper for adding all MemoryNodes the given \p output may target to a ModRefSet
+   * @param output the pointer typed output
+   * @param modRefSet the set of MemoryNodes that should be expanded with \p outputs targets
+   */
+  void
+  AddPointerToModRefSet(
+      const rvsdg::Output & output,
+      util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet);
+
+  /**
+   * Recursively traverses the given \p region, creating ModRef sets for simple nodes.
+   * @param region the region to traverse
+   */
+  void
+  AnnotateRegion(const rvsdg::Region & region);
+
+  /**
+   * Creates a ModRef set for the given simple node if it belongs in the ModRefSet map.
+   * Only nodes that affect memory are given ModRefSets.
+   * CallOperations are not included, since the agnostic summary assumes calls touch everything.
+   * @param node the simple node
+   */
+  void
+  AnnotateSimpleNode(const rvsdg::SimpleNode & node);
+
+  /**
+   * Recursively traverses the regions of the given structural node to annotate simple nodes
+   * @param node the structural node to traverse
+   */
+  void
+  AnnotateStructuralNode(const rvsdg::StructuralNode & node);
+
+  // The ModRefSummary being created by this class
+  std::unique_ptr<AgnosticModRefSummary> ModRefSummary_;
 };
 
 /** \brief Agnostic mod/ref summarizer statistics

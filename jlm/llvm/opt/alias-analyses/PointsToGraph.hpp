@@ -1145,6 +1145,26 @@ private:
   typename std::unordered_set<NODETYPE *>::const_iterator It_;
 };
 
+/**
+ * If the given \p memoryNode represents a location in memory with a statically known size,
+ * its byte size is returned.
+ * If \p memoryNode represents multiple locations of the same size, that size is returned.
+ *
+ * @param memoryNode the \ref MemoryNode in question
+ * @return the static size of the location(s) represented by the node, or nullopt if unknown.
+ */
+std::optional<size_t>
+getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode);
+
+/**
+ * Checks if the given \p memoryNode represents memory locations that never change during execution.
+ *
+ * @param memoryNode the \ref MemoryNode in question
+ * @return true if the memory node represents constant memory
+ */
+bool
+isMemoryNodeConstant(const PointsToGraph::MemoryNode & memoryNode);
+
 }
 }
 

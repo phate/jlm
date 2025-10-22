@@ -44,16 +44,6 @@ private:
   TryGetSingleTarget(const PointsToGraph::RegisterNode & node, size_t size);
 
   /**
-   * Determines the size of the memory region represented by the given memory node, if possible.
-   * If the memory node represents multiple regions of the same size,
-   * (e.g., an ALLOCA[i32]), the size of each represented region (e.g., 4) is returned.
-   * @param node the MemoryNode representing an abstract memory location.
-   * @return the size of the memory region, in bytes
-   */
-  [[nodiscard]] static std::optional<size_t>
-  GetMemoryNodeSize(const PointsToGraph::MemoryNode & node);
-
-  /**
    * Determines if the given abstract memory location represent exactly one region in memory,
    * such as imports and global variables.
    * As a counterexample, an ALLOCA[i32] can represent multiple 4-byte locations.
