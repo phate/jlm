@@ -302,11 +302,13 @@ TestCallWithMemoryStateNodes()
         functionTypeTest1,
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
 
-    auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 2);
+    auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNode),
+        { 0, 1 });
 
-    auto & lambdaExitMergeResult =
-        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        outputs(&callExitSplitNode));
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
@@ -403,11 +405,13 @@ TestCallWithMissingMemoryStateNodes()
         functionType,
         { xArgument, ioStateArgument, &callEntryMergeResult });
 
-    auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 1);
+    auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNode),
+        { 0 });
 
-    auto & lambdaExitMergeResult =
-        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        outputs(&callExitSplitNode));
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
