@@ -573,7 +573,7 @@ std::unordered_map<const Node *, size_t>
 computeDepthMap(const Region & region)
 {
   std::unordered_map<const Node *, size_t> depthMap;
-  for (const auto node : TopDownTraverser(const_cast<Region *>(&region)))
+  for (const auto node : TopDownConstTraverser(&region))
   {
     size_t depth = 0;
     for (auto & input : node->Inputs())
