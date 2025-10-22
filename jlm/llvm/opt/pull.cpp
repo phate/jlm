@@ -156,7 +156,7 @@ NodeSinking::collectDependentNodes(const rvsdg::Node & node)
       {
         if (const auto userNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(user))
         {
-          if (dependentNodes.Insert(userNode))
+          if (dependentNodes.insert(userNode))
           {
             collect(*userNode, dependentNodes);
           }

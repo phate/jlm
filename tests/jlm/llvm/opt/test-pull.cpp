@@ -98,11 +98,11 @@ testPullInBottom()
 
   // Assert
   assert(sunkNodes == 2);
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
 
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gammaNode);
-  assert(gammaNode->subregion(0)->nnodes() == 2);
-  assert(gammaNode->subregion(1)->nnodes() == 2);
+  assert(gammaNode->subregion(0)->numNodes() == 2);
+  assert(gammaNode->subregion(1)->numNodes() == 2);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInBottom", testPullInBottom)
