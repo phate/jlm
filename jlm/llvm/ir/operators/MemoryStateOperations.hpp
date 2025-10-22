@@ -324,22 +324,6 @@ public:
       const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
       const std::vector<rvsdg::Output *> & operands);
 
-  // FIXME: Deprecated, needs to be removed
-  static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
-        { &output },
-        numResults,
-        std::move(memoryNodeIds)));
-  }
-
   static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::Output & operand,
@@ -462,19 +446,6 @@ public:
     return operands.empty()
              ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, memoryNodeIds)
              : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, memoryNodeIds);
-  }
-
-  // FIXME: Deprecated, needs to be removed
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
   }
 
 private:
@@ -604,19 +575,6 @@ public:
     return rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>(
         { &operand },
         std::move(memoryNodeIds));
-  }
-
-  // FIXME: Deprecated, will be removed
-  static std::vector<rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; i++)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&CreateNode(output, std::move(memoryNodeIds)));
   }
 
 private:
