@@ -83,9 +83,27 @@ ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
 }
 
 bool
-ScalarEvolution::IsBasedOnInductionVariable(
+ScalarEvolution::DependsOnLoopVariable(
     const rvsdg::Output & output,
     InductionVariableSet & candidates)
+{
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+    return candidates.Contains(&output);
+
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    for (size_t n = 0; n < simpleNode->ninputs(); ++n)
+    {
+      const auto origin = simpleNode->input(n)->origin();
+      if (DependsOnLoopVariable(*origin, candidates))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool
+ScalarEvolution::IsAnalyzable(const rvsdg::Output & output, InductionVariableSet & candidates)
 {
   if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
@@ -103,7 +121,7 @@ ScalarEvolution::IsBasedOnInductionVariable(
     for (size_t n = 0; n < simpleNode->ninputs(); ++n)
     {
       const auto origin = simpleNode->input(n)->origin();
-      if (!IsBasedOnInductionVariable(*origin, candidates))
+      if (!IsAnalyzable(*origin, candidates))
       {
         return false;
       }
@@ -135,10 +153,30 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode & thetaNode)
     for (const auto & loopVar : loopVars)
     {
       const rvsdg::Output * origin = loopVar.post->origin();
-      if (!IsBasedOnInductionVariable(*origin, inductionVariableCandidates))
-      {
+      /*
+       * For a loop variable to be a valid induction variable, two conditions must hold:
+       * 1. Its evolution must be analyzable (based only on constants and add/sub operations)
+       * 2. It must depend on at least one loop variable (including itself)
+       *
+       * The second requirement filters out loop variables that are computed entirely from
+       * constants or external values.
+       *
+       * For example:
+       *   x = 0;
+       *   loop:
+       *     x = 5;  // x is computed from a constant, not from any loop variable
+       *   end;
+       *
+       * Here x evolves as 0 → 5 → 5 → ..., which is not a linear sequence.
+       * In RVSDG tree representation this would be represented as a constant node with the value 5,
+       * the output of which is the post-value of the loop variable x.
+       *
+       * A valid induction variable depends on a loop variable atleast once, like x = x + 1,
+       * evolving as 0 → 1 → 2 →... or based on another induction variable like y = x + 2.
+       */
+      if (!IsAnalyzable(*origin, inductionVariableCandidates)
+          || !DependsOnLoopVariable(*origin, inductionVariableCandidates))
         changed = inductionVariableCandidates.Remove(loopVar.pre);
-      }
     }
   } while (changed == true);
 
@@ -179,7 +217,7 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
     }
     if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation()))
     {
-      assert(simpleNode->ninputs() == 2);
+      JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
       const auto rhs = simpleNode->input(1)->origin();
       result = std::make_unique<SCEVAddExpr>(
@@ -211,12 +249,7 @@ ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::
   if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&currentSCEV))
   {
     if (const auto dependency = placeholderSCEV->GetPrePointer())
-    {
-      if (dependencies.find(dependency) != dependencies.end())
-        dependencies[dependency]++;
-      else
-        dependencies[dependency] = 1;
-    }
+      dependencies[dependency]++;
   }
   if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&currentSCEV))
   {
@@ -228,15 +261,11 @@ ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::
 
     // Merge lhsDependencies into dependencies
     for (const auto & [ptr, count] : lhsDependencies)
-    {
       dependencies[ptr] += count;
-    }
 
-    // Merge rhsDependencies into dependencies
+    // Do the same for rhs
     for (const auto & [ptr, count] : rhsDependencies)
-    {
       dependencies[ptr] += count;
-    }
   }
 
   return dependencies;
@@ -312,8 +341,7 @@ ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
       }
     }
   }
-
-  assert(result.size() == numVertices && "Dependency graph can't contain cycles!");
+  JLM_ASSERT(result.size() == numVertices && "Dependency graph can't contain cycles!");
   return result;
 }
 
@@ -427,33 +455,30 @@ ScalarEvolution::IsValidInductionVariable(
     const rvsdg::Output & variable,
     IVDependencyGraph & dependencyGraph)
 {
-  // First check for multiple self-references
-  for (const auto & [depPtr, depCount] : dependencyGraph[&variable])
-  {
-    if (depPtr == &variable && depCount > 1)
-      return false;
-  }
+  // First check that variable has only one self-reference
+  if (dependencyGraph[&variable][&variable] != 1)
+    return false;
 
   // Then check for cycles through other variables
-  std::unordered_set<const rvsdg::Output *> visited;
-  std::unordered_set<const rvsdg::Output *> recursionStack;
-  return !HasCycleThroughOthers(&variable, dependencyGraph, visited, recursionStack);
+  std::unordered_set<const rvsdg::Output *> visited{};
+  std::unordered_set<const rvsdg::Output *> recursionStack{};
+  return !HasCycleThroughOthers(variable, dependencyGraph, visited, recursionStack);
 }
 
 bool
 ScalarEvolution::HasCycleThroughOthers(
-    const rvsdg::Output * current,
+    const rvsdg::Output & currentIV,
     IVDependencyGraph & dependencyGraph,
     std::unordered_set<const rvsdg::Output *> & visited,
     std::unordered_set<const rvsdg::Output *> & recursionStack)
 {
-  visited.insert(current);
-  recursionStack.insert(current);
+  visited.insert(&currentIV);
+  recursionStack.insert(&currentIV);
 
-  for (const auto & [depPtr, depCount] : dependencyGraph[current])
+  for (const auto & [depPtr, depCount] : dependencyGraph[&currentIV])
   {
-    // Ignore sel-references
-    if (depPtr == current)
+    // Ignore self-references
+    if (depPtr == &currentIV)
       continue;
 
     // Found a cycle back to a variable in our path
@@ -465,11 +490,11 @@ ScalarEvolution::HasCycleThroughOthers(
       continue;
 
     // Recursively check dependencies
-    if (HasCycleThroughOthers(depPtr, dependencyGraph, visited, recursionStack))
+    if (HasCycleThroughOthers(*depPtr, dependencyGraph, visited, recursionStack))
       return true;
   }
 
-  recursionStack.erase(current);
+  recursionStack.erase(&currentIV);
   return false;
 }
 

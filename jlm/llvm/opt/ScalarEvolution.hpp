@@ -267,7 +267,10 @@ private:
   TraverseRegion(const rvsdg::Region & region);
 
   static bool
-  IsBasedOnInductionVariable(const rvsdg::Output & output, InductionVariableSet & candidates);
+  IsAnalyzable(const rvsdg::Output & output, InductionVariableSet & candidates);
+
+  static bool
+  DependsOnLoopVariable(const rvsdg::Output & output, InductionVariableSet & candidates);
 
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
@@ -298,7 +301,7 @@ private:
 
   static bool
   HasCycleThroughOthers(
-      const rvsdg::Output * current,
+      const rvsdg::Output & currentIV,
       IVDependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
