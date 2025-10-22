@@ -328,7 +328,8 @@ TestInvariantMemoryState()
   std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::CreateNode(
       *lambda->subregion(),
-      { loadOutput[1], memoryStateSplitNode.output(1) }, { 0, 1 });
+      { loadOutput[1], memoryStateSplitNode.output(1) },
+      { 0, 1 });
 
   auto lambdaOutput = lambda->finalize({ memoryStateMerge.output(0) });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
