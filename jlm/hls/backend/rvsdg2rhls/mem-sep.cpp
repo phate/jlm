@@ -224,10 +224,16 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
   auto memoryStates = outputs(&lambdaEntrySplitNode);
 
   // handle existing state edge - TODO: remove entirely?
-  // The old chain between the state argument and state result,
-  // are attached as a chain between the final state on the split and merge, respectively
+  // The memory state chain that was previously between the state argument and state result,
+  // should now be attached as a chain between the final state on the split and merge, respectively
   auto common_edge = memoryStates.back();
-  memoryStateArgument.divert_users(common_edge);
+  // Divert everything except the lambdaEntrySplit itself, to the lambdaEntrySplit
+  memoryStateArgument.divertUsersWhere(
+      *common_edge,
+      [&](const rvsdg::Input & input)
+      {
+        return &input != lambdaEntrySplitNode.input(0);
+      });
 
   auto state_result = &llvm::GetMemoryStateRegionResult(lambdaNode);
   memoryStates.back() = state_result->origin();
