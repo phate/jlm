@@ -23,6 +23,39 @@ RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
 }
 
 static void
+ConstantInductionVariable()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+
+  lv1.post->divert_to(c1.output(0));
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(*theta);
+
+  // Assert
+  assert(chrecMap.size() == 0); // Not a valid induction variable. No SCEV should have been created
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/ScalarEvolutionTests-ConstantInductionVariable",
+    ConstantInductionVariable)
+
+static void
 SimpleInductionVariable()
 {
   using namespace jlm::llvm;
