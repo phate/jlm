@@ -578,6 +578,15 @@ public:
   void
   prune(bool recursive);
 
+  /**
+   * @return the Node:Id that will be used for the next node created in the region.
+   */
+  [[nodiscard]] Node::Id
+  getNextNodeId() const noexcept
+  {
+    return nextNodeId_;
+  }
+
 private:
   /**
    * \brief Adds \p node to the top nodes of the region.
@@ -790,7 +799,9 @@ private:
   size_t numBottomNodes_;
   region_nodes_list nodes_;
   size_t numNodes_;
-  RegionObserver * observers_ = nullptr;
+
+  // Allow RegionObservers to register themselves on const Regions
+  mutable RegionObserver * observers_ = nullptr;
 
   friend class Node;
   friend class RegionObserver;
@@ -813,7 +824,7 @@ class RegionObserver
 public:
   virtual ~RegionObserver() noexcept;
 
-  explicit RegionObserver(Region & region);
+  explicit RegionObserver(const Region & region);
 
   RegionObserver(const RegionObserver &) = delete;
 
