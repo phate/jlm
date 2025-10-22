@@ -502,19 +502,6 @@ public:
   [[nodiscard]] static rvsdg::Input *
   MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
-  // FIXME: Deprecated, will be removed
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
-  }
-
   static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::Region & region,
