@@ -314,12 +314,13 @@ TestInvariantMemoryState()
   auto functionArguments = lambda->GetFunctionArguments();
 
   // LambdaEntryMemoryStateSplit node
-  auto memoryStateSplit = LambdaEntryMemoryStateSplitOperation::Create(*functionArguments[1], 2);
+  auto & memoryStateSplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*functionArguments[1], 2, { 0, 1 });
 
   // Load node
   auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
-      { memoryStateSplit[0] },
+      { memoryStateSplitNode.output(0) },
       PointerType::Create(),
       32);
 
@@ -327,8 +328,7 @@ TestInvariantMemoryState()
   std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::CreateNode(
       *lambda->subregion(),
-      { loadOutput[1], memoryStateSplit[1] },
-      { 0, 1 });
+      { loadOutput[1], memoryStateSplitNode.output(1) }, { 0, 1 });
 
   auto lambdaOutput = lambda->finalize({ memoryStateMerge.output(0) });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
