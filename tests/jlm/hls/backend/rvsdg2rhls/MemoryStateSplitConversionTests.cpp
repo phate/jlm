@@ -32,11 +32,12 @@ SplitConversion()
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   const auto inputVar = structuralNode->addInputWithArguments(importX);
 
-  auto entrySplitResults = LambdaEntryMemoryStateSplitOperation::Create(*inputVar.argument[0], 3);
+  auto & entrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*inputVar.argument[0], 3, { 0, 1, 2 });
 
-  const auto outputVar0 = structuralNode->addOutputWithResults({ entrySplitResults[0] });
-  const auto outputVar1 = structuralNode->addOutputWithResults({ entrySplitResults[1] });
-  const auto outputVar2 = structuralNode->addOutputWithResults({ entrySplitResults[2] });
+  const auto outputVar0 = structuralNode->addOutputWithResults({ entrySplitNode.output(0) });
+  const auto outputVar1 = structuralNode->addOutputWithResults({ entrySplitNode.output(1) });
+  const auto outputVar2 = structuralNode->addOutputWithResults({ entrySplitNode.output(2) });
 
   auto splitResults = MemoryStateSplitOperation::Create(importY, 2);
 

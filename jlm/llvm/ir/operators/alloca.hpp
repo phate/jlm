@@ -76,6 +76,13 @@ public:
     return ThreeAddressCode::create(op, { size });
   }
 
+  /**
+   * Creates a SimpleNode containing an AllocaOperation.
+   * @param allocatedType the type being allocated
+   * @param size the number of elements of the given type to allocate. Should almost always be 1.
+   * @param alignment the minimum alignment of the allocation
+   * @return the outputs of the created SimpleNode
+   */
   static std::vector<rvsdg::Output *>
   create(std::shared_ptr<const rvsdg::Type> allocatedType, rvsdg::Output * size, size_t alignment)
   {

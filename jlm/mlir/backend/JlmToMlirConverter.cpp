@@ -728,7 +728,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (
       auto lambdaStateSplit =
-          dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
+          dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
         memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateSplit->getMemoryNodeIds());
