@@ -619,19 +619,6 @@ public:
         std::move(memoryNodeIds));
   }
 
-  // FIXME: Deprecated, will be removed
-  static std::vector<rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; i++)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&CreateNode(output, std::move(memoryNodeIds)));
-  }
-
 private:
   std::vector<MemoryNodeId> MemoryNodeIds_{};
 };
