@@ -448,19 +448,6 @@ public:
              : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, memoryNodeIds);
   }
 
-  // FIXME: Deprecated, needs to be removed
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
-  }
-
 private:
   util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
