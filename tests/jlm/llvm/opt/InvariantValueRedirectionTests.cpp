@@ -291,16 +291,17 @@ TestCallWithMemoryStateNodes()
     auto lambdaEntrySplitResults =
         LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
 
-    auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
+    auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
-        lambdaEntrySplitResults);
+        lambdaEntrySplitResults,
+        { 0, 1 });
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
-        { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
+        { controlResult, xArgument, ioStateArgument, callEntryMergeNode.output(0) });
 
     auto callExitSplitResults =
         CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 2);
@@ -394,14 +395,15 @@ TestCallWithMissingMemoryStateNodes()
     auto lambdaEntrySplitResults =
         LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 1);
 
-    auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
+    auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
-        lambdaEntrySplitResults);
+        lambdaEntrySplitResults,
+        { 0 });
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest,
         functionType,
-        { xArgument, ioStateArgument, &callEntryMergeResult });
+        { xArgument, ioStateArgument, callEntryMergeNode.output(0) });
 
     auto callExitSplitResults =
         CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 1);
