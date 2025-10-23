@@ -184,7 +184,7 @@ NodeSinking::sortByDepth(const util::HashSet<rvsdg::Node *> & nodes)
     sortedNodes.push_back(node);
   }
 
-  auto depthMap = rvsdg::Region::computeDepthMap(*sortedNodes[0]->region());
+  auto depthMap = rvsdg::computeDepthMap(*sortedNodes[0]->region());
   std::sort(
       sortedNodes.begin(),
       sortedNodes.end(),
