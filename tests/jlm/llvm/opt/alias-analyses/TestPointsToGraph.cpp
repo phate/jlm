@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
@@ -165,11 +166,12 @@ TestNodeIterators()
   }
 
   assert(pointsToGraph->NumRegisterNodes() == 5);
-  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters({ &test.GetImportOutput(),
-                                                                     &test.GetLambdaOutput(),
-                                                                     &test.GetDeltaOutput(),
-                                                                     &test.GetAllocaOutput(),
-                                                                     &test.GetMallocOutput() });
+  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters(
+      { &test.GetImportOutput(),
+        &test.GetLambdaOutput(),
+        &test.GetDeltaOutput(),
+        &test.GetAllocaOutput(),
+        &test.GetMallocOutput() });
   for (auto & registerNode : pointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())
@@ -185,7 +187,9 @@ TestNodeIterators()
     }
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestNodeIterators", TestNodeIterators)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestNodeIterators",
+    TestNodeIterators)
 
 static void
 TestRegisterNodeIteration()
@@ -210,7 +214,9 @@ TestRegisterNodeIteration()
   // Assert
   assert(numIteratedRegisterNodes == pointsToGraph->NumRegisterNodes());
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestRegisterNodeIteration", TestRegisterNodeIteration)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestRegisterNodeIteration",
+    TestRegisterNodeIteration)
 
 static void
 TestIsSupergraphOf()
@@ -321,9 +327,12 @@ TestIsSupergraphOf()
   assert(graph0->IsSupergraphOf(*graph1));
   assert(graph1->IsSupergraphOf(*graph0));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestIsSupergraphOf", TestIsSupergraphOf)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestIsSupergraphOf",
+    TestIsSupergraphOf)
 
-static void testMemoryNodeSize()
+static void
+testMemoryNodeSize()
 {
   using namespace jlm::llvm;
 
@@ -361,7 +370,7 @@ static void testMemoryNodeSize()
     // Arrange 3
     jlm::tests::AllMemoryNodesTest test;
     test.InitializeTest();
-    
+
     auto ptg = aa::PointsToGraph::Create();
     const auto & allocaNode = aa::PointsToGraph::AllocaNode::Create(*ptg, test.GetAllocaNode());
     const auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*ptg, test.GetMallocNode());
@@ -369,7 +378,7 @@ static void testMemoryNodeSize()
     const auto & lambdaNode = aa::PointsToGraph::LambdaNode::Create(*ptg, test.GetLambdaNode());
     const auto & importNode = aa::PointsToGraph::ImportNode::Create(*ptg, test.GetImportOutput());
     const auto & externalNode = ptg->GetExternalMemoryNode();
-    
+
     // Assert 3
     assert(aa::tryGetMemoryNodeSize(allocaNode) == 8);
     assert(aa::tryGetMemoryNodeSize(mallocNode) == 4);
@@ -385,3 +394,74 @@ static void testMemoryNodeSize()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestPointsToGraph-testMemoryNodeSize",
     testMemoryNodeSize)
+
+static void
+testIsMemoryNodeConstant()
+{
+  using namespace jlm::llvm;
+
+  {
+    // Arrange
+    jlm::tests::AllMemoryNodesTest test;
+    test.InitializeTest();
+
+    auto ptg = aa::PointsToGraph::Create();
+    const auto & allocaNode = aa::PointsToGraph::AllocaNode::Create(*ptg, test.GetAllocaNode());
+    const auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*ptg, test.GetMallocNode());
+    const auto & deltaNode = aa::PointsToGraph::DeltaNode::Create(*ptg, test.GetDeltaNode());
+    const auto & lambdaNode = aa::PointsToGraph::LambdaNode::Create(*ptg, test.GetLambdaNode());
+    const auto & importNode = aa::PointsToGraph::ImportNode::Create(*ptg, test.GetImportOutput());
+    const auto & externalNode = ptg->GetExternalMemoryNode();
+
+    // Assert
+    assert(!aa::isMemoryNodeConstant(allocaNode));
+    assert(!aa::isMemoryNodeConstant(mallocNode));
+    assert(!aa::isMemoryNodeConstant(deltaNode));
+    assert(!aa::isMemoryNodeConstant(importNode));
+    // Functions are always constant
+    assert(aa::isMemoryNodeConstant(lambdaNode));
+
+    // The external node is not constant
+    assert(!aa::isMemoryNodeConstant(externalNode));
+  }
+
+  {
+    // Arrange 2
+    jlm::rvsdg::Graph graph;
+    const auto intType = jlm::rvsdg::BitType::Create(32);
+    const auto pointerType = jlm::llvm::PointerType::Create();
+
+    auto & constImport =
+        GraphImport::Create(graph, intType, pointerType, "test", Linkage::externalLinkage, true);
+    auto & nonConstImport =
+        GraphImport::Create(graph, intType, pointerType, "test", Linkage::externalLinkage, false);
+
+    auto & constDelta = *jlm::rvsdg::DeltaNode::Create(
+        &graph.GetRootRegion(),
+        DeltaOperation::Create(intType, "constGlobal", Linkage::internalLinkage, "data", true));
+    const auto & int2 = IntegerConstantOperation::Create(*constDelta.subregion(), 32, 2);
+    constDelta.finalize(int2.output(0));
+
+    auto & nonConstDelta = *jlm::rvsdg::DeltaNode::Create(
+        &graph.GetRootRegion(),
+        DeltaOperation::Create(intType, "global", Linkage::internalLinkage, "data", false));
+    const auto & int8 = IntegerConstantOperation::Create(*nonConstDelta.subregion(), 32, 8);
+    nonConstDelta.finalize(int8.output(0));
+
+    auto ptg = aa::PointsToGraph::Create();
+    const auto & constImportmemoryNode = aa::PointsToGraph::ImportNode::Create(*ptg, constImport);
+    const auto & nonConstImportMemoryNode = aa::PointsToGraph::ImportNode::Create(*ptg, nonConstImport);
+
+    const auto & constDeltaMemoryNode = aa::PointsToGraph::DeltaNode::Create(*ptg, constDelta);
+    const auto & nonConstDeltaMemoryNode = aa::PointsToGraph::DeltaNode::Create(*ptg, nonConstDelta);
+
+    // Assert
+    assert(aa::isMemoryNodeConstant(constImportmemoryNode));
+    assert(!aa::isMemoryNodeConstant(nonConstImportMemoryNode));
+    assert(aa::isMemoryNodeConstant(constDeltaMemoryNode));
+    assert(!aa::isMemoryNodeConstant(nonConstDeltaMemoryNode));
+  }
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-testIsMemoryNodeConstant",
+    testIsMemoryNodeConstant)
