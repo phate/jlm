@@ -144,68 +144,117 @@ pullin_top(rvsdg::GammaNode * gamma)
   }
 }
 
-void
-pullin_bottom(rvsdg::GammaNode * gamma)
+util::HashSet<rvsdg::Node *>
+NodeSinking::collectDependentNodes(const rvsdg::Node & node)
 {
-  /* collect immediate successors of the gamma node */
-  std::unordered_set<rvsdg::Node *> workset;
-  for (size_t n = 0; n < gamma->noutputs(); n++)
+  std::function<void(const rvsdg::Node &, util::HashSet<rvsdg::Node *> &)> collect =
+      [&collect](const rvsdg::Node & node, util::HashSet<rvsdg::Node *> & dependentNodes)
   {
-    auto output = gamma->output(n);
-    for (const auto & user : output->Users())
+    for (auto & output : node.Outputs())
     {
-      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-      if (node && node->depth() == gamma->depth() + 1)
-        workset.insert(node);
+      for (auto & user : output.Users())
+      {
+        if (const auto userNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(user))
+        {
+          if (dependentNodes.insert(userNode))
+          {
+            collect(*userNode, dependentNodes);
+          }
+        }
+      }
+    }
+  };
+
+  util::HashSet<rvsdg::Node *> dependentNodes;
+  collect(node, dependentNodes);
+  return dependentNodes;
+}
+
+std::vector<rvsdg::Node *>
+NodeSinking::sortByDepth(const util::HashSet<rvsdg::Node *> & nodes)
+{
+  if (nodes.IsEmpty())
+  {
+    return {};
+  }
+
+  std::vector<rvsdg::Node *> sortedNodes;
+  for (auto & node : nodes.Items())
+  {
+    sortedNodes.push_back(node);
+  }
+
+  auto depthMap = rvsdg::computeDepthMap(*sortedNodes[0]->region());
+  std::sort(
+      sortedNodes.begin(),
+      sortedNodes.end(),
+      [&depthMap](const auto * node1, const auto * node2)
+      {
+        JLM_ASSERT(depthMap.find(node1) != depthMap.end());
+        JLM_ASSERT(depthMap.find(node2) != depthMap.end());
+        return depthMap[node1] < depthMap[node2];
+      });
+
+  return sortedNodes;
+}
+
+size_t
+NodeSinking::sinkDependentNodesIntoGamma(rvsdg::GammaNode & gammaNode)
+{
+  const auto dependentNodes = collectDependentNodes(gammaNode);
+  const auto sortedDependentNodes = sortByDepth(dependentNodes);
+
+  // FIXME: We create too many entry and exit variables for the gamma node as we copy each
+  // node individually instead of the entire subgraph. Rather copy the entire subgraph at once and
+  // create entry and exit variables according to the "outer edges" of this subgraph.
+  for (auto & node : sortedDependentNodes)
+  {
+    // Collect operands for each subregion we copy the node into
+    std::unordered_map<rvsdg::Region *, std::vector<rvsdg::Output *>> subregionOperands;
+    for (auto & input : node->Inputs())
+    {
+      auto & oldOperand = *input.origin();
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(oldOperand) == &gammaNode)
+      {
+        auto [branchResults, _] = gammaNode.MapOutputExitVar(oldOperand);
+        for (const auto branchResult : branchResults)
+        {
+          subregionOperands[branchResult->region()].push_back(branchResult->origin());
+        }
+      }
+      else
+      {
+        auto [_, branchArguments] = gammaNode.AddEntryVar(&oldOperand);
+        for (auto branchArgument : branchArguments)
+        {
+          subregionOperands[branchArgument->region()].push_back(branchArgument);
+        }
+      }
+    }
+
+    // Copy node into each subregion and collect outputs of each copy
+    std::unordered_map<rvsdg::Region *, std::vector<rvsdg::Output *>> subregionOutputs;
+    for (auto & subregion : gammaNode.Subregions())
+    {
+      const auto copiedNode = node->copy(&subregion, subregionOperands.at(&subregion));
+      subregionOutputs[&subregion] = rvsdg::outputs(copiedNode);
+    }
+
+    // Adjust outputs of original node
+    for (auto & output : node->Outputs())
+    {
+      std::vector<rvsdg::Output *> branchResultOperands;
+      for (auto & subregion : gammaNode.Subregions())
+      {
+        branchResultOperands.push_back(subregionOutputs[&subregion][output.index()]);
+      }
+
+      auto [_, exitVarOutput] = gammaNode.AddExitVar(branchResultOperands);
+      output.divert_users(exitVarOutput);
     }
   }
 
-  while (!workset.empty())
-  {
-    auto node = *workset.begin();
-    workset.erase(node);
-
-    /* copy node into subregions */
-    std::vector<std::vector<jlm::rvsdg::Output *>> outputs(node->noutputs());
-    for (size_t r = 0; r < gamma->nsubregions(); r++)
-    {
-      /* collect operands */
-      std::vector<jlm::rvsdg::Output *> operands;
-      for (size_t i = 0; i < node->ninputs(); i++)
-      {
-        auto input = node->input(i);
-        if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*input->origin()) == gamma)
-        {
-          auto output = static_cast<rvsdg::StructuralOutput *>(input->origin());
-          operands.push_back(gamma->subregion(r)->result(output->index())->origin());
-        }
-        else
-        {
-          auto ev = gamma->AddEntryVar(input->origin());
-          operands.push_back(ev.branchArgument[r]);
-        }
-      }
-
-      auto copy = node->copy(gamma->subregion(r), operands);
-      for (size_t o = 0; o < copy->noutputs(); o++)
-        outputs[o].push_back(copy->output(o));
-    }
-
-    /* adjust outputs and update workset */
-    for (size_t n = 0; n < node->noutputs(); n++)
-    {
-      auto output = node->output(n);
-      for (const auto & user : output->Users())
-      {
-        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-        if (tmp && tmp->depth() == node->depth() + 1)
-          workset.insert(tmp);
-      }
-
-      auto xv = gamma->AddExitVar(outputs[n]).output;
-      output->divert_users(xv);
-    }
-  }
+  return dependentNodes.Size();
 }
 
 static size_t
