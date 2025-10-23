@@ -166,12 +166,11 @@ TestNodeIterators()
   }
 
   assert(pointsToGraph->NumRegisterNodes() == 5);
-  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters(
-      { &test.GetImportOutput(),
-        &test.GetLambdaOutput(),
-        &test.GetDeltaOutput(),
-        &test.GetAllocaOutput(),
-        &test.GetMallocOutput() });
+  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters({ &test.GetImportOutput(),
+                                                                     &test.GetLambdaOutput(),
+                                                                     &test.GetDeltaOutput(),
+                                                                     &test.GetAllocaOutput(),
+                                                                     &test.GetMallocOutput() });
   for (auto & registerNode : pointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())
@@ -450,10 +449,12 @@ testIsMemoryNodeConstant()
 
     auto ptg = aa::PointsToGraph::Create();
     const auto & constImportmemoryNode = aa::PointsToGraph::ImportNode::Create(*ptg, constImport);
-    const auto & nonConstImportMemoryNode = aa::PointsToGraph::ImportNode::Create(*ptg, nonConstImport);
+    const auto & nonConstImportMemoryNode =
+        aa::PointsToGraph::ImportNode::Create(*ptg, nonConstImport);
 
     const auto & constDeltaMemoryNode = aa::PointsToGraph::DeltaNode::Create(*ptg, constDelta);
-    const auto & nonConstDeltaMemoryNode = aa::PointsToGraph::DeltaNode::Create(*ptg, nonConstDelta);
+    const auto & nonConstDeltaMemoryNode =
+        aa::PointsToGraph::DeltaNode::Create(*ptg, nonConstDelta);
 
     // Assert
     assert(aa::isMemoryNodeConstant(constImportmemoryNode));
