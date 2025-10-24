@@ -634,7 +634,13 @@ std::optional<size_t>
 PointsToGraph::MallocNode::tryGetSize() const noexcept
 {
   // If the size parameter of the malloc node is a constant, that is our size
-  return tryGetConstantSignedInteger(*MallocNode_->input(0)->origin());
+  auto size = tryGetConstantSignedInteger(*MallocNode_->input(0)->origin());
+
+  // Only return the size if it is a positive integer, to avoid unsigned underflow
+  if (size.has_value() && *size >= 0)
+    return *size;
+
+  return std::nullopt;
 }
 
 bool

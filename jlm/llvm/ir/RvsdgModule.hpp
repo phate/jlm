@@ -26,12 +26,12 @@ class GraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      bool constant)
+      bool isConstant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
         ValueType_(std::move(valueType)),
         ImportedType_(std::move(importedType)),
         Linkage_(std::move(linkage)),
-        isConstant_(constant)
+        isConstant_(isConstant)
   {}
 
 public:
