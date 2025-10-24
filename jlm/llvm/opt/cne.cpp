@@ -13,6 +13,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
+#include <map>
 
 #include <typeindex>
 
@@ -118,6 +119,12 @@ public:
     operator!=(const Index & other) const noexcept
     {
       return !(*this == other);
+    }
+
+    [[nodiscard]] bool
+    operator<(const Index & other) const noexcept
+    {
+      return value_ < other.value_;
     }
   };
 
@@ -333,19 +340,124 @@ checkNodesCongruent(
  * Only arguments with identical integers can stay in the same partition.
  * If a pair of arguments are already in different congruence sets, they will remain separate.
  *
- * If the list of partitions is shorter than the number of arguments,
- * the arguments with no corresponding partition are given their own congruence sets.
- *
  * @param region the region whose arguments should be partitioned
- * @param partitions integers used to partition arguments.
+ * @param partitions integers used to partition arguments. Must have length equal to narguments
  * @param context the current context of the marking phase
  * @return true if any congruence sets were created from this operation
  */
 static bool
-partitionArguments(rvsdg::Region & region, const std::vector<size_t> & partitions, CommonNodeElimination::Context & context)
+partitionArguments(
+    const rvsdg::Region & region,
+    const std::vector<size_t> & partitions,
+    CommonNodeElimination::Context & context)
 {
-  std::unordered_map<std::pair<size_t, >, size_t> leader;
-  for (int)
+  auto & argumentCongruenceSets = context.getArgumentCongruenceSets();
+
+  JLM_ASSERT(region.narguments() == partitions.size());
+
+  bool anyChanged = false;
+
+  // Keys in the map are old argument congruence sets, and provided partition key
+  // Values in the map are the new congruence sets
+  std::map<std::pair<ArgumentCongruenceSets::Index, size_t>, ArgumentCongruenceSets::Index> newSets;
+  for (auto argument : region.Arguments())
+  {
+    const auto currentPartition = argumentCongruenceSets.tryGetSetFor(*argument);
+    const auto key = std::make_pair(currentPartition, partitions[argument->index()]);
+
+    // If this argument is the first with the given key, it should be a leader
+    // otherwise it should be a follower
+
+    if (const auto it = newSets.find(key); it != newSets.end())
+    {
+      // This argument should be a follower of the given congruence set
+      const auto toFollow = it->second;
+
+      // If we are already a follower, we are done
+      if (currentPartition == toFollow)
+        continue;
+
+      // If we follow someone else, remove that
+      if (currentPartition != ArgumentCongruenceSets::NoCongruenceSet)
+        argumentCongruenceSets.removeFollower(*argument);
+
+      // Start following our leader
+      argumentCongruenceSets.addFollower(toFollow, *argument);
+      anyChanged = true;
+    }
+    else
+    {
+      // This argument should be the leader of its congruence set
+
+      // Check if the argument already belongs to a congruence set
+      if (currentPartition != ArgumentCongruenceSets::NoCongruenceSet)
+      {
+        // If the argument is already the leader of its set, continue
+        if (&argumentCongruenceSets.getLeader(currentPartition) == argument)
+        {
+          newSets.emplace(key, currentPartition);
+          continue;
+        }
+
+        // otherwise we must remove the argument from its current (wrong) congruence set
+        argumentCongruenceSets.removeFollower(*argument);
+      }
+
+      const auto newSet = argumentCongruenceSets.makeSetForLeader(*argument);
+      anyChanged = true;
+      newSets.emplace(key, newSet);
+    }
+  }
+
+  return anyChanged;
+}
+
+/**
+ * Divides a set of inputs into partitions by assigning partition keys to each input.
+ * Two inputs have identical partition keys iff their origins are congruent outputs.
+ *
+ * @tparam InputGetter a functor for getting inputs (size_t) -> const rvsdg::Input &
+ * @param numInputs the number of inputs
+ * @param inputGetter an instantiation of the input getter functor
+ * @param context the current context of the marking phase
+ * @return partition keys for each input
+ */
+template<typename InputGetter>
+static std::vector<size_t>
+createPartitionKeys(
+    size_t numInputs,
+    const InputGetter & inputGetter,
+    CommonNodeElimination::Context & context)
+{
+  // For each partition of congruent inputs, the partition key is the index of the leftmost member
+  std::vector<const rvsdg::Input *> partitionLeaders;
+  std::vector<size_t> partitionKeys;
+
+  // TODO: We could use unordered_maps here to avoid comparing against all partitionLeaders
+  for (size_t i = 0; i < numInputs; i++)
+  {
+    const rvsdg::Input & input = inputGetter(i);
+
+    bool foundMatch = false;
+    for (size_t j = 0; j < partitionLeaders.size(); j++)
+    {
+      auto & leader = *partitionLeaders[j];
+      if (areOutputsCongruent(*input.origin(), *leader.origin(), context))
+      {
+        partitionKeys.push_back(j);
+        foundMatch = true;
+        break;
+      }
+    }
+
+    if (!foundMatch)
+    {
+      partitionLeaders.push_back(&input);
+      partitionKeys.push_back(partitionLeaders.size() - 1);
+    }
+  }
+
+  return partitionKeys;
 }
 
 /**
@@ -360,50 +472,49 @@ partitionArguments(rvsdg::Region & region, const std::vector<size_t> & partition
  *
  * @param node the structural node
  * @param context the current context of the marking phase
- * @return true if any region arguments changed congruence set
+ * @return a vector of the subregions whose argument congruence sets were modified
  */
-static bool
-markArgumentsFromInputs(rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
+static std::vector<const rvsdg::Region *>
+markArgumentsFromInputs(
+    const rvsdg::StructuralNode & node,
+    CommonNodeElimination::Context & context)
 {
-  // First group inputs that have congruent origins.
-  // The leftmost input becomes the leader, and all congruent inputs point to its index
-  std::vector<size_t> firstCongruentInput;
-
-  // TODO: We could use unordered_maps here to avoid comparing against all other outputs
-  for (auto & input : node.Inputs())
-  {
-    bool foundCongruentInput = false;
-    for (size_t i = 0; i < firstCongruentInput.size(); i++)
-    {
-      // Only consider inputs that are not congruent with any earlier inputs
-      if (firstCongruentInput[i] != i)
-        continue;
-
-      if (areOutputsCongruent(*input.origin(), *node.input(i)->origin(), context))
+  const auto inputPartitionKeys = createPartitionKeys(
+      node.ninputs(),
+      [&](size_t i) -> const rvsdg::Input &
       {
-        firstCongruentInput.push_back(i);
-        foundCongruentInput = true;
-        break;
-      }
-    }
+        return *node.input(i);
+      },
+      context);
 
-    // The input is not congruent with anything that comes before it.
-    if (!foundCongruentInput)
-      firstCongruentInput.push_back(input.index());
-  }
+  std::vector<const rvsdg::Region *> changedRegions;
 
-  bool anyChanged = false;
   for (auto & subregion : node.Subregions())
   {
     // create a partitioning of the region arguments
-    std::vector<size_t> firstCongruentArgument;
+    std::vector<size_t> partitions(subregion.narguments());
+    // Arguments that do not belong to any input are given partition keys higher than any input
+    size_t nextUniquePartitionKey = inputPartitionKeys.size();
+
     for (auto & argument : subregion.Arguments())
     {
-
+      if (argument->input())
+      {
+        // If the argument corresponds to an input, use the partition key of the input
+        partitions[argument->index()] = inputPartitionKeys[argument->input()->index()];
+      }
+      else
+      {
+        // Otherwise make sure the argument is not partitioned with any other argument
+        partitions[argument->index()] = nextUniquePartitionKey++;
+      }
     }
+
+    if (partitionArguments(subregion, partitions, context))
+      changedRegions.push_back(&subregion);
   }
 
-  return anyChanged;
+  return changedRegions;
 }
 
 /**
@@ -412,7 +523,7 @@ markArgumentsFromInputs(rvsdg::StructuralNode & node, CommonNodeElimination::Con
  * @param context the current context of the marking phase
  */
 static void
-markGraphImports(rvsdg::Region & region, CommonNodeElimination::Context & context)
+markGraphImports(const rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
   auto & argumentCongruenceSets = context.getArgumentCongruenceSets();
 
@@ -423,85 +534,81 @@ markGraphImports(rvsdg::Region & region, CommonNodeElimination::Context & contex
 }
 
 static void
-markRegion(rvsdg::Region &, CommonNodeElimination::Context & context);
+markRegion(const rvsdg::Region &, CommonNodeElimination::Context & context);
 
 static void
-mark_gamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & ctx)
+markGamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & context)
 {
-  /* mark entry variables */
-  for (size_t i1 = 1; i1 < gamma.ninputs(); i1++)
-  {
-    for (size_t i2 = i1 + 1; i2 < gamma.ninputs(); i2++)
-      mark_arguments(gamma.input(i1), gamma.input(i2), ctx);
-  }
+  const auto changedRegions = markArgumentsFromInputs(gamma, context);
+  // Only visit subregions whose argument congruence sets have changed
+  for (auto changedRegion : changedRegions)
+    markRegion(*changedRegion, context);
 
-  for (size_t n = 0; n < gamma.nsubregions(); n++)
-    mark(gamma.subregion(n), ctx);
-
-  /* mark exit variables */
-  for (size_t o1 = 0; o1 < gamma.noutputs(); o1++)
-  {
-    for (size_t o2 = o1 + 1; o2 < gamma.noutputs(); o2++)
-    {
-      if (congruent(gamma.output(o1), gamma.output(o2), ctx))
-        ctx.mark(gamma.output(o1), gamma.output(o2));
-    }
-  }
+  // Gamma nodes are never considered common to other gamma nodes. Make sure it has a set it leads
+  if (!context.getNodeCongruenceSets().hasSet(gamma))
+    context.getNodeCongruenceSets().makeSetForLeader(gamma);
 }
 
 static void
-mark_theta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & ctx)
+markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & context)
 {
-  /* mark loop variables */
-  for (size_t i1 = 0; i1 < theta.ninputs(); i1++)
+  auto changedRegions = markArgumentsFromInputs(theta, context);
+  bool changed = !changedRegions.empty();
+  while (changed)
   {
-    for (size_t i2 = i1 + 1; i2 < theta.ninputs(); i2++)
-    {
-      auto input1 = theta.input(i1);
-      auto input2 = theta.input(i2);
-      auto loopvar1 = theta.MapInputLoopVar(*input1);
-      auto loopvar2 = theta.MapInputLoopVar(*input2);
-      if (congruent(loopvar1.pre, loopvar2.pre, ctx))
-      {
-        ctx.mark(loopvar1.pre, loopvar2.pre);
-        ctx.mark(loopvar1.output, loopvar2.output);
-      }
-    }
+    // Propagate changes in argument congruence sets through the theta region
+    markRegion(*theta.subregion(), context);
+
+    // Use the theta region results to further partition region argument congruence sets, if needed
+    const auto loopVariables = theta.GetLoopVars();
+    const auto partitionKeys = createPartitionKeys(
+        loopVariables.size(),
+        [&](size_t i) -> const rvsdg::Input &
+        {
+          return *loopVariables[i].post;
+        },
+        context);
+    changed = partitionArguments(*theta.subregion(), partitionKeys, context);
   }
 
-  mark(theta.subregion(), ctx);
+  // Theta nodes are never considered common to other theta nodes. Make sure it has a set it leads
+  if (!context.getNodeCongruenceSets().hasSet(theta))
+    context.getNodeCongruenceSets().makeSetForLeader(theta);
 }
 
 static void
-mark_lambda(const rvsdg::LambdaNode & lambda, CommonNodeElimination::Context & ctx)
+markLambda(const rvsdg::LambdaNode & lambda, CommonNodeElimination::Context & context)
 {
-  /* mark dependencies */
-  for (size_t i1 = 0; i1 < lambda.ninputs(); i1++)
-  {
-    for (size_t i2 = i1 + 1; i2 < lambda.ninputs(); i2++)
-    {
-      auto input1 = lambda.input(i1);
-      auto input2 = lambda.input(i2);
-      if (ctx.congruent(input1, input2))
-        ctx.mark(input1->arguments.first(), input2->arguments.first());
-    }
-  }
+  const auto changedRegions = markArgumentsFromInputs(lambda, context);
+  // Only visit subregions whose argument congruence sets have changed
+  for (auto changedRegion : changedRegions)
+    markRegion(*changedRegion, context);
 
-  mark(lambda.subregion(), ctx);
+  // Lambda nodes are never considered common to other nodes. Make sure it has a set it leads
+  if (!context.getNodeCongruenceSets().hasSet(lambda))
+    context.getNodeCongruenceSets().makeSetForLeader(lambda);
 }
 
 static void
-markPhi(const rvsdg::PhiNode & phi, CommonNodeElimination::Context & ctx)
+markPhi(const rvsdg::PhiNode & phi, CommonNodeElimination::Context & context)
 {
+  const auto changedRegions = markArgumentsFromInputs(phi, context);
+  // Only visit subregions whose argument congruence sets have changed
+  for (auto changedRegion : changedRegions)
+    markRegion(*changedRegion, context);
 
-
-  markRegion(phi.subregion(), ctx);
+  // Phi nodes are never considered common to other nodes. Make sure it has a set it leads
+  if (!context.getNodeCongruenceSets().hasSet(phi))
+    context.getNodeCongruenceSets().makeSetForLeader(phi);
 }
 
-using TopNodeLeaderList = std::vector<std::pair<rvsdg::Node *, NodeCongruenceSets::Index>>;
+using TopNodeLeaderList = std::vector<std::pair<const rvsdg::Node *, NodeCongruenceSets::Index>>;
 
 static void
-markTopNode(rvsdg::Node & node, TopNodeLeaderList & leaders, CommonNodeElimination::Context & context)
+markTopNode(
+    const rvsdg::Node & node,
+    TopNodeLeaderList & leaders,
+    CommonNodeElimination::Context & context)
 {
   // TODO: Use some sort of hashing to make this not O(n * m)
   // where n is the number of outputs and m is the number of congruence sets
@@ -670,11 +777,11 @@ markStructuralNode(const rvsdg::StructuralNode & node, CommonNodeElimination::Co
  * @param context the current marking context
  */
 static void
-markRegion(rvsdg::Region & region, CommonNodeElimination::Context & context)
+markRegion(const rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
   TopNodeLeaderList leaders;
 
-  for (const auto & node : rvsdg::TopDownTraverser(&region))
+  for (const auto & node : rvsdg::TopDownConstTraverser(&region))
   {
     // Handle top nodes as a special case
     if (node->ninputs() == 0)
@@ -697,93 +804,93 @@ markRegion(rvsdg::Region & region, CommonNodeElimination::Context & context)
 /* divert phase */
 
 static void
-divert_users(jlm::rvsdg::Output * output, CommonNodeElimination::Context & context)
+divertArguments(rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
-  auto set = context.set(output);
-  for (auto & other : *set)
-    other->divert_users(output);
-  set->clear();
-}
+  auto & argumentCongruenceSets = context.getArgumentCongruenceSets();
 
-static void
-divert_outputs(rvsdg::Node * node, CommonNodeElimination::Context & ctx)
-{
-  for (size_t n = 0; n < node->noutputs(); n++)
-    divert_users(node->output(n), ctx);
-}
-
-static void
-divert_arguments(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
-{
-  for (size_t n = 0; n < region->narguments(); n++)
-    divert_users(region->argument(n), ctx);
-}
-
-static void
-divert(rvsdg::Region *, CommonNodeElimination::Context &);
-
-static void
-divert_gamma(rvsdg::GammaNode & gamma, CommonNodeElimination::Context & ctx)
-{
-  for (const auto & ev : gamma.GetEntryVars())
+  for (auto argument : region.Arguments())
   {
-    for (auto input : ev.branchArgument)
-      divert_users(input, ctx);
+    const auto argumentSet = argumentCongruenceSets.tryGetSetFor(*argument);
+    JLM_ASSERT(argumentSet != ArgumentCongruenceSets::NoCongruenceSet);
+
+    auto & leader = argumentCongruenceSets.getLeader(argumentSet);
+    if (&leader == argument)
+      continue;
+
+    argument->divert_users(const_cast<rvsdg::RegionArgument *>(&leader));
   }
-
-  for (size_t r = 0; r < gamma.nsubregions(); r++)
-    divert(gamma.subregion(r), ctx);
-
-  divert_outputs(&gamma, ctx);
 }
 
 static void
-divert_theta(rvsdg::ThetaNode & theta, CommonNodeElimination::Context & ctx)
+divertSimpleNode(rvsdg::Node & node, CommonNodeElimination::Context & context)
 {
-  for (const auto & lv : theta.GetLoopVars())
+  auto & nodeCongruenceSets = context.getNodeCongruenceSets();
+
+  const auto nodeSet = nodeCongruenceSets.tryGetSetFor(node);
+  JLM_ASSERT(nodeSet != NodeCongruenceSets::NoCongruenceSet);
+
+  // If this node is the leader of its set, do nothing
+  auto & leader = nodeCongruenceSets.getLeader(nodeSet);
+  if (&leader == &node)
+    return;
+
+  // Otherwise redirect all our outputs to our leader
+  for (auto & output : node.Outputs())
   {
-    JLM_ASSERT(ctx.set(lv.pre)->size() == ctx.set(lv.output)->size());
-    divert_users(lv.pre, ctx);
-    divert_users(lv.output, ctx);
+    output.divert_users(leader.output(output.index()));
   }
-
-  divert(theta.subregion(), ctx);
 }
 
 static void
-divert_lambda(rvsdg::LambdaNode & lambda, CommonNodeElimination::Context & ctx)
+divertInRegion(rvsdg::Region &, CommonNodeElimination::Context &);
+
+static void
+divertGamma(rvsdg::GammaNode & gamma, CommonNodeElimination::Context & context)
 {
-  divert_arguments(lambda.subregion(), ctx);
-  divert(lambda.subregion(), ctx);
+  for (auto & subregion : gamma.Subregions())
+  {
+    divertInRegion(subregion, context);
+  }
 }
 
 static void
-divert_phi(rvsdg::PhiNode & phi, CommonNodeElimination::Context & ctx)
+divertTheta(rvsdg::ThetaNode & theta, CommonNodeElimination::Context & ctx)
 {
-  divert_arguments(phi.subregion(), ctx);
-  divert(phi.subregion(), ctx);
+  divertInRegion(*theta.subregion(), ctx);
 }
 
 static void
-divert(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
+divertLambda(rvsdg::LambdaNode & lambda, CommonNodeElimination::Context & ctx)
+{
+  divertInRegion(*lambda.subregion(), ctx);
+}
+
+static void
+divertPhi(rvsdg::PhiNode & phi, CommonNodeElimination::Context & ctx)
+{
+  divertInRegion(*phi.subregion(), ctx);
+}
+
+static void
+divertStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Context & ctx)
 {
   rvsdg::MatchTypeOrFail(
-      *node,
+      node,
       [&](rvsdg::GammaNode & gamma)
       {
-        divert_gamma(gamma, ctx);
+        divertGamma(gamma, ctx);
       },
       [&](rvsdg::ThetaNode & theta)
       {
-        divert_theta(theta, ctx);
+        divertTheta(theta, ctx);
       },
       [&](rvsdg::LambdaNode & lambda)
       {
-        divert_lambda(lambda, ctx);
+        divertLambda(lambda, ctx);
       },
       [&](rvsdg::PhiNode & phi)
       {
-        divert_phi(phi, ctx);
+        divertPhi(phi, ctx);
       },
       [&](rvsdg::DeltaNode & delta)
       {
@@ -792,14 +899,24 @@ divert(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 }
 
 static void
-divert(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
+divertInRegion(rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
-  for (const auto & node : rvsdg::TopDownTraverser(region))
+  divertArguments(region, context);
+
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
   {
-    if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-      divert_outputs(simple, ctx);
+    if (auto simple = dynamic_cast<rvsdg::SimpleNode *>(node))
+    {
+      divertSimpleNode(*simple, context);
+    }
+    else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      divertStructuralNode(*structural, context);
+    }
     else
-      divert(static_cast<rvsdg::StructuralNode *>(node), ctx);
+    {
+      throw std::logic_error("Unknown node type");
+    }
   }
 }
 
@@ -822,7 +939,7 @@ CommonNodeElimination::Run(
   statistics->endMarkStatistics();
 
   statistics->startDivertStatistics();
-  divert(&rvsdg.GetRootRegion(), context);
+  divertInRegion(rvsdg.GetRootRegion(), context);
   statistics->endDivertStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
