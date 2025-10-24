@@ -330,7 +330,7 @@ ScalarEvolution::CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode)
       ++it;
   }
 
-  const auto order{ TopologicalSort(filteredDependencyGraph) };
+  const auto order = TopologicalSort(filteredDependencyGraph);
 
   std::vector<const rvsdg::Output *> allVars{};
   // Add valid IVs to the set (in the correct order)
@@ -354,10 +354,7 @@ ScalarEvolution::CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode)
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> chrecMap{};
   for (const auto loopVar : thetaNode.GetLoopVars())
-  {
     chrecMap[loopVar.pre] = UniqueSCEVs_.at(loopVar.pre)->Clone();
-    std::cout << UniqueSCEVs_.at(loopVar.pre)->Clone()->DebugString() << '\n';
-  }
 
   return chrecMap;
 }

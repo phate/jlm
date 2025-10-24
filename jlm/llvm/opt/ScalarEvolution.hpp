@@ -149,7 +149,7 @@ public:
     std::ostringstream oss;
     std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
     std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
-    oss << "(" << leftStr << ",+," << rightStr << ")";
+    oss << "(" << leftStr << " + " << rightStr << ")";
     return oss.str();
   }
 
