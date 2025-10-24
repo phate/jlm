@@ -248,7 +248,7 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 
         const auto lambdaEntryMemoryNodeId =
             LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(lambdaEntrySplitOutput);
-        const auto callEntryMergeInput = CallEntryMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+        const auto callEntryMergeInput = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
             *callEntryMerge,
             lambdaEntryMemoryNodeId);
 
