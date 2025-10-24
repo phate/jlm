@@ -727,7 +727,6 @@ MlirToJlmConverter::ConvertOperation(
     auto operands = std::vector(inputs.begin(), inputs.end());
     return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        LambdaEntryMemstateSplitOp.getNumResults(),
         std::move(memoryNodeIds)));
   }
   if (auto LambdaExitMemstateMergeOp =

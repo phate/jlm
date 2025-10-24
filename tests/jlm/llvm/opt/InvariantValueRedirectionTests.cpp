@@ -254,7 +254,7 @@ TestCallWithMemoryStateNodes()
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 2, { 0, 1 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1 });
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
@@ -290,7 +290,7 @@ TestCallWithMemoryStateNodes()
     auto lambdaArgumentTest1 = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 2, { 0, 1 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1 });
 
     auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
@@ -399,7 +399,7 @@ TestCallWithMissingMemoryStateNodes()
     auto lambdaArgumentTest = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, 1, { 0 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0 });
 
     auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
