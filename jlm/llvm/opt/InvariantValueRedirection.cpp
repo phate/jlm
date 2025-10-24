@@ -230,16 +230,31 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
       JLM_ASSERT(lambdaEntrySplit->noutputs() == callEntryMerge->ninputs());
 
-      for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
+      for (auto & lambdaExitMergeInput : lambdaExitMerge->Inputs())
       {
-        auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lambdaExitMergeInput->origin());
-        if (node == lambdaEntrySplit)
+        auto & lambdaEntrySplitOutput = *lambdaExitMergeInput.origin();
+        const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(lambdaEntrySplitOutput);
+        if (node != lambdaEntrySplit)
         {
-          auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());
-          auto callEntryMergeOperand =
-              callEntryMerge->input(lambdaExitMergeInput->origin()->index())->origin();
-          callExitSplitOutput->divert_users(callEntryMergeOperand);
+          // The state edge is not invariant. Let's move on to the next one.
+          continue;
+        }
+
+        const auto lambdaExitMemoryNodeId =
+            LambdaExitMemoryStateMergeOperation::mapInputToMemoryNodeId(lambdaExitMergeInput);
+        const auto callExitSplitOutput = CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+            *callExitSplit,
+            lambdaExitMemoryNodeId);
+
+        const auto lambdaEntryMemoryNodeId =
+            LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(lambdaEntrySplitOutput);
+        const auto callEntryMergeInput = CallEntryMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+            *callEntryMerge,
+            lambdaEntryMemoryNodeId);
+
+        if (callExitSplitOutput != nullptr && callEntryMergeInput != nullptr)
+        {
+          callExitSplitOutput->divert_users(callEntryMergeInput->origin());
         }
       }
     }
