@@ -315,7 +315,7 @@ TestInvariantMemoryState()
 
   // LambdaEntryMemoryStateSplit node
   auto & memoryStateSplitNode =
-      LambdaEntryMemoryStateSplitOperation::CreateNode(*functionArguments[1], 2, { 0, 1 });
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*functionArguments[1], { 0, 1 });
 
   // Load node
   auto loadOutput = LoadNonVolatileOperation::Create(

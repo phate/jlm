@@ -219,7 +219,6 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
 
   auto & lambdaEntrySplitNode = llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
       memoryStateArgument,
-      numMemoryStates,
       memoryNodeIds);
   auto memoryStates = outputs(&lambdaEntrySplitNode);
 

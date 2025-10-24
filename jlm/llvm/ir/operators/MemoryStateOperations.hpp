@@ -290,9 +290,7 @@ class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
-  LambdaEntryMemoryStateSplitOperation(
-      size_t numResults,
-      const std::vector<MemoryNodeId> & memoryNodeIds);
+  explicit LambdaEntryMemoryStateSplitOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -351,12 +349,10 @@ public:
   static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::Output & operand,
-      const size_t numResults,
       std::vector<MemoryNodeId> memoryNodeIds)
   {
     return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
         { &operand },
-        numResults,
         std::move(memoryNodeIds));
   }
 
@@ -394,7 +390,7 @@ public:
    * @return The \ref MemoryNodeId for each of the operation's operands.
    */
   [[nodiscard]] std::vector<MemoryNodeId>
-  GetMemoryNodeIds() const noexcept
+  getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(narguments());
     for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
@@ -415,7 +411,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Maps the input a \ref LambdaExitMemoryStateMergeOperation node to the respective \ref
@@ -521,7 +517,7 @@ public:
    * @return The \ref MemoryNodeId for each of the operation's results.
    */
   [[nodiscard]] std::vector<MemoryNodeId>
-  GetMemoryNodeIds() const noexcept
+  getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(narguments());
     for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
@@ -542,7 +538,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   static rvsdg::SimpleNode &
   CreateNode(

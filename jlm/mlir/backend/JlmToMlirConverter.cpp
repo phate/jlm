@@ -749,7 +749,7 @@ JlmToMlirConverter::ConvertSimpleNode(
           dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
-        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateMerge->GetMemoryNodeIds());
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateMerge->getMemoryNodeIds());
 
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateMerge->nresults(); i++)
@@ -785,7 +785,7 @@ JlmToMlirConverter::ConvertSimpleNode(
           dynamic_cast<const jlm::llvm::CallEntryMemoryStateMergeOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
-        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->GetMemoryNodeIds());
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->getMemoryNodeIds());
 
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < callStateMerge->nresults(); i++)

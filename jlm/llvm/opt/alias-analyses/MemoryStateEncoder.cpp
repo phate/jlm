@@ -928,7 +928,6 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   stateMap.PushRegion(*lambdaNode.subregion());
   const auto states = rvsdg::outputs(&LambdaEntryMemoryStateSplitOperation::CreateNode(
       memoryStateArgument,
-      memoryNodes.Size(),
       memoryNodeIds));
 
   size_t n = 0;

@@ -33,7 +33,7 @@ SplitConversion()
   const auto inputVar = structuralNode->addInputWithArguments(importX);
 
   auto & entrySplitNode =
-      LambdaEntryMemoryStateSplitOperation::CreateNode(*inputVar.argument[0], 3, { 0, 1, 2 });
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*inputVar.argument[0], { 0, 1, 2 });
 
   const auto outputVar0 = structuralNode->addOutputWithResults({ entrySplitNode.output(0) });
   const auto outputVar1 = structuralNode->addOutputWithResults({ entrySplitNode.output(1) });

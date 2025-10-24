@@ -277,17 +277,12 @@ MemoryStateSplitOperation::NormalizeSplitMerge(
 }
 
 static void
-CheckMemoryNodeIds(
-    const std::vector<MemoryNodeId> & memoryNodeIds,
-    const size_t numExpectedMemoryNodeIds)
+CheckMemoryNodeIds(const std::vector<MemoryNodeId> & memoryNodeIds)
 {
-  if (memoryNodeIds.size() != numExpectedMemoryNodeIds)
-    throw std::logic_error("Insufficient number of memory node identifiers");
-
   const util::HashSet<MemoryNodeId> memoryNodeIdsSet(
       { memoryNodeIds.begin(), memoryNodeIds.end() });
 
-  if (memoryNodeIdsSet.Size() != numExpectedMemoryNodeIds)
+  if (memoryNodeIdsSet.Size() != memoryNodeIds.size())
     throw std::logic_error("Found duplicated memory node identifiers.");
 }
 
@@ -306,11 +301,10 @@ ToString(const std::vector<MemoryNodeId> & memoryNodeIds)
 }
 
 LambdaEntryMemoryStateSplitOperation::LambdaEntryMemoryStateSplitOperation(
-    const size_t numResults,
     const std::vector<MemoryNodeId> & memoryNodeIds)
-    : MemoryStateOperation(1, numResults)
+    : MemoryStateOperation(1, memoryNodeIds.size())
 {
-  CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
+  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
     memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
@@ -366,7 +360,7 @@ LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : lambdaEntrySplitOperation.getMemoryNodeIds())
   {
-    const auto input = CallEntryMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+    const auto input = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
         *callEntryMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);
@@ -380,7 +374,7 @@ LambdaExitMemoryStateMergeOperation::LambdaExitMemoryStateMergeOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(memoryNodeIds.size(), 1)
 {
-  CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
+  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
     MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
@@ -399,7 +393,7 @@ LambdaExitMemoryStateMergeOperation::operator==(const Operation & other) const n
 std::string
 LambdaExitMemoryStateMergeOperation::debug_string() const
 {
-  return util::strfmt("LambdaExitMemoryStateMerge[", ToString(GetMemoryNodeIds()), "]");
+  return util::strfmt("LambdaExitMemoryStateMerge[", ToString(getMemoryNodeIds()), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
@@ -409,7 +403,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -475,7 +469,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.getMemoryNodeIds()).output(0) }
   };
 }
 
@@ -515,7 +509,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.getMemoryNodeIds()).output(0) }
   };
 }
 
@@ -550,7 +544,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.getMemoryNodeIds()).output(0) }
   };
 }
 
@@ -560,7 +554,7 @@ CallEntryMemoryStateMergeOperation::CallEntryMemoryStateMergeOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(memoryNodeIds.size(), 1)
 {
-  CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
+  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
     MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
@@ -577,7 +571,7 @@ CallEntryMemoryStateMergeOperation::operator==(const Operation & other) const no
 std::string
 CallEntryMemoryStateMergeOperation::debug_string() const
 {
-  return util::strfmt("CallEntryMemoryStateMerge[", ToString(GetMemoryNodeIds()), "]");
+  return util::strfmt("CallEntryMemoryStateMerge[", ToString(getMemoryNodeIds()), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
@@ -587,7 +581,7 @@ CallEntryMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-CallEntryMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -614,7 +608,7 @@ CallExitMemoryStateSplitOperation::CallExitMemoryStateSplitOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(1, memoryNodeIds.size())
 {
-  CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
+  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
     memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
@@ -679,7 +673,7 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : callExitSplitOperation.getMemoryNodeIds())
   {
-    const auto input = LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+    const auto input = LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
         *lambdaExitMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);

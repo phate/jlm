@@ -485,9 +485,9 @@ LambdaEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  const LambdaEntryMemoryStateSplitOperation operation1(2, { 1, 2 });
-  const LambdaEntryMemoryStateSplitOperation operation2(2, { 3, 4 });
-  const LambdaEntryMemoryStateSplitOperation operation3(4, { 1, 2, 3, 4 });
+  const LambdaEntryMemoryStateSplitOperation operation1({ 1, 2 });
+  const LambdaEntryMemoryStateSplitOperation operation2({ 3, 4 });
+  const LambdaEntryMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
   const jlm::tests::TestOperation operation4(
       { memoryStateType },
       { memoryStateType, memoryStateType });
@@ -524,7 +524,6 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
 
   auto & lambdaEntrySplitNode = LambdaEntryMemoryStateSplitOperation::CreateNode(
       *callEntryMergeNode.output(0),
-      3,
       { 3, 2, 1 });
 
   auto & x0 = GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
@@ -633,7 +632,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   assert(memStateMerge1Node->ninputs() == 2);
   assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
-  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
@@ -698,7 +697,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   assert(memStateMerge1Node->ninputs() == 2);
   assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
-  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
@@ -759,7 +758,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   assert(memStateMerge1Node != &lambdaExitMergeNode1);
   assert(memStateMerge1Node->ninputs() == 2);
-  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
   const auto undefNode = TryGetOwnerNode<Node>(*memStateMerge1Node->input(0)->origin());
   assert(undefNode);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
