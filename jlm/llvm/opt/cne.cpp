@@ -328,6 +328,27 @@ checkNodesCongruent(
 }
 
 /**
+ * Uses the provided list of partition indices to partition the arguments of the given region.
+ * Each argument has a corresponding integer in the \p partitions list.
+ * Only arguments with identical integers can stay in the same partition.
+ * If a pair of arguments are already in different congruence sets, they will remain separate.
+ *
+ * If the list of partitions is shorter than the number of arguments,
+ * the arguments with no corresponding partition are given their own congruence sets.
+ *
+ * @param region the region whose arguments should be partitioned
+ * @param partitions integers used to partition arguments.
+ * @param context the current context of the marking phase
+ * @return true if any congruence sets were created from this operation
+ */
+static bool
+partitionArguments(rvsdg::Region & region, const std::vector<size_t> & partitions, CommonNodeElimination::Context & context)
+{
+  std::unordered_map<std::pair<size_t, >, size_t> leader;
+  for (int)
+}
+
+/**
  * Marks all arguments in all regions of the given structural node.
  *
  * Arguments that correspond to structural inputs are made congruent
@@ -342,7 +363,7 @@ checkNodesCongruent(
  * @return true if any region arguments changed congruence set
  */
 static bool
-markArguments(rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
+markArgumentsFromInputs(rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
 {
   // First group inputs that have congruent origins.
   // The leftmost input becomes the leader, and all congruent inputs point to its index
