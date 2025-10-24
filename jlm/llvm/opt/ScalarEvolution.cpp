@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <algorithm>
 #include <queue>
 
 namespace jlm::llvm
