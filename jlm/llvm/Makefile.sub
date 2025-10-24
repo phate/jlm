@@ -63,6 +63,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
+    jlm/llvm/opt/PartialRedundancyElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
@@ -83,6 +84,7 @@ libllvm_HEADERS = \
     \
     jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
+    jlm/llvm/opt/PartialRedundancyElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/cne.hpp \
     jlm/llvm/opt/push.hpp \
