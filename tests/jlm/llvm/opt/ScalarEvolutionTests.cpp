@@ -17,8 +17,7 @@ RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::ScalarEvolution scalarEvolution;
-  const auto inductionVariables = scalarEvolution.FindInductionVariables(thetaNode);
-  auto chrecMap = scalarEvolution.CreateChainRecurrences(inductionVariables, thetaNode);
+  auto chrecMap = scalarEvolution.CreateChainRecurrences(thetaNode);
   return chrecMap;
 }
 
@@ -48,7 +47,9 @@ ConstantInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 0); // Not a valid induction variable. No SCEV should have been created
+  assert(chrecMap.size() == 1); // Not a valid induction variable. No SCEV should have been created
+
+  assert(ScalarEvolution::StructurallyEqual(*chrecMap[lv1.pre], SCEVUnknown()));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -151,15 +152,18 @@ InductionVariableWithMultiplication()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 1);
+  assert(chrecMap.size() == 2);
   assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) == chrecMap.end()); // Ensure that lv2 is not counted as an IV
+  assert(chrecMap.find(lv2.pre) != chrecMap.end());
 
   // lv1 is a simple induction variable: {0,+,1}
   SCEVAddExpr scevAddExpr = SCEVAddExpr();
   scevAddExpr.SetLeftOperand(std::make_unique<SCEVConstant>(0));
   scevAddExpr.SetRightOperand(std::make_unique<SCEVConstant>(1));
   assert(ScalarEvolution::StructurallyEqual(*chrecMap[lv1.pre], scevAddExpr));
+
+  // lv2 is Unknown
+  assert(ScalarEvolution::StructurallyEqual(*chrecMap[lv2.pre], SCEVUnknown()));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -221,7 +225,7 @@ RecursiveInductionVariable()
   scevAddExpr1.SetRightOperand(std::make_unique<SCEVConstant>(1));
   assert(ScalarEvolution::StructurallyEqual(*chrecMap[lv1.pre], scevAddExpr1));
 
-  // lv2 is a second-degree polynomial: {{4,+,2},+,3}
+  // lv2 is a multi-layered induction variable: {{4,+,2},+,3}
   // Inner: {4,+,2}
   SCEVAddExpr inner = SCEVAddExpr();
   inner.SetLeftOperand(std::make_unique<SCEVConstant>(4));
@@ -378,7 +382,6 @@ ThirdDegreePolynomialInductionVariable()
   SCEVAddExpr outermost = SCEVAddExpr();
   outermost.SetLeftOperand(std::make_unique<SCEVConstant>(0));
   outermost.SetRightOperand(middle.Clone());
-
   assert(ScalarEvolution::StructurallyEqual(*chrecMap[lv1.pre], outermost));
 }
 

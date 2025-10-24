@@ -248,13 +248,8 @@ public:
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  static InductionVariableSet
-  FindInductionVariables(const rvsdg::ThetaNode & thetaNode);
-
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-  CreateChainRecurrences(
-      const InductionVariableSet & inductionVariableCandidates,
-      const rvsdg::ThetaNode & thetaNode);
+  CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode);
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
@@ -265,13 +260,6 @@ private:
 
   void
   TraverseRegion(const rvsdg::Region & region);
-
-  static bool
-  IsAnalyzable(const rvsdg::Output & output, InductionVariableSet & candidates);
-
-  static bool
-  DependsOnLoopVariable(const rvsdg::Output & output, InductionVariableSet & candidates);
-
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
@@ -279,9 +267,7 @@ private:
   TryGetSCEVForOutput(const rvsdg::Output & output);
 
   IVDependencyGraph
-  CreateDependencyGraph(
-      const InductionVariableSet & inductionVariables,
-      const rvsdg::ThetaNode & thetaNode) const;
+  CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
   static std::unordered_map<const rvsdg::Output *, int>
   FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV);

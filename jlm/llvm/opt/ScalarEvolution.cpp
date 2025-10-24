@@ -74,113 +74,10 @@ ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
-        const auto inductionVariables = FindInductionVariables(*thetaNode);
-        InductionVariableMap_.emplace(thetaNode, inductionVariables);
-        CreateChainRecurrences(inductionVariables, *thetaNode);
+        CreateChainRecurrences(*thetaNode);
       }
     }
   }
-}
-
-bool
-ScalarEvolution::DependsOnLoopVariable(
-    const rvsdg::Output & output,
-    InductionVariableSet & candidates)
-{
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
-    return candidates.Contains(&output);
-
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    for (size_t n = 0; n < simpleNode->ninputs(); ++n)
-    {
-      const auto origin = simpleNode->input(n)->origin();
-      if (DependsOnLoopVariable(*origin, candidates))
-        return true;
-    }
-  }
-  return false;
-}
-
-bool
-ScalarEvolution::IsAnalyzable(const rvsdg::Output & output, InductionVariableSet & candidates)
-{
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
-  {
-    // We know the output is a loop variable. Check if the loop variable is in the set, if so return
-    // true, otherwise false
-    return candidates.Contains(&output);
-  }
-
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
-    {
-      return true;
-    }
-    for (size_t n = 0; n < simpleNode->ninputs(); ++n)
-    {
-      const auto origin = simpleNode->input(n)->origin();
-      if (!IsAnalyzable(*origin, candidates))
-      {
-        return false;
-      }
-    }
-    if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation())
-        || rvsdg::is<IntegerSubOperation>(simpleNode->GetOperation()))
-    {
-      return true;
-    }
-    return false;
-  }
-  // TODO: Handle structural nodes
-  return false;
-}
-
-ScalarEvolution::InductionVariableSet
-ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode & thetaNode)
-{
-  const std::vector<rvsdg::ThetaNode::LoopVar> loopVars = thetaNode.GetLoopVars();
-  // Starting out, all loop variables are induction variable candidates
-  InductionVariableSet inductionVariableCandidates{};
-  for (const auto & loopVar : loopVars)
-  {
-    inductionVariableCandidates.insert(loopVar.pre);
-  }
-  bool changed = false;
-  do
-  {
-    for (const auto & loopVar : loopVars)
-    {
-      const rvsdg::Output * origin = loopVar.post->origin();
-      /*
-       * For a loop variable to be a valid induction variable, two conditions must hold:
-       * 1. Its evolution must be analyzable (based only on constants and add/sub operations)
-       * 2. It must depend on at least one loop variable (including itself)
-       *
-       * The second requirement filters out loop variables that are computed entirely from
-       * constants or external values.
-       *
-       * For example:
-       *   x = 0;
-       *   loop:
-       *     x = 5;  // x is computed from a constant, not from any loop variable
-       *   end;
-       *
-       * Here x evolves as 0 → 5 → 5 → ..., which is not a linear sequence.
-       * In RVSDG tree representation this would be represented as a constant node with the value 5,
-       * the output of which is the post-value of the loop variable x.
-       *
-       * A valid induction variable depends on a loop variable atleast once, like x = x + 1,
-       * evolving as 0 → 1 → 2 →... or based on another induction variable like y = x + 2.
-       */
-      if (!IsAnalyzable(*origin, inductionVariableCandidates)
-          || !DependsOnLoopVariable(*origin, inductionVariableCandidates))
-        changed = inductionVariableCandidates.Remove(loopVar.pre);
-    }
-  } while (changed == true);
-
-  return inductionVariableCandidates;
 }
 
 std::optional<const SCEV *>
@@ -272,20 +169,18 @@ ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::
 }
 
 ScalarEvolution::IVDependencyGraph
-ScalarEvolution::CreateDependencyGraph(
-    const InductionVariableSet & inductionVariables,
-    const rvsdg::ThetaNode & thetaNode) const
+ScalarEvolution::CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const
 {
   IVDependencyGraph graph{};
-  for (const auto indVarPre : inductionVariables.Items())
+  for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    const auto loopVar = thetaNode.MapPreLoopVar(*indVarPre);
     const auto post = loopVar.post;
     const auto scev = UniqueSCEVs_.at(post->origin())->Clone();
 
+    const auto pre = loopVar.pre;
     const std::unordered_map<const rvsdg::Output *, int> dependencies =
-        FindDependenciesForSCEV(*scev.get(), *indVarPre);
-    graph[indVarPre] = dependencies;
+        FindDependenciesForSCEV(*scev.get(), *pre);
+    graph[pre] = dependencies;
   }
 
   return graph;
@@ -297,7 +192,7 @@ ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
 {
   const size_t numVertices = dependencyGraph.size();
   std::unordered_map<const rvsdg::Output *, int> indegree(numVertices);
-  std::queue<const rvsdg::Output *> q;
+  std::queue<const rvsdg::Output *> q{};
   for (const auto & [node, deps] : dependencyGraph)
   {
     for (const auto & dep : deps)
@@ -387,23 +282,37 @@ ScalarEvolution::ReplacePlaceholders(
   return scevTree.Clone();
 }
 
-std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-ScalarEvolution::CreateChainRecurrences(
-    const InductionVariableSet & inductionVariableCandidates,
-    const rvsdg::ThetaNode & thetaNode)
+bool
+DependsOnLoopVariable(
+    const rvsdg::Output & variable,
+    ScalarEvolution::IVDependencyGraph & dependencyGraph)
 {
-  for (const auto indVarPre : inductionVariableCandidates.Items())
+  if (dependencyGraph[&variable].size() >= 1)
+    return true;
+  return false;
+}
+
+std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+ScalarEvolution::CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode)
+{
+  for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    const auto loopVar = thetaNode.MapPreLoopVar(*indVarPre);
     const auto post = loopVar.post;
     GetOrCreateSCEVForOutput(*post->origin());
   }
-  auto dependencyGraph = CreateDependencyGraph(inductionVariableCandidates, thetaNode);
-  InductionVariableSet validIVs{ inductionVariableCandidates };
-  for (const auto indVarPre : inductionVariableCandidates.Items())
+  auto dependencyGraph = CreateDependencyGraph(thetaNode);
+
+  InductionVariableSet validIVs{};
+  for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    if (!IsValidInductionVariable(*indVarPre, dependencyGraph))
-      validIVs.Remove(indVarPre);
+    if (!DependsOnLoopVariable(*loopVar.pre, dependencyGraph))
+    {
+      // If the expression doesn't depend on atleast one loop variable (including itself), it is not
+      // an induction variable. Replace it with a SCEVUnknown
+      UniqueSCEVs_.insert_or_assign(loopVar.post->origin(), std::make_unique<SCEVUnknown>());
+    }
+    else if (IsValidInductionVariable(*loopVar.pre, dependencyGraph))
+      validIVs.insert(loopVar.pre);
   }
 
   // Filter the dependency graph to only contain the IVs that are valid and update dependencies
@@ -427,25 +336,28 @@ ScalarEvolution::CreateChainRecurrences(
   // Add valid IVs to the set (in the correct order)
   for (const auto & indVarPre : order)
     allVars.push_back(indVarPre);
-  for (auto indVarPre : inductionVariableCandidates.Items())
+  for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    if (std::find(order.begin(), order.end(), indVarPre) == order.end())
+    if (std::find(order.begin(), order.end(), loopVar.pre) == order.end())
       // This is not a valid IV, so it hasn't been added yet
-      allVars.push_back(indVarPre);
+      allVars.push_back(loopVar.pre);
   }
 
-  for (const auto indVarPre : allVars)
+  for (const auto loopVarPre : allVars)
   {
-    const auto loopVar = thetaNode.MapPreLoopVar(*indVarPre);
+    const auto loopVar = thetaNode.MapPreLoopVar(*loopVarPre);
     const auto post = loopVar.post;
     const auto SCEV = UniqueSCEVs_.at(post->origin()).get();
-    auto replacedSCEV = ReplacePlaceholders(*SCEV, *indVarPre, thetaNode, validIVs);
-    UniqueSCEVs_.insert_or_assign(indVarPre, std::move(replacedSCEV));
+    auto replacedSCEV = ReplacePlaceholders(*SCEV, *loopVarPre, thetaNode, validIVs);
+    UniqueSCEVs_.insert_or_assign(loopVarPre, std::move(replacedSCEV));
   }
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> chrecMap{};
-  for (auto indVar : inductionVariableCandidates.Items())
-    chrecMap[indVar] = UniqueSCEVs_.at(indVar)->Clone();
+  for (const auto loopVar : thetaNode.GetLoopVars())
+  {
+    chrecMap[loopVar.pre] = UniqueSCEVs_.at(loopVar.pre)->Clone();
+    std::cout << UniqueSCEVs_.at(loopVar.pre)->Clone()->DebugString() << '\n';
+  }
 
   return chrecMap;
 }
