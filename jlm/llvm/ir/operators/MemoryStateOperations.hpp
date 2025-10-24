@@ -303,11 +303,14 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
   getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(nresults());
-    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    for (auto [memoryNodeId, index] : memoryNodeIdToIndexMap_)
     {
       JLM_ASSERT(index < nresults());
       memoryNodeIds[index] = memoryNodeId;
@@ -358,7 +361,7 @@ public:
   }
 
 private:
-  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
+  util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
 
 /**
@@ -387,6 +390,9 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's operands.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
   GetMemoryNodeIds() const noexcept
   {
@@ -511,6 +517,9 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
   GetMemoryNodeIds() const noexcept
   {
@@ -579,11 +588,14 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
   getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(nresults());
-    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    for (auto [memoryNodeId, index] : memoryNodeIdToIndexMap_)
     {
       JLM_ASSERT(index < nresults());
       memoryNodeIds[index] = memoryNodeId;
@@ -629,7 +641,7 @@ public:
   }
 
 private:
-  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
+  util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
 
 }

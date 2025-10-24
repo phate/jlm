@@ -313,7 +313,7 @@ LambdaEntryMemoryStateSplitOperation::LambdaEntryMemoryStateSplitOperation(
   CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
+    memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
   }
 }
 
@@ -324,7 +324,7 @@ LambdaEntryMemoryStateSplitOperation::operator==(const Operation & other) const 
 {
   const auto operation = dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&other);
   return operation && operation->nresults() == nresults()
-      && operation->MemoryNodeIdToIndex_ == MemoryNodeIdToIndex_;
+      && operation->memoryNodeIdToIndexMap_ == memoryNodeIdToIndexMap_;
 }
 
 std::string
@@ -346,7 +346,7 @@ LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Outpu
       rvsdg::TryGetSimpleNodeAndOptionalOp<LambdaEntryMemoryStateSplitOperation>(output);
   JLM_ASSERT(operation != nullptr);
 
-  return operation->MemoryNodeIdToIndex_.LookupValue(output.index());
+  return operation->memoryNodeIdToIndexMap_.LookupValue(output.index());
 }
 
 std::optional<std::vector<rvsdg::Output *>>
@@ -617,7 +617,7 @@ CallExitMemoryStateSplitOperation::CallExitMemoryStateSplitOperation(
   CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
+    memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
   }
 }
 
@@ -625,7 +625,7 @@ bool
 CallExitMemoryStateSplitOperation::operator==(const Operation & other) const noexcept
 {
   const auto operation = dynamic_cast<const CallExitMemoryStateSplitOperation *>(&other);
-  return operation && operation->MemoryNodeIdToIndex_ == MemoryNodeIdToIndex_;
+  return operation && operation->memoryNodeIdToIndexMap_ == memoryNodeIdToIndexMap_;
 }
 
 std::string
@@ -652,12 +652,12 @@ CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
     return nullptr;
   }
 
-  if (!operation->MemoryNodeIdToIndex_.HasKey(memoryNodeId))
+  if (!operation->memoryNodeIdToIndexMap_.HasKey(memoryNodeId))
   {
     return nullptr;
   }
 
-  const auto index = operation->MemoryNodeIdToIndex_.LookupKey(memoryNodeId);
+  const auto index = operation->memoryNodeIdToIndexMap_.LookupKey(memoryNodeId);
   JLM_ASSERT(index < node.noutputs());
   return node.output(index);
 }
