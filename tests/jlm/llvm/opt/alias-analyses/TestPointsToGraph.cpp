@@ -346,9 +346,9 @@ testMemoryNodeSize()
     const auto & f = aa::PointsToGraph::LambdaNode::Create(*ptg, test.LambdaF());
 
     // Assert
-    assert(aa::tryGetMemoryNodeSize(deltaG1) == 4);
-    assert(aa::tryGetMemoryNodeSize(deltaG2) == 8);
-    assert(aa::tryGetMemoryNodeSize(f) == 0);
+    assert(deltaG1.tryGetSize() == 4);
+    assert(deltaG2.tryGetSize() == 8);
+    assert(f.tryGetSize() == 0);
   }
 
   {
@@ -361,8 +361,8 @@ testMemoryNodeSize()
     const auto & allocaC = aa::PointsToGraph::AllocaNode::Create(*ptg, *test.alloca_c);
 
     // Assert 2
-    assert(aa::tryGetMemoryNodeSize(allocaD) == 4);
-    assert(aa::tryGetMemoryNodeSize(allocaC) == 8); // Pointers are 8 bytes
+    assert(allocaD.tryGetSize() == 4);
+    assert(allocaC.tryGetSize() == 8); // Pointers are 8 bytes
   }
 
   {
@@ -379,15 +379,15 @@ testMemoryNodeSize()
     const auto & externalNode = ptg->GetExternalMemoryNode();
 
     // Assert 3
-    assert(aa::tryGetMemoryNodeSize(allocaNode) == 8);
-    assert(aa::tryGetMemoryNodeSize(mallocNode) == 4);
-    assert(aa::tryGetMemoryNodeSize(deltaNode) == 8);
-    assert(aa::tryGetMemoryNodeSize(importNode) == 4);
+    assert(allocaNode.tryGetSize() == 8);
+    assert(mallocNode.tryGetSize() == 4);
+    assert(deltaNode.tryGetSize() == 8);
+    assert(importNode.tryGetSize() == 4);
     // Function nodes have size 0
-    assert(aa::tryGetMemoryNodeSize(lambdaNode) == 0);
+    assert(lambdaNode.tryGetSize() == 0);
 
     // We can not give a size to the external node
-    assert(aa::tryGetMemoryNodeSize(externalNode) == std::nullopt);
+    assert(externalNode.tryGetSize() == std::nullopt);
   }
 }
 JLM_UNIT_TEST_REGISTER(
@@ -413,15 +413,15 @@ testIsMemoryNodeConstant()
     const auto & externalNode = ptg->GetExternalMemoryNode();
 
     // Assert
-    assert(!aa::isMemoryNodeConstant(allocaNode));
-    assert(!aa::isMemoryNodeConstant(mallocNode));
-    assert(!aa::isMemoryNodeConstant(deltaNode));
-    assert(!aa::isMemoryNodeConstant(importNode));
+    assert(!allocaNode.isConstant());
+    assert(!mallocNode.isConstant());
+    assert(!deltaNode.isConstant());
+    assert(!importNode.isConstant());
     // Functions are always constant
-    assert(aa::isMemoryNodeConstant(lambdaNode));
+    assert(lambdaNode.isConstant());
 
     // The external node is not constant
-    assert(!aa::isMemoryNodeConstant(externalNode));
+    assert(!externalNode.isConstant());
   }
 
   {
@@ -457,10 +457,10 @@ testIsMemoryNodeConstant()
         aa::PointsToGraph::DeltaNode::Create(*ptg, nonConstDelta);
 
     // Assert
-    assert(aa::isMemoryNodeConstant(constImportmemoryNode));
-    assert(!aa::isMemoryNodeConstant(nonConstImportMemoryNode));
-    assert(aa::isMemoryNodeConstant(constDeltaMemoryNode));
-    assert(!aa::isMemoryNodeConstant(nonConstDeltaMemoryNode));
+    assert(constImportmemoryNode.isConstant());
+    assert(!nonConstImportMemoryNode.isConstant());
+    assert(constDeltaMemoryNode.isConstant());
+    assert(!nonConstDeltaMemoryNode.isConstant());
   }
 }
 JLM_UNIT_TEST_REGISTER(
