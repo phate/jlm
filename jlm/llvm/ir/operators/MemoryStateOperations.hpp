@@ -290,7 +290,9 @@ class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
-  LambdaEntryMemoryStateSplitOperation(size_t numResults, std::vector<MemoryNodeId> memoryNodeIds);
+  LambdaEntryMemoryStateSplitOperation(
+      size_t numResults,
+      const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -304,8 +306,27 @@ public:
   [[nodiscard]] std::vector<MemoryNodeId>
   getMemoryNodeIds() const noexcept
   {
-    return MemoryNodeIds_;
+    std::vector<MemoryNodeId> memoryNodeIds(nresults());
+    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    {
+      JLM_ASSERT(index < nresults());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
   }
+
+  /**
+   * Maps the output a \ref LambdaEntryMemoryStateSplitOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param output A output of \ref LambdaEntryMemoryStateSplitOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The output is assumed to belong to a \ref LambdaEntryMemoryStateSplitOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
   /**
    * Perform the following transformation:
@@ -337,7 +358,7 @@ public:
   }
 
 private:
-  std::vector<MemoryNodeId> MemoryNodeIds_{};
+  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
 
 /**
@@ -389,6 +410,18 @@ public:
    */
   [[nodiscard]] static rvsdg::Input *
   MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  /**
+   * Maps the input a \ref LambdaExitMemoryStateMergeOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param input A input of \ref LambdaExitMemoryStateMergeOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The input is assumed to belong to a \ref LambdaExitMemoryStateMergeOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapInputToMemoryNodeId(const rvsdg::Input & input);
 
   /**
    * Performs the following transformation:
@@ -467,7 +500,7 @@ class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~CallEntryMemoryStateMergeOperation() noexcept override;
 
-  CallEntryMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
+  explicit CallEntryMemoryStateMergeOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -535,7 +568,7 @@ class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~CallExitMemoryStateSplitOperation() noexcept override;
 
-  explicit CallExitMemoryStateSplitOperation(std::vector<MemoryNodeId> memoryNodeIds);
+  explicit CallExitMemoryStateSplitOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -546,11 +579,29 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const std::vector<MemoryNodeId> &
+  [[nodiscard]] std::vector<MemoryNodeId>
   getMemoryNodeIds() const noexcept
   {
-    return MemoryNodeIds_;
+    std::vector<MemoryNodeId> memoryNodeIds(nresults());
+    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    {
+      JLM_ASSERT(index < nresults());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
   }
+
+  /**
+   * Maps a memory node identifier to the respective output of a \ref
+   * CallExitMemoryStateSplitOperation node.
+   *
+   * @param node A \ref CallExitMemoryStateSplitOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Output *
+  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Perform the following transformation:
@@ -578,7 +629,7 @@ public:
   }
 
 private:
-  std::vector<MemoryNodeId> MemoryNodeIds_{};
+  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
 
 }
