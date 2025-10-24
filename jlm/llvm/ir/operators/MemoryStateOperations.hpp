@@ -347,9 +347,7 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   static rvsdg::SimpleNode &
-  CreateNode(
-      rvsdg::Output & operand,
-      std::vector<MemoryNodeId> memoryNodeIds)
+  CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
   {
     return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
         { &operand },

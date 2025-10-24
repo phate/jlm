@@ -522,9 +522,8 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
       { &i0, &i1, &i2 },
       { 1, 2, 3 });
 
-  auto & lambdaEntrySplitNode = LambdaEntryMemoryStateSplitOperation::CreateNode(
-      *callEntryMergeNode.output(0),
-      { 3, 2, 1 });
+  auto & lambdaEntrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), { 3, 2, 1 });
 
   auto & x0 = GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
   auto & x1 = GraphExport::Create(*lambdaEntrySplitNode.output(1), "x1");

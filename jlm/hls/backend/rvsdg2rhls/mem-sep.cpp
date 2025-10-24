@@ -217,9 +217,8 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
     memoryNodeIds.push_back(i);
   }
 
-  auto & lambdaEntrySplitNode = llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
-      memoryStateArgument,
-      memoryNodeIds);
+  auto & lambdaEntrySplitNode =
+      llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
   auto memoryStates = outputs(&lambdaEntrySplitNode);
 
   // handle existing state edge - TODO: remove entirely?
