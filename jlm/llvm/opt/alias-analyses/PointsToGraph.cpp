@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
 #include <typeindex>
@@ -561,12 +562,43 @@ PointsToGraph::AllocaNode::DebugString() const
   return GetAllocaNode().DebugString();
 }
 
+std::optional<size_t>
+PointsToGraph::AllocaNode::tryGetSize() const noexcept
+{
+  const auto allocaOp = util::assertedCast<const AllocaOperation>(&AllocaNode_->GetOperation());
+
+  // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+  const auto elementCount = tryGetConstantSignedInteger(*AllocaNode_->input(0)->origin());
+  if (elementCount.has_value())
+    return *elementCount * GetTypeSize(*allocaOp->ValueType());
+
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::AllocaNode::isConstant() const noexcept
+{
+  return false;
+}
+
 PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
 
 std::string
 PointsToGraph::DeltaNode::DebugString() const
 {
   return GetDeltaNode().DebugString();
+}
+
+std::optional<size_t>
+PointsToGraph::DeltaNode::tryGetSize() const noexcept
+{
+  return GetTypeSize(*DeltaNode_->GetOperation().Type());
+}
+
+bool
+PointsToGraph::DeltaNode::isConstant() const noexcept
+{
+  return DeltaNode_->constant();
 }
 
 PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
@@ -577,12 +609,44 @@ PointsToGraph::LambdaNode::DebugString() const
   return GetLambdaNode().DebugString();
 }
 
+std::optional<size_t>
+PointsToGraph::LambdaNode::tryGetSize() const noexcept
+{
+  // Functions should never be read from or written to, so they have no size
+  return 0;
+}
+
+bool
+PointsToGraph::LambdaNode::isConstant() const noexcept
+{
+  return true;
+}
+
 PointsToGraph::MallocNode::~MallocNode() noexcept = default;
 
 std::string
 PointsToGraph::MallocNode::DebugString() const
 {
   return GetMallocNode().DebugString();
+}
+
+std::optional<size_t>
+PointsToGraph::MallocNode::tryGetSize() const noexcept
+{
+  // If the size parameter of the malloc node is a constant, that is our size
+  auto size = tryGetConstantSignedInteger(*MallocNode_->input(0)->origin());
+
+  // Only return the size if it is a positive integer, to avoid unsigned underflow
+  if (size.has_value() && *size >= 0)
+    return *size;
+
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::MallocNode::isConstant() const noexcept
+{
+  return false;
 }
 
 PointsToGraph::ImportNode::~ImportNode() noexcept = default;
@@ -593,6 +657,27 @@ PointsToGraph::ImportNode::DebugString() const
   return GetArgument().Name();
 }
 
+std::optional<size_t>
+PointsToGraph::ImportNode::tryGetSize() const noexcept
+{
+  auto size = GetTypeSize(*GraphImport_->ValueType());
+
+  // C code can contain declarations like this:
+  //     extern char myArray[];
+  // which means there is an array of unknown size defined in a different module.
+  // In the LLVM IR the import gets an array length of 0, but that is not correct.
+  if (size == 0)
+    return std::nullopt;
+
+  return size;
+}
+
+bool
+PointsToGraph::ImportNode::isConstant() const noexcept
+{
+  return GraphImport_->isConstant();
+}
+
 PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;
 
 std::string
@@ -601,12 +686,36 @@ PointsToGraph::UnknownMemoryNode::DebugString() const
   return "UnknownMemory";
 }
 
+std::optional<size_t>
+PointsToGraph::UnknownMemoryNode::tryGetSize() const noexcept
+{
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::UnknownMemoryNode::isConstant() const noexcept
+{
+  return false;
+}
+
 PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept = default;
 
 std::string
 PointsToGraph::ExternalMemoryNode::DebugString() const
 {
   return "ExternalMemory";
+}
+
+std::optional<size_t>
+PointsToGraph::ExternalMemoryNode::tryGetSize() const noexcept
+{
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::ExternalMemoryNode::isConstant() const noexcept
+{
+  return false;
 }
 
 }

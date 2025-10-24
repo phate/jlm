@@ -596,6 +596,23 @@ public:
   ~MemoryNode() noexcept override;
 
   /**
+   * If the MemoryNode represents a location in memory with a statically known size, it is returned.
+   * Also if the MemoryNode represents multiple locations of the same size, that size is returned.
+   *
+   * @return the byte size of the location(s) represented by the node, or nullopt if unknown.
+   */
+  virtual std::optional<size_t>
+  tryGetSize() const noexcept = 0;
+
+  /**
+   * Checks if the MemoryNode represents memory locations that never change during execution.
+   *
+   * @return true if the memory node represents constant memory, false otherwise.
+   */
+  virtual bool
+  isConstant() const noexcept = 0;
+
+  /**
    * Marks this memory node as escaping the module.
    */
   void
@@ -658,6 +675,12 @@ public:
   std::string
   DebugString() const override;
 
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
   static PointsToGraph::AllocaNode &
   Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
@@ -692,6 +715,12 @@ public:
 
   std::string
   DebugString() const override;
+
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
 
   static PointsToGraph::DeltaNode &
   Create(PointsToGraph & pointsToGraph, const rvsdg::DeltaNode & deltaNode)
@@ -730,6 +759,12 @@ public:
   std::string
   DebugString() const override;
 
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
   static PointsToGraph::MallocNode &
   Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
@@ -767,6 +802,12 @@ public:
   std::string
   DebugString() const override;
 
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
   static PointsToGraph::LambdaNode &
   Create(PointsToGraph & pointsToGraph, const rvsdg::LambdaNode & lambdaNode)
   {
@@ -802,6 +843,12 @@ public:
   std::string
   DebugString() const override;
 
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
   static PointsToGraph::ImportNode &
   Create(PointsToGraph & pointsToGraph, const GraphImport & argument)
   {
@@ -823,13 +870,19 @@ class PointsToGraph::UnknownMemoryNode final : public PointsToGraph::MemoryNode
 public:
   ~UnknownMemoryNode() noexcept override;
 
+  std::string
+  DebugString() const override;
+
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
 private:
   explicit UnknownMemoryNode(PointsToGraph & pointsToGraph)
       : MemoryNode(pointsToGraph)
   {}
-
-  std::string
-  DebugString() const override;
 
   static std::unique_ptr<UnknownMemoryNode>
   Create(PointsToGraph & pointsToGraph)
@@ -848,6 +901,15 @@ class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode
 public:
   ~ExternalMemoryNode() noexcept override;
 
+  std::string
+  DebugString() const override;
+
+  std::optional<size_t>
+  tryGetSize() const noexcept override;
+
+  bool
+  isConstant() const noexcept override;
+
 private:
   explicit ExternalMemoryNode(PointsToGraph & pointsToGraph)
       : MemoryNode(pointsToGraph)
@@ -858,9 +920,6 @@ private:
   {
     return std::unique_ptr<ExternalMemoryNode>(new ExternalMemoryNode(pointsToGraph));
   }
-
-  std::string
-  DebugString() const override;
 };
 
 /** \brief Points-to graph node iterator

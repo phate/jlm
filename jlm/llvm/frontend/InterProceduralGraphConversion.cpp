@@ -987,7 +987,9 @@ ConvertFunctionNode(
         functionNode.GetFunctionType(),
         functionNode.GetFunctionType(),
         functionNode.name(),
-        functionNode.linkage());
+        functionNode.linkage(),
+        true // Function imports are regarded as constant
+    );
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1029,7 +1031,8 @@ ConvertDataNode(
           dataNode.GetValueType(),
           PointerType::Create(),
           dataNode.name(),
-          dataNode.linkage());
+          dataNode.linkage(),
+          dataNode.constant());
     }
 
     /*
