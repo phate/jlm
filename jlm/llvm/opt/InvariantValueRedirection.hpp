@@ -47,6 +47,8 @@ namespace jlm::llvm
  * the origin of the call input corresponding to the lambda argument. Invariant Value Redirection
  * for call nodes works only on non-recursive direct calls as IVR needs to inspect the lambda body
  * in order to determine whether a value is simply routed through the lambda.
+ *
+ * FIXME: add documentation
  */
 class InvariantValueRedirection final : public rvsdg::Transformation
 {
@@ -77,6 +79,22 @@ private:
 
   static void
   RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
+
+  // FIXME: add documentation
+  static void
+  redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode);
+
+  typedef struct
+  {
+    rvsdg::Region * repetitionSubregion;
+    rvsdg::Region * exitSubregion;
+  } GammaSubregionRoles;
+
+  // FIXME: add docuem
+  static std::optional<GammaSubregionRoles>
+  determineGammaSubregionRoles(
+      rvsdg::GammaNode & gammaNode,
+      const rvsdg::Output & thetaPredicateOperand);
 
   static void
   RedirectCallOutputs(rvsdg::SimpleNode & callNode);

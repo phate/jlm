@@ -108,9 +108,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 void
 InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
-  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
-  auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
+  const auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
+  const auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
+  const auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
@@ -144,13 +144,13 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 void
 InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
-  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
-  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
+  const auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
+  const auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
-  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  for (auto & subregion : structuralNode.Subregions())
   {
-    RedirectInRegion(*structuralNode.subregion(n));
+    RedirectInRegion(subregion);
   }
 }
 
@@ -169,6 +169,8 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 void
 InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
+  redirectThetaGammaOutputs(thetaNode);
+
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
@@ -179,6 +181,119 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
       loopVar.output->divert_users(loopVar.input->origin());
   }
+}
+
+void
+InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode)
+{
+  const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
+  const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand);
+  if (!gammaNode)
+  {
+    // The theta node predicate does not originate from a gamma node. Nothing can be done.
+    return;
+  }
+
+  auto subregionRolesOpt = determineGammaSubregionRoles(*gammaNode, thetaPredicateOperand);
+  if (!subregionRolesOpt.has_value())
+  {
+    // We could not determine the roles of the gamma subregions. Nothing can be done.
+    return;
+  }
+  auto roles = *subregionRolesOpt;
+
+  auto divertLoopVar =
+      [&gammaNode](rvsdg::ThetaNode::LoopVar & loopVar, rvsdg::Output & entryVarArgument)
+  {
+    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(entryVarArgument))
+    {
+      auto roleVar = gammaNode->MapBranchArgument(entryVarArgument);
+      if (auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+      {
+        loopVar.post->divert_to(entryVar->input->origin());
+      }
+    }
+  };
+
+  // At this point we can try to redirect the theta node loop variables
+  for (auto & loopVar : thetaNode.GetLoopVars())
+  {
+    if (loopVar.output->IsDead() && loopVar.pre->IsDead())
+    {
+      // The loop variable is completely dead. We do not need to waste any effort on it.
+      continue;
+    }
+
+    auto & loopVarPostOperand = *loopVar.post->origin();
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != gammaNode)
+    {
+      // The post value of the loop variable does not originate from the gamma node. Nothing can
+      // be done.
+      continue;
+    }
+    auto [branchResult, _] = gammaNode->MapOutputExitVar(loopVarPostOperand);
+
+    if (loopVar.output->IsDead())
+    {
+      // FIXME: documentation
+      auto & entryVarArgument = *branchResult[roles.repetitionSubregion->index()]->origin();
+      divertLoopVar(loopVar, entryVarArgument);
+    }
+    else if (loopVar.pre->IsDead())
+    {
+      // FIXME: documentation
+      auto & entryVarArgument = *branchResult[roles.exitSubregion->index()]->origin();
+      divertLoopVar(loopVar, entryVarArgument);
+    }
+  }
+}
+
+std::optional<InvariantValueRedirection::GammaSubregionRoles>
+InvariantValueRedirection::determineGammaSubregionRoles(
+    rvsdg::GammaNode & gammaNode,
+    const rvsdg::Output & thetaPredicateOperand)
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand) == &gammaNode);
+
+  if (gammaNode.nsubregions() != 2)
+  {
+    return std::nullopt;
+  }
+
+  auto [branchResult, _] = gammaNode.MapOutputExitVar(thetaPredicateOperand);
+  auto [constantNodeA, constantOperationA] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(*branchResult[0]->origin());
+  if (constantOperationA == nullptr)
+  {
+    return std::nullopt;
+  }
+
+  auto [constantNodeB, constantOperationB] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(*branchResult[1]->origin());
+  if (constantOperationB == nullptr)
+  {
+    return std::nullopt;
+  }
+
+  const size_t alternativeA = constantOperationA->value().alternative();
+  const size_t alternativeB = constantOperationB->value().alternative();
+  JLM_ASSERT(alternativeA == 0 || alternativeA == 1);
+  JLM_ASSERT(alternativeB == 0 || alternativeB == 1);
+  JLM_ASSERT(alternativeA != alternativeB);
+
+  GammaSubregionRoles roles;
+  if (alternativeA == 0)
+  {
+    roles.exitSubregion = constantNodeA->region();
+    roles.repetitionSubregion = constantNodeB->region();
+  }
+  else
+  {
+    roles.exitSubregion = constantNodeB->region();
+    roles.repetitionSubregion = constantNodeA->region();
+  }
+
+  return roles;
 }
 
 void
