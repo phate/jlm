@@ -544,8 +544,6 @@ testThetaGammaRedirection()
 
   GraphExport::Create(*lambdaOutput, "test");
 
-  std::cout << view(&rvsdg.GetRootRegion()) << std::flush;
-
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
 
