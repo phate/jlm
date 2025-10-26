@@ -31,24 +31,45 @@ namespace jlm::llvm
  * identified as invariant. Moreover, IVR processes a lambda node before all the lambda's call nodes
  * to ensure that the outputs of call nodes are correctly identified as invariant.
  *
- * ### Theta Nodes
- * The output of a theta node is considered invariant if the corresponding region result is
- * connected to the corresponding region argument. All the users of a theta output are diverted to
- * the origin of the corresponding theta input.
+ * ### Theta nodes
+ * A loop variable is considered invariant if its post value is connected to its corresponding pre
+ * value. All the users of the loop variables' output are diverted to the origin of the
+ * corresponding input. See rvsdg::ThetaLoopVarIsInvariant() for more details.
  *
- * ### Gamma Nodes
+ * ### Gamma nodes
  * The output of a gamma node is considered invariant if all the corresponding region results are
  * connected to the arguments of a single gamma input. All the users of a gamma output are diverted
  * to the origin of this gamma input.
  *
- * ### Call Nodes
+ * ### Call nodes
  * The output of a call node is considered invariant if the respective result of the corresponding
  * lambda is connected to an argument of the lambda. All the users of a call output are diverted to
  * the origin of the call input corresponding to the lambda argument. Invariant Value Redirection
  * for call nodes works only on non-recursive direct calls as IVR needs to inspect the lambda body
  * in order to determine whether a value is simply routed through the lambda.
  *
- * FIXME: add documentation
+ * ### Theta nodes with a predicate that correlates with a gamma node
+ * If the theta node has a gamma node in its subregion and for both nodes the predicates correlate,
+ * then the theta node's loop variables can be redirected under certain conditions. The
+ * correlation of predicates means that either:
+ *
+ * 1. The theta node's predicate origin is an exit variable of the gamma node and the respective
+ * producers of the subregion results are control constants.
+ * 2. The producer of the theta node's predicate origin and the gamma node's predicate origin are
+ * the same \ref rvsdg::MatchOperation node.
+ *
+ * These conditions are sufficient to statically determine that either one of the two gamma node's
+ * subregions is only executed on loop repetition or loop exit.
+ *
+ * A loop variable can now be redirected in the following cases:
+ *
+ * 1. If the loop variable's output is dead, then only the repetition value of the loop variable
+ * is of interest. This means that we can redirect the value from the respective entry variable of
+ * the gamma node's repetition subregion to the post value.
+ *
+ * 2. If the loop variable's pre value is dead, then only the exit value of the loop variable is of
+ * interest. This means that we can redirect the value from the respective entry variable of the
+ * gamma node's exit subregion to the post value.
  */
 class InvariantValueRedirection final : public rvsdg::Transformation
 {
@@ -80,7 +101,12 @@ private:
   static void
   RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
 
-  // FIXME: add documentation
+  /**
+   * Redirects invariant loop variables from theta nodes of which thet predicate statically
+   * correlates with the predicate of a gamma node.
+   *
+   * @param thetaNode The \ref rvsdg::ThetaNode of which the loop variables are redirected.
+   */
   static void
   redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode);
 
@@ -90,7 +116,15 @@ private:
     rvsdg::Region * exitSubregion;
   } GammaSubregionRoles;
 
-  // FIXME: add docuem
+  /**
+   * Tries to assign the respective roles (exit or repetition) to the subregions of a gamma node
+   * that statically determines the predicate of a theta node.
+   *
+   * @param gammaNode The gamma node for which to determine the subregion roles.
+   * @param thetaPredicateOperand The operand of the theta node predicate. It must be an output of
+   * \p gammaNode.
+   * @return
+   */
   static std::optional<GammaSubregionRoles>
   determineGammaSubregionRoles(
       rvsdg::GammaNode & gammaNode,

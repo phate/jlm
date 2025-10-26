@@ -235,13 +235,13 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
 
     if (loopVar.output->IsDead())
     {
-      // FIXME: documentation
+      // The loop variables' output is dead, which means only its repetition value is of interest.
       auto & entryVarArgument = *branchResult[roles.repetitionSubregion->index()]->origin();
       divertLoopVar(loopVar, entryVarArgument);
     }
     else if (loopVar.pre->IsDead())
     {
-      // FIXME: documentation
+      // The loop variables' pre value is dead, which means only its exit value is of interest.
       auto & entryVarArgument = *branchResult[roles.exitSubregion->index()]->origin();
       divertLoopVar(loopVar, entryVarArgument);
     }
