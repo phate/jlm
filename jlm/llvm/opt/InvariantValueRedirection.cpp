@@ -367,6 +367,11 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
             *callEntryMerge,
             lambdaEntryMemoryNodeId);
 
+        // We expect that the memory node IDs for a given state between a
+        // LambdaEntryMemoryStateMergeOperation node and a LambdaExitMemoryStateSplitOperation node
+        // are always the same, otherwise we have a bug in the memory state encoding.
+        JLM_ASSERT(lambdaExitMemoryNodeId == lambdaEntryMemoryNodeId);
+
         if (callExitSplitOutput != nullptr && callEntryMergeInput != nullptr)
         {
           callExitSplitOutput->divert_users(callEntryMergeInput->origin());

@@ -264,8 +264,8 @@ TestCallWithMemoryStateNodes()
     auto gammaInputMemoryState2 = gammaNode->AddEntryVar(lambdaEntrySplitNode.output(1));
 
     auto gammaOutputX = gammaNode->AddExitVar(gammaInputX.branchArgument);
-    auto gammaOutputMemoryState1 = gammaNode->AddExitVar(gammaInputMemoryState2.branchArgument);
-    auto gammaOutputMemoryState2 = gammaNode->AddExitVar(gammaInputMemoryState1.branchArgument);
+    auto gammaOutputMemoryState1 = gammaNode->AddExitVar(gammaInputMemoryState1.branchArgument);
+    auto gammaOutputMemoryState2 = gammaNode->AddExitVar(gammaInputMemoryState2.branchArgument);
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
@@ -307,12 +307,12 @@ TestCallWithMemoryStateNodes()
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNode),
-        { 0, 1 });
+        { 1, 0 });
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         outputs(&callExitSplitNode),
-        { 0, 1 });
+        { 1, 0 });
 
     lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
                                                &CallOperation::GetIOStateOutput(callNode),
