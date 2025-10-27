@@ -526,9 +526,9 @@ testThetaGammaRedirection()
   auto dummyNodeGamma1 = TestOperation::create(gammaNode->subregion(1), {}, { valueType });
 
   auto controlConstant0 =
-      ctlconstant_op::create(gammaNode->subregion(0), ControlValueRepresentation(0, 2));
+      ControlConstantOperation::create(gammaNode->subregion(0), ControlValueRepresentation(0, 2));
   auto controlConstant1 =
-      ctlconstant_op::create(gammaNode->subregion(1), ControlValueRepresentation(1, 2));
+      ControlConstantOperation::create(gammaNode->subregion(1), ControlValueRepresentation(1, 2));
 
   auto controlExitVar = gammaNode->AddExitVar({ controlConstant0, controlConstant1 });
   auto exitVar0 =

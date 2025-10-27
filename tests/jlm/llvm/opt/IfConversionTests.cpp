@@ -177,10 +177,10 @@ EmptyGammaWithTwoSubregions()
   const auto matchResult = match(32, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
 
   const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchResult, 2);
-  const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
+  const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ControlConstantOperation>(
       *gammaNode0->subregion(0),
       jlm::rvsdg::ControlValueRepresentation(0, 2));
-  const auto & c1 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
+  const auto & c1 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ControlConstantOperation>(
       *gammaNode0->subregion(1),
       jlm::rvsdg::ControlValueRepresentation(1, 2));
   auto c = gammaNode0->AddExitVar({ c0.output(0), c1.output(0) });

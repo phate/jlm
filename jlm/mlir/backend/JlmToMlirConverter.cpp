@@ -556,7 +556,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0]);
   }
   // ** region structural nodes **
-  else if (auto ctlOp = dynamic_cast<const rvsdg::ctlconstant_op *>(&operation))
+  else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
         Builder_->getUnknownLoc(),
