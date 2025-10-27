@@ -863,7 +863,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   {
     if (!alloca.IsModuleEscaping())
       continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(alloca))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && alloca.isConstant())
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, alloca);
   }
@@ -871,7 +871,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   {
     if (!malloc.IsModuleEscaping())
       continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(malloc))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && malloc.isConstant())
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, malloc);
   }
@@ -879,7 +879,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   {
     if (!delta.IsModuleEscaping())
       continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(delta))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && delta.isConstant())
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, delta);
   }
@@ -892,7 +892,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
     auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda.GetLambdaNode());
     AddModRefSimpleConstraint(lambdaModRefIndex, Context_->ExternalModRefIndex);
 
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(lambda))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && lambda.isConstant())
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, lambda);
   }
@@ -900,7 +900,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   {
     if (!import.IsModuleEscaping())
       continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(import))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && import.isConstant())
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, import);
   }
@@ -1031,11 +1031,11 @@ RegionAwareModRefSummarizer::AddPointerOriginTargets(
   const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
   for (const auto & target : registerNode.Targets())
   {
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(target))
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && target.isConstant())
       continue;
     if (ENABLE_OPERATION_SIZE_BLOCKING && minTargetSize)
     {
-      const auto targetSize = getMemoryNodeSize(target);
+      const auto targetSize = target.tryGetSize();
       if (targetSize && *targetSize < minTargetSize)
         continue;
     }
