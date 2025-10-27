@@ -28,7 +28,7 @@ perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
   auto & constant = AssertGetOwnerNode<SimpleNode>(*origin);
-  auto cop = static_cast<const ctlconstant_op *>(&constant.GetOperation());
+  auto cop = static_cast<const ControlConstantOperation *>(&constant.GetOperation());
   auto alternative = cop->value().alternative();
 
   rvsdg::SubstitutionMap smap;
@@ -101,10 +101,10 @@ is_control_constant_reducible(GammaNode * gamma)
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
       auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());
-      if (!is<ctlconstant_op>(node))
+      if (!is<ControlConstantOperation>(node))
         break;
 
-      auto op = static_cast<const jlm::rvsdg::ctlconstant_op *>(&node->GetOperation());
+      auto op = static_cast<const ControlConstantOperation *>(&node->GetOperation());
       if (op->value().nalternatives() != 2)
         break;
     }
