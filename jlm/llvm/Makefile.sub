@@ -68,6 +68,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
+    jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
@@ -112,6 +113,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
+    jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
@@ -222,6 +224,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/LoadChainSeparationTests \
     tests/jlm/llvm/opt/LoopUnswitchingTests \
     tests/jlm/llvm/opt/NodeReductionTests \
+    tests/jlm/llvm/opt/PredicateCorrelationTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/ScalarEvolutionTests \
     tests/jlm/llvm/opt/test-cne \
