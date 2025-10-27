@@ -33,6 +33,15 @@ protected:
 
   void
   AnnotateEdge(const rvsdg::Input & rvsdgInput, util::graph::Edge & edge) override;
+
+public:
+  /**
+   * Utility function for dumping the given region in dot format
+   * @param region the region to dump
+   * @param out the ostream to write the output to
+   */
+  static void
+  Dump(rvsdg::Region & region, std::ostream & out);
 };
 
 }
