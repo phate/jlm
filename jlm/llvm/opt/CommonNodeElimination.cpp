@@ -960,23 +960,23 @@ divertStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Contex
   bool divertInSubregions = false;
   rvsdg::MatchTypeOrFail(
       node,
-      [&](rvsdg::GammaNode & gamma)
+      [&]([[maybe_unused]] rvsdg::GammaNode & gamma)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::ThetaNode & theta)
+      [&]([[maybe_unused]] rvsdg::ThetaNode & theta)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::LambdaNode & lambda)
+      [&]([[maybe_unused]] rvsdg::LambdaNode & lambda)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::PhiNode & phi)
+      [&]([[maybe_unused]] rvsdg::PhiNode & phi)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::DeltaNode & delta)
+      [&]([[maybe_unused]] rvsdg::DeltaNode & delta)
       {
         // Inside a delta node we can not perform diverting,
         // since we never marked the outputs there
