@@ -56,13 +56,21 @@ public:
   void
   Run(jlm::rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
 
+
+
 private:
 
-  void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
+  void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node));
 
-  static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node& node);
-  static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void initialize_interned_and_stats(PartialRedundancyElimination *pe, rvsdg::Node* node);
 
+  size_t stat_theta_count;
+  size_t stat_gamma_count;
+  size_t stat_interned_literals_count;
+  std::unordered_map< std::string, rvsdg::Node* >  interned_literals_;
+  std::unordered_map< rvsdg::Node*, rvsdg::Node* > literals_nodes_;
 };
 
 }

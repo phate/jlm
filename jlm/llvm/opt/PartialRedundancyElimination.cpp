@@ -167,14 +167,19 @@ public:
 
 
 PartialRedundancyElimination::~PartialRedundancyElimination() noexcept {}
-PartialRedundancyElimination::PartialRedundancyElimination(): jlm::rvsdg::Transformation("PartialRedundancyElimination"){}
+PartialRedundancyElimination::PartialRedundancyElimination() :
+  jlm::rvsdg::Transformation("PartialRedundancyElimination"),
+  stat_theta_count(0),
+  stat_gamma_count(0),
+  stat_interned_literals_count(0)
+  {}
 
-void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node))
+void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node))
 {
   IndentMan indenter = IndentMan();
   for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
   {
-    cb(this, *node);
+    cb(this, node);
     MatchType(*node, [this,cb](rvsdg::StructuralNode& sn)
     {
       for (auto& reg : sn.Subregions())
@@ -196,20 +201,26 @@ PartialRedundancyElimination::Run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  auto& root = rvsdg.GetRootRegion();
+  this->TraverseTopDownRecursively(root, initialize_interned_and_stats);
+  this->TraverseTopDownRecursively(root, dump_region);
+  this->TraverseTopDownRecursively(root, dump_node);
 
-  std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
+  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
+  std::cout <<TR_GREEN << "Interned literals:" << stat_interned_literals_count << TR_RESET << std::endl;
+  std::cout <<TR_CYAN << "Gamma node count:"  << stat_gamma_count << TR_RESET << std::endl;
+  std::cout <<TR_CYAN << "Theta node count:"  << stat_theta_count << TR_RESET << std::endl;
+  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
 }
 
 /** -------------------------------------------------------------------------------------------- **/
 
-void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe, rvsdg::Node& node)
+void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe, rvsdg::Node* node)
 {
-  std::string name = node.DebugString() + std::to_string(node.GetNodeId());
+  std::string name = node->DebugString() + std::to_string(node->GetNodeId());
   size_t reg_counter = 0;
 
-  MatchType(node, [&name, &reg_counter](rvsdg::StructuralNode& sn)
+  MatchType(*node, [&name, &reg_counter](rvsdg::StructuralNode& sn)
   {
     for (auto& reg : sn.Subregions())
     {
@@ -228,9 +239,33 @@ void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe,
   });
 }
 
-void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node& node)
+void PartialRedundancyElimination::initialize_interned_and_stats(PartialRedundancyElimination *pe, rvsdg::Node* node)
 {
-  std::cout << ind() << TR_BLUE << node.DebugString() << "<"<<node.GetNodeId() <<">"<< TR_RESET;
+  MatchType(*node, [&pe, &node](rvsdg::ThetaNode& tn){
+    pe->stat_theta_count++;
+  });
+
+  MatchType(*node, [&pe, &node](rvsdg::GammaNode& tn){
+    pe->stat_gamma_count++;
+  });
+
+  MatchType(node->GetOperation(), [&pe, node](const jlm::llvm::IntegerConstantOperation& iconst)
+  {
+    auto s = iconst.Representation().str();
+    if (pe->interned_literals_.find(s) == pe->interned_literals_.end()){
+      pe->interned_literals_.insert({s, node});
+    }else{
+      pe->stat_interned_literals_count++;
+    }
+    rvsdg::Node* exemplar = pe->interned_literals_[s];
+    pe->literals_nodes_.insert({node, exemplar});
+
+  });
+}
+
+void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node* node)
+{
+  std::cout << ind() << TR_BLUE << node->DebugString() << "<"<<node->GetNodeId() <<">"<< TR_RESET;
   std::cout << std::endl;
 }
 
