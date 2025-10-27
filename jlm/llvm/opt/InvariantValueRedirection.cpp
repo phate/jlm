@@ -262,14 +262,16 @@ InvariantValueRedirection::determineGammaSubregionRoles(
 
   auto [branchResult, _] = gammaNode.MapOutputExitVar(thetaPredicateOperand);
   auto [constantNodeA, constantOperationA] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(*branchResult[0]->origin());
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
+          *branchResult[0]->origin());
   if (constantOperationA == nullptr)
   {
     return std::nullopt;
   }
 
   auto [constantNodeB, constantOperationB] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(*branchResult[1]->origin());
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
+          *branchResult[1]->origin());
   if (constantOperationB == nullptr)
   {
     return std::nullopt;

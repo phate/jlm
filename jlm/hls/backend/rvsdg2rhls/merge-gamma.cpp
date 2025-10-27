@@ -150,7 +150,8 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
         auto r = gamma->subregion(j)->result(i);
         if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&simpleNode->GetOperation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ControlConstantOperation *>(
+                  &simpleNode->GetOperation()))
           {
             if (j == ctl->value().alternative())
             {
@@ -210,7 +211,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
           rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
       JLM_ASSERT(constantOperation);
       auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
-      auto no = rvsdg::ctlconstant_op::create(
+      auto no = rvsdg::ControlConstantOperation::create(
           origin->region(),
           { ctl_value, matchOperation->nalternatives() });
       new_outputs.push_back(no);
@@ -247,7 +248,8 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
         auto r = old_gamma->subregion(j)->result(i);
         if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&simpleNode->GetOperation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ControlConstantOperation *>(
+                  &simpleNode->GetOperation()))
           {
             if (j != ctl->value().alternative())
             {

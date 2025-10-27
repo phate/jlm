@@ -174,7 +174,7 @@ match(
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  return CreateOpNode<ctlconstant_op>(
+  return CreateOpNode<ControlConstantOperation>(
              *region,
              ControlValueRepresentation(alternative, nalternatives))
       .output(0);

@@ -195,7 +195,7 @@ IpGraphToLlvmConverter::convert_ctlconstant(
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is_ctlconstant_op(op));
-  auto & cop = *static_cast<const rvsdg::ctlconstant_op *>(&op);
+  auto & cop = *static_cast<const rvsdg::ControlConstantOperation *>(&op);
 
   size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
   auto type = ::llvm::IntegerType::get(builder.getContext(), nbits);
@@ -1182,7 +1182,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return ConverterIntegerConstant(op, arguments, builder);
   }
-  if (is<rvsdg::ctlconstant_op>(op))
+  if (is<rvsdg::ControlConstantOperation>(op))
   {
     return convert_ctlconstant(op, arguments, builder);
   }
