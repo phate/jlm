@@ -99,6 +99,13 @@ private:
     return rvsdg::gvn::GVN_NULL;
   }
 
+  /// -----------------------------------------------------------
+
+  void GVN_VisitRegion(rvsdg::Region& reg);
+  void GVN_VisitAllSubRegions(rvsdg::Node& node);
+  void GVN_VisitNode(rvsdg::Node* node);
+  void GVN_VisitLeafNode(rvsdg::Node* node);
+
 };
 
 }

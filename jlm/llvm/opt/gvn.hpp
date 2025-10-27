@@ -316,6 +316,7 @@ namespace jlm::rvsdg::gvn {
 
         std::unordered_map< std::string,  GVN_Val > str_to_gvn_;     // Convenience map
         std::unordered_map< const void*, GVN_Val > ptr_to_gvn_;      // Convenience map
+        std::unordered_map< size_t, GVN_Val > word_to_gvn_;          // Convenience map
         std::unordered_map< GVN_Val, std::optional<GVN_Deps> > gvn_;
 
     public:
@@ -376,6 +377,20 @@ namespace jlm::rvsdg::gvn {
                 throw std::runtime_error("Inconsistent flags for literal: " + s);
             }
             return str_to_gvn_[s];
+        }
+        GVN_Val FromWord(size_t w)  {return FromWord(w, 0);}
+        GVN_Val FromWord(size_t w, uint64_t flags)
+        {
+          auto q = word_to_gvn_.find(w);
+          if (q == word_to_gvn_.end()) {
+            word_to_gvn_.insert({w,Leaf(flags)});
+            q = word_to_gvn_.find(w);
+          }
+          if (q == word_to_gvn_.end()) {throw std::runtime_error("Expected some value");}
+          if ((q->second & GVN_MASK) != flags) {
+            throw std::runtime_error("Inconsistent flags for gvn generated from word: " + std::to_string(w));
+          }
+          return word_to_gvn_[w];
         }
         GVN_Val FromPtr(const void* p) {return FromPtr(p, 0);}
         GVN_Val FromPtr(const void* p, uint64_t flags)
