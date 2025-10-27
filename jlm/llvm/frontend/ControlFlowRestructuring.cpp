@@ -120,7 +120,8 @@ AppendConstantAssignment(
   const auto numAlternatives =
       util::assertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
 
-  const rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, numAlternatives));
+  const rvsdg::ControlConstantOperation op(
+      rvsdg::ControlValueRepresentation(value, numAlternatives));
   basicBlock.append_last(ThreeAddressCode::create(op, {}));
   basicBlock.append_last(AssignmentOperation::create(basicBlock.last()->result(0), &variable));
 }

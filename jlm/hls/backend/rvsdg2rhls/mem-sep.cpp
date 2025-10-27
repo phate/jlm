@@ -184,7 +184,6 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
   const auto lambdaSubregion = lambdaNode.subregion();
   auto & memoryStateArgument = llvm::GetMemoryStateRegionArgument(lambdaNode);
 
-  auto & state_user = *memoryStateArgument.Users().begin();
   auto tracedPointerNodesVector = TracePointerArguments(&lambdaNode);
   for (auto & tp : tracedPointerNodesVector)
   {
@@ -209,24 +208,45 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
     tracedPointerNodesVector.back().decoupleNodes.push_back(call);
   }
 
-  auto entry_states = llvm::LambdaEntryMemoryStateSplitOperation::Create(
-      memoryStateArgument,
-      1 + tracedPointerNodesVector.size());
-  auto state_result = &llvm::GetMemoryStateRegionResult(lambdaNode);
+  const size_t numMemoryStates = tracedPointerNodesVector.size() + 1;
+
+  // Assign memory node ids incrementally, used by both the split and merge
+  std::vector<llvm::MemoryNodeId> memoryNodeIds;
+  for (size_t i = 0; i < numMemoryStates; ++i)
+  {
+    memoryNodeIds.push_back(i);
+  }
+
+  auto & lambdaEntrySplitNode =
+      llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
+  auto memoryStates = outputs(&lambdaEntrySplitNode);
+
   // handle existing state edge - TODO: remove entirely?
-  auto common_edge = entry_states.back();
-  entry_states.pop_back();
-  state_user.divert_to(common_edge);
-  entry_states.push_back(state_result->origin());
-  auto & merged_state =
-      llvm::LambdaExitMemoryStateMergeOperation::Create(*lambdaSubregion, entry_states);
-  entry_states.pop_back();
-  state_result->divert_to(&merged_state);
+  // The memory state chain that was previously between the state argument and state result,
+  // should now be attached as a chain between the final state on the split and merge, respectively
+  auto common_edge = memoryStates.back();
+  // Divert everything except the lambdaEntrySplit itself, to the lambdaEntrySplit
+  memoryStateArgument.divertUsersWhere(
+      *common_edge,
+      [&](const rvsdg::Input & input)
+      {
+        return &input != lambdaEntrySplitNode.input(0);
+      });
+
+  auto state_result = &llvm::GetMemoryStateRegionResult(lambdaNode);
+  memoryStates.back() = state_result->origin();
+
+  auto & lambdaExitMergeNode = llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+      *lambdaSubregion,
+      memoryStates,
+      memoryNodeIds);
+  memoryStates.pop_back();
+  state_result->divert_to(lambdaExitMergeNode.output(0));
 
   for (auto tp : tracedPointerNodesVector)
   {
-    auto new_edge = entry_states.back();
-    entry_states.pop_back();
+    auto new_edge = memoryStates.back();
+    memoryStates.pop_back();
     trace_edge(common_edge, new_edge, tp.loadNodes, tp.storeNodes, tp.decoupleNodes);
   }
 }

@@ -556,7 +556,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0]);
   }
   // ** region structural nodes **
-  else if (auto ctlOp = dynamic_cast<const rvsdg::ctlconstant_op *>(&operation))
+  else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
         Builder_->getUnknownLoc(),
@@ -728,7 +728,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (
       auto lambdaStateSplit =
-          dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
+          dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
         memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateSplit->getMemoryNodeIds());
@@ -749,7 +749,7 @@ JlmToMlirConverter::ConvertSimpleNode(
           dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
-        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateMerge->GetMemoryNodeIds());
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), lambdaStateMerge->getMemoryNodeIds());
 
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateMerge->nresults(); i++)
@@ -785,7 +785,7 @@ JlmToMlirConverter::ConvertSimpleNode(
           dynamic_cast<const jlm::llvm::CallEntryMemoryStateMergeOperation *>(&operation))
   {
     auto memoryNodeIndicesAttr =
-        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->GetMemoryNodeIds());
+        memoryNodeIndicesToArrayAttr(Builder_->getContext(), callStateMerge->getMemoryNodeIds());
 
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < callStateMerge->nresults(); i++)

@@ -64,7 +64,7 @@ LlvmDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node
   }
   else
   {
-    JLM_UNREACHABLE("Unknown type");
+    // JLM_UNREACHABLE("Unknown type");
   }
 }
 
@@ -137,6 +137,15 @@ LlvmDotWriter::AnnotateGraphNode(
       node.SetAttributeGraphElement("type", typeNode);
     }
   }
+}
+
+void
+LlvmDotWriter::Dump(rvsdg::Region & region, std::ostream & out)
+{
+  LlvmDotWriter writer;
+  util::graph::Writer gw;
+  writer.WriteGraphs(gw, region, true);
+  gw.outputAllGraphs(out, util::graph::OutputFormat::Dot);
 }
 
 }

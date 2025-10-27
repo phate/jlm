@@ -127,19 +127,19 @@ typedef DomainConstOperation<
     ControlValueRepresentation,
     ControlValueRepresentationFormatValue,
     ControlValueRepresentationTypeOfValue>
-    ctlconstant_op;
+    ControlConstantOperation;
 
 static inline bool
 is_ctlconstant_op(const Operation & op) noexcept
 {
-  return dynamic_cast<const ctlconstant_op *>(&op) != nullptr;
+  return dynamic_cast<const ControlConstantOperation *>(&op) != nullptr;
 }
 
-static inline const ctlconstant_op &
+static inline const ControlConstantOperation &
 to_ctlconstant_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is_ctlconstant_op(op));
-  return *static_cast<const ctlconstant_op *>(&op);
+  return *static_cast<const ControlConstantOperation *>(&op);
 }
 
 /**

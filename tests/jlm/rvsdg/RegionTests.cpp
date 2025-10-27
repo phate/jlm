@@ -469,3 +469,41 @@ BottomNodeTests()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-BottomNodeTests", BottomNodeTests)
+
+static void
+computeDepthMap()
+{
+  // Arrange
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto valueType = ValueType::Create();
+
+  Graph rvsdg;
+
+  auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+
+  auto node0 = TestOperation::create(&rvsdg.GetRootRegion(), {}, { valueType });
+  auto node1 =
+      TestOperation::create(&rvsdg.GetRootRegion(), { node0->output(0), &i0 }, { valueType });
+  auto node2 = TestOperation::create(&rvsdg.GetRootRegion(), { &i1 }, { valueType });
+  auto node3 = TestOperation::create(
+      &rvsdg.GetRootRegion(),
+      { node1->output(0), node2->output(0) },
+      { valueType });
+
+  GraphExport::Create(*node3->output(0), "x0");
+
+  // Act
+  const auto depthMap = computeDepthMap(rvsdg.GetRootRegion());
+
+  // Assert
+  assert(depthMap.size() == 4);
+  assert(depthMap.at(node0) == 0);
+  assert(depthMap.at(node1) == 1);
+  assert(depthMap.at(node2) == 0);
+  assert(depthMap.at(node3) == 2);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-computeDepthMap", computeDepthMap)

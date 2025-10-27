@@ -5,9 +5,9 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
-#include <jlm/llvm/ir/trace.hpp>
 #include <typeindex>
 #include <unordered_map>
 
@@ -562,12 +562,43 @@ PointsToGraph::AllocaNode::DebugString() const
   return GetAllocaNode().DebugString();
 }
 
+std::optional<size_t>
+PointsToGraph::AllocaNode::tryGetSize() const noexcept
+{
+  const auto allocaOp = util::assertedCast<const AllocaOperation>(&AllocaNode_->GetOperation());
+
+  // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+  const auto elementCount = tryGetConstantSignedInteger(*AllocaNode_->input(0)->origin());
+  if (elementCount.has_value())
+    return *elementCount * GetTypeSize(*allocaOp->ValueType());
+
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::AllocaNode::isConstant() const noexcept
+{
+  return false;
+}
+
 PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
 
 std::string
 PointsToGraph::DeltaNode::DebugString() const
 {
   return GetDeltaNode().DebugString();
+}
+
+std::optional<size_t>
+PointsToGraph::DeltaNode::tryGetSize() const noexcept
+{
+  return GetTypeSize(*DeltaNode_->GetOperation().Type());
+}
+
+bool
+PointsToGraph::DeltaNode::isConstant() const noexcept
+{
+  return DeltaNode_->constant();
 }
 
 PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
@@ -578,12 +609,44 @@ PointsToGraph::LambdaNode::DebugString() const
   return GetLambdaNode().DebugString();
 }
 
+std::optional<size_t>
+PointsToGraph::LambdaNode::tryGetSize() const noexcept
+{
+  // Functions should never be read from or written to, so they have no size
+  return 0;
+}
+
+bool
+PointsToGraph::LambdaNode::isConstant() const noexcept
+{
+  return true;
+}
+
 PointsToGraph::MallocNode::~MallocNode() noexcept = default;
 
 std::string
 PointsToGraph::MallocNode::DebugString() const
 {
   return GetMallocNode().DebugString();
+}
+
+std::optional<size_t>
+PointsToGraph::MallocNode::tryGetSize() const noexcept
+{
+  // If the size parameter of the malloc node is a constant, that is our size
+  auto size = tryGetConstantSignedInteger(*MallocNode_->input(0)->origin());
+
+  // Only return the size if it is a positive integer, to avoid unsigned underflow
+  if (size.has_value() && *size >= 0)
+    return *size;
+
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::MallocNode::isConstant() const noexcept
+{
+  return false;
 }
 
 PointsToGraph::ImportNode::~ImportNode() noexcept = default;
@@ -594,12 +657,45 @@ PointsToGraph::ImportNode::DebugString() const
   return GetArgument().Name();
 }
 
+std::optional<size_t>
+PointsToGraph::ImportNode::tryGetSize() const noexcept
+{
+  auto size = GetTypeSize(*GraphImport_->ValueType());
+
+  // C code can contain declarations like this:
+  //     extern char myArray[];
+  // which means there is an array of unknown size defined in a different module.
+  // In the LLVM IR the import gets an array length of 0, but that is not correct.
+  if (size == 0)
+    return std::nullopt;
+
+  return size;
+}
+
+bool
+PointsToGraph::ImportNode::isConstant() const noexcept
+{
+  return GraphImport_->isConstant();
+}
+
 PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;
 
 std::string
 PointsToGraph::UnknownMemoryNode::DebugString() const
 {
   return "UnknownMemory";
+}
+
+std::optional<size_t>
+PointsToGraph::UnknownMemoryNode::tryGetSize() const noexcept
+{
+  return std::nullopt;
+}
+
+bool
+PointsToGraph::UnknownMemoryNode::isConstant() const noexcept
+{
+  return false;
 }
 
 PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept = default;
@@ -611,68 +707,14 @@ PointsToGraph::ExternalMemoryNode::DebugString() const
 }
 
 std::optional<size_t>
-getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
+PointsToGraph::ExternalMemoryNode::tryGetSize() const noexcept
 {
-  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
-  {
-    // Functions should never be read from or written to, so they have no size
-    return 0;
-  }
-  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
-  {
-    return GetTypeSize(*delta->GetDeltaNode().GetOperation().Type());
-  }
-  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
-  {
-    auto size = GetTypeSize(*import->GetArgument().ValueType());
-    // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
-    if (size == 0)
-      return std::nullopt;
-
-    return size;
-  }
-  if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&memoryNode))
-  {
-    const auto & allocaNode = alloca->GetAllocaNode();
-    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
-
-    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
-    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
-    if (elementCount.has_value())
-      return *elementCount * GetTypeSize(*allocaOp->ValueType());
-
-    return std::nullopt;
-  }
-  if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&memoryNode))
-  {
-    const auto & mallocNode = malloc->GetMallocNode();
-
-    return tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
-  }
-  if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&memoryNode))
-  {
-    return std::nullopt;
-  }
-
-  throw std::logic_error("Unknown memory node type.");
+  return std::nullopt;
 }
 
 bool
-isMemoryNodeConstant(const PointsToGraph::MemoryNode & memoryNode)
+PointsToGraph::ExternalMemoryNode::isConstant() const noexcept
 {
-  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
-  {
-    // Functions are always constant memory
-    return true;
-  }
-  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
-  {
-    return delta->GetDeltaNode().constant();
-  }
-  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
-  {
-    return import->GetArgument().isConstant();
-  }
   return false;
 }
 

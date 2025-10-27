@@ -26,12 +26,12 @@ class GraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      bool constant)
+      bool isConstant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
         ValueType_(std::move(valueType)),
         ImportedType_(std::move(importedType)),
         Linkage_(std::move(linkage)),
-        constant_(constant)
+        isConstant_(isConstant)
   {}
 
 public:
@@ -44,7 +44,7 @@ public:
   [[nodiscard]] bool
   isConstant() const noexcept
   {
-    return constant_;
+    return isConstant_;
   }
 
   /**
@@ -84,7 +84,7 @@ public:
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      bool constant = false)
+      bool isConstant = false)
   {
     auto graphImport = new GraphImport(
         graph,
@@ -92,7 +92,7 @@ public:
         std::move(importedType),
         std::move(name),
         std::move(linkage),
-        constant);
+        isConstant);
     graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
     return *graphImport;
   }
@@ -101,7 +101,7 @@ private:
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
   llvm::Linkage Linkage_;
-  bool constant_;
+  bool isConstant_;
 };
 
 /**

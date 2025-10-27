@@ -727,11 +727,9 @@ MlirToJlmConverter::ConvertOperation(
     auto operands = std::vector(inputs.begin(), inputs.end());
     return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        LambdaEntryMemstateSplitOp.getNumResults(),
         std::move(memoryNodeIds)));
   }
-  else if (
-      auto LambdaExitMemstateMergeOp =
+  if (auto LambdaExitMemstateMergeOp =
           ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMerge>(&mlirOperation))
   {
     auto memoryNodeIds =
