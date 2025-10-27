@@ -264,14 +264,10 @@ test_theta3()
   jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
   jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
 
-  LlvmDotWriter::Dump(graph.GetRootRegion(), std::cout);
-
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
-
-  LlvmDotWriter::Dump(graph.GetRootRegion(), std::cout);
 
   assert(r1->result(2)->origin() == r1->result(4)->origin());
   assert(u1->input(0)->origin() == u2->input(0)->origin());
