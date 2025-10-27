@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_PartialRedundancyElimination_HPP
 #define JLM_LLVM_OPT_PartialRedundancyElimination_HPP
 
+#include "gvn.hpp"
 #include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include "jlm/rvsdg/MatchType.hpp"
 #include "jlm/rvsdg/traverser.hpp"
@@ -62,15 +63,42 @@ private:
 
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node));
 
-  static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node* node);
-  static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node* node);
-  static void initialize_interned_and_stats(PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void dump_region(          PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void dump_node(            PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void initialize_stats(     PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void gvn_lambda_and_consts(PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void gvn_compute(          PartialRedundancyElimination *pe, rvsdg::Node* node);
 
   size_t stat_theta_count;
   size_t stat_gamma_count;
-  size_t stat_interned_literals_count;
-  std::unordered_map< std::string, rvsdg::Node* >  interned_literals_;
-  std::unordered_map< rvsdg::Node*, rvsdg::Node* > literals_nodes_;
+
+  jlm::rvsdg::gvn::GVN_Val g_alternatives;
+
+
+
+  std::unordered_map< rvsdg::Output *, rvsdg::gvn::GVN_Val> output_to_gvn_;
+  void RegisterGVN(rvsdg::Output * output, rvsdg::gvn::GVN_Val gvn){
+    output_to_gvn_[output] = gvn;
+  }
+
+  rvsdg::gvn::GVN_Manager gvn_;
+  inline rvsdg::gvn::GVN_Val GVNOrZero(rvsdg::Output* edge){
+    if (output_to_gvn_.find(edge) != output_to_gvn_.end()){
+      return output_to_gvn_[edge];
+    }
+    return rvsdg::gvn::GVN_NULL;
+  }
+
+  inline rvsdg::gvn::GVN_Val GVNOrFail(rvsdg::Output* edge, rvsdg::Node* ctx_node){
+    if (output_to_gvn_.find(edge) != output_to_gvn_.end()){
+      return output_to_gvn_[edge];
+    }
+
+    std::cout << "Logic error: missing input for edge" + ctx_node->DebugString() + std::to_string(ctx_node->GetNodeId());
+
+    return rvsdg::gvn::GVN_NULL;
+  }
+
 };
 
 }
