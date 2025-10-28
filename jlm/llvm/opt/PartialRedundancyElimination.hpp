@@ -70,8 +70,6 @@ private:
   size_t stat_theta_count;
   size_t stat_gamma_count;
 
-  jlm::rvsdg::gvn::GVN_Val g_alternatives;
-
   std::unordered_map< rvsdg::Output *, rvsdg::gvn::GVN_Val> output_to_gvn_;
   void RegisterGVN(rvsdg::Output * output, rvsdg::gvn::GVN_Val gvn){
     output_to_gvn_[output] = gvn;
@@ -82,7 +80,7 @@ private:
     if (output_to_gvn_.find(edge) != output_to_gvn_.end()){
       return output_to_gvn_[edge];
     }
-    return rvsdg::gvn::GVN_NULL;
+    return rvsdg::gvn::GVN_NO_VALUE;
   }
 
   inline rvsdg::gvn::GVN_Val GVNOrFail(rvsdg::Output* edge, rvsdg::Node* ctx_node){
@@ -92,7 +90,7 @@ private:
 
     std::cout << "Logic error: missing input for edge" + ctx_node->DebugString() + std::to_string(ctx_node->GetNodeId());
 
-    return rvsdg::gvn::GVN_NULL;
+    return rvsdg::gvn::GVN_NO_VALUE;
   }
 
   /// -----------------------------------------------------------
@@ -101,8 +99,17 @@ private:
   void GVN_VisitAllSubRegions(rvsdg::Node* node);
   void GVN_VisitNode(rvsdg::Node* node);
   void GVN_VisitGammaNode(rvsdg::Node* node);
-  void GVN_VisitThetaNode(rvsdg::ThetaNode* tn);
+  void GVN_VisitThetaNode(rvsdg::Node* tn);
+  void GVN_VisitLambdaNode(rvsdg::Node* ln);
   void GVN_VisitLeafNode(rvsdg::Node* node);
+
+  void PassDownRegion(rvsdg::Region& reg);
+  void PassDownAllSubRegions(rvsdg::Node* node);
+  void PassDownNode(rvsdg::Node* node);
+  void PassDownGammaNode(rvsdg::Node* gn);
+  void PassDownThetaNode(rvsdg::Node* tn);
+  void PassDownLambdaNode(rvsdg::Node* ln);
+  void PassDownLeafNode(rvsdg::Node* node);
 };
 
 }

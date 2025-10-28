@@ -58,7 +58,6 @@
 
 #include <typeinfo>
 
-
 /**
  *  Partial redundancy elimination:
  *  -invariants: after each insertion of a new GVN all GVN shall have unique values
@@ -175,7 +174,7 @@ PartialRedundancyElimination::PartialRedundancyElimination() :
   stat_theta_count(0),
   stat_gamma_count(0)
 {
-  g_alternatives = gvn_.Leaf(rvsdg::gvn::GVN_OP_IS_SWITCH);
+
 }
 
 void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node))
@@ -224,6 +223,7 @@ PartialRedundancyElimination::Run(
   jlm::rvsdg::gvn::RunAllTests();
 
   GVN_VisitRegion(root);
+  PassDownRegion(root);
 }
 
 /** -------------------------------------------------------------------------------------------- **/
@@ -266,17 +266,13 @@ void PartialRedundancyElimination::initialize_stats(PartialRedundancyElimination
 void PartialRedundancyElimination::GVN_VisitRegion(rvsdg::Region& reg)
 {
   IndentMan indenter = IndentMan();
-  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg)){
-    GVN_VisitNode(node);
-  }
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg)){GVN_VisitNode(node);}
 }
 
 void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node* node)
 {
   MatchType(*node,[this](rvsdg::StructuralNode& sn){
-    for (auto& reg : sn.Subregions()){
-      GVN_VisitRegion(reg);
-    }
+    for (auto& reg : sn.Subregions()){GVN_VisitRegion(reg);}
   });
 }
 
@@ -309,7 +305,7 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
     [this, node](const jlm::rvsdg::BinaryOperation& binop){
       if (binop.is_associative() && binop.is_commutative()){
         JLM_ASSERT(node->ninputs() >= 2);
-        auto op    = gvn_.FromStr(binop.debug_string(), rvsdg::gvn::GVN_OP_IS_CA);
+        auto op    = gvn_.FromStr(binop.debug_string(), rvsdg::gvn::GVN_OPERATOR_IS_CA);
         auto a     = GVNOrFail( node->input(0)->origin(), node);
         auto b     = GVNOrFail( node->input(1)->origin(), node);
         RegisterGVN(node->output(0), gvn_.Op(op).Arg(a).Arg(b).End());
@@ -323,6 +319,7 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
   MatchType(*node, [this,node](rvsdg::GammaNode& gn){
     std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
 
+    //Route gvn values into alternatives
     for (auto br : gn.GetEntryVars()){
       auto out = br.input->origin();
       for (auto into_branch : br.branchArgument){
@@ -337,16 +334,17 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
 
     GVN_VisitAllSubRegions(node);
 
+    //route results out and handle cases where result is always the same
     for (auto ev : gn.GetExitVars())
     {
-      auto any_val = jlm::rvsdg::gvn::GVN_NULL;
-      gvn_.Op(g_alternatives);
+      using namespace jlm::rvsdg::gvn;
+      auto any_val = GVN_NO_VALUE;
+      gvn_.Op(GVN_OP_ANY_ORDERED);
       for (auto leaving_branch : ev.branchResult){
         auto from_inner = GVNOrZero(leaving_branch->origin());
         gvn_.Arg( from_inner );
         any_val = from_inner;
       }
-
       auto branches_merged = gvn_.End();
 
       if (any_val == branches_merged){
@@ -360,6 +358,32 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
   });
 }
 
+void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::ThetaNode& tn)
+  {
+    std::cout << ind() << TR_ORANGE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+    GVN_VisitAllSubRegions(node);
+    throw std::runtime_error("Not implemented");
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitLambdaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::LambdaNode& ln){
+    for (auto arg : ln.GetFunctionArguments()){
+      RegisterGVN(arg, gvn_.Leaf());
+    }
+    for (auto arg : ln.GetContextVars())
+    {
+      auto from = arg.input->origin();
+      RegisterGVN(arg.inner, GVNOrFail(from, node));
+    }
+
+    std::cout << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+    GVN_VisitAllSubRegions(node);
+  });
+}
 
 void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
 {
@@ -369,23 +393,13 @@ void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
       GVN_VisitAllSubRegions(node);
     },
     [this,node](rvsdg::ThetaNode& tn){
-      std::cout << ind() << TR_ORANGE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      GVN_VisitAllSubRegions(node);
-      throw std::runtime_error("Not implemented");
+      GVN_VisitThetaNode(node);
     },
-    [this,node](rvsdg::LambdaNode& ln)
-    {
-      for (auto arg : ln.GetFunctionArguments()){
-        RegisterGVN(arg, gvn_.Leaf());
-      }
-      for (auto arg : ln.GetContextVars())
-      {
-        auto from = arg.input->origin();
-        RegisterGVN(arg.inner, GVNOrFail(from, node));
-      }
-
-      std::cout << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      GVN_VisitAllSubRegions(node);
+    [this,node](rvsdg::ThetaNode& tn){
+      GVN_VisitGammaNode(node);
+    },
+    [this,node](rvsdg::LambdaNode& ln){
+      GVN_VisitLambdaNode(node);
     },
     //DEFAULT
     [this, node](){
@@ -418,9 +432,74 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
     std::cout << TR_GREEN;
     std::cout << " : " << pe->GVNOrZero( node->output(i) );
   }
-
   std::cout << std::endl;
 }
 
+/** ********************************************************************************************* */
+/** ********************************************************************************************* */
+/** ********************************************************************************************* */
+
+void PartialRedundancyElimination::PassDownRegion(rvsdg::Region& reg)
+{
+  IndentMan indenter = IndentMan();
+
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg)){PassDownNode(node);}
 }
+
+void PartialRedundancyElimination::PassDownAllSubRegions(rvsdg::Node* node)
+{
+  MatchType(*node,[this](rvsdg::StructuralNode& sn){
+    for (auto& reg : sn.Subregions()){PassDownRegion(reg);}
+  });
+}
+
+void PartialRedundancyElimination::PassDownNode(rvsdg::Node* node)
+{
+  MatchTypeWithDefault(*node,
+  [this,node](rvsdg::DeltaNode& dn){
+      std::cout << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+      PassDownAllSubRegions(node);
+    },
+    [this,node](rvsdg::ThetaNode& tn){
+      PassDownThetaNode(node);
+    },
+    [this, node](rvsdg::GammaNode& gn)
+    {
+      PassDownGammaNode(node);
+    },
+    [this,node](rvsdg::LambdaNode& ln){
+      PassDownLambdaNode(node);
+    },
+    //DEFAULT
+    [this, node](){
+      PassDownLeafNode(node);
+    }
+  );
+}
+
+void PartialRedundancyElimination::PassDownThetaNode(rvsdg::Node* node)
+{
+  PassDownAllSubRegions(node);
+}
+
+void PartialRedundancyElimination::PassDownGammaNode(rvsdg::Node* node)
+{
+  PassDownAllSubRegions(node);
+}
+
+void PartialRedundancyElimination::PassDownLeafNode(rvsdg::Node* node)
+{
+   std::cout << ind() <<TR_CYAN << node->DebugString()<<node->GetNodeId() << TR_RESET;
+}
+
+void
+PartialRedundancyElimination::PassDownLambdaNode(rvsdg::Node * ln)
+{
+  std::cout << ind() << TR_GREEN << ln->GetNodeId() << TR_RESET;
+  PassDownAllSubRegions(ln);
+}
+
+
+}
+
 
