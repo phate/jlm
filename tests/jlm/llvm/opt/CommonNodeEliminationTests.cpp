@@ -6,7 +6,6 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 #include "test-types.hpp"
-#include <jlm/llvm/DotWriter.hpp>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
