@@ -379,8 +379,8 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
       bool first_iter = false;
       auto lv = tn.GetLoopVars();
-      auto op_prism = gvn_.FromStr("prism");
-      auto op_refract = gvn_.FromStr("refract");
+      auto OP_PRISM = gvn_.FromStr("prism");
+      auto OP_REFRACT = gvn_.FromStr("refract");
 
       /** ----------------------------------- LOAD INPUTS INTO PRE.disruptors ------------------- */
 
@@ -426,7 +426,7 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
           thetas_[node].post.elements[i].partition = merged_io;
         }
 
-        thetas_[node].prism = gvn_.FromPartitions(op_prism, thetas_[node].post);
+        thetas_[node].prism = gvn_.FromPartitions(OP_PRISM, thetas_[node].post);
         thetas_[node].post.OrderByOriginal();
 
         for (size_t i = 0; i < lv.size(); i++){
@@ -450,15 +450,15 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 
       /** ----------------------------------- REFRACT INPUT -------------------------------------- */
 
-      GVN_Val input_hash = gvn_.FromDisruptors(op_prism, thetas_[node].pre);
+      GVN_Val hash_all_inputs = gvn_.FromDisruptors(OP_REFRACT, thetas_[node].pre);
       thetas_[node].pre.OrderByOriginal();
 
       for (size_t i = 0; i < lv.size(); i++){
         auto th_in = thetas_[node].pre.elements[i].disruptor;
-        auto th_out = gvn_.Op(op_refract)
+        auto th_out = gvn_.Op(OP_REFRACT)
                                         .Arg(thetas_[node].prism)
                                         .Arg(th_in)
-                                        .Arg(input_hash)
+                                        .Arg(hash_all_inputs)
                                         .End();
         bool invariance = thetas_[node].post.elements[i].partition == GVN_INVARIANT;
         RegisterGVN(lv[i].output, invariance ? th_out : th_in);
