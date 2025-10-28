@@ -548,8 +548,8 @@ markRegion(const rvsdg::Region &, CommonNodeElimination::Context & context);
 
 /**
  * Makes all arguments as the leader of their own congruence set.
- * @param region the region whose arguments are
- * @param context the current context of the marking phase
+ * @param region the region whose arguments should be marked.
+ * @param context the current context of the marking phase.
  */
 static void
 markGraphImports(const rvsdg::Region & region, CommonNodeElimination::Context & context)
@@ -815,47 +815,6 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
   }
 }
 
-/**
- * Marks the given lambda node and its subregion.
- * Context variables are congruent if their origins are congruent.
- * All other arguments are given distinct congruence sets.
- * The lambda node itself becomes its own leader.
- * @param lambda the lambda node
- * @param context the current context of the marking phase.
- */
-static void
-markLambda(const rvsdg::LambdaNode & lambda, CommonNodeElimination::Context & context)
-{
-  markSubregionsFromInputs(lambda, context);
-
-  // A lambda output is always unique
-  markNodeAsLeader(lambda, context);
-}
-
-/**
- * Marks the given phi node and its subregion.
- * Context variables are congruent if their origins are congruent.
- * All other arguments are given distinct congruence sets.
- * The phi node itself becomes its own leader.
- * @param phi the phi node
- * @param context the current context of the marking phase.
- */
-static void
-markPhi(const rvsdg::PhiNode & phi, CommonNodeElimination::Context & context)
-{
-  markSubregionsFromInputs(phi, context);
-
-  // A phi node is always unique
-  markNodeAsLeader(phi, context);
-}
-
-static void
-markDelta(const rvsdg::DeltaNode & delta, CommonNodeElimination::Context & context)
-{
-  // A delta node is always unique
-  markNodeAsLeader(delta, context);
-}
-
 static void
 markStructuralNode(const rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
 {
@@ -871,49 +830,63 @@ markStructuralNode(const rvsdg::StructuralNode & node, CommonNodeElimination::Co
       },
       [&](const rvsdg::LambdaNode & lambda)
       {
-        markLambda(lambda, context);
+        // Context variables are congruent if their origins are congruent.
+        // All other arguments are given distinct congruence sets.
+        markSubregionsFromInputs(lambda, context);
+
+        // A lambda output is always unique
+        markNodeAsLeader(lambda, context);
       },
       [&](const rvsdg::PhiNode & phi)
       {
-        markPhi(phi, context);
+        // Context variables are congruent if their origins are congruent.
+        // Recursion variables are given distinct congruence sets.
+        markSubregionsFromInputs(phi, context);
+
+        // A phi node is always unique
+        markNodeAsLeader(phi, context);
       },
       [&](const rvsdg::DeltaNode & delta)
       {
-        markDelta(delta, context);
+        // We skip doing CNE inside delta nodes
+
+        // A delta node is always unique
+        markNodeAsLeader(delta, context);
       });
 }
 
 /**
- * Marks every argument and node in the given region, and recursively marks subregions.
- * Expects region arguments to already belong to argument congruence sets.
- * @param region the region to perform marking in
- * @param context the current marking context
+ * Traverses every node in the region and places their outputs in congruence sets.
+ * Also recurses into the subregions of structural nodes.
+ * Expects the arguments of \p region to already belong to congruence sets.
+ * @param region the region to perform marking in.
+ * @param context the current context of the marking phase.
  */
 static void
 markRegion(const rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
   TopNodeLeaderList leaders;
 
-  for (const auto & node : rvsdg::TopDownConstTraverser(&region))
+  for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
-    if (auto simple = dynamic_cast<const rvsdg::SimpleNode *>(node))
-    {
-      // Handle top nodes as a special case
-      if (node->ninputs() == 0)
-      {
-        markSimpleTopNode(*simple, leaders, context);
-      }
-      else
-      {
-        markSimpleNode(*simple, context);
-      }
-    }
-    else if (auto structural = dynamic_cast<const rvsdg::StructuralNode *>(node))
-    {
-      markStructuralNode(*structural, context);
-    }
-    else
-      throw std::logic_error("Unknown node type");
+    rvsdg::MatchTypeOrFail(
+        *node,
+        [&](const rvsdg::SimpleNode & simple)
+        {
+          // Handle top nodes as a special case
+          if (node->ninputs() == 0)
+          {
+            markSimpleTopNode(simple, leaders, context);
+          }
+          else
+          {
+            markSimpleNode(simple, context);
+          }
+        },
+        [&](const rvsdg::StructuralNode & structural)
+        {
+          markStructuralNode(structural, context);
+        });
   }
 }
 
@@ -960,23 +933,23 @@ divertStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Contex
   bool divertInSubregions = false;
   rvsdg::MatchTypeOrFail(
       node,
-      [&](rvsdg::GammaNode & gamma)
+      [&]([[maybe_unused]] rvsdg::GammaNode & gamma)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::ThetaNode & theta)
+      [&]([[maybe_unused]] rvsdg::ThetaNode & theta)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::LambdaNode & lambda)
+      [&]([[maybe_unused]] rvsdg::LambdaNode & lambda)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::PhiNode & phi)
+      [&]([[maybe_unused]] rvsdg::PhiNode & phi)
       {
         divertInSubregions = true;
       },
-      [&](rvsdg::DeltaNode & delta)
+      [&]([[maybe_unused]] rvsdg::DeltaNode & delta)
       {
         // Inside a delta node we can not perform diverting,
         // since we never marked the outputs there
