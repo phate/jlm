@@ -31,6 +31,12 @@ class Region;
 
 namespace jlm::llvm{
 
+struct ThetaData
+{
+  jlm::rvsdg::gvn::GVN_Val prism;
+  jlm::rvsdg::gvn::BrittlePrism pre;
+  jlm::rvsdg::gvn::BrittlePrism post;
+};
 
 /** \brief Partial Redundancy Elimination
  *
@@ -69,6 +75,7 @@ private:
 
   size_t stat_theta_count;
   size_t stat_gamma_count;
+  std::unordered_map<rvsdg::Node*, ThetaData> thetas_;
 
   std::unordered_map< rvsdg::Output *, rvsdg::gvn::GVN_Val> output_to_gvn_;
   void RegisterGVN(rvsdg::Output * output, rvsdg::gvn::GVN_Val gvn){

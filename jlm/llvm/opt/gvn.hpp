@@ -101,6 +101,12 @@ namespace jlm::rvsdg::gvn {
             }
             current_ordering = ORD_ORIGINAL;
         }
+        BrittlePrism() : did_shatter(false), fracture_count(0){
+          current_ordering = ORD_ORIGINAL;
+        }
+        void Add(GVN_Val v){
+          elements.emplace_back(BrittlePrismEle{v, v, v,elements.size()});
+        }
 
         void OrderByPartition() {
             std::sort(elements.begin(), elements.end(),
@@ -442,6 +448,17 @@ namespace jlm::rvsdg::gvn {
                 i += brittle.SpanPartition(i);
             }
             return End();
+        }
+
+        GVN_Val FromDisruptors(GVN_Val op, BrittlePrism& brittle) {
+          Op(op);
+          brittle.OrderByDisruptorThenPartition();
+          size_t i = 0;
+          while (i < brittle.elements.size()) {
+            Arg(brittle.elements[i].disruptor);
+            i += brittle.SpanDisruptor(i);
+          }
+          return End();
         }
 
     private:

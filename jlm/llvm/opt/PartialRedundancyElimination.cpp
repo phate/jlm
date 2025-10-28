@@ -374,11 +374,96 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
 
 void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 {
-  MatchType(*node, [this,node](rvsdg::ThetaNode& tn)
-  {
-    std::cout << ind() << TR_ORANGE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-    GVN_VisitAllSubRegions(node);
-    throw std::runtime_error("Not implemented");
+  MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
+    using namespace jlm::rvsdg::gvn;
+    MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
+      bool first_iter = false;
+      auto lv = tn.GetLoopVars();
+      auto op_prism = gvn_.FromStr("prism");
+      auto op_refract = gvn_.FromStr("refract");
+
+      /** ----------------------------------- LOAD INPUTS INTO PRE.disruptors ------------------- */
+
+      if (thetas_.find(node) == thetas_.end()){
+        first_iter = true;
+        thetas_.insert({node, ThetaData()});
+        thetas_[node].prism = 0;
+
+        for (auto v : tn.GetLoopVars()){
+          thetas_[node].pre.Add( GVNOrFail( v.input->origin() , node ) );
+          thetas_[node].post.Add( 0 );
+        }
+      }else{
+        for (size_t i = 0; i < lv.size(); i++){
+          thetas_[node].pre.elements[i].disruptor = GVNOrFail( lv[i].input->origin(), node );
+        }
+      }
+
+      bool fracture = thetas_[node].pre.Fracture();
+
+      /** ----------------------------------- UPDATE PRISM -------------------------------------- */
+      //DO LOOP TO UPDATE PRISM
+      //Always keep the most recent inputs in the pre buffer
+      while (fracture || first_iter){
+        first_iter = false;
+        // ================= PERFORM GVN IN LOOP BODY ========================
+        for (size_t i = 0; i < lv.size(); i++){
+          RegisterGVN( lv[i].pre, thetas_[node].pre.elements[i].disruptor );
+        }
+
+        GVN_VisitAllSubRegions(node);
+
+        for (size_t i = 0; i < lv.size(); i++){
+          thetas_[node].post.elements[i].disruptor = GVNOrFail( lv[i].post->origin(), node );
+        }
+        // ================= END LOOP BODY ====================================
+
+        thetas_[node].post.OrderByOriginal();
+        for (size_t i = 0; i < lv.size(); i++){
+          auto input  = thetas_[node].pre.elements[i].disruptor;
+          auto output = thetas_[node].post.elements[i].disruptor;
+          auto merged_io = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(input).Arg(output).End();
+          thetas_[node].post.elements[i].partition = merged_io;
+        }
+
+        thetas_[node].prism = gvn_.FromPartitions(op_prism, thetas_[node].post);
+        thetas_[node].post.OrderByOriginal();
+
+        for (size_t i = 0; i < lv.size(); i++){
+          auto pi = thetas_[node].post.elements[i].partition;
+          auto merged_with_prism = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(pi).Arg(thetas_[node].prism).End();
+
+          bool was_invariant = thetas_[node].pre.elements[i].disruptor == thetas_[node].post.elements[i].disruptor;
+
+          thetas_[node].post.elements[i].partition = was_invariant ? GVN_INVARIANT : merged_with_prism;
+          if (! was_invariant ){
+            thetas_[node].pre.elements[i].disruptor = merged_with_prism;
+          }
+        }
+        fracture = thetas_[node].pre.Fracture();
+        if (!fracture){
+          for (size_t i = 0; i < lv.size(); i++){
+            thetas_[node].pre.elements[i].disruptor = GVNOrFail( lv[i].input->origin(), node );
+          }
+        }
+      }
+
+      /** ----------------------------------- REFRACT INPUT -------------------------------------- */
+
+      GVN_Val input_hash = gvn_.FromDisruptors(op_prism, thetas_[node].pre);
+      thetas_[node].pre.OrderByOriginal();
+
+      for (size_t i = 0; i < lv.size(); i++){
+        auto th_in = thetas_[node].pre.elements[i].disruptor;
+        auto th_out = gvn_.Op(op_refract)
+                                        .Arg(thetas_[node].prism)
+                                        .Arg(th_in)
+                                        .Arg(input_hash)
+                                        .End();
+        bool invariance = thetas_[node].post.elements[i].partition == GVN_INVARIANT;
+        RegisterGVN(lv[i].output, invariance ? th_out : th_in);
+      }
+    });
   });
 }
 
