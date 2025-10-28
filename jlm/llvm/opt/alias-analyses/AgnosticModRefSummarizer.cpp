@@ -1,10 +1,12 @@
 /*
  * Copyright 2022 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -169,18 +171,16 @@ AgnosticModRefSummarizer::AnnotateRegion(const rvsdg::Region & region)
 {
   for (const auto & node : region.Nodes())
   {
-    if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
-    {
-      AnnotateSimpleNode(*simpleNode);
-    }
-    else if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    {
-      AnnotateStructuralNode(*structuralNode);
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unknown node type");
-    }
+    rvsdg::MatchTypeOrFail(
+        node,
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          AnnotateSimpleNode(simpleNode);
+        },
+        [&](const rvsdg::StructuralNode & structuralNode)
+        {
+          AnnotateStructuralNode(structuralNode);
+        });
   }
 }
 

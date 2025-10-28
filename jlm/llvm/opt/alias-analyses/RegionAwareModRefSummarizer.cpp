@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -355,6 +356,15 @@ private:
  */
 struct RegionAwareModRefSummarizer::Context
 {
+  explicit Context(const PointsToGraph & ptg)
+      : pointsToGraph(ptg)
+  {}
+
+  /**
+   * The points to graph used to create the Mod/Ref summary.
+   */
+  const PointsToGraph & pointsToGraph;
+
   /**
    * The set of functions belonging to each SCC in the call graph.
    * The SCCs are ordered in reverse topological order, so
@@ -449,7 +459,7 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
     util::StatisticsCollector & statisticsCollector)
 {
   ModRefSummary_ = RegionAwareModRefSummary::Create(pointsToGraph);
-  Context_ = std::make_unique<Context>();
+  Context_ = std::make_unique<Context>(pointsToGraph);
   auto statistics = Statistics::Create(rvsdgModule, pointsToGraph);
 
   statistics->StartCallGraphStatistics();
@@ -769,22 +779,21 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
 }
 
 /**
- * Checks if it is possible to reach the given \p allocaMemoryNode from an argument of \p region,
- * via zero or more AllocaMemoryNodes in the PointsToGraph.
- * Other types of MemoryNodes are ignored, as they would disqualify the alloca from being simple.
- * @param allocaMemoryNode the AllocaMemoryNode representing a simple alloca
+ * Gets the set of simple AllocaMemoryNodes that it is possible to reach from region arguments.
+ * Reachability is defined in terms of the PointsToGraph. A simple alloca is by definition
+ * only reachable from RegisterNodes and other simple AllocaMemoryNodes,
+ * so other types of MemoryNodes can be ignored.
  * @param region the region whose arguments are checked
- * @return true if it was possible to reach the alloca from the region parameters
+ * @return the set of simple allocas reachable from region arguments
  */
-static bool
-IsSimpleAllocaReachableFromRegionArguments(
-    const PointsToGraph::AllocaNode & allocaMemoryNode,
+util::HashSet<const PointsToGraph::MemoryNode *>
+RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
     const rvsdg::Region & region)
 {
-  const auto & pointsToGraph = allocaMemoryNode.Graph();
+  const auto & pointsToGraph = Context_->pointsToGraph;
 
   // Use a queue and a set to traverse the PointsToGraph
-  util::HashSet<const PointsToGraph::Node *> seen;
+  util::HashSet<const PointsToGraph::MemoryNode *> reachableSimpleAllocas;
   std::queue<const PointsToGraph::Node *> nodes;
   for (auto argument : region.Arguments())
   {
@@ -792,10 +801,9 @@ IsSimpleAllocaReachableFromRegionArguments(
       continue;
     auto & ptgNode = pointsToGraph.GetRegisterNode(*argument);
     nodes.push(&ptgNode);
-    seen.insert(&ptgNode);
   }
 
-  // Traverse along PointsToGraph edges to find all reachable allocas
+  // Traverse along PointsToGraph edges to find all reachable simple allocas
   while (!nodes.empty())
   {
     auto & ptgNode = *nodes.front();
@@ -803,19 +811,16 @@ IsSimpleAllocaReachableFromRegionArguments(
 
     for (auto & target : ptgNode.Targets())
     {
-      if (&target == &allocaMemoryNode)
-        return true;
-
-      // We only are about following allocas, as simple allocas are only reachable from them.
-      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(target))
+      // We only are about following simple allocas, as simple allocas are only reachable from them.
+      if (!Context_->SimpleAllocas.Contains(&target))
         continue;
 
-      if (seen.insert(&target))
+      if (reachableSimpleAllocas.insert(&target))
         nodes.push(&target);
     }
   }
 
-  return false;
+  return reachableSimpleAllocas;
 }
 
 bool
@@ -830,6 +835,9 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
 {
   size_t numNonReentrantAllocas = 0;
 
+  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
+      simpleAllocasReachableFromRegionArguments;
+
   // Only simple allocas are candidates for being Non-Reentrant
   for (auto memoryNode : Context_->SimpleAllocas.Items())
   {
@@ -841,9 +849,21 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
     // the alloca is definitely non-reentrant.
     const auto & lambda = GetSurroundingLambdaNode(allocaNode);
 
-    if (IsRecursionPossible(lambda)
-        && IsSimpleAllocaReachableFromRegionArguments(allocaMemoryNode, region))
-      continue;
+    // In lambdas where recursion is possible, only simple allocas that are provably not
+    // passed in through region arguments can be considered Non-Reentrant
+    if (IsRecursionPossible(lambda))
+    {
+      auto it = simpleAllocasReachableFromRegionArguments.find(&region);
+      if (it == simpleAllocasReachableFromRegionArguments.end())
+      {
+        it = simpleAllocasReachableFromRegionArguments.insert(
+            it,
+            { &region, GetSimpleAllocasReachableFromRegionArguments(region) });
+      }
+
+      if (it->second.Contains(&allocaMemoryNode))
+        continue;
+    }
 
     // Creates a set for the region if it does not already have one, and add the alloca
     Context_->NonReentrantAllocas[&region].insert(&allocaMemoryNode);

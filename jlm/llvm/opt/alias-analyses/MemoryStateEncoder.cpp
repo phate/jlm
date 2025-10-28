@@ -1,10 +1,9 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#include "AliasAnalysisPrecisionEvaluator.hpp"
-#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -12,6 +11,7 @@
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -340,10 +340,9 @@ public:
   MemoryNodeStatePair *
   GetState(const PointsToGraph::MemoryNode & memoryNode)
   {
-    auto statePair = TryGetState(memoryNode);
-    if (statePair == nullptr)
-      throw std::logic_error("Memory node does not have a state.");
-    return statePair;
+    if (const auto statePair = TryGetState(memoryNode))
+      return statePair;
+    throw std::logic_error("Memory node does not have a state.");
   }
 
   std::vector<MemoryNodeStatePair *>
@@ -358,30 +357,40 @@ public:
     return memoryNodeStatePairs;
   }
 
+  /**
+   * Gets MemoryNodeStatePairs for each of the given memory nodes,
+   * unless there is no memory state in the region representing the memory node.
+   * @param memoryNodes the set of memory nodes to retrieve states for.
+   * @return The MemoryNodeStatePairs for each given memory nodes, if one exists.
+   * @see RegionalizedStateMap::GetExistingStates()
+   */
   std::vector<MemoryNodeStatePair *>
   GetExistingStates(const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
     for (auto & memoryNode : memoryNodes.Items())
     {
-      const auto statePair = TryGetState(*memoryNode);
-      if (statePair)
+      if (const auto statePair = TryGetState(*memoryNode))
         memoryNodeStatePairs.push_back(statePair);
     }
 
     return memoryNodeStatePairs;
   }
 
+  /**
+   * Creates a new memory node / memory state pair in the region.
+   * The memory node must not have an already associated state.
+   * @param memoryNode the memory node
+   * @param state the output that produces the memory state associated with the memory node
+   * @return pointer to the new pair
+   */
   MemoryNodeStatePair *
   InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
   {
-    JLM_ASSERT(!HasState(memoryNode));
-
-    auto pair = std::make_pair<const PointsToGraph::MemoryNode *, MemoryNodeStatePair>(
-        &memoryNode,
-        { memoryNode, state });
-    states_.insert(pair);
-    return GetState(memoryNode);
+    auto [it, added] = states_.insert({ &memoryNode, { memoryNode, state } });
+    if (!added)
+      throw std::logic_error("Memory node already has a state.");
+    return &it->second;
   }
 
   static std::unique_ptr<StateMap>
@@ -391,6 +400,8 @@ public:
   }
 
 private:
+  // std::unordered_map guarantees pointers to keys and values remain valid even when
+  // new pairs are added to the container.
   std::unordered_map<const PointsToGraph::MemoryNode *, MemoryNodeStatePair> states_;
 };
 
@@ -633,29 +644,19 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
   using namespace jlm::rvsdg;
 
-  if (&region == TARGET_REGION)
-  {
-    jlm::util::graph::Writer gw;
-    jlm::llvm::LlvmDotWriter writer;
-    writer.WriteGraphs(gw, region, true);
-    gw.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
-  }
-
   TopDownTraverser traverser(&region);
-  for (auto & node : traverser)
+  for (const auto node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
-    {
-      EncodeSimpleNode(*simpleNode);
-    }
-    else if (auto structuralNode = dynamic_cast<StructuralNode *>(node))
-    {
-      EncodeStructuralNode(*structuralNode);
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled node type.");
-    }
+    MatchTypeOrFail(
+        *node,
+        [&](SimpleNode & simpleNode)
+        {
+          EncodeSimpleNode(simpleNode);
+        },
+        [&](StructuralNode & structuralNode)
+        {
+          EncodeStructuralNode(structuralNode);
+        });
   }
 }
 

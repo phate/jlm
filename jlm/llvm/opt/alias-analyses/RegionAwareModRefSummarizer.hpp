@@ -120,6 +120,9 @@ private:
   static util::HashSet<const PointsToGraph::MemoryNode *>
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
+  util::HashSet<const PointsToGraph::MemoryNode *>
+  GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+
   /**
    * Uses the call graph to determine if the given function can ever be involved
    * in a recursive chain of function calls.
