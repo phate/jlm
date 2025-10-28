@@ -72,7 +72,7 @@ private:
 
   std::unordered_map< rvsdg::Output *, rvsdg::gvn::GVN_Val> output_to_gvn_;
   void RegisterGVN(rvsdg::Output * output, rvsdg::gvn::GVN_Val gvn){
-    output_to_gvn_[output] = gvn;
+    output_to_gvn_[output] = gvn; //overwrites old values
   }
 
   rvsdg::gvn::GVN_Manager gvn_;
