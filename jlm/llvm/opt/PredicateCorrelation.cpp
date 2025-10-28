@@ -50,6 +50,10 @@ PredicateCorrelation::correlatePredicatesInRegion(rvsdg::Region & region)
           {
             correlatePredicatesInRegion(subregion);
           }
+        },
+        [](rvsdg::SimpleNode &)
+        {
+          // Nothing needs to be done
         });
   }
 }
@@ -106,7 +110,8 @@ PredicateCorrelation::extractControlConstantAlternatives(const rvsdg::Output & g
   for (const auto branchResult : branchResults)
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(*branchResult->origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
+            *branchResult->origin());
     if (constantOperation == nullptr)
     {
       return std::nullopt;
