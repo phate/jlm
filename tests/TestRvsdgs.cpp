@@ -1196,7 +1196,8 @@ ExternalCallTest1::SetupRvsdg()
         functionGType,
         functionGType,
         "g",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        true);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::RegionArgument * functionG)
@@ -1302,15 +1303,17 @@ ExternalCallTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
   auto llvmLifetimeEnd = &GraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
   ExternalFArgument_ =
-      &GraphImport::Create(rvsdg, lambdaFType, lambdaFType, "f", Linkage::externalLinkage);
+      &GraphImport::Create(rvsdg, lambdaFType, lambdaFType, "f", Linkage::externalLinkage, true);
 
   // Setup function g()
   LambdaG_ = rvsdg::LambdaNode::Create(
@@ -2908,7 +2911,8 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction1Type,
         externalFunction1Type,
         "ExternalFunction1",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        true);
   };
 
   auto SetupExternalFunction2Declaration = [&]()
@@ -2918,7 +2922,8 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction2Type,
         externalFunction2Type,
         "ExternalFunction2",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        true);
   };
 
   auto SetupReturnAddressFunction = [&]()
@@ -3086,7 +3091,8 @@ EscapedMemoryTest3::SetupRvsdg()
         externalFunctionType,
         externalFunctionType,
         "externalFunction",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        true);
   };
 
   auto SetupGlobal = [&]()
@@ -3595,7 +3601,8 @@ AllMemoryNodesTest::SetupRvsdg()
       rvsdg::BitType::Create(32),
       PointerType::Create(),
       "imported",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
 
   // Create global variable "global"
   Delta_ = jlm::rvsdg::DeltaNode::Create(
@@ -3947,7 +3954,8 @@ VariadicFunctionTest1::SetupRvsdg()
       { IOStateType::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, lambdaHType, "h", Linkage::externalLinkage);
+  ImportH_ =
+      &GraphImport::Create(rvsdg, lambdaHType, lambdaHType, "h", Linkage::externalLinkage, true);
 
   // Setup f()
   {
@@ -4057,25 +4065,29 @@ VariadicFunctionTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
   auto llvmLifetimeEnd = &GraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
   auto llvmVaStart = &GraphImport::Create(
       rvsdg,
       lambdaVaStartType,
       lambdaVaStartType,
       "llvm.va_start",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
   auto llvmVaEnd = &GraphImport::Create(
       rvsdg,
       lambdaVaEndType,
       lambdaVaEndType,
       "llvm.va_end",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      true);
 
   // Setup function fst()
   {

@@ -217,14 +217,17 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
   else if (is<MemCpyOperation>(&node))
   {
     util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
-    AddPointerToModRefSet(*node.input(0)->origin(), modRefSet);
-    AddPointerToModRefSet(*node.input(1)->origin(), modRefSet);
+    const auto & srcAddress = *MemCpyOperation::sourceInput(node).origin();
+    const auto & dstAddress = *MemCpyOperation::destinationInput(node).origin();
+    AddPointerToModRefSet(srcAddress, modRefSet);
+    AddPointerToModRefSet(dstAddress, modRefSet);
     ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
   }
   else if (is<FreeOperation>(&node))
   {
     util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
-    AddPointerToModRefSet(*node.input(0)->origin(), modRefSet);
+    const auto & freeAddress = *FreeOperation::addressInput(node).origin();
+    AddPointerToModRefSet(freeAddress, modRefSet);
     ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
   }
   else if (is<AllocaOperation>(&node))

@@ -745,8 +745,8 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
   // merge it with the state created by the alloca using a MemoryStateJoin node.
   if (const auto statePair = stateMap.TryGetState(*allocaNode.region(), allocaMemoryNode))
   {
-    auto & joinNode = MemoryStateJoinOperation::CreateNode(
-        { &allocaNodeStateOutput, &statePair->State() });
+    auto & joinNode =
+        MemoryStateJoinOperation::CreateNode({ &allocaNodeStateOutput, &statePair->State() });
     auto & joinOutput = *joinNode.output(0);
     statePair->ReplaceState(joinOutput);
   }
@@ -773,8 +773,8 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
   // is not just simply replaced and therefore "lost".
   if (const auto statePair = stateMap.TryGetState(*mallocNode.region(), mallocMemoryNode))
   {
-    auto & joinNode = MemoryStateJoinOperation::CreateNode(
-        { &mallocNodeStateOutput, &statePair->State() });
+    auto & joinNode =
+        MemoryStateJoinOperation::CreateNode({ &mallocNodeStateOutput, &statePair->State() });
     auto & joinOutput = *joinNode.output(0);
     statePair->ReplaceState(joinOutput);
   }
@@ -861,7 +861,8 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
     memoryNodeIds.push_back(statePair->MemoryNode().GetId());
   }
 
-  auto & entryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(*region, inputStates, memoryNodeIds);
+  auto & entryMergeNode =
+      CallEntryMemoryStateMergeOperation::CreateNode(*region, inputStates, memoryNodeIds);
   CallOperation::GetMemoryStateInput(callNode).divert_to(entryMergeNode.output(0));
 
   auto & exitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
