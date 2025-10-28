@@ -33,6 +33,7 @@ namespace jlm::llvm{
 
 struct ThetaData
 {
+  bool first_iteration;
   jlm::rvsdg::gvn::GVN_Val prism;
   jlm::rvsdg::gvn::BrittlePrism pre;
   jlm::rvsdg::gvn::BrittlePrism post;

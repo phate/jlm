@@ -377,7 +377,6 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
   MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
     using namespace jlm::rvsdg::gvn;
     MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
-      bool first_iter = false;
       auto lv = tn.GetLoopVars();
       auto OP_PRISM = gvn_.FromStr("prism");
       auto OP_REFRACT = gvn_.FromStr("refract");
@@ -385,8 +384,8 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       /** ----------------------------------- LOAD INPUTS INTO PRE.disruptors ------------------- */
 
       if (thetas_.find(node) == thetas_.end()){
-        first_iter = true;
         thetas_.insert({node, ThetaData()});
+        thetas_[node].first_iteration = true;
         thetas_[node].prism = 0;
 
         for (auto v : tn.GetLoopVars()){
@@ -404,8 +403,8 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       /** ----------------------------------- UPDATE PRISM -------------------------------------- */
       //DO LOOP TO UPDATE PRISM
       //Always keep the most recent inputs in the pre buffer
-      while (fracture || first_iter){
-        first_iter = false;
+      while (fracture || thetas_[node].first_iteration){
+        thetas_[node].first_iteration = false;
         // ================= PERFORM GVN IN LOOP BODY ========================
         for (size_t i = 0; i < lv.size(); i++){
           RegisterGVN( lv[i].pre, thetas_[node].pre.elements[i].disruptor );
