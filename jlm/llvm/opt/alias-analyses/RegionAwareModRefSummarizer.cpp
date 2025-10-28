@@ -566,14 +566,12 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   // Outgoing edges for each node in the call graph
   std::vector<util::HashSet<size_t>> callGraphSuccessors(numCallGraphNodes);
 
-  const auto & pointsToGraph = ModRefSummary_->GetPointsToGraph();
-
   // Add outgoing edges from the given caller to any function the call may target
   const auto HandleCall = [&](rvsdg::Node & callNode, size_t callerIndex) -> void
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
     const auto targetPtr = callNode.input(0)->origin();
-    const auto & targetPtrNode = pointsToGraph.GetRegisterNode(*targetPtr);
+    const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
 
     // Go through all locations the called function pointer may target
     for (auto & callee : targetPtrNode.Targets())
@@ -696,7 +694,7 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   util::HashSet<const PointsToGraph::MemoryNode *> allAllocas;
 
   // Add all Allocas to the SCC of the function they are defined in
-  for (auto & allocaNode : ModRefSummary_->GetPointsToGraph().AllocaNodes())
+  for (auto & allocaNode : Context_->pointsToGraph.AllocaNodes())
   {
     allAllocas.insert(&allocaNode);
     const auto & lambdaNode = GetSurroundingLambdaNode(allocaNode.GetAllocaNode());
@@ -879,7 +877,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   Context_->ExternalModRefIndex = ModRefSummary_->CreateModRefSet();
 
   // Go through all types of memory node and add them to the external ModRefSet if escaping
-  for (auto & alloca : ModRefSummary_->GetPointsToGraph().AllocaNodes())
+  for (auto & alloca : Context_->pointsToGraph.AllocaNodes())
   {
     if (!alloca.IsModuleEscaping())
       continue;
@@ -887,7 +885,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, alloca);
   }
-  for (auto & malloc : ModRefSummary_->GetPointsToGraph().MallocNodes())
+  for (auto & malloc : Context_->pointsToGraph.MallocNodes())
   {
     if (!malloc.IsModuleEscaping())
       continue;
@@ -895,7 +893,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, malloc);
   }
-  for (auto & delta : ModRefSummary_->GetPointsToGraph().DeltaNodes())
+  for (auto & delta : Context_->pointsToGraph.DeltaNodes())
   {
     if (!delta.IsModuleEscaping())
       continue;
@@ -903,7 +901,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, delta);
   }
-  for (auto & lambda : ModRefSummary_->GetPointsToGraph().LambdaNodes())
+  for (auto & lambda : Context_->pointsToGraph.LambdaNodes())
   {
     if (!lambda.IsModuleEscaping())
       continue;
@@ -916,7 +914,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
       continue;
     ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, lambda);
   }
-  for (auto & import : ModRefSummary_->GetPointsToGraph().ImportNodes())
+  for (auto & import : Context_->pointsToGraph.ImportNodes())
   {
     if (!import.IsModuleEscaping())
       continue;
@@ -927,7 +925,7 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
 
   ModRefSummary_->AddToModRefSet(
       Context_->ExternalModRefIndex,
-      ModRefSummary_->GetPointsToGraph().GetExternalMemoryNode());
+      Context_->pointsToGraph.GetExternalMemoryNode());
 }
 
 void
@@ -1046,7 +1044,7 @@ RegionAwareModRefSummarizer::AddPointerOriginTargets(
     const rvsdg::LambdaNode & lambda)
 {
   // TODO Re-use ModRefSets for all uses of the registerNode in this function
-  const auto & registerNode = ModRefSummary_->GetPointsToGraph().GetRegisterNode(origin);
+  const auto & registerNode = Context_->pointsToGraph.GetRegisterNode(origin);
 
   const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
   for (const auto & target : registerNode.Targets())
@@ -1098,7 +1096,7 @@ ModRefSetIndex
 RegionAwareModRefSummarizer::AnnotateAlloca(const rvsdg::SimpleNode & allocaNode)
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(allocaNode);
-  const auto & allocaMemoryNode = ModRefSummary_->GetPointsToGraph().GetAllocaNode(allocaNode);
+  const auto & allocaMemoryNode = Context_->pointsToGraph.GetAllocaNode(allocaNode);
   ModRefSummary_->AddToModRefSet(nodeModRef, allocaMemoryNode);
   return nodeModRef;
 }
@@ -1107,7 +1105,7 @@ ModRefSetIndex
 RegionAwareModRefSummarizer::AnnotateMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(mallocNode);
-  const auto & mallocMemoryNode = ModRefSummary_->GetPointsToGraph().GetMallocNode(mallocNode);
+  const auto & mallocMemoryNode = Context_->pointsToGraph.GetMallocNode(mallocNode);
   ModRefSummary_->AddToModRefSet(nodeModRef, mallocMemoryNode);
   return nodeModRef;
 }
@@ -1155,7 +1153,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
 
   // Go over all possible targets of the call and add them to the call summary
   const auto targetPtr = callNode.input(0)->origin();
-  const auto & targetPtrNode = ModRefSummary_->GetPointsToGraph().GetRegisterNode(*targetPtr);
+  const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
 
   // Go through all locations the called function pointer may target
   for (auto & callee : targetPtrNode.Targets())
