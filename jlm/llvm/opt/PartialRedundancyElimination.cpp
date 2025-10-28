@@ -263,27 +263,6 @@ void PartialRedundancyElimination::initialize_stats(PartialRedundancyElimination
   });
 }
 
-void PartialRedundancyElimination::gvn_lambda_and_consts(PartialRedundancyElimination *pe, rvsdg::Node* node)
-{
-  MatchType(node->GetOperation(), [&pe, node](const jlm::llvm::IntegerConstantOperation& iconst)
-  {
-    JLM_ASSERT(node->noutputs() == 1);
-    pe->RegisterGVN(node->output(0), pe->gvn_.FromStr(iconst.Representation().str()));
-  });
-
-  MatchType(*node , [pe, node](jlm::rvsdg::LambdaNode& ln){
-    for (auto arg : ln.GetFunctionArguments()){
-      pe->RegisterGVN(arg, pe->gvn_.Leaf());
-    }
-    for (auto arg : ln.GetContextVars())
-    {
-      auto from = arg.input->origin();
-      pe->RegisterGVN(arg.inner, pe->GVNOrFail(from, node));
-    }
-
-  });
-}
-
 void PartialRedundancyElimination::GVN_VisitRegion(rvsdg::Region& reg)
 {
   IndentMan indenter = IndentMan();
@@ -292,9 +271,9 @@ void PartialRedundancyElimination::GVN_VisitRegion(rvsdg::Region& reg)
   }
 }
 
-void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node& node)
+void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node* node)
 {
-  MatchType(node,[this](rvsdg::StructuralNode& sn){
+  MatchType(*node,[this](rvsdg::StructuralNode& sn){
     for (auto& reg : sn.Subregions()){
       GVN_VisitRegion(reg);
     }
@@ -303,9 +282,7 @@ void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node& node)
 
 void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 {
-
   std::cout << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
-
   MatchType(*node, [this](rvsdg::StructuralNode& sn){
     if (sn.ninputs() && sn.noutputs()){
       auto op_opaque = gvn_.FromPtr(&(sn.GetOperation()) );
@@ -339,55 +316,61 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
       }
     }
   );
-
 }
+
+void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::GammaNode& gn){
+    std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+
+    for (auto br : gn.GetEntryVars()){
+      auto out = br.input->origin();
+      for (auto into_branch : br.branchArgument){
+        RegisterGVN(into_branch, GVNOrFail(out, node));
+      }
+    }
+    auto selector = gn.GetMatchVar().input->origin();
+    auto match_var = GVNOrFail(selector, node);
+    for (auto mv : gn.GetMatchVar().matchContent){
+      RegisterGVN( mv, GVNOrFail(selector, node));
+    }
+
+    GVN_VisitAllSubRegions(node);
+
+    for (auto ev : gn.GetExitVars())
+    {
+      auto any_val = jlm::rvsdg::gvn::GVN_NULL;
+      gvn_.Op(g_alternatives);
+      for (auto leaving_branch : ev.branchResult){
+        auto from_inner = GVNOrZero(leaving_branch->origin());
+        gvn_.Arg( from_inner );
+        any_val = from_inner;
+      }
+
+      auto branches_merged = gvn_.End();
+
+      if (any_val == branches_merged){
+        RegisterGVN(ev.output, branches_merged); // If all branches output the same value
+      }else{
+        auto sel_op = gvn_.FromStr("selector");
+        auto hash_with_selector = gvn_.Op(sel_op).Arg(match_var).Arg(branches_merged).End();
+        RegisterGVN( ev.output, hash_with_selector); // Typical case. Note: branch order matters.
+      }
+    }
+  });
+}
+
 
 void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
 {
   MatchTypeWithDefault(*node,
   [this,node](rvsdg::DeltaNode& dn){
       std::cout << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      GVN_VisitAllSubRegions(dn);
-    },
-    [this,node](rvsdg::GammaNode& gn){
-      std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-
-      for (auto br : gn.GetEntryVars()){
-        auto out = br.input->origin();
-        for (auto into_branch : br.branchArgument){
-          RegisterGVN(into_branch, GVNOrFail(out, node));
-        }
-      }
-      auto selector = gn.GetMatchVar().input->origin();
-      auto match_var = GVNOrFail(selector, node);
-      for (auto mv : gn.GetMatchVar().matchContent){
-        RegisterGVN( mv, GVNOrFail(selector, node));
-      }
-
-      GVN_VisitAllSubRegions(gn);
-
-      for (auto ev : gn.GetExitVars())
-      {
-        auto any_val = jlm::rvsdg::gvn::GVN_NULL;
-        gvn_.Op(g_alternatives);
-        for (auto leaving_branch : ev.branchResult){
-          auto from_inner = GVNOrZero(leaving_branch->origin());
-          gvn_.Arg( from_inner );
-          any_val = from_inner;
-        }
-        auto branches_merged = gvn_.End();
-        if (any_val == branches_merged){
-          RegisterGVN(ev.output, branches_merged); // If all branches output the same value
-        }else{
-          auto sel_op = gvn_.FromStr("selector");
-          auto hash_with_selector = gvn_.Op(sel_op).Arg(match_var).Arg(branches_merged).End();
-          RegisterGVN( ev.output, hash_with_selector); // Typical case. Note: branch order matters.
-        }
-      }
+      GVN_VisitAllSubRegions(node);
     },
     [this,node](rvsdg::ThetaNode& tn){
       std::cout << ind() << TR_ORANGE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      GVN_VisitAllSubRegions(tn);
+      GVN_VisitAllSubRegions(node);
       throw std::runtime_error("Not implemented");
     },
     [this,node](rvsdg::LambdaNode& ln)
@@ -402,97 +385,13 @@ void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
       }
 
       std::cout << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      GVN_VisitAllSubRegions(ln);
+      GVN_VisitAllSubRegions(node);
     },
     //DEFAULT
     [this, node](){
       GVN_VisitLeafNode(node);
     }
   );
-}
-
-void PartialRedundancyElimination::gvn_compute(PartialRedundancyElimination* pe, rvsdg::Node* node)
-{
-  /*MatchType(node->GetOperation(),[pe, node](const jlm::llvm::ConstantDataArray& data_array){
-    auto op_data_array = pe->gvn_.FromStr("constant_data_array");
-    pe->gvn_.Op(op_data_array);
-    for (size_t i = 0 ; i < node->noutputs() ; i++){
-      pe->gvn_.Arg( pe->GVNOrFail(node->input(i)->origin(), node) );
-    }
-    auto g = pe->gvn_.End();
-    JLM_ASSERT(node->noutputs() == 1);
-    pe->RegisterGVN(node->output(0), g);
-  });*/
-  MatchType(*node, [](rvsdg::ThetaNode& tn)
-  {
-    throw std::runtime_error("Not implemented");
-  });
-
-  MatchType(node->GetOperation(), [pe, node](const jlm::llvm::CallOperation& call_op){
-    auto op_call = pe->gvn_.FromStr("hash_call");
-    auto hash_call_out = pe->gvn_.FromStr("hash_call_out");
-    pe->gvn_.Op(op_call);
-    for (size_t i = 0 ; i < node->ninputs() ; i++){
-      pe->gvn_.Arg( pe->GVNOrFail(node->input(i)->origin(), node) );
-    }
-    auto hash_all_inputs = pe->gvn_.End();
-    for (size_t i = 0 ; i < node->noutputs() ; i++){
-      auto arg_pos = pe->gvn_.FromWord(i);
-      auto g_out = pe->gvn_.Op(hash_call_out).Arg(hash_all_inputs).Arg(arg_pos).End();
-      pe->RegisterGVN( node->output(i), g_out);
-    }
-  });
-
-  MatchTypeWithDefault(*node, [pe, node](rvsdg::GammaNode& tn)
-  {
-    for (auto br : tn.GetEntryVars()){
-      auto out = br.input->origin();
-      for (auto into_branch : br.branchArgument){
-        pe->RegisterGVN(into_branch, pe->GVNOrFail(out, node));
-      }
-    }
-    auto selector = tn.GetMatchVar().input->origin();
-    auto match_var = pe->GVNOrFail(selector, node);
-    for (auto mv : tn.GetMatchVar().matchContent){
-      pe->RegisterGVN( mv, pe->GVNOrFail(selector, node));
-    }
-
-    // Sub regions here
-
-    for (auto ev : tn.GetExitVars())
-    {
-      auto any_val = jlm::rvsdg::gvn::GVN_NULL;
-      pe->gvn_.Op(pe->g_alternatives);
-      for (auto leaving_branch : ev.branchResult){
-        auto from_inner = pe->GVNOrZero(leaving_branch->origin());
-        pe->gvn_.Arg( from_inner );
-        any_val = from_inner;
-      }
-      auto branches_merged = pe->gvn_.End();
-      if (any_val == branches_merged){
-        pe->RegisterGVN(ev.output, branches_merged); // If all branches output the same value
-      }else{
-        auto sel_op = pe->gvn_.FromStr("selector");
-        auto hash_with_selector = pe->gvn_.Op(sel_op).Arg(match_var).Arg(branches_merged).End();
-        pe->RegisterGVN( ev.output, hash_with_selector); // Typical case. Note: branch order matters.
-      }
-    }
-  },
-  [pe,node](){
-    std::cout << TR_PINK << "Caught other structural node" << node->DebugString() << TR_RESET << std::endl;
-  });
-
-
-  MatchType(node->GetOperation(), [pe, node](const jlm::rvsdg::BinaryOperation& binop){
-    if (binop.is_associative() && binop.is_commutative()){
-      JLM_ASSERT(node->ninputs() >= 2);
-      auto op    = pe->gvn_.FromStr(binop.debug_string(), rvsdg::gvn::GVN_OP_IS_CA);
-      auto a     = pe->GVNOrFail( node->input(0)->origin(), node);
-      auto b     = pe->GVNOrFail( node->input(1)->origin(), node);
-      pe->RegisterGVN(node->output(0), pe->gvn_.Op(op).Arg(a).Arg(b).End());
-    }
-  });
-
 }
 
 void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node* node)

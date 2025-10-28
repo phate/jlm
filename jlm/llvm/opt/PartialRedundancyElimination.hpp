@@ -66,15 +66,11 @@ private:
   static void dump_region(          PartialRedundancyElimination *pe, rvsdg::Node* node);
   static void dump_node(            PartialRedundancyElimination *pe, rvsdg::Node* node);
   static void initialize_stats(     PartialRedundancyElimination *pe, rvsdg::Node* node);
-  static void gvn_lambda_and_consts(PartialRedundancyElimination *pe, rvsdg::Node* node);
-  static void gvn_compute(          PartialRedundancyElimination *pe, rvsdg::Node* node);
 
   size_t stat_theta_count;
   size_t stat_gamma_count;
 
   jlm::rvsdg::gvn::GVN_Val g_alternatives;
-
-
 
   std::unordered_map< rvsdg::Output *, rvsdg::gvn::GVN_Val> output_to_gvn_;
   void RegisterGVN(rvsdg::Output * output, rvsdg::gvn::GVN_Val gvn){
@@ -102,10 +98,11 @@ private:
   /// -----------------------------------------------------------
 
   void GVN_VisitRegion(rvsdg::Region& reg);
-  void GVN_VisitAllSubRegions(rvsdg::Node& node);
+  void GVN_VisitAllSubRegions(rvsdg::Node* node);
   void GVN_VisitNode(rvsdg::Node* node);
+  void GVN_VisitGammaNode(rvsdg::Node* node);
+  void GVN_VisitThetaNode(rvsdg::ThetaNode* tn);
   void GVN_VisitLeafNode(rvsdg::Node* node);
-
 };
 
 }
