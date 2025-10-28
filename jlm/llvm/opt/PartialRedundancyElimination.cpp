@@ -212,9 +212,6 @@ PartialRedundancyElimination::Run(
   std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
   std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
   this->TraverseTopDownRecursively(root, initialize_stats);
-  this->TraverseTopDownRecursively(root, gvn_lambda_and_consts);
-  this->TraverseTopDownRecursively(root, gvn_compute);
-
   this->TraverseTopDownRecursively(root, dump_region);
   this->TraverseTopDownRecursively(root, dump_node);
 
@@ -306,37 +303,43 @@ void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node& node)
 
 void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 {
+
   std::cout << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
-  MatchTypeWithDefault(node->GetOperation(),
-    [this,node](const jlm::llvm::ConstantDataArray& data_array){
-      auto op_data_array = gvn_.FromStr("constant_data_array");
-      gvn_.Op(op_data_array);
-      for (size_t i = 0 ; i < node->noutputs() ; i++){
-        gvn_.Arg( GVNOrFail(node->input(i)->origin(), node) );
+
+  MatchType(*node, [this](rvsdg::StructuralNode& sn){
+    if (sn.ninputs() && sn.noutputs()){
+      auto op_opaque = gvn_.FromPtr(&(sn.GetOperation()) );
+      auto hash_call_out = gvn_.FromStr("hash_call_out");
+      gvn_.Op(op_opaque);
+      for (size_t i = 0 ; i < sn.ninputs() ; i++){
+        auto from = sn.input(i)->origin();
+        gvn_.Arg( GVNOrFail(from, &sn) );
       }
-      auto g = gvn_.End();
-      JLM_ASSERT(node->noutputs() == 1);
-      RegisterGVN(node->output(0), g);
+      auto hash_all_inputs = gvn_.End();
+      for (size_t i = 0 ; i < sn.noutputs() ; i++){
+        auto arg_pos = gvn_.FromWord(i);
+        auto g_out = gvn_.Op(hash_call_out).Arg(hash_all_inputs).Arg(arg_pos).End();
+        RegisterGVN( sn.output(i), g_out );
+      }
+    }
+  });
+
+  MatchType(node->GetOperation(),
+    [this, node](const jlm::llvm::IntegerConstantOperation& iconst){
+      auto v = gvn_.FromStr(iconst.Representation().str());
+      RegisterGVN(node->output(0), v);
     },
-    // Treat nodes as opaque calls unless overridden.
-    [this, node](){
-      if (node->ninputs() && node->noutputs()){
-        auto op_opaque = gvn_.FromPtr(&(node->GetOperation()) );
-        auto hash_call_out = gvn_.FromStr("hash_call_out");
-        gvn_.Op(op_opaque);
-        for (size_t i = 0 ; i < node->ninputs() ; i++){
-          gvn_.Arg( GVNOrFail(node->input(i)->origin(), node) );
-        }
-        auto hash_all_inputs = gvn_.End();
-        for (size_t i = 0 ; i < node->noutputs() ; i++){
-          auto arg_pos = gvn_.FromWord(i);
-          auto g_out = gvn_.Op(hash_call_out).Arg(hash_all_inputs).Arg(arg_pos).End();
-          RegisterGVN( node->output(i), g_out);
-        }
+    [this, node](const jlm::rvsdg::BinaryOperation& binop){
+      if (binop.is_associative() && binop.is_commutative()){
+        JLM_ASSERT(node->ninputs() >= 2);
+        auto op    = gvn_.FromStr(binop.debug_string(), rvsdg::gvn::GVN_OP_IS_CA);
+        auto a     = GVNOrFail( node->input(0)->origin(), node);
+        auto b     = GVNOrFail( node->input(1)->origin(), node);
+        RegisterGVN(node->output(0), gvn_.Op(op).Arg(a).Arg(b).End());
       }
-      std::cout << ind() << "todo: handle default call" << std::endl;
     }
   );
+
 }
 
 void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
@@ -348,14 +351,56 @@ void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
     },
     [this,node](rvsdg::GammaNode& gn){
       std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+
+      for (auto br : gn.GetEntryVars()){
+        auto out = br.input->origin();
+        for (auto into_branch : br.branchArgument){
+          RegisterGVN(into_branch, GVNOrFail(out, node));
+        }
+      }
+      auto selector = gn.GetMatchVar().input->origin();
+      auto match_var = GVNOrFail(selector, node);
+      for (auto mv : gn.GetMatchVar().matchContent){
+        RegisterGVN( mv, GVNOrFail(selector, node));
+      }
+
       GVN_VisitAllSubRegions(gn);
+
+      for (auto ev : gn.GetExitVars())
+      {
+        auto any_val = jlm::rvsdg::gvn::GVN_NULL;
+        gvn_.Op(g_alternatives);
+        for (auto leaving_branch : ev.branchResult){
+          auto from_inner = GVNOrZero(leaving_branch->origin());
+          gvn_.Arg( from_inner );
+          any_val = from_inner;
+        }
+        auto branches_merged = gvn_.End();
+        if (any_val == branches_merged){
+          RegisterGVN(ev.output, branches_merged); // If all branches output the same value
+        }else{
+          auto sel_op = gvn_.FromStr("selector");
+          auto hash_with_selector = gvn_.Op(sel_op).Arg(match_var).Arg(branches_merged).End();
+          RegisterGVN( ev.output, hash_with_selector); // Typical case. Note: branch order matters.
+        }
+      }
     },
-    [this,node](rvsdg::DeltaNode& tn){
+    [this,node](rvsdg::ThetaNode& tn){
       std::cout << ind() << TR_ORANGE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
       GVN_VisitAllSubRegions(tn);
+      throw std::runtime_error("Not implemented");
     },
     [this,node](rvsdg::LambdaNode& ln)
     {
+      for (auto arg : ln.GetFunctionArguments()){
+        RegisterGVN(arg, gvn_.Leaf());
+      }
+      for (auto arg : ln.GetContextVars())
+      {
+        auto from = arg.input->origin();
+        RegisterGVN(arg.inner, GVNOrFail(from, node));
+      }
+
       std::cout << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
       GVN_VisitAllSubRegions(ln);
     },
@@ -368,7 +413,7 @@ void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
 
 void PartialRedundancyElimination::gvn_compute(PartialRedundancyElimination* pe, rvsdg::Node* node)
 {
-  MatchType(node->GetOperation(),[pe, node](const jlm::llvm::ConstantDataArray& data_array){
+  /*MatchType(node->GetOperation(),[pe, node](const jlm::llvm::ConstantDataArray& data_array){
     auto op_data_array = pe->gvn_.FromStr("constant_data_array");
     pe->gvn_.Op(op_data_array);
     for (size_t i = 0 ; i < node->noutputs() ; i++){
@@ -377,7 +422,7 @@ void PartialRedundancyElimination::gvn_compute(PartialRedundancyElimination* pe,
     auto g = pe->gvn_.End();
     JLM_ASSERT(node->noutputs() == 1);
     pe->RegisterGVN(node->output(0), g);
-  });
+  });*/
   MatchType(*node, [](rvsdg::ThetaNode& tn)
   {
     throw std::runtime_error("Not implemented");
