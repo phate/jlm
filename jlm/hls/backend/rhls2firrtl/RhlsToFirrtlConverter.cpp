@@ -271,7 +271,8 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto constant = GetConstant(body, size, value.to_uint());
     Connect(body, outData, constant);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(node->GetOperation())))
+  else if (
+      auto op = dynamic_cast<const jlm::rvsdg::ControlConstantOperation *>(&(node->GetOperation())))
   {
     auto value = op->value().alternative();
     auto size = ceil(log2(op->value().nalternatives()));
