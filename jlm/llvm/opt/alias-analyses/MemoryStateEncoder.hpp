@@ -104,12 +104,6 @@ private:
   EncodeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallEntry(const rvsdg::SimpleNode & callNode);
-
-  void
-  EncodeCallExit(const rvsdg::SimpleNode & callNode);
-
-  void
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   void
