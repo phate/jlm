@@ -548,6 +548,8 @@ CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
 void
 RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
+  const auto & pointsToGraph = Context_->pointsToGraph;
+  
   // The list of lambdas becomes the list of nodes in the call graph
   auto lambdaNodes = CollectLambdaNodes(rvsdgModule);
 
@@ -571,7 +573,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
     const auto targetPtr = callNode.input(0)->origin();
-    const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
+    const auto & targetPtrNode = pointsToGraph.GetRegisterNode(*targetPtr);
 
     // Go through all locations the called function pointer may target
     for (auto & callee : targetPtrNode.Targets())
