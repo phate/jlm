@@ -84,7 +84,7 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   {
     return;
   }
-
+#if 0
   auto [matchNode, matchOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(
       *gammaNode->predicate()->origin());
   if (!matchOperation)
@@ -96,8 +96,8 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   {
     return;
   }
-
-  thetaNode.predicate()->divert_to(matchNode->output(0));
+#endif
+  thetaNode.predicate()->divert_to(gammaNode->predicate()->origin());
 }
 
 std::optional<std::vector<size_t>>
