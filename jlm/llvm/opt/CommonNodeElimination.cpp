@@ -255,7 +255,7 @@ public:
 private:
   // The list of congruence sets
   std::vector<CongruenceSet> sets_;
-  // A mapping from T to the congruence set it belongs to, either as leader or follower
+  // A mapping from each output to the congruence set it belongs to, either as leader or follower
   std::unordered_map<const rvsdg::Output *, CongruenceSetIndex> congruenceSetMapping_;
 };
 
