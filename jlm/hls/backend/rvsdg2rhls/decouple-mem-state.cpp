@@ -60,7 +60,7 @@ trace_edge(
     }
     else if (auto ln = rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
-      auto si = util::AssertedCast<rvsdg::StructuralInput>(state_edge);
+      auto si = util::assertedCast<rvsdg::StructuralInput>(state_edge);
       auto arg = si->arguments.begin().ptr();
       std::vector<rvsdg::SimpleNode *> mem_ops;
       auto out = follow_state_edge(get_mem_state_user(arg), mem_ops, false);
@@ -69,7 +69,7 @@ trace_edge(
         // only route new edge through if target is contained
         auto new_out = ln->AddLoopVar(new_edge);
         new_edge_user->divert_to(new_out);
-        auto new_in = util::AssertedCast<rvsdg::StructuralInput>(get_mem_state_user(new_edge));
+        auto new_in = util::assertedCast<rvsdg::StructuralInput>(get_mem_state_user(new_edge));
         JLM_ASSERT(
             out
             == trace_edge(
@@ -116,7 +116,7 @@ trace_edge(
       // end of loop
       JLM_ASSERT(rvsdg::IsOwnerNodeOperation<BranchOperation>(*new_edge_user));
       JLM_ASSERT(branchOperation->loop);
-      return util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
+      return util::assertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
     }
     else if (muxOperation && !muxOperation->loop)
     {
@@ -316,7 +316,7 @@ follow_state_edge(
     else if (rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
       std::vector<rvsdg::SimpleNode *> loop_mem_ops;
-      auto si = jlm::util::AssertedCast<rvsdg::StructuralInput>(state_edge);
+      auto si = jlm::util::assertedCast<rvsdg::StructuralInput>(state_edge);
       auto arg = si->arguments.begin().ptr();
       auto out = follow_state_edge(get_mem_state_user(arg), loop_mem_ops, modify);
       // get this here before the graph is modified by handle_structural
@@ -359,7 +359,7 @@ follow_state_edge(
     {
       // end of loop
       JLM_ASSERT(branchOperation->loop);
-      return util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
+      return util::assertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
     }
     else if (muxOperation && !muxOperation->loop)
     {
@@ -439,7 +439,7 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 {
   JLM_ASSERT(loop_state_input->Type()->Kind() == rvsdg::TypeKind::State);
   JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*loop_state_input));
-  auto si = util::AssertedCast<rvsdg::StructuralInput>(loop_state_input);
+  auto si = util::assertedCast<rvsdg::StructuralInput>(loop_state_input);
   auto arg = si->arguments.begin().ptr();
   auto user = get_mem_state_user(arg);
   auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*user);
@@ -454,10 +454,21 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 }
 
 static void
-decouple_mem_state(rvsdg::Region * region)
+decouple_mem_state(rvsdg::RvsdgModule & rvsdgModule)
 {
-  JLM_ASSERT(region->nnodes() == 1);
-  auto lambda = util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+  const auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambda)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
+
   auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
@@ -507,7 +518,7 @@ MemoryStateDecoupling::MemoryStateDecoupling()
 void
 MemoryStateDecoupling::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  decouple_mem_state(&rvsdgModule.Rvsdg().GetRootRegion());
+  decouple_mem_state(rvsdgModule);
 }
 
 }

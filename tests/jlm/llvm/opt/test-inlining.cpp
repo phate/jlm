@@ -40,7 +40,7 @@ test1()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
     lambda->AddContextVar(*i);
 
     auto t = jlm::tests::TestOperation::create(
@@ -67,7 +67,7 @@ test1()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
     auto d = lambda->AddContextVar(*f1).inner;
     auto controlArgument = lambda->GetFunctionArguments()[0];
     auto valueArgument = lambda->GetFunctionArguments()[1];
@@ -142,7 +142,7 @@ test2()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
     return lambda->finalize(
         { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
@@ -157,7 +157,7 @@ test2()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f2", Linkage::externalLinkage));
     auto cvi = lambda->AddContextVar(*i).inner;
     auto cvf1 = lambda->AddContextVar(*f1).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];

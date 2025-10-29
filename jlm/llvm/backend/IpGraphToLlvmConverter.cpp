@@ -179,7 +179,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
     ::llvm::IRBuilder<> & builder)
 {
   const auto & representation =
-      util::AssertedCast<const IntegerConstantOperation>(&op)->Representation();
+      util::assertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
   if (representation.is_defined())
@@ -194,8 +194,8 @@ IpGraphToLlvmConverter::convert_ctlconstant(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is_ctlconstant_op(op));
-  auto & cop = *static_cast<const rvsdg::ctlconstant_op *>(&op);
+  JLM_ASSERT(is<rvsdg::ControlConstantOperation>(op));
+  auto & cop = *static_cast<const rvsdg::ControlConstantOperation *>(&op);
 
   size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
   auto type = ::llvm::IntegerType::get(builder.getContext(), nbits);
@@ -333,7 +333,7 @@ IpGraphToLlvmConverter::convert_phi(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
+  auto & phi = *util::assertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
@@ -410,7 +410,7 @@ IpGraphToLlvmConverter::convert_store(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
+  auto storeOperation = util::assertedCast<const StoreNonVolatileOperation>(&operation);
   CreateStoreInstruction(operands[0], operands[1], false, storeOperation->GetAlignment(), builder);
   return nullptr;
 }
@@ -718,7 +718,7 @@ IpGraphToLlvmConverter::convert_select(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & select = *util::AssertedCast<const SelectOperation>(&op);
+  auto & select = *util::assertedCast<const SelectOperation>(&op);
 
   if (select.type().Kind() == rvsdg::TypeKind::State)
     return nullptr;
@@ -1182,7 +1182,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return ConverterIntegerConstant(op, arguments, builder);
   }
-  if (is<rvsdg::ctlconstant_op>(op))
+  if (is<rvsdg::ControlConstantOperation>(op))
   {
     return convert_ctlconstant(op, arguments, builder);
   }
@@ -1929,21 +1929,21 @@ IpGraphToLlvmConverter::convert_data_node(const DataNode & node)
 }
 
 const ::llvm::GlobalValue::LinkageTypes &
-IpGraphToLlvmConverter::convert_linkage(const llvm::linkage & linkage)
+IpGraphToLlvmConverter::convert_linkage(const llvm::Linkage & linkage)
 {
-  static std::unordered_map<llvm::linkage, ::llvm::GlobalValue::LinkageTypes> map(
-      { { llvm::linkage::external_linkage, ::llvm::GlobalValue::ExternalLinkage },
-        { llvm::linkage::available_externally_linkage,
+  static std::unordered_map<llvm::Linkage, ::llvm::GlobalValue::LinkageTypes> map(
+      { { llvm::Linkage::externalLinkage, ::llvm::GlobalValue::ExternalLinkage },
+        { llvm::Linkage::availableExternallyLinkage,
           ::llvm::GlobalValue::AvailableExternallyLinkage },
-        { llvm::linkage::link_once_any_linkage, ::llvm::GlobalValue::LinkOnceAnyLinkage },
-        { llvm::linkage::link_once_odr_linkage, ::llvm::GlobalValue::LinkOnceODRLinkage },
-        { llvm::linkage::weak_any_linkage, ::llvm::GlobalValue::WeakAnyLinkage },
-        { llvm::linkage::weak_odr_linkage, ::llvm::GlobalValue::WeakODRLinkage },
-        { llvm::linkage::appending_linkage, ::llvm::GlobalValue::AppendingLinkage },
-        { llvm::linkage::internal_linkage, ::llvm::GlobalValue::InternalLinkage },
-        { llvm::linkage::private_linkage, ::llvm::GlobalValue::PrivateLinkage },
-        { llvm::linkage::external_weak_linkage, ::llvm::GlobalValue::ExternalWeakLinkage },
-        { llvm::linkage::common_linkage, ::llvm::GlobalValue::CommonLinkage } });
+        { llvm::Linkage::linkOnceAnyLinkage, ::llvm::GlobalValue::LinkOnceAnyLinkage },
+        { llvm::Linkage::linkOnceOdrLinkage, ::llvm::GlobalValue::LinkOnceODRLinkage },
+        { llvm::Linkage::weakAnyLinkage, ::llvm::GlobalValue::WeakAnyLinkage },
+        { llvm::Linkage::weakOdrLinkage, ::llvm::GlobalValue::WeakODRLinkage },
+        { llvm::Linkage::appendingLinkage, ::llvm::GlobalValue::AppendingLinkage },
+        { llvm::Linkage::internalLinkage, ::llvm::GlobalValue::InternalLinkage },
+        { llvm::Linkage::privateLinkage, ::llvm::GlobalValue::PrivateLinkage },
+        { llvm::Linkage::externalWeakLinkage, ::llvm::GlobalValue::ExternalWeakLinkage },
+        { llvm::Linkage::commonLinkage, ::llvm::GlobalValue::CommonLinkage } });
 
   JLM_ASSERT(map.find(linkage) != map.end());
   return map[linkage];

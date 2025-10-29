@@ -24,10 +24,10 @@ TestWriteGraphs()
 
   // Act
   Writer writer;
-  dot::LlvmDotWriter dotWriter;
+  LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
-  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
+  writer.outputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
@@ -36,7 +36,7 @@ TestWriteGraphs()
       == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
   assert(rootGraph.NumNodes() == 1);       // Only the lambda node for "f"
   assert(rootGraph.NumResultNodes() == 1); // Exporting the function "f"
-  auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));
+  auto & lambdaNode = *assertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
   assert(lambdaNode.GetLabel() == gammaTest.lambda->DebugString());
@@ -51,7 +51,7 @@ TestWriteGraphs()
   // Argument a1 leads to the gamma node
   auto & connections = fctBody.GetArgumentNode(1).GetConnections();
   assert(connections.size() == 1);
-  auto & gammaNode = *AssertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
+  auto & gammaNode = *assertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
   assert(gammaNode.GetLabel() == gammaTest.gamma->DebugString());
   assert(gammaNode.NumInputPorts() == 5);
   assert(gammaNode.NumOutputPorts() == 2);
@@ -94,11 +94,11 @@ TestTypeGraph()
 
   // Act
   Writer writer;
-  dot::LlvmDotWriter dotWriter;
+  LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
-  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
+  writer.outputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & typeGraph = writer.GetGraph(0);

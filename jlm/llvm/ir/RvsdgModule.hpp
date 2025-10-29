@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_RVSDGMODULE_HPP
 #define JLM_LLVM_IR_RVSDGMODULE_HPP
 
-#include <jlm/llvm/ir/linkage.hpp>
+#include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/file.hpp>
@@ -20,32 +20,54 @@ namespace jlm::llvm
  */
 class GraphImport final : public rvsdg::GraphImport
 {
-private:
   GraphImport(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      llvm::linkage linkage)
+      Linkage linkage,
+      bool isConstant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
-        Linkage_(std::move(linkage)),
         ValueType_(std::move(valueType)),
-        ImportedType_(std::move(importedType))
+        ImportedType_(std::move(importedType)),
+        Linkage_(std::move(linkage)),
+        isConstant_(isConstant)
   {}
 
 public:
-  [[nodiscard]] const linkage &
-  Linkage() const noexcept
+  [[nodiscard]] const Linkage &
+  linkage() const noexcept
   {
     return Linkage_;
   }
 
+  [[nodiscard]] bool
+  isConstant() const noexcept
+  {
+    return isConstant_;
+  }
+
+  /**
+   * Symbols are imported as references to an underlying function or global variable.
+   * The value type is the type of this underlying target.
+   *
+   * @return the underlying type of the imported symbol
+   * @see ImportedType
+   */
   [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   ValueType() const noexcept
   {
     return ValueType_;
   }
 
+  /**
+   * Symbols are imported as references to an underlying function or global variable.
+   * The imported type is the type of this reference, e.g., a pointer or function type.
+   * The imported type is the actual type of the RVSDG region argument.
+   *
+   * @return the type used to reference the imported symbol.
+   * @see ValueType
+   */
   [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   ImportedType() const noexcept
   {
@@ -61,22 +83,25 @@ public:
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      llvm::linkage linkage)
+      Linkage linkage,
+      bool isConstant = false)
   {
     auto graphImport = new GraphImport(
         graph,
         std::move(valueType),
         std::move(importedType),
         std::move(name),
-        std::move(linkage));
-    graph.GetRootRegion().append_argument(graphImport);
+        std::move(linkage),
+        isConstant);
+    graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
     return *graphImport;
   }
 
 private:
-  llvm::linkage Linkage_;
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
+  llvm::Linkage Linkage_;
+  bool isConstant_;
 };
 
 /**

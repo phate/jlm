@@ -128,7 +128,7 @@ public:
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(Output_);
+    auto argument = jlm::util::assertedCast<jlm::rvsdg::RegionArgument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
@@ -147,7 +147,7 @@ public:
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *jlm::util::AssertedCast<rvsdg::RegionArgument>(Output_);
+    return *jlm::util::assertedCast<rvsdg::RegionArgument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -297,7 +297,7 @@ public:
    * @return The call node's input/output state input.
    */
   [[nodiscard]] static rvsdg::Input &
-  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
+  GetIOStateInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.input(node.ninputs() - 2);

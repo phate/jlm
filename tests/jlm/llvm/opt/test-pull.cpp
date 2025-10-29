@@ -17,8 +17,8 @@
 static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
-static inline void
-test_pullin_top()
+static void
+testPullInTop()
 {
   using namespace jlm::llvm;
 
@@ -53,45 +53,62 @@ test_pullin_top()
   pullin_top(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(gamma->subregion(0)->nnodes() == 2);
-  assert(gamma->subregion(1)->nnodes() == 2);
+  assert(gamma->subregion(0)->numNodes() == 2);
+  assert(gamma->subregion(1)->numNodes() == 2);
 }
 
-static inline void
-test_pullin_bottom()
-{
-  auto vt = jlm::tests::ValueType::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
-
-  jlm::rvsdg::Graph graph;
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-
-  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-
-  auto ev = gamma->AddEntryVar(x);
-  gamma->AddExitVar(ev.branchArgument);
-
-  auto b1 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { gamma->output(0), x }, { vt })
-          ->output(0);
-  auto b2 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { gamma->output(0), b1 }, { vt })
-          ->output(0);
-
-  auto & xp = jlm::rvsdg::GraphExport::Create(*b2, "x");
-
-  //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::pullin_bottom(gamma);
-  //	jlm::rvsdg::view(graph, stdout);
-
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gamma);
-  assert(gamma->subregion(0)->nnodes() == 2);
-  assert(gamma->subregion(1)->nnodes() == 2);
-}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInTop", testPullInTop)
 
 static void
-test_pull()
+testPullInBottom()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  auto valueType = ValueType::Create();
+  const auto controlType = ControlType::Create(2);
+
+  Graph rvsdg;
+  auto c = &jlm::rvsdg::GraphImport::Create(rvsdg, controlType, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+
+  auto gammaNode = GammaNode::create(c, 2);
+
+  auto entryVar = gammaNode->AddEntryVar(x);
+  gammaNode->AddExitVar(entryVar.branchArgument);
+
+  auto node1 =
+      TestOperation::create(&rvsdg.GetRootRegion(), { gammaNode->output(0), x }, { valueType });
+  auto node2 = TestOperation::create(
+      &rvsdg.GetRootRegion(),
+      { gammaNode->output(0), node1->output(0) },
+      { valueType });
+
+  auto & xp = GraphExport::Create(*node2->output(0), "x");
+
+  view(rvsdg, stdout);
+
+  // Act
+  const auto sunkNodes = NodeSinking::sinkDependentNodesIntoGamma(*gammaNode);
+  rvsdg.PruneNodes();
+
+  view(rvsdg, stdout);
+
+  // Assert
+  assert(sunkNodes == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
+
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gammaNode);
+  assert(gammaNode->subregion(0)->numNodes() == 2);
+  assert(gammaNode->subregion(1)->numNodes() == 2);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInBottom", testPullInBottom)
+
+static void
+testPull()
 {
   using namespace jlm::llvm;
 
@@ -128,16 +145,7 @@ test_pull()
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 }
 
-static void
-verify()
-{
-  test_pullin_top();
-  test_pullin_bottom();
-
-  test_pull();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull", verify)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPull", testPull)

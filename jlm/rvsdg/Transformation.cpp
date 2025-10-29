@@ -24,14 +24,34 @@ public:
   {}
 
   void
-  StartMeasuring(const Graph & graph) noexcept
+  StartMeasuring() noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  EndMeasuring(const rvsdg::Graph & graph) noexcept
+  StartTransformationMeasuring(size_t passNumber, std::string_view passName, const Graph & graph)
+  {
+    const auto fullName = util::strfmt(std::setw(3), std::setfill('0'), passNumber, "-", passName);
+
+    const auto totalNodes = nnodes(&graph.GetRootRegion());
+    AddMeasurement(fullName + "-#RvsdgNodesBefore", totalNodes);
+
+    JLM_ASSERT(currentTransformationTimer_ == nullptr);
+    currentTransformationTimer_ = &AddTimer(fullName + "-Timer");
+    currentTransformationTimer_->start();
+  }
+
+  void
+  EndTransformationMeasuring()
+  {
+    JLM_ASSERT(currentTransformationTimer_ != nullptr);
+    currentTransformationTimer_->stop();
+    currentTransformationTimer_ = nullptr;
+  }
+
+  void
+  EndMeasuring(const Graph & graph) noexcept
   {
     GetTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodesAfter, nnodes(&graph.GetRootRegion()));
@@ -42,6 +62,15 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
+
+  static bool
+  IsDemandedBy(const util::StatisticsCollector & collector)
+  {
+    return collector.IsDemanded(Id::RvsdgOptimization);
+  }
+
+private:
+  util::Timer * currentTransformationTimer_ = nullptr;
 };
 
 TransformationSequence::~TransformationSequence() noexcept = default;
@@ -51,8 +80,12 @@ TransformationSequence::Run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
-  statistics->StartMeasuring(rvsdgModule.Rvsdg());
+  std::unique_ptr<Statistics> statistics;
+  if (Statistics::IsDemandedBy(statisticsCollector))
+    statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
+
+  if (statistics)
+    statistics->StartMeasuring();
 
   size_t numPasses = 0;
   if (DumpRvsdgDotGraphs_)
@@ -67,7 +100,17 @@ TransformationSequence::Run(
 
   for (const auto & transformation : Transformations_)
   {
+    if (statistics)
+      statistics->StartTransformationMeasuring(
+          numPasses,
+          transformation->GetName(),
+          rvsdgModule.Rvsdg());
+
     transformation->Run(rvsdgModule, statisticsCollector);
+
+    if (statistics)
+      statistics->EndTransformationMeasuring();
+
     if (DumpRvsdgDotGraphs_)
     {
       DumpDotGraphs(
@@ -75,12 +118,16 @@ TransformationSequence::Run(
           statisticsCollector.GetSettings().GetOrCreateOutputDirectory(),
           "After" + std::string(transformation->GetName()),
           numPasses);
-      numPasses++;
     }
+
+    numPasses++;
   }
 
-  statistics->EndMeasuring(rvsdgModule.Rvsdg());
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  if (statistics)
+  {
+    statistics->EndMeasuring(rvsdgModule.Rvsdg());
+    statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  }
 }
 
 void
@@ -101,7 +148,7 @@ TransformationSequence::DumpDotGraphs(
 
   std::ofstream outputFile;
   outputFile.open(filePath.str());
-  graphWriter.OutputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
   outputFile.close();
 }
 

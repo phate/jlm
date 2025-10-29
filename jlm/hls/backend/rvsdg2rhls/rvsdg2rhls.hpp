@@ -21,14 +21,11 @@ is_constant(const rvsdg::Node * node)
 {
   return jlm::rvsdg::is<llvm::IntegerConstantOperation>(node)
       || jlm::rvsdg::is<llvm::UndefValueOperation>(node) || jlm::rvsdg::is<llvm::ConstantFP>(node)
-      || jlm::rvsdg::is<jlm::rvsdg::ctlconstant_op>(node);
+      || jlm::rvsdg::is<rvsdg::ControlConstantOperation>(node);
 }
 
 std::unique_ptr<rvsdg::TransformationSequence>
-createTransformationSequence(
-    rvsdg::DotWriter & dotWriter,
-    bool dumpRvsdgDotGraphs,
-    util::HashSet<std::unique_ptr<rvsdg::Transformation>> & transformations);
+createTransformationSequence(rvsdg::DotWriter & dotWriter, bool dumpRvsdgDotGraphs);
 
 void
 rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);

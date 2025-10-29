@@ -290,7 +290,7 @@ class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
-  LambdaEntryMemoryStateSplitOperation(size_t numResults, std::vector<MemoryNodeId> memoryNodeIds);
+  explicit LambdaEntryMemoryStateSplitOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -300,6 +300,34 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
+
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
+  [[nodiscard]] std::vector<MemoryNodeId>
+  getMemoryNodeIds() const noexcept
+  {
+    std::vector<MemoryNodeId> memoryNodeIds(nresults());
+    for (auto [memoryNodeId, index] : memoryNodeIdToIndexMap_)
+    {
+      JLM_ASSERT(index < nresults());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
+  }
+
+  /**
+   * Maps the output a \ref LambdaEntryMemoryStateSplitOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param output A output of \ref LambdaEntryMemoryStateSplitOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The output is assumed to belong to a \ref LambdaEntryMemoryStateSplitOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
   /**
    * Perform the following transformation:
@@ -318,36 +346,16 @@ public:
       const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
       const std::vector<rvsdg::Output *> & operands);
 
-  // FIXME: Deprecated, needs to be removed
-  static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
-        { &output },
-        numResults,
-        std::move(memoryNodeIds)));
-  }
-
   static rvsdg::SimpleNode &
-  CreateNode(
-      rvsdg::Output & operand,
-      const size_t numResults,
-      std::vector<MemoryNodeId> memoryNodeIds)
+  CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
   {
     return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
         { &operand },
-        numResults,
         std::move(memoryNodeIds));
   }
 
 private:
-  std::vector<MemoryNodeId> MemoryNodeIds_{};
+  util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
 
 /**
@@ -376,8 +384,11 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's operands.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
-  GetMemoryNodeIds() const noexcept
+  getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(narguments());
     for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
@@ -398,7 +409,19 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  /**
+   * Maps the input a \ref LambdaExitMemoryStateMergeOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param input A input of \ref LambdaExitMemoryStateMergeOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The input is assumed to belong to a \ref LambdaExitMemoryStateMergeOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapInputToMemoryNodeId(const rvsdg::Input & input);
 
   /**
    * Performs the following transformation:
@@ -458,19 +481,6 @@ public:
              : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, memoryNodeIds);
   }
 
-  // FIXME: Deprecated, needs to be removed
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
-  }
-
 private:
   util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
@@ -490,7 +500,7 @@ class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~CallEntryMemoryStateMergeOperation() noexcept override;
 
-  CallEntryMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
+  explicit CallEntryMemoryStateMergeOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -501,8 +511,11 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
   [[nodiscard]] std::vector<MemoryNodeId>
-  GetMemoryNodeIds() const noexcept
+  getMemoryNodeIds() const noexcept
   {
     std::vector<MemoryNodeId> memoryNodeIds(narguments());
     for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
@@ -523,20 +536,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
-
-  // FIXME: Deprecated, will be removed
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
-  }
+  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   static rvsdg::SimpleNode &
   CreateNode(
@@ -571,7 +571,7 @@ class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~CallExitMemoryStateSplitOperation() noexcept override;
 
-  explicit CallExitMemoryStateSplitOperation(std::vector<MemoryNodeId> memoryNodeIds);
+  explicit CallExitMemoryStateSplitOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -581,6 +581,33 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
+
+  /**
+   * @return The \ref MemoryNodeId for each of the operation's results.
+   */
+  [[nodiscard]] std::vector<MemoryNodeId>
+  getMemoryNodeIds() const noexcept
+  {
+    std::vector<MemoryNodeId> memoryNodeIds(nresults());
+    for (auto [memoryNodeId, index] : memoryNodeIdToIndexMap_)
+    {
+      JLM_ASSERT(index < nresults());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
+  }
+
+  /**
+   * Maps a memory node identifier to the respective output of a \ref
+   * CallExitMemoryStateSplitOperation node.
+   *
+   * @param node A \ref CallExitMemoryStateSplitOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Output *
+  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Perform the following transformation:
@@ -607,21 +634,8 @@ public:
         std::move(memoryNodeIds));
   }
 
-  // FIXME: Deprecated, will be removed
-  static std::vector<rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; i++)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&CreateNode(output, std::move(memoryNodeIds)));
-  }
-
 private:
-  std::vector<MemoryNodeId> MemoryNodeIds_{};
+  util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
 
 }

@@ -93,7 +93,7 @@ TestIntegerBinaryOperation()
     {
       using namespace jlm::llvm;
 
-      assert(region->nnodes() == 3);
+      assert(region->numNodes() == 3);
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
@@ -102,13 +102,13 @@ TestIntegerBinaryOperation()
         {
           assert(convertedBinaryOp->nresults() == 1);
           assert(convertedBinaryOp->narguments() == 2);
-          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(0).get());
           assert(inputBitType1->nbits() == nbits);
-          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(1).get());
           assert(inputBitType2->nbits() == nbits);
-          auto outputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->result(0).get());
           assert(outputBitType->nbits() == nbits);
           foundBinaryOp = true;
@@ -220,7 +220,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
     {
       using namespace jlm::llvm;
 
-      assert(region->nnodes() == 3);
+      assert(region->numNodes() == 3);
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {
@@ -229,16 +229,16 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
         {
           assert(convertedCompOp->nresults() == 1);
           assert(convertedCompOp->narguments() == 2);
-          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(0).get());
           assert(inputBitType1->nbits() == nbits);
-          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(1).get());
           assert(inputBitType2->nbits() == nbits);
 
           // Check the output type is bit1 (boolean)
           auto outputBitType =
-              jlm::util::AssertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
+              jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
           assert(outputBitType->nbits() == 1);
 
           foundCompOp = true;

@@ -252,12 +252,10 @@ NodeReduction::NormalizeLoadNode(
     const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
-      { LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
-        LoadNonVolatileOperation::NormalizeLoadStore,
+      { LoadNonVolatileOperation::NormalizeLoadStore,
         LoadNonVolatileOperation::NormalizeLoadAlloca,
         LoadNonVolatileOperation::NormalizeDuplicateStates,
         LoadNonVolatileOperation::NormalizeLoadStoreState,
-        LoadNonVolatileOperation::NormalizeLoadLoadState,
         LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
 
   return rvsdg::NormalizeSequence<LoadNonVolatileOperation>(
@@ -276,7 +274,8 @@ NodeReduction::NormalizeStoreNode(
         StoreNonVolatileOperation::NormalizeStoreStore,
         StoreNonVolatileOperation::NormalizeStoreAlloca,
         StoreNonVolatileOperation::NormalizeDuplicateStates,
-        StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
+        StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+        StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
 
   return rvsdg::NormalizeSequence<StoreNonVolatileOperation>(
       storeNodeNormalizations,

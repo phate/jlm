@@ -9,7 +9,6 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
-#include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 namespace jlm::util
@@ -28,6 +27,7 @@ class StructuralInput;
 class StructuralNode;
 class StructuralOutput;
 class SubstitutionMap;
+class RegionObserver;
 
 /**
  * \brief Represents the argument of a region.
@@ -211,12 +211,6 @@ private:
  */
 class Region
 {
-  typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
-
-  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
-
-  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
-
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
   using RegionArgumentRange = util::IteratorRange<RegionArgumentIterator>;
@@ -226,6 +220,10 @@ class Region
   using RegionResultConstIterator = std::vector<RegionResult *>::const_iterator;
   using RegionResultRange = util::IteratorRange<RegionResultIterator>;
   using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
+
+  using region_nodes_list = util::IntrusiveList<Node, Node::region_node_list_accessor>;
+  using region_top_node_list = util::IntrusiveList<Node, Node::region_top_node_list_accessor>;
+  using region_bottom_node_list = util::IntrusiveList<Node, Node::region_bottom_node_list_accessor>;
 
   using TopNodeIterator = region_top_node_list::Iterator;
   using TopNodeConstIterator = region_top_node_list::ConstIterator;
@@ -248,6 +246,11 @@ public:
   Region(rvsdg::Region * parent, Graph * graph);
 
   Region(rvsdg::StructuralNode * node, size_t index);
+
+  Region(const Region &) = delete;
+
+  Region &
+  operator=(const Region &) = delete;
 
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
@@ -287,20 +290,22 @@ public:
 
   /**
    * @return Returns an iterator range for iterating through the top nodes of the region.
+   * The top nodes are all nodes that do not have any inputs.
    */
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return { topNodes_.begin(), topNodes_.end() };
   }
 
   /**
    * @return Returns an iterator range for iterating through the top nodes of the region.
+   * The top nodes are all nodes that do not have any inputs.
    */
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return { topNodes_.begin(), topNodes_.end() };
   }
 
   /**
@@ -309,7 +314,7 @@ public:
   [[nodiscard]] NodeRange
   Nodes() noexcept
   {
-    return { Nodes_.begin(), Nodes_.end() };
+    return { nodes_.begin(), nodes_.end() };
   }
 
   /**
@@ -318,26 +323,27 @@ public:
   [[nodiscard]] NodeConstRange
   Nodes() const noexcept
   {
-    return { Nodes_.begin(), Nodes_.end() };
+    return { nodes_.begin(), nodes_.end() };
   }
 
   /**
    * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   * The bottom nodes are all nodes with only unused outputs, aka. dead nodes.
    */
   [[nodiscard]] BottomNodeRange
   BottomNodes() noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return { bottomNodes_.begin(), bottomNodes_.end() };
   }
 
   /**
-   * @return Returns an iterator range for iterating through the bottom nodes of the
-   * region.
+   * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   * The bottom nodes are all nodes with only unused outputs, aka. dead nodes.
    */
   [[nodiscard]] BottomNodeConstRange
   BottomNodes() const noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return { bottomNodes_.begin(), bottomNodes_.end() };
   }
 
   [[nodiscard]] Graph *
@@ -366,19 +372,28 @@ public:
   [[nodiscard]] bool
   IsRootRegion() const noexcept;
 
-  /* \brief Append \p argument to the region
+  /**
+   * Appends the given region \p argument to the list of region arguments.
+   * Invalidates any existing iterators to the argument list.
    *
-   * Multiple invocations of append_argument for the same argument are undefined.
+   * @param argument the argument to add
+   * @return a reference to the added argument
    */
-  void
-  append_argument(RegionArgument * argument);
+  RegionArgument &
+  addArgument(std::unique_ptr<RegionArgument> argument);
 
-  /* \brief Insert \p argument into argument list of the region
+  /**
+   * Inserts the given region \p argument in the list of region arguments, at the given \p index.
+   * Shifts any results with equal or greater index one to the right to make room.
+   * Invalidates any existing iterators to the argument list.
    *
-   * Multiple invocations of append_argument for the same argument are undefined.
+   * @param index the position to add the result
+   * @param argument the argument to add
+   * @return a reference to the added result
+   * @see addArgument to add to the end
    */
-  void
-  insert_argument(size_t index, RegionArgument * argument);
+  RegionArgument &
+  insertArgument(size_t index, std::unique_ptr<RegionArgument> argument);
 
   /**
    * Removes an argument from the region given an arguments' index.
@@ -432,12 +447,15 @@ public:
     return arguments_[index];
   }
 
-  /* \brief Appends \p result to the region
+  /**
+   * Appends the given region result to the list of region results.
+   * Invalidates any existing iterators to the result list.
    *
-   * Multiple invocations of append_result for the same result are undefined.
+   * @param result the result to add
+   * @return a reference to the added result
    */
-  void
-  append_result(RegionResult * result);
+  RegionResult &
+  addResult(std::unique_ptr<RegionResult> result);
 
   /**
    * Removes a result from the region given a results' index.
@@ -503,114 +521,40 @@ public:
     return results_[index];
   }
 
-  inline size_t
-  nnodes() const noexcept
+  /**
+   * @return The number of nodes in the region.
+   */
+  [[nodiscard]] size_t
+  numNodes() const noexcept
   {
-    return Nodes_.size();
+    return numNodes_;
   }
 
   /**
    * @return The number of top nodes in the region.
    */
   [[nodiscard]] size_t
-  NumTopNodes() const noexcept
+  numTopNodes() const noexcept
   {
-    return TopNodes_.size();
+    return numTopNodes_;
   }
 
   /**
    * @return The number of bottom nodes in the region.
    */
   [[nodiscard]] size_t
-  NumBottomNodes() const noexcept
+  numBottomNodes() const noexcept
   {
-    return BottomNodes_.size();
+    return numBottomNodes_;
   }
 
+  /**
+   * Deletes the given node from the region.
+   * The node must belong to this region, and be dead.
+   * @param node the node to remove
+   */
   void
-  remove_node(Node * node);
-
-  /**
-   * \brief Adds \p node to the top nodes of the region.
-   *
-   * The node \p node is only added to the top nodes of this region, iff:
-   * 1. The node \p node belongs to the same region instance.
-   * 2. The node \p node has no inputs.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created. There is
-   * no need to invoke it manually.
-   */
-  bool
-  AddTopNode(Node & node);
-
-  /**
-   * \brief Adds \p node to the bottom nodes of the region.
-   *
-   * The node \p node is only added to the bottom nodes of this region, iff:
-   * 1. The node \p node belongs to the same region instance.
-   * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created or becomes dead. There is
-   * no need to invoke it manually.
-   */
-  bool
-  AddBottomNode(Node & node);
-
-  /**
-   * \brief Adds \p node to the region.
-   *
-   * The node \p node is only added to this region, iff \p node belongs to the same region instance.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created. There is no need to invoke
-   * it manually.
-   */
-  bool
-  AddNode(Node & node);
-
-  /**
-   * Removes \p node from the top nodes in the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was a top node and removed, otherwise false.
-   *
-   * @note This method is automatically invoked when inputs are added to a node. There is no need to
-   * invoke it manually.
-   */
-  bool
-  RemoveTopNode(Node & node);
-
-  /**
-   * Removes \p node from the bottom nodes in the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was a bottom node and removed, otherwise false.
-   *
-   * @note This method is automatically invoked when a node cedes to be dead. There is no need to
-   * invoke it manually.
-   */
-  bool
-  RemoveBottomNode(Node & node);
-
-  /**
-   * Remove \p node from the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was removed, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is deleted. There is no need to invoke
-   * it manually.
-   */
-  bool
-  RemoveNode(Node & node);
+  removeNode(Node * node);
 
   /**
     \brief Copy a region with substitutions
@@ -627,9 +571,109 @@ public:
   void
   copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const;
 
+  /**
+   * Removes all dead nodes from the region, including nodes that become dead during pruning.
+   * @param recursive if true, any subregions are also pruned, as well as their subregions etc.
+   */
   void
   prune(bool recursive);
 
+  /**
+   * @return the Node:Id that will be used for the next node created in the region.
+   */
+  [[nodiscard]] Node::Id
+  getNextNodeId() const noexcept
+  {
+    return nextNodeId_;
+  }
+
+private:
+  /**
+   * \brief Adds \p node to the top nodes of the region.
+   * @param node The node that is now a top node.
+   * @see TopNodes
+   *
+   * @note This method is automatically invoked when a top node is created.
+   */
+  void
+  onTopNodeAdded(Node & node);
+
+  /**
+   * Removes \p node from the list of top nodes in the region.
+   * @param node The node that is no longer a top node.
+   *
+   * @note This method is automatically invoked when inputs are added to a node.
+   */
+  void
+  onTopNodeRemoved(Node & node);
+
+  /**
+   * \brief Adds \p node to the set of bottom nodes in the region.
+   * @param node The node that is now a bottom node.
+   * @see BottomNodes
+   *
+   * @note This method is automatically invoked when a node is created or becomes dead.
+   */
+  void
+  onBottomNodeAdded(Node & node);
+
+  /**
+   * Removes \p node from the list of bottom nodes in the region.
+   * @param node The node that is no longer a bottom node.
+   *
+   * @note This method is automatically invoked when a node ceases to be dead.
+   */
+  void
+  onBottomNodeRemoved(Node & node);
+
+  /**
+   * \brief Adds \p node to the list of nodes in the region.
+   * @param node The node that has been created in the region.
+   *
+   * @note This method is automatically invoked when a node is created.
+   */
+  void
+  onNodeAdded(Node & node);
+
+  /**
+   * Remove \p node from the region.
+   * @param node The node that is removed.
+   *
+   * @note This method is automatically invoked when a node is deleted.
+   */
+  void
+  onNodeRemoved(Node & node);
+
+  /**
+   * @return A unique identifier for a node within this region.
+   *
+   * @note This method is automatically invoked when a node is created.
+   * The identifier is only unique within this region.
+   */
+  [[nodiscard]] Node::Id
+  generateNodeId() noexcept
+  {
+    const auto nodeId = nextNodeId_;
+    nextNodeId_++;
+    return nodeId;
+  }
+
+  void
+  notifyNodeCreate(Node * node);
+
+  void
+  notifyNodeDestroy(Node * node);
+
+  void
+  notifyInputCreate(Input * input);
+
+  void
+  notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+
+  void
+  notifyInputDestory(Input * input);
+
+public:
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.
@@ -717,19 +761,6 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
-  /**
-   * @return A unique identifier for a node within this region.
-   *
-   * \note The identifier is only unique within this region.
-   */
-  [[nodiscard]] Node::Id
-  GenerateNodeId() noexcept
-  {
-    const auto nodeId = NodeId_;
-    NodeId_++;
-    return nodeId;
-  }
-
 private:
   static void
   ToTree(
@@ -756,19 +787,111 @@ private:
 
   size_t index_;
   Graph * graph_;
-  Node::Id NodeId_;
+  Node::Id nextNodeId_;
   rvsdg::StructuralNode * node_;
+
+  // The region owns its results, arguments and nodes
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
-  region_bottom_node_list BottomNodes_;
-  region_top_node_list TopNodes_;
-  region_nodes_list Nodes_;
+  region_top_node_list topNodes_;
+  size_t numTopNodes_;
+  region_bottom_node_list bottomNodes_;
+  size_t numBottomNodes_;
+  region_nodes_list nodes_;
+  size_t numNodes_;
+
+  // Allow RegionObservers to register themselves on const Regions
+  mutable RegionObserver * observers_ = nullptr;
+
+  friend class Node;
+  friend class RegionObserver;
+  friend class SimpleNode;
+  friend class StructuralNode;
+  friend class Input;
+  friend class Output;
+  friend class RegionResult;
 };
+
+/**
+ * \brief Proxy object to observe changes to a region.
+ *
+ * Subscribers can implement and instantiate this interface for
+ * a specific region to receive notifications about the region.
+ *
+ */
+class RegionObserver
+{
+public:
+  virtual ~RegionObserver() noexcept;
+
+  explicit RegionObserver(const Region & region);
+
+  RegionObserver(const RegionObserver &) = delete;
+
+  RegionObserver &
+  operator=(const RegionObserver &) = delete;
+
+  /**
+   * Called right after a node is added to the region,
+   * after the node has its inputs and output added.
+   * @param node the node being added
+   */
+  virtual void
+  onNodeCreate(Node * node) = 0;
+
+  /**
+   * Called right before a node is removed from the region,
+   * before the node has its inputs and outputs removed.
+   * @param node the node being removed
+   */
+  virtual void
+  onNodeDestroy(Node * node) = 0;
+
+  /**
+   * Called after a node gets a new input, or the region gets a new result.
+   * This method is not called when creating new nodes, only modifying existing nodes.
+   * @param input the new input
+   */
+  virtual void
+  onInputCreate(Input * input) = 0;
+
+  /**
+   * Called right after the given input gets a new origin.
+   * @param input the input.
+   * @param old_origin the input's old origin.
+   * @param new_origin the input's new origin.
+   */
+  virtual void
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
+
+  /**
+   * Called right before a node input or region result is removed.
+   * This method is not called when deleting nodes, only modifying existing nodes.
+   * @param input the input that is removed
+   */
+  virtual void
+  onInputDestroy(Input * input) = 0;
+
+private:
+  RegionObserver ** pprev_;
+  RegionObserver * next_;
+
+  friend class Region;
+};
+
+/**
+ * Computes the depth for all nodes in \p region.
+ *
+ * @param region The region for which to compute the depth of its nodes.
+ * @return A dictionary mapping nodes to their depth.
+ */
+std::unordered_map<const Node *, size_t>
+computeDepthMap(const Region & region);
 
 static inline void
 remove(Node * node)
 {
-  return node->region()->remove_node(node);
+  return node->region()->removeNode(node);
 }
 
 size_t

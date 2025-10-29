@@ -22,13 +22,13 @@ namespace jlm::util
  */
 template<class T>
 static constexpr int
-Log2Floor(T value)
+log2Floor(T value)
 {
   static_assert(std::is_integral_v<T>, "T must be integral type");
   if (value < 1)
     return -1;
 
-  return 1 + Log2Floor(value >> 1);
+  return 1 + log2Floor(value >> 1);
 }
 
 /**
@@ -51,7 +51,7 @@ RoundUpToPowerOf2(T value)
   if (value <= 1)
     return 1;
 
-  return T(1) << (Log2Floor(value - 1) + 1);
+  return T(1) << (log2Floor(value - 1) + 1);
 }
 
 /**
@@ -94,7 +94,7 @@ static constexpr int
 BitsRequiredToRepresent(T value)
 {
   using UnsignedT = std::make_unsigned_t<T>;
-  return Log2Floor(static_cast<UnsignedT>(value)) + 1;
+  return log2Floor(static_cast<UnsignedT>(value)) + 1;
 }
 
 /**

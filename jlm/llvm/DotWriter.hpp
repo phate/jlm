@@ -8,10 +8,10 @@
 
 #include <jlm/rvsdg/DotWriter.hpp>
 
-namespace jlm::llvm::dot
+namespace jlm::llvm
 {
 
-class LlvmDotWriter final : public rvsdg::DotWriter
+class LlvmDotWriter : public rvsdg::DotWriter
 {
 public:
   ~LlvmDotWriter() noexcept override;

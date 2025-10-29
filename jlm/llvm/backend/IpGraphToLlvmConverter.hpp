@@ -100,7 +100,7 @@ private:
   convert_ipgraph();
 
   const ::llvm::GlobalValue::LinkageTypes &
-  convert_linkage(const llvm::linkage & linkage);
+  convert_linkage(const llvm::Linkage & linkage);
 
   void
   convert_data_node(const DataNode & node);

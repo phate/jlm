@@ -9,12 +9,12 @@
 
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
 
 #include <cstdint>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
@@ -28,14 +28,15 @@ class SubstitutionMap;
 class Input
 {
   friend class Node;
-  friend class rvsdg::Region;
+  friend class Region;
+
+protected:
+  Input(Node & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
+
+  Input(Region & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   virtual ~Input() noexcept;
-
-  Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
-
-  Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
   Input(const Input &) = delete;
 
@@ -47,20 +48,20 @@ public:
   Input &
   operator=(Input &&) = delete;
 
-  inline size_t
+  size_t
   index() const noexcept
   {
     return index_;
   }
 
-  jlm::rvsdg::Output *
+  Output *
   origin() const noexcept
   {
     return origin_;
   }
 
   void
-  divert_to(jlm::rvsdg::Output * new_origin);
+  divert_to(Output * new_origin);
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
@@ -68,7 +69,7 @@ public:
     return Type_;
   }
 
-  [[nodiscard]] rvsdg::Region *
+  [[nodiscard]] Region *
   region() const noexcept;
 
   virtual std::string
@@ -245,7 +246,12 @@ class Output
 {
   friend Input;
   friend class Node;
-  friend class rvsdg::Region;
+  friend class Region;
+
+protected:
+  Output(Node & owner, std::shared_ptr<const rvsdg::Type> type);
+
+  Output(Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   using UsersList = Input::UsersList;
@@ -253,10 +259,6 @@ public:
   using UsersConstRange = jlm::util::IteratorRange<UsersList::ConstIterator>;
 
   virtual ~Output() noexcept;
-
-  Output(rvsdg::Node & owner, std::shared_ptr<const rvsdg::Type> type);
-
-  Output(rvsdg::Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
   Output(const Output &) = delete;
 
@@ -268,13 +270,13 @@ public:
   Output &
   operator=(Output &&) = delete;
 
-  inline size_t
+  size_t
   index() const noexcept
   {
     return index_;
   }
 
-  inline size_t
+  size_t
   nusers() const noexcept
   {
     return NumUsers_;
@@ -303,6 +305,37 @@ public:
 
     while (!Users_.empty())
       Users_.begin()->divert_to(new_origin);
+  }
+
+  /**
+   * Divert all users of the output that satisfy the predicate \p match.
+   *
+   * @tparam F A functor with the signature (const rvsdg::Input &) -> bool
+   * @param newOrigin The new origin of each user that satisfies \p match.
+   * @param match An instance of F, to be invoked on each user
+   *
+   * @return The number of diverted users.
+   */
+  template<typename F>
+  size_t
+  divertUsersWhere(Output & newOrigin, const F & match)
+  {
+    if (this == &newOrigin)
+      return 0;
+
+    util::HashSet<Input *> matchedUsers;
+    for (auto & user : Users_)
+    {
+      if (match(user))
+        matchedUsers.insert(&user);
+    }
+
+    for (auto & user : matchedUsers.Items())
+    {
+      user->divert_to(&newOrigin);
+    }
+
+    return matchedUsers.Size();
   }
 
   /**
@@ -523,16 +556,10 @@ class NodeInput : public Input
 public:
   NodeInput(Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
-  Node *
+  [[nodiscard]] Node *
   node() const noexcept
   {
-    auto owner = GetOwner();
-    if (auto node = std::get_if<Node *>(&owner))
-    {
-      return *node;
-    }
-
-    JLM_UNREACHABLE("This should not have happened!");
+    return std::get<Node *>(GetOwner());
   }
 };
 
@@ -544,11 +571,8 @@ public:
   [[nodiscard]] Node *
   node() const noexcept
   {
-    return node_;
+    return std::get<Node *>(GetOwner());
   }
-
-private:
-  Node * node_;
 };
 
 /* node class */
@@ -570,7 +594,7 @@ public:
   /**
    * @return The unique identifier of the node instance within the region.
    *
-   * \see GenerateNodeId()
+   * \see Region::generateNodeId()
    */
   [[nodiscard]] Id
   GetNodeId() const noexcept
@@ -597,12 +621,22 @@ public:
   [[nodiscard]] InputIteratorRange
   Inputs() noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::Iterator(nullptr), Input::Iterator(nullptr) };
+    }
+
     return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
   }
 
   [[nodiscard]] InputConstIteratorRange
   Inputs() const noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::ConstIterator(nullptr), Input::ConstIterator(nullptr) };
+    }
+
     return { Input::ConstIterator(input(0)), Input::ConstIterator(nullptr) };
   }
 
@@ -622,12 +656,22 @@ public:
   [[nodiscard]] OutputIteratorRange
   Outputs() noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::Iterator(nullptr), Output::Iterator(nullptr) };
+    }
+
     return { Output::Iterator(output(0)), Output::Iterator(nullptr) };
   }
 
   [[nodiscard]] OutputConstIteratorRange
   Outputs() const noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::ConstIterator(nullptr), Output::ConstIterator(nullptr) };
+    }
+
     return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 
@@ -646,38 +690,49 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    for (auto & output : outputs_)
-    {
-      if (!output->IsDead())
-        return false;
-    }
+    return numSuccessors_ == 0;
+  }
 
-    return true;
+  [[nodiscard]] std::size_t
+  numSuccessors() const noexcept
+  {
+    return numSuccessors_;
   }
 
   virtual std::string
   DebugString() const = 0;
 
 protected:
+  /**
+   * Adds the given \p input to the node's inputs.
+   * Invalidates existing iterators to the node's inputs.
+   *
+   * @param input an owned pointer to the new input
+   * @param notifyRegion If true, the region is informed about the new input.
+   * This should be false if the node has not yet notified the region about being created,
+   * i.e., this function is being called from the node's constructor.
+   *
+   * @return a pointer to the added input
+   */
   NodeInput *
-  add_input(std::unique_ptr<NodeInput> input);
+  addInput(std::unique_ptr<NodeInput> input, bool notifyRegion);
 
   /**
-   * Removes an input from the node given the inputs' index.
+   * Removes an input from the node given the inputs' \p index.
    *
-   * The removal of an input invalidates the node's existing input iterators.
+   * The removal of an input invalidates the node's existing input iterators,
+   * and changes the index of all following inputs.
    *
    * @param index The inputs' index. It must be between [0, ninputs()).
-   *
-   * \note The method must adjust the indices of the other inputs after the removal. Moreover, it
-   * also might need to recompute the depth of the node.
+   * @param notifyRegion If true, the region is informed about the removal.
+   * This should be false if the node has already notified the region about being removed,
+   * i.e., this function is being called from the node's destructor.
    *
    * \see ninputs()
-   * \see recompute_depth()
    * \see input#index()
    */
   void
-  RemoveInput(size_t index);
+  removeInput(size_t index, bool notifyRegion);
 
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
@@ -697,15 +752,17 @@ public:
       auto & input = *Node::input(n);
       if (match(input))
       {
-        RemoveInput(n);
+        removeInput(n, true);
       }
     }
   }
 
 protected:
   NodeOutput *
-  add_output(std::unique_ptr<NodeOutput> output)
+  addOutput(std::unique_ptr<NodeOutput> output)
   {
+    if (output->node() != this)
+      throw std::logic_error("Output does not belong to this node!");
     output->index_ = noutputs();
     outputs_.push_back(std::move(output));
     return this->output(noutputs() - 1);
@@ -727,7 +784,7 @@ protected:
    * \see output#nusers()
    */
   void
-  RemoveOutput(size_t index);
+  removeOutput(size_t index);
 
   // FIXME: I really would not like to be RemoveOutputsWhere() to be public
 public:
@@ -749,7 +806,7 @@ public:
       auto & output = *Node::output(n);
       if (output.nusers() == 0 && match(output))
       {
-        RemoveOutput(n);
+        removeOutput(n);
       }
     }
   }
@@ -814,6 +871,9 @@ private:
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<NodeOutput>> outputs_;
+  std::size_t numSuccessors_ = 0;
+
+  friend class Output;
 };
 
 /**
@@ -1087,11 +1147,12 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
 }
 
 /**
- * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing
- * through:
+ * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing:
  *
- * 1. Gamma nodes if the exit variable is invariant
- * 2. Theta nodes if the loop variable is invariant
+ * 1. Through gamma nodes if the exit variable is invariant
+ * 2. Out of gamma nodes from entry variable arguments
+ * 3. Through theta nodes if the loop variable is invariant
+ * 4. Out of theta nodes from the arguments, if the loop variable is invariant
  *
  * Tracing stops when a lambda function argument or context argument is reached. If the function is
  * invoked with an output that is not from within a lambda node, then this output is simply
@@ -1101,7 +1162,22 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
  * @return The final value of the tracing.
  */
 const Output &
-TraceOutputIntraProcedurally(const Output & output);
+traceOutputIntraProcedurally(const Output & output);
+
+/**
+ * Traces \p output through the RVSDG.
+ * The function is capable of tracing through everything \ref traceOutputIntraProcedurally is,
+ * in addition to:
+ *
+ * 1. From lambda context variables out of the lambda
+ * 2. From delta context variables out of the delta
+ * 3. Phi node recursion variables and context variables
+ *
+ * @param output the output to trace.
+ * @return the final value of the tracing
+ */
+const Output &
+traceOutput(const Output & output);
 
 }
 

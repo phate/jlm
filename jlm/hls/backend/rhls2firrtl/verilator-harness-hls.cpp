@@ -180,7 +180,7 @@ bool terminate = false;
 
   for (const auto arg : rm.Rvsdg().GetRootRegion().Arguments())
   {
-    const auto graphImport = util::AssertedCast<llvm::GraphImport>(arg);
+    const auto graphImport = util::assertedCast<llvm::GraphImport>(arg);
     cpp << "extern \"C\" char " << graphImport->Name() << ";" << std::endl;
   }
   cpp << R"(
@@ -430,7 +430,7 @@ static void verilator_init(int argc, char **argv) {
   for (const auto & ctx : kernel.GetContextVars())
   {
     // Context variables should always be external symbols imported by name
-    const auto import = util::AssertedCast<rvsdg::GraphImport>(ctx.input->origin());
+    const auto import = util::assertedCast<rvsdg::GraphImport>(ctx.input->origin());
     cpp << "    top->i_data_" << first_ctx_var << " = (uint64_t) &" << import->Name() << ";"
         << std::endl;
     first_ctx_var++;
@@ -469,7 +469,7 @@ static void posedge() {
   // Emit calls to MemoryQueue::accept_request()
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    const auto req_bt = util::AssertedCast<const BundleType>(mem_reqs[i]->Type().get());
+    const auto req_bt = util::assertedCast<const BundleType>(mem_reqs[i]->Type().get());
     const auto has_write = req_bt->get_element_type("write") != nullptr;
 
     cpp << "    memory_queues[" << i << "].accept_request(";

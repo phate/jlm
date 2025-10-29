@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 
-namespace jlm::llvm::dot
+namespace jlm::llvm
 {
 
 LlvmDotWriter::~LlvmDotWriter() noexcept = default;
@@ -94,7 +94,7 @@ LlvmDotWriter::AnnotateRegionArgument(
   // If the argument is a GraphImport, include extra type and linkage data
   if (const auto graphImport = dynamic_cast<const GraphImport *>(&rvsdgArgument))
   {
-    node.SetAttribute("linkage", ToString(graphImport->Linkage()));
+    node.SetAttribute("linkage", std::string(linkageToString(graphImport->linkage())));
     if (typeGraph)
     {
       // The output of a GraphImport is always a PointerType
@@ -125,7 +125,7 @@ LlvmDotWriter::AnnotateGraphNode(
   {
     if (auto op = dynamic_cast<const llvm::DeltaOperation *>(&delta->GetOperation()))
     {
-      node.SetAttribute("linkage", ToString(op->linkage()));
+      node.SetAttribute("linkage", std::string(linkageToString(op->linkage())));
       node.SetAttribute("constant", op->constant() ? "true" : "false");
     }
 
