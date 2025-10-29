@@ -20,7 +20,7 @@ static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
   auto constant = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
-  return constant && is_ctlconstant_op(constant->GetOperation());
+  return constant && is<ControlConstantOperation>(constant->GetOperation());
 }
 
 static void
