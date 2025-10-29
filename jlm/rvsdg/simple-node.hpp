@@ -286,7 +286,6 @@ TryGetSimpleNodeAndOptionalOp(const Node & node) noexcept
   return std::make_pair(simpleNode, nullptr);
 }
 
-
 }
 
 #endif
