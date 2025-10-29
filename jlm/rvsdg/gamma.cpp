@@ -138,8 +138,9 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
     for (size_t n = 0; n < xv.branchResult.size(); n++)
     {
       auto origin = xv.branchResult[n]->origin();
-      auto & value =
-          to_ctlconstant_op(AssertGetOwnerNode<SimpleNode>(*origin).GetOperation()).value();
+      auto [ctlConstantNode, ctlConstantOperation] =
+          TryGetSimpleNodeAndOptionalOp<ControlConstantOperation>(*origin);
+      auto & value = ctlConstantOperation->value();
       nalternatives = value.nalternatives();
       if (map.find(n) != map.end())
         new_mapping[map[n]] = value.alternative();

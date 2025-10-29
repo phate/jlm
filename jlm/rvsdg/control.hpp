@@ -129,13 +129,6 @@ typedef DomainConstOperation<
     ControlValueRepresentationTypeOfValue>
     ControlConstantOperation;
 
-static inline const ControlConstantOperation &
-to_ctlconstant_op(const Operation & op) noexcept
-{
-  JLM_ASSERT(is<ControlConstantOperation>(op));
-  return *static_cast<const ControlConstantOperation *>(&op);
-}
-
 /**
  * Match operator
  * Converts an n-bit integer input into a value of type ControlType.
