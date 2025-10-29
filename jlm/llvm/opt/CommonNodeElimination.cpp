@@ -122,7 +122,7 @@ public:
    * Gets the index of the congruence set representing the given \p output, if it has one.
    * @param output the output
    * @return the index of the congruence set if the output belongs to one, otherwise \ref
-   * NoCongruenceSet.
+   * NoCongruenceSetIndex.
    */
   [[nodiscard]] CongruenceSetIndex
   tryGetSetFor(const rvsdg::Output & output) const
