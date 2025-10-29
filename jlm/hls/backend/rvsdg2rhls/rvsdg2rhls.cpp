@@ -41,6 +41,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -443,6 +444,7 @@ rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 std::unique_ptr<rvsdg::TransformationSequence>
 createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgDotGraphs)
 {
+  auto predicateCorrelation = std::make_shared<llvm::PredicateCorrelation>();
   auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
   auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
   auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
@@ -477,6 +479,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
       deadNodeElimination,
       commonNodeElimination,
       invariantValueRedirection,
+      predicateCorrelation,
       deadNodeElimination,
       commonNodeElimination,
       deadNodeElimination,
