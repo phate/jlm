@@ -13,7 +13,7 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/cne.hpp>
+#include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
