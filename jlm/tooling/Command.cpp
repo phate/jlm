@@ -22,6 +22,7 @@
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -434,6 +435,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
     return std::make_shared<llvm::NodeReduction>();
+  case JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation:
+    return std::make_shared<llvm::PredicateCorrelation>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_shared<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());

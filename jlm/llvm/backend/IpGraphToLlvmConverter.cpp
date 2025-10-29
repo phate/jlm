@@ -194,7 +194,7 @@ IpGraphToLlvmConverter::convert_ctlconstant(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is_ctlconstant_op(op));
+  JLM_ASSERT(is<rvsdg::ControlConstantOperation>(op));
   auto & cop = *static_cast<const rvsdg::ControlConstantOperation *>(&op);
 
   size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;

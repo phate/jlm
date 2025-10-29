@@ -20,7 +20,7 @@ static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
   auto constant = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
-  return constant && is_ctlconstant_op(constant->GetOperation());
+  return constant && is<ControlConstantOperation>(constant->GetOperation());
 }
 
 static void
@@ -94,7 +94,7 @@ is_control_constant_reducible(GammaNode * gamma)
   std::unordered_set<jlm::rvsdg::Output *> outputs;
   for (const auto & exitvar : gamma->GetExitVars())
   {
-    if (!is_ctltype(*exitvar.output->Type()))
+    if (!is<ControlType>(*exitvar.output->Type()))
       continue;
 
     size_t n = 0;
@@ -138,8 +138,9 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
     for (size_t n = 0; n < xv.branchResult.size(); n++)
     {
       auto origin = xv.branchResult[n]->origin();
-      auto & value =
-          to_ctlconstant_op(AssertGetOwnerNode<SimpleNode>(*origin).GetOperation()).value();
+      auto [ctlConstantNode, ctlConstantOperation] =
+          TryGetSimpleNodeAndOptionalOp<ControlConstantOperation>(*origin);
+      auto & value = ctlConstantOperation->value();
       nalternatives = value.nalternatives();
       if (map.find(n) != map.end())
         new_mapping[map[n]] = value.alternative();
