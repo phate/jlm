@@ -62,12 +62,6 @@ private:
   size_t nalternatives_;
 };
 
-static inline bool
-is_ctltype(const jlm::rvsdg::Type & type) noexcept
-{
-  return dynamic_cast<const ControlType *>(&type) != nullptr;
-}
-
 class ControlValueRepresentation
 {
 public:
@@ -128,19 +122,6 @@ typedef DomainConstOperation<
     ControlValueRepresentationFormatValue,
     ControlValueRepresentationTypeOfValue>
     ControlConstantOperation;
-
-static inline bool
-is_ctlconstant_op(const Operation & op) noexcept
-{
-  return dynamic_cast<const ControlConstantOperation *>(&op) != nullptr;
-}
-
-static inline const ControlConstantOperation &
-to_ctlconstant_op(const Operation & op) noexcept
-{
-  JLM_ASSERT(is_ctlconstant_op(op));
-  return *static_cast<const ControlConstantOperation *>(&op);
-}
 
 /**
  * Match operator
