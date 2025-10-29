@@ -73,33 +73,46 @@ public:
  * Later passes can then quickly verify if a outputs does not belong, by comparing against only
  * the congruence set leader.
  */
-class CongruenceSets
+class CommonNodeElimination::Context
 {
 public:
   /**
-   * Represents a set of T where all Ts in the set are considered identical.
-   * All the Ts must be in the same region.
-   * One T is the leader, and will eventually become the single source of truth.
+   * Represents a set of outputs where all outputs in the set are considered identical.
+   * One output is the leader, and will eventually become the single source of truth.
+   *
+   * When making congruence sets, the following invariants must be satisfied:
+   *  - In a congruence set consisting of region arguments, all arguments belong to the same region,
+   *    and the leader is the argument with the lowest index.
+   *  - In a congruence set consisting of node outputs, all nodes belong to the same region.
+   *    The leader must be the output of the node that comes earliest in the top-down traversal
+   *    of this region.
+   *
+   * Maintaining these invariants ensures that any search for a suitable leader only needs
+   * to consider arguments / nodes that have already been visited in the current traversal.
    */
   struct CongruenceSet
   {
+    explicit CongruenceSet(const rvsdg::Output & leader)
+        : leader(&leader)
+    {}
+
     // The set leader. Never changes.
     // Once an output has become a leader, it will never be a follower.
-    // A leader always comes earlier than its followers in the traverser.
     const rvsdg::Output * leader;
     // The set of followers. Can both grow and shrink during the marking phase.
     // Does not include the leader.
     util::HashSet<const rvsdg::Output *> followers;
   };
 
-  // Type used for indexing congruence sets
-  using Index = size_t;
-  static constexpr auto NoCongruenceSet = std::numeric_limits<size_t>::max();
+  using CongruenceSetIndex = size_t;
+  static constexpr auto NoCongruenceSetIndex = std::numeric_limits<CongruenceSetIndex>::max();
 
   /**
-   * @return the number of congruence sets in the data structure. All sets have a lower index.
+   * @return the number of congruence sets in the data structure.
+   * Any congruence set that already exists when calling this method
+   * is guaranteed to have a CongruenceSetIndex strictly less than the returned value.
    */
-  [[nodiscard]] Index
+  [[nodiscard]] CongruenceSetIndex
   numCongruenceSets() const
   {
     return sets_.size();
@@ -111,14 +124,14 @@ public:
    * @return the index of the congruence set if the output belongs to one, otherwise \ref
    * NoCongruenceSet.
    */
-  [[nodiscard]] Index
+  [[nodiscard]] CongruenceSetIndex
   tryGetSetFor(const rvsdg::Output & output) const
   {
     if (const auto it = congruenceSetMapping_.find(&output); it != congruenceSetMapping_.end())
     {
       return it->second;
     }
-    return NoCongruenceSet;
+    return NoCongruenceSetIndex;
   }
 
   /**
@@ -127,11 +140,11 @@ public:
    * @return the index of the congruence set the output belongs to
    * @throws std::logic_error if the output does not belong to a congruence set
    */
-  [[nodiscard]] Index
+  [[nodiscard]] CongruenceSetIndex
   getSetFor(const rvsdg::Output & output) const
   {
     const auto index = tryGetSetFor(output);
-    if (index == NoCongruenceSet)
+    if (index == NoCongruenceSetIndex)
       throw std::logic_error("Output does not belong to a congruence set");
     return index;
   }
@@ -144,7 +157,7 @@ public:
   [[nodiscard]] bool
   hasSet(const rvsdg::Output & output) const
   {
-    return tryGetSetFor(output) != NoCongruenceSet;
+    return tryGetSetFor(output) != NoCongruenceSetIndex;
   }
 
   /**
@@ -154,7 +167,7 @@ public:
    * @param leader the output that should lead a congruence set
    * @return the index of the congruence set led by the given leader
    */
-  Index
+  CongruenceSetIndex
   getOrCreateSetForLeader(const rvsdg::Output & leader)
   {
     // The index of the new set, if this operation actually creates one
@@ -175,7 +188,7 @@ public:
     }
 
     // Create the new set, lead by \p leader
-    sets_.emplace_back(CongruenceSet{ &leader, {} });
+    sets_.emplace_back(leader);
     return nextSet;
   }
 
@@ -185,7 +198,7 @@ public:
    * @return the output that is the leader of the set
    */
   const rvsdg::Output &
-  getLeader(Index index) const
+  getLeader(CongruenceSetIndex index) const
   {
     JLM_ASSERT(index < sets_.size());
     return *sets_[index].leader;
@@ -200,7 +213,7 @@ public:
    * @param follower the output that should become a follower
    */
   void
-  addFollower(Index index, const rvsdg::Output & follower)
+  addFollower(CongruenceSetIndex index, const rvsdg::Output & follower)
   {
     JLM_ASSERT(index < sets_.size());
 
@@ -233,7 +246,7 @@ public:
    * @return the followers
    */
   const util::HashSet<const rvsdg::Output *> &
-  getFollowers(Index index) const
+  getFollowers(CongruenceSetIndex index) const
   {
     JLM_ASSERT(index < sets_.size());
     return sets_[index].followers;
@@ -243,21 +256,7 @@ private:
   // The list of congruence sets
   std::vector<CongruenceSet> sets_;
   // A mapping from T to the congruence set it belongs to, either as leader or follower
-  std::unordered_map<const rvsdg::Output *, Index> congruenceSetMapping_;
-};
-
-class CommonNodeElimination::Context final
-{
-
-public:
-  [[nodiscard]] CongruenceSets &
-  getCongruenceSets()
-  {
-    return congruenceSets_;
-  }
-
-private:
-  CongruenceSets congruenceSets_;
+  std::unordered_map<const rvsdg::Output *, CongruenceSetIndex> congruenceSetMapping_;
 };
 
 /**
@@ -278,8 +277,8 @@ areOutputsCongruent(
   if (*o1.Type() != *o2.Type())
     return false;
 
-  const auto o1Set = context.getCongruenceSets().getSetFor(o1);
-  const auto o2Set = context.getCongruenceSets().getSetFor(o2);
+  const auto o1Set = context.getSetFor(o1);
+  const auto o2Set = context.getSetFor(o2);
 
   return o1Set == o2Set;
 }
@@ -334,10 +333,9 @@ checkNodesCongruent(
 void
 markNodeAsLeader(const rvsdg::Node & leader, CommonNodeElimination::Context & context)
 {
-  auto & congruenceSets = context.getCongruenceSets();
   for (auto & output : leader.Outputs())
   {
-    congruenceSets.getOrCreateSetForLeader(output);
+    context.getOrCreateSetForLeader(output);
   }
 }
 
@@ -360,14 +358,12 @@ markNodesAsCongruent(
   JLM_ASSERT(leader.noutputs() == follower.noutputs());
   JLM_ASSERT(leader.region() == follower.region());
 
-  auto & congruenceSets = context.getCongruenceSets();
-
   for (size_t i = 0; i < leader.noutputs(); i++)
   {
     const auto & leaderOutput = *leader.output(i);
     const auto & followerOutput = *follower.output(i);
-    const auto leaderSet = congruenceSets.getSetFor(leaderOutput);
-    congruenceSets.addFollower(leaderSet, followerOutput);
+    const auto leaderSet = context.getSetFor(leaderOutput);
+    context.addFollower(leaderSet, followerOutput);
   }
 }
 
@@ -386,12 +382,10 @@ tryGetLeaderNode(const rvsdg::Node & node, CommonNodeElimination::Context & cont
   if (node.noutputs() == 0)
     return &node;
 
-  const auto & congruenceSets = context.getCongruenceSets();
-
   // Check the congruence set of the first output
-  const auto output0Set = congruenceSets.tryGetSetFor(*node.output(0));
+  const auto output0Set = context.tryGetSetFor(*node.output(0));
   // If the output has not gotten a congruence set yet, the node has yet to be marked
-  if (output0Set == CongruenceSets::NoCongruenceSet)
+  if (output0Set == CommonNodeElimination::Context::NoCongruenceSetIndex)
     return nullptr;
 
   // Structural nodes can have outputs that are congruent with completely different nodes
@@ -400,7 +394,7 @@ tryGetLeaderNode(const rvsdg::Node & node, CommonNodeElimination::Context & cont
     return &node;
 
   // A simple node can only be congruent with other simple nodes
-  const auto & output0Leader = congruenceSets.getLeader(output0Set);
+  const auto & output0Leader = context.getLeader(output0Set);
   const auto & leaderNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(output0Leader);
   JLM_ASSERT(leaderNode.noutputs() == node.noutputs());
   return &leaderNode;
@@ -462,7 +456,7 @@ markSimpleTopNode(
 /**
  * Places the given \p node in a congruence set, based on its operation and inputs.
  * If the node already has a congruence set, it gets double-checked against the leader.
- * The node must not be a top node. @see markTopNode.
+ * The node must not be a top node. @see markSimpleTopNode.
  *
  * @param node the node to find a congruence set for.
  * @param context the current context of the marking phase
@@ -472,8 +466,6 @@ markSimpleNode(const rvsdg::SimpleNode & node, CommonNodeElimination::Context & 
 {
   // This function should never be called for TopNodes
   JLM_ASSERT(node.ninputs() > 0);
-
-  auto & congruenceSets = context.getCongruenceSets();
 
   // If node is already in a congruence set, check that it actually belongs there
   if (const auto leaderNode = tryGetLeaderNode(node, context))
@@ -528,9 +520,9 @@ markSimpleNode(const rvsdg::SimpleNode & node, CommonNodeElimination::Context & 
 
   // Use the origin of the first input to find other potential candidates
   const auto origin = node.input(0)->origin();
-  const auto origin0Set = congruenceSets.getSetFor(*origin);
-  const auto & origin0Leader = congruenceSets.getLeader(origin0Set);
-  const auto & origin0Followers = congruenceSets.getFollowers(origin0Set);
+  const auto origin0Set = context.getSetFor(*origin);
+  const auto & origin0Leader = context.getLeader(origin0Set);
+  const auto & origin0Followers = context.getFollowers(origin0Set);
   if (tryFindCongruentUserOf(origin0Leader))
     return;
   for (auto follower : origin0Followers.Items())
@@ -554,11 +546,11 @@ markRegion(const rvsdg::Region &, CommonNodeElimination::Context & context);
 static void
 markGraphImports(const rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
-  auto & congruenceSets = context.getCongruenceSets();
-
+  // FIXME: Multiple imports with identical names could in theory be aliases.
+  // For now this function ignores that and makes all imports distinct. This is sound
   for (auto argument : region.Arguments())
   {
-    congruenceSets.getOrCreateSetForLeader(*argument);
+    context.getOrCreateSetForLeader(*argument);
   }
 }
 
@@ -570,28 +562,32 @@ markGraphImports(const rvsdg::Region & region, CommonNodeElimination::Context & 
  * If a pair of arguments are already in different congruence sets, they will remain separate.
  *
  * @param region the region whose arguments should be partitioned.
- * @param partitions integers used to partition arguments. Must have length equal to narguments.
+ * @param partitions integers used to partition arguments.
+ * Must have length equal to the number of arguments in \p region.
  * @param context the current context of the marking phase.
  * @return true if any congruence sets were created from this operation.
  */
 static bool
 partitionArguments(
     const rvsdg::Region & region,
-    const std::vector<CongruenceSets::Index> & partitions,
+    const std::vector<CommonNodeElimination::Context::CongruenceSetIndex> & partitions,
     CommonNodeElimination::Context & context)
 {
-  auto & congruenceSets = context.getCongruenceSets();
-
   JLM_ASSERT(region.narguments() == partitions.size());
 
-  const auto numCongruenceSets = congruenceSets.numCongruenceSets();
+  const auto numCongruenceSets = context.numCongruenceSets();
 
   // Keys in the map are (old congruence set index, provided partition key)
   // Values in the map are the new congruence set indices
-  std::map<std::pair<CongruenceSets::Index, CongruenceSets::Index>, CongruenceSets::Index> newSets;
+  std::map<
+      std::pair<
+          CommonNodeElimination::Context::CongruenceSetIndex,
+          CommonNodeElimination::Context::CongruenceSetIndex>,
+      CommonNodeElimination::Context::CongruenceSetIndex>
+      newSets;
   for (auto argument : region.Arguments())
   {
-    const auto currentPartition = congruenceSets.tryGetSetFor(*argument);
+    const auto currentPartition = context.tryGetSetFor(*argument);
     const auto key = std::make_pair(currentPartition, partitions[argument->index()]);
 
     // If this argument is the first with the given key, it should be a leader
@@ -607,17 +603,17 @@ partitionArguments(
         continue;
 
       // Start following our leader
-      congruenceSets.addFollower(toFollow, *argument);
+      context.addFollower(toFollow, *argument);
     }
     else
     {
       // This argument should be the leader of its congruence set
-      newSets.emplace(key, congruenceSets.getOrCreateSetForLeader(*argument));
+      newSets.emplace(key, context.getOrCreateSetForLeader(*argument));
     }
   }
 
   // Return true iff any new congruence sets were created
-  return congruenceSets.numCongruenceSets() != numCongruenceSets;
+  return context.numCongruenceSets() != numCongruenceSets;
 }
 
 /**
@@ -642,7 +638,6 @@ markSubregionsFromInputs(
     const rvsdg::StructuralNode & node,
     CommonNodeElimination::Context & context)
 {
-  const auto & congruenceSets = context.getCongruenceSets();
   bool anyChanges = false;
 
   for (auto & subregion : node.Subregions())
@@ -650,14 +645,14 @@ markSubregionsFromInputs(
     // create a partitioning of the region arguments
     std::vector<size_t> partitions(subregion.narguments());
     // Arguments that do not belong to any input are given partition keys higher than any real index
-    size_t nextUniquePartitionKey = congruenceSets.numCongruenceSets();
+    size_t nextUniquePartitionKey = context.numCongruenceSets();
 
     for (const auto argument : subregion.Arguments())
     {
       if (const auto input = argument->input())
       {
         // If the argument corresponds to an input, use the partition key of the input
-        partitions[argument->index()] = congruenceSets.getSetFor(*input->origin());
+        partitions[argument->index()] = context.getSetFor(*input->origin());
       }
       else
       {
@@ -677,24 +672,27 @@ markSubregionsFromInputs(
 }
 
 /**
- * Check if all results of the given exit variable
- * @param exitVar
- * @param context
- * @return
+ * Checks if the given gamma \p exitVar is always a copy of some other origin in the region
+ * the gamma is in.
+ * This happens if each branch result of the exit var is a copy of an entry variable,
+ * and all copied entry variables take their value from congruent origins outside the gamma.
+ * If this is the case, the congruence set of that origin is returned.
+ * @param exitVar the exit variable in question
+ * @param context the current context of the marking phase.
+ * @return the congruence set index of the shared origin, or nullopt if no shared origin exists.
  */
-static std::optional<CongruenceSets::Index>
-tryGetGammaEntryVarCongruenceSet(
+static std::optional<CommonNodeElimination::Context::CongruenceSetIndex>
+tryGetGammaExitVarCongruenceSet(
     rvsdg::GammaNode::ExitVar & exitVar,
     CommonNodeElimination::Context & context)
 {
-  const auto & congruenceSets = context.getCongruenceSets();
-  std::optional<CongruenceSets::Index> sharedCongruenceSet;
+  std::optional<CommonNodeElimination::Context::CongruenceSetIndex> sharedCongruenceSet;
 
   for (auto result : exitVar.branchResult)
   {
     if (const auto argument = dynamic_cast<rvsdg::RegionArgument *>(result->origin()))
     {
-      const auto inputCongruenceSet = congruenceSets.getSetFor(*argument->input()->origin());
+      const auto inputCongruenceSet = context.getSetFor(*argument->input()->origin());
       if (!sharedCongruenceSet.has_value())
       {
         sharedCongruenceSet = inputCongruenceSet;
@@ -717,7 +715,8 @@ tryGetGammaEntryVarCongruenceSet(
 
 /**
  * Marks the arguments of the gamma subregions, and the nodes within the subregions.
- * Uses the origins of the exit variables to assign congruence sets to the gamma's outputs.
+ * Uses the origins of the branch results of exit variables to assign congruence sets to
+ * each exit variable's output.
  * @param gamma the gamma node to mark
  * @param context the current context of the marking phase.
  */
@@ -729,21 +728,20 @@ markGamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & conte
   if (tryGetLeaderNode(gamma, context))
     return;
 
-  auto & congruenceSets = context.getCongruenceSets();
-
   // Go through the outputs of the gamma node and create congruence sets for them.
-  // Gamma outputs get distinct congruence sets, unless the exit var has entry var origins in
-  // all subregions, and all the entry vars have congruent origins outside the gamma.
+  // By default, each exit variable output gets a distinct congruence set.
+  // Only if an exit variable is a copy of an entry variable in each region,
+  // and all the entry variables have congruent origins, does the gamma output become a follower.
   for (auto exitVar : gamma.GetExitVars())
   {
-    if (const auto entryVarCongruenceSet = tryGetGammaEntryVarCongruenceSet(exitVar, context);
+    if (const auto entryVarCongruenceSet = tryGetGammaExitVarCongruenceSet(exitVar, context);
         entryVarCongruenceSet.has_value())
     {
-      congruenceSets.addFollower(*entryVarCongruenceSet, *exitVar.output);
+      context.addFollower(*entryVarCongruenceSet, *exitVar.output);
     }
     else
     {
-      congruenceSets.getOrCreateSetForLeader(*exitVar.output);
+      context.getOrCreateSetForLeader(*exitVar.output);
     }
   }
 }
@@ -762,8 +760,6 @@ markGamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & conte
 static void
 markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & context)
 {
-  auto & congruenceSets = context.getCongruenceSets();
-
   bool anyChanges = markSubregionsFromInputs(theta, context);
   if (!anyChanges)
     return;
@@ -774,10 +770,10 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
   while (anyChanges)
   {
     // Create partition keys for each loop variable
-    std::vector<CongruenceSets::Index> partitions;
+    std::vector<CommonNodeElimination::Context::CongruenceSetIndex> partitions;
     for (const auto & loopVar : loopVars)
     {
-      partitions.push_back(congruenceSets.getSetFor(*loopVar.post->origin()));
+      partitions.push_back(context.getSetFor(*loopVar.post->origin()));
     }
 
     anyChanges = partitionArguments(*theta.subregion(), partitions, context);
@@ -789,27 +785,30 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
   }
 
   // Partition theta outputs
-  std::unordered_map<CongruenceSets::Index, CongruenceSets::Index> resultToOutputSetMapping;
+  std::unordered_map<
+      CommonNodeElimination::Context::CongruenceSetIndex,
+      CommonNodeElimination::Context::CongruenceSetIndex>
+      resultToOutputSetMapping;
   for (auto & loopVar : loopVars)
   {
     // invariant loop variables become followers of the input origin
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      const auto inputOriginSet = congruenceSets.getSetFor(*loopVar.input->origin());
-      congruenceSets.addFollower(inputOriginSet, *loopVar.output);
+      const auto inputOriginSet = context.getSetFor(*loopVar.input->origin());
+      context.addFollower(inputOriginSet, *loopVar.output);
       continue;
     }
 
     // Other loop variable outputs are partitioned based on the origins of the post results.
-    const auto resultSet = congruenceSets.getSetFor(*loopVar.post->origin());
+    const auto resultSet = context.getSetFor(*loopVar.post->origin());
     const auto it = resultToOutputSetMapping.find(resultSet);
     if (it != resultToOutputSetMapping.end())
     {
-      congruenceSets.addFollower(it->second, *loopVar.output);
+      context.addFollower(it->second, *loopVar.output);
     }
     else
     {
-      const auto outputSet = congruenceSets.getOrCreateSetForLeader(*loopVar.output);
+      const auto outputSet = context.getOrCreateSetForLeader(*loopVar.output);
       resultToOutputSetMapping.emplace(resultSet, outputSet);
     }
   }
@@ -895,11 +894,9 @@ markRegion(const rvsdg::Region & region, CommonNodeElimination::Context & contex
 static void
 divertOutput(rvsdg::Output & output, CommonNodeElimination::Context & context)
 {
-  auto & congruenceSets = context.getCongruenceSets();
+  const auto outputSet = context.getSetFor(output);
 
-  const auto outputSet = congruenceSets.getSetFor(output);
-
-  auto & leader = congruenceSets.getLeader(outputSet);
+  auto & leader = context.getLeader(outputSet);
   if (&leader == &output)
     return;
 
@@ -907,28 +904,10 @@ divertOutput(rvsdg::Output & output, CommonNodeElimination::Context & context)
 }
 
 static void
-divertArguments(rvsdg::Region & region, CommonNodeElimination::Context & context)
-{
-  for (auto argument : region.Arguments())
-  {
-    divertOutput(*argument, context);
-  }
-}
-
-static void
-divertSimpleNode(rvsdg::Node & node, CommonNodeElimination::Context & context)
-{
-  for (auto & output : node.Outputs())
-  {
-    divertOutput(output, context);
-  }
-}
-
-static void
 divertInRegion(rvsdg::Region &, CommonNodeElimination::Context &);
 
 static void
-divertStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
+divertInStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Context & context)
 {
   bool divertInSubregions = false;
   rvsdg::MatchTypeOrFail(
@@ -962,30 +941,32 @@ divertStructuralNode(rvsdg::StructuralNode & node, CommonNodeElimination::Contex
       divertInRegion(subregion, context);
     }
   }
-  for (auto & output : node.Outputs())
-  {
-    divertOutput(output, context);
-  }
 }
 
 static void
 divertInRegion(rvsdg::Region & region, CommonNodeElimination::Context & context)
 {
-  divertArguments(region, context);
+  // First divert all region arguments
+  for (auto argument : region.Arguments())
+  {
+    divertOutput(*argument, context);
+  }
 
+  // Divert all nodes
   for (const auto node : rvsdg::TopDownTraverser(&region))
   {
-    if (auto simple = dynamic_cast<rvsdg::SimpleNode *>(node))
+    // When diverting structural nodes, also recurse into their subregions
+    rvsdg::MatchType(
+        *node,
+        [&](rvsdg::StructuralNode & structural)
+        {
+          divertInStructuralNode(structural, context);
+        });
+
+    // Divert all outputs of the node
+    for (auto & output : node->Outputs())
     {
-      divertSimpleNode(*simple, context);
-    }
-    else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(node))
-    {
-      divertStructuralNode(*structural, context);
-    }
-    else
-    {
-      throw std::logic_error("Unknown node type");
+      divertOutput(output, context);
     }
   }
 }
