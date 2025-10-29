@@ -13,6 +13,9 @@ namespace jlm::llvm
 
 /**
  * \brief Common Node Elimination
+ * Discovers simple nodes, region arguments and structural node outputs that are guaranteed to
+ * always produce the same value, and redirects all their users to the same output.
+ * This renders common nodes and common structural arguments / results dead.
  */
 class CommonNodeElimination final : public rvsdg::Transformation
 {
