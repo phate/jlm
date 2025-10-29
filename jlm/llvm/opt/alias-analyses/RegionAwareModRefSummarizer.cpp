@@ -549,7 +549,7 @@ void
 RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
-  
+
   // The list of lambdas becomes the list of nodes in the call graph
   auto lambdaNodes = CollectLambdaNodes(rvsdgModule);
 
