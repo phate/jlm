@@ -62,12 +62,6 @@ private:
   size_t nalternatives_;
 };
 
-static inline bool
-is_ctltype(const jlm::rvsdg::Type & type) noexcept
-{
-  return dynamic_cast<const ControlType *>(&type) != nullptr;
-}
-
 class ControlValueRepresentation
 {
 public:
