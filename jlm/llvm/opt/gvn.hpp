@@ -190,25 +190,25 @@ namespace jlm::rvsdg::gvn {
                 std::cout << "["<<i<<"] : part("
                     << e.partition <<") pos("
                     << e.original_position << ")  disruptor("
-                    << e.disruptor << ")"
+                    << e.disruptor << ")   init("
+                    << e.original_position << ")"
                     << std::endl;
             }
         }
 
         void dump_partitions()
         {
+            GVN_Val checksum = 0;
             OrderByPartition();
             size_t it = 0;
             if (elements.empty()){return;}
             while (it < elements.size()) {
-                size_t end_it = it + SpanPartition(it);
-                while (it < end_it) {
-                    std::cout << "(" << elements[it].partition <<":"<< elements[it].original_position << ")";
-                    it++;
-                }
-                std::cout << "  ";
+                std::cout << "(" << elements[it].partition <<" <- "<< elements[it].original_partition << ")" << std::endl;
+                checksum += elements[it].partition + elements[it].original_partition;
+                it += SpanPartition(it);
             }
             std::cout << std::endl;
+            std::cout << "[[" << checksum << "]]" << std::endl;
         }
         /// --------------------------- CORE -----------------------------------------------------------------
         void CheckDisruptorInvariants()
@@ -258,48 +258,49 @@ namespace jlm::rvsdg::gvn {
 
         bool Fracture()
         {
-            // Partition again based on disruptors
-            // Either because a single partition faces distinct disruptors or when
-            //     the disruptor does equal the original value.
-            bool did_fracture = false;
-            CheckDisruptorInvariants();
-            OrderByPartitionThenDisruptor();
+          // Partition again based on disruptors
+          // Either because a single partition faces distinct disruptors or when
+          //     the disruptor does equal the original value.
+          bool did_fracture = false;
+          CheckDisruptorInvariants();
+          OrderByPartitionThenDisruptor();
 
-            size_t it = 0;
-            while (it < elements.size()) {
-                size_t pspan        = SpanPartition(it);
-                size_t gspan        = SpanDisruptorAndPartition(it);
-                size_t p_end = it + pspan;
+          size_t it = 0;
+          while (it < elements.size()) {
+              size_t pspan        = SpanPartition(it);
+              size_t gspan        = SpanDisruptorAndPartition(it);
+              size_t p_end = it + pspan;
 
-                if (pspan == gspan) {
-                    // Check if value changes for first time
-                    while (it < p_end) {
-                        BrittlePrismEle& e = elements[it];
-                        if (e.original_partition == e.partition && e.disruptor != e.original_partition) {
-                            elements[it].partition = e.disruptor;
-                            did_fracture = true;
-                        }
-                        it++;
-                    }
-                }else {
-                    // Partition was given multiple different disruptors
-                    did_fracture = true;
-                    while (it < p_end) {
-                        BrittlePrismEle& e = elements[it];
-                        if (e.partition != e.disruptor) {
-                            elements[it].partition = e.disruptor;
-                        }
-                        it++;
-                    }
-                }
-            }
-            if (did_fracture) {
-                fracture_count++;
-                if (fracture_count > elements.size() * 2) {
-                    throw std::runtime_error("Brittle prism invariant broken. Possible missing updates to by reassign callback.");
-                }
-            }
-            return did_fracture;
+              if (pspan == gspan) {
+                  // Check if value changes for first time
+                  while (it < p_end) {
+                      BrittlePrismEle& e = elements[it];
+                      if (e.original_partition == e.partition && e.disruptor != e.original_partition) {
+                          elements[it].partition = e.disruptor;
+                          did_fracture = true;
+                      }
+                      it++;
+                  }
+              }else {
+                  // Partition was given multiple different disruptors
+                  did_fracture = true;
+                  while (it < p_end) {
+                      BrittlePrismEle& e = elements[it];
+                      if (e.partition != e.disruptor) {
+                          elements[it].partition = e.disruptor;
+                      }
+                      it++;
+                  }
+              }
+          }
+          if (did_fracture) {
+              fracture_count++;
+              if (fracture_count > elements.size() * 2) {
+                  throw std::runtime_error("Brittle prism invariant broken. Possible missing updates to by reassign callback.");
+              }
+          }
+          OrderByOriginal();
+          return did_fracture;
         }
 
         static void Test0();
@@ -447,7 +448,8 @@ namespace jlm::rvsdg::gvn {
                 Arg(brittle.elements[i].partition);
                 i += brittle.SpanPartition(i);
             }
-            return End();
+          brittle.OrderByOriginal();
+          return End();
         }
 
         GVN_Val FromDisruptors(GVN_Val op, BrittlePrism& brittle) {
@@ -458,6 +460,7 @@ namespace jlm::rvsdg::gvn {
             Arg(brittle.elements[i].disruptor);
             i += brittle.SpanDisruptor(i);
           }
+          brittle.OrderByOriginal();
           return End();
         }
 
@@ -484,8 +487,9 @@ namespace jlm::rvsdg::gvn {
                         auto ad = *(gvn_[arg]);
                         if (ad.op == new_gvn->op) {
                             for (auto leaf : ad.args) {acc.emplace_back(leaf);}
-                        }else {
-                            acc.emplace_back(arg, 1);
+                        } else {
+                          GVN_Val h_with_op = arg * op;
+                            acc.emplace_back(h_with_op, 1);
                         }
                     }else {
                         acc.emplace_back(arg, 1);
@@ -504,6 +508,16 @@ namespace jlm::rvsdg::gvn {
                         last = ele.first;
                     }
                 }
+
+                std::cout << "*******************************************************************" << std::endl;
+                std::cout << "*******************************************************************" << std::endl;
+                for (auto ele : new_gvn->args){
+                  std::cout << op << " LEAVES: " << ele.first << " " << ele.second << std::endl;
+                }
+                std::cout << "*******************************************************************" << std::endl;
+                std::cout << "*******************************************************************" << std::endl;
+
+
             }
 
             std::pair<GVN_Val, bool> pr = CalculateHash(*new_gvn);
@@ -526,7 +540,26 @@ namespace jlm::rvsdg::gvn {
                 if (!DepsEqual(prev, *new_gvn)) {
                     // Collision with internal node
                     v = FindUnique((v & GVN_MASK) | GVN_FROM_COLLISION );
+
+                    std::cout << prev.op << " " << new_gvn->op << " " << std::endl;
+                    if (new_gvn->args.size() == prev.args.size()){
+                      for (size_t i = 0; i < new_gvn->args.size(); i++){
+                        std::cout << new_gvn->args[i].first << " ?? " << prev.args[i].first << std::endl;
+                        std::cout << new_gvn->args[i].second << " ?? " << prev.args[i].second << std::endl;
+                        std::cout << "---------------------------------" << std::endl;
+                      }
+                    }else{
+                      std::cout << "Arg len mismatch..." << std::endl;
+                      for (size_t i = 0; i < new_gvn->args.size(); i++){
+                        std::cout << new_gvn->args[i].first << " ?? " << new_gvn->args[i].second << std::endl;
+                      }
+                      for (size_t i = 0; i < new_gvn->args.size(); i++){
+                        std::cout << prev.args[i].first << " ?? " << prev.args[i].second << std::endl;
+                      }
+
+                    }
                     stat_collisions++;
+                    throw std::runtime_error("Collision between:");
                 }
             }
 
@@ -576,22 +609,14 @@ namespace jlm::rvsdg::gvn {
                  * Take the sum of hashes for internal nodes.
                  */
 
-                for (size_t i = 0; i < deps.args.size(); ++i) {
-                    if (GVN_ValueHasDeps(deps.args[i].first)) {
-                        auto ad = *(gvn_[deps.args[i].first]);
-                        if (ad.op == deps.op) {
-                            v += deps.args[i].first;
-                        }else {
-                            v += deps.args[i].first * deps.op;
-                        }
-                    }else {
-                        v += deps.args[i].first * deps.op;
-                    }
+                for (size_t i = 0; i < deps.args.size(); i++) {
+                  v += deps.args[i].first * deps.args[i].second;
                 }
             }else {
                 //std::cout << "+++++++++++++++STANDARD HASHER+++++++++++++++++"<<std::endl;
+                v ^= deps.op;
                 for (size_t i = 0; i < deps.args.size(); i++) {
-                    v ^= deps.args[i].first * (i+1);
+                    v ^= deps.args[i].first * (i+1) + deps.args[i].second * (i+3);
                 }
             }
 
