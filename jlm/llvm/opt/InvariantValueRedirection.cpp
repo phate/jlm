@@ -192,7 +192,7 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
   {
     return;
   }
-  auto correlation = correlationOpt.value();
+  auto & correlation = correlationOpt.value();
 
   auto subregionRolesOpt = determineGammaSubregionRoles(*correlation);
   if (!subregionRolesOpt.has_value())

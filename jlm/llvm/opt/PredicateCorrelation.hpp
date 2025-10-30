@@ -11,6 +11,7 @@
 #include <jlm/rvsdg/Transformation.hpp>
 
 #include <optional>
+#include <variant>
 #include <vector>
 
 namespace jlm
@@ -57,11 +58,11 @@ private:
       const CorrelationType type,
       rvsdg::ThetaNode & thetaNode,
       rvsdg::GammaNode & gammaNode,
-      ControlConstantAlternatives controlConstantAlternatives)
+      CorrelationData correlationData)
       : type_(type),
         thetaNode_(thetaNode),
         gammaNode_(gammaNode),
-        data_(std::move(controlConstantAlternatives))
+        data_(std::move(correlationData))
   {}
 
 public:
@@ -89,13 +90,13 @@ public:
     return data_;
   }
 
-  static std::shared_ptr<ThetaGammaPredicateCorrelation>
+  static std::unique_ptr<ThetaGammaPredicateCorrelation>
   CreateControlConstantCorrelation(
       rvsdg::ThetaNode & thetaNode,
       rvsdg::GammaNode & gammaNode,
       ControlConstantAlternatives controlConstantVector)
   {
-    return std::shared_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
+    return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
         CorrelationType::ControlConstantCorrelation,
         thetaNode,
         gammaNode,
@@ -106,7 +107,7 @@ private:
   CorrelationType type_;
   rvsdg::ThetaNode & thetaNode_;
   rvsdg::GammaNode & gammaNode_;
-  std::variant<ControlConstantAlternatives> data_{};
+  CorrelationData data_{};
 };
 
 /**
@@ -115,7 +116,7 @@ private:
  * @param thetaNode The theta node for which to compute the predicate correlation.
  * @return A theta-gamma predicate correlation if any, otherwise std::nullopt.
  */
-std::optional<std::shared_ptr<ThetaGammaPredicateCorrelation>>
+std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode);
 
 /**

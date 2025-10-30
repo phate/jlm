@@ -48,7 +48,7 @@ extractControlConstantAlternatives(const rvsdg::Output & gammaOutput)
   return controlAlternatives;
 }
 
-std::optional<std::shared_ptr<ThetaGammaPredicateCorrelation>>
+std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
 {
   const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
@@ -121,7 +121,7 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   {
     return;
   }
-  const auto correlation = correlationOpt.value();
+  const auto & correlation = correlationOpt.value();
 
   if (correlation->type() != CorrelationType::ControlConstantCorrelation)
   {
