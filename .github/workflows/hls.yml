@@ -41,4 +41,4 @@ jobs:
             repo: context.repo.repo,
             body: "```\n" + comment + "```"
           });
-      continue-on-error: true
+      continue-on-error: false
