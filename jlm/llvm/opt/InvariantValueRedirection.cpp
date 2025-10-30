@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -186,28 +187,28 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 void
 InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode)
 {
-  const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
-  const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand);
-  if (!gammaNode)
+  auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+  if (!correlationOpt.has_value())
   {
-    // The theta node predicate does not originate from a gamma node. Nothing can be done.
     return;
   }
+  auto correlation = correlationOpt.value();
 
-  auto subregionRolesOpt = determineGammaSubregionRoles(*gammaNode, thetaPredicateOperand);
+  auto subregionRolesOpt = determineGammaSubregionRoles(*correlation);
   if (!subregionRolesOpt.has_value())
   {
     // We could not determine the roles of the gamma subregions. Nothing can be done.
     return;
   }
   auto roles = *subregionRolesOpt;
+  auto & gammaNode = correlation->gammaNode();
 
   auto divertLoopVar =
       [&gammaNode](rvsdg::ThetaNode::LoopVar & loopVar, rvsdg::Output & entryVarArgument)
   {
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(entryVarArgument))
     {
-      auto roleVar = gammaNode->MapBranchArgument(entryVarArgument);
+      auto roleVar = gammaNode.MapBranchArgument(entryVarArgument);
       if (auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
       {
         loopVar.post->divert_to(entryVar->input->origin());
@@ -225,13 +226,13 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
     }
 
     auto & loopVarPostOperand = *loopVar.post->origin();
-    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != gammaNode)
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != &gammaNode)
     {
       // The post value of the loop variable does not originate from the gamma node. Nothing can
       // be done.
       continue;
     }
-    auto [branchResult, _] = gammaNode->MapOutputExitVar(loopVarPostOperand);
+    auto [branchResult, _] = gammaNode.MapOutputExitVar(loopVarPostOperand);
 
     if (loopVar.output->IsDead())
     {
@@ -250,49 +251,30 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
 
 std::optional<InvariantValueRedirection::GammaSubregionRoles>
 InvariantValueRedirection::determineGammaSubregionRoles(
-    rvsdg::GammaNode & gammaNode,
-    const rvsdg::Output & thetaPredicateOperand)
+    const ThetaGammaPredicateCorrelation & correlation)
 {
-  JLM_ASSERT(rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand) == &gammaNode);
-
-  if (gammaNode.nsubregions() != 2)
+  if (correlation.type() != CorrelationType::ControlConstantCorrelation)
   {
     return std::nullopt;
   }
 
-  auto [branchResult, _] = gammaNode.MapOutputExitVar(thetaPredicateOperand);
-  auto [constantNodeA, constantOperationA] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
-          *branchResult[0]->origin());
-  if (constantOperationA == nullptr)
+  const auto controlAlternatives =
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantAlternatives>(correlation.data());
+  if (controlAlternatives.size() != 2)
   {
     return std::nullopt;
   }
-
-  auto [constantNodeB, constantOperationB] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
-          *branchResult[1]->origin());
-  if (constantOperationB == nullptr)
-  {
-    return std::nullopt;
-  }
-
-  const size_t alternativeA = constantOperationA->value().alternative();
-  const size_t alternativeB = constantOperationB->value().alternative();
-  JLM_ASSERT(alternativeA == 0 || alternativeA == 1);
-  JLM_ASSERT(alternativeB == 0 || alternativeB == 1);
-  JLM_ASSERT(alternativeA != alternativeB);
 
   GammaSubregionRoles roles;
-  if (alternativeA == 0)
+  if (controlAlternatives[0] == 0)
   {
-    roles.exitSubregion = constantNodeA->region();
-    roles.repetitionSubregion = constantNodeB->region();
+    roles.exitSubregion = correlation.gammaNode().subregion(0);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(1);
   }
   else
   {
-    roles.exitSubregion = constantNodeB->region();
-    roles.repetitionSubregion = constantNodeA->region();
+    roles.exitSubregion = correlation.gammaNode().subregion(1);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(0);
   }
 
   return roles;
