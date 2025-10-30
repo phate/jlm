@@ -196,7 +196,7 @@ CreateOpNode(Region & region, OperatorArguments... operatorArguments)
  * See \ref def_use_inspection.
  */
 template<typename TOperation>
-std::pair<SimpleNode *, const TOperation *>
+[[nodiscard]] std::pair<SimpleNode *, const TOperation *>
 TryGetSimpleNodeAndOptionalOp(const Input & input) noexcept
 {
   const auto simpleNode = TryGetOwnerNode<SimpleNode>(input);
@@ -234,7 +234,7 @@ TryGetSimpleNodeAndOptionalOp(const Input & input) noexcept
  * See \ref def_use_inspection.
  */
 template<typename TOperation>
-std::pair<SimpleNode *, const TOperation *>
+[[nodiscard]] std::pair<SimpleNode *, const TOperation *>
 TryGetSimpleNodeAndOptionalOp(const Output & output) noexcept
 {
   const auto simpleNode = TryGetOwnerNode<SimpleNode>(output);
@@ -263,7 +263,7 @@ TryGetSimpleNodeAndOptionalOp(const Output & output) noexcept
  * \returns
  *   A pair of the simple node and requested operation. If \p node is not a \ref SimpleNode,
  *   then <nullptr, nullptr> is returned. If \p is a \ref SimpleNode of a different operation type,
- *   then <SimpleNode*, nullptr> are returned. Otherwise, <SimpleNode*, TOperation*> are returned.
+ *   then <SimpleNode*, nullptr> is returned. Otherwise, <SimpleNode*, TOperation*> is returned.
  *
  * Checks if the specified \p node is a \ref SimpleNode of the requested operation type.
  * If this is the case, returns a pair of pointers to the SimpleNode and operation.
@@ -271,7 +271,7 @@ TryGetSimpleNodeAndOptionalOp(const Output & output) noexcept
  * See \ref def_use_inspection.
  */
 template<typename TOperation>
-std::pair<const SimpleNode *, const TOperation *>
+[[nodiscard]] std::pair<const SimpleNode *, const TOperation *>
 TryGetSimpleNodeAndOptionalOp(const Node & node) noexcept
 {
   const auto simpleNode = dynamic_cast<const SimpleNode *>(&node);
