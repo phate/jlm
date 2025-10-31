@@ -91,7 +91,7 @@ private:
     return rvsdg::gvn::GVN_NO_VALUE;
   }
 
-  inline rvsdg::gvn::GVN_Val GVNOrFail(rvsdg::Output* edge, rvsdg::Node* ctx_node){
+  inline rvsdg::gvn::GVN_Val GVNOrWarn(rvsdg::Output* edge, rvsdg::Node* ctx_node){
     if (output_to_gvn_.find(edge) != output_to_gvn_.end()){
       return output_to_gvn_[edge];
     }
@@ -99,6 +99,13 @@ private:
     std::cout << "Logic error: missing input for edge" + ctx_node->DebugString() + std::to_string(ctx_node->GetNodeId());
 
     return rvsdg::gvn::GVN_NO_VALUE;
+  }
+
+  inline rvsdg::gvn::GVN_Val GVNOrPanic(rvsdg::Output* edge, rvsdg::Node* ctx_node){
+    if (output_to_gvn_.find(edge) != output_to_gvn_.end()){
+      return output_to_gvn_[edge];
+    }
+    throw std::runtime_error("Logic error: missing input for edge" + ctx_node->DebugString() + std::to_string(ctx_node->GetNodeId()));
   }
 
   /// -----------------------------------------------------------

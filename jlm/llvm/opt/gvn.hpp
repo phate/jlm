@@ -20,27 +20,30 @@ namespace jlm::rvsdg::gvn {
     typedef uint64_t GVN_Val;
 
     constexpr GVN_Val GVN_SMALL_VALUE = 0xFFFFFFFF;  // Must not collide with flags below.
-    inline bool GVN_IsSmallValue(GVN_Val v){return (v & GVN_SMALL_VALUE) == v;}
 
+    // -------------------------------------------------------------------------------
     /* Flags stored as part of GVN values */
     constexpr GVN_Val GVN_IS_SYMBOLIC                   =  1ull << 32;
     constexpr GVN_Val GVN_HAS_DEPS                      =  1ull << 33;  /* \brief : By setting a single bit for internal nodes it becomes impossible for leaf and internal nodes to have the same hash making code simpler. */
     constexpr GVN_Val GVN_IS_LOCAL_VALUE                =  1ull << 34;  /* \brief : This value depends on a lambda param. Cannot be moved into the global region. */
-    constexpr GVN_Val GVN_FROM_COLLISION                =  1ull << 35;  /* \brief : This gvn depends on value created by collision resolution */
-    constexpr GVN_Val GVN_OPERATOR_IS_CA                =  1ull << 36;  /* \brief : This gvn value represent a commutative and associative operation */
-    constexpr GVN_Val GVN_CONST_SYMBOL                  =  1ull << 37;
+    constexpr GVN_Val GVN_CONST_SYMBOL                  =  1ull << 35;
 
     constexpr GVN_Val GVN_MASK_INHERIT     = GVN_IS_LOCAL_VALUE | GVN_IS_SYMBOLIC;
-    constexpr GVN_Val GVN_MASK             = GVN_IS_SYMBOLIC | GVN_IS_LOCAL_VALUE | GVN_FROM_COLLISION | GVN_OPERATOR_IS_CA | GVN_HAS_DEPS | GVN_CONST_SYMBOL;
+    constexpr GVN_Val GVN_MASK             = GVN_IS_SYMBOLIC | GVN_IS_LOCAL_VALUE | GVN_HAS_DEPS | GVN_CONST_SYMBOL;
 
+    inline bool GVN_IsSmallValue(GVN_Val v)            {return (v & GVN_SMALL_VALUE) == v;}
+    inline bool GVN_ValueIsGlobal(GVN_Val v)           {return v & GVN_IS_LOCAL_VALUE;}
+    inline bool GVN_ValueHasDeps(GVN_Val v)            {return v & GVN_HAS_DEPS;}
+
+    // -------------------------------------------------------------------------------
     constexpr GVN_Val GVN_PREDEFS = GVN_CONST_SYMBOL | GVN_IS_SYMBOLIC;
 
     /* GLOBAL OPERATION */
     constexpr GVN_Val GVN_OP_ANY_ORDERED       = GVN_PREDEFS | 1;
     constexpr GVN_Val GVN_OP_BECOME_LOCAL      = GVN_PREDEFS | 2;
     constexpr GVN_Val GVN_OP_BECOME_GLOBAL     = GVN_PREDEFS | 3;
-    constexpr GVN_Val GVN_OP_ADDITION          = GVN_PREDEFS | GVN_OPERATOR_IS_CA | 4;
-    constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | GVN_OPERATOR_IS_CA | 5;
+    constexpr GVN_Val GVN_OP_ADDITION          = GVN_PREDEFS | 4;
+    constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | 5;
     constexpr GVN_Val GVN_OP_EQ                = GVN_PREDEFS | 6;   // N-ary checks if all values are the same
     constexpr GVN_Val GVN_OP_NEQ               = GVN_PREDEFS | 7;   // N-ary checks is two values are distinct
 
@@ -48,25 +51,28 @@ namespace jlm::rvsdg::gvn {
     constexpr GVN_Val GVN_NO_VALUE             = GVN_PREDEFS | GVN_CONST_SYMBOL | 100;
     constexpr GVN_Val GVN_TRUE                 = GVN_PREDEFS | GVN_CONST_SYMBOL | 101;
     constexpr GVN_Val GVN_FALSE                = GVN_PREDEFS | GVN_CONST_SYMBOL | 102;
-    constexpr GVN_Val GVN_INVARIANT            = GVN_PREDEFS | GVN_CONST_SYMBOL | 103;
 
-    inline bool GVN_ValueIsGlobal(GVN_Val v)           {return v & GVN_IS_LOCAL_VALUE;}
-    inline bool GVN_ValueIsFromCollision(GVN_Val v)    {return v & GVN_FROM_COLLISION;}
-    inline bool GVN_ValueIsCA_Op(GVN_Val v)            {return v & GVN_OPERATOR_IS_CA;}
-    inline bool GVN_ValueHasDeps(GVN_Val v)            {return v & GVN_HAS_DEPS;}
+    /* SPECIAL VALUES */
+    constexpr GVN_Val GVN_IGNORE = GVN_PREDEFS | GVN_CONST_SYMBOL | 103;
 
     inline std::string to_string(GVN_Val v) {
         auto n = static_cast<uint64_t>(v);
+
         std::string s = "" + std::to_string(n);
-        if ((v & GVN_HAS_DEPS) == 0) {s += "<L>";}
-        if (v & GVN_OPERATOR_IS_CA) {s+="<ca_operator>";}
-        if ((v & GVN_IS_LOCAL_VALUE) == 0) {s += "<global>";}
-        if (v & GVN_FROM_COLLISION) {s += "<COLLISION!>";}
-        if (v & GVN_IS_SYMBOLIC){s += "<SYM>";}
-        if (v == GVN_TRUE) {s += "GVN_TRUE";}
-        if (v == GVN_FALSE){s += "GVN_FALSE";}
-        if (v == GVN_NO_VALUE){s += "GVN_NO_VALUE";}
-        if (v == GVN_INVARIANT){s += "GVN_INVARIANT";}
+        if (s.length() > 5)
+        {
+          s = s.substr(0,4) + "...";
+        }
+
+        //if ((v & GVN_HAS_DEPS) == 0) {s += "<L>";}
+        //if ((v & GVN_IS_LOCAL_VALUE) == 0) {s += "<global>";}
+        if (v & GVN_IS_SYMBOLIC){s += "$";}
+        // Constant predefined symbols
+        if (v == GVN_TRUE)        {s = "TRUE";}
+        if (v == GVN_FALSE)       {s = "FALSE";}
+        if (v == GVN_NO_VALUE)    {s = "NO_VALUE";}
+        if (v == GVN_OP_ADDITION) {s = "+";}
+        if (v == GVN_OP_MULTIPLY) {s = "*";}
         return s;
     }
 
@@ -79,6 +85,7 @@ namespace jlm::rvsdg::gvn {
 
     constexpr const char* ORD_ORIGINAL = "order:original";
     constexpr const char* ORD_PARTITION  = "order:partition";
+    constexpr const char* ORD_DISRUPTOR  = "order:disruptor";
     constexpr const char* ORD_PARTITION_DISRUPTOR = "order:partition>disruptor";
     constexpr const char* ORD_DISRUPTOR_PARTITION = "order:disruptor>partition";
 
@@ -115,6 +122,15 @@ namespace jlm::rvsdg::gvn {
                 }
             );
             current_ordering = ORD_PARTITION;
+        }
+
+        void OrderByDisruptor() {
+            std::sort(elements.begin(), elements.end(),
+                 [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                     return a.disruptor < b.disruptor;
+                 }
+             );
+            current_ordering = ORD_DISRUPTOR;
         }
 
         void OrderByOriginal()
@@ -190,8 +206,8 @@ namespace jlm::rvsdg::gvn {
                 std::cout << "["<<i<<"] : part("
                     << e.partition <<") pos("
                     << e.original_position << ")  disruptor("
-                    << e.disruptor << ")   init("
-                    << e.original_position << ")"
+                    << to_string(e.disruptor) << ")   init("
+                    << e.original_partition << ")"
                     << std::endl;
             }
         }
@@ -211,19 +227,6 @@ namespace jlm::rvsdg::gvn {
             std::cout << "[[" << checksum << "]]" << std::endl;
         }
         /// --------------------------- CORE -----------------------------------------------------------------
-        void CheckDisruptorInvariants()
-        {
-            // Partitions should never become more equal
-            // No element may become part of another partition at a later stage
-            OrderByDisruptorThenPartition();
-            size_t it = 0;
-            while (it < elements.size()) {
-                auto g_span = SpanDisruptorAndPartition(it);
-                auto d_span = SpanDisruptor(it);
-                if (g_span < d_span) {throw std::runtime_error("Same disruptor value applied into distinct partitions.");}
-                it += d_span;
-            }
-        }
 
         template<typename Fn>
         static void EachPartition(BrittlePrism& p, Fn cb)
@@ -262,7 +265,6 @@ namespace jlm::rvsdg::gvn {
           // Either because a single partition faces distinct disruptors or when
           //     the disruptor does equal the original value.
           bool did_fracture = false;
-          CheckDisruptorInvariants();
           OrderByPartitionThenDisruptor();
 
           size_t it = 0;
@@ -286,7 +288,7 @@ namespace jlm::rvsdg::gvn {
                   did_fracture = true;
                   while (it < p_end) {
                       BrittlePrismEle& e = elements[it];
-                      if (e.partition != e.disruptor) {
+                      if (e.partition != e.disruptor && e.disruptor != e.original_partition) {
                           elements[it].partition = e.disruptor;
                       }
                       it++;
@@ -305,6 +307,8 @@ namespace jlm::rvsdg::gvn {
 
         static void Test0();
         static void Test1();
+        static void Test2();
+        static void Test3();
     };
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -359,14 +363,17 @@ namespace jlm::rvsdg::gvn {
             DefineConst(GVN_NO_VALUE);
             DefineConst(GVN_TRUE);
             DefineConst(GVN_FALSE);
-            DefineConst(GVN_INVARIANT);
+
+            DefineConst(GVN_IGNORE);
+
+            DefineConst(~0ull);
         }
 
         GVN_Val Leaf() {
             return Leaf(0);
         }
         GVN_Val Leaf(GVN_Val flags) {
-            auto g = FindUnique(flags);
+            auto g = SymGen(flags);
             gvn_.insert({g,std::nullopt});
             return g;
         }
@@ -438,21 +445,25 @@ namespace jlm::rvsdg::gvn {
             return ptr_to_gvn_[p];
         }
 
-        GVN_Val FromPartitions(GVN_Val op, BrittlePrism& brittle) {
-            // It is sufficient to create a prism from the post array after taking the union
-            //      with the pre array
-            Op(op);
+        GVN_Manager& FromPartitions(BrittlePrism& brittle)
+        {
+          // It is sufficient to create a prism from the post array after taking the union
+          //      with the pre array
+
+          {
             brittle.OrderByPartition();
             size_t i = 0;
-            while (i < brittle.elements.size()) {
-                Arg(brittle.elements[i].partition);
-                i += brittle.SpanPartition(i);
+            while (i < brittle.elements.size())
+            {
+              Arg(brittle.elements[i].partition);
+              i += brittle.SpanPartition(i);
             }
-          brittle.OrderByOriginal();
-          return End();
+            brittle.OrderByOriginal();
+          }
+          return *this;
         }
 
-        GVN_Val FromDisruptors(GVN_Val op, BrittlePrism& brittle) {
+        /*GVN_Val FromDisruptors(GVN_Val op, BrittlePrism& brittle) {
           Op(op);
           brittle.OrderByDisruptorThenPartition();
           size_t i = 0;
@@ -462,7 +473,7 @@ namespace jlm::rvsdg::gvn {
           }
           brittle.OrderByOriginal();
           return End();
-        }
+        }*/
 
     private:
         void DefineConst(GVN_Val v)
@@ -474,121 +485,60 @@ namespace jlm::rvsdg::gvn {
         }
         GVN_Val Create(GVN_Val op, const std::vector<GVN_Val>& args) {
             if (args.empty()){throw std::runtime_error("Logic error: GVN operator applied to zero args.");}
-            std::optional<GVN_Deps> new_gvn = GVN_Deps();
-            new_gvn->op = op;
+            GVN_Deps new_gvn = GVN_Deps();
+            new_gvn.op = op;
             // Initialize new_gvn.args
             //      Either a copy of args or count of operator cluster leaves
-            if (!GVN_ValueIsCA_Op(new_gvn->op)) {
-                for (auto a : args) {new_gvn->push(a);}
-            }else{
-                std::vector<std::pair< GVN_Val, size_t> > acc;
-                for (auto arg : args) {
-                    if (GVN_ValueHasDeps(arg)) {
-                        auto ad = *(gvn_[arg]);
-                        if (ad.op == new_gvn->op) {
-                            for (auto leaf : ad.args) {acc.emplace_back(leaf);}
-                        } else {
-                          GVN_Val h_with_op = arg * op;
-                            acc.emplace_back(h_with_op, 1);
-                        }
-                    }else {
-                        acc.emplace_back(arg, 1);
-                    }
-                }
-                std::sort(acc.begin(), acc.end());
-                if (!acc.empty()) {
-                    GVN_Val last  = GVN_NO_VALUE;
-                    size_t acc_at = -1;
-                    for (auto ele : acc) {
-                        if (ele.first != last) {
-                            acc_at = new_gvn->args.size();
-                            new_gvn->args.emplace_back(ele.first, 0);
-                        }
-                        new_gvn->args[acc_at].second += ele.second;
-                        last = ele.first;
-                    }
-                }
 
-                std::cout << "*******************************************************************" << std::endl;
-                std::cout << "*******************************************************************" << std::endl;
-                for (auto ele : new_gvn->args){
-                  std::cout << op << " LEAVES: " << ele.first << " " << ele.second << std::endl;
+            for (auto a : args) {
+                if (a != GVN_IGNORE) {
+                    new_gvn.push(a);
                 }
-                std::cout << "*******************************************************************" << std::endl;
-                std::cout << "*******************************************************************" << std::endl;
-
-
             }
 
-            std::pair<GVN_Val, bool> pr = CalculateHash(*new_gvn);
+            std::pair<GVN_Val, bool> pr = CalculateHash(new_gvn);
 
             GVN_Val v = pr.first;
-            bool cannot_collide = pr.second;
-            if (cannot_collide) {return v;}    //v was either a leaf or small number
+            bool is_older_value = pr.second;
+            if (is_older_value) {return v;}    //Note: if the hash is a small number return here.
 
             // The memory usage for large dags of ca type operations might be too large
-            if (new_gvn->args.size() > max_ca_size) {
+            if (new_gvn.args.size() > max_ca_size) {
                 stat_ca_too_big++;
                 return Leaf();
             }
 
+            bool did_linear_probe = false;
             // Check if gvn is already in use, compare with existing gvn if so
-            if ( gvn_.find(v) != gvn_.end() ) {
-                if ( !gvn_[v] ) {throw std::runtime_error("Invariant violation.");}
-
-                auto prev = *(gvn_[v]);
-                if (!DepsEqual(prev, *new_gvn)) {
-                    // Collision with internal node
-                    v = FindUnique((v & GVN_MASK) | GVN_FROM_COLLISION );
-
-                    std::cout << prev.op << " " << new_gvn->op << " " << std::endl;
-                    if (new_gvn->args.size() == prev.args.size()){
-                      for (size_t i = 0; i < new_gvn->args.size(); i++){
-                        std::cout << new_gvn->args[i].first << " ?? " << prev.args[i].first << std::endl;
-                        std::cout << new_gvn->args[i].second << " ?? " << prev.args[i].second << std::endl;
-                        std::cout << "---------------------------------" << std::endl;
-                      }
-                    }else{
-                      std::cout << "Arg len mismatch..." << std::endl;
-                      for (size_t i = 0; i < new_gvn->args.size(); i++){
-                        std::cout << new_gvn->args[i].first << " ?? " << new_gvn->args[i].second << std::endl;
-                      }
-                      for (size_t i = 0; i < new_gvn->args.size(); i++){
-                        std::cout << prev.args[i].first << " ?? " << prev.args[i].second << std::endl;
-                      }
-
-                    }
-                    stat_collisions++;
-                    throw std::runtime_error("Collision between:");
-                }
+            while ( gvn_.find(v) != gvn_.end() ) {
+                if (DepsEqual(*gvn_[v] , new_gvn)){break;}
+                v = (v & ~GVN_SMALL_VALUE) | ((v + 1) & GVN_SMALL_VALUE);
+                did_linear_probe = true;
+                throw std::runtime_error("True hash collision detected.");
             }
 
             // ----------------- commit ---------------------
             if (gvn_.find(v) == gvn_.end()) {
-                if ((v & GVN_IS_SYMBOLIC)) {
-                    gvn_.insert({v,new_gvn});
-                }else {
-                    // gvn_.insert({v,std::nullopt});
-                }
+                if (did_linear_probe) { stat_collisions++; }
+                gvn_.insert({v,new_gvn});
             }
             return v;
         }
 
     private:
-        GVN_Val FindUnique() {
-            return FindUnique(0);
+        GVN_Val SymGen() {
+            return SymGen(0);
         }
-        GVN_Val FindUnique(GVN_Val flags) {
+        GVN_Val SymGen(GVN_Val flags) {
             GVN_Val g;
             do{
                 g = random() & ~GVN_MASK;
                 g |= flags | GVN_IS_SYMBOLIC;
             }while(gvn_.find(g) != gvn_.end());
-
             return g;
         }
 
-        std::pair<GVN_Val, bool> CalculateHash(const GVN_Deps& deps) {
+        std::pair<GVN_Val, bool> CalculateHash(GVN_Deps& deps) {
             // Return a gvn value based on operator and arguments
             // The second element of the pair is true if the value cannot collide
 
@@ -603,23 +553,7 @@ namespace jlm::rvsdg::gvn {
             if (deps.op == GVN_OP_BECOME_GLOBAL){flags &= ~GVN_IS_LOCAL_VALUE;}
 
             GVN_Val v = 0;
-            if (GVN_ValueIsCA_Op(deps.op)) {
-                //std::cout << "--------------CA------------------"<<std::endl;
-                /* Hash in the operator for edges entering a contiguous dag of the same operator
-                 * Take the sum of hashes for internal nodes.
-                 */
-
-                for (size_t i = 0; i < deps.args.size(); i++) {
-                  v += deps.args[i].first * deps.args[i].second;
-                }
-            }else {
-                //std::cout << "+++++++++++++++STANDARD HASHER+++++++++++++++++"<<std::endl;
-                v ^= deps.op;
-                for (size_t i = 0; i < deps.args.size(); i++) {
-                    v ^= deps.args[i].first * (i+1) + deps.args[i].second * (i+3);
-                }
-            }
-
+            constexpr GVN_Val TO_BE_DELETED = ~0ull;
             switch (deps.op) {
                 case GVN_OP_NEQ: {
                     // Note:   NEQ cannot assume two symbol values are different.
@@ -649,6 +583,22 @@ namespace jlm::rvsdg::gvn {
                     if (must_be_different) {return {GVN_FALSE, true};}
                 }break;
                 case GVN_OP_ADDITION: {
+                    for (size_t i = 0; i < deps.args.size(); i++) {
+                        auto leaf = deps.args[i].first;
+                        if (leaf & GVN_HAS_DEPS) {
+                            auto leaf_deps = *gvn_[leaf];
+                            if (leaf_deps.op == GVN_OP_ADDITION) {
+                                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
+                                deps.args[i].first = TO_BE_DELETED;  //mark for deletion
+                            }
+                        }
+                        if (deps.args[i].first == 0) {deps.args[i].first = TO_BE_DELETED;} //delete zeroes
+                    }
+                    std::sort(deps.args.begin(), deps.args.end());
+                    while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
+                    if (deps.args.size() == 0){return {0, true};}
+                    if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x + 0 == x
+                    // -------------------------------------------------------------------------------------------------
                     if (!(flags & GVN_IS_SYMBOLIC)) {
                         GVN_Val num = 0;
                         bool overflow = false;
@@ -660,6 +610,22 @@ namespace jlm::rvsdg::gvn {
                     }
                 }break;
                 case GVN_OP_MULTIPLY: {
+                    for (size_t i = 0; i < deps.args.size(); i++) {
+                        auto leaf = deps.args[i].first;
+                        if (leaf & GVN_HAS_DEPS) {
+                            auto leaf_deps = *gvn_[leaf];
+                            if (leaf_deps.op == GVN_OP_MULTIPLY) {
+                                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
+                                deps.args[i].first = TO_BE_DELETED;  //mark for deletion
+                            }
+                        }
+                        if (deps.args[i].first == 1) {deps.args[i].first = TO_BE_DELETED;} //delete zeroes
+                    }
+                    for (auto ele : deps.args){if (ele.first == 0){return {0, true};}}  //x * 0 == 0
+                    std::sort(deps.args.begin(), deps.args.end());
+                    while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
+                    if (deps.args.size() == 0){return {1, true};} // all ones were removed above.
+                    if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x * 1 == x
                     if (!(flags & GVN_IS_SYMBOLIC)) {
                         GVN_Val num = 1;
                         bool overflow = false;
@@ -684,6 +650,11 @@ namespace jlm::rvsdg::gvn {
                     if (all_same) {return {ele, true};}
                 }break;
                 default:break;
+            }
+
+            v ^= deps.op;
+            for (size_t i = 0; i < deps.args.size(); i++) {
+                v ^= deps.args[i].first * (i+1) + deps.args[i].second * (i+131);
             }
 
             v = (v & ~GVN_MASK) | flags | GVN_HAS_DEPS;

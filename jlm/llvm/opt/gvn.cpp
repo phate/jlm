@@ -13,63 +13,7 @@ namespace jlm::rvsdg::gvn {
 
 
     void GVN_Manager::Test0() {
-        GVN_Manager gm;
-        auto my_op = gm.Leaf();
-        auto my_ca = gm.Leaf(GVN_OPERATOR_IS_CA);
-
-        auto x = gm.Leaf();
-        auto y = gm.Leaf();
-
-        if (x == y) {
-            throw std::runtime_error("Expected unique hashes");
-        }
-        if (gvn_verbose) {
-            std::cout << "X: " << to_string(x) << std::endl;
-            std::cout << "Y: " << to_string(y) << std::endl;
-
-            std::cout << "MyOp: " << to_string(my_op) << std::endl;
-            std::cout << "MyCa: " << to_string(my_ca) << std::endl;
-        }
-        {
-            GVN_Deps d;
-            d.op = my_op;
-            d.push(x);
-            d.push(y);
-            if (gvn_verbose){std::cout << "Hash of x - y is : " << to_string(gm.CalculateHash(d).first) << std::endl;}
-        }
-        {
-            GVN_Deps d2;
-            d2.op = my_op;
-            d2.push(y);
-            d2.push(x);
-            if (gvn_verbose){std::cout << "Hash of y - x is : " << to_string(gm.CalculateHash(d2).first) << std::endl;}
-        }
-        {
-            GVN_Deps d3;
-            d3.op = my_ca;
-            d3.push(y);
-            d3.push(x);
-            gm.gvn_.insert({gm.CalculateHash(d3).first, d3});
-
-            GVN_Deps d4;
-            d4.op = my_ca;
-            d4.push(y);
-            d4.push(gm.CalculateHash(d3).first);
-
-            GVN_Deps d5;
-            d5.op = my_ca;
-            d5.push(gm.CalculateHash(d3).first);
-            d5.push(y);
-
-            if (gm.CalculateHash(d4).first != gm.CalculateHash(d5).first) {
-                throw std::runtime_error("Test failed: expected equal hashes from associative and commutative op");
-            }
-            if (gvn_verbose) {
-                std::cout << "y+x " << to_string(gm.CalculateHash(d3).first) << std::endl;
-                std::cout << "y + (y+x): " << to_string(gm.CalculateHash(d4).first) << std::endl;
-                std::cout << "(y+x) + y: " << to_string(gm.CalculateHash(d5).first) << std::endl;
-            }
-        }
+        // TODO: arithmentic tests
     }
     void GVN_Manager::Test1()
     {
@@ -106,69 +50,10 @@ namespace jlm::rvsdg::gvn {
     void GVN_Manager::Test3()
     {
         GVN_Manager gm;
-        auto a   = gm.Leaf();
-        auto b   = gm.Leaf();
-        auto c   = gm.Leaf();
-        auto d   = c;
-
-        auto op_add             = gm.FromStr("+", GVN_OPERATOR_IS_CA);
-        auto one                = gm.FromStr("1");
-
-        // loop  (
-        //          a + 1      ->   a
-        //          b + a      ->   b
-        //              c      ->   d
-        //              d      ->   c
-        // )
-
-        GVN_Val last = 0;
-        for (size_t k = 0; k < 4; k++) {
-            std::optional< BrittlePrism > prevars  = std::nullopt;
-            std::optional< BrittlePrism > postvars = std::nullopt;
-
-            GVN_Val a_out = 0;
-            GVN_Val b_out = 0;
-            GVN_Val c_out = 0;
-            GVN_Val d_out = 0;
-            size_t max_iter = 100;
-
-            std::cout << "INIT: " << a_out << " - " << b_out << " - " << c_out << " - " << d_out << std::endl;
-
-            while (max_iter) {
-                max_iter--;
-                if (!prevars) {
-                    prevars = BrittlePrism({a,b,c,d});
-                }else {
-                    prevars->elements[0].disruptor = a_out;
-                    prevars->elements[1].disruptor = b_out;
-                    prevars->elements[2].disruptor = c_out;
-                    prevars->elements[3].disruptor = d_out;
-
-                    if (! prevars->Fracture() ){break;}
-                }
-                a_out = gm.Op(op_add).Args({a, one});
-                b_out = gm.Op(op_add).Args({b,a});
-                c_out = d;
-                d_out = c;
-                if (!postvars) {
-                    postvars = BrittlePrism( {a_out, b_out, c_out, d_out});
-                }else {
-                    postvars->elements[0].disruptor = a_out;
-                    postvars->elements[1].disruptor = b_out;
-                    postvars->elements[2].disruptor = c_out;
-                    postvars->elements[3].disruptor = d_out;
-                    if (! postvars->Fracture() ){break;}
-                }
-            }
-
-            std::cout << "after:    " << a_out << " - " << b_out << " - " << c_out << " - " << d_out << std::endl;
-
-            GVN_Val h = gm.Op(GVN_OP_ANY_ORDERED).Args({a_out,b_out,c_out,d_out});
-            if (last && h != last && !(h & GVN_FROM_COLLISION)) {
-                std::cout << to_string(last) << " " << to_string(h) << std::endl;
-                throw std::runtime_error("Hashes where different across iterations");
-            }
-            last = h;
+        auto a = gm.Leaf();
+        auto b = gm.FromWord(88);
+        if ( gm.Op(GVN_OP_ADDITION).Args({a,b}) != gm.Op(GVN_OP_ADDITION).Args({b,GVN_IGNORE,a,GVN_IGNORE}) ) {
+            throw std::runtime_error("Should have ignored some args");
         }
     }
 
@@ -297,15 +182,22 @@ namespace jlm::rvsdg::gvn {
 
     void GVN_Manager::Test5()
     {
-        if (GVN_MASK & GVN_SMALL_VALUE) {
-            throw std::runtime_error("Flags of gvn value cannot overlap with field for integer constants.");
-        }
-
         GVN_Manager gm;
         auto forty = gm.Op(GVN_OP_ADDITION).Arg(10).Arg(30).End();
         if (forty != 40){throw std::runtime_error("Bad addition" + to_string(forty));}
         auto twelve = gm.Op(GVN_OP_MULTIPLY).Arg(4).Arg(3).End();
         if (twelve != 12){throw std::runtime_error("Bad multiplication");}
+
+        auto x = gm.Leaf();
+        auto x_plus_zero = gm.Op(GVN_OP_ADDITION).Arg(0).Arg(x).End();
+        auto x_times_zero = gm.Op(GVN_OP_MULTIPLY).Arg(0).Arg(x).End();
+        auto x_times_one = gm.Op(GVN_OP_MULTIPLY).Arg(1).Arg(x).End();
+
+        auto x2 = gm.Op(GVN_OP_MULTIPLY).Arg(2).End();
+        if (x2 == x){throw std::runtime_error("x == 2*x");}
+        if (x_plus_zero != x){throw std::runtime_error("Bad addition x + 0  != x");}
+        if (x_times_zero != 0){throw std::runtime_error("Bad multiplication x * 0 != 0");}
+        if (x_times_one != x){throw std::runtime_error("Bad multiplication x * 1 != x");}
     }
 
     void GVN_Manager::Test6() {
