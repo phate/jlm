@@ -259,7 +259,7 @@ InvariantValueRedirection::determineGammaSubregionRoles(
   }
 
   const auto controlAlternatives =
-      std::get<ThetaGammaPredicateCorrelation::ControlConstantAlternatives>(correlation.data());
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation.data());
   if (controlAlternatives.size() != 2)
   {
     return std::nullopt;
