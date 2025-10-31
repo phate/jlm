@@ -9,10 +9,9 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <typeindex>
 
 namespace jlm::llvm
 {
@@ -341,26 +340,15 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.numNodes());
-  for (auto & node : region.Nodes())
+  for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    nodesTopDown[node.depth()].push_back(&node);
-  }
-
-  for (auto it = nodesTopDown.rbegin(); it != nodesTopDown.rend(); it++)
-  {
-    for (auto node : *it)
+    if (!Context_->IsAlive(*node))
     {
-      if (!Context_->IsAlive(*node))
-      {
-        remove(node);
-        continue;
-      }
-
-      if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
-      {
-        SweepStructuralNode(*structuralNode);
-      }
+      remove(node);
+    }
+    else if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      SweepStructuralNode(*structuralNode);
     }
   }
 
