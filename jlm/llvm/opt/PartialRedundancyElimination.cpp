@@ -220,7 +220,7 @@ PartialRedundancyElimination::Run(
 
   for (auto kv : thetas_){
     auto ic = kv.second.stat_iteration_count;
-    std::cout << TR_ORANGE << kv.first->DebugString() << kv.first->GetNodeId() << " Iteration count: " << ic << TR_RESET << std::endl;
+    std::cout << TR_ORANGE << kv.first->DebugString() << kv.first->GetNodeId() << " Iteration count: " << ic << " Checksum inputs: " << kv.second.checksum_inputs << TR_RESET << std::endl;
   }
 
   if (gvn_.stat_collisions){
@@ -418,6 +418,17 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
   });
 }
 
+jlm::rvsdg::gvn::GVN_Val PartialRedundancyElimination::ComputeInputCheckSumForTheta(rvsdg::ThetaNode& tn)
+{
+  auto CHECKSUM = gvn_.FromStr("CHECKSUM");
+  gvn_.Op(CHECKSUM);
+  for (auto v : tn.GetLoopVars()){
+    auto from_outer = GVNOrZero( v.input->origin() );
+    gvn_.Arg( from_outer );
+  }
+  return gvn_.End();
+}
+
 void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 {
 
@@ -432,36 +443,36 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 
     if (thetas_.find(node) == thetas_.end()){
       thetas_.insert({node, ThetaData()});
-
       thetas_[node].prism = 0;           // This value capture the behavior of thetas given their context
       thetas_[node].stat_iteration_count = 0;
+      thetas_[node].checksum_inputs = ComputeInputCheckSumForTheta(tn);
       for (auto v : tn.GetLoopVars()){
         thetas_[node].pre.Add( GVNOrWarn( v.input->origin() , node ) );
         thetas_[node].post.Add( 0 );
       }
-/*
-      std::cout << TR_YELLOW << "THETA INPUTS: " << node->GetNodeId() << std::endl;
-      thetas_[node].pre.dump();
-      std::cout << TR_RESET;*/
     }else{
-      for (size_t i = 0; i < lv.size(); i++){
-        auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
-        auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].disruptor).End();
-        if ( thetas_[node].post.elements[i].disruptor == GVN_INVARIANT){
-          thetas_[node].pre.elements[i].disruptor = from_outer;
-        }else{
-          thetas_[node].pre.elements[i].disruptor = merged;
+      // Only evaluate loop body once per unique set of inputs
+      auto check_new = ComputeInputCheckSumForTheta(tn);
+      if (thetas_[node].checksum_inputs == check_new){return;}
+      thetas_[node].checksum_inputs = check_new;
+
+      ///// Fill buffers from input edges
+      {
+        for (size_t i = 0; i < lv.size(); i++){
+          auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
+          auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].disruptor).End();
+          if ( thetas_[node].post.elements[i].disruptor == GVN_INVARIANT){
+            thetas_[node].pre.elements[i].disruptor = from_outer;
+          }else{
+            thetas_[node].pre.elements[i].disruptor = merged;
+          }
         }
       }
     }
     auto& td = thetas_[node];
-    /** ----------------------------------- UPDATE PRISM -------------------------------------- */
-    // The pre buffer contains either the most recent inputs for invariant values
-    //    or the superposition of values across all evaluations.
 
     do{
       // ================= PERFORM GVN IN LOOP BODY ========================
-
       for (size_t i = 0; i < lv.size(); i++){
         RegisterGVN( lv[i].pre, td.pre.elements[i].disruptor );
       }
@@ -471,7 +482,6 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       for (size_t i = 0; i < lv.size(); i++){
         td.post.elements[i].disruptor = GVNOrWarn( lv[i].post->origin(), node );
       }
-
       // ================= END LOOP BODY ====================================
 
       for (size_t i = 0; i < lv.size(); i++){
@@ -508,6 +518,8 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 
       td.stat_iteration_count++;
     } while (thetas_[node].pre.Fracture());
+    //Loop when either a loop variable changed from its initial value or loop variables
+    //   which were the same at the start of the iteration diverged (partition splits or fractures).
 
     /** ----------------------------------- COMPUTE LOOP OUTPUTS -------------------------------------- */
 

@@ -307,8 +307,6 @@ namespace jlm::rvsdg::gvn {
 
         static void Test0();
         static void Test1();
-        static void Test2();
-        static void Test3();
     };
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -657,7 +655,7 @@ namespace jlm::rvsdg::gvn {
         }
 
     public:
-        static void Test0();
+
         static void Test1();
         static void Test2();
         static void Test3();
@@ -670,7 +668,6 @@ namespace jlm::rvsdg::gvn {
     {
         BrittlePrism::Test0();
         BrittlePrism::Test1();
-        GVN_Manager::Test0();
         GVN_Manager::Test1();
         GVN_Manager::Test2();
         GVN_Manager::Test3();

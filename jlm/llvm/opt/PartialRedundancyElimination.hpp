@@ -33,6 +33,7 @@ namespace jlm::llvm{
 
 struct ThetaData
 {
+  jlm::rvsdg::gvn::GVN_Val checksum_inputs;
   size_t stat_iteration_count;
   jlm::rvsdg::gvn::GVN_Val prism;
   jlm::rvsdg::gvn::BrittlePrism pre;
@@ -125,6 +126,8 @@ private:
   void PassDownThetaNode(rvsdg::Node* tn);
   void PassDownLambdaNode(rvsdg::Node* ln);
   void PassDownLeafNode(rvsdg::Node* node);
+
+  jlm::rvsdg::gvn::GVN_Val ComputeInputCheckSumForTheta(rvsdg::ThetaNode& tn);
 };
 
 }

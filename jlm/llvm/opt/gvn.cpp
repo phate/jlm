@@ -12,9 +12,6 @@ bool jlm::rvsdg::gvn::gvn_verbose = false;
 namespace jlm::rvsdg::gvn {
 
 
-    void GVN_Manager::Test0() {
-        // TODO: arithmentic tests
-    }
     void GVN_Manager::Test1()
     {
         GVN_Manager gm;
