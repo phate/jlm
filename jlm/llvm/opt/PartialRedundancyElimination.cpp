@@ -207,30 +207,21 @@ PartialRedundancyElimination::Run(
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   auto& root = rvsdg.GetRootRegion();
-  this->TraverseTopDownRecursively(root, dump_region);
-
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
-  this->TraverseTopDownRecursively(root, dump_node);
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
   this->TraverseTopDownRecursively(root, initialize_stats);
-
-  this->TraverseTopDownRecursively(root, dump_node);
 
   std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
   std::cout <<TR_CYAN << "Gamma node count:"  << stat_gamma_count << TR_RESET << std::endl;
   std::cout <<TR_CYAN << "Theta node count:"  << stat_theta_count << TR_RESET << std::endl;
   std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
 
-  /*jlm::rvsdg::gvn::gvn_verbose = false;
-  jlm::rvsdg::gvn::RunAllTests();*/
-
-  std::cout << TR_PURPLE << "=================================================" << TR_RESET << std::endl;
-  TraverseTopDownRecursively(root, dump_node);
   GVN_VisitRegion(root);
   TraverseTopDownRecursively(root, dump_node);
   std::cout << TR_PURPLE << "=================================================" << TR_RESET << std::endl;
+
+  for (auto kv : thetas_){
+    auto ic = kv.second.stat_iteration_count;
+    std::cout << TR_ORANGE << kv.first->DebugString() << kv.first->GetNodeId() << " Iteration count: " << ic << TR_RESET << std::endl;
+  }
 
   if (gvn_.stat_collisions){
     throw std::runtime_error("gvn_.stat_collisions");
@@ -331,7 +322,7 @@ static StateEdgesAt findStateIndices(rvsdg::Node* node)
 void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 {
   std::cout << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
-
+  // Treats state edges just like any other value
   if (node->ninputs() && node->noutputs()){
     auto op_opaque = gvn_.FromStr( node->DebugString() );
     auto hash_call_out = gvn_.FromStr("hash_call_out");
@@ -343,8 +334,6 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
     auto hash_all_inputs = gvn_.End();
     for (size_t i = 0 ; i < node->noutputs() ; i++){
       auto arg_pos = gvn_.FromWord(i);
-      //std::cout << TR_YELLOW << "hash_call_out: " << hash_call_out << std::endl;
-      //std::cout << TR_YELLOW << "op_opaque: " << op_opaque << std::endl;
       auto g_out = gvn_.Op(hash_call_out).Arg(hash_all_inputs).Arg(arg_pos).End();
       RegisterGVN( node->output(i), g_out );
     }
@@ -379,11 +368,7 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
   for (size_t i = 0; i < node->noutputs(); i++){
     if (output_to_gvn_.find(node->output(i)) == output_to_gvn_.end()){
       if (node->DebugString() == std::string("undef")){
-        //std::cout <<ind() << TR_RED << "Warning: undef found:" << node->DebugString() << node->GetNodeId() << std::endl;
         RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
-      }else{
-        //std::cout << std::endl << ind() << TR_RED << "Warning: Missing out from:" << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-        RegisterGVN( node->output(i), gvn_.FromStr("missing") );
       }
     }
   }
@@ -448,16 +433,16 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     if (thetas_.find(node) == thetas_.end()){
       thetas_.insert({node, ThetaData()});
 
-      thetas_[node].prism = 0;  // This value is unique for each non-isomorphic theta
-
+      thetas_[node].prism = 0;           // This value capture the behavior of thetas given their context
+      thetas_[node].stat_iteration_count = 0;
       for (auto v : tn.GetLoopVars()){
         thetas_[node].pre.Add( GVNOrWarn( v.input->origin() , node ) );
         thetas_[node].post.Add( 0 );
       }
-
+/*
       std::cout << TR_YELLOW << "THETA INPUTS: " << node->GetNodeId() << std::endl;
       thetas_[node].pre.dump();
-      std::cout << TR_RESET;
+      std::cout << TR_RESET;*/
     }else{
       for (size_t i = 0; i < lv.size(); i++){
         auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
@@ -469,7 +454,7 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
         }
       }
     }
-
+    auto& td = thetas_[node];
     /** ----------------------------------- UPDATE PRISM -------------------------------------- */
     // The pre buffer contains either the most recent inputs for invariant values
     //    or the superposition of values across all evaluations.
@@ -478,34 +463,34 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       // ================= PERFORM GVN IN LOOP BODY ========================
 
       for (size_t i = 0; i < lv.size(); i++){
-        RegisterGVN( lv[i].pre, thetas_[node].pre.elements[i].disruptor );
+        RegisterGVN( lv[i].pre, td.pre.elements[i].disruptor );
       }
 
       GVN_VisitAllSubRegions(node);
 
       for (size_t i = 0; i < lv.size(); i++){
-        thetas_[node].post.elements[i].disruptor = GVNOrWarn( lv[i].post->origin(), node );
+        td.post.elements[i].disruptor = GVNOrWarn( lv[i].post->origin(), node );
       }
 
       // ================= END LOOP BODY ====================================
 
       for (size_t i = 0; i < lv.size(); i++){
-        auto input  = thetas_[node].pre.elements[i].disruptor;
-        auto output = thetas_[node].post.elements[i].disruptor;
+        auto input  = td.pre.elements[i].disruptor;
+        auto output = td.post.elements[i].disruptor;
         auto merged_io = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(input).Arg(output).End();
-        thetas_[node].post.elements[i].partition = merged_io;
+        td.post.elements[i].partition = merged_io;
       }
 
       GVN_Val predicate = GVNOrPanic( tn.predicate()->origin(), node );
       /// This hash depends on the mapping between inputs to ouputs as well as the predicate
       /// Does not depend on order of loop variables or duplicate loop variables
-      thetas_[node].prism = gvn_.Op(OP_PRISM).Arg(predicate).FromPartitions(thetas_[node].post).End();
-      thetas_[node].post.OrderByOriginal();
+      td.prism = gvn_.Op(OP_PRISM).Arg(predicate).FromPartitions(td.post).End();
+      td.post.OrderByOriginal();
 
       for (size_t i = 0; i < lv.size(); i++){
-        auto pi = thetas_[node].post.elements[i].partition;
-        auto merged_with_prism = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(pi).Arg(thetas_[node].prism).End();
-        bool was_invariant = thetas_[node].pre.elements[i].disruptor == thetas_[node].post.elements[i].disruptor;
+        auto pi = td.post.elements[i].partition;
+        auto merged_with_prism = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(pi).Arg(td.prism).End();
+        bool was_invariant = td.pre.elements[i].disruptor == td.post.elements[i].disruptor;
 
         // Note: this doesn't use rvsdg::ThetaLoopVarIsInvariant()
         //       state edges can be made invariant inside thetas only
@@ -513,15 +498,15 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
         //       Computing referential transparency
 
         if (was_invariant){
-          thetas_[node].post.elements[i].partition = GVN_INVARIANT;
+          td.post.elements[i].partition = GVN_INVARIANT;
         }else{
-          thetas_[node].post.elements[i].partition = merged_with_prism;
-          auto loop_old = thetas_[node].pre.elements[i].disruptor;
-          thetas_[node].pre.elements[i].disruptor = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(merged_with_prism).Arg(loop_old).End();
+          td.post.elements[i].partition = merged_with_prism;
+          auto loop_old = td.pre.elements[i].disruptor;
+          td.pre.elements[i].disruptor = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(merged_with_prism).Arg(loop_old).End();
         }
       }
 
-
+      td.stat_iteration_count++;
     } while (thetas_[node].pre.Fracture());
 
     /** ----------------------------------- COMPUTE LOOP OUTPUTS -------------------------------------- */
