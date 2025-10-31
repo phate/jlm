@@ -456,13 +456,15 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       if (thetas_[node].checksum_inputs == check_new){return;}
       thetas_[node].checksum_inputs = check_new;
 
-      ///// Fill buffers from input edges
+      ///// Only called for nested loops
       {
         for (size_t i = 0; i < lv.size(); i++){
           auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
           auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].disruptor).End();
           if ( thetas_[node].post.elements[i].disruptor == GVN_INVARIANT){
             thetas_[node].pre.elements[i].disruptor = from_outer;
+            thetas_[node].pre.elements[i].partition = from_outer;
+            thetas_[node].pre.elements[i].original_partition = from_outer;
           }else{
             thetas_[node].pre.elements[i].disruptor = merged;
           }
