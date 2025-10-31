@@ -447,9 +447,7 @@ namespace jlm::rvsdg::gvn {
 
         GVN_Manager& FromPartitions(BrittlePrism& brittle)
         {
-          // It is sufficient to create a prism from the post array after taking the union
-          //      with the pre array
-
+          // Call Arg( ) once for each partition
           {
             brittle.OrderByPartition();
             size_t i = 0;
@@ -462,18 +460,6 @@ namespace jlm::rvsdg::gvn {
           }
           return *this;
         }
-
-        /*GVN_Val FromDisruptors(GVN_Val op, BrittlePrism& brittle) {
-          Op(op);
-          brittle.OrderByDisruptorThenPartition();
-          size_t i = 0;
-          while (i < brittle.elements.size()) {
-            Arg(brittle.elements[i].disruptor);
-            i += brittle.SpanDisruptor(i);
-          }
-          brittle.OrderByOriginal();
-          return End();
-        }*/
 
     private:
         void DefineConst(GVN_Val v)
