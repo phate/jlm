@@ -38,9 +38,15 @@ namespace jlm::llvm
 enum class CorrelationType
 {
   /**
-   * The predicate correlates with control constants from subregions of another structural node.
+   * The predicate correlates with control constants from subregions of a gamma node.
    */
   ControlConstantCorrelation,
+
+  /**
+   * The predicate correlates with a MatchNode that gets its input from constants originating from
+   * subregions of a gamma node.
+   */
+  MatchConstantCorrelation,
 };
 
 /**
@@ -50,8 +56,16 @@ enum class CorrelationType
 class ThetaGammaPredicateCorrelation final
 {
 public:
-  using ControlConstantAlternatives = std::vector<size_t>;
-  using CorrelationData = std::variant<ControlConstantAlternatives>;
+  using ControlConstantCorrelationData = std::vector<uint64_t>;
+
+  typedef struct MatchConstantCorrelationData
+  {
+    rvsdg::Node * matchNode{};
+    std::vector<uint64_t> alternatives{};
+  } MatchConstantCorrelationData;
+
+  using CorrelationData =
+      std::variant<ControlConstantCorrelationData, MatchConstantCorrelationData>;
 
 private:
   ThetaGammaPredicateCorrelation(
@@ -94,13 +108,26 @@ public:
   CreateControlConstantCorrelation(
       rvsdg::ThetaNode & thetaNode,
       rvsdg::GammaNode & gammaNode,
-      ControlConstantAlternatives controlConstantVector)
+      ControlConstantCorrelationData data)
   {
     return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
         CorrelationType::ControlConstantCorrelation,
         thetaNode,
         gammaNode,
-        std::move(controlConstantVector)));
+        std::move(data)));
+  }
+
+  static std::unique_ptr<ThetaGammaPredicateCorrelation>
+  CreateMatchConstantCorrelation(
+      rvsdg::ThetaNode & thetaNode,
+      rvsdg::GammaNode & gammaNode,
+      MatchConstantCorrelationData data)
+  {
+    return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
+        CorrelationType::MatchConstantCorrelation,
+        thetaNode,
+        gammaNode,
+        std::move(data)));
   }
 
 private:

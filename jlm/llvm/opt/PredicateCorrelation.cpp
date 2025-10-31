@@ -3,7 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -18,38 +20,61 @@ namespace jlm::llvm
 
 /**
  * Takes the output of a gamma node and if the output's respective branch results in every
- * subregion originate from a control constant, then it returns a vector of the control constant
+ * subregion originate from a constant, then it returns a vector of the constant
  * alternatives.
  *
  * @param gammaOutput The output of a gamma node.
- * @return The control constant alternatives for each of the gamma node's subregion, or
+ * @return The constant alternatives for each of the gamma node's subregion, or
  * std::nullopt;
  */
-static std::optional<std::vector<size_t>>
-extractControlConstantAlternatives(const rvsdg::Output & gammaOutput)
+static std::optional<std::vector<uint64_t>>
+extractConstantAlternatives(const rvsdg::Output & gammaOutput)
 {
   const auto & gammaNode = rvsdg::AssertGetOwnerNode<rvsdg::GammaNode>(gammaOutput);
 
-  std::vector<size_t> controlAlternatives;
+  std::vector<uint64_t> alternatives;
   auto [branchResults, _] = gammaNode.MapOutputExitVar(gammaOutput);
   for (const auto branchResult : branchResults)
   {
-    auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
-            *branchResult->origin());
-    if (constantOperation == nullptr)
     {
-      return std::nullopt;
+      auto [constantNode, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
+              *branchResult->origin());
+      if (constantOperation)
+      {
+        alternatives.push_back(constantOperation->value().alternative());
+        continue;
+      }
     }
 
-    controlAlternatives.push_back(constantOperation->value().alternative());
+    {
+      auto [constantNode, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(*branchResult->origin());
+      if (constantOperation)
+      {
+        alternatives.push_back(constantOperation->value().to_uint());
+        continue;
+      }
+    }
+
+    {
+      auto [constantNode, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*branchResult->origin());
+      if (constantOperation)
+      {
+        alternatives.push_back(constantOperation->Representation().to_uint());
+        continue;
+      }
+    }
+
+    return std::nullopt;
   }
 
-  return controlAlternatives;
+  return alternatives;
 }
 
-std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
-computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
+static std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
+computeControlConstantCorrelation(rvsdg::ThetaNode & thetaNode)
 {
   const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
   auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand);
@@ -58,7 +83,7 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
     return std::nullopt;
   }
 
-  const auto controlAlternativesOpt = extractControlConstantAlternatives(thetaPredicateOperand);
+  const auto controlAlternativesOpt = extractConstantAlternatives(thetaPredicateOperand);
   if (!controlAlternativesOpt.has_value())
   {
     return std::nullopt;
@@ -69,6 +94,52 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
       thetaNode,
       *gammaNode,
       controlAlternatives);
+}
+
+static std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
+computeMatchConstantCorrelation(rvsdg::ThetaNode & thetaNode)
+{
+  auto [matchNode, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*thetaNode.predicate()->origin());
+  if (!matchOperation)
+  {
+    return std::nullopt;
+  }
+
+  const auto & gammaOutput = *matchNode->input(0)->origin();
+  const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(gammaOutput);
+  if (!gammaNode)
+  {
+    return std::nullopt;
+  }
+
+  const auto alternativesOpt = extractConstantAlternatives(gammaOutput);
+  if (!alternativesOpt.has_value())
+  {
+    return std::nullopt;
+  }
+  const auto alternatives = alternativesOpt.value();
+
+  return ThetaGammaPredicateCorrelation::CreateMatchConstantCorrelation(
+      thetaNode,
+      *gammaNode,
+      { matchNode, alternatives });
+}
+
+std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
+computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
+{
+  if (auto correlationOpt = computeControlConstantCorrelation(thetaNode))
+  {
+    return correlationOpt;
+  }
+
+  if (auto correlationOpt = computeMatchConstantCorrelation(thetaNode))
+  {
+    return correlationOpt;
+  }
+
+  return std::nullopt;
 }
 
 PredicateCorrelation::~PredicateCorrelation() noexcept = default;
@@ -129,7 +200,7 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   }
 
   const auto controlAlternatives =
-      std::get<ThetaGammaPredicateCorrelation::ControlConstantAlternatives>(correlation->data());
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation->data());
   if (controlAlternatives.size() != 2 || controlAlternatives[0] != 0 || controlAlternatives[1] != 1)
   {
     return;
