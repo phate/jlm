@@ -12,6 +12,7 @@
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
+#include <jlm/util/Math.hpp>
 
 #include <memory>
 #include <string>
@@ -27,126 +28,66 @@ namespace aa
 {
 
 /** /brief PointsTo Graph
- *
  */
 class PointsToGraph final
 {
-  template<class DATATYPE, class ITERATORTYPE, typename IteratorToPointer>
-  class NodeIterator;
+  using NodeIndex = uint32_t;
 
-  template<class DATATYPE, class ITERATORTYPE, typename IteratorToPointer>
-  class NodeConstIterator;
-
-public:
-  class AllocaNode;
-  class DeltaNode;
-  class ImportNode;
-  class LambdaNode;
-  class MallocNode;
-  class MemoryNode;
-  class Node;
-  class RegisterNode;
-  class UnknownMemoryNode;
-  class ExternalMemoryNode;
-
-  using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
-  using DeltaNodeMap =
-      std::unordered_map<const rvsdg::DeltaNode *, std::unique_ptr<PointsToGraph::DeltaNode>>;
-  using ImportNodeMap =
-      std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
-  using LambdaNodeMap =
-      std::unordered_map<const rvsdg::LambdaNode *, std::unique_ptr<PointsToGraph::LambdaNode>>;
-  using MallocNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<MallocNode>>;
-  using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, PointsToGraph::RegisterNode *>;
-  using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
-
-  template<class DataType, class IteratorType>
-  struct IteratorToPointerFunctor
+  enum class NodeKind : uint8_t
   {
-    DataType *
-    operator()(const IteratorType & it) const
-    {
-      return it->second.get();
-    }
+    RegisterNode = 0,
+    AllocaNode,
+    DeltaNode,
+    ImportNode,
+    LambdaNode,
+    MallocNode,
+    COUNT
   };
 
-  using AllocaNodeIterator = NodeIterator<
-      AllocaNode,
-      AllocaNodeMap::iterator,
-      IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::iterator>>;
-  using AllocaNodeConstIterator = NodeConstIterator<
-      AllocaNode,
-      AllocaNodeMap::const_iterator,
-      IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::const_iterator>>;
+  struct NodeData
+  {
+    NodeKind kind : util::BitWidthOfEnum(NodeKind::COUNT);
+
+    // When set, the node is available from other modules in the program
+    uint8_t isExternallyAvailable : 1;
+
+    // When set, the PointsToGraph Node implicitly targets all externally available nodes
+    uint8_t isTargetingAllExternallyAvailable : 1;
+  };
+
+  using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, NodeIndex>;
+  using DeltaNodeMap = std::unordered_map<const rvsdg::DeltaNode *, NodeIndex>;
+  using ImportNodeMap = std::unordered_map<const rvsdg::RegionArgument *, NodeIndex>;
+  using LambdaNodeMap = std::unordered_map<const rvsdg::LambdaNode *, NodeIndex>;
+  using MallocNodeMap = std::unordered_map<const rvsdg::Node *, NodeIndex>;
+  using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, NodeIndex>;
+
+  using AllocaNodeIterator =
+      util::MapValuePtrIterator<const NodeIndex, AllocaNodeMap::const_iterator>;
   using AllocaNodeRange = util::IteratorRange<AllocaNodeIterator>;
-  using AllocaNodeConstRange = util::IteratorRange<AllocaNodeConstIterator>;
 
-  using DeltaNodeIterator = NodeIterator<
-      DeltaNode,
-      DeltaNodeMap::iterator,
-      IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::iterator>>;
-  using DeltaNodeConstIterator = NodeConstIterator<
-      DeltaNode,
-      DeltaNodeMap::const_iterator,
-      IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::const_iterator>>;
+  using DeltaNodeIterator =
+      util::MapValuePtrIterator<const NodeIndex, DeltaNodeMap::const_iterator>;
   using DeltaNodeRange = util::IteratorRange<DeltaNodeIterator>;
-  using DeltaNodeConstRange = util::IteratorRange<DeltaNodeConstIterator>;
 
-  using ImportNodeIterator = NodeIterator<
-      ImportNode,
-      ImportNodeMap::iterator,
-      IteratorToPointerFunctor<ImportNode, ImportNodeMap::iterator>>;
-  using ImportNodeConstIterator = NodeConstIterator<
-      ImportNode,
-      ImportNodeMap::const_iterator,
-      IteratorToPointerFunctor<ImportNode, ImportNodeMap::const_iterator>>;
-  using ImportNodeRange = jlm::util::IteratorRange<ImportNodeIterator>;
-  using ImportNodeConstRange = jlm::util::IteratorRange<ImportNodeConstIterator>;
+  using ImportNodeIterator =
+      util::MapValuePtrIterator<const NodeIndex, ImportNodeMap::const_iterator>;
+  using ImportNodeRange = util::IteratorRange<ImportNodeIterator>;
 
-  using LambdaNodeIterator = NodeIterator<
-      LambdaNode,
-      LambdaNodeMap::iterator,
-      IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::iterator>>;
-  using LambdaNodeConstIterator = NodeConstIterator<
-      LambdaNode,
-      LambdaNodeMap::const_iterator,
-      IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::const_iterator>>;
+  using LambdaNodeIterator =
+      util::MapValuePtrIterator<const NodeIndex, LambdaNodeMap::const_iterator>;
   using LambdaNodeRange = util::IteratorRange<LambdaNodeIterator>;
-  using LambdaNodeConstRange = util::IteratorRange<LambdaNodeConstIterator>;
 
-  using MallocNodeIterator = NodeIterator<
-      MallocNode,
-      MallocNodeMap::iterator,
-      IteratorToPointerFunctor<MallocNode, MallocNodeMap::iterator>>;
-  using MallocNodeConstIterator = NodeConstIterator<
-      MallocNode,
-      MallocNodeMap::const_iterator,
-      IteratorToPointerFunctor<MallocNode, MallocNodeMap::const_iterator>>;
+  using MallocNodeIterator =
+      util::MapValuePtrIterator<const NodeIndex, MallocNodeMap::const_iterator>;
   using MallocNodeRange = util::IteratorRange<MallocNodeIterator>;
-  using MallocNodeConstRange = util::IteratorRange<MallocNodeConstIterator>;
 
-  template<class IteratorType>
-  struct RegisterNodeIteratorToPointerFunctor
-  {
-    RegisterNode *
-    operator()(const IteratorType & it) const
-    {
-      return it->get();
-    }
-  };
-
-  using RegisterNodeIterator = NodeIterator<
-      RegisterNode,
-      RegisterNodeVector::iterator,
-      RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::iterator>>;
-  using RegisterNodeConstIterator = NodeConstIterator<
-      RegisterNode,
-      RegisterNodeVector::const_iterator,
-      RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::const_iterator>>;
+  using RegisterNodeIterator = std::vector<NodeIndex>::const_iterator;
   using RegisterNodeRange = util::IteratorRange<RegisterNodeIterator>;
-  using RegisterNodeConstRange = util::IteratorRange<RegisterNodeConstIterator>;
 
-private:
+  using ExternallyAvailableIterator = std::vector<NodeIndex>::const_iterator;
+  using ExternallyAvailableRange = util::IteratorRange<ExternallyAvailableIterator>;
+
   PointsToGraph();
 
 public:
@@ -161,224 +102,277 @@ public:
   operator=(PointsToGraph &&) = delete;
 
   AllocaNodeRange
-  AllocaNodes();
-
-  AllocaNodeConstRange
-  AllocaNodes() const;
+  allocaNodes() const noexcept;
 
   DeltaNodeRange
-  DeltaNodes();
-
-  DeltaNodeConstRange
-  DeltaNodes() const;
+  deltaNodes() const noexcept;
 
   ImportNodeRange
-  ImportNodes();
-
-  ImportNodeConstRange
-  ImportNodes() const;
+  importNodes() const noexcept;
 
   LambdaNodeRange
-  LambdaNodes();
-
-  LambdaNodeConstRange
-  LambdaNodes() const;
+  lambdaNodes() const noexcept;
 
   MallocNodeRange
-  MallocNodes();
-
-  MallocNodeConstRange
-  MallocNodes() const;
+  mallocNodes() const noexcept;
 
   RegisterNodeRange
-  RegisterNodes();
-
-  RegisterNodeConstRange
-  RegisterNodes() const;
+  registerNodes() const noexcept;
 
   size_t
-  NumAllocaNodes() const noexcept
+  numAllocaNodes() const noexcept
   {
-    return AllocaNodes_.size();
+    return allocaMap_.size();
   }
 
   size_t
-  NumDeltaNodes() const noexcept
+  numDeltaNodes() const noexcept
   {
-    return DeltaNodes_.size();
+    return deltaMap_.size();
   }
 
   size_t
-  NumImportNodes() const noexcept
+  numImportNodes() const noexcept
   {
-    return ImportNodes_.size();
+    return importMap_.size();
   }
 
   size_t
-  NumLambdaNodes() const noexcept
+  numLambdaNodes() const noexcept
   {
-    return LambdaNodes_.size();
+    return lambdaMap_.size();
   }
 
   size_t
-  NumMallocNodes() const noexcept
+  numMallocNodes() const noexcept
   {
-    return MallocNodes_.size();
+    return mallocMap_.size();
   }
 
   [[nodiscard]] size_t
-  NumRegisterNodes() const noexcept
+  numRegisterNodes() const noexcept
   {
-    return RegisterNodes_.size();
+    return registerNodes_.size();
   }
 
   /**
    * @return the total number of registers that are represented by some RegisterNode
    */
   [[nodiscard]] size_t
-  NumMappedRegisters() const noexcept
+  numMappedRegisters() const noexcept
   {
-    return RegisterNodeMap_.size();
+    return registerMap_.size();
   }
 
   size_t
-  NumMemoryNodes() const noexcept
+  numMemoryNodes() const noexcept
   {
-    return NumAllocaNodes() + NumDeltaNodes() + NumImportNodes() + NumLambdaNodes()
-         + NumMallocNodes() + 1; // External memory node
+    return numAllocaNodes() + numDeltaNodes() + numImportNodes() + numLambdaNodes()
+         + numMallocNodes();
   }
 
   size_t
-  NumNodes() const noexcept
+  numNodes() const noexcept
   {
-    return NumMemoryNodes() + NumRegisterNodes();
+    JLM_ASSERT(nodeData_.size() == nodeTargets_.size());
+    JLM_ASSERT(nodeData_.size() == nodeObjects_.size());
+    return nodeData_.size();
   }
 
-  PointsToGraph::UnknownMemoryNode &
-  GetUnknownMemoryNode() const noexcept
+  NodeIndex
+  getAllocaNode(const rvsdg::Node & node) const
   {
-    return *UnknownMemoryNode_;
+    if (const auto it = allocaMap_.find(&node); it != allocaMap_.end())
+      return it->second;
+
+    throw util::Error("Cannot find alloca node in points-to graph.");
   }
 
-  ExternalMemoryNode &
-  GetExternalMemoryNode() const noexcept
+  NodeIndex
+  getDeltaNode(const rvsdg::DeltaNode & node) const
   {
-    return *ExternalMemoryNode_;
+    if (const auto it = deltaMap_.find(&node); it != deltaMap_.end())
+      return it->second;
+
+    throw util::Error("Cannot find delta node in points-to graph.");
   }
 
-  const PointsToGraph::AllocaNode &
-  GetAllocaNode(const rvsdg::Node & node) const
+  NodeIndex
+  getImportNode(const rvsdg::RegionArgument & argument) const
   {
-    auto it = AllocaNodes_.find(&node);
-    if (it == AllocaNodes_.end())
-      throw util::Error("Cannot find alloca node in points-to graph.");
+    if (const auto it = importMap_.find(&argument); it != importMap_.end())
+      return it->second;
 
-    return *it->second;
+    throw util::Error("Cannot find import in points-to graph.");
   }
 
-  const PointsToGraph::DeltaNode &
-  GetDeltaNode(const rvsdg::DeltaNode & node) const
+  NodeIndex
+  getLambdaNode(const rvsdg::LambdaNode & node) const
   {
-    auto it = DeltaNodes_.find(&node);
-    if (it == DeltaNodes_.end())
-      throw util::Error("Cannot find delta node in points-to graph.");
+    if (const auto it = lambdaMap_.find(&node); it != lambdaMap_.end())
+      return it->second;
 
-    return *it->second;
+    throw util::Error("Cannot find lambda node in points-to graph.");
   }
 
-  const PointsToGraph::ImportNode &
-  GetImportNode(const rvsdg::RegionArgument & argument) const
+  NodeIndex
+  getMallocNode(const rvsdg::Node & node) const
   {
-    auto it = ImportNodes_.find(&argument);
-    if (it == ImportNodes_.end())
-      throw util::Error("Cannot find import node in points-to graph.");
+    if (const auto it = mallocMap_.find(&node); it != mallocMap_.end())
+      return it->second;
 
-    return *it->second;
+    throw util::Error("Cannot find malloc node in points-to graph.");
   }
 
-  const PointsToGraph::LambdaNode &
-  GetLambdaNode(const rvsdg::LambdaNode & node) const
+  NodeIndex
+  getRegisterNode(const rvsdg::Output & output) const
   {
-    auto it = LambdaNodes_.find(&node);
-    if (it == LambdaNodes_.end())
-      throw util::Error("Cannot find lambda node in points-to graph.");
+    if (const auto it = registerMap_.find(&output); it != registerMap_.end())
+      return it->second;
 
-    return *it->second;
+    throw util::Error("Cannot find node mapped to register in points-to graph.");
   }
 
-  const PointsToGraph::MallocNode &
-  GetMallocNode(const rvsdg::Node & node) const
+  [[nodiscard]] const util::HashSet<NodeIndex> &
+  getTargets(NodeIndex index) const
   {
-    auto it = MallocNodes_.find(&node);
-    if (it == MallocNodes_.end())
-      throw util::Error("Cannot find malloc node in points-to graph.");
-
-    return *it->second;
+    JLM_ASSERT(index < nodeTargets_.size());
+    return nodeTargets_[index];
   }
 
-  const PointsToGraph::RegisterNode &
-  GetRegisterNode(const rvsdg::Output & output) const
+  [[nodiscard]] bool
+  isExternallyAvailable(NodeIndex index) const
   {
-    auto it = RegisterNodeMap_.find(&output);
-    if (it == RegisterNodeMap_.end())
-      throw util::Error("Cannot find register set node in points-to graph.");
+    JLM_ASSERT(index < nodeData_.size());
+    return nodeData_[index].isExternallyAvailable;
+  }
 
-    return *it->second;
+  [[nodiscard]] bool
+  isTargetingAllExternallyAvailable(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeData_.size());
+    return nodeData_[index].isTargetingAllExternallyAvailable;
+  }
+
+  [[nodiscard]] NodeKind
+  getKind(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeData_.size());
+    return nodeData_[index].kind;
   }
 
   /**
-   * Returns all memory nodes that are marked as escaped from the module.
+   * Returns all memory nodes that are marked as being externally available
    *
    * @return A set with all escaped memory nodes.
    *
    * @see PointsToGraph::MemoryNode::MarkAsModuleEscaping()
    */
-  const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetEscapedMemoryNodes() const noexcept
+  const std::vector<NodeIndex> &
+  getExternallyAvailableNodes() const noexcept
   {
-    return EscapedMemoryNodes_;
+    return externallyAvailableNodes_;
   }
 
-  PointsToGraph::AllocaNode &
-  AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node);
+  const rvsdg::Node &
+  getAllocaNodeObject(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeObjects_.size());
+    JLM_ASSERT(nodeData_[index].kind == NodeKind::AllocaNode);
+    return *static_cast<const rvsdg::Node *>(nodeObjects_[index]);
+  }
 
-  PointsToGraph::DeltaNode &
-  AddDeltaNode(std::unique_ptr<PointsToGraph::DeltaNode> node);
+  const rvsdg::DeltaNode &
+  getDeltaNodeObject(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeObjects_.size());
+    JLM_ASSERT(nodeData_[index].kind == NodeKind::DeltaNode);
+    return *static_cast<const rvsdg::DeltaNode *>(nodeObjects_[index]);
+  }
 
-  PointsToGraph::LambdaNode &
-  AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node);
+  const rvsdg::RegionArgument &
+  getImportNodeObject(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeObjects_.size());
+    JLM_ASSERT(nodeData_[index].kind == NodeKind::ImportNode);
+    return *static_cast<const rvsdg::RegionArgument *>(nodeObjects_[index]);
+  }
 
-  PointsToGraph::MallocNode &
-  AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
+  const rvsdg::LambdaNode &
+  getLambdaNodeObject(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeObjects_.size());
+    JLM_ASSERT(nodeData_[index].kind == NodeKind::LambdaNode);
+    return *static_cast<const rvsdg::LambdaNode *>(nodeObjects_[index]);
+  }
 
-  PointsToGraph::RegisterNode &
-  AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node);
+  const rvsdg::Node &
+  getMallocNodeObject(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeObjects_.size());
+    JLM_ASSERT(nodeData_[index].kind == NodeKind::MallocNode);
+    return *static_cast<const rvsdg::Node *>(nodeObjects_[index]);
+  }
 
-  PointsToGraph::ImportNode &
-  AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
+  NodeIndex
+  addAllocaNode(const rvsdg::Node & allocaNode, bool externallyAvailable);
+
+  NodeIndex
+  addDeltaNode(const rvsdg::DeltaNode & deltaNode, bool externallyAvailable);
+
+  NodeIndex
+  addImportNode(const rvsdg::RegionArgument & argument, bool externallyAvailable);
+
+  NodeIndex
+  addLambdaNode(const rvsdg::LambdaNode & allocaNode, bool externallyAvailable);
+
+  NodeIndex
+  addMallocNode(const rvsdg::Node & mallocNode, bool externallyAvailable);
+
+  [[nodiscard]] NodeIndex
+  addRegisterNode();
+
+  void
+  mapRegisterToNode(const rvsdg::Output & output, NodeIndex nodeIndex);
 
   /**
-   * @return A unique identifier for a memory node within this points-to graph.
+   * Marks the given node with targeting every node that is externally available.
+   * Note that this method will not go over other targets and remove doubled up pointees.
+   * @param index
    */
-  [[nodiscard]] MemoryNodeId
-  GenerateMemoryNodeId() noexcept
-  {
-    const auto MemoryNodeId = NextMemoryNodeId_;
-    NextMemoryNodeId_++;
-    return MemoryNodeId;
-  }
+  void
+  markAsTargetsAllExternallyAvailable(NodeIndex index);
+
+  /**
+   * Adds the given \p target to \p source's set of targets.
+   * If source is marked as targeting all externally available nodes,
+   * and the target is  marked as externally available, this is a no-op.
+   * @param source the source node
+   * @param target the target node, must be a memory node
+   * @return true if the target was added
+   */
+  bool
+  addTarget(NodeIndex source, NodeIndex target);
+
+  [[nodiscard]] bool
+  isNodeConstant(NodeIndex index) const noexcept;
+
+  [[nodiscard]] std::optional<size_t>
+  tryGetNodeSize(NodeIndex index) const noexcept;
 
   /**
    * Gets the total number of edges in the PointsToGraph.
    *
-   * In addition, RegisterNodes can represent multiple registers,
-   * in which case each outgoing edge represents multiple points-to relations.
-   * The total number of points-to relations is also returned.
+   * This can be counted in two different ways:
+   *  - Only explicit edges
+   *  - Both explicit and implicit edges
    *
-   * @return a pair (number of edges, number of points-to relations)
+   * In both cases, register nodes are only counted once, even if multiple registers map to them.
+   *
+   * @return a pair (number of explicit edges, total number of edges)
    */
   [[nodiscard]] std::pair<size_t, size_t>
-  NumEdges() const noexcept;
+  numEdges() const noexcept;
 
   /**
    * Checks if this PointsToGraph is a supergraph of \p subgraph.
@@ -423,785 +417,23 @@ public:
   }
 
 private:
-  void
-  AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode);
 
-  /**
-   * All memory nodes that escape from the module.
-   */
-  jlm::util::HashSet<const PointsToGraph::MemoryNode *> EscapedMemoryNodes_;
-
-  AllocaNodeMap AllocaNodes_;
-  DeltaNodeMap DeltaNodes_;
-  ImportNodeMap ImportNodes_;
-  LambdaNodeMap LambdaNodes_;
-  MallocNodeMap MallocNodes_;
-
-  RegisterNodeMap RegisterNodeMap_;
-  RegisterNodeVector RegisterNodes_;
-
-  std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
-  std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
-
-  MemoryNodeId NextMemoryNodeId_;
-};
-
-/** \brief PointsTo graph node
- *
- */
-class PointsToGraph::Node
-{
-  template<class NODETYPE>
-  class ConstIterator;
-  template<class NODETYPE>
-  class Iterator;
-
-  using SourceIterator = Iterator<PointsToGraph::Node>;
-  using SourceConstIterator = ConstIterator<PointsToGraph::Node>;
-
-  using TargetIterator = Iterator<PointsToGraph::MemoryNode>;
-  using TargetConstIterator = ConstIterator<PointsToGraph::MemoryNode>;
-
-  using SourceRange = util::IteratorRange<SourceIterator>;
-  using SourceConstRange = util::IteratorRange<SourceConstIterator>;
-
-  using TargetRange = util::IteratorRange<TargetIterator>;
-  using TargetConstRange = util::IteratorRange<TargetConstIterator>;
-
-public:
-  virtual ~Node() noexcept;
-
-  explicit Node(PointsToGraph & pointsToGraph)
-      : PointsToGraph_(&pointsToGraph)
-  {}
-
-  Node(const Node &) = delete;
-
-  Node(Node &&) = delete;
-
-  Node &
-  operator=(const Node &) = delete;
-
-  Node &
-  operator=(Node &&) = delete;
-
-  TargetRange
-  Targets();
-
-  TargetConstRange
-  Targets() const;
-
-  [[nodiscard]] bool
-  HasTarget(const PointsToGraph::MemoryNode & target) const;
-
-  SourceRange
-  Sources();
-
-  SourceConstRange
-  Sources() const;
-
-  [[nodiscard]] bool
-  HasSource(const PointsToGraph::Node & source) const;
-
-  PointsToGraph &
-  Graph() const noexcept
-  {
-    return *PointsToGraph_;
-  }
-
-  size_t
-  NumTargets() const noexcept
-  {
-    return Targets_.size();
-  }
-
-  size_t
-  NumSources() const noexcept
-  {
-    return Sources_.size();
-  }
-
-  virtual std::string
-  DebugString() const = 0;
-
-  void
-  AddEdge(PointsToGraph::MemoryNode & target);
-
-  void
-  RemoveEdge(PointsToGraph::MemoryNode & target);
-
-  template<class T>
-  static bool
-  Is(const Node & node)
-  {
-    static_assert(
-        std::is_base_of<Node, T>::value,
-        "Template parameter T must be derived from PointsToGraph::Node.");
-
-    return dynamic_cast<const T *>(&node) != nullptr;
-  }
-
-private:
-  PointsToGraph * PointsToGraph_;
-  std::unordered_set<PointsToGraph::MemoryNode *> Targets_;
-  std::unordered_set<PointsToGraph::Node *> Sources_;
-};
-
-/**
- * Represents a set of registers from the RVSDG that all point to the same
- * PointsToGraph::MemoryNode%s.
- */
-class PointsToGraph::RegisterNode final : public PointsToGraph::Node
-{
-public:
-  ~RegisterNode() noexcept override;
-
-private:
-  RegisterNode(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::Output *> outputs)
-      : Node(pointsToGraph),
-        Outputs_(std::move(outputs))
-  {}
-
-public:
-  const util::HashSet<const rvsdg::Output *> &
-  GetOutputs() const noexcept
-  {
-    return Outputs_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  static std::string
-  ToString(const rvsdg::Output & output);
-
-  static PointsToGraph::RegisterNode &
-  Create(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::Output *> outputs)
-  {
-    auto node = std::unique_ptr<PointsToGraph::RegisterNode>(
-        new RegisterNode(pointsToGraph, std::move(outputs)));
-    return pointsToGraph.AddRegisterNode(std::move(node));
-  }
-
-private:
-  const util::HashSet<const rvsdg::Output *> Outputs_;
-};
-
-/** \brief PointsTo graph memory node
- *
- */
-class PointsToGraph::MemoryNode : public PointsToGraph::Node
-{
-public:
-  ~MemoryNode() noexcept override;
-
-  /**
-   * If the MemoryNode represents a location in memory with a statically known size, it is returned.
-   * Also if the MemoryNode represents multiple locations of the same size, that size is returned.
-   *
-   * @return the byte size of the location(s) represented by the node, or nullopt if unknown.
-   */
-  virtual std::optional<size_t>
-  tryGetSize() const noexcept = 0;
-
-  /**
-   * Checks if the MemoryNode represents memory locations that never change during execution.
-   *
-   * @return true if the memory node represents constant memory, false otherwise.
-   */
-  virtual bool
-  isConstant() const noexcept = 0;
-
-  /**
-   * Marks this memory node as escaping the module.
-   */
-  void
-  MarkAsModuleEscaping()
-  {
-    Graph().AddEscapedMemoryNode(*this);
-  }
-
-  /**
-   * @return true if this memory node is marked as escaping the module.
-   */
-  bool
-  IsModuleEscaping() const
-  {
-    return Graph().GetEscapedMemoryNodes().Contains(this);
-  }
-
-  /**
-   * @return The memory node identifier associated with this memory node.
-   */
-  [[nodiscard]] const MemoryNodeId &
-  GetId() const noexcept
-  {
-    return Id_;
-  }
-
-protected:
-  explicit MemoryNode(PointsToGraph & pointsToGraph)
-      : Node(pointsToGraph),
-        Id_(pointsToGraph.GenerateMemoryNodeId())
-  {}
-
-private:
-  MemoryNodeId Id_;
-};
-
-/** \brief PointsTo graph alloca node
- *
- */
-class PointsToGraph::AllocaNode final : public PointsToGraph::MemoryNode
-{
-public:
-  ~AllocaNode() noexcept override;
-
-private:
-  AllocaNode(PointsToGraph & pointsToGraph, const rvsdg::Node & allocaNode)
-      : MemoryNode(pointsToGraph),
-        AllocaNode_(&allocaNode)
-  {
-    JLM_ASSERT(is<AllocaOperation>(&allocaNode));
-  }
-
-public:
-  const rvsdg::Node &
-  GetAllocaNode() const noexcept
-  {
-    return *AllocaNode_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-  static PointsToGraph::AllocaNode &
-  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
-  {
-    auto n = std::unique_ptr<PointsToGraph::AllocaNode>(new AllocaNode(pointsToGraph, node));
-    return pointsToGraph.AddAllocaNode(std::move(n));
-  }
-
-private:
-  const rvsdg::Node * AllocaNode_;
-};
-
-/** \brief PointsTo graph delta node
- *
- */
-class PointsToGraph::DeltaNode final : public PointsToGraph::MemoryNode
-{
-public:
-  ~DeltaNode() noexcept override;
-
-private:
-  DeltaNode(PointsToGraph & pointsToGraph, const rvsdg::DeltaNode & deltaNode)
-      : MemoryNode(pointsToGraph),
-        DeltaNode_(&deltaNode)
-  {}
-
-public:
-  const rvsdg::DeltaNode &
-  GetDeltaNode() const noexcept
-  {
-    return *DeltaNode_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-  static PointsToGraph::DeltaNode &
-  Create(PointsToGraph & pointsToGraph, const rvsdg::DeltaNode & deltaNode)
-  {
-    auto n = std::unique_ptr<PointsToGraph::DeltaNode>(new DeltaNode(pointsToGraph, deltaNode));
-    return pointsToGraph.AddDeltaNode(std::move(n));
-  }
-
-private:
-  const rvsdg::DeltaNode * DeltaNode_;
-};
-
-/** \brief PointsTo graph malloc node
- *
- */
-class PointsToGraph::MallocNode final : public PointsToGraph::MemoryNode
-{
-public:
-  ~MallocNode() noexcept override;
-
-private:
-  MallocNode(PointsToGraph & pointsToGraph, const rvsdg::Node & mallocNode)
-      : MemoryNode(pointsToGraph),
-        MallocNode_(&mallocNode)
-  {
-    JLM_ASSERT(is<MallocOperation>(&mallocNode));
-  }
-
-public:
-  const rvsdg::Node &
-  GetMallocNode() const noexcept
-  {
-    return *MallocNode_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-  static PointsToGraph::MallocNode &
-  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
-  {
-    auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
-    return pointsToGraph.AddMallocNode(std::move(n));
-  }
-
-private:
-  const rvsdg::Node * MallocNode_;
-};
-
-/** \brief PointsTo graph malloc node
- *
- */
-class PointsToGraph::LambdaNode final : public PointsToGraph::MemoryNode
-{
-public:
-  ~LambdaNode() noexcept override;
-
-private:
-  LambdaNode(PointsToGraph & pointsToGraph, const rvsdg::LambdaNode & lambdaNode)
-      : MemoryNode(pointsToGraph),
-        LambdaNode_(&lambdaNode)
-  {
-    JLM_ASSERT(dynamic_cast<const llvm::LlvmLambdaOperation *>(&lambdaNode.GetOperation()));
-  }
-
-public:
-  const rvsdg::LambdaNode &
-  GetLambdaNode() const noexcept
-  {
-    return *LambdaNode_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-  static PointsToGraph::LambdaNode &
-  Create(PointsToGraph & pointsToGraph, const rvsdg::LambdaNode & lambdaNode)
-  {
-    auto n = std::unique_ptr<PointsToGraph::LambdaNode>(new LambdaNode(pointsToGraph, lambdaNode));
-    return pointsToGraph.AddLambdaNode(std::move(n));
-  }
-
-private:
-  const rvsdg::LambdaNode * LambdaNode_;
-};
-
-/** \brief PointsTo graph import node
- *
- */
-class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode
-{
-public:
-  ~ImportNode() noexcept override;
-
-private:
-  ImportNode(PointsToGraph & pointsToGraph, const GraphImport & graphImport)
-      : MemoryNode(pointsToGraph),
-        GraphImport_(&graphImport)
-  {}
-
-public:
-  const GraphImport &
-  GetArgument() const noexcept
-  {
-    return *GraphImport_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-  static PointsToGraph::ImportNode &
-  Create(PointsToGraph & pointsToGraph, const GraphImport & argument)
-  {
-    auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(pointsToGraph, argument));
-    return pointsToGraph.AddImportNode(std::move(n));
-  }
-
-private:
-  const GraphImport * GraphImport_;
-};
-
-/** \brief PointsTo graph unknown node
- *
- */
-class PointsToGraph::UnknownMemoryNode final : public PointsToGraph::MemoryNode
-{
-  friend PointsToGraph;
-
-public:
-  ~UnknownMemoryNode() noexcept override;
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-private:
-  explicit UnknownMemoryNode(PointsToGraph & pointsToGraph)
-      : MemoryNode(pointsToGraph)
-  {}
-
-  static std::unique_ptr<UnknownMemoryNode>
-  Create(PointsToGraph & pointsToGraph)
-  {
-    return std::unique_ptr<UnknownMemoryNode>(new UnknownMemoryNode(pointsToGraph));
-  }
-};
-
-/** \brief PointsTo graph external memory node
- *
- */
-class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode
-{
-  friend PointsToGraph;
-
-public:
-  ~ExternalMemoryNode() noexcept override;
-
-  std::string
-  DebugString() const override;
-
-  std::optional<size_t>
-  tryGetSize() const noexcept override;
-
-  bool
-  isConstant() const noexcept override;
-
-private:
-  explicit ExternalMemoryNode(PointsToGraph & pointsToGraph)
-      : MemoryNode(pointsToGraph)
-  {}
-
-  static std::unique_ptr<ExternalMemoryNode>
-  Create(PointsToGraph & pointsToGraph)
-  {
-    return std::unique_ptr<ExternalMemoryNode>(new ExternalMemoryNode(pointsToGraph));
-  }
-};
-
-/** \brief Points-to graph node iterator
- */
-template<class DATATYPE, class ITERATORTYPE, typename IteratorToPointer>
-class PointsToGraph::NodeIterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = DATATYPE *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = DATATYPE **;
-  using reference = DATATYPE *&;
-
-private:
-  friend PointsToGraph;
-
-  explicit NodeIterator(const ITERATORTYPE & it)
-      : it_(it)
-  {}
-
-public:
-  [[nodiscard]] DATATYPE *
-  Node() const noexcept
-  {
-    return IteratorToPointer_(it_);
-  }
-
-  DATATYPE &
-  operator*() const
-  {
-    JLM_ASSERT(Node() != nullptr);
-    return *Node();
-  }
-
-  DATATYPE *
-  operator->() const
-  {
-    return Node();
-  }
-
-  NodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  NodeIterator
-  operator++(int)
-  {
-    NodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const NodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const NodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  ITERATORTYPE it_;
-  IteratorToPointer IteratorToPointer_;
-};
-
-/** \brief Points-to graph node const iterator
- */
-template<class DATATYPE, class ITERATORTYPE, typename IteratorToPointer>
-class PointsToGraph::NodeConstIterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const DATATYPE *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const DATATYPE **;
-  using reference = const DATATYPE *&;
-
-private:
-  friend PointsToGraph;
-
-  explicit NodeConstIterator(const ITERATORTYPE & it)
-      : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const DATATYPE *
-  Node() const noexcept
-  {
-    return IteratorToPointer_(it_);
-  }
-
-  const DATATYPE &
-  operator*() const
-  {
-    JLM_ASSERT(Node() != nullptr);
-    return *Node();
-  }
-
-  const DATATYPE *
-  operator->() const
-  {
-    return Node();
-  }
-
-  NodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  NodeConstIterator
-  operator++(int)
-  {
-    NodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const NodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const NodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  ITERATORTYPE it_;
-  IteratorToPointer IteratorToPointer_;
-};
-
-/** \brief Points-to graph edge iterator
- */
-template<class NODETYPE>
-class PointsToGraph::Node::Iterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = NODETYPE *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = NODETYPE **;
-  using reference = NODETYPE *&;
-
-private:
-  friend class PointsToGraph::Node;
-
-  explicit Iterator(const typename std::unordered_set<NODETYPE *>::iterator & it)
-      : It_(it)
-  {}
-
-public:
-  [[nodiscard]] NODETYPE *
-  GetNode() const noexcept
-  {
-    return *It_;
-  }
-
-  NODETYPE &
-  operator*() const
-  {
-    JLM_ASSERT(GetNode() != nullptr);
-    return *GetNode();
-  }
-
-  NODETYPE *
-  operator->() const
-  {
-    return GetNode();
-  }
-
-  Iterator &
-  operator++()
-  {
-    ++It_;
-    return *this;
-  }
-
-  Iterator
-  operator++(int)
-  {
-    Iterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const Iterator & other) const
-  {
-    return It_ == other.It_;
-  }
-
-  bool
-  operator!=(const Iterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  typename std::unordered_set<NODETYPE *>::iterator It_;
-};
-
-/** \brief Points-to graph edge const iterator
- */
-template<class NODETYPE>
-class PointsToGraph::Node::ConstIterator final
-{
-public:
-  using itearator_category = std::forward_iterator_tag;
-  using value_type = const NODETYPE *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const NODETYPE **;
-  using reference = const NODETYPE *&;
-
-private:
-  friend PointsToGraph;
-
-  explicit ConstIterator(const typename std::unordered_set<NODETYPE *>::const_iterator & it)
-      : It_(it)
-  {}
-
-public:
-  [[nodiscard]] const NODETYPE *
-  GetNode() const noexcept
-  {
-    return *It_;
-  }
-
-  const NODETYPE &
-  operator*() const
-  {
-    JLM_ASSERT(GetNode() != nullptr);
-    return *GetNode();
-  }
-
-  const NODETYPE *
-  operator->() const
-  {
-    return GetNode();
-  }
-
-  ConstIterator &
-  operator++()
-  {
-    ++It_;
-    return *this;
-  }
-
-  ConstIterator
-  operator++(int)
-  {
-    ConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const ConstIterator & other) const
-  {
-    return It_ == other.It_;
-  }
-
-  bool
-  operator!=(const ConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  typename std::unordered_set<NODETYPE *>::const_iterator It_;
+  NodeIndex addNode(NodeKind kind, bool externallyAvailable, const void * object);
+
+  std::vector<NodeData> nodeData_;
+  std::vector<util::HashSet<NodeIndex>> nodeTargets_;
+  std::vector<const void *> nodeObjects_;
+
+  AllocaNodeMap allocaMap_;
+  DeltaNodeMap deltaMap_;
+  ImportNodeMap importMap_;
+  LambdaNodeMap lambdaMap_;
+  MallocNodeMap mallocMap_;
+  RegisterNodeMap registerMap_;
+
+  // In-order lists of node indices, for specific node kinds or flags
+  std::vector<NodeIndex> registerNodes_;
+  std::vector<NodeIndex> externallyAvailableNodes_;
 };
 
 }
