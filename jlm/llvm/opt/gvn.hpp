@@ -567,6 +567,7 @@ namespace jlm::rvsdg::gvn {
                     if (must_be_different) {return {GVN_FALSE, true};}
                 }break;
                 case GVN_OP_ADDITION: {
+                    //flatten     (a + (2*a) + b + a + b)  => a + 2*a + a + b
                     for (size_t i = 0; i < deps.args.size(); i++) {
                         auto leaf = deps.args[i].first;
                         if (leaf & GVN_HAS_DEPS) {
@@ -579,6 +580,16 @@ namespace jlm::rvsdg::gvn {
                         if (deps.args[i].first == 0) {deps.args[i].first = TO_BE_DELETED;} //delete zeroes
                     }
                     std::sort(deps.args.begin(), deps.args.end());
+                    // Coalesce    a + 2*a + a + b  =>   4*a + b
+                    for (size_t i = 1; i < deps.args.size(); i++)
+                    {
+                      if (deps.args[i  ].first == deps.args[i-1].first){
+                        deps.args[i].second += deps.args[i-1].second;
+                        deps.args[i-1].first = TO_BE_DELETED;
+                      }
+                    }
+                    std::sort(deps.args.begin(), deps.args.end());
+                    // Collect
                     while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
                     if (deps.args.size() == 0){return {0, true};}
                     if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x + 0 == x
@@ -594,6 +605,7 @@ namespace jlm::rvsdg::gvn {
                     }
                 }break;
                 case GVN_OP_MULTIPLY: {
+                    // Flatten
                     for (size_t i = 0; i < deps.args.size(); i++) {
                         auto leaf = deps.args[i].first;
                         if (leaf & GVN_HAS_DEPS) {
@@ -607,6 +619,16 @@ namespace jlm::rvsdg::gvn {
                     }
                     for (auto ele : deps.args){if (ele.first == 0){return {0, true};}}  //x * 0 == 0
                     std::sort(deps.args.begin(), deps.args.end());
+                    // Coalesce
+                    for (size_t i = 1; i < deps.args.size(); i++)
+                    {
+                      if (deps.args[i  ].first == deps.args[i-1].first){
+                        deps.args[i].second += deps.args[i-1].second;
+                        deps.args[i-1].first = TO_BE_DELETED;
+                      }
+                    }
+                    std::sort(deps.args.begin(), deps.args.end());
+                    // Collect
                     while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
                     if (deps.args.size() == 0){return {1, true};} // all ones were removed above.
                     if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x * 1 == x

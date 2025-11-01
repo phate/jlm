@@ -32,6 +32,7 @@
 #include "../ir/operators/IntegerOperations.hpp"
 #include "../ir/operators/operators.hpp"
 #include "PartialRedundancyElimination.hpp"
+#include "../../rvsdg/control.hpp"
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -216,6 +217,7 @@ PartialRedundancyElimination::Run(
 
   GVN_VisitRegion(root);
   TraverseTopDownRecursively(root, dump_node);
+  TraverseTopDownRecursively(root, dump_region);
   std::cout << TR_PURPLE << "=================================================" << TR_RESET << std::endl;
 
   for (auto kv : thetas_){
@@ -355,6 +357,8 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
       auto op    = gvn_.FromStr(binop.debug_string());
       if (binop.debug_string() == "IAdd"){op = GVN_OP_ADDITION; }
       if (binop.debug_string() == "IMul"){op = GVN_OP_MULTIPLY; }
+      if (binop.debug_string() == "INe"){op = GVN_OP_NEQ; }
+      if (binop.debug_string() == "IEq"){op = GVN_OP_EQ; }
 
       auto a     = GVNOrWarn( node->input(0)->origin(), node);
       auto b     = GVNOrWarn( node->input(1)->origin(), node);
@@ -370,12 +374,30 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
       if (node->DebugString() == std::string("undef")){
         RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
       }
+      auto& op = node->GetOperation();
+      if ( rvsdg::is_ctlconstant_op( op ) ){
+        RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
+      }
     }
   }
+
+  MatchType(node->GetOperation(), [this, node](const rvsdg::MatchOperation& mop){
+    using namespace jlm::rvsdg::gvn;
+    auto pred = GVNOrPanic( node->input(0)->origin(), node );
+    if (pred == GVN_TRUE) {pred = 1;}
+    if (pred == GVN_FALSE){pred = 0;}
+    if (jlm::rvsdg::gvn::GVN_IsSmallValue(pred)){
+      RegisterGVN( node->output(0), mop.alternative(static_cast<size_t>(pred)) );
+    }
+    //std::cout << "MAPPED MATCH" << std::endl;
+    //dump_node(this, node);
+  });
 }
 
 void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
 {
+  using namespace jlm::rvsdg::gvn;
+
   MatchType(*node, [this,node](rvsdg::GammaNode& gn){
     std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
 
@@ -386,35 +408,60 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
         RegisterGVN(into_branch, GVNOrWarn(out, node));
       }
     }
-    auto selector = gn.GetMatchVar().input->origin();
-    auto match_var = GVNOrWarn(selector, node);
+
+    auto mv_edge = gn.GetMatchVar().input->origin();
+    auto mv_val  = GVNOrWarn( mv_edge, node );
     for (auto mv : gn.GetMatchVar().matchContent){
-      RegisterGVN( mv, GVNOrWarn(selector, node));
+      RegisterGVN(mv, mv_val);
     }
 
+    //  --------------------------------------------------------------------------------------------
     GVN_VisitAllSubRegions(node);
+    //  --------------------------------------------------------------------------------------------
 
-    //route results out and handle cases where result is always the same
-    for (auto ev : gn.GetExitVars())
-    {
-      using namespace jlm::rvsdg::gvn;
-      auto any_val = GVN_NO_VALUE;
-      gvn_.Op(GVN_OP_ANY_ORDERED);
-      for (auto leaving_branch : ev.branchResult){
+    auto GAMMA_VARIABLE_OUT = gvn_.FromStr("GAMMA_VARIABLE_OUT");
+    auto BRANCHES_CONDITIONALLY = gvn_.FromStr("CONDITIONAL_BRANCHING");
+
+    auto entry_vars = gn.GetEntryVars();
+    auto exit_vars = gn.GetExitVars();
+    auto match_var = gn.GetMatchVar();
+    auto predicate = GVNOrPanic(gn.predicate()->origin(), node);
+
+    for (auto ev : exit_vars){
+      auto any_branch_value = GVN_NO_VALUE;
+      auto value_from_branch_always_taken = BRANCHES_CONDITIONALLY;
+      gvn_.Op(GVN_OP_ANY_ORDERED);         // Returns input if all inputs are the same.
+      for (size_t b = 0; b < ev.branchResult.size(); b++){
+        auto leaving_branch = ev.branchResult[b];
         auto from_inner = GVNOrZero(leaving_branch->origin());
         gvn_.Arg( from_inner );
-        any_val = from_inner;
+        any_branch_value = from_inner;
+
+        // --------------------- check if predicate is known and maps to this branch -------------
+        auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>( *(match_var.input->origin()) );
+        if (match_node){
+          MatchType(match_node->GetOperation(), [&value_from_branch_always_taken, predicate, b, from_inner](const rvsdg::MatchOperation& mop){
+            if (jlm::rvsdg::gvn::GVN_IsSmallValue(predicate) && mop.alternative(static_cast<size_t>(predicate)) == b){
+              value_from_branch_always_taken = from_inner;
+            }
+          });
+        }
+        // ---------------------
       }
       auto branches_merged = gvn_.End();
 
-      if (any_val == branches_merged){
-        RegisterGVN(ev.output, branches_merged); // If all branches output the same value
-      }else{
-        auto sel_op = gvn_.FromStr("selector");
-        auto hash_with_selector = gvn_.Op(sel_op).Arg(match_var).Arg(branches_merged).End();
-        RegisterGVN( ev.output, hash_with_selector); // Typical case. Note: branch order matters.
-      }
+      RegisterGVN( ev.output,
+        gvn_.Op(GAMMA_VARIABLE_OUT).Arg(predicate).Arg(branches_merged).End()
+      );
+
+      // If all branches output the same value
+      if (any_branch_value == branches_merged){ RegisterGVN(ev.output, any_branch_value); }
+      // If the match variable has a known value
+      if (value_from_branch_always_taken != BRANCHES_CONDITIONALLY){ RegisterGVN(ev.output, value_from_branch_always_taken); }
     }
+
+
+
   });
 }
 
