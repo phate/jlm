@@ -194,19 +194,59 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   }
   const auto & correlation = correlationOpt.value();
 
-  if (correlation->type() != CorrelationType::ControlConstantCorrelation)
+  switch (correlation->type())
   {
-    return;
+  case CorrelationType::ControlConstantCorrelation:
+    handleControlConstantCorrelation(*correlation);
+    break;
+  case CorrelationType::MatchConstantCorrelation:
+    break;
+  default:
+    throw std::logic_error("Unhandled theta-gamma predicate correlation.");
   }
+}
+
+void
+PredicateCorrelation::handleControlConstantCorrelation(ThetaGammaPredicateCorrelation & correlation)
+{
+  JLM_ASSERT(correlation.type() == CorrelationType::ControlConstantCorrelation);
+  const auto & gammaNode = correlation.gammaNode();
+  const auto & thetaNode = correlation.thetaNode();
 
   const auto controlAlternatives =
-      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation->data());
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation.data());
   if (controlAlternatives.size() != 2 || controlAlternatives[0] != 0 || controlAlternatives[1] != 1)
   {
     return;
   }
 
-  thetaNode.predicate()->divert_to(correlation->gammaNode().predicate()->origin());
+  thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
+}
+
+void
+PredicateCorrelation::handleMatchConstantCorrelation(ThetaGammaPredicateCorrelation & correlation)
+{
+  JLM_ASSERT(correlation.type() == CorrelationType::MatchConstantCorrelation);
+  const auto & gammaNode = correlation.gammaNode();
+  const auto & thetaNode = correlation.thetaNode();
+
+  const auto [matchNode, alternatives] =
+      std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(correlation.data());
+
+  if (alternatives.size() != 2)
+  {
+    return;
+  }
+
+  const auto matchOperation =
+      util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+  if (matchOperation->alternative(alternatives[0]) != 0
+      || matchOperation->alternative(alternatives[1]) != 1)
+  {
+    return;
+  }
+
+  thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
 }
 
 void
