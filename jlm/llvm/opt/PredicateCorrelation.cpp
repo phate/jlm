@@ -49,7 +49,8 @@ extractConstantAlternatives(const rvsdg::Output & gammaOutput)
 
     {
       auto [constantNode, constantOperation] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(*branchResult->origin());
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(
+              *branchResult->origin());
       if (constantOperation)
       {
         alternatives.push_back(constantOperation->value().to_uint());

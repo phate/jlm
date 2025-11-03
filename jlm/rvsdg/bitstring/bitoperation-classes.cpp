@@ -16,7 +16,7 @@ unop_reduction_path_t
 BitUnaryOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto & tracedOperand = traceOutputIntraProcedurally(*arg);
-  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand))
+  if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand))
     return unop_reduction_constant;
 
   return unop_reduction_none;
@@ -29,7 +29,7 @@ BitUnaryOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
   {
     auto & tracedOperand = traceOutputIntraProcedurally(*arg);
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
     return create_bitconstant(constantNode->region(), reduce_constant(constantOperation->value()));
   }
 
@@ -46,8 +46,8 @@ BitBinaryOperation::can_reduce_operand_pair(
   auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1);
   auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2);
 
-  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand1)
-      && rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand2))
+  if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand1)
+      && rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand2))
     return binop_reduction_constants;
 
   return binop_reduction_none;
@@ -63,11 +63,11 @@ BitBinaryOperation::reduce_operand_pair(
   {
     auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1);
     auto [constantNode1, constantOperation1] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
 
     auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2);
     auto [constantNode2, constantOperation2] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
 
     return create_bitconstant(
         arg1->region(),
@@ -86,10 +86,10 @@ BitCompareOperation::can_reduce_operand_pair(
 {
   auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1);
   auto [constantNode1, constantOperation1] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
   auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2);
   auto [constantNode2, constantOperation2] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
 
   BitValueRepresentation arg1_repr = constantOperation1
                                        ? constantOperation1->value()

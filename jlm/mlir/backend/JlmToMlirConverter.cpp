@@ -425,7 +425,7 @@ JlmToMlirConverter::ConvertSimpleNode(
 {
   ::mlir::Operation * MlirOp = nullptr;
   auto & operation = node.GetOperation();
-  if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&operation))
+  if (auto bitOp = dynamic_cast<const rvsdg::BitConstantOperation *>(&operation))
   {
     auto value = bitOp->value();
     MlirOp = Builder_->create<::mlir::arith::ConstantIntOp>(

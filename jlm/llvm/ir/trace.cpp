@@ -43,7 +43,7 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
   }
 
   if (const auto [_, constant] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(normalized);
       constant)
   {
     const auto & rep = constant->value();
