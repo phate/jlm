@@ -39,7 +39,7 @@ BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noex
   if (is<BitSliceOperation>(node))
     return unop_reduction_narrow;
 
-  if (is<bitconstant_op>(node))
+  if (is<BitConstantOperation>(node))
     return unop_reduction_constant;
 
   if (is<BitConcatOperation>(node))
@@ -66,7 +66,7 @@ BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
 
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(node.GetOperation());
+    auto op = static_cast<const BitConstantOperation &>(node.GetOperation());
     std::string s(&op.value()[0] + low(), high() - low());
     return create_bitconstant(arg->region(), BitValueRepresentation(s.c_str()));
   }

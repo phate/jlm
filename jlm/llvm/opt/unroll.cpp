@@ -60,7 +60,8 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
-  if (jlm::rvsdg::is<rvsdg::bitconstant_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
+  if (jlm::rvsdg::is<rvsdg::BitConstantOperation>(
+          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
     return true;
 
   auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
@@ -79,7 +80,7 @@ push_from_theta(jlm::rvsdg::Output * output)
     return argument;
 
   auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(tmp));
+  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp));
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
 
