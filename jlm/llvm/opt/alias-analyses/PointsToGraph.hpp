@@ -398,7 +398,7 @@ public:
   /**
    * Marks the given node with targeting every node that is externally available.
    * Note that this method will not go over other targets and remove doubled up pointees.
-   * @param index
+   * @param index the index of the PointsToGraph node that should be marked
    */
   void
   markAsTargetsAllExternallyAvailable(NodeIndex index);

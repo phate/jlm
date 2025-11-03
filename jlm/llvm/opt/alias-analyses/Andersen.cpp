@@ -1581,7 +1581,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
       pointsToGraph->markAsTargetsAllExternallyAvailable(ptgNode);
     }
 
-    // All all explicit pointees. Doubled up pointees are ignored by the PtG
+    // Add all explicit pointees. Doubled up pointees are ignored by the PtG
     for (const auto targetIdx : set.GetPointsToSet(index).Items())
     {
       pointsToGraph->addTarget(ptgNode, memoryNodeMapping[targetIdx]);

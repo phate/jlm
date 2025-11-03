@@ -146,19 +146,11 @@ private:
   CreateNonReentrantAllocaSets();
 
   /**
-   * Creates one ModRefSet which is responsible for representing all reads and writes
-   * that may happen in external functions.
-   */
-  void
-  CreateExternalModRefSet();
-
-
-  /**
    * Creates ModRefSets for regions and nodes within the function.
    * The flow of MemoryNodes between sets is modeled by adding edges to the constraint graph.
    */
   void
-  AnnotateFunction(const rvsdg::LambdaNode & lambda);
+  annotateFunction(const rvsdg::LambdaNode & lambda);
 
   /**
    * Recursive call used to create ModRefSets for the given region, its nodes and its sub-regions.
@@ -166,7 +158,7 @@ private:
    * @param lambda the function this region belongs to
    */
   ModRefSetIndex
-  AnnotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
+  annotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
   AnnotateStructuralNode(
@@ -178,13 +170,15 @@ private:
 
   /**
    * Helper function for filling ModRefSets based on the pointer being operated on
-   * @param modRefSetIndex the index of the ModRefSet representing some memory operation
+   * @tparam IsStore true if the operation in a store, false if it is a load
+   * @param modRefSetIndex the index of the ModRefSet representing the memory operation
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
    * @param lambda the function the operation is happening in
    */
+  template<bool IsStore>
   void
-  AddPointerOriginTargets(
+  addPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
@@ -210,6 +204,13 @@ private:
 
   ModRefSetIndex
   AnnotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
+
+  /**
+   * Creates a single ModRefSet responsible for representing all reads and writes
+   * that may happen in external functions, or due to calls made from external functions.
+   */
+  void
+  createExternalModRefSet();
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
