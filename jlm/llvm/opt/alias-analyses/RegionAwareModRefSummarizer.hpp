@@ -13,8 +13,11 @@
 namespace jlm::llvm::aa
 {
 
-class RegionAwareModRefSummary;
+// The type used for indexing Mod/Ref sets during analysis and solving
 using ModRefSetIndex = uint32_t;
+
+// The final result of running the summarizer
+class RegionAwareModRefSummary;
 
 /** \brief Region-aware mod/ref summarizer
  *
@@ -117,10 +120,10 @@ private:
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
    */
-  static util::HashSet<const PointsToGraph::MemoryNode *>
+  static util::HashSet<PointsToGraph::NodeIndex>
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
-  util::HashSet<const PointsToGraph::MemoryNode *>
+  util::HashSet<PointsToGraph::NodeIndex>
   GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
 
   /**
@@ -149,27 +152,6 @@ private:
   void
   CreateExternalModRefSet();
 
-  /**
-   * Adds the fact that everything in the ModRefSet \p from should also be included
-   * in the ModRefSet \p to.
-   */
-  void
-  AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to);
-
-  /**
-   * Defines a set of MemoryNodes that should be blocked from the ModRefSet with the given \p index.
-   * A ModRefSet can have at most one such blocklist.
-   * The reference to the blocklist must stay valid until solving is finished.
-   *
-   * Note: The blocklist only prevents propagation during solving,
-   * so the user must avoid adding blocked MemoryNodes manually.
-   *
-   * @see VerifyBlocklists to check that no blocked MemoryNodes have been added
-   */
-  void
-  AddModRefSetBlocklist(
-      ModRefSetIndex index,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist);
 
   /**
    * Creates ModRefSets for regions and nodes within the function.
@@ -230,21 +212,6 @@ private:
   AnnotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
 
   /**
-   * Uses the simple and complex constraints to propagate MemoryNodes between ModRefSets
-   * until all constraints are satisfied.
-   */
-  void
-  SolveModRefSetConstraintGraph();
-
-  /**
-   * For all ModRefSets where a blocklist is defined,
-   * checks that none of the MemoryNodes from the blocklist have been added to the ModRefSet.
-   * @return true if all blocklists are satisfied.
-   */
-  bool
-  VerifyBlocklists() const;
-
-  /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   static std::string
@@ -261,11 +228,6 @@ private:
    */
   static std::string
   ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareModRefSummary & modRefSummary);
-
-  /**
-   * The Mod/Ref summary produced by this summarizer
-   */
-  std::unique_ptr<RegionAwareModRefSummary> ModRefSummary_;
 
   std::unique_ptr<Context> Context_;
 };

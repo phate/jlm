@@ -576,24 +576,24 @@ public:
   StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
   {
     GetTimer(PointsToGraphConstructionTimer_).stop();
-    AddMeasurement(Label::NumPointsToGraphNodes, pointsToGraph.NumNodes());
-    AddMeasurement(Label::NumPointsToGraphAllocaNodes, pointsToGraph.NumAllocaNodes());
-    AddMeasurement(Label::NumPointsToGraphDeltaNodes, pointsToGraph.NumDeltaNodes());
-    AddMeasurement(Label::NumPointsToGraphImportNodes, pointsToGraph.NumImportNodes());
-    AddMeasurement(Label::NumPointsToGraphLambdaNodes, pointsToGraph.NumLambdaNodes());
-    AddMeasurement(Label::NumPointsToGraphMallocNodes, pointsToGraph.NumMallocNodes());
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
-    AddMeasurement(Label::NumPointsToGraphRegisterNodes, pointsToGraph.NumRegisterNodes());
+    AddMeasurement(Label::NumPointsToGraphNodes, pointsToGraph.numNodes());
+    AddMeasurement(Label::NumPointsToGraphAllocaNodes, pointsToGraph.numAllocaNodes());
+    AddMeasurement(Label::NumPointsToGraphDeltaNodes, pointsToGraph.numDeltaNodes());
+    AddMeasurement(Label::NumPointsToGraphImportNodes, pointsToGraph.numImportNodes());
+    AddMeasurement(Label::NumPointsToGraphLambdaNodes, pointsToGraph.numLambdaNodes());
+    AddMeasurement(Label::NumPointsToGraphMallocNodes, pointsToGraph.numMallocNodes());
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.numMemoryNodes());
+    AddMeasurement(Label::NumPointsToGraphRegisterNodes, pointsToGraph.numRegisterNodes());
     AddMeasurement(
-        Label::NumPointsToGraphEscapedNodes,
-        pointsToGraph.GetEscapedMemoryNodes().Size());
+        Label::NumPointsToGraphExternallyAvailableNodes,
+        pointsToGraph.numExternallyAvailableNodes());
     // The number of nodes pointing to external (and all nodes marked as escaped)
     AddMeasurement(
-        Label::NumPointsToGraphExternalMemorySources,
-        pointsToGraph.GetExternalMemoryNode().NumSources());
-    auto [numEdges, numPointsToRelations] = pointsToGraph.NumEdges();
+        Label::NumPointsToGraphNodesTargetsAllExternallyAvailable,
+        pointsToGraph.numNodesTargetingAllExternallyAvailable());
+    auto [numExplicitEdges, numEdges] = pointsToGraph.numEdges();
+    AddMeasurement(Label::NumPointsToGraphExplicitEdges, numExplicitEdges);
     AddMeasurement(Label::NumPointsToGraphEdges, numEdges);
-    AddMeasurement(Label::NumPointsToGraphPointsToRelations, numPointsToRelations);
   }
 
   void
@@ -1538,57 +1538,53 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
 
   auto pointsToGraph = PointsToGraph::Create();
 
-  // memory nodes are the nodes that can be pointed to in the points-to graph.
-  // This vector has the same indexing as the nodes themselves, register nodes become nullptr.
-  std::vector<PointsToGraph::MemoryNode *> memoryNodes(set.NumPointerObjects());
+  // Mapping from index in PointerObjectSet to the equivalent memory node in the PointsToGraph
+  std::unordered_map<PointerObjectIndex, PointsToGraph::NodeIndex> memoryNodeMapping;
 
-  // Nodes that should point to external in the final graph.
-  // They also get explicit edges connecting them to all escaped memory nodes.
-  std::vector<PointsToGraph::Node *> pointsToExternal;
-
-  // A list of all memory nodes that have been marked as escaped
-  std::vector<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-
-  // First all memory nodes are created
   for (auto [allocaNode, pointerObjectIndex] : set.GetAllocaMap())
   {
-    auto & node = PointsToGraph::AllocaNode::Create(*pointsToGraph, *allocaNode);
-    memoryNodes[pointerObjectIndex] = &node;
+    memoryNodeMapping[pointerObjectIndex] =
+        pointsToGraph->addAllocaNode(*allocaNode, set.HasEscaped(pointerObjectIndex));
   }
-  for (auto [mallocNode, pointerObjectIndex] : set.GetMallocMap())
-  {
-    auto & node = PointsToGraph::MallocNode::Create(*pointsToGraph, *mallocNode);
-    memoryNodes[pointerObjectIndex] = &node;
-  }
+
   for (auto [deltaNode, pointerObjectIndex] : set.GetGlobalMap())
   {
-    auto & node = PointsToGraph::DeltaNode::Create(*pointsToGraph, *deltaNode);
-    memoryNodes[pointerObjectIndex] = &node;
+    memoryNodeMapping[pointerObjectIndex] =
+        pointsToGraph->addDeltaNode(*deltaNode, set.HasEscaped(pointerObjectIndex));
   }
+
+  for (auto [import, pointerObjectIndex] : set.GetImportMap())
+  {
+    memoryNodeMapping[pointerObjectIndex] =
+        pointsToGraph->addImportNode(*import, set.HasEscaped(pointerObjectIndex));
+  }
+
   for (auto [lambdaNode, pointerObjectIndex] : set.GetFunctionMap())
   {
-    auto & node = PointsToGraph::LambdaNode::Create(*pointsToGraph, *lambdaNode);
-    memoryNodes[pointerObjectIndex] = &node;
+    memoryNodeMapping[pointerObjectIndex] =
+        pointsToGraph->addLambdaNode(*lambdaNode, set.HasEscaped(pointerObjectIndex));
   }
-  for (auto [argument, pointerObjectIndex] : set.GetImportMap())
+
+  for (auto [mallocNode, pointerObjectIndex] : set.GetMallocMap())
   {
-    auto & node = PointsToGraph::ImportNode::Create(*pointsToGraph, *argument);
-    memoryNodes[pointerObjectIndex] = &node;
+    memoryNodeMapping[pointerObjectIndex] =
+        pointsToGraph->addMallocNode(*mallocNode, set.HasEscaped(pointerObjectIndex));
   }
 
   // Helper function for attaching PointsToGraph nodes to their pointees, based on the
   // PointerObject's points-to set.
-  auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
+  auto applyPointsToSet = [&](PointsToGraph::NodeIndex ptgNode, PointerObjectIndex index)
   {
-    // Add all PointsToGraph nodes who should point to external to the list
+    // Mark nodes that target everything that is externally available
     if (set.IsPointingToExternal(index))
-      pointsToExternal.push_back(&node);
+    {
+      pointsToGraph->markAsTargetsAllExternallyAvailable(ptgNode);
+    }
 
+    // All all explicit pointees. Doubled up pointees are ignored by the PtG
     for (const auto targetIdx : set.GetPointsToSet(index).Items())
     {
-      // Only PointerObjects corresponding to memory nodes can be members of points-to sets
-      JLM_ASSERT(memoryNodes[targetIdx]);
-      node.AddEdge(*memoryNodes[targetIdx]);
+      pointsToGraph->addTarget(ptgNode, memoryNodeMapping[targetIdx]);
     }
   };
 
@@ -1605,45 +1601,17 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges
   for (auto & [registerIdx, outputNodes] : outputsInRegister)
   {
-    auto & node = PointsToGraph::RegisterNode::Create(*pointsToGraph, std::move(outputNodes));
-    applyPointsToSet(node, registerIdx);
+    const auto ptgNode = pointsToGraph->addRegisterNode();
+    for (auto outputNode : outputNodes.Items())
+      pointsToGraph->mapRegisterToNode(*outputNode, ptgNode);
+    applyPointsToSet(ptgNode, registerIdx);
   }
 
   // Now add all edges from memory node to memory node.
-  // Also checks and informs the PointsToGraph which memory nodes are marked as escaping the module
-  for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
+  for (auto [pointerObjectSetIndex, ptgNode] : memoryNodeMapping)
   {
-    if (memoryNodes[idx] == nullptr)
-      continue; // Skip all nodes that are not MemoryNodes
-
-    // Add outgoing edges to nodes representing pointer values
-    if (set.CanPoint(idx))
-      applyPointsToSet(*memoryNodes[idx], idx);
-
-    if (set.HasEscaped(idx))
-    {
-      memoryNodes[idx]->MarkAsModuleEscaping();
-      escapedMemoryNodes.push_back(memoryNodes[idx]);
-    }
+    applyPointsToSet(ptgNode, pointerObjectSetIndex);
   }
-
-  // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
-  statistics.StartExternalToAllEscapedStatistics();
-  for (const auto source : pointsToExternal)
-  {
-    for (const auto target : escapedMemoryNodes)
-    {
-      source->AddEdge(*target);
-    }
-    // Add an edge to the special PointsToGraph node called "external" as well
-    source->AddEdge(pointsToGraph->GetExternalMemoryNode());
-  }
-  statistics.StopExternalToAllEscapedStatistics();
-
-  // We do not use the unknown node, and do not give the external node any targets
-  JLM_ASSERT(pointsToGraph->GetExternalMemoryNode().NumTargets() == 0);
-  JLM_ASSERT(pointsToGraph->GetUnknownMemoryNode().NumSources() == 0);
-  JLM_ASSERT(pointsToGraph->GetUnknownMemoryNode().NumTargets() == 0);
 
   statistics.StopPointsToGraphConstructionStatistics(*pointsToGraph);
   return pointsToGraph;

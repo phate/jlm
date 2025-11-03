@@ -57,14 +57,28 @@ PointsToGraph::registerNodes() const noexcept
 PointsToGraph::NodeIndex
 PointsToGraph::addAllocaNode(const rvsdg::Node & allocaNode, bool externallyAvailable)
 {
-  if (!is<AllocaOperation>(&allocaNode))
-    throw std::logic_error("Node is not an alloca node");
-
   auto [it, added] = allocaMap_.try_emplace(&allocaNode, 0);
   if (!added)
     throw std::logic_error("Alloca node already exists in the graph.");
 
-  return it->second = addNode(NodeKind::AllocaNode, externallyAvailable, &allocaNode);
+  // Try to include the size of the allocation in the created node
+  const auto getMemorySize = [](const rvsdg::Node & allocaNode) -> std::optional<size_t>
+  {
+    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+
+    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
+    if (elementCount.has_value() && *elementCount >= 0)
+      return *elementCount * GetTypeSize(*allocaOp->ValueType());
+    return std::nullopt;
+  };
+
+  return it->second = addNode(
+             NodeKind::AllocaNode,
+             externallyAvailable,
+             false,
+             getMemorySize(allocaNode),
+             &allocaNode);
 }
 
 PointsToGraph::NodeIndex
@@ -74,17 +88,49 @@ PointsToGraph::addDeltaNode(const rvsdg::DeltaNode & deltaNode, bool externallyA
   if (!added)
     throw std::logic_error("Delta node already exists in the graph.");
 
-  return it->second = addNode(NodeKind::DeltaNode, externallyAvailable, &deltaNode);
+  const auto isConstant = deltaNode.GetOperation().constant();
+  const auto memorySize = GetTypeSize(*deltaNode.GetOperation().Type());
+
+  return it->second =
+             addNode(NodeKind::DeltaNode, externallyAvailable, isConstant, memorySize, &deltaNode);
 }
 
 PointsToGraph::NodeIndex
-PointsToGraph::addImportNode(const rvsdg::RegionArgument & argument, bool externallyAvailable)
+PointsToGraph::addImportNode(const rvsdg::GraphImport & import, bool externallyAvailable)
 {
-  auto [it, added] = importMap_.try_emplace(&argument, 0);
+  auto [it, added] = importMap_.try_emplace(&import, 0);
   if (!added)
     throw std::logic_error("Import node already exists in the graph.");
 
-  return it->second = addNode(NodeKind::ImportNode, externallyAvailable, &argument);
+  const auto isConstant = [](const rvsdg::GraphImport & import) -> bool
+  {
+    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+      return graphImport->isConstant();
+    return false;
+  };
+
+  const auto getMemorySize = [](const rvsdg::GraphImport & import) -> std::optional<size_t>
+  {
+    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+    {
+      auto size = GetTypeSize(*graphImport->ValueType());
+
+      // C code can contain declarations like this:
+      //     extern char myArray[];
+      // which means there is an array of unknown size defined in a different module.
+      // In the LLVM IR the import gets an array length of 0, but that is not correct.
+      if (size != 0)
+        return size;
+    }
+    return std::nullopt;
+  };
+
+  return it->second = addNode(
+             NodeKind::ImportNode,
+             externallyAvailable,
+             isConstant(import),
+             getMemorySize(import),
+             &import);
 }
 
 PointsToGraph::NodeIndex
@@ -94,26 +140,44 @@ PointsToGraph::addLambdaNode(const rvsdg::LambdaNode & lambdaNode, bool external
   if (!added)
     throw std::logic_error("Lambda node already exists in the graph.");
 
-  return it->second = addNode(NodeKind::LambdaNode, externallyAvailable, &lambdaNode);
+  // A function can never be written to, so it is regarded constant
+  // It should never be read from either, so its size is 0
+  return it->second = addNode(NodeKind::LambdaNode, externallyAvailable, true, 0, &lambdaNode);
 }
 
 PointsToGraph::NodeIndex
 PointsToGraph::addMallocNode(const rvsdg::Node & mallocNode, bool externallyAvailable)
 {
-  if (!is<MallocOperation>(&mallocNode))
-    throw std::logic_error("Node is not a malloc node");
-
   auto [it, added] = mallocMap_.try_emplace(&mallocNode, 0);
   if (!added)
     throw std::logic_error("Malloc node already exists in the graph.");
 
-  return it->second = addNode(NodeKind::MallocNode, externallyAvailable, &mallocNode);
+  const auto tryGetMemorySize = [](const rvsdg::Node & mallocNode) -> std::optional<size_t>
+  {
+    // If the size parameter of the malloc node is a constant, that is our size
+    auto size = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+
+    // Only return the size if it is a positive integer, to avoid unsigned underflow
+    if (size.has_value() && *size >= 0)
+      return *size;
+
+    return std::nullopt;
+  };
+
+  return it->second = addNode(
+             NodeKind::MallocNode,
+             externallyAvailable,
+             false,
+             tryGetMemorySize(mallocNode),
+             &mallocNode);
 }
 
 PointsToGraph::NodeIndex
 PointsToGraph::addRegisterNode()
 {
-  auto index = addNode(NodeKind::RegisterNode, false, nullptr);
+  // Registers need to be static single assignment, so they are regarded as constants
+  // Their size in memory is not known, as most registers never even live in memory.
+  auto index = addNode(NodeKind::RegisterNode, false, true, std::nullopt, nullptr);
   registerNodes_.emplace_back(index);
   return index;
 }
@@ -133,7 +197,11 @@ void
 PointsToGraph::markAsTargetsAllExternallyAvailable(NodeIndex index)
 {
   JLM_ASSERT(index < nodeData_.size());
-  nodeData_[index].isTargetingAllExternallyAvailable = true;
+  if (!nodeData_[index].isTargetingAllExternallyAvailable)
+  {
+    numNodesTargetingAllExternallyAvailable_++;
+    nodeData_[index].isTargetingAllExternallyAvailable = true;
+  }
 }
 
 bool
@@ -147,102 +215,6 @@ PointsToGraph::addTarget(NodeIndex source, NodeIndex target)
   if (isTargetingAllExternallyAvailable(source) && isExternallyAvailable(target))
     return false;
   return nodeTargets_[source].insert(target);
-}
-
-bool
-PointsToGraph::isNodeConstant(NodeIndex index) const noexcept
-{
-  const auto kind = getKind(index);
-  switch (kind)
-  {
-  case NodeKind::AllocaNode:
-    return false;
-  case NodeKind::DeltaNode:
-  {
-    const auto & deltaNode = getDeltaNodeObject(index);
-    return deltaNode.constant();
-  }
-  case NodeKind::ImportNode:
-  {
-    const auto & import = getImportNodeObject(index);
-    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
-      return graphImport->isConstant();
-    return false;
-  }
-  case NodeKind::LambdaNode:
-    return true;
-  case NodeKind::MallocNode:
-    return false;
-  case NodeKind::RegisterNode:
-    // Registers are not memory, but are by all means constant
-    return true;
-  default:
-    JLM_UNREACHABLE("Unknown PtG node kind");
-  }
-}
-
-std::optional<size_t>
-PointsToGraph::tryGetNodeSize(NodeIndex index) const noexcept
-{
-  const auto kind = getKind(index);
-  switch (kind)
-  {
-  case NodeKind::AllocaNode:
-  {
-    const auto & allocaNode = getAllocaNodeObject(index);
-    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
-
-    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
-    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
-    if (elementCount.has_value())
-      return *elementCount * GetTypeSize(*allocaOp->ValueType());
-
-    return std::nullopt;
-  }
-  case NodeKind::DeltaNode:
-  {
-    const auto & deltaNode = getDeltaNodeObject(index);
-    return GetTypeSize(*deltaNode.GetOperation().Type());
-  }
-  case NodeKind::ImportNode:
-  {
-    const auto & import = getImportNodeObject(index);
-    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
-    {
-      auto size = GetTypeSize(*graphImport->ValueType());
-
-      // C code can contain declarations like this:
-      //     extern char myArray[];
-      // which means there is an array of unknown size defined in a different module.
-      // In the LLVM IR the import gets an array length of 0, but that is not correct.
-      if (size != 0)
-        return size;
-    }
-    return std::nullopt;
-  }
-  case NodeKind::LambdaNode:
-  {
-    // Functions should never be read from or written to, so use size 0
-    return 0;
-  }
-  case NodeKind::MallocNode:
-  {
-    const auto & mallocNode = getMallocNodeObject(index);
-    // If the size parameter of the malloc node is a constant, that is our size
-    auto size = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
-
-    // Only return the size if it is a positive integer, to avoid unsigned underflow
-    if (size.has_value() && *size >= 0)
-      return *size;
-
-    return std::nullopt;
-  }
-  case NodeKind::RegisterNode:
-    // Registers are not memory
-    return std::nullopt;
-  default:
-    JLM_UNREACHABLE("Unknown PtG node kind");
-  }
 }
 
 std::pair<size_t, size_t>
@@ -493,44 +465,23 @@ PointsToGraph::ToDot(
   return dot;
 }
 
-PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;
-
-std::string
-PointsToGraph::UnknownMemoryNode::DebugString() const
+PointsToGraph::NodeIndex
+PointsToGraph::addNode(
+    NodeKind kind,
+    bool externallyAvailable,
+    bool isConstant,
+    std::optional<size_t> memorySize,
+    const void * object)
 {
-  return "UnknownMemory";
+  const auto index = nodeData_.size();
+
+  nodeData_.emplace_back(NodeData(kind, externallyAvailable, false, isConstant, memorySize));
+  nodeTargets_.emplace_back();
+  nodeObjects_.push_back(object);
+
+  if (externallyAvailable)
+    externallyAvailableNodes_.push_back(index);
+
+  return index;
 }
-
-std::optional<size_t>
-PointsToGraph::UnknownMemoryNode::tryGetSize() const noexcept
-{
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::UnknownMemoryNode::isConstant() const noexcept
-{
-  return false;
-}
-
-PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept = default;
-
-std::string
-PointsToGraph::ExternalMemoryNode::DebugString() const
-{
-  return "ExternalMemory";
-}
-
-std::optional<size_t>
-PointsToGraph::ExternalMemoryNode::tryGetSize() const noexcept
-{
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::ExternalMemoryNode::isConstant() const noexcept
-{
-  return false;
-}
-
 }

@@ -235,8 +235,8 @@ public:
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
       config.EnableOnlineCycleDetection(false);
       config.EnableHybridCycleDetection(true);
-      config.EnableLazyCycleDetection(true);
-      config.EnableDifferencePropagation(true);
+      config.EnableLazyCycleDetection(false);
+      config.EnableDifferencePropagation(false);
       config.EnablePreferImplicitPointees(true);
       return config;
     }

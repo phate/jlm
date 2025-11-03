@@ -7,7 +7,6 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
@@ -17,7 +16,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace jlm::llvm
 {
@@ -31,6 +29,7 @@ namespace aa
  */
 class PointsToGraph final
 {
+public:
   using NodeIndex = uint32_t;
 
   enum class NodeKind : uint8_t
@@ -44,6 +43,7 @@ class PointsToGraph final
     COUNT
   };
 
+private:
   struct NodeData
   {
     NodeKind kind : util::BitWidthOfEnum(NodeKind::COUNT);
@@ -53,11 +53,36 @@ class PointsToGraph final
 
     // When set, the PointsToGraph Node implicitly targets all externally available nodes
     uint8_t isTargetingAllExternallyAvailable : 1;
+
+    // When set, the node represents constant memory / a constant register
+    uint8_t isConstant : 1;
+
+    // The size of the memory allocation(s) represented by the node.
+    // If the size is unknown or too large, it is set to UnknownMemorySize
+    uint16_t memorySize : 10;
+    static constexpr uint16_t UnknownMemorySize = (1 << 10) - 1;
+
+    NodeData(
+        NodeKind kind,
+        bool externallyAvailable,
+        bool targetsAllExternallyAvailable,
+        bool isConstant,
+        std::optional<size_t> memorySize)
+        : kind(kind),
+          isExternallyAvailable(externallyAvailable),
+          isTargetingAllExternallyAvailable(targetsAllExternallyAvailable),
+          isConstant(isConstant),
+          memorySize(
+              memorySize.has_value() && *memorySize < UnknownMemorySize ? *memorySize
+                                                                        : UnknownMemorySize)
+    {}
   };
+
+  static_assert(sizeof(NodeData) == sizeof(uint16_t), "NodeData must fit in 16 bits");
 
   using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, NodeIndex>;
   using DeltaNodeMap = std::unordered_map<const rvsdg::DeltaNode *, NodeIndex>;
-  using ImportNodeMap = std::unordered_map<const rvsdg::RegionArgument *, NodeIndex>;
+  using ImportNodeMap = std::unordered_map<const rvsdg::GraphImport *, NodeIndex>;
   using LambdaNodeMap = std::unordered_map<const rvsdg::LambdaNode *, NodeIndex>;
   using MallocNodeMap = std::unordered_map<const rvsdg::Node *, NodeIndex>;
   using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, NodeIndex>;
@@ -198,7 +223,7 @@ public:
   }
 
   NodeIndex
-  getImportNode(const rvsdg::RegionArgument & argument) const
+  getImportNode(const rvsdg::GraphImport & argument) const
   {
     if (const auto it = importMap_.find(&argument); it != importMap_.end())
       return it->second;
@@ -240,6 +265,13 @@ public:
     return nodeTargets_[index];
   }
 
+  [[nodiscard]] NodeKind
+  getKind(NodeIndex index) const
+  {
+    JLM_ASSERT(index < nodeData_.size());
+    return nodeData_[index].kind;
+  }
+
   [[nodiscard]] bool
   isExternallyAvailable(NodeIndex index) const
   {
@@ -254,11 +286,27 @@ public:
     return nodeData_[index].isTargetingAllExternallyAvailable;
   }
 
-  [[nodiscard]] NodeKind
-  getKind(NodeIndex index) const
+  [[nodiscard]] bool
+  isNodeConstant(NodeIndex index) const noexcept
   {
     JLM_ASSERT(index < nodeData_.size());
-    return nodeData_[index].kind;
+    return nodeData_[index].isConstant;
+  }
+
+  /**
+   * Gets the size of the memory allocation(s) represented by the node with the given \p index.
+   * If the node represents an unknown size, nullopt is returned.
+   * @param index the Node in question
+   * @return the size of the memory allocation(s) in bytes, or nullopt if unknown.
+   */
+  [[nodiscard]] std::optional<size_t>
+  tryGetNodeSize(NodeIndex index) const noexcept
+  {
+    JLM_ASSERT(index < nodeData_.size());
+    const auto size = nodeData_[index].memorySize;
+    if (size == NodeData::UnknownMemorySize)
+      return std::nullopt;
+    return size;
   }
 
   /**
@@ -272,6 +320,18 @@ public:
   getExternallyAvailableNodes() const noexcept
   {
     return externallyAvailableNodes_;
+  }
+
+  size_t
+  numExternallyAvailableNodes() const noexcept
+  {
+    return externallyAvailableNodes_.size();
+  }
+
+  size_t
+  numNodesTargetingAllExternallyAvailable() const noexcept
+  {
+    return numNodesTargetingAllExternallyAvailable_;
   }
 
   const rvsdg::Node &
@@ -321,7 +381,7 @@ public:
   addDeltaNode(const rvsdg::DeltaNode & deltaNode, bool externallyAvailable);
 
   NodeIndex
-  addImportNode(const rvsdg::RegionArgument & argument, bool externallyAvailable);
+  addImportNode(const rvsdg::GraphImport & argument, bool externallyAvailable);
 
   NodeIndex
   addLambdaNode(const rvsdg::LambdaNode & allocaNode, bool externallyAvailable);
@@ -353,12 +413,6 @@ public:
    */
   bool
   addTarget(NodeIndex source, NodeIndex target);
-
-  [[nodiscard]] bool
-  isNodeConstant(NodeIndex index) const noexcept;
-
-  [[nodiscard]] std::optional<size_t>
-  tryGetNodeSize(NodeIndex index) const noexcept;
 
   /**
    * Gets the total number of edges in the PointsToGraph.
@@ -417,8 +471,8 @@ public:
   }
 
 private:
-
-  NodeIndex addNode(NodeKind kind, bool externallyAvailable, const void * object);
+  NodeIndex
+  addNode(NodeKind kind, bool externallyAvailable, bool isConstant, std::optional<size_t> memorySize, const void * object);
 
   std::vector<NodeData> nodeData_;
   std::vector<util::HashSet<NodeIndex>> nodeTargets_;
@@ -434,6 +488,7 @@ private:
   // In-order lists of node indices, for specific node kinds or flags
   std::vector<NodeIndex> registerNodes_;
   std::vector<NodeIndex> externallyAvailableNodes_;
+  size_t numNodesTargetingAllExternallyAvailable_ = 0;
 };
 
 }

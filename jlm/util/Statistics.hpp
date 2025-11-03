@@ -202,7 +202,7 @@ protected:
    */
   struct Label
   {
-    static inline const char * FunctionNameLabel_ = "Function";
+    static inline const char * Functtests/jlm/llvm/opt/alias-analyses/TestAndersen \ionNameLabel_ = "Function";
 
     static inline const char * NumCfgNodes = "#CfgNodes";
 
@@ -223,15 +223,11 @@ protected:
     inline static const char * NumPointsToGraphMallocNodes = "#PointsToGraphMallocNodes";
     inline static const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
     inline static const char * NumPointsToGraphRegisterNodes = "#PointsToGraphRegisterNodes";
-    inline static const char * NumPointsToGraphEscapedNodes = "#PointsToGraphEscapedNodes";
-    inline static const char * NumPointsToGraphExternalMemorySources =
-        "#PointsToGraphExternalMemorySources";
-    inline static const char * NumPointsToGraphUnknownMemorySources =
-        "#PointsToGraphUnknownMemorySources";
+    inline static const char * NumPointsToGraphExternallyAvailableNodes = "#PointsToGraphExternallyAvailableNodes";
+    inline static const char * NumPointsToGraphNodesTargetsAllExternallyAvailable = "#PointsToGraphNodesTargetsAllExternallyAvailable";
 
+    inline static const char * NumPointsToGraphExplicitEdges = "#PointsToGraphExplicitEdges";
     inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
-    inline static const char * NumPointsToGraphPointsToRelations =
-        "#PointsToGraphPointsToRelations";
 
     static inline const char * Timer = "Time";
   };
