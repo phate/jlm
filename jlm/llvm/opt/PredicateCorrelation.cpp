@@ -200,6 +200,7 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
     handleControlConstantCorrelation(*correlation);
     break;
   case CorrelationType::MatchConstantCorrelation:
+    handleMatchConstantCorrelation(*correlation);
     break;
   default:
     throw std::logic_error("Unhandled theta-gamma predicate correlation.");
@@ -207,7 +208,8 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
 }
 
 void
-PredicateCorrelation::handleControlConstantCorrelation(ThetaGammaPredicateCorrelation & correlation)
+PredicateCorrelation::handleControlConstantCorrelation(
+    const ThetaGammaPredicateCorrelation & correlation)
 {
   JLM_ASSERT(correlation.type() == CorrelationType::ControlConstantCorrelation);
   const auto & gammaNode = correlation.gammaNode();
@@ -224,7 +226,8 @@ PredicateCorrelation::handleControlConstantCorrelation(ThetaGammaPredicateCorrel
 }
 
 void
-PredicateCorrelation::handleMatchConstantCorrelation(ThetaGammaPredicateCorrelation & correlation)
+PredicateCorrelation::handleMatchConstantCorrelation(
+    const ThetaGammaPredicateCorrelation & correlation)
 {
   JLM_ASSERT(correlation.type() == CorrelationType::MatchConstantCorrelation);
   const auto & gammaNode = correlation.gammaNode();

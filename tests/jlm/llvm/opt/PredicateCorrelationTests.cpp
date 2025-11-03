@@ -13,6 +13,36 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+static std::unique_ptr<jlm::llvm::RvsdgModule>
+setupMatchConstantCorrelationTest()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto bitType32 = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+
+  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
+  auto gammaNode = GammaNode::create(predicate, 2);
+
+  auto constant0 = create_bitconstant(gammaNode->subregion(0), 2, 0);
+  auto constant1 = create_bitconstant(gammaNode->subregion(1), 2, 1);
+
+  auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
+
+  auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);
+
+  thetaNode->predicate()->divert_to(matchNode.output(0));
+
+  return rvsdgModule;
+}
+
 static void
 testControlConstantCorrelation()
 {
@@ -112,3 +142,55 @@ testMatchConstantCorrelationDetection()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelationDetection",
     testMatchConstantCorrelationDetection)
+
+static void
+testMatchConstantCorrelation()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto rvsdgModule = setupMatchConstantCorrelationTest();
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+#if 0
+  auto bitType32 = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+
+  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
+  auto gammaNode = GammaNode::create(predicate, 2);
+
+  auto constant0 = create_bitconstant(gammaNode->subregion(0), 2, 0);
+  auto constant1 = create_bitconstant(gammaNode->subregion(1), 2, 1);
+
+  auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
+
+  auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);
+
+  thetaNode->predicate()->divert_to(matchNode.output(0));
+#endif
+  view(rvsdg, stdout);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  PredicateCorrelation predicateCorrelation;
+  predicateCorrelation.Run(*rvsdgModule, statisticsCollector);
+
+  thetaNode->subregion()->prune(true);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  assert(thetaNode->subregion()->numNodes() == 1);
+  assert(thetaNode->predicate()->origin() == predicate);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation",
+    testMatchConstantCorrelation)
