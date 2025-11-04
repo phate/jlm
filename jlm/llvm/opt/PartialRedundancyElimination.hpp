@@ -33,7 +33,6 @@ namespace jlm::llvm{
 
 struct ThetaData
 {
-  jlm::rvsdg::gvn::GVN_Val checksum_inputs;
   size_t stat_iteration_count;
   jlm::rvsdg::gvn::GVN_Val prism;
   jlm::rvsdg::gvn::BrittlePrism pre;
@@ -68,7 +67,11 @@ public:
 
 
 private:
-
+  enum class ThetaMode{
+    GVN_FIND_FIXED_POINT,
+    GVN_FINALIZE,
+  };
+  ThetaMode gvn_mode_thetas_ = ThetaMode::GVN_FIND_FIXED_POINT;
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node));
 
   static void dump_region(          PartialRedundancyElimination *pe, rvsdg::Node* node);
@@ -111,11 +114,13 @@ private:
 
   /// -----------------------------------------------------------
 
+  void GVN(rvsdg::Region& root);
   void GVN_VisitRegion(rvsdg::Region& reg);
   void GVN_VisitAllSubRegions(rvsdg::Node* node);
   void GVN_VisitNode(rvsdg::Node* node);
   void GVN_VisitGammaNode(rvsdg::Node* node);
   void GVN_VisitThetaNode(rvsdg::Node* tn);
+  void GVN_FinalizeThetaNode(rvsdg::Node * node);
   void GVN_VisitLambdaNode(rvsdg::Node* ln);
   void GVN_VisitLeafNode(rvsdg::Node* node);
 
@@ -126,8 +131,6 @@ private:
   void PassDownThetaNode(rvsdg::Node* tn);
   void PassDownLambdaNode(rvsdg::Node* ln);
   void PassDownLeafNode(rvsdg::Node* node);
-
-  jlm::rvsdg::gvn::GVN_Val ComputeInputCheckSumForTheta(rvsdg::ThetaNode& tn);
 };
 
 }

@@ -42,6 +42,7 @@ namespace jlm::rvsdg::gvn {
     constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | 3;
     constexpr GVN_Val GVN_OP_EQ                = GVN_PREDEFS | 4;   // N-ary checks if all values are the same
     constexpr GVN_Val GVN_OP_NEQ               = GVN_PREDEFS | 5;   // N-ary checks is two values are distinct
+    constexpr GVN_Val GVN_INVARIANT            = GVN_PREDEFS | 6;
     constexpr GVN_Val GVN_TOMBSTONE            = (~0ull & ~GVN_MASK) | GVN_PREDEFS;  // Largest possible value
 
     /* GLOBAL CONSTANTS */
@@ -356,6 +357,7 @@ namespace jlm::rvsdg::gvn {
             DefineConst(GVN_FALSE);
 
             DefineConst(GVN_IGNORE);
+            DefineConst(GVN_INVARIANT);
 
             DefineConst(~0ull);
         }
