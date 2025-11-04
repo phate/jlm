@@ -46,6 +46,37 @@ public:
   }
 };
 
+class SCEVInit final : public SCEV
+{
+public:
+  explicit SCEVInit(const rvsdg::Output & pre)
+      : PrePointer_{ &pre }
+  {}
+
+  const rvsdg::Output *
+  GetPrePointer() const
+  {
+    return PrePointer_;
+  }
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "Init(" << PrePointer_->debug_string() << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVInit>(*PrePointer_);
+  }
+
+private:
+  const rvsdg::Output * PrePointer_;
+};
+
 class SCEVPlaceholder final : public SCEV
 {
 public:
@@ -119,16 +150,16 @@ public:
         RightOperand_{ std::move(right) }
   {}
 
-  const std::unique_ptr<SCEV>
+  SCEV *
   GetLeftOperand() const
   {
-    return LeftOperand_->Clone();
+    return LeftOperand_.get();
   }
 
-  const std::unique_ptr<SCEV>
+  SCEV *
   GetRightOperand() const
   {
-    return RightOperand_->Clone();
+    return RightOperand_.get();
   }
 
   void
@@ -166,14 +197,14 @@ private:
   std::unique_ptr<SCEV> RightOperand_;
 };
 
-class SCEVChrecExpr final : public SCEV
+class SCEVChainRecurrence final : public SCEV
 {
   friend class ScalarEvolution;
 
 public:
-  explicit SCEVChrecExpr(const rvsdg::ThetaNode * theta)
+  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
       : Operands_{},
-        Loop_{ theta }
+        Loop_{ &theta }
   {}
 
   void
@@ -188,6 +219,35 @@ public:
     return Loop_;
   }
 
+  SCEV *
+  GetStartValue() const
+  {
+    return Operands_[0].get();
+  }
+
+  void
+  SetStartValue(const std::unique_ptr<SCEV> & initScev)
+  {
+    Operands_.insert(Operands_.begin(), initScev->Clone());
+  }
+
+  std::vector<const SCEV *>
+  GetOperands() const
+  {
+    std::vector<const SCEV *> operands{};
+    for (auto & op : Operands_)
+    {
+      operands.push_back(op.get());
+    }
+    return operands;
+  }
+
+  SCEV *
+  GetOperand(const size_t index) const
+  {
+    return Operands_.at(index).get();
+  }
+
   std::string
   DebugString() const override
   {
@@ -199,14 +259,14 @@ public:
       if (i < Operands_.size() - 1)
         oss << ",+,";
     }
-    oss << "}" << '\n';
+    oss << "}" << "<" << Loop_->DebugString() << ">";
     return oss.str();
   }
 
   std::unique_ptr<SCEV>
   Clone() const override
   {
-    auto copy = std::make_unique<SCEVChrecExpr>(Loop_);
+    auto copy = std::make_unique<SCEVChainRecurrence>(*Loop_);
     for (const auto & op : Operands_)
     {
       copy->AddOperand(op->Clone());
@@ -251,7 +311,7 @@ public:
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-  CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode);
+  CreateSCEVTrees(const rvsdg::ThetaNode & thetaNode);
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
@@ -259,9 +319,12 @@ public:
 private:
   std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> UniqueSCEVs_;
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
+      ChainRecurrenceMap_;
 
   void
   TraverseRegion(const rvsdg::Region & region);
+
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
@@ -277,12 +340,11 @@ private:
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
 
-  std::unique_ptr<SCEV>
-  ReplacePlaceholders(
+  std::unique_ptr<SCEVChainRecurrence>
+  CreateChainRecurrence(
+      const rvsdg::Output & IV,
       const SCEV & scevTree,
-      const rvsdg::Output & currentIV,
-      const rvsdg::ThetaNode & thetaNode,
-      const InductionVariableSet & validIVs);
+      const rvsdg::ThetaNode & thetaNode);
 
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
