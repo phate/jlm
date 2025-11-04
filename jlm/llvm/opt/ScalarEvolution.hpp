@@ -310,8 +310,8 @@ public:
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-  CreateSCEVTrees(const rvsdg::ThetaNode & thetaNode);
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
+  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
