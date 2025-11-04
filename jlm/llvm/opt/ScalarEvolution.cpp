@@ -456,11 +456,7 @@ ScalarEvolution::CreateChainRecurrence(
     }
   }
   else
-  {
-    // Unknown SCEV type - add a fallback
-    std::cerr << "Warning: Unknown SCEV type in CreateChainRecurrence\n";
-    chrec->AddOperand(std::make_unique<SCEVUnknown>());
-  }
+    JLM_ASSERT(false && "Unknown SCEV type in CreateChainRecurrence!");
 
   return chrec;
 }
