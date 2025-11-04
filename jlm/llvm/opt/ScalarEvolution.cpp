@@ -75,7 +75,7 @@ ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
-        CreateChainRecurrences(*thetaNode);
+        PerformSCEVAnalysis(*thetaNode);
       }
     }
   }
@@ -153,9 +153,9 @@ ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::
   {
     // Recursively find dependencies on lhs and rhs
     std::unordered_map<const rvsdg::Output *, int> lhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetLeftOperand().get(), currentIV);
+        FindDependenciesForSCEV(*addSCEV->GetLeftOperand(), currentIV);
     std::unordered_map<const rvsdg::Output *, int> rhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetRightOperand().get(), currentIV);
+        FindDependenciesForSCEV(*addSCEV->GetRightOperand(), currentIV);
 
     // Merge lhsDependencies into dependencies
     for (const auto & [ptr, count] : lhsDependencies)
@@ -241,48 +241,6 @@ ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
   return result;
 }
 
-std::unique_ptr<SCEV>
-ScalarEvolution::ReplacePlaceholders(
-    const SCEV & scevTree,
-    const rvsdg::Output & currentIV,
-    const rvsdg::ThetaNode & thetaNode,
-    const InductionVariableSet & validIVs)
-{
-  if (dynamic_cast<const SCEVConstant *>(&scevTree) || dynamic_cast<const SCEVUnknown *>(&scevTree))
-  {
-    return scevTree.Clone(); // Copy the leaf node
-  }
-  if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
-  {
-    const auto placeholderIV = placeholderSCEV->GetPrePointer();
-    // Check if it is in the set of validIVs
-    if (!validIVs.Contains(placeholderIV))
-    {
-      // If not, return an unknown
-      return std::make_unique<SCEVUnknown>();
-    }
-
-    const auto loopVar = thetaNode.MapPreLoopVar(*placeholderIV);
-    if (placeholderIV != &currentIV)
-    {
-      // We have a dependency of another IV
-      // Get it's saved value. This is safe to do due to the topological ordering
-      return UniqueSCEVs_.at(placeholderIV)->Clone();
-    }
-    // We have found ourselves, get the start value
-    return GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone();
-  }
-
-  if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&scevTree))
-  {
-    auto left = ReplacePlaceholders(*addSCEV->GetLeftOperand(), currentIV, thetaNode, validIVs);
-    auto right = ReplacePlaceholders(*addSCEV->GetRightOperand(), currentIV, thetaNode, validIVs);
-    return std::make_unique<SCEVAddExpr>(std::move(left), std::move(right));
-  }
-
-  return scevTree.Clone();
-}
-
 bool
 DependsOnLoopVariable(
     const rvsdg::Output & variable,
@@ -294,7 +252,7 @@ DependsOnLoopVariable(
 }
 
 std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-ScalarEvolution::CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode)
+ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 {
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
@@ -346,18 +304,157 @@ ScalarEvolution::CreateChainRecurrences(const rvsdg::ThetaNode & thetaNode)
 
   for (const auto loopVarPre : allVars)
   {
-    const auto loopVar = thetaNode.MapPreLoopVar(*loopVarPre);
-    const auto post = loopVar.post;
-    const auto SCEV = UniqueSCEVs_.at(post->origin()).get();
-    auto replacedSCEV = ReplacePlaceholders(*SCEV, *loopVarPre, thetaNode, validIVs);
-    UniqueSCEVs_.insert_or_assign(loopVarPre, std::move(replacedSCEV));
+    if (std::find(order.begin(), order.end(), loopVarPre) != order.end())
+    {
+      const auto loopVar = thetaNode.MapPreLoopVar(*loopVarPre);
+      const auto post = loopVar.post;
+      const auto scev = UniqueSCEVs_.at(post->origin()).get();
+
+      auto chainRecurrence = CreateChainRecurrence(*loopVarPre, *scev, thetaNode);
+
+      if (auto simpleNode =
+              rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin()))
+      {
+        if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+        {
+          // If the input value is a constant, get it's SCEV representation
+          chainRecurrence->SetStartValue(
+              GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone());
+        }
+      }
+      else
+      {
+        // If not, create a SCEVInit node representing the start value
+        chainRecurrence->SetStartValue(std::make_unique<SCEVInit>(*loopVarPre));
+      }
+
+      ChainRecurrenceMap_.emplace(loopVarPre, std::move(chainRecurrence));
+    }
+    else
+    {
+      auto unknownChainRecurrence = std::make_unique<SCEVChainRecurrence>(thetaNode);
+      unknownChainRecurrence->AddOperand(std::make_unique<SCEVUnknown>());
+      ChainRecurrenceMap_.emplace(loopVarPre, std::move(unknownChainRecurrence));
+    }
+
+    std::cout << loopVarPre->debug_string() << ": "
+              << ChainRecurrenceMap_.at(loopVarPre)->DebugString() << '\n';
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> chrecMap{};
-  for (const auto loopVar : thetaNode.GetLoopVars())
-    chrecMap[loopVar.pre] = UniqueSCEVs_.at(loopVar.pre)->Clone();
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> scevMap{};
+  for (const auto loopVarPre : order)
+    scevMap[loopVarPre] = UniqueSCEVs_.at(loopVarPre)->Clone();
 
-  return chrecMap;
+  return scevMap;
+}
+
+std::unique_ptr<SCEVChainRecurrence>
+ScalarEvolution::CreateChainRecurrence(
+    const rvsdg::Output & IV,
+    const SCEV & scevTree,
+    const rvsdg::ThetaNode & thetaNode)
+{
+  auto chrec = std::make_unique<SCEVChainRecurrence>(thetaNode);
+
+  if (const auto scevConstant = dynamic_cast<const SCEVConstant *>(&scevTree))
+  {
+    // This is a constant, we add it as the only operand
+    chrec->AddOperand(scevConstant->Clone());
+  }
+  else if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
+  {
+    if (scevPlaceholder->GetPrePointer() == &IV)
+    {
+      // Since we are only interested in the step value, and not the initial value, we can ignore
+      // ourselves by adding a 0, which is the identity element
+      chrec->AddOperand(std::make_unique<SCEVConstant>(0));
+    }
+    else
+    {
+      if (ChainRecurrenceMap_.find(scevPlaceholder->GetPrePointer()) != ChainRecurrenceMap_.end())
+      {
+        // We have a dependency of another IV
+        // Get it's saved value. This is safe to do due to the topological ordering
+        auto storedRec = ChainRecurrenceMap_.at(scevPlaceholder->GetPrePointer())->Clone();
+
+        return std::unique_ptr<SCEVChainRecurrence>(
+            dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
+      }
+      chrec->AddOperand(std::make_unique<SCEVUnknown>());
+    }
+  }
+  else if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
+  {
+    auto lhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetLeftOperand(), thetaNode);
+    auto rhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetRightOperand(), thetaNode);
+    std::cout << "Folding : " << lhsChrec->DebugString() << " and " << rhsChrec->DebugString()
+              << " into: ";
+
+    /* Apply folding rules
+     *
+     * We have the following folding rules from the CR algebra:
+     * G + {e,+,f}         =>       {G + e,+,f}         (1)
+     * {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
+     *
+     * The loop below is able to apply both folding rules at the same time.
+     * We do this with a generalized version of rule (2), where for two recurrences of arbitrary
+     * length, we add the operands element by element. If the recurrences being added together are
+     * not the same size, we pad the shorter recurrence with 0's.
+     *
+     * It is clear that these statements are equivalent:
+     * {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
+     *
+     * Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
+     * node, we can therefore pad the constant recurrence with however many zeroes we need for the
+     * length of the other recurrence. This effectively let's us apply both rules in one go.
+     */
+
+    const auto lhsSize = lhsChrec->GetOperands().size();
+    const auto rhsSize = rhsChrec->GetOperands().size();
+    for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
+    {
+      SCEV * lhsOperand{};
+      SCEV * rhsOperand{};
+      if (i <= lhsSize - 1)
+        lhsOperand = lhsChrec->GetOperand(i);
+
+      if (i <= rhsSize - 1)
+        rhsOperand = rhsChrec->GetOperand(i);
+
+      if (dynamic_cast<SCEVUnknown *>(lhsOperand) || dynamic_cast<SCEVUnknown *>(rhsOperand))
+      {
+        chrec->AddOperand(std::make_unique<SCEVUnknown>());
+        break;
+      }
+
+      // Set default values to 0, that way, we can effectively pad the recurrence, if no element is
+      // found for the current index
+      uint64_t lhsValue = 0;
+      uint64_t rhsValue = 0;
+      if (lhsOperand)
+      {
+        if (auto lhsConstant = dynamic_cast<SCEVConstant *>(lhsOperand))
+          lhsValue = lhsConstant->GetValue();
+      }
+      if (rhsOperand)
+      {
+        if (auto rhsConstant = dynamic_cast<SCEVConstant *>(rhsOperand))
+          rhsValue = rhsConstant->GetValue();
+      }
+
+      if (lhsValue + rhsValue != 0)
+        chrec->AddOperand(std::make_unique<SCEVConstant>(lhsValue + rhsValue));
+    }
+    std::cout << chrec->DebugString() << '\n';
+  }
+  else
+  {
+    // Unknown SCEV type - add a fallback
+    std::cerr << "Warning: Unknown SCEV type in CreateChainRecurrence\n";
+    chrec->AddOperand(std::make_unique<SCEVUnknown>());
+  }
+
+  return chrec;
 }
 
 bool
@@ -430,16 +527,16 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
         && StructurallyEqual(*aa->GetRightOperand(), *ab->GetRightOperand());
   }
 
-  if (auto * cha = dynamic_cast<const SCEVChrecExpr *>(&a))
+  if (auto * cha = dynamic_cast<const SCEVChainRecurrence *>(&a))
   {
-    auto * chb = dynamic_cast<const SCEVChrecExpr *>(&b);
+    auto * chb = dynamic_cast<const SCEVChainRecurrence *>(&b);
     if (cha->GetLoop() != chb->GetLoop())
       return false;
-    if (cha->Operands_.size() != chb->Operands_.size())
+    if (cha->GetOperands().size() != chb->GetOperands().size())
       return false;
-    for (size_t i = 0; i < cha->Operands_.size(); ++i)
+    for (size_t i = 0; i < cha->GetOperands().size(); ++i)
     {
-      if (!StructurallyEqual(*cha->Operands_[i], *chb->Operands_[i]))
+      if (!StructurallyEqual(*cha->GetOperands()[i], *chb->GetOperands()[i]))
         return false;
     }
     return true;
