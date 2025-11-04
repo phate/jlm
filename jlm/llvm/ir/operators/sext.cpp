@@ -98,7 +98,7 @@ rvsdg::unop_reduction_path_t
 SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
   auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::bitconstant_op>(tracedOutput))
+  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOutput))
     return rvsdg::unop_reduction_constant;
 
   if (is_bitunary_reducible(operand))
@@ -120,7 +120,7 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
   {
     auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantNode && constantOperation);
     return create_bitconstant(
         operand->region(),

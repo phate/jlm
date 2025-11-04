@@ -61,13 +61,14 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/cne.cpp \
+    jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
+    jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
@@ -84,7 +85,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
-    jlm/llvm/opt/cne.hpp \
+    jlm/llvm/opt/CommonNodeElimination.hpp \
     jlm/llvm/opt/push.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
@@ -112,6 +113,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
+    jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
@@ -216,15 +218,16 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
+    tests/jlm/llvm/opt/CommonNodeEliminationTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
     tests/jlm/llvm/opt/LoadChainSeparationTests \
     tests/jlm/llvm/opt/LoopUnswitchingTests \
     tests/jlm/llvm/opt/NodeReductionTests \
+    tests/jlm/llvm/opt/PredicateCorrelationTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/ScalarEvolutionTests \
-    tests/jlm/llvm/opt/test-cne \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
