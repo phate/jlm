@@ -228,6 +228,14 @@ private:
   createMemoryNodeOrdering();
 
   /**
+   * Uses the solved ModRefGraph and MemoryNodeOrdering to build the final ModRefSummary.
+   * @return the created ModRefSummary
+   */
+  [[nodiscard]]
+  std::unique_ptr<RegionAwareModRefSummary>
+  createModRefSummary();
+
+  /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   [[nodiscard]] std::string

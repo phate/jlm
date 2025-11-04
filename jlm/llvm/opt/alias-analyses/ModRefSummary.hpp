@@ -62,6 +62,13 @@ struct MemoryNodeInterval
   // End index in the MemoryNodeOrdering. Exclusive
   MemoryNodeOrderingIndex end;
 
+  // Default ctor needed for vector resize. Do not use
+  MemoryNodeInterval() : start(0), end(0) {}
+
+  explicit MemoryNodeInterval(MemoryNodeOrderingIndex start) : start(start), end(start + 1) {}
+
+  MemoryNodeInterval(MemoryNodeOrderingIndex start, MemoryNodeOrderingIndex end) : start(start), end(end) {}
+
   /**
    * Intervals are sorted primarily by start index.
    * If the start indices are identical, the largest interval comes first.
@@ -81,6 +88,8 @@ struct MemoryNodeIntervalSet
 {
   // The set of intervals, which should be sorted according to the interval ordering rules.
   std::vector<MemoryNodeInterval> intervals;
+
+  MemoryNodeIntervalSet() = default;
 
   explicit MemoryNodeIntervalSet(std::vector<MemoryNodeInterval> intervals)
       : intervals(std::move(intervals))

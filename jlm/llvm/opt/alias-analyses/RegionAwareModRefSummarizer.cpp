@@ -81,6 +81,8 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto CreateExternalModRefNodeTimer_ = "CreateExternalModRefNodeTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
+  static constexpr auto CreateMemoryNodeOrderingTimer_ = "CreateMemoryNodeOrderingTimer";
+  static constexpr auto CreateModRefSummaryTimer_ = "CreateModRefSummaryTimer";
 
 public:
   ~Statistics() override = default;
@@ -180,6 +182,30 @@ public:
   StopSolvingStatistics()
   {
     GetTimer(SolvingTimer_).stop();
+  }
+
+  void
+  StartCreateMemoryNodeOrderingStatistics()
+  {
+    AddTimer(CreateMemoryNodeOrderingTimer_).start();
+  }
+
+  void
+  StopCreateMemoryNodeOrderingStatistics()
+  {
+    GetTimer(CreateMemoryNodeOrderingTimer_).stop();
+  }
+
+  void
+  StartCreateModRefSummaryStatistics()
+  {
+    AddTimer(CreateModRefSummaryTimer_).start();
+  }
+
+  void
+  StopCreateModRefSummaryStatistics()
+  {
+    GetTimer(CreateModRefSummaryTimer_).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -340,6 +366,12 @@ public:
     nodeMap_[&node] = index;
   }
 
+  [[nodiscard]] const std::unordered_map<const rvsdg::Node *, ModRefNodeIndex> &
+  getNodeMap() const
+  {
+    return nodeMap_;
+  }
+
   [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   getExplicitLoads(ModRefNodeIndex modRefNode) const
   {
@@ -380,6 +412,20 @@ public:
     return modRefNodes_[modRefNode].explicitStores.insert(ptgNode);
   }
 
+  [[nodiscard]] std::optional<size_t>
+  isLoadingFromExternal(ModRefNodeIndex modRefNode) const
+  {
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].isLoadingFromExternal();
+  }
+
+  [[nodiscard]] std::optional<size_t>
+  isStoringToExternal(ModRefNodeIndex modRefNode) const
+  {
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].isStoringToExternal();
+  }
+
   /**
    * Marks the given \p modRefNode as loading from all external memory [of at least the given size]
    * @param modRefNode the ModRefNode that gains the flag.
@@ -404,6 +450,13 @@ public:
   {
     JLM_ASSERT(modRefNode < modRefNodes_.size());
     return modRefNodes_[modRefNode].markAsStoringToExternal(minSize.value_or(0));
+  }
+
+  [[nodiscard]] bool
+  isCallingExternal(ModRefNodeIndex modRefNode) const
+  {
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].callsExternal;
   }
 
   bool
@@ -648,8 +701,9 @@ private:
 struct RegionAwareModRefSummarizer::MemoryNodeOrderingMetadata
 {
   // For each memory node size that appears among externally available memory nodes,
-  // this map provides the lowest index for each memory node size
-  std::map<uint32_t, MemoryNodeOrderingIndex> firstExternallyAvailableWithSize;
+  // this map provides the lowest index for each memory node size.
+  // Memory nodes with unknown size are given the maximum possible size_t.
+  std::map<size_t, MemoryNodeOrderingIndex> firstExternallyAvailableWithSize;
 
   // The first memory node that is not externally available
   MemoryNodeOrderingIndex endOfExternallyAvailable = 0;
@@ -770,7 +824,7 @@ struct RegionAwareModRefSummarizer::Context
 class RegionAwareModRefSummarizer::RegionAwareModRefSummary final : public ModRefSummary
 {
 public:
-  using ModRefSetIndex = uint32_t;
+  using ModRefSetIndex = ModRefNodeIndex;
 
   RegionAwareModRefSummary(
       MemoryNodeOrdering memoryNodeOrdering,
@@ -907,14 +961,17 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   std::cerr << "Call Graph SCCs:" << std::endl << callGraphSCCsToString() << std::endl;
   std::cerr << "RegionTree:" << std::endl << dumpRegionTree(rvsdgModule.Rvsdg()) << std::endl;
 
+  statistics->StartCreateMemoryNodeOrderingStatistics();
   createMemoryNodeOrdering();
+  statistics->StopCreateMemoryNodeOrderingStatistics();
 
-  // TODO:
-  std::unique_ptr<ModRefSummary> modRefSummary_ = nullptr;
+  statistics->StartCreateModRefSummaryStatistics();
+  auto result = createModRefSummary();
+  statistics->StopCreateModRefSummaryStatistics();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();
-  return modRefSummary_;
+  return result;
 }
 
 /**
@@ -1677,7 +1734,7 @@ RegionAwareModRefSummarizer::createMemoryNodeOrdering()
           const auto & aMallocNode = pointsToGraph.getMallocNodeObject(a);
           const auto & bMallocNode = pointsToGraph.getMallocNodeObject(b);
           const auto aLambdaId = getSurroundingLambdaNode(aMallocNode).GetNodeId();
-          const auto bLambdaId = getSurroundingLambdaNode(aMallocNode).GetNodeId();
+          const auto bLambdaId = getSurroundingLambdaNode(bMallocNode).GetNodeId();
           if (aLambdaId != bLambdaId)
             return aLambdaId < bLambdaId;
         }
@@ -1686,11 +1743,136 @@ RegionAwareModRefSummarizer::createMemoryNodeOrdering()
         return a < b;
       });
 
+  // Create metadata about the MemoryNodeOrdering
+  auto & metadata = Context_->memoryNodeOrderingMetadata;
+  metadata.ptgNodeIndexToMemoryOrderingIndex.resize(pointsToGraph.numNodes());
+
+  // Go through the MemoryNodeOrdering in order and track relevant intervals
+  std::optional<size_t> previousExternallyAvailableNodeSize = std::nullopt;
+  std::optional<MemoryNodeOrderingIndex> firstStoredByExternal = std::nullopt;
+  std::optional<MemoryNodeOrderingIndex> firstLoadedByExternal = std::nullopt;
+  for (MemoryNodeOrderingIndex i = 0; i < memoryNodeOrder.size(); i++)
+  {
+    const auto ptgNode = memoryNodeOrder[i];
+    metadata.ptgNodeIndexToMemoryOrderingIndex[ptgNode] = i;
+
+    if (pointsToGraph.isExternallyAvailable(ptgNode))
+    {
+      metadata.endOfExternallyAvailable = i + 1;
+
+      // nodes with unknown size are given a size larger than anything else,
+      auto size =
+          pointsToGraph.tryGetNodeSize(ptgNode).value_or(std::numeric_limits<size_t>::max());
+      if (size != previousExternallyAvailableNodeSize)
+      {
+        metadata.firstExternallyAvailableWithSize[size] = i;
+        previousExternallyAvailableNodeSize = size;
+      }
+    }
+    else
+    {
+      const bool storedByExternal =
+          modRefGraph.getExplicitStores(Context_->externalModRefNode).Contains(ptgNode);
+      if (storedByExternal)
+      {
+        if (!firstStoredByExternal)
+          firstStoredByExternal = i;
+        metadata.endOfStoredByExternal = i + 1;
+      }
+      const bool loadedByExternal =
+          modRefGraph.getExplicitLoads(Context_->externalModRefNode).Contains(ptgNode);
+      if (loadedByExternal)
+      {
+        if (!firstLoadedByExternal)
+          firstLoadedByExternal = i;
+        metadata.endOfLoadedByExternal = i + 1;
+      }
+    }
+  }
+
+  metadata.startOfStoredByExternal = firstStoredByExternal.value_or(0);
+  metadata.startOfLoadedByExternal = firstLoadedByExternal.value_or(0);
+
   Context_->memoryNodeOrdering =
       std::make_unique<MemoryNodeOrdering>(pointsToGraph, std::move(memoryNodeOrder));
+}
 
-  // Create metadata about the MemoryNodeOrdering
+std::unique_ptr<RegionAwareModRefSummarizer::RegionAwareModRefSummary>
+RegionAwareModRefSummarizer::createModRefSummary()
+{
+  JLM_ASSERT(Context_->memoryNodeOrdering);
 
+  const auto & modRefGraph = Context_->modRefGraph;
+  const auto & memoryNodeOrdering = *Context_->memoryNodeOrdering;
+  const auto & metadata = Context_->memoryNodeOrderingMetadata;
+
+  std::vector<ModRefSet> modRefSets;
+
+  // Convert each ModRefNode to a ModRefSet consisting of intervals
+  for (ModRefNodeIndex i = 0; i < modRefGraph.numModRefNodes(); i++)
+  {
+    MemoryNodeIntervalSet loads;
+    MemoryNodeIntervalSet stores;
+
+    // Handle ModRefs that load from all external memory nodes with a size >= X
+    const auto loadingFromExternal = modRefGraph.isLoadingFromExternal(i);
+    if (loadingFromExternal)
+    {
+      // Returns the first MemoryNodeIndex with size >= loadingFromExternal
+      const auto it = metadata.firstExternallyAvailableWithSize.lower_bound(*loadingFromExternal);
+      if (it != metadata.firstExternallyAvailableWithSize.end())
+      {
+        loads.intervals.push_back(
+            MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
+      }
+    }
+
+    // Handle ModRefs to that store to all external memory nodes with a size >= X
+    const auto storingToExternal = modRefGraph.isStoringToExternal(i);
+    if (storingToExternal)
+    {
+      // Returns the first MemoryNodeIndex with size >= storingToExternal
+      const auto it = metadata.firstExternallyAvailableWithSize.lower_bound(*storingToExternal);
+      if (it != metadata.firstExternallyAvailableWithSize.end())
+      {
+        stores.intervals.push_back(
+            MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
+      }
+    }
+
+    // Handle ModRefNodes that make calls to external functions
+    if (modRefGraph.isCallingExternal(i))
+    {
+      loads.intervals.push_back(
+          MemoryNodeInterval(metadata.startOfLoadedByExternal, metadata.endOfLoadedByExternal));
+      stores.intervals.push_back(
+          MemoryNodeInterval(metadata.startOfStoredByExternal, metadata.endOfStoredByExternal));
+    }
+
+    // Handle explicit loads and stores
+    for (const auto load : modRefGraph.getExplicitLoads(i).Items())
+    {
+      const auto memoryOrderingIndex = metadata.ptgNodeIndexToMemoryOrderingIndex[load];
+      loads.intervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
+    }
+    for (const auto store : modRefGraph.getExplicitStores(i).Items())
+    {
+      const auto memoryOrderingIndex = metadata.ptgNodeIndexToMemoryOrderingIndex[store];
+      stores.intervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
+    }
+
+    loads.sortAndCompact();
+    stores.sortAndCompact();
+
+    modRefSets.push_back(ModRefSet(std::move(loads), std::move(stores)));
+  }
+
+  auto result = std::make_unique<RegionAwareModRefSummary>(
+      std::move(memoryNodeOrdering),
+      std::move(modRefSets),
+      modRefGraph.getNodeMap());
+
+  return result;
 }
 
 std::string

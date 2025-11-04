@@ -88,23 +88,23 @@ private:
   using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, NodeIndex>;
 
   using AllocaNodeIterator =
-      util::MapValuePtrIterator<const NodeIndex, AllocaNodeMap::const_iterator>;
+      util::MapValueIterator<const NodeIndex, AllocaNodeMap::const_iterator>;
   using AllocaNodeRange = util::IteratorRange<AllocaNodeIterator>;
 
   using DeltaNodeIterator =
-      util::MapValuePtrIterator<const NodeIndex, DeltaNodeMap::const_iterator>;
+      util::MapValueIterator<const NodeIndex, DeltaNodeMap::const_iterator>;
   using DeltaNodeRange = util::IteratorRange<DeltaNodeIterator>;
 
   using ImportNodeIterator =
-      util::MapValuePtrIterator<const NodeIndex, ImportNodeMap::const_iterator>;
+      util::MapValueIterator<const NodeIndex, ImportNodeMap::const_iterator>;
   using ImportNodeRange = util::IteratorRange<ImportNodeIterator>;
 
   using LambdaNodeIterator =
-      util::MapValuePtrIterator<const NodeIndex, LambdaNodeMap::const_iterator>;
+      util::MapValueIterator<const NodeIndex, LambdaNodeMap::const_iterator>;
   using LambdaNodeRange = util::IteratorRange<LambdaNodeIterator>;
 
   using MallocNodeIterator =
-      util::MapValuePtrIterator<const NodeIndex, MallocNodeMap::const_iterator>;
+      util::MapValueIterator<const NodeIndex, MallocNodeMap::const_iterator>;
   using MallocNodeRange = util::IteratorRange<MallocNodeIterator>;
 
   using RegisterNodeIterator = std::vector<NodeIndex>::const_iterator;

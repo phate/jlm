@@ -50,6 +50,23 @@ struct MapValuePtrDereferenceFunc
 };
 
 /**
+ * Functor for iterators to maps, yielding the value
+ * The iterator may for example be an unordered_map<int, int>:: iterator.
+ *
+ * @tparam T the result type
+ * @tparam BaseIterator the iterator type
+ */
+template<typename T, typename BaseIterator>
+struct MapValueDereferenceFunc
+{
+  [[nodiscard]] T &
+  operator()(const BaseIterator & it) const
+  {
+    return it->second;
+  }
+};
+
+/**
  * Helper class for providing iterators over lists of wrapper types, like (smart)pointers and maps.
  * To get a const interator, let T be a const type.
  * This iterator should not be used if any element in the collection may be a null pointer.
@@ -131,6 +148,15 @@ using PtrIterator = IteratorWrapper<T, BaseIterator, PtrDereferenceFunc<T, BaseI
 template<typename T, typename BaseIterator>
 using MapValuePtrIterator =
     IteratorWrapper<T, BaseIterator, MapValuePtrDereferenceFunc<T, BaseIterator>>;
+
+/**
+ * Wrapper for iterators over values of maps.
+ * @tparam T the type of the map's value elements
+ * @tparam BaseIterator the type of the iterator being wrapped
+ */
+template<typename T, typename BaseIterator>
+using MapValueIterator =
+    IteratorWrapper<T, BaseIterator, MapValueDereferenceFunc<T, BaseIterator>>;
 
 }
 
