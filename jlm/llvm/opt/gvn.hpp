@@ -23,16 +23,14 @@ namespace jlm::rvsdg::gvn {
 
     // -------------------------------------------------------------------------------
     /* Flags stored as part of GVN values */
-    constexpr GVN_Val GVN_IS_SYMBOLIC                   =  1ull << 32;
-    constexpr GVN_Val GVN_HAS_DEPS                      =  1ull << 33;  /* \brief : By setting a single bit for internal nodes it becomes impossible for leaf and internal nodes to have the same hash making code simpler. */
-    constexpr GVN_Val GVN_IS_LOCAL_VALUE                =  1ull << 34;  /* \brief : This value depends on a lambda param. Cannot be moved into the global region. */
+    constexpr GVN_Val GVN_IS_SYMBOLIC                   =  1ull << 33;  /* Not a small integer */
+    constexpr GVN_Val GVN_HAS_DEPS                      =  1ull << 34;  /* \brief : By setting a single bit for internal nodes it becomes impossible for leaf and internal nodes to have the same hash making code simpler. */
     constexpr GVN_Val GVN_CONST_SYMBOL                  =  1ull << 35;
 
-    constexpr GVN_Val GVN_MASK_INHERIT     = GVN_IS_LOCAL_VALUE | GVN_IS_SYMBOLIC;
-    constexpr GVN_Val GVN_MASK             = GVN_IS_SYMBOLIC | GVN_IS_LOCAL_VALUE | GVN_HAS_DEPS | GVN_CONST_SYMBOL;
+    constexpr GVN_Val GVN_MASK_INHERIT     = GVN_IS_SYMBOLIC;
+    constexpr GVN_Val GVN_MASK             = GVN_IS_SYMBOLIC | GVN_HAS_DEPS | GVN_CONST_SYMBOL;
 
     inline bool GVN_IsSmallValue(GVN_Val v)            {return (v & GVN_SMALL_VALUE) == v;}
-    inline bool GVN_ValueIsGlobal(GVN_Val v)           {return v & GVN_IS_LOCAL_VALUE;}
     inline bool GVN_ValueHasDeps(GVN_Val v)            {return v & GVN_HAS_DEPS;}
 
     // -------------------------------------------------------------------------------
@@ -40,12 +38,11 @@ namespace jlm::rvsdg::gvn {
 
     /* GLOBAL OPERATION */
     constexpr GVN_Val GVN_OP_ANY_ORDERED       = GVN_PREDEFS | 1;
-    constexpr GVN_Val GVN_OP_BECOME_LOCAL      = GVN_PREDEFS | 2;
-    constexpr GVN_Val GVN_OP_BECOME_GLOBAL     = GVN_PREDEFS | 3;
-    constexpr GVN_Val GVN_OP_ADDITION          = GVN_PREDEFS | 4;
-    constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | 5;
-    constexpr GVN_Val GVN_OP_EQ                = GVN_PREDEFS | 6;   // N-ary checks if all values are the same
-    constexpr GVN_Val GVN_OP_NEQ               = GVN_PREDEFS | 7;   // N-ary checks is two values are distinct
+    constexpr GVN_Val GVN_OP_ADDITION          = GVN_PREDEFS | 2;
+    constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | 3;
+    constexpr GVN_Val GVN_OP_EQ                = GVN_PREDEFS | 4;   // N-ary checks if all values are the same
+    constexpr GVN_Val GVN_OP_NEQ               = GVN_PREDEFS | 5;   // N-ary checks is two values are distinct
+    constexpr GVN_Val GVN_TOMBSTONE            = (~0ull & ~GVN_MASK) | GVN_PREDEFS;  // Largest possible value
 
     /* GLOBAL CONSTANTS */
     constexpr GVN_Val GVN_NO_VALUE             = GVN_PREDEFS | GVN_CONST_SYMBOL | 100;
@@ -59,13 +56,11 @@ namespace jlm::rvsdg::gvn {
         auto n = static_cast<uint64_t>(v);
 
         std::string s = "" + std::to_string(n);
-        if (s.length() > 5)
-        {
+        if (s.length() > 5){
           s = s.substr(0,4) + "...";
         }
 
         //if ((v & GVN_HAS_DEPS) == 0) {s += "<L>";}
-        //if ((v & GVN_IS_LOCAL_VALUE) == 0) {s += "<global>";}
         if (v & GVN_IS_SYMBOLIC){s += "$";}
         // Constant predefined symbols
         if (v == GVN_TRUE)        {s = "TRUE";}
@@ -351,8 +346,6 @@ namespace jlm::rvsdg::gvn {
             // Add constant symbols to the table of all values such that
             //     values cannot collide.
             DefineConst(GVN_OP_ANY_ORDERED);
-            DefineConst(GVN_OP_BECOME_LOCAL);
-            DefineConst(GVN_OP_BECOME_GLOBAL);
             DefineConst(GVN_OP_ADDITION);
             DefineConst(GVN_OP_MULTIPLY);
             DefineConst(GVN_OP_EQ);
@@ -521,10 +514,39 @@ namespace jlm::rvsdg::gvn {
             }while(gvn_.find(g) != gvn_.end());
             return g;
         }
+        void NormalizeCa(GVN_Deps& deps)
+        {
+          // Flatten
+          for (size_t i = 0; i < deps.args.size(); i++) {
+            auto leaf = deps.args[i].first;
+            if (leaf & GVN_HAS_DEPS) {
+              auto leaf_deps = *gvn_[leaf];
+              if (leaf_deps.op == deps.op) {
+                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
+                deps.args[i].first = GVN_TOMBSTONE;  //mark for deletion
+              }
+            }
+            if (deps.op == GVN_OP_ADDITION && deps.args[i].first == 0) {deps.args[i].first = GVN_TOMBSTONE;}
+            if (deps.op == GVN_OP_MULTIPLY && deps.args[i].first == 1) {deps.args[i].first = GVN_TOMBSTONE;} //delete zeroes
+          }
+          std::sort(deps.args.begin(), deps.args.end());
+          // Coalesce
+          for (size_t i = 1; i < deps.args.size(); i++)
+          {
+            if (deps.args[i  ].first == deps.args[i-1].first){
+              deps.args[i].second += deps.args[i-1].second;
+              deps.args[i-1].first = GVN_TOMBSTONE;
+            }
+          }
+          std::sort(deps.args.begin(), deps.args.end());
+          // Collect
+          while (deps.args.size() && deps.args[ deps.args.size() - 1 ].first == GVN_TOMBSTONE) {deps.args.pop_back();}
+        }
 
         std::pair<GVN_Val, bool> CalculateHash(GVN_Deps& deps) {
             // Return a gvn value based on operator and arguments
             // The second element of the pair is true if the value cannot collide
+            if (deps.op == GVN_OP_ADDITION || deps.op == GVN_OP_MULTIPLY){NormalizeCa(deps);}
 
             // The lower bits are used to store properties for operations and
             //    keep track of context dependence of values
@@ -533,11 +555,8 @@ namespace jlm::rvsdg::gvn {
                 flags |= arg.first & GVN_MASK_INHERIT;
             }
 
-            if (deps.op == GVN_OP_BECOME_LOCAL) {flags |= GVN_IS_LOCAL_VALUE;}
-            if (deps.op == GVN_OP_BECOME_GLOBAL){flags &= ~GVN_IS_LOCAL_VALUE;}
-
             GVN_Val v = 0;
-            constexpr GVN_Val TO_BE_DELETED = ~0ull;
+
             switch (deps.op) {
                 case GVN_OP_NEQ: {
                     // Note:   NEQ cannot assume two symbol values are different.
@@ -567,30 +586,6 @@ namespace jlm::rvsdg::gvn {
                     if (must_be_different) {return {GVN_FALSE, true};}
                 }break;
                 case GVN_OP_ADDITION: {
-                    //flatten     (a + (2*a) + b + a + b)  => a + 2*a + a + b
-                    for (size_t i = 0; i < deps.args.size(); i++) {
-                        auto leaf = deps.args[i].first;
-                        if (leaf & GVN_HAS_DEPS) {
-                            auto leaf_deps = *gvn_[leaf];
-                            if (leaf_deps.op == GVN_OP_ADDITION) {
-                                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
-                                deps.args[i].first = TO_BE_DELETED;  //mark for deletion
-                            }
-                        }
-                        if (deps.args[i].first == 0) {deps.args[i].first = TO_BE_DELETED;} //delete zeroes
-                    }
-                    std::sort(deps.args.begin(), deps.args.end());
-                    // Coalesce    a + 2*a + a + b  =>   4*a + b
-                    for (size_t i = 1; i < deps.args.size(); i++)
-                    {
-                      if (deps.args[i  ].first == deps.args[i-1].first){
-                        deps.args[i].second += deps.args[i-1].second;
-                        deps.args[i-1].first = TO_BE_DELETED;
-                      }
-                    }
-                    std::sort(deps.args.begin(), deps.args.end());
-                    // Collect
-                    while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
                     if (deps.args.size() == 0){return {0, true};}
                     if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x + 0 == x
                     // -------------------------------------------------------------------------------------------------
@@ -605,31 +600,7 @@ namespace jlm::rvsdg::gvn {
                     }
                 }break;
                 case GVN_OP_MULTIPLY: {
-                    // Flatten
-                    for (size_t i = 0; i < deps.args.size(); i++) {
-                        auto leaf = deps.args[i].first;
-                        if (leaf & GVN_HAS_DEPS) {
-                            auto leaf_deps = *gvn_[leaf];
-                            if (leaf_deps.op == GVN_OP_MULTIPLY) {
-                                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
-                                deps.args[i].first = TO_BE_DELETED;  //mark for deletion
-                            }
-                        }
-                        if (deps.args[i].first == 1) {deps.args[i].first = TO_BE_DELETED;} //delete zeroes
-                    }
-                    for (auto ele : deps.args){if (ele.first == 0){return {0, true};}}  //x * 0 == 0
-                    std::sort(deps.args.begin(), deps.args.end());
-                    // Coalesce
-                    for (size_t i = 1; i < deps.args.size(); i++)
-                    {
-                      if (deps.args[i  ].first == deps.args[i-1].first){
-                        deps.args[i].second += deps.args[i-1].second;
-                        deps.args[i-1].first = TO_BE_DELETED;
-                      }
-                    }
-                    std::sort(deps.args.begin(), deps.args.end());
-                    // Collect
-                    while (deps.args[ deps.args.size() - 1 ].first == TO_BE_DELETED) {deps.args.pop_back();}
+                    if (deps.args.size() && deps.args[0].first == 0){return {0, true};}  //x * 0 == 0
                     if (deps.args.size() == 0){return {1, true};} // all ones were removed above.
                     if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x * 1 == x
                     if (!(flags & GVN_IS_SYMBOLIC)) {
@@ -677,7 +648,7 @@ namespace jlm::rvsdg::gvn {
         }
 
     public:
-
+        static void Test0();
         static void Test1();
         static void Test2();
         static void Test3();
@@ -690,6 +661,7 @@ namespace jlm::rvsdg::gvn {
     {
         BrittlePrism::Test0();
         BrittlePrism::Test1();
+        GVN_Manager::Test0();
         GVN_Manager::Test1();
         GVN_Manager::Test2();
         GVN_Manager::Test3();

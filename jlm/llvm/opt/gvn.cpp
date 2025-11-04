@@ -11,7 +11,48 @@
 bool jlm::rvsdg::gvn::gvn_verbose = false;
 namespace jlm::rvsdg::gvn {
 
-
+    void GVN_Manager::Test0()
+    {
+      GVN_Manager gm;
+      auto x = gm.Leaf();
+      auto y = gm.Leaf();
+      {
+          if (gm.Op(GVN_OP_ADDITION).Arg(x).Arg(0).End() != x) {
+              throw std::runtime_error("Addition error, x expected");
+          }
+          if (gm.Op(GVN_OP_ADDITION).Arg(3).Arg(4).Arg(2).Arg(3).End() != 12) {
+              throw std::runtime_error("Addition error, 12");
+          }
+          if (gm.Op(GVN_OP_MULTIPLY).Arg(3).Arg(4).Arg(2).Arg(3).End() != 72) {
+              throw std::runtime_error("Addition error, 72");
+          }
+      }
+      {
+        auto xyx =  gm.Op(GVN_OP_ADDITION).Arg(x).Arg(y).Arg(x).End();
+        auto xxyy = gm.Op(GVN_OP_ADDITION).Arg(x).Arg(y).Arg(x).Arg(y).End();
+        if (gm.Op(GVN_OP_ADDITION).Arg(xyx).Arg(y).End() != xxyy){
+          throw std::runtime_error("Addition error x+y+x + y != x+y+x+y");
+        }
+      }
+      {
+        auto xx =  gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(x).End();
+        auto xxyy = gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(y).Arg(x).Arg(y).End();
+        if (gm.Op(GVN_OP_MULTIPLY).Arg(y).Arg(xx).Arg(y).End() != xxyy){
+          throw std::runtime_error("Multiplication error, yxxy != xxyy");
+        }
+      }
+      {
+        auto x0 =  gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(0).End();
+        auto x1 =  gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(1).End();
+          //check identities
+        if (gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(0).End() != x0 || x0 != 0){
+          throw std::runtime_error("Multiplication error: x*0");
+        }
+        if (gm.Op(GVN_OP_MULTIPLY).Arg(x).Arg(1).End() != x1){
+          throw std::runtime_error("Multiplication error: x*1");
+        }
+      }
+    }
     void GVN_Manager::Test1()
     {
         GVN_Manager gm;
@@ -29,10 +70,7 @@ namespace jlm::rvsdg::gvn {
         GVN_Val y = gm.Leaf();
 
         GVN_Val xx   = gm.Op(GVN_OP_ANY_ORDERED).Args({x,x});
-        std::cout << "*************************"<< std::endl << std::endl;
         GVN_Val xy   = gm.Op(GVN_OP_ANY_ORDERED).Args({x,y});
-
-        std::cout << "*************************"<< std::endl << std::endl;
         GVN_Val xy_2 = gm.Op(GVN_OP_ANY_ORDERED).Args({x,y});
 
         if (xy != xy_2) {
@@ -71,13 +109,13 @@ namespace jlm::rvsdg::gvn {
     {
         std::vector<GVN_Val> v = {77,128,128,77,77};
         BrittlePrism p0(v);
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
         p0.OrderByPartition();
         if (gvn_verbose){std::cout << "----------partitions-------------"<<std::endl;}
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
         p0.OrderByOriginal();
         if (gvn_verbose){std::cout << "----------original---------------"<<std::endl;}
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
 
         p0.elements[2].disruptor = 198;
         p0.elements[0].disruptor = 199;
@@ -86,15 +124,14 @@ namespace jlm::rvsdg::gvn {
 
         p0.OrderByPartitionThenDisruptor();
         if (gvn_verbose){std::cout << "----------before fracture---------------"<<std::endl;}
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
         if (gvn_verbose){std::cout << "-----------------------------------"<<std::endl;}
         p0.Fracture();
         p0.OrderByPartition();
         if (gvn_verbose){std::cout << "----------after frac---------------"<<std::endl;}
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
 
-        p0.dump_partitions();
-
+        if (gvn_verbose){p0.dump_partitions();}
         p0.OrderByPartition();
         p0.elements[0].disruptor = 1001;
         p0.elements[p0.elements.size()-1].disruptor = 1001;
@@ -106,7 +143,7 @@ namespace jlm::rvsdg::gvn {
         }
 
         BrittlePrism::EachPartition(p0, [](BrittlePrismEle& ele, size_t count) {
-            std::cout << ele.partition << " : " << count << std::endl;
+            if (gvn_verbose){std::cout << ele.partition << " : " << count << std::endl;}
         });
 
 
@@ -114,9 +151,9 @@ namespace jlm::rvsdg::gvn {
         p2 = p0;
         p0.elements[0].disruptor = 10;
         if (gvn_verbose){std::cout << "=======================================" << std::endl;}
-        p0.dump();
+        if (gvn_verbose){p0.dump();}
         if (gvn_verbose){std::cout << "=======================================" << std::endl;}
-        p2.dump();
+        if (gvn_verbose){p2.dump();}
         if (gvn_verbose){std::cout << "=======================================" << std::endl;}
 
         auto shatter_good = [](BrittlePrismEle& ele, size_t index) {
@@ -136,14 +173,14 @@ namespace jlm::rvsdg::gvn {
     void BrittlePrism::Test1()
     {
         auto br = BrittlePrism({1,1,1,4});
-        br.dump();
-        std::cout << "*****************************************" << std::endl;
+        if (gvn_verbose){br.dump();}
+        if (gvn_verbose){std::cout << "*****************************************" << std::endl;}
         br.elements[0].disruptor = 10;
         br.elements[1].disruptor = 10;
         br.elements[2].disruptor = 88;
         br.elements[3].disruptor = 77;
         br.Fracture();
-        br.dump();
+        if (gvn_verbose){br.dump();}
         br.OrderByOriginal();
         if (gvn_verbose){br.dump();}
         if (br.elements[0].partition != 10){throw std::runtime_error("should be 10");}

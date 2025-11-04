@@ -203,7 +203,7 @@ PartialRedundancyElimination::Run(
     util::StatisticsCollector & statisticsCollector)
 {
   std::cout << TR_BLUE << "Hello JLM its me." << TR_RESET << std::endl;
-
+  jlm::rvsdg::gvn::RunAllTests();
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
@@ -478,7 +478,6 @@ jlm::rvsdg::gvn::GVN_Val PartialRedundancyElimination::ComputeInputCheckSumForTh
 
 void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 {
-
   MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
     using namespace jlm::rvsdg::gvn;
     auto GVN_INVARIANT = gvn_.FromStr("INVARIANT");
@@ -572,6 +571,7 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 
     /** ----------------------------------- COMPUTE LOOP OUTPUTS -------------------------------------- */
 
+
     for (size_t i = 0; i < lv.size(); i++){
       auto inv = thetas_[node].post.elements[i].partition == GVN_INVARIANT;
       if (inv){
@@ -591,7 +591,8 @@ void PartialRedundancyElimination::GVN_VisitLambdaNode(rvsdg::Node * node)
   MatchType(*node, [this,node](rvsdg::LambdaNode& ln){
     size_t i = 0;
     for (auto arg : ln.GetFunctionArguments()){
-      RegisterGVN(arg, gvn_.FromStr("Param:" + std::to_string(i)) ); i++;
+      auto g = gvn_.FromStr("Param:" + std::to_string(i));
+      RegisterGVN(arg, g ); i++;
     }
     for (auto arg : ln.GetContextVars())
     {
