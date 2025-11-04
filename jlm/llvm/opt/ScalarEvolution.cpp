@@ -225,9 +225,9 @@ ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
       for (const auto & dep : deps)
       {
         const auto ptr = dep.first;
-        if (ptr == currentNode)
-          continue;
         if (ptr == node)
+          continue; // Skip self-edges
+        if (ptr == currentNode)
         {
           // Update the indegree of nodes depending on this one
           indegree[node] -= 1;
