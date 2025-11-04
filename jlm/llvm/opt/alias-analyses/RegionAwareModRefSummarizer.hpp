@@ -14,7 +14,7 @@ namespace jlm::llvm::aa
 {
 
 // The type used for indexing Mod/Ref sets during analysis and solving
-using ModRefSetIndex = uint32_t;
+using ModRefNodeIndex = uint32_t;
 
 // The final result of running the summarizer
 class RegionAwareModRefSummary;
@@ -41,21 +41,30 @@ class RegionAwareModRefSummary;
  *
  * 4. Create sets of Non-Reentrant allocas for each region.
  *
- * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
- * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
- * Special edges are used between function body region -> function,
- * which filter away all simple allocas defined in the function that are not recursive.
+ * 5. ModRefGraph Building: Creates a graph containing nodes for loads, stores, calls,
+ * regions and functions. Each ModRefNode tracks memory nodes that are loaded from or stored to.
+ * The nodes also have flags to represent operations on all external available memory nodes.
+ * Edges in the ModRefGraph propagate sets and flags between nodes.
  *
- * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
+ * 6. ModRefGraph Solving: sets and flags are propagated along edges in the graph
+ *
+ * 7. MemoryNodeOrder creation: all relevant memory nodes in the program are ordered in a list
+ *
+ * 8. ModRefSummary creation: the ModRefGraph is converted into the final result data structure
  *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
  */
 class RegionAwareModRefSummarizer final : public ModRefSummarizer
 {
-public:
   class Statistics;
+  struct ModRefNode;
+  class ModRefGraph;
+  struct MemoryNodeOrderingMetadata;
   struct Context;
+  class RegionAwareModRefSummary;
+
+public:
 
   ~RegionAwareModRefSummarizer() noexcept override;
 
@@ -106,14 +115,14 @@ private:
    * @param rvsdgModule the module for which a mod/ref summary is computed.
    */
   void
-  CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
+  createCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * For each SCC in the call graph, determines which allocas can be known to not be live
    * when a function from the SCC is at the top of the call stack.
    */
   void
-  FindAllocasDeadInSccs();
+  findAllocasDeadInSccs();
 
   /**
    * Creates a set containing all simple Allocas is the PointsToGraph.
@@ -121,10 +130,10 @@ private:
    * or from RegisterNodes, in the PointsToGraph.
    */
   static util::HashSet<PointsToGraph::NodeIndex>
-  CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
+  createSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
   util::HashSet<PointsToGraph::NodeIndex>
-  GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+  getSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
 
   /**
    * Uses the call graph to determine if the given function can ever be involved
@@ -134,7 +143,7 @@ private:
    * @return true if it is possible for lambda to be involved in recursion, false otherwise
    */
   bool
-  IsRecursionPossible(const rvsdg::LambdaNode & lambda);
+  isRecursionPossible(const rvsdg::LambdaNode & lambda);
 
   /**
    * Creates a set for each region that contains alloca definitions,
@@ -143,7 +152,7 @@ private:
     // the alloca is definitely non-reentrant.s in the module.
    */
   size_t
-  CreateNonReentrantAllocaSets();
+  createNonReentrantAllocaSets();
 
   /**
    * Creates ModRefSets for regions and nodes within the function.
@@ -157,21 +166,21 @@ private:
    * @param region the region to create ModRefSets for.
    * @param lambda the function this region belongs to
    */
-  ModRefSetIndex
+  ModRefNodeIndex
   annotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateStructuralNode(
+  ModRefNodeIndex
+  annotateStructuralNode(
       const rvsdg::StructuralNode & structuralNode,
       const rvsdg::LambdaNode & lambda);
 
-  std::optional<ModRefSetIndex>
-  AnnotateSimpleNode(const rvsdg::SimpleNode & simpleNode, const rvsdg::LambdaNode & lambda);
+  std::optional<ModRefNodeIndex>
+  annotateSimpleNode(const rvsdg::SimpleNode & simpleNode, const rvsdg::LambdaNode & lambda);
 
   /**
    * Helper function for filling ModRefSets based on the pointer being operated on
    * @tparam IsStore true if the operation in a store, false if it is a load
-   * @param modRefSetIndex the index of the ModRefSet representing the memory operation
+   * @param modRefNode the index of the ModRefSet representing the memory operation
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
    * @param lambda the function the operation is happening in
@@ -179,56 +188,61 @@ private:
   template<bool IsStore>
   void
   addPointerOriginTargets(
-      ModRefSetIndex modRefSetIndex,
+      ModRefNodeIndex modRefNode,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
       const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
+  ModRefNodeIndex
+  annotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
+  ModRefNodeIndex
+  annotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
+  ModRefNodeIndex
+  annotateAlloca(const rvsdg::SimpleNode & allocaNode);
 
-  ModRefSetIndex
-  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
+  ModRefNodeIndex
+  annotateMalloc(const rvsdg::SimpleNode & mallocNode);
 
-  ModRefSetIndex
-  AnnotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
+  ModRefNodeIndex
+  annotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode, const rvsdg::LambdaNode & lambda);
+  ModRefNodeIndex
+  annotateMemcpy(const rvsdg::SimpleNode & memcpyNode, const rvsdg::LambdaNode & lambda);
 
-  ModRefSetIndex
-  AnnotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
+  ModRefNodeIndex
+  annotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
 
   /**
    * Creates a single ModRefSet responsible for representing all reads and writes
    * that may happen in external functions, or due to calls made from external functions.
    */
   void
-  createExternalModRefSet();
+  createExternalModRefNode();
+
+  /**
+   * Uses the results of solving the ModRefGraph to define an ordering of all relevant Memory Nodes.
+   */
+  void
+  createMemoryNodeOrdering();
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
-  static std::string
-  CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer);
+  [[nodiscard]] std::string
+  callGraphSCCsToString() const;
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the
    * RegionAwareMemoryNodeProvider.
    *
    * @param rvsdg The RVSDG that is converted to a region tree.
-   * @param modRefSummary The Mod/Ref summary used for annotating the region tree.
    *
    * @return A string that contains the region tree.
    */
-  static std::string
-  ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareModRefSummary & modRefSummary);
+  [[nodiscard]] std::string
+  dumpRegionTree(const rvsdg::Graph & rvsdg);
 
   std::unique_ptr<Context> Context_;
 };

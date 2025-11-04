@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
@@ -23,12 +22,13 @@ CommandLineOptions::~CommandLineOptions() = default;
 std::string
 JlcCommandLineOptions::ToString(const OptimizationLevel & optimizationLevel)
 {
-  static std::unordered_map<OptimizationLevel, const char *> map({
-      { OptimizationLevel::O0, "O0" },
-      { OptimizationLevel::O1, "O1" },
-      { OptimizationLevel::O2, "O2" },
-      { OptimizationLevel::O3, "O3" },
-  });
+  static std::unordered_map<OptimizationLevel, const char *> map(
+      {
+          { OptimizationLevel::O0, "O0" },
+          { OptimizationLevel::O1, "O1" },
+          { OptimizationLevel::O2, "O2" },
+          { OptimizationLevel::O3, "O3" },
+      });
 
   JLM_ASSERT(map.find(optimizationLevel) != map.end());
   return map[optimizationLevel];
@@ -95,14 +95,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     const std::string & commandLineArgument)
 {
   static std::unordered_map<std::string, OptimizationId> map(
-      { { OptimizationCommandLineArgument::AaAndersenAgnostic_,
-          OptimizationId::AAAndersenAgnostic },
-        { OptimizationCommandLineArgument::AaAndersenRegionAware_,
+      { { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
-        { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
-          OptimizationId::AASteensgaardAgnostic },
-        { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
-          OptimizationId::AASteensgaardRegionAware },
         { OptimizationCommandLineArgument::CommonNodeElimination_,
           OptimizationId::CommonNodeElimination },
         { OptimizationCommandLineArgument::DeadNodeElimination_,
@@ -320,33 +314,34 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
   {
     if (optimizations.empty() && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
     {
-      return std::vector({
-          JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
-          JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation,
-          JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
-          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::NodePullIn,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::IfConversion,
-          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::ScalarEvolution,
-      });
+      return std::vector(
+          {
+              JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
+              JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation,
+              JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
+              JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+              JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::NodePullIn,
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommandLineOptions::OptimizationId::IfConversion,
+              JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+              JlmOptCommandLineOptions::OptimizationId::ScalarEvolution,
+          });
     }
 
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
@@ -565,22 +560,24 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
   /* Process parsed options */
 
   static std::unordered_map<std::string, JlcCommandLineOptions::OptimizationLevel>
-      optimizationLevelMap({ { "0", JlcCommandLineOptions::OptimizationLevel::O0 },
-                             { "1", JlcCommandLineOptions::OptimizationLevel::O1 },
-                             { "2", JlcCommandLineOptions::OptimizationLevel::O2 },
-                             { "3", JlcCommandLineOptions::OptimizationLevel::O3 } });
+      optimizationLevelMap(
+          { { "0", JlcCommandLineOptions::OptimizationLevel::O0 },
+            { "1", JlcCommandLineOptions::OptimizationLevel::O1 },
+            { "2", JlcCommandLineOptions::OptimizationLevel::O2 },
+            { "3", JlcCommandLineOptions::OptimizationLevel::O3 } });
 
   static std::unordered_map<std::string, JlcCommandLineOptions::LanguageStandard>
-      languageStandardMap({ { "gnu89", JlcCommandLineOptions::LanguageStandard::Gnu89 },
-                            { "gnu99", JlcCommandLineOptions::LanguageStandard::Gnu99 },
-                            { "c89", JlcCommandLineOptions::LanguageStandard::C89 },
-                            { "c90", JlcCommandLineOptions::LanguageStandard::C99 },
-                            { "c99", JlcCommandLineOptions::LanguageStandard::C99 },
-                            { "c11", JlcCommandLineOptions::LanguageStandard::C11 },
-                            { "c++98", JlcCommandLineOptions::LanguageStandard::Cpp98 },
-                            { "c++03", JlcCommandLineOptions::LanguageStandard::Cpp03 },
-                            { "c++11", JlcCommandLineOptions::LanguageStandard::Cpp11 },
-                            { "c++14", JlcCommandLineOptions::LanguageStandard::Cpp14 } });
+      languageStandardMap(
+          { { "gnu89", JlcCommandLineOptions::LanguageStandard::Gnu89 },
+            { "gnu99", JlcCommandLineOptions::LanguageStandard::Gnu99 },
+            { "c89", JlcCommandLineOptions::LanguageStandard::C89 },
+            { "c90", JlcCommandLineOptions::LanguageStandard::C99 },
+            { "c99", JlcCommandLineOptions::LanguageStandard::C99 },
+            { "c11", JlcCommandLineOptions::LanguageStandard::C11 },
+            { "c++98", JlcCommandLineOptions::LanguageStandard::Cpp98 },
+            { "c++03", JlcCommandLineOptions::LanguageStandard::Cpp03 },
+            { "c++11", JlcCommandLineOptions::LanguageStandard::Cpp11 },
+            { "c++14", JlcCommandLineOptions::LanguageStandard::Cpp14 } });
 
   if (!optimizationLevel.empty())
   {
@@ -935,26 +932,31 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
       "annotations",
-      cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes,
-          "NumAllocaNodes",
-          "Annotate number of AllocaOperation nodes")),
-      cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes,
-          "NumLoadNodes",
-          "Annotate number of LoadOperation nodes")),
-      cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs,
-          "NumMemoryStateInputsOutputs",
-          "Annotate number of inputs/outputs with memory state type")),
-      cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
-          "NumRvsdgNodes",
-          "Annotate number of RVSDG nodes")),
-      cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumStoreNodes,
-          "NumStoreNodes",
-          "Annotate number of StoreOperation nodes")),
+      cl::values(
+          ::clEnumValN(
+              llvm::RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes,
+              "NumAllocaNodes",
+              "Annotate number of AllocaOperation nodes")),
+      cl::values(
+          ::clEnumValN(
+              llvm::RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes,
+              "NumLoadNodes",
+              "Annotate number of LoadOperation nodes")),
+      cl::values(
+          ::clEnumValN(
+              llvm::RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs,
+              "NumMemoryStateInputsOutputs",
+              "Annotate number of inputs/outputs with memory state type")),
+      cl::values(
+          ::clEnumValN(
+              llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
+              "NumRvsdgNodes",
+              "Annotate number of RVSDG nodes")),
+      cl::values(
+          ::clEnumValN(
+              llvm::RvsdgTreePrinter::Configuration::Annotation::NumStoreNodes,
+              "NumStoreNodes",
+              "Annotate number of StoreOperation nodes")),
       cl::CommaSeparated,
       cl::desc("Comma separated list of RVSDG tree printer annotations"));
 

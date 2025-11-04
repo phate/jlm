@@ -273,6 +273,18 @@ public:
   }
 
   [[nodiscard]] bool
+  isRegisterNode(NodeIndex index) const
+  {
+    return getKind(index) == NodeKind::RegisterNode;
+  }
+
+  [[nodiscard]] bool
+  isMemoryNode(NodeIndex index) const
+  {
+    return !isRegisterNode(index);
+  }
+
+  [[nodiscard]] bool
   isExternallyAvailable(NodeIndex index) const
   {
     JLM_ASSERT(index < nodeData_.size());
@@ -427,6 +439,17 @@ public:
    */
   [[nodiscard]] std::pair<size_t, size_t>
   numEdges() const noexcept;
+
+  /**
+   * Produces a debug string for the given node,
+   * containing the index, flags, size, constness and info about the underlying object.
+   * Does not include explicit targets.
+   * @param index the index of the node to create a debug string for
+   * @param separator the char to put between parts of the debug string
+   * @return the debug string
+   */
+  [[nodiscard]] std::string
+  getNodeDebugString(NodeIndex index, char separator = ' ') const;
 
   /**
    * Checks if this PointsToGraph is a supergraph of \p subgraph.

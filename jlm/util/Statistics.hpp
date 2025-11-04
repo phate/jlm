@@ -202,7 +202,7 @@ protected:
    */
   struct Label
   {
-    static inline const char * Functtests/jlm/llvm/opt/alias-analyses/TestAndersen \ionNameLabel_ = "Function";
+    static inline const char * FunctionNameLabel_ = "Function";
 
     static inline const char * NumCfgNodes = "#CfgNodes";
 

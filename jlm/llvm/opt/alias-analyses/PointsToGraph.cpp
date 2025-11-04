@@ -233,6 +233,61 @@ PointsToGraph::numEdges() const noexcept
   return std::make_pair(numExplicitEdges, numExplicitEdges + numImplicitEdges);
 }
 
+std::string
+PointsToGraph::getNodeDebugString(NodeIndex index, char seperator) const
+{
+  std::string result = std::to_string(index) + ": ";
+
+  switch (getKind(index))
+  {
+  case NodeKind::AllocaNode:
+    result += getAllocaNodeObject(index).DebugString();
+    break;
+  case NodeKind::DeltaNode:
+    result += getDeltaNodeObject(index).DebugString();
+    break;
+  case NodeKind::ImportNode:
+    result += getImportNodeObject(index).debug_string();
+    break;
+  case NodeKind::LambdaNode:
+    result += getLambdaNodeObject(index).DebugString();
+    break;
+  case NodeKind::MallocNode:
+    result += getMallocNodeObject(index).DebugString();
+    break;
+  case NodeKind::RegisterNode:
+    result += "register"; // TODO: Include which outputs it maps to
+    break;
+  default:
+    JLM_UNREACHABLE("Unknown PtG node kind");
+  }
+
+  if (isExternallyAvailable(index))
+  {
+    result += seperator;
+    result += "ExtAv";
+  }
+  if (isTargetingAllExternallyAvailable(index))
+  {
+    result += seperator;
+    result += "->?";
+  }
+
+  const auto size = tryGetNodeSize(index);
+  if (size.has_value())
+  {
+    result += util::strfmt(seperator, "(", size.value(), " bytes)");
+  }
+  const auto isConst = isNodeConstant(index);
+  if (isConst)
+  {
+    result += seperator;
+    result += "(const)";
+  }
+
+  return result;
+}
+
 bool
 PointsToGraph::IsSupergraphOf([[maybe_unused]] const jlm::llvm::aa::PointsToGraph & subgraph) const
 {
@@ -394,35 +449,6 @@ PointsToGraph::ToDot(
     return "box";
   };
 
-  auto nodeLabel = [&](NodeIndex node) -> std::string
-  {
-    const auto kind = pointsToGraph.getKind(node);
-    switch (kind)
-    {
-    case NodeKind::AllocaNode:
-      return pointsToGraph.getAllocaNodeObject(node).DebugString();
-    case NodeKind::DeltaNode:
-      return pointsToGraph.getDeltaNodeObject(node).DebugString();
-    case NodeKind::ImportNode:
-      return pointsToGraph.getImportNodeObject(node).debug_string();
-    case NodeKind::LambdaNode:
-      return pointsToGraph.getLambdaNodeObject(node).DebugString();
-    case NodeKind::MallocNode:
-      return pointsToGraph.getMallocNodeObject(node).DebugString();
-    case NodeKind::RegisterNode:
-      return "register"; // TODO: Include which outputs it maps to
-    default:
-      JLM_UNREACHABLE("Unknown PtG node kind");
-    }
-  };
-
-  auto nodeTargetsAllExternalLabel = [&](NodeIndex node) -> std::string_view
-  {
-    if (pointsToGraph.isTargetingAllExternallyAvailable(node))
-      return "\\n->*";
-    return "";
-  };
-
   auto nodeString = [&](NodeIndex node)
   {
     return util::strfmt(
@@ -431,8 +457,7 @@ PointsToGraph::ToDot(
         " [",
         nodeFill(node),
         "label = \"",
-        nodeLabel(node),
-        nodeTargetsAllExternalLabel(node),
+        pointsToGraph.getNodeDebugString(node),
         "\" ",
         "shape = \"",
         nodeShape(node),
@@ -459,7 +484,6 @@ PointsToGraph::ToDot(
   {
     dot += printNodeAndEdges(i);
   }
-  dot += "label=\"Yellow = Escaping memory node\"\n";
   dot += "}\n";
 
   return dot;

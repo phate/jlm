@@ -18,7 +18,9 @@
 #include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
+#include <map>
 #include <queue>
+#include <vector>
 
 namespace jlm::llvm::aa
 {
@@ -54,8 +56,8 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
 
 /**
  * When propagating explicit loads and stores, should a memory node be skipped if
- * the target ModRefSet is flagged as loading/storing from external,
- * and the node is externally available, and large enough to be included by the flag.
+ * the target ModRefNode is flagged as loading/storing from external,
+ * and the memory node is externally available, and large enough to be covered by the flag.
  */
 static const bool ENABLE_MOD_REF_PIP = !std::getenv("JLM_DISABLE_MOD_REF_PIP");
 
@@ -76,8 +78,8 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
   static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
   static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
-  static constexpr auto CreateExternalModRefSetTimer_ = "CreateExternalModRefSetTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
+  static constexpr auto CreateExternalModRefNodeTimer_ = "CreateExternalModRefNodeTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
 
 public:
@@ -145,15 +147,15 @@ public:
   }
 
   void
-  StartCreateExternalModRefSet()
+  StartCreateExternalModRefNode()
   {
-    AddTimer(CreateExternalModRefSetTimer_).start();
+    AddTimer(CreateExternalModRefNodeTimer_).start();
   }
 
   void
-  StopCreateExternalModRefSet()
+  StopCreateExternalModRefNode()
   {
-    GetTimer(CreateExternalModRefSetTimer_).stop();
+    GetTimer(CreateExternalModRefNodeTimer_).stop();
   }
 
   void
@@ -188,22 +190,23 @@ public:
 };
 
 /**
- * Class representing the set of MemoryNodes that may be modified or referenced by some operation,
- * or within some region.
+ * Struct representing a node in the ModRefGraph.
+ * Each node represents a set of PointsToGraph nodes that may be modified or referenced
+ * by some operation, or within some region.
  */
-struct ModRefSet final
+struct RegionAwareModRefSummarizer::ModRefNode final
 {
   // Constant indicating that the loadFromExternal and/or storeToExternal flags are not set.
   static constexpr uint32_t NotFlagged = (1 << 15) - 1;
 
-  ModRefSet()
+  ModRefNode()
       : loadFromExternal(NotFlagged),
         storeToExternal(NotFlagged),
         callsExternal(0),
         blocklist(nullptr)
   {}
 
-  // Sets containing PointsToGraph nodes that are loaded from or stored to in this ModRefSet.
+  // Sets containing PointsToGraph nodes that are loaded from or stored to in this ModRefNode.
   util::HashSet<PointsToGraph::NodeIndex> explicitLoads;
   util::HashSet<PointsToGraph::NodeIndex> explicitStores;
 
@@ -276,172 +279,189 @@ struct ModRefSet final
 };
 
 /**
- * A graph containing Mod/Ref sets and constraints
+ * A graph containing Mod/Ref nodes and constraints
  */
-class ModRefSetGraph final
+class RegionAwareModRefSummarizer::ModRefGraph final
 {
 public:
-  explicit ModRefSetGraph(const PointsToGraph & pointsToGraph)
+  explicit ModRefGraph(const PointsToGraph & pointsToGraph)
       : pointsToGraph_(pointsToGraph)
   {}
 
-  ModRefSetGraph(const RegionAwareModRefSummary &) = delete;
-  ModRefSetGraph &
-  operator=(const RegionAwareModRefSummary &) = delete;
+  ModRefGraph(const ModRefGraph &) = delete;
+  ModRefGraph &
+  operator=(const ModRefGraph &) = delete;
 
   [[nodiscard]] size_t
-  numModRefSets() const noexcept
+  numModRefNodes() const noexcept
   {
-    return modRefSets_.size();
+    return modRefNodes_.size();
   }
 
   /**
-   * Creates a new ModRefSet that is not mapped to any node
-   * @return the index of the new ModRefSet
+   * Creates a new ModRefNode that is not mapped to any node
+   * @return the index of the new ModRefNode
    */
-  [[nodiscard]] ModRefSetIndex
-  createModRefSet()
+  [[nodiscard]] ModRefNodeIndex
+  createModRefNode()
   {
-    modRefSets_.emplace_back();
+    modRefNodes_.emplace_back();
     simpleConstraints_.emplace_back();
-    return modRefSets_.size() - 1;
+    return modRefNodes_.size() - 1;
   }
 
   [[nodiscard]] bool
-  hasSetForNode(const rvsdg::Node & node) const
+  hasModRefForNode(const rvsdg::Node & node) const
   {
     return nodeMap_.find(&node) != nodeMap_.end();
   }
 
-  [[nodiscard]] ModRefSetIndex
-  getSetForNode(const rvsdg::Node & node) const
+  [[nodiscard]] ModRefNodeIndex
+  getModRefForNode(const rvsdg::Node & node) const
   {
     const auto it = nodeMap_.find(&node);
     JLM_ASSERT(it != nodeMap_.end());
     return it->second;
   }
 
-  [[nodiscard]] ModRefSetIndex
-  getOrCreateSetForNode(const rvsdg::Node & node)
+  [[nodiscard]] ModRefNodeIndex
+  getOrCreateModRefForNode(const rvsdg::Node & node)
   {
     if (const auto it = nodeMap_.find(&node); it != nodeMap_.end())
       return it->second;
 
-    return nodeMap_[&node] = createModRefSet();
+    return nodeMap_[&node] = createModRefNode();
   }
 
   void
-  mapNodeToSet(const rvsdg::Node & node, ModRefSetIndex index)
+  mapNodeToModRef(const rvsdg::Node & node, ModRefNodeIndex index)
   {
-    JLM_ASSERT(!hasSetForNode(node));
+    JLM_ASSERT(!hasModRefForNode(node));
     nodeMap_[&node] = index;
   }
 
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
+  getExplicitLoads(ModRefNodeIndex modRefNode) const
+  {
+    return modRefNodes_[modRefNode].explicitLoads;
+  }
+
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
+  getExplicitStores(ModRefNodeIndex modRefNode) const
+  {
+    return modRefNodes_[modRefNode].explicitStores;
+  }
+
   /**
-   * Inserts the given \p ptgNode as an explicit load in the given \p modRefSet.
+   * Inserts the given \p ptgNode as an explicit load in the given \p modRefNode.
    * Ignores the loadFromExternal flag and the blocklist.
-   * @param modRefSet the index of the modRefSet
+   * @param modRefNode the index of the modRefNode
    * @param ptgNode the index of the PointsToGraph Node
    * @return true if the ptgNode was added as an explicit load, false otherwise.
    */
   bool
-  addExplicitLoad(ModRefSetIndex modRefSet, PointsToGraph::NodeIndex ptgNode)
+  addExplicitLoad(ModRefNodeIndex modRefNode, PointsToGraph::NodeIndex ptgNode)
   {
-    JLM_ASSERT(modRefSet < modRefSets_.size());
-    return modRefSets_[modRefSet].explicitLoads.insert(ptgNode);
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].explicitLoads.insert(ptgNode);
   }
 
   /**
-   * Inserts the given \p ptgNode as an explicit store in the given \p modRefSet.
+   * Inserts the given \p ptgNode as an explicit store in the given \p modRefNode.
    * Ignores the storeToExternal flag and the blocklist.
-   * @param modRefSet the index of the modRefSet
+   * @param modRefNode the index of the modRefNode
    * @param ptgNode the index of the PointsToGraph Node
    * @return true if the ptgNode was added as an explicit store, false otherwise.
    */
   bool
-  addExplicitStore(ModRefSetIndex modRefSet, PointsToGraph::NodeIndex ptgNode)
+  addExplicitStore(ModRefNodeIndex modRefNode, PointsToGraph::NodeIndex ptgNode)
   {
-    JLM_ASSERT(modRefSet < modRefSets_.size());
-    return modRefSets_[modRefSet].explicitStores.insert(ptgNode);
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].explicitStores.insert(ptgNode);
   }
 
   /**
-   * Marks the given \p modRefSet as loading from all external memory [with at least the given size]
-   * @param modRefSet the ModRefSet that gains the flag.
+   * Marks the given \p modRefNode as loading from all external memory [of at least the given size]
+   * @param modRefNode the ModRefNode that gains the flag.
    * @param minSize [optional] the minimum byte size of the external memory being loaded from.
-   * @return true if the modRefSet gained a (stricter) flag, false otherwise.
+   * @return true if the modRefNode gained a (stricter) flag, false otherwise.
    */
   bool
-  markAsLoadingFromExternal(ModRefSetIndex modRefSet, std::optional<size_t> minSize)
+  markAsLoadingFromExternal(ModRefNodeIndex modRefNode, std::optional<size_t> minSize)
   {
-    JLM_ASSERT(modRefSet < modRefSets_.size());
-    return modRefSets_[modRefSet].markAsLoadingFromExternal(minSize.value_or(0));
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].markAsLoadingFromExternal(minSize.value_or(0));
   }
 
   /**
-   * Marks the given \p modRefSet as storing to all external memory [with at least the given size]
-   * @param modRefSet the ModRefSet that gains the flag.
+   * Marks the given \p modRefNode as storing to all external memory [with at least the given size]
+   * @param modRefNode the ModRefNode that gains the flag.
    * @param minSize [optional] the minimum byte size of the external memory being stored to.
-   * @return true if the modRefSet gained a (stricter) flag, false otherwise.
+   * @return true if the modRefNode gained a (stricter) flag, false otherwise.
    */
   bool
-  markAsStoringToExternal(ModRefSetIndex modRefSet, std::optional<size_t> minSize)
+  markAsStoringToExternal(ModRefNodeIndex modRefNode, std::optional<size_t> minSize)
   {
-    JLM_ASSERT(modRefSet < modRefSets_.size());
-    return modRefSets_[modRefSet].markAsStoringToExternal(minSize.value_or(0));
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    return modRefNodes_[modRefNode].markAsStoringToExternal(minSize.value_or(0));
   }
 
   bool
-  markAsCallingExternal(ModRefSetIndex modRefSet)
+  markAsCallingExternal(ModRefNodeIndex modRefNode)
   {
-    JLM_ASSERT(modRefSet < modRefSets_.size());
-    if (modRefSets_[modRefSet].callsExternal)
+    JLM_ASSERT(modRefNode < modRefNodes_.size());
+    if (modRefNodes_[modRefNode].callsExternal)
       return false;
-    modRefSets_[modRefSet].callsExternal = 1;
-    modRefSets_[modRefSet].loadFromExternal = 0;
-    modRefSets_[modRefSet].storeToExternal = 0;
+    modRefNodes_[modRefNode].callsExternal = 1;
+    modRefNodes_[modRefNode].loadFromExternal = 0;
+    modRefNodes_[modRefNode].storeToExternal = 0;
     return true;
   }
 
   /**
    * Adds the simple constraint edge from -> to, which causes "to" to be a superset of "from"
-   * in the final solution. The solution will respect a blocklist in the "to" set, however.
-   * @param from the index of the ModRefSet to propagate from
-   * @param to the index of the ModRefSet to propagate to
+   * in the final solution. The solution will respect a blocklist in the "to" node, however.
+   * @param from the index of the ModRefNode to propagate from
+   * @param to the index of the ModRefNode to propagate to
    */
   void
-  addSimpleConstraintEdge(ModRefSetIndex from, ModRefSetIndex to)
+  addSimpleConstraintEdge(ModRefNodeIndex from, ModRefNodeIndex to)
   {
     simpleConstraints_[from].push_back(to);
   }
 
   /**
-   * Defines a blocklist for the ModRefSet with the given \p index.
-   * The set can not already have a blocklist.
-   * @param index the ModRefSet that gains a blocklist
+   * Defines a blocklist for the ModRefNode with the given \p index.
+   * The set can not have any explicit loads or stores, and can not already have a blocklist.
+   * @param index the ModRefNode that gains a blocklist
    * @param blocklist the list of PointsToGraph nodes to block.
    * The reference must stay valid until after solving has finished.
    */
   void
-  addBlocklist(ModRefSetIndex index, const util::HashSet<PointsToGraph::NodeIndex> & blocklist)
+  addBlocklist(ModRefNodeIndex index, const util::HashSet<PointsToGraph::NodeIndex> & blocklist)
   {
-    JLM_ASSERT(index < modRefSets_.size());
-    if (modRefSets_[index].blocklist != nullptr)
+    JLM_ASSERT(index < modRefNodes_.size());
+    if (modRefNodes_[index].blocklist != nullptr)
       throw std::logic_error("Blocklist already set");
-    modRefSets_[index].blocklist = &blocklist;
+    if (!modRefNodes_[index].explicitLoads.IsEmpty())
+      throw std::logic_error("Blocklist cannot be set on ModRefNode with explicit loads");
+    if (!modRefNodes_[index].explicitStores.IsEmpty())
+      throw std::logic_error("Blocklist cannot be set on ModRefNode with explicit stores");
+
+    modRefNodes_[index].blocklist = &blocklist;
   }
 
   /**
-   * Solves the ModRefSetGraph by propagating ModRefSets until all constraints are satisfied,
+   * Solves the ModRefGraph by propagating between ModRefNodes until all constraints are satisfied,
    * while also respecting blocklists.
    */
   void
   solveConstraints()
   {
-    util::FifoWorklist<ModRefSetIndex> worklist;
+    util::FifoWorklist<ModRefNodeIndex> worklist;
 
     // Start by pushing everything to the worklist
-    for (ModRefSetIndex i = 0; i < numModRefSets(); i++)
+    for (ModRefNodeIndex i = 0; i < numModRefNodes(); i++)
       worklist.PushWorkItem(i);
 
     while (worklist.HasMoreWorkItems())
@@ -451,7 +471,7 @@ public:
       // Handle all simple constraints workItem -> target
       for (auto target : simpleConstraints_[workItem])
       {
-        if (propagateModRefSet(workItem, target))
+        if (propagateModRefNode(workItem, target))
           worklist.PushWorkItem(target);
       }
     }
@@ -459,36 +479,80 @@ public:
     JLM_ASSERT(verifyBlocklists());
   }
 
+  /**
+   * Produce a textual representation of the ModRefNode with the given \p index.
+   * Includes flags and explicit loads and stores.
+   * @param index the index of the ModRefNode to produce the debug string for
+   * @return
+   */
+  [[nodiscard]] std::string
+  debugStringForSet(ModRefNodeIndex index) const
+  {
+    JLM_ASSERT(index < modRefNodes_.size());
+
+    std::string result = std::to_string(index);
+    result += " loads:{";
+    for (const auto load : modRefNodes_[index].explicitLoads.Items())
+    {
+      result += load;
+      result += ",";
+    }
+    result += "} stores:{";
+    for (const auto store : modRefNodes_[index].explicitStores.Items())
+    {
+      result += store;
+      result += ",";
+    }
+    result += "}";
+
+    const auto loadingFromExternal = modRefNodes_[index].isLoadingFromExternal();
+    const auto storingToExternal = modRefNodes_[index].isLoadingFromExternal();
+    if (loadingFromExternal)
+    {
+      result += " (lFromExt>= " + std::to_string(*loadingFromExternal) + ")";
+    }
+    if (storingToExternal)
+    {
+      result += " (sToExtr>= " + std::to_string(*storingToExternal) + ")";
+    }
+    if (modRefNodes_[index].callsExternal)
+    {
+      result += " (callsExt)";
+    }
+
+    return result;
+  }
+
 private:
   /**
-   * Propagates flags and explicit loads and stores from one ModRefSet to another.
+   * Propagates flags and explicit loads and stores from one ModRefNode to another.
    * Respects the blocklist of the \p to set, if it has one.
-   * @param from the ModRefSet to propagate from
-   * @param to the ModRefSet to propagate to
-   * @return true if the \p to ModRefSet gained any flags or explicit targets, false otherwise
+   * @param from the ModRefNode to propagate from
+   * @param to the ModRefNode to propagate to
+   * @return true if the \p to ModRefNode gained any flags or explicit targets, false otherwise
    */
   bool
-  propagateModRefSet(ModRefSetIndex from, ModRefSetIndex to)
+  propagateModRefNode(ModRefNodeIndex from, ModRefNodeIndex to)
   {
-    JLM_ASSERT(from < modRefSets_.size());
-    JLM_ASSERT(to < modRefSets_.size());
+    JLM_ASSERT(from < modRefNodes_.size());
+    JLM_ASSERT(to < modRefNodes_.size());
 
     bool changed = false;
 
-    if (!modRefSets_[to].callsExternal && modRefSets_[from].callsExternal)
+    if (!modRefNodes_[to].callsExternal && modRefNodes_[from].callsExternal)
     {
-      modRefSets_[to].callsExternal = true;
+      modRefNodes_[to].callsExternal = true;
       changed = true;
     }
-    changed |= modRefSets_[to].markAsLoadingFromExternal(modRefSets_[from].loadFromExternal);
-    changed |= modRefSets_[to].markAsStoringToExternal(modRefSets_[from].storeToExternal);
+    changed |= modRefNodes_[to].markAsLoadingFromExternal(modRefNodes_[from].loadFromExternal);
+    changed |= modRefNodes_[to].markAsStoringToExternal(modRefNodes_[from].storeToExternal);
 
-    const auto blocklist = modRefSets_[to].blocklist;
-    const auto loadFromExternal = modRefSets_[to].isLoadingFromExternal();
-    const auto storeToExternal = modRefSets_[to].isStoringToExternal();
+    const auto blocklist = modRefNodes_[to].blocklist;
+    const auto loadFromExternal = modRefNodes_[to].isLoadingFromExternal();
+    const auto storeToExternal = modRefNodes_[to].isStoringToExternal();
 
     // Propagate explicit loads and stores
-    for (auto load : modRefSets_[from].explicitLoads.Items())
+    for (auto load : modRefNodes_[from].explicitLoads.Items())
     {
       if (blocklist && blocklist->Contains(load))
         continue;
@@ -504,7 +568,7 @@ private:
 
       changed |= addExplicitLoad(to, load);
     }
-    for (auto store : modRefSets_[from].explicitStores.Items())
+    for (auto store : modRefNodes_[from].explicitStores.Items())
     {
       if (blocklist && blocklist->Contains(store))
         continue;
@@ -525,25 +589,25 @@ private:
   }
 
   /**
-   * Internal sanity check. After solving, ModRefSets with blocklists should not
+   * Internal sanity check. After solving, ModRefNodes with blocklists should not
    * contain any of their blocked PointsToGraph nodes in their sets of explicit loads or stores.
-   * @return true if validation passed for all ModRefSets with blocklists, otherwise false.
+   * @return true if validation passed for all ModRefNodes with blocklists, otherwise false.
    */
   [[nodiscard]] bool
   verifyBlocklists() const
   {
-    for (ModRefSetIndex index = 0; index < numModRefSets(); index++)
+    for (ModRefNodeIndex index = 0; index < numModRefNodes(); index++)
     {
-      const auto blocklist = modRefSets_[index].blocklist;
+      const auto blocklist = modRefNodes_[index].blocklist;
       if (blocklist == nullptr)
         continue;
 
-      for (auto ptgNode : modRefSets_[index].explicitLoads.Items())
+      for (auto ptgNode : modRefNodes_[index].explicitLoads.Items())
       {
         if (blocklist->Contains(ptgNode))
           return false;
       }
-      for (auto ptgNode : modRefSets_[index].explicitStores.Items())
+      for (auto ptgNode : modRefNodes_[index].explicitStores.Items())
       {
         if (blocklist->Contains(ptgNode))
           return false;
@@ -558,28 +622,46 @@ private:
   const PointsToGraph & pointsToGraph_;
 
   /**
-   * All ModRefSets in the constraint graph
+   * All ModRefNodes in the constraint graph
    */
-  std::vector<ModRefSet> modRefSets_;
+  std::vector<ModRefNode> modRefNodes_;
 
   /**
-   * Map from nodes that have memory side effects, to their ModRefSet.
+   * Map from RVSDG Nodes that have memory side effects, to their ModRefNode.
    * Includes nodes like loads, stores, memcpy, free and calls.
    * Also includes structural nodes like gamma, theta and lambda.
    */
-  std::unordered_map<const rvsdg::Node *, ModRefSetIndex> nodeMap_;
+  std::unordered_map<const rvsdg::Node *, ModRefNodeIndex> nodeMap_;
 
   /**
    * Simple edges in the constraint graph.
-   * A simple edge a -> b indicates that the ModRefSet b should be a superset of set a.
+   * A simple edge a -> b indicates that the ModRefNode b should be a superset of set a.
    * If b has a blocklist, it is respected.
-   * This list is always the same length as modRefSets_.
+   * This list is always the same length as modRefNodes_.
    */
-  std::vector<std::vector<ModRefSetIndex>> simpleConstraints_;
+  std::vector<std::vector<ModRefNodeIndex>> simpleConstraints_;
 };
 
-class RegionAwareModRefSummary final : public ModRefSummary
+/**
+ * Contains metadata about the MemoryNodeOrdering
+ */
+struct RegionAwareModRefSummarizer::MemoryNodeOrderingMetadata
 {
+  // For each memory node size that appears among externally available memory nodes,
+  // this map provides the lowest index for each memory node size
+  std::map<uint32_t, MemoryNodeOrderingIndex> firstExternallyAvailableWithSize;
+
+  // The first memory node that is not externally available
+  MemoryNodeOrderingIndex endOfExternallyAvailable = 0;
+
+  //
+  MemoryNodeOrderingIndex startOfStoredByExternal = 0;
+  MemoryNodeOrderingIndex endOfStoredByExternal = 0;
+
+  MemoryNodeOrderingIndex startOfLoadedByExternal = 0;
+  MemoryNodeOrderingIndex endOfLoadedByExternal = 0;
+
+  std::vector<MemoryNodeOrderingIndex> ptgNodeIndexToMemoryOrderingIndex;
 };
 
 /**
@@ -589,7 +671,7 @@ struct RegionAwareModRefSummarizer::Context
 {
   explicit Context(const PointsToGraph & pointsToGraph)
       : pointsToGraph(pointsToGraph),
-        modRefSetGraph(pointsToGraph)
+        modRefGraph(pointsToGraph)
   {}
 
   /**
@@ -645,7 +727,7 @@ struct RegionAwareModRefSummarizer::Context
    *
    * Assigned in \ref CreateSimpleAllocaSet(). Remains constant after.
    */
-  util::HashSet<PointsToGraph::NodeIndex> SimpleAllocas;
+  util::HashSet<PointsToGraph::NodeIndex> simpleAllocas;
 
   /**
    * For each region, this field contains the set of allocas defined in the region,
@@ -659,20 +741,114 @@ struct RegionAwareModRefSummarizer::Context
   /**
    * Graph containing ModRef sets and their constraints.
    */
-  ModRefSetGraph modRefSetGraph;
+  ModRefGraph modRefGraph;
 
   /**
-   * A ModRefSet containing all MemoryNodes that can be read or written to from external functions,
-   * as explicit loads and stores.
+   * A ModRefNode containing memory nodes that can be written to or read from by external functions.
+   * Externally available memory is automatically included, but we must also account for memory
+   * that never escapes the module, but can be changed in functions called from external code.
+   * All such memory nodes end up as explicit loads and stores in this ModRefNode.
    *
-   * Assigned in \ref createExternalModRefSet(). Remains constant after.
+   * Assigned in \ref createExternalModRefNode(). Remains constant after.
    */
-  ModRefSetIndex externalModRefIndex = 0;
+  ModRefNodeIndex externalModRefNode = 0;
 
   /**
-   * Mapping from index in the pointsToGraph to the index in the interval list
+   * The ordering of all relevant memory nodes, to be used by the final ModRefSummary
    */
-  std::vector<uint32_t> pointsToGraphNodeIndexToIntervalIndex;
+  std::unique_ptr<MemoryNodeOrdering> memoryNodeOrdering;
+
+  /**
+   * Metadata about the memoryNodeOrdering, used to convert ModRefNodes to ModRefSets
+   */
+  MemoryNodeOrderingMetadata memoryNodeOrderingMetadata;
+};
+
+/**
+ * Class holding the final result of the whole RegionAwareModRefSummarizer process.
+ */
+class RegionAwareModRefSummarizer::RegionAwareModRefSummary final : public ModRefSummary
+{
+public:
+  using ModRefSetIndex = uint32_t;
+
+  RegionAwareModRefSummary(
+      MemoryNodeOrdering memoryNodeOrdering,
+      std::vector<ModRefSet> modRefSets,
+      std::unordered_map<const rvsdg::Node *, ModRefSetIndex> nodeMap)
+      : memoryNodeOrdering_(std::move(memoryNodeOrdering)),
+        modRefSets_(std::move(modRefSets)),
+        nodeMap_(std::move(nodeMap))
+  {}
+
+  const MemoryNodeOrdering &
+  getMemoryNodeOrdering() override
+  {
+    return memoryNodeOrdering_;
+  }
+
+  const ModRefSet &
+  getSimpleNodeModRef(const rvsdg::SimpleNode & node) const override
+  {
+    if (const auto it = nodeMap_.find(&node); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("Node not found in ModRefSummary");
+  }
+
+  const ModRefSet &
+  getGammaEntryModRef(const rvsdg::GammaNode & gamma) const override
+  {
+    if (const auto it = nodeMap_.find(&gamma); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("GammaNode not found in ModRefSummary");
+  }
+
+  const ModRefSet &
+  getGammaExitModRef(const rvsdg::GammaNode & gamma) const override
+  {
+    if (const auto it = nodeMap_.find(&gamma); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("GammaNode not found in ModRefSummary");
+  }
+
+  const ModRefSet &
+  getThetaModRef(const rvsdg::ThetaNode & theta) const override
+  {
+    if (const auto it = nodeMap_.find(&theta); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("ThetaNode not found in ModRefSummary");
+  }
+
+  const ModRefSet &
+  getLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const override
+  {
+    if (const auto it = nodeMap_.find(&lambda); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("LambdaNode not found in ModRefSummary");
+  }
+
+  const ModRefSet &
+  getLambdaExitModRef(const rvsdg::LambdaNode & lambda) const override
+  {
+    if (const auto it = nodeMap_.find(&lambda); it != nodeMap_.end())
+      return modRefSets_[it->second];
+
+    throw std::logic_error("LambdaNode not found in ModRefSummary");
+  }
+
+private:
+  // The memory node ordering used by all ModRefSets
+  MemoryNodeOrdering memoryNodeOrdering_;
+
+  // The ModRef sets in the
+  std::vector<ModRefSet> modRefSets_;
+
+  std::unordered_map<const rvsdg::Node *, ModRefSetIndex> nodeMap_;
 };
 
 RegionAwareModRefSummarizer::~RegionAwareModRefSummarizer() noexcept = default;
@@ -690,19 +866,19 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   auto statistics = Statistics::Create(rvsdgModule, pointsToGraph);
 
   statistics->StartCallGraphStatistics();
-  CreateCallGraph(rvsdgModule);
+  createCallGraph(rvsdgModule);
   statistics->StopCallGraphStatistics(Context_->SccFunctions.size());
 
   statistics->StartAllocasDeadInSccStatistics();
-  FindAllocasDeadInSccs();
+  findAllocasDeadInSccs();
   statistics->StopAllocasDeadInSccStatistics();
 
   statistics->StartCreateSimpleAllocasSetStatistics();
-  Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
-  statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
+  Context_->simpleAllocas = createSimpleAllocaSet(pointsToGraph);
+  statistics->StopCreateSimpleAllocasSetStatistics(Context_->simpleAllocas.Size());
 
   statistics->StartCreateNonReentrantAllocaSetsStatistics();
-  auto numNonReentrantAllocas = CreateNonReentrantAllocaSets();
+  auto numNonReentrantAllocas = createNonReentrantAllocaSets();
   statistics->StopCreateNonReentrantAllocaSetsStatistics(numNonReentrantAllocas);
 
   statistics->StartAnnotationStatistics();
@@ -716,28 +892,29 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   }
   statistics->StopAnnotationStatistics();
 
-  statistics->StartCreateExternalModRefSet();
-  createExternalModRefSet();
-  statistics->StopCreateExternalModRefSet();
+  statistics->StartCreateExternalModRefNode();
+  createExternalModRefNode();
+  statistics->StopCreateExternalModRefNode();
 
   statistics->StartSolvingStatistics();
-  Context_->modRefSetGraph.solveConstraints();
+  Context_->modRefGraph.solveConstraints();
   statistics->StopSolvingStatistics();
 
   // Print debug output
-  // std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
-  // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
-  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
-  // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
-  // std::cerr << "RegionTree:" << std::endl
-  //           << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
+  std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
+  std::cerr << "numSimpleAllocas: " << Context_->simpleAllocas.Size() << std::endl;
+  std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
+  std::cerr << "Call Graph SCCs:" << std::endl << callGraphSCCsToString() << std::endl;
+  std::cerr << "RegionTree:" << std::endl << dumpRegionTree(rvsdgModule.Rvsdg()) << std::endl;
+
+  createMemoryNodeOrdering();
 
   // TODO:
-  std::unique_ptr<RegionAwareModRefSummary> modRefSummary_ = nullptr;
+  std::unique_ptr<ModRefSummary> modRefSummary_ = nullptr;
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();
-  return std::move(modRefSummary_);
+  return modRefSummary_;
 }
 
 /**
@@ -746,12 +923,12 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
  * @return a list of all lambda nodes in the module
  */
 static std::vector<const rvsdg::LambdaNode *>
-CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
+collectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
 {
   std::vector<const rvsdg::LambdaNode *> result;
 
   // Recursively traverses all structural nodes, but does not enter into lambdas
-  const std::function<void(rvsdg::Region &)> CollectLambdasInRegion =
+  const std::function<void(rvsdg::Region &)> collectLambdasInRegion =
       [&](rvsdg::Region & region) -> void
   {
     for (auto & node : region.Nodes())
@@ -764,24 +941,24 @@ CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
       {
         for (size_t i = 0; i < structural->nsubregions(); i++)
         {
-          CollectLambdasInRegion(*structural->subregion(i));
+          collectLambdasInRegion(*structural->subregion(i));
         }
       }
     }
   };
 
-  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  collectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
   return result;
 }
 
 void
-RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
+RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
   // The list of lambdas becomes the list of nodes in the call graph
-  auto lambdaNodes = CollectLambdaNodes(rvsdgModule);
+  auto lambdaNodes = collectLambdaNodes(rvsdgModule);
 
   // Mapping from LambdaNode* to its index in lambdaNodes
   std::unordered_map<const rvsdg::LambdaNode *, size_t> callGraphNodeIndex;
@@ -834,7 +1011,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   };
 
   // Recursive function finding all call operations, adding edges to the call graph
-  const std::function<void(rvsdg::Region &, size_t)> HandleCalls = [&](rvsdg::Region & region,
+  const std::function<void(rvsdg::Region &, size_t)> handleCalls = [&](rvsdg::Region & region,
                                                                        size_t callerIndex) -> void
   {
     for (auto & node : region.Nodes())
@@ -847,7 +1024,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
       {
         for (size_t i = 0; i < structural->nsubregions(); i++)
         {
-          HandleCalls(*structural->subregion(i), callerIndex);
+          handleCalls(*structural->subregion(i), callerIndex);
         }
       }
     }
@@ -856,7 +1033,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   // For all functions, visit all their calls and add outgoing edges in the call graph
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    HandleCalls(*lambdaNodes[i]->subregion(), i);
+    handleCalls(*lambdaNodes[i]->subregion(), i);
 
     // If the function has escaped, add an edge from the node representing all external functions
     const auto lambdaPtgNode = pointsToGraph.getLambdaNode(*lambdaNodes[i]);
@@ -908,7 +1085,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
 }
 
 [[nodiscard]] static const rvsdg::LambdaNode &
-GetSurroundingLambdaNode(const rvsdg::Node & node)
+getSurroundingLambdaNode(const rvsdg::Node & node)
 {
   auto it = &node;
   while (it)
@@ -921,7 +1098,7 @@ GetSurroundingLambdaNode(const rvsdg::Node & node)
 }
 
 void
-RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
+RegionAwareModRefSummarizer::findAllocasDeadInSccs()
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
@@ -935,7 +1112,7 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   {
     allAllocas.insert(allocaPtgNode);
     const auto & allocaNode = pointsToGraph.getAllocaNodeObject(allocaPtgNode);
-    const auto & lambdaNode = GetSurroundingLambdaNode(allocaNode);
+    const auto & lambdaNode = getSurroundingLambdaNode(allocaNode);
     JLM_ASSERT(Context_->FunctionToSccIndex.count(&lambdaNode));
     const auto sccIndex = Context_->FunctionToSccIndex[&lambdaNode];
     liveAllocas[sccIndex].insert(allocaPtgNode);
@@ -965,7 +1142,7 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph)
+RegionAwareModRefSummarizer::createSimpleAllocaSet(const PointsToGraph & pointsToGraph)
 {
   // The set of allocas that are simple. Starts off as an over-approximation
   util::HashSet<PointsToGraph::NodeIndex> simpleAllocas;
@@ -974,12 +1151,11 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
 
   for (PointsToGraph::NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
   {
-    auto kind = pointsToGraph.getKind(ptgNode);
     // Ignore register nodes. Only memory nodes are relevant
-    if (kind == PointsToGraph::NodeKind::RegisterNode)
+    if (pointsToGraph.isRegisterNode(ptgNode))
       continue;
 
-    if (kind == PointsToGraph::NodeKind::AllocaNode
+    if (pointsToGraph.getKind(ptgNode) == PointsToGraph::NodeKind::AllocaNode
         && !pointsToGraph.isExternallyAvailable(ptgNode))
       simpleAllocas.insert(ptgNode);
     else
@@ -1013,7 +1189,7 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
  * @return the set of simple allocas reachable from region arguments
  */
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
+RegionAwareModRefSummarizer::getSimpleAllocasReachableFromRegionArguments(
     const rvsdg::Region & region)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
@@ -1038,7 +1214,7 @@ RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
     for (auto & targetPtgNode : pointsToGraph.getTargets(ptgNode).Items())
     {
       // We only are about following simple allocas, as simple allocas are only reachable from them.
-      if (!Context_->SimpleAllocas.Contains(targetPtgNode))
+      if (!Context_->simpleAllocas.Contains(targetPtgNode))
         continue;
 
       if (reachableSimpleAllocas.insert(targetPtgNode))
@@ -1050,14 +1226,14 @@ RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
 }
 
 bool
-RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda)
+RegionAwareModRefSummarizer::isRecursionPossible(const rvsdg::LambdaNode & lambda)
 {
   const auto scc = Context_->FunctionToSccIndex[&lambda];
   return Context_->SccCallTargets[scc].Contains(scc);
 }
 
 size_t
-RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
+RegionAwareModRefSummarizer::createNonReentrantAllocaSets()
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
@@ -1073,19 +1249,19 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
     {
       return it->second;
     }
-    return reachableSimpleAllocas[&region] = GetSimpleAllocasReachableFromRegionArguments(region);
+    return reachableSimpleAllocas[&region] = getSimpleAllocasReachableFromRegionArguments(region);
   };
 
   // Only simple allocas are candidates for being Non-Reentrant
-  for (auto simpleAllocaPtgNode : Context_->SimpleAllocas.Items())
+  for (auto simpleAllocaPtgNode : Context_->simpleAllocas.Items())
   {
     auto & allocaNode = pointsToGraph.getAllocaNodeObject(simpleAllocaPtgNode);
     const auto & region = *allocaNode.region();
 
     // If the alloca's function is never involved in any recursion,
     // the alloca is definitely non-reentrant.
-    const auto & lambda = GetSurroundingLambdaNode(allocaNode);
-    if (IsRecursionPossible(lambda))
+    const auto & lambda = getSurroundingLambdaNode(allocaNode);
+    if (isRecursionPossible(lambda))
     {
       // In lambdas where recursion is possible, only simple allocas that are provably not
       // passed in through region arguments can be considered Non-Reentrant
@@ -1106,29 +1282,41 @@ void
 RegionAwareModRefSummarizer::annotateFunction(const rvsdg::LambdaNode & lambda)
 {
   const auto & region = *lambda.subregion();
-  const auto regionModRefSet = annotateRegion(region, lambda);
-  Context_->modRefSetGraph.mapNodeToSet(lambda, regionModRefSet);
+  const auto regionModRefNode = annotateRegion(region, lambda);
+
+  // Due to calls targeting this function, the lambda may already have a Mod/Ref set
+  // If so, create an edge between the region Mod/Ref set and the lambda Mod/Ref set
+  // otherwise, just map the lambda to the region's Mod/Ref set
+  if (Context_->modRefGraph.hasModRefForNode(lambda))
+  {
+    const auto lambdaModRefNode = Context_->modRefGraph.getOrCreateModRefForNode(lambda);
+    Context_->modRefGraph.addSimpleConstraintEdge(regionModRefNode, lambdaModRefNode);
+  }
+  else
+  {
+    Context_->modRefGraph.mapNodeToModRef(lambda, regionModRefNode);
+  }
 }
 
-ModRefSetIndex
+ModRefNodeIndex
 RegionAwareModRefSummarizer::annotateRegion(
     const rvsdg::Region & region,
     const rvsdg::LambdaNode & lambda)
 {
-  const auto regionModRefSet = Context_->modRefSetGraph.createModRefSet();
+  const auto regionModRefNode = Context_->modRefGraph.createModRefNode();
 
   for (auto & node : region.Nodes())
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      const auto nodeModRefSet = AnnotateStructuralNode(*structuralNode, lambda);
-      Context_->modRefSetGraph.addSimpleConstraintEdge(nodeModRefSet, regionModRefSet);
+      const auto nodeModRefNode = annotateStructuralNode(*structuralNode, lambda);
+      Context_->modRefGraph.addSimpleConstraintEdge(nodeModRefNode, regionModRefNode);
     }
     else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
     {
-      const auto nodeModRefSet = AnnotateSimpleNode(*simpleNode, lambda);
-      if (nodeModRefSet)
-        Context_->modRefSetGraph.addSimpleConstraintEdge(*nodeModRefSet, regionModRefSet);
+      const auto nodeModRefNode = annotateSimpleNode(*simpleNode, lambda);
+      if (nodeModRefNode)
+        Context_->modRefGraph.addSimpleConstraintEdge(*nodeModRefNode, regionModRefNode);
     }
     else
     {
@@ -1140,77 +1328,77 @@ RegionAwareModRefSummarizer::annotateRegion(
   if (const auto it = Context_->NonReentrantAllocas.find(&region);
       it != Context_->NonReentrantAllocas.end() && ENABLE_NON_REENTRANT_ALLOCA_BLOCKLIST)
   {
-    Context_->modRefSetGraph.addBlocklist(regionModRefSet, it->second);
+    Context_->modRefGraph.addBlocklist(regionModRefNode, it->second);
   }
 
-  return regionModRefSet;
+  return regionModRefNode;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateStructuralNode(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateStructuralNode(
     const rvsdg::StructuralNode & structuralNode,
     const rvsdg::LambdaNode & lambda)
 {
-  const auto nodeModRefSet = Context_->modRefSetGraph.getOrCreateSetForNode(structuralNode);
+  const auto nodeModRefNode = Context_->modRefGraph.getOrCreateModRefForNode(structuralNode);
 
   for (auto & subregion : structuralNode.Subregions())
   {
     const auto subregionModRefSef = annotateRegion(subregion, lambda);
-    Context_->modRefSetGraph.addSimpleConstraintEdge(subregionModRefSef, nodeModRefSet);
+    Context_->modRefGraph.addSimpleConstraintEdge(subregionModRefSef, nodeModRefNode);
   }
 
-  return nodeModRefSet;
+  return nodeModRefNode;
 }
 
-std::optional<ModRefSetIndex>
-RegionAwareModRefSummarizer::AnnotateSimpleNode(
+std::optional<ModRefNodeIndex>
+RegionAwareModRefSummarizer::annotateSimpleNode(
     const rvsdg::SimpleNode & simpleNode,
     const rvsdg::LambdaNode & lambda)
 {
   if (is<LoadOperation>(&simpleNode))
-    return AnnotateLoad(simpleNode, lambda);
+    return annotateLoad(simpleNode, lambda);
 
   if (is<StoreOperation>(&simpleNode))
-    return AnnotateStore(simpleNode, lambda);
+    return annotateStore(simpleNode, lambda);
 
   if (is<AllocaOperation>(&simpleNode))
-    return AnnotateAlloca(simpleNode);
+    return annotateAlloca(simpleNode);
 
   if (is<MallocOperation>(&simpleNode))
-    return AnnotateMalloc(simpleNode);
+    return annotateMalloc(simpleNode);
 
   if (is<FreeOperation>(&simpleNode))
-    return AnnotateFree(simpleNode, lambda);
+    return annotateFree(simpleNode, lambda);
 
   if (is<MemCpyOperation>(&simpleNode))
-    return AnnotateMemcpy(simpleNode, lambda);
+    return annotateMemcpy(simpleNode, lambda);
 
   if (is<CallOperation>(&simpleNode))
-    return AnnotateCall(simpleNode, lambda);
+    return annotateCall(simpleNode, lambda);
 
   return std::nullopt;
 }
 
-template <bool IsStore>
+template<bool IsStore>
 void
 RegionAwareModRefSummarizer::addPointerOriginTargets(
-    ModRefSetIndex modRefSetIndex,
+    ModRefNodeIndex modRefNode,
     const rvsdg::Output & origin,
     std::optional<size_t> minTargetSize,
     const rvsdg::LambdaNode & lambda)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
-  auto & modRefSetGraph = Context_->modRefSetGraph;
+  auto & modRefGraph = Context_->modRefGraph;
 
-  // TODO: Re-use ModRefSets for all uses of the registerNode in this function
+  // TODO: Re-use ModRefNodes for all uses of the registerNode in this function
   const auto & registerPtgNode = pointsToGraph.getRegisterNode(origin);
 
   if (pointsToGraph.isTargetingAllExternallyAvailable(registerPtgNode))
   {
     if constexpr (IsStore)
-      modRefSetGraph.markAsStoringToExternal(modRefSetIndex, minTargetSize);
+      modRefGraph.markAsStoringToExternal(modRefNode, minTargetSize);
     else
-      modRefSetGraph.markAsLoadingFromExternal(modRefSetIndex, minTargetSize);
+      modRefGraph.markAsLoadingFromExternal(modRefNode, minTargetSize);
   }
 
   const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
@@ -1227,126 +1415,145 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
     if (ENABLE_DEAD_ALLOCA_BLOCKLIST && allocasDead.Contains(targetPtgNode))
       continue;
 
+    // We do not bother to check against adding doubled-up explicit loads/stores,
+    // as the PointsToGraph should already be free of doubled-up targets.
+
     if constexpr (IsStore)
-      modRefSetGraph.addExplicitStore(modRefSetIndex, targetPtgNode);
+      modRefGraph.addExplicitStore(modRefNode, targetPtgNode);
     else
-      modRefSetGraph.addExplicitLoad(modRefSetIndex, targetPtgNode);
+      modRefGraph.addExplicitLoad(modRefNode, targetPtgNode);
   }
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateLoad(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateLoad(
     const rvsdg::SimpleNode & loadNode,
     const rvsdg::LambdaNode & lambda)
 {
-  const auto nodeModRef = Context_->modRefSetGraph.getOrCreateSetForNode(loadNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(loadNode);
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
   const auto loadOperation = util::assertedCast<const LoadOperation>(&loadNode.GetOperation());
   const auto loadSize = GetTypeSize(*loadOperation->GetLoadedType());
 
-  AddPointerOriginTargets(nodeModRef, *origin, loadSize, lambda);
+  addPointerOriginTargets<false>(nodeModRef, *origin, loadSize, lambda);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateStore(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateStore(
     const rvsdg::SimpleNode & storeNode,
     const rvsdg::LambdaNode & lambda)
 {
-  const auto nodeModRef = Context_->modRefSetGraph.getOrCreateSetForNode(storeNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(storeNode);
   const auto origin = StoreOperation::AddressInput(storeNode).origin();
   const auto storeOperation = util::assertedCast<const StoreOperation>(&storeNode.GetOperation());
   const auto storeSize = GetTypeSize(storeOperation->GetStoredType());
 
-  AddPointerOriginTargets(nodeModRef, *origin, storeSize, lambda);
+  addPointerOriginTargets<true>(nodeModRef, *origin, storeSize, lambda);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateAlloca(const rvsdg::SimpleNode & allocaNode)
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateAlloca(const rvsdg::SimpleNode & allocaNode)
 {
-  const auto nodeModRef = Context_->modRefSetGraph.getOrCreateSetForNode(allocaNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(allocaNode);
   const auto allocaPtgNode = Context_->pointsToGraph.getAllocaNode(allocaNode);
-  Context_->modRefSetGraph.addExplicitStore(nodeModRef, allocaPtgNode);
+
+  // The creation of the alloca is considered to be a store
+  Context_->modRefGraph.addExplicitStore(nodeModRef, allocaPtgNode);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateMalloc(const rvsdg::SimpleNode & mallocNode)
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateMalloc(const rvsdg::SimpleNode & mallocNode)
 {
-  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(mallocNode);
-  const auto & mallocMemoryNode = Context_->pointsToGraph.GetMallocNode(mallocNode);
-  ModRefSummary_->AddToModRefSet(nodeModRef, mallocMemoryNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(mallocNode);
+  const auto & mallocPtgNode = Context_->pointsToGraph.getMallocNode(mallocNode);
+
+  // The creation of the malloc is considered to be a store
+  Context_->modRefGraph.addExplicitStore(nodeModRef, mallocPtgNode);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateFree(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateFree(
     const rvsdg::SimpleNode & freeNode,
     const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(is<FreeOperation>(&freeNode));
 
-  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(freeNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(freeNode);
   const auto origin = freeNode.input(0)->origin();
+
+  // Let the free operation behave as a store in its Mod/Ref set
   // TODO: Only free MallocMemoryNodes
-  AddPointerOriginTargets(nodeModRef, *origin, std::nullopt, lambda);
+  addPointerOriginTargets<true>(nodeModRef, *origin, std::nullopt, lambda);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateMemcpy(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateMemcpy(
     const rvsdg::SimpleNode & memcpyNode,
     const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
 
-  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(memcpyNode);
+  const auto nodeModRef = Context_->modRefGraph.getOrCreateModRefForNode(memcpyNode);
   const auto dstOrigin = MemCpyOperation::destinationInput(memcpyNode).origin();
   const auto srcOrigin = MemCpyOperation::sourceInput(memcpyNode).origin();
   const auto countOrigin = MemCpyOperation::countInput(memcpyNode).origin();
-  const auto count = tryGetConstantSignedInteger(*countOrigin);
-  AddPointerOriginTargets(nodeModRef, *dstOrigin, count, lambda);
-  AddPointerOriginTargets(nodeModRef, *srcOrigin, count, lambda);
+  auto count = tryGetConstantSignedInteger(*countOrigin);
+
+  // Avoid underflow in signed -> unsigned conversion
+  if (*count && count < 0)
+    count = std::nullopt;
+
+  addPointerOriginTargets<true>(nodeModRef, *dstOrigin, count, lambda);
+  addPointerOriginTargets<false>(nodeModRef, *srcOrigin, count, lambda);
   return nodeModRef;
 }
 
-ModRefSetIndex
-RegionAwareModRefSummarizer::AnnotateCall(
+ModRefNodeIndex
+RegionAwareModRefSummarizer::annotateCall(
     const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
 
-  // This ModRefSet represents everything the call may affect
-  const auto callModRef = ModRefSummary_->GetOrCreateSetForNode(callNode);
+  const auto & pointsToGraph = Context_->pointsToGraph;
+  auto & modRefGraph = Context_->modRefGraph;
+
+  // This ModRefNode represents everything the call may affect
+  const auto callModRef = modRefGraph.getOrCreateModRefForNode(callNode);
 
   // Go over all possible targets of the call and add them to the call summary
   const auto targetPtr = callNode.input(0)->origin();
-  const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
+  const auto & targetPtgNode = Context_->pointsToGraph.getRegisterNode(*targetPtr);
 
   // Go through all locations the called function pointer may target
-  for (auto & callee : targetPtrNode.Targets())
+  for (auto & calleePtgNode : pointsToGraph.getTargets(targetPtgNode).Items())
   {
-    if (auto lambdaCallee = dynamic_cast<const PointsToGraph::LambdaNode *>(&callee))
+    const auto kind = pointsToGraph.getKind(calleePtgNode);
+    if (kind == PointsToGraph::NodeKind::LambdaNode)
     {
-      const auto & lambdaNode = lambdaCallee->GetLambdaNode();
-      const auto targetModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambdaNode);
-      AddModRefSimpleConstraint(targetModRefSet, callModRef);
+      const auto & calleeLambda = pointsToGraph.getLambdaNodeObject(calleePtgNode);
+      const auto calleeModRef = modRefGraph.getOrCreateModRefForNode(calleeLambda);
+      modRefGraph.addSimpleConstraintEdge(calleeModRef, callModRef);
     }
-    else if (
-        PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
-        || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
+    else if (kind == PointsToGraph::NodeKind::ImportNode)
     {
-      AddModRefSimpleConstraint(Context_->externalModRefIndex, callModRef);
+      modRefGraph.markAsCallingExternal(callModRef);
     }
+  }
+  if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
+  {
+    modRefGraph.markAsCallingExternal(callModRef);
   }
 
   // Allocas that are live within the call, might no longer be live from the call site
   if (ENABLE_DEAD_ALLOCA_BLOCKLIST)
   {
-    JLM_ASSERT(ModRefSummary_->GetModRefSet(callModRef).IsEmpty());
-    AddModRefSetBlocklist(
+    modRefGraph.addBlocklist(
         callModRef,
         Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
   }
@@ -1355,13 +1562,13 @@ RegionAwareModRefSummarizer::AnnotateCall(
 }
 
 void
-RegionAwareModRefSummarizer::createExternalModRefSet()
+RegionAwareModRefSummarizer::createExternalModRefNode()
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
-  Context_->externalModRefIndex = Context_->modRefSetGraph.createModRefSet();
-  // An external function may in fact call another external function
-  Context_->modRefSetGraph.markAsCallingExternal(Context_->externalModRefIndex);
+  Context_->externalModRefNode = Context_->modRefGraph.createModRefNode();
+  // An external function may call another external function
+  Context_->modRefGraph.markAsCallingExternal(Context_->externalModRefNode);
 
   // All functions that are externally available can be called from external functions
   for (auto lambdaPtgNode : pointsToGraph.lambdaNodes())
@@ -1371,27 +1578,135 @@ RegionAwareModRefSummarizer::createExternalModRefSet()
 
     // Add a call from external to the function
     const auto & lambdaNode = pointsToGraph.getLambdaNodeObject(lambdaPtgNode);
-    auto lambdaModRefIndex = Context_->modRefSetGraph.getOrCreateSetForNode(lambdaNode);
-    Context_->modRefSetGraph.addSimpleConstraintEdge(
-        lambdaModRefIndex,
-        Context_->externalModRefIndex);
+    auto lambdaModRefIndex = Context_->modRefGraph.getOrCreateModRefForNode(lambdaNode);
+    Context_->modRefGraph.addSimpleConstraintEdge(lambdaModRefIndex, Context_->externalModRefNode);
   }
 }
 
+void
+RegionAwareModRefSummarizer::createMemoryNodeOrdering()
+{
+  const auto & pointsToGraph = Context_->pointsToGraph;
+  const auto & modRefGraph = Context_->modRefGraph;
+
+  // Add all relevant memory nodes to this list
+  std::vector<PointsToGraph::NodeIndex> memoryNodeOrder;
+
+  for (PointsToGraph::NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
+  {
+    if (!pointsToGraph.isMemoryNode(ptgNode))
+      continue;
+
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(ptgNode))
+      continue;
+
+    memoryNodeOrder.push_back(ptgNode);
+  }
+
+  // Sorting rules, in order of most important to least:
+  // - All externally available memory comes first
+  // Among nodes that are not externally available:
+  //   - Memory nodes that are stored to but not loaded by external calls come first
+  //   - Then come memory nodes that are both stored to and loaded from by external calls
+  //   - Then come memory nodes that are only loaded from by external calls
+  //   - Then come memory nodes that are neither stored to or loaded from by external calls
+  // - Memory nodes are sorted by increasing size, with unknown sizes at the end
+  // - Memory nodes are sorted by kind
+  // - Alloca and malloc nodes are sorted by the function they belong to
+
+  std::sort(
+      memoryNodeOrder.begin(),
+      memoryNodeOrder.end(),
+      [&](PointsToGraph::NodeIndex a, PointsToGraph::NodeIndex b) -> bool
+      {
+        // The sort comparison function returns true if a should come before b
+
+        const bool aIsExternallyAvailable = pointsToGraph.isExternallyAvailable(a);
+        const bool bIsExternallyAvailable = pointsToGraph.isExternallyAvailable(b);
+        if (aIsExternallyAvailable != bIsExternallyAvailable)
+          return aIsExternallyAvailable;
+
+        const bool bothPrivate = !aIsExternallyAvailable && !bIsExternallyAvailable;
+        if (bothPrivate)
+        {
+          const auto & storedByExternal =
+              modRefGraph.getExplicitStores(Context_->externalModRefNode);
+          const bool aIsStoredByExternal = storedByExternal.Contains(a);
+          const bool bIsStoredByExternal = storedByExternal.Contains(b);
+          const auto & loadedByExternal =
+              modRefGraph.getExplicitLoads(Context_->externalModRefNode);
+          const bool aIsLoadedByExternal = loadedByExternal.Contains(a);
+          const bool bIsLoadedByExternal = loadedByExternal.Contains(b);
+
+          // Memory nodes that are both stored to and loaded from by external functions,
+          // are placed in the middle. Memory nodes that are neither come last.
+          const int aPriority = (aIsStoredByExternal * 3) ^ aIsLoadedByExternal;
+          const int bPriority = (bIsStoredByExternal * 3) ^ bIsLoadedByExternal;
+          if (aPriority != bPriority)
+            return aPriority > bPriority;
+        }
+
+        const auto aSize = pointsToGraph.tryGetNodeSize(a);
+        const auto bSize = pointsToGraph.tryGetNodeSize(b);
+        if (aSize != bSize)
+        {
+          // Unknown sizes come last
+          if (!aSize.has_value())
+            return false;
+          if (!bSize.has_value())
+            return true;
+          return *aSize < *bSize;
+        }
+
+        const auto aKind = pointsToGraph.getKind(a);
+        const auto bKind = pointsToGraph.getKind(b);
+        if (aKind != bKind)
+          return aKind < bKind;
+
+        if (aKind == PointsToGraph::NodeKind::AllocaNode)
+        {
+          const auto & aAllocaNode = pointsToGraph.getAllocaNodeObject(a);
+          const auto & bAllocaNode = pointsToGraph.getAllocaNodeObject(b);
+          const auto aLambdaId = getSurroundingLambdaNode(aAllocaNode).GetNodeId();
+          const auto bLambdaId = getSurroundingLambdaNode(bAllocaNode).GetNodeId();
+          if (aLambdaId != bLambdaId)
+            return aLambdaId < bLambdaId;
+        }
+        if (aKind == PointsToGraph::NodeKind::MallocNode)
+        {
+          const auto & aMallocNode = pointsToGraph.getMallocNodeObject(a);
+          const auto & bMallocNode = pointsToGraph.getMallocNodeObject(b);
+          const auto aLambdaId = getSurroundingLambdaNode(aMallocNode).GetNodeId();
+          const auto bLambdaId = getSurroundingLambdaNode(aMallocNode).GetNodeId();
+          if (aLambdaId != bLambdaId)
+            return aLambdaId < bLambdaId;
+        }
+
+        // Final comparison if all else is equal
+        return a < b;
+      });
+
+  Context_->memoryNodeOrdering =
+      std::make_unique<MemoryNodeOrdering>(pointsToGraph, std::move(memoryNodeOrder));
+
+  // Create metadata about the MemoryNodeOrdering
+
+}
+
 std::string
-RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer)
+RegionAwareModRefSummarizer::callGraphSCCsToString() const
 {
   std::ostringstream ss;
-  for (size_t i = 0; i < summarizer.Context_->SccFunctions.size(); i++)
+  for (size_t i = 0; i < Context_->SccFunctions.size(); i++)
   {
     if (i != 0)
       ss << " <- ";
     ss << "[" << std::endl;
-    if (i == summarizer.Context_->ExternalNodeSccIndex)
+    if (i == Context_->ExternalNodeSccIndex)
     {
       ss << "  " << "<external>" << std::endl;
     }
-    for (auto function : summarizer.Context_->SccFunctions[i].Items())
+    for (auto function : Context_->SccFunctions[i].Items())
     {
       ss << "  " << function->DebugString() << std::endl;
     }
@@ -1401,22 +1716,11 @@ RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummar
 }
 
 std::string
-RegionAwareModRefSummarizer::ToRegionTree(
-    const rvsdg::Graph & rvsdg,
-    const RegionAwareModRefSummary & modRefSummary)
+RegionAwareModRefSummarizer::dumpRegionTree(const rvsdg::Graph & rvsdg)
 {
-  std::ostringstream ss;
+  const auto & modRefGraph = Context_->modRefGraph;
 
-  auto toString = [&](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
-  {
-    ss << "MemoryNodes: {";
-    for (auto & memoryNode : memoryNodes.Items())
-    {
-      ss << memoryNode->DebugString();
-      ss << ", ";
-    }
-    ss << "}" << std::endl;
-  };
+  std::ostringstream ss;
 
   auto indent = [&](size_t depth, char c = '-')
   {
@@ -1427,13 +1731,13 @@ RegionAwareModRefSummarizer::ToRegionTree(
   std::function<void(const rvsdg::Node &, size_t)> toRegionTree =
       [&](const rvsdg::Node & node, size_t depth)
   {
-    if (!modRefSummary.HasSetForNode(node))
+    if (!modRefGraph.hasModRefForNode(node))
       return;
 
-    auto modRefIndex = modRefSummary.GetSetForNode(node);
-    auto & memoryNodes = modRefSummary.GetModRefSet(modRefIndex);
-    ss << " ";
-    toString(memoryNodes);
+    indent(depth, ' ');
+    ss << node.DebugString() << " ";
+    auto modRefIndex = modRefGraph.getModRefForNode(node);
+    ss << modRefGraph.debugStringForSet(modRefIndex) << std::endl;
 
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
