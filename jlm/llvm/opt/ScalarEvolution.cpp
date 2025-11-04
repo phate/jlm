@@ -251,7 +251,7 @@ DependsOnLoopVariable(
   return false;
 }
 
-std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
 ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 {
   for (const auto loopVar : thetaNode.GetLoopVars())
@@ -312,6 +312,16 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 
       auto chainRecurrence = CreateChainRecurrence(*loopVarPre, *scev, thetaNode);
 
+      if (chainRecurrence->GetOperands().size() == 1
+          && StructurallyEqual(*chainRecurrence->GetOperand(0), SCEVConstant(0)))
+      {
+        // If the recurrence is empty ({0}), delete the old unique_ptr and create a new one without
+        // any operands. This effectively removes trailing zeroes for constants
+        chainRecurrence.reset();
+        chainRecurrence = std::make_unique<SCEVChainRecurrence>(thetaNode);
+      }
+
+      // Find the start value for the recurrence
       if (auto simpleNode =
               rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin()))
       {
@@ -341,11 +351,16 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
               << ChainRecurrenceMap_.at(loopVarPre)->DebugString() << '\n';
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> scevMap{};
-  for (const auto loopVarPre : order)
-    scevMap[loopVarPre] = UniqueSCEVs_.at(loopVarPre)->Clone();
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> chrecMap{};
+  for (const auto loopVar : thetaNode.GetLoopVars())
+  {
+    auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
+    // Workaround for the fact that Clone() is an overrided method that returns a unique_ptr of SCEV
+    chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
+        dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
+  }
 
-  return scevMap;
+  return chrecMap;
 }
 
 std::unique_ptr<SCEVChainRecurrence>
