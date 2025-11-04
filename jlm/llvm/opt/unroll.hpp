@@ -212,7 +212,7 @@ private:
   {
     auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation && constantOperation->value().is_known();
   }
 
@@ -224,7 +224,7 @@ private:
 
     auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation == nullptr ? nullptr : &constantOperation->value();
   }
 
