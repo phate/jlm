@@ -346,9 +346,6 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       unknownChainRecurrence->AddOperand(std::make_unique<SCEVUnknown>());
       ChainRecurrenceMap_.emplace(loopVarPre, std::move(unknownChainRecurrence));
     }
-
-    std::cout << loopVarPre->debug_string() << ": "
-              << ChainRecurrenceMap_.at(loopVarPre)->DebugString() << '\n';
   }
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> chrecMap{};
@@ -402,8 +399,6 @@ ScalarEvolution::CreateChainRecurrence(
   {
     auto lhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetLeftOperand(), thetaNode);
     auto rhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetRightOperand(), thetaNode);
-    std::cout << "Folding : " << lhsChrec->DebugString() << " and " << rhsChrec->DebugString()
-              << " into: ";
 
     /* Apply folding rules
      *
@@ -460,7 +455,6 @@ ScalarEvolution::CreateChainRecurrence(
       if (lhsValue + rhsValue != 0)
         chrec->AddOperand(std::make_unique<SCEVConstant>(lhsValue + rhsValue));
     }
-    std::cout << chrec->DebugString() << '\n';
   }
   else
   {
