@@ -259,7 +259,7 @@ void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe,
       std::cout<< TR_RED<<full_name<<TR_RESET<<std::endl;
 
       std::ofstream my_dot_oss (full_name);
-      my_graph_writer.OutputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
+      my_graph_writer.outputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
       std::cout << TR_GREEN << "-------------------------------------" << TR_RESET << std::endl;
     }
   });
@@ -383,10 +383,10 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
       if (node->DebugString() == std::string("undef")){
         RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
       }
-      auto& op = node->GetOperation();
+      /*auto& op = node->GetOperation();
       if ( rvsdg::is_ctlconstant_op( op ) ){
         RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
-      }
+      }*/
     }
   }
 

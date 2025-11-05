@@ -13,20 +13,21 @@
 namespace jlm::hls
 {
 
-typedef std::vector<std::tuple<
-    std::vector<jlm::rvsdg::SimpleNode *>,
-    std::vector<jlm::rvsdg::SimpleNode *>,
-    std::vector<jlm::rvsdg::SimpleNode *>>>
-    port_load_store_decouple;
+struct TracedPointerNodes
+{
+  std::vector<rvsdg::Node *> loadNodes{};
+  std::vector<rvsdg::Node *> storeNodes{};
+  std::vector<rvsdg::Node *> decoupleNodes{};
+};
 
 /**
  * Traces all pointer arguments of a lambda node and finds all memory operations.
  * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
  * @param lambda The lambda node for which to trace all pointer arguments
- * @param portNodes A vector where each element contains all memory operations traced from a pointer
+ * @return A vector where each element contains all memory operations traced from a pointer
  */
-void
-TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple & portNodes);
+std::vector<TracedPointerNodes>
+TracePointerArguments(const rvsdg::LambdaNode * lambda);
 
 jlm::rvsdg::SimpleNode *
 find_decouple_response(

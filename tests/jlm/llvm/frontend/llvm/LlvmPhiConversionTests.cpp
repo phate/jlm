@@ -117,13 +117,13 @@ TestPhiConversion()
   // Assert
   // First traverse from the function's entry node to bb2
   auto popcount =
-      jlm::util::AssertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("popcount"));
+      jlm::util::assertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("popcount"));
   auto entry_node = popcount->cfg()->entry();
   assert(entry_node->single_successor());
   auto bb1_node = entry_node->OutEdge(0)->sink();
   assert(bb1_node->single_successor());
   auto bb2_node = bb1_node->OutEdge(0)->sink();
-  auto bb2 = jlm::util::AssertedCast<jlm::llvm::BasicBlock>(bb2_node);
+  auto bb2 = jlm::util::assertedCast<jlm::llvm::BasicBlock>(bb2_node);
 
   // The first two three address codes should be the phi representing x and popcnt respectively
   auto tacs = bb2->begin();
@@ -131,9 +131,9 @@ TestPhiConversion()
   auto & phiPopcnt = *std::next(tacs);
 
   // Check that they are both phi operations
-  auto phiXOp = *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiX->operation());
+  auto phiXOp = *jlm::util::assertedCast<const jlm::llvm::SsaPhiOperation>(&phiX->operation());
   auto phiPopcntOp =
-      *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
+      *jlm::util::assertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
 
   // Both phi nodes should have 3 operands, representing the loop entry, and the two "continue"s
   assert(phiX->noperands() == 3);
@@ -145,8 +145,8 @@ TestPhiConversion()
   assert(phiPopcnt->noperands() == 3);
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
-      jlm::util::AssertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
+      jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
+  auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
   assert(constant0op->Representation() == 0);
   // The last operand of the popcnt phi is the result of the phi itself
@@ -219,7 +219,7 @@ TestPhiOperandElision()
   // Assert
   // Get the CFG of the function
   auto phi_elide =
-      jlm::util::AssertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("phi_elide"));
+      jlm::util::assertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("phi_elide"));
 
   // Traverse the cfg and save every phi node
   size_t numBasicBlocks = 0;
@@ -243,8 +243,8 @@ TestPhiOperandElision()
   assert(phiTac->noperands() == 2);
   // The first phi operand should be a constant 0
   auto constant0variable =
-      jlm::util::AssertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
+      jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));
+  auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
   assert(constant0op->Representation() == 0);
 }

@@ -62,4 +62,14 @@ LlvmLambdaOperation::SetArgumentAttributes(
   ArgumentAttributes_[index] = attributes;
 }
 
+rvsdg::Output &
+LlvmLambdaOperation::getIOStateArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
+{
+  JLM_ASSERT(is<LlvmLambdaOperation>(&lambdaNode));
+  const auto functionArguments = lambdaNode.GetFunctionArguments();
+  const auto ioStateArgument = functionArguments[functionArguments.size() - 2];
+  JLM_ASSERT(is<IOStateType>(ioStateArgument->Type()));
+  return *ioStateArgument;
+}
+
 }

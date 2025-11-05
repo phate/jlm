@@ -298,7 +298,7 @@ public:
    * @return A unique file
    */
   static FilePath
-  CreateUniqueFileName(
+  createUniqueFileName(
       const FilePath & directory,
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)

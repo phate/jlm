@@ -9,10 +9,9 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <typeindex>
 
 namespace jlm::llvm
 {
@@ -42,11 +41,11 @@ public:
   {
     if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
-      SimpleNodes_.Insert(simpleNode);
+      SimpleNodes_.insert(simpleNode);
       return;
     }
 
-    Outputs_.Insert(&output);
+    Outputs_.insert(&output);
   }
 
   bool
@@ -304,7 +303,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
-    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    const auto argument = util::assertedCast<const rvsdg::RegionArgument>(&output);
     MarkOutput(*argument->input()->origin());
     return;
   }
@@ -341,30 +340,19 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
-  for (auto & node : region.Nodes())
+  for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    nodesTopDown[node.depth()].push_back(&node);
-  }
-
-  for (auto it = nodesTopDown.rbegin(); it != nodesTopDown.rend(); it++)
-  {
-    for (auto node : *it)
+    if (!Context_->IsAlive(*node))
     {
-      if (!Context_->IsAlive(*node))
-      {
-        remove(node);
-        continue;
-      }
-
-      if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
-      {
-        SweepStructuralNode(*structuralNode);
-      }
+      remove(node);
+    }
+    else if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      SweepStructuralNode(*structuralNode);
     }
   }
 
-  JLM_ASSERT(region.NumBottomNodes() == 0);
+  JLM_ASSERT(region.numBottomNodes() == 0);
 }
 
 void

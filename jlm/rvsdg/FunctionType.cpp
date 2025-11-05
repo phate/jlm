@@ -90,16 +90,16 @@ FunctionType::ComputeHash() const noexcept
 {
   std::size_t seed = typeid(FunctionType).hash_code();
 
-  util::CombineHashesWithSeed(seed, ArgumentTypes_.size());
+  util::combineHashesWithSeed(seed, ArgumentTypes_.size());
   for (auto argumentType : ArgumentTypes_)
   {
-    util::CombineHashesWithSeed(seed, argumentType->ComputeHash());
+    util::combineHashesWithSeed(seed, argumentType->ComputeHash());
   }
 
-  util::CombineHashesWithSeed(seed, ResultTypes_.size());
+  util::combineHashesWithSeed(seed, ResultTypes_.size());
   for (auto resultType : ResultTypes_)
   {
-    util::CombineHashesWithSeed(seed, resultType->ComputeHash());
+    util::combineHashesWithSeed(seed, resultType->ComputeHash());
   }
 
   return seed;

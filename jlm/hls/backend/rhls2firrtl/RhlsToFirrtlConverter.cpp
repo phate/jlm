@@ -271,7 +271,8 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto constant = GetConstant(body, size, value.to_uint());
     Connect(body, outData, constant);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(node->GetOperation())))
+  else if (
+      auto op = dynamic_cast<const jlm::rvsdg::ControlConstantOperation *>(&(node->GetOperation())))
   {
     auto value = op->value().alternative();
     auto size = ceil(log2(op->value().nalternatives()));
@@ -862,7 +863,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
   ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
   for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    auto reqType = util::AssertedCast<const BundleType>(node->output(j)->Type().get());
+    auto reqType = util::assertedCast<const BundleType>(node->output(j)->Type().get());
     auto hasWrite = reqType->elements_.size() == 5;
     mlir::BlockArgument memReq = GetOutPort(module, j);
     mlir::Value memReqData;
@@ -1168,7 +1169,7 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
+  auto lmem_op = util::assertedCast<const LocalMemoryOperation>(&node->GetOperation());
   auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin());
   JLM_ASSERT(rvsdg::is<LocalMemoryResponseOperation>(res_node));
   auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(1)->Users().begin());

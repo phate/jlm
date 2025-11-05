@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -108,9 +109,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 void
 InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
-  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
-  auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
+  const auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
+  const auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
+  const auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
@@ -135,7 +136,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
     {
       if (is<CallOperation>(simpleNode))
       {
-        RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+        RedirectCallOutputs(*util::assertedCast<rvsdg::SimpleNode>(&node));
       }
     }
   }
@@ -144,13 +145,13 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 void
 InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
-  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
-  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
+  const auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
+  const auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
-  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  for (auto & subregion : structuralNode.Subregions())
   {
-    RedirectInRegion(*structuralNode.subregion(n));
+    RedirectInRegion(subregion);
   }
 }
 
@@ -169,6 +170,8 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 void
 InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
+  redirectThetaGammaOutputs(thetaNode);
+
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
@@ -179,6 +182,102 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
       loopVar.output->divert_users(loopVar.input->origin());
   }
+}
+
+void
+InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode)
+{
+  auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+  if (!correlationOpt.has_value())
+  {
+    return;
+  }
+  auto & correlation = correlationOpt.value();
+
+  auto subregionRolesOpt = determineGammaSubregionRoles(*correlation);
+  if (!subregionRolesOpt.has_value())
+  {
+    // We could not determine the roles of the gamma subregions. Nothing can be done.
+    return;
+  }
+  auto roles = *subregionRolesOpt;
+  auto & gammaNode = correlation->gammaNode();
+
+  auto divertLoopVar =
+      [&gammaNode](rvsdg::ThetaNode::LoopVar & loopVar, rvsdg::Output & entryVarArgument)
+  {
+    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(entryVarArgument))
+    {
+      auto roleVar = gammaNode.MapBranchArgument(entryVarArgument);
+      if (auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+      {
+        loopVar.post->divert_to(entryVar->input->origin());
+      }
+    }
+  };
+
+  // At this point we can try to redirect the theta node loop variables
+  for (auto & loopVar : thetaNode.GetLoopVars())
+  {
+    if (loopVar.output->IsDead() && loopVar.pre->IsDead())
+    {
+      // The loop variable is completely dead. We do not need to waste any effort on it.
+      continue;
+    }
+
+    auto & loopVarPostOperand = *loopVar.post->origin();
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != &gammaNode)
+    {
+      // The post value of the loop variable does not originate from the gamma node. Nothing can
+      // be done.
+      continue;
+    }
+    auto [branchResult, _] = gammaNode.MapOutputExitVar(loopVarPostOperand);
+
+    if (loopVar.output->IsDead())
+    {
+      // The loop variables' output is dead, which means only its repetition value is of interest.
+      auto & entryVarArgument = *branchResult[roles.repetitionSubregion->index()]->origin();
+      divertLoopVar(loopVar, entryVarArgument);
+    }
+    else if (loopVar.pre->IsDead())
+    {
+      // The loop variables' pre value is dead, which means only its exit value is of interest.
+      auto & entryVarArgument = *branchResult[roles.exitSubregion->index()]->origin();
+      divertLoopVar(loopVar, entryVarArgument);
+    }
+  }
+}
+
+std::optional<InvariantValueRedirection::GammaSubregionRoles>
+InvariantValueRedirection::determineGammaSubregionRoles(
+    const ThetaGammaPredicateCorrelation & correlation)
+{
+  if (correlation.type() != CorrelationType::ControlConstantCorrelation)
+  {
+    return std::nullopt;
+  }
+
+  const auto controlAlternatives =
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation.data());
+  if (controlAlternatives.size() != 2)
+  {
+    return std::nullopt;
+  }
+
+  GammaSubregionRoles roles;
+  if (controlAlternatives[0] == 0)
+  {
+    roles.exitSubregion = correlation.gammaNode().subregion(0);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+  }
+  else
+  {
+    roles.exitSubregion = correlation.gammaNode().subregion(1);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(0);
+  }
+
+  return roles;
 }
 
 void
@@ -230,16 +329,36 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
       JLM_ASSERT(lambdaEntrySplit->noutputs() == callEntryMerge->ninputs());
 
-      for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
+      for (auto & lambdaExitMergeInput : lambdaExitMerge->Inputs())
       {
-        auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lambdaExitMergeInput->origin());
-        if (node == lambdaEntrySplit)
+        auto & lambdaEntrySplitOutput = *lambdaExitMergeInput.origin();
+        const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(lambdaEntrySplitOutput);
+        if (node != lambdaEntrySplit)
         {
-          auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());
-          auto callEntryMergeOperand =
-              callEntryMerge->input(lambdaExitMergeInput->origin()->index())->origin();
-          callExitSplitOutput->divert_users(callEntryMergeOperand);
+          // The state edge is not invariant. Let's move on to the next one.
+          continue;
+        }
+
+        const auto lambdaExitMemoryNodeId =
+            LambdaExitMemoryStateMergeOperation::mapInputToMemoryNodeId(lambdaExitMergeInput);
+        const auto callExitSplitOutput = CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+            *callExitSplit,
+            lambdaExitMemoryNodeId);
+
+        const auto lambdaEntryMemoryNodeId =
+            LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(lambdaEntrySplitOutput);
+        const auto callEntryMergeInput = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+            *callEntryMerge,
+            lambdaEntryMemoryNodeId);
+
+        // We expect that the memory node IDs for a given state between a
+        // LambdaEntryMemoryStateMergeOperation node and a LambdaExitMemoryStateSplitOperation node
+        // are always the same, otherwise we have a bug in the memory state encoding.
+        JLM_ASSERT(lambdaExitMemoryNodeId == lambdaEntryMemoryNodeId);
+
+        if (callExitSplitOutput != nullptr && callEntryMergeInput != nullptr)
+        {
+          callExitSplitOutput->divert_users(callEntryMergeInput->origin());
         }
       }
     }

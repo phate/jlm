@@ -307,7 +307,7 @@ public:
   void
   End(const rvsdg::Graph & graph) noexcept
   {
-    AddTimer(Label::Timer).stop();
+    GetTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
@@ -517,7 +517,7 @@ Convert(
   }
 
   std::unique_ptr<TOperation> operation(
-      util::AssertedCast<TOperation>(threeAddressCode.operation().copy().release()));
+      util::assertedCast<TOperation>(threeAddressCode.operation().copy().release()));
   auto results = TNode::Create(region, std::move(operation), operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
@@ -987,7 +987,9 @@ ConvertFunctionNode(
         functionNode.GetFunctionType(),
         functionNode.GetFunctionType(),
         functionNode.name(),
-        functionNode.linkage());
+        functionNode.linkage(),
+        true // Function imports are regarded as constant
+    );
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1029,7 +1031,8 @@ ConvertDataNode(
           dataNode.GetValueType(),
           PointerType::Create(),
           dataNode.name(),
-          dataNode.linkage());
+          dataNode.linkage(),
+          dataNode.constant());
     }
 
     /*

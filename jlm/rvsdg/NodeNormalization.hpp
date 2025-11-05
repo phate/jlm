@@ -46,7 +46,7 @@ template<class TOperation>
 bool
 ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, SimpleNode & node)
 {
-  auto operation = util::AssertedCast<const TOperation>(&node.GetOperation());
+  auto operation = util::assertedCast<const TOperation>(&node.GetOperation());
   auto operands = rvsdg::operands(&node);
 
   if (auto results = nodeNormalization(*operation, operands))

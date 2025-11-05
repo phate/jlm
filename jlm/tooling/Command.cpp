@@ -16,7 +16,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/cne.hpp>
+#include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -26,6 +26,7 @@
 #include <jlm/llvm/opt/PartialRedundancyElimination.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -441,6 +442,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
     return std::make_shared<llvm::NodeReduction>();
+  case JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation:
+    return std::make_shared<llvm::PredicateCorrelation>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_shared<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
@@ -624,13 +627,13 @@ JlmOptCommand::PrintAsDot(
 
   if (outputFile == "")
   {
-    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.OutputAllGraphs(fs, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(fs, util::graph::OutputFormat::Dot);
     fs.close();
   }
 }

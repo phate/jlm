@@ -399,6 +399,17 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   }
 }
 
+static std::vector<llvm::MemoryNodeId>
+arrayAttrToMemoryNodeIds(::mlir::ArrayAttr arrayAttr)
+{
+  std::vector<llvm::MemoryNodeId> memoryNodeIds;
+  for (auto memoryNodeId : arrayAttr)
+  {
+    memoryNodeIds.push_back(memoryNodeId.cast<::mlir::IntegerAttr>().getInt());
+  }
+  return memoryNodeIds;
+}
+
 std::vector<jlm::rvsdg::Output *>
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
@@ -708,36 +719,50 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (
       auto LambdaEntryMemstateSplitOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplit>(&mlirOperation))
   {
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaEntryMemstateSplitOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+    return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        LambdaEntryMemstateSplitOp.getNumResults());
+        std::move(memoryNodeIds)));
   }
-  else if (
-      auto LambdaExitMemstateMergeOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+  if (auto LambdaExitMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds =
+        arrayAttrToMemoryNodeIds(LambdaExitMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallEntryMemstateMergeOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallEntryMemoryStateMerge>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallEntryMemstateMergeOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::CallEntryMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return rvsdg::outputs(&jlm::llvm::CallEntryMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        std::move(memoryNodeIds)));
   }
   else if (
       auto CallExitMemstateSplitOp =
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
+    auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
+    return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        CallExitMemstateSplitOp.getNumResults());
-    return outputs;
+        std::move(memoryNodeIds)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {
@@ -754,13 +779,6 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
     return jlm::llvm::MallocOperation::create(inputs[0]);
-  }
-  else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
-  {
-    auto type = IOBarrierOp.getResult().getType();
-    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
-        std::vector(inputs.begin(), inputs.end()),
-        ConvertType(type)));
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
@@ -956,7 +974,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
       {
-        auto op = util::AssertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
+        auto op = util::assertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
         jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
     }

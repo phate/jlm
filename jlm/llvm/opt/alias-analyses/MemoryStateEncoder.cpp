@@ -468,11 +468,11 @@ public:
     }
     else if (jlm::rvsdg::is<AllocaOperation>(&node))
     {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetAllocaNode(node));
+      result.insert(&ModRefSummary_.GetPointsToGraph().GetAllocaNode(node));
     }
     else if (jlm::rvsdg::is<MallocOperation>(&node))
     {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetMallocNode(node));
+      result.insert(&ModRefSummary_.GetPointsToGraph().GetMallocNode(node));
     }
     else if (jlm::rvsdg::is<CallOperation>(&node))
     {
@@ -926,10 +926,8 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   stateMap.PushRegion(*lambdaNode.subregion());
-  const auto states = rvsdg::outputs(&LambdaEntryMemoryStateSplitOperation::CreateNode(
-      memoryStateArgument,
-      memoryNodes.Size(),
-      memoryNodeIds));
+  const auto states = rvsdg::outputs(
+      &LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds));
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())

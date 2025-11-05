@@ -45,7 +45,7 @@ perform_bitunary_reduction(const SExtOperation & op, rvsdg::Output * operand)
 
   auto output = SExtOperation::create(op.ndstbits(), unaryNode->input(0)->origin());
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
-      util::AssertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
+      util::assertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
 }
 
@@ -62,7 +62,7 @@ perform_bitbinary_reduction(const SExtOperation & op, rvsdg::Output * operand)
   auto op2 = SExtOperation::create(op.ndstbits(), binaryNode->input(1)->origin());
 
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
-      util::AssertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
+      util::assertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { op1, op2 }).output(0);
 }
 
@@ -97,8 +97,8 @@ SExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::bitconstant_op>(tracedOutput))
+  auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
+  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOutput))
     return rvsdg::unop_reduction_constant;
 
   if (is_bitunary_reducible(operand))
@@ -118,9 +118,9 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*operand);
+    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantNode && constantOperation);
     return create_bitconstant(
         operand->region(),

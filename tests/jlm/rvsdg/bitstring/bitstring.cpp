@@ -615,7 +615,7 @@ static inline void
 expect_static_true(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
-  auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
   assert(op && op->value().nbits() == 1 && op->value().str() == "1");
 }
 
@@ -623,7 +623,7 @@ static inline void
 expect_static_false(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
-  auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
   assert(op && op->value().nbits() == 1 && op->value().str() == "0");
 }
 
@@ -1163,10 +1163,10 @@ types_bitstring_test_constant()
         operands);
   };
 
-  auto & b1 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "00110011");
+  auto & b1 = CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), "00110011");
   auto & b2 = *TryGetOwnerNode<Node>(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
   auto & b3 = *TryGetOwnerNode<Node>(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
-  auto & b4 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "001100110");
+  auto & b4 = CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), "001100110");
 
   auto & ex1 = GraphExport::Create(*b1.output(0), "b1");
   auto & ex2 = GraphExport::Create(*b2.output(0), "b2");
@@ -1179,10 +1179,10 @@ types_bitstring_test_constant()
   assert(b1.GetOperation() == uint_constant_op(8, 204));
   assert(b1.GetOperation() == int_constant_op(8, -52));
 
-  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex1.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex2.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex3.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex4.origin()));
+  ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex1.origin()));
+  ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex2.origin()));
+  ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex3.origin()));
+  ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex4.origin()));
 
   assert(ex1.origin() == ex2.origin());
   assert(ex1.origin() == ex3.origin());
@@ -1195,11 +1195,13 @@ types_bitstring_test_constant()
   assert(node4->GetOperation() == uint_constant_op(9, 204));
   assert(node4->GetOperation() == int_constant_op(9, 204));
 
-  const auto & plus_one_128 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), ONE_64 ZERO_64);
+  const auto & plus_one_128 =
+      CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), ONE_64 ZERO_64);
   assert(plus_one_128.GetOperation() == uint_constant_op(128, 1));
   assert(plus_one_128.GetOperation() == int_constant_op(128, 1));
 
-  const auto & minus_one_128 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), MONE_64 MONE_64);
+  const auto & minus_one_128 =
+      CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), MONE_64 MONE_64);
   assert(minus_one_128.GetOperation() == int_constant_op(128, -1));
 
   view(&graph.GetRootRegion(), stdout);
@@ -1261,7 +1263,7 @@ static void
 assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*bitstr);
-  auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->GetOperation());
+  auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation &>(node->GetOperation());
   assert(op.value() == jlm::rvsdg::BitValueRepresentation(std::string(bits, nbits).c_str()));
 }
 
@@ -1431,7 +1433,7 @@ SliceOfConstant()
 
   // Assert
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto & operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
+  auto & operation = dynamic_cast<const BitConstantOperation &>(node->GetOperation());
   assert(operation.value() == BitValueRepresentation("1101"));
 }
 
@@ -1655,7 +1657,7 @@ ConcatOfConstants()
 
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
+  auto operation = dynamic_cast<const BitConstantOperation &>(node->GetOperation());
   assert(operation.value() == BitValueRepresentation("0011011111001000"));
 }
 

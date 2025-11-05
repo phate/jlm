@@ -119,6 +119,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
+        { OptimizationCommandLineArgument::PredicateCorrelation_,
+          OptimizationId::PredicateCorrelation },
         { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
         { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
@@ -158,6 +160,8 @@ OptimizationCommandLineArgument::PartialRedundancyElimination_ },
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
+        { OptimizationId::PredicateCorrelation,
+          OptimizationCommandLineArgument::PredicateCorrelation_ },
         { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
         { OptimizationId::ScalarEvolution, OptimizationCommandLineArgument::ScalarEvolution_ },
         { OptimizationId::ThetaGammaInversion,
@@ -324,6 +328,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation,
           JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
@@ -853,6 +858,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
+  auto predicateCorrelation = JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation;
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
   auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
@@ -921,6 +927,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               nodeReduction,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodeReduction),
               "Node Reduction"),
+          ::clEnumValN(
+              predicateCorrelation,
+              JlmOptCommandLineOptions::ToCommandLineArgument(predicateCorrelation),
+              "Correlate predicates between theta and gamma nodes"),
           ::clEnumValN(
               rvsdgTreePrinter,
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),

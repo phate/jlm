@@ -25,8 +25,8 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
-#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
+#include <jlm/hls/opt/IOStateElimination.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
@@ -41,6 +41,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -258,7 +259,7 @@ convert_alloca(rvsdg::Region * region)
 rvsdg::DeltaNode *
 rename_delta(rvsdg::DeltaNode * odn)
 {
-  auto op = util::AssertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+  auto op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
   auto name = op->name();
   std::replace_if(
       name.begin(),
@@ -385,12 +386,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else if (auto odn = dynamic_cast<rvsdg::DeltaNode *>(orig_node))
         {
-          auto op = util::AssertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+          auto op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
           // modify name to not contain .
           if (op->name().find('.') != std::string::npos)
           {
             odn = rename_delta(odn);
-            op = util::AssertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+            op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
           }
           std::cout << "delta node " << op->name() << ": " << op->Type()->debug_string() << "\n";
           // add import for delta to rhls
@@ -443,11 +444,13 @@ rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 std::unique_ptr<rvsdg::TransformationSequence>
 createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgDotGraphs)
 {
+  auto predicateCorrelation = std::make_shared<llvm::PredicateCorrelation>();
   auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
   auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
   auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
   auto loopUnswitching = std::make_shared<llvm::LoopUnswitching>();
   auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();
+  auto ioStateElimination = std::make_shared<IOStateElimination>();
   auto memoryStateSeparation = std::make_shared<MemoryStateSeparation>();
   auto gammaMerge = std::make_shared<GammaMerge>();
   auto unusedStateRemoval = std::make_shared<UnusedStateRemoval>();
@@ -468,15 +471,20 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   auto bufferInsertion = std::make_shared<BufferInsertion>();
   auto rhlsVerification = std::make_shared<RhlsVerification>();
 
+  // Use this transformation to dump HLS dot graphs at specific points in the sequence
+  [[maybe_unused]] auto dumpDot = std::make_shared<DumpDotTransformation>();
+
   std::vector<std::shared_ptr<rvsdg::Transformation>> sequence({
       loopUnswitching,
       deadNodeElimination,
       commonNodeElimination,
       invariantValueRedirection,
+      predicateCorrelation,
       deadNodeElimination,
       commonNodeElimination,
       deadNodeElimination,
       ioBarrierRemoval,
+      ioStateElimination,
       memoryStateSeparation,
       gammaMerge,
       unusedStateRemoval,
@@ -488,6 +496,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
       deadNodeElimination,
       unusedStateRemoval,
       constantDistribution,
+      deadNodeElimination,
       gammaNodeConversion,
       thetaNodeConversion,
       commonNodeElimination,
@@ -525,7 +534,7 @@ dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
   for (size_t i = 0; i < reference->Rvsdg().GetRootRegion().narguments(); ++i)
   {
     auto graphImport =
-        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
+        util::assertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
     std::cout << "impport " << graphImport->Name() << ": " << graphImport->Type()->debug_string()
               << "\n";
   }

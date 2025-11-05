@@ -113,8 +113,8 @@ MatchOperation::operator==(const Operation & other) const noexcept
 unop_reduction_path_t
 MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
-  auto & tracedOutput = TraceOutputIntraProcedurally(*arg);
-  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOutput))
+  auto & tracedOutput = traceOutputIntraProcedurally(*arg);
+  if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOutput))
     return unop_reduction_constant;
 
   return unop_reduction_none;
@@ -125,8 +125,8 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
 {
   if (path == unop_reduction_constant)
   {
-    auto & tracedOutput = TraceOutputIntraProcedurally(*arg);
-    auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOutput);
+    auto & tracedOutput = traceOutputIntraProcedurally(*arg);
+    auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantOperation);
     return control_constant(
         arg->region(),
@@ -174,7 +174,7 @@ match(
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  return CreateOpNode<ctlconstant_op>(
+  return CreateOpNode<ControlConstantOperation>(
              *region,
              ControlValueRepresentation(alternative, nalternatives))
       .output(0);

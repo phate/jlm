@@ -80,6 +80,7 @@ public:
     NodePullIn,
     NodePushOut,
     NodeReduction,
+    PredicateCorrelation,
     RvsdgTreePrinter,
     ScalarEvolution,
     ThetaGammaInversion,
@@ -226,6 +227,7 @@ private:
     inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
+    inline static const char * PredicateCorrelation_ = "PredicateCorrelation";
     inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
     inline static const char * ScalarEvolution_ = "ScalarEvolution";
   };

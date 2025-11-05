@@ -25,11 +25,13 @@ class GraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      Linkage linkage)
+      Linkage linkage,
+      bool isConstant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
-        Linkage_(std::move(linkage)),
         ValueType_(std::move(valueType)),
-        ImportedType_(std::move(importedType))
+        ImportedType_(std::move(importedType)),
+        Linkage_(std::move(linkage)),
+        isConstant_(isConstant)
   {}
 
 public:
@@ -37,6 +39,12 @@ public:
   linkage() const noexcept
   {
     return Linkage_;
+  }
+
+  [[nodiscard]] bool
+  isConstant() const noexcept
+  {
+    return isConstant_;
   }
 
   /**
@@ -75,22 +83,25 @@ public:
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      Linkage linkage)
+      Linkage linkage,
+      bool isConstant = false)
   {
     auto graphImport = new GraphImport(
         graph,
         std::move(valueType),
         std::move(importedType),
         std::move(name),
-        std::move(linkage));
-    graph.GetRootRegion().append_argument(graphImport);
+        std::move(linkage),
+        isConstant);
+    graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
     return *graphImport;
   }
 
 private:
-  Linkage Linkage_;
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
+  llvm::Linkage Linkage_;
+  bool isConstant_;
 };
 
 /**

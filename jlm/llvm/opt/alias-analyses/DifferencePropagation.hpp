@@ -69,7 +69,7 @@ public:
     // If pointees added to the superset are being tracked, use the tracking version
     bool newPointee = Set_.AddToPointsToSet(pointer, pointee);
     if (newPointee && NewPointeesTracked_[pointer])
-      return NewPointees_[pointer].Insert(pointee);
+      return NewPointees_[pointer].insert(pointee);
 
     return newPointee;
   }

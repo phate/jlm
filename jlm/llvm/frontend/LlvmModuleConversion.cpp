@@ -85,7 +85,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, Context & ctx)
 
     JLM_ASSERT(operands.size() >= 1);
 
-    auto phi_tac = util::AssertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
+    auto phi_tac = util::assertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(
         SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
         operands);
@@ -334,7 +334,7 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 
         auto basicBlock = BasicBlock::create(cfg);
 
-        rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(1, 2));
+        rvsdg::ControlConstantOperation op(rvsdg::ControlValueRepresentation(1, 2));
         auto operand = basicBlock->append_last(ThreeAddressCode::create(op, {}))->result(0);
         basicBlock->append_last(BranchOperation::create(2, operand));
 
