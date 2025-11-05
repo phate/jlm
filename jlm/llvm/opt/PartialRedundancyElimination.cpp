@@ -473,13 +473,18 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
   });
 }
 
+static rvsdg::gvn::GVN_Val mergeIntoLV(rvsdg::gvn::GVN_Manager& gvn, rvsdg::gvn::GVN_Val olderValue, rvsdg::gvn::GVN_Val newerValue, rvsdg::gvn::GVN_Val prism)
+{
+  if (olderValue == newerValue){return olderValue;}
+  auto MERGE_ON_LOOP_ENTRY = gvn.FromStr("MERGE_ON_LOOP_ENTRY");
+  return gvn.Op(MERGE_ON_LOOP_ENTRY).Arg(prism).Arg(olderValue).Arg(newerValue).End();
+}
+
 void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
 {
   MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
     using namespace jlm::rvsdg::gvn;
     auto LOOP_EXIT  = gvn_.FromStr("LOOP_EXIT");
-    auto LOOP_BACK  = gvn_.FromStr("LOOP_BACK");
-    auto OUTPUT_PARTITION = gvn_.FromStr("OUTPUT_PARTITION");
     auto OP_PRISM   = gvn_.FromStr("prism");
 
     auto lv = tn.GetLoopVars();
@@ -500,9 +505,12 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
         std::cout << TR_RED << "Warning nested loops not tested yet." << TR_RESET << std::endl;
         // Similar to loop back at the end of simple loops.
         for (size_t i = 0; i < lv.size(); i++){
-          auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
-          auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].partition).End();
-          thetas_[node].pre.elements[i].disruptor = merged;
+          thetas_[node].pre.elements[i].disruptor = mergeIntoLV(
+            gvn_,
+            thetas_[node].pre.elements[i].partition,
+            GVNOrWarn( lv[i].input->origin(), node ),
+            thetas_[node].prism
+          );
         }
       }
     }
@@ -536,6 +544,14 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       GVN_Val predicate = GVNOrPanic( tn.predicate()->origin(), node );
       td.prism = gvn_.Op(OP_PRISM).Arg(predicate).FromPartitions(td.post).End();
 
+      // Why hashing solely with the predicate might not work:
+      //  Update in parallel
+      //         i -> i + 1 + a     , i control the predicate.
+      //         a -> a + 2 + b
+      //         b -> b + 3 + c
+      //         c -> c + 4 + K     , K eventually affects i
+      //                              however, it reaches a fixed point in 2 iterations
+
       // Note: this doesn't use rvsdg::ThetaLoopVarIsInvariant()
       //  Because we pass in data from outside the theta it might be possible
       //    to detect more invariance such as from
@@ -553,9 +569,11 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
         }else{
           auto lv_old   =  td.pre.elements[i].disruptor;
           auto lv_newer = td.post.elements[i].disruptor;
-          td.pre.elements[i].disruptor  = gvn_.Op(LOOP_BACK)      .Arg(td.prism).Arg(lv_old).Arg(lv_newer).End();
-          td.post.elements[i].partition = gvn_.Op(OUTPUT_PARTITION).Arg(td.prism).Arg(lv_old).Arg(lv_newer).End();
+
           //  hashing with prism here prevents accidental capture of values from outer loops.
+          auto g = mergeIntoLV(gvn_, lv_old, lv_newer, td.prism);
+          td.pre.elements[i].disruptor  = g;
+          td.post.elements[i].partition = g;
         }
       }
       td.stat_iteration_count++;
