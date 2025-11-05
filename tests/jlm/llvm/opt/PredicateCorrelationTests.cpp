@@ -12,9 +12,18 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <RVSDG/Ops.h.inc>
 
-static std::unique_ptr<jlm::llvm::RvsdgModule>
-setupMatchConstantCorrelationTest()
+struct MatchConstantCorrelationTest
+{
+  jlm::rvsdg::GammaNode & gammaNode;
+  jlm::rvsdg::ThetaNode & thetaNode;
+};
+
+static MatchConstantCorrelationTest
+setupMatchConstantCorrelationTest(
+    jlm::rvsdg::Graph & rvsdg,
+    const std::pair<uint64_t, uint64_t> & gammaSubregionAlternatives)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -23,16 +32,15 @@ setupMatchConstantCorrelationTest()
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rvsdgModule->Rvsdg();
-
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
   auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode = GammaNode::create(predicate, 2);
 
-  auto constant0 = create_bitconstant(gammaNode->subregion(0), 2, 0);
-  auto constant1 = create_bitconstant(gammaNode->subregion(1), 2, 1);
+  auto constant0 =
+      create_bitconstant(gammaNode->subregion(0), 64, gammaSubregionAlternatives.first);
+  auto constant1 =
+      create_bitconstant(gammaNode->subregion(1), 64, gammaSubregionAlternatives.second);
 
   auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
 
@@ -40,7 +48,7 @@ setupMatchConstantCorrelationTest()
 
   thetaNode->predicate()->divert_to(matchNode.output(0));
 
-  return rvsdgModule;
+  return { *gammaNode, *thetaNode };
 }
 
 static void
@@ -99,44 +107,36 @@ testMatchConstantCorrelationDetection()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto bitType32 = BitType::Create(32);
-  auto controlType = ControlType::Create(2);
+  const std::vector<std::pair<uint64_t, uint64_t>> gammaSubregionAlternatives = { { 0, 1 },
+                                                                                  { 1, 0 } };
+  for (auto alternatives : gammaSubregionAlternatives)
+  {
+    // Arrange
+    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rvsdgModule->Rvsdg();
+    auto [gammaNode, thetaNode] = setupMatchConstantCorrelationTest(rvsdg, alternatives);
+    const auto matchNode = TryGetOwnerNode<Node>(*thetaNode.predicate()->origin());
 
-  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+    view(rvsdg, stdout);
 
-  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
-  auto gammaNode = GammaNode::create(predicate, 2);
+    // Act
+    const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
 
-  auto constant0 = create_bitconstant(gammaNode->subregion(0), 2, 0);
-  auto constant1 = create_bitconstant(gammaNode->subregion(1), 2, 1);
+    // Assert
+    assert(correlationOpt.value() != nullptr);
+    assert(correlationOpt.value()->type() == CorrelationType::MatchConstantCorrelation);
+    assert(&correlationOpt.value()->thetaNode() == &thetaNode);
+    assert(&correlationOpt.value()->gammaNode() == &gammaNode);
 
-  auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
-
-  auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);
-
-  thetaNode->predicate()->divert_to(matchNode.output(0));
-
-  view(rvsdg, stdout);
-
-  // Act
-  const auto correlationOpt = computeThetaGammaPredicateCorrelation(*thetaNode);
-
-  // Assert
-  assert(correlationOpt.value() != nullptr);
-  assert(correlationOpt.value()->type() == CorrelationType::MatchConstantCorrelation);
-  assert(&correlationOpt.value()->thetaNode() == thetaNode);
-  assert(&correlationOpt.value()->gammaNode() == gammaNode);
-
-  const auto correlationData =
-      std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
-          correlationOpt.value()->data());
-  assert(correlationData.matchNode == &matchNode);
-  assert(correlationData.alternatives.size() == 2);
-  assert(correlationData.alternatives[0] == 0);
-  assert(correlationData.alternatives[1] == 1);
+    const auto correlationData =
+        std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
+            correlationOpt.value()->data());
+    assert(correlationData.matchNode == matchNode);
+    assert(correlationData.alternatives.size() == 2);
+    assert(correlationData.alternatives[0] == alternatives.first);
+    assert(correlationData.alternatives[1] == alternatives.second);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -144,37 +144,18 @@ JLM_UNIT_TEST_REGISTER(
     testMatchConstantCorrelationDetection)
 
 static void
-testMatchConstantCorrelation()
+testMatchConstantCorrelation_Success()
 {
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto rvsdgModule = setupMatchConstantCorrelationTest();
-  auto & rvsdg = rvsdgModule->Rvsdg();
-
-#if 0
-  auto bitType32 = BitType::Create(32);
-  auto controlType = ControlType::Create(2);
-
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
-
-  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
-  auto gammaNode = GammaNode::create(predicate, 2);
-
-  auto constant0 = create_bitconstant(gammaNode->subregion(0), 2, 0);
-  auto constant1 = create_bitconstant(gammaNode->subregion(1), 2, 1);
-
-  auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
-
-  auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);
-
-  thetaNode->predicate()->divert_to(matchNode.output(0));
-#endif
+  auto [gammaNode, thetaNode] = setupMatchConstantCorrelationTest(rvsdg, { 0, 1 });
+  auto gammaPredicate = gammaNode.predicate()->origin();
   view(rvsdg, stdout);
 
   // Act
@@ -182,15 +163,53 @@ testMatchConstantCorrelation()
   PredicateCorrelation predicateCorrelation;
   predicateCorrelation.Run(*rvsdgModule, statisticsCollector);
 
-  thetaNode->subregion()->prune(true);
+  thetaNode.subregion()->prune(true);
 
   view(rvsdg, stdout);
 
   // Assert
-  assert(thetaNode->subregion()->numNodes() == 1);
-  assert(thetaNode->predicate()->origin() == predicate);
+  assert(thetaNode.subregion()->numNodes() == 1);
+  assert(thetaNode.predicate()->origin() == gammaPredicate);
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation",
-    testMatchConstantCorrelation)
+    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation_Success",
+    testMatchConstantCorrelation_Success)
+
+static void
+testMatchConstantCorrelation_Failure()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto gammaSubregionAlternatives = std::make_pair(1, 0);
+  auto [gammaNode, thetaNode] =
+      setupMatchConstantCorrelationTest(rvsdg, gammaSubregionAlternatives);
+  auto gammaPredicate = gammaNode.predicate()->origin();
+  view(rvsdg, stdout);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  PredicateCorrelation predicateCorrelation;
+  predicateCorrelation.Run(*rvsdgModule, statisticsCollector);
+
+  thetaNode.subregion()->prune(true);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // The theta node predicate is not redirected as the gamma subregion alternatives do not lead to
+  // the same control behavior as the match node that is currently connected to the theta node
+  // predicate. It would be necessary to create a new match node for this instead of just reusing
+  // the gamma node's control predicate.
+  assert(thetaNode.predicate()->origin() != gammaPredicate);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation_Failure",
+    testMatchConstantCorrelation_Failure)
