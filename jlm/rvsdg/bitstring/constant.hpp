@@ -44,18 +44,18 @@ typedef DomainConstOperation<
     BitValueRepresentation,
     BitValueRepresentationFormatValue,
     BitValueRepresentationTypeOfValue>
-    bitconstant_op;
+    BitConstantOperation;
 
-inline bitconstant_op
+inline BitConstantOperation
 uint_constant_op(size_t nbits, uint64_t value)
 {
-  return bitconstant_op(BitValueRepresentation(nbits, value));
+  return BitConstantOperation(BitValueRepresentation(nbits, value));
 }
 
-inline bitconstant_op
+inline BitConstantOperation
 int_constant_op(size_t nbits, int64_t value)
 {
-  return bitconstant_op(BitValueRepresentation(nbits, value));
+  return BitConstantOperation(BitValueRepresentation(nbits, value));
 }
 
 // declare explicit instantiation
@@ -68,7 +68,7 @@ extern template class DomainConstOperation<
 static inline jlm::rvsdg::Output *
 create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
 {
-  return CreateOpNode<bitconstant_op>(*region, vr).output(0);
+  return CreateOpNode<BitConstantOperation>(*region, vr).output(0);
 }
 
 static inline jlm::rvsdg::Output *
