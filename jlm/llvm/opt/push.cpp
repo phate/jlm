@@ -94,11 +94,23 @@ has_side_effects(const rvsdg::Node * node)
   return false;
 }
 
+[[nodiscard]] static bool
+hasPredecessors(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*input.origin()))
+      return true;
+  }
+
+  return false;
+}
+
 static std::vector<rvsdg::RegionArgument *>
 copy_from_gamma(rvsdg::Node * node, size_t r)
 {
   JLM_ASSERT(dynamic_cast<rvsdg::GammaNode *>(node->region()->node()));
-  JLM_ASSERT(node->depth() == 0);
+  JLM_ASSERT(!hasPredecessors(*node));
 
   auto target = node->region()->node()->region();
   auto gamma = static_cast<rvsdg::GammaNode *>(node->region()->node());
@@ -127,7 +139,7 @@ static std::vector<rvsdg::Output *>
 copy_from_theta(rvsdg::Node * node)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
-  JLM_ASSERT(node->depth() == 0);
+  JLM_ASSERT(!hasPredecessors(*node));
 
   auto target = node->region()->node()->region();
   auto theta = static_cast<rvsdg::ThetaNode *>(node->region()->node());
@@ -180,7 +192,7 @@ push(rvsdg::GammaNode * gamma)
       for (const auto & user : argument->Users())
       {
         auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-        if (tmp && tmp->depth() == 0)
+        if (tmp && !hasPredecessors(*tmp))
           wl.push_back(tmp);
       }
     }
@@ -201,7 +213,7 @@ push(rvsdg::GammaNode * gamma)
         for (const auto & user : argument->Users())
         {
           auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-          if (tmp && tmp->depth() == 0)
+          if (tmp && !hasPredecessors(*tmp))
             wl.push_back(tmp);
         }
       }
@@ -213,7 +225,7 @@ static bool
 is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::Output *> & invariants)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
-  JLM_ASSERT(node->depth() == 0);
+  JLM_ASSERT(!hasPredecessors(*node));
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -254,7 +266,7 @@ push_top(rvsdg::ThetaNode * theta)
     for (const auto & user : argument->Users())
     {
       auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-      if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
+      if (tmp && !hasPredecessors(*tmp) && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
   }
@@ -277,7 +289,7 @@ push_top(rvsdg::ThetaNode * theta)
       for (const auto & user : argument->Users())
       {
         auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-        if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
+        if (tmp && !hasPredecessors(*tmp) && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
     }
