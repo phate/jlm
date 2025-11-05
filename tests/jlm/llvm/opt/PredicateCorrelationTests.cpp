@@ -18,6 +18,7 @@ struct MatchConstantCorrelationTest
 {
   jlm::rvsdg::GammaNode & gammaNode;
   jlm::rvsdg::ThetaNode & thetaNode;
+  jlm::rvsdg::Node & matchNode;
 };
 
 static MatchConstantCorrelationTest
@@ -48,7 +49,7 @@ setupMatchConstantCorrelationTest(
 
   thetaNode->predicate()->divert_to(matchNode.output(0));
 
-  return { *gammaNode, *thetaNode };
+  return { *gammaNode, *thetaNode, matchNode };
 }
 
 static void
@@ -115,8 +116,7 @@ testMatchConstantCorrelationDetection()
     auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
-    auto [gammaNode, thetaNode] = setupMatchConstantCorrelationTest(rvsdg, alternatives);
-    const auto matchNode = TryGetOwnerNode<Node>(*thetaNode.predicate()->origin());
+    auto [gammaNode, thetaNode, matchNode] = setupMatchConstantCorrelationTest(rvsdg, alternatives);
 
     view(rvsdg, stdout);
 
@@ -132,7 +132,7 @@ testMatchConstantCorrelationDetection()
     const auto correlationData =
         std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
             correlationOpt.value()->data());
-    assert(correlationData.matchNode == matchNode);
+    assert(correlationData.matchNode == &matchNode);
     assert(correlationData.alternatives.size() == 2);
     assert(correlationData.alternatives[0] == alternatives.first);
     assert(correlationData.alternatives[1] == alternatives.second);
@@ -154,7 +154,7 @@ testMatchConstantCorrelation_Success()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto [gammaNode, thetaNode] = setupMatchConstantCorrelationTest(rvsdg, { 0, 1 });
+  auto [gammaNode, thetaNode, _] = setupMatchConstantCorrelationTest(rvsdg, { 0, 1 });
   auto gammaPredicate = gammaNode.predicate()->origin();
   view(rvsdg, stdout);
 
@@ -188,7 +188,7 @@ testMatchConstantCorrelation_Failure()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto gammaSubregionAlternatives = std::make_pair(1, 0);
-  auto [gammaNode, thetaNode] =
+  auto [gammaNode, thetaNode, _] =
       setupMatchConstantCorrelationTest(rvsdg, gammaSubregionAlternatives);
   auto gammaPredicate = gammaNode.predicate()->origin();
   view(rvsdg, stdout);
