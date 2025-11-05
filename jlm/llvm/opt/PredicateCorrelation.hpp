@@ -182,6 +182,12 @@ private:
    */
   static void
   correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode);
+
+  static void
+  handleControlConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
+
+  static void
+  handleMatchConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
 };
 
 }
