@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <RVSDG/Ops.h.inc>
 
 struct MatchConstantCorrelationTest
 {
