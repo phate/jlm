@@ -11,15 +11,6 @@
 namespace jlm::rvsdg
 {
 
-/* control constant */
-
-// explicit instantiation
-template class DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>;
-
 ControlType::~ControlType() noexcept = default;
 
 ControlType::ControlType(size_t nalternatives)
@@ -88,6 +79,32 @@ ControlValueRepresentation::ControlValueRepresentation(size_t alternative, size_
 {
   if (alternative >= nalternatives)
     throw util::Error("Alternative is bigger than the number of possible alternatives.");
+}
+
+ControlConstantOperation::~ControlConstantOperation() noexcept = default;
+
+ControlConstantOperation::ControlConstantOperation(ControlValueRepresentation value)
+    : NullaryOperation(ControlType::Create(value.nalternatives())),
+      value_(std::move(value))
+{}
+
+bool
+ControlConstantOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const ControlConstantOperation *>(&other);
+  return operation && operation->value_ == value_;
+}
+
+std::string
+ControlConstantOperation::debug_string() const
+{
+  return jlm::util::strfmt("CTL(", value_.alternative(), ")");
+}
+
+std::unique_ptr<Operation>
+ControlConstantOperation::copy() const
+{
+  return std::make_unique<ControlConstantOperation>(value_);
 }
 
 MatchOperation::~MatchOperation() noexcept = default;

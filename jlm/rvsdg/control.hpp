@@ -96,32 +96,37 @@ private:
   size_t nalternatives_;
 };
 
-/* control constant */
-
-struct ControlValueRepresentationTypeOfValue
+class ControlConstantOperation final : public NullaryOperation
 {
-  std::shared_ptr<const ControlType>
-  operator()(const ControlValueRepresentation & repr) const
-  {
-    return ControlType::Create(repr.nalternatives());
-  }
-};
+public:
+  ~ControlConstantOperation() noexcept override;
 
-struct ControlValueRepresentationFormatValue
-{
+  explicit ControlConstantOperation(ControlValueRepresentation value);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
   std::string
-  operator()(const ControlValueRepresentation & repr) const
-  {
-    return jlm::util::strfmt("CTL(", repr.alternative(), ")");
-  }
-};
+  debug_string() const override;
 
-typedef DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>
-    ControlConstantOperation;
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] const ControlValueRepresentation &
+  value() const noexcept
+  {
+    return value_;
+  }
+
+  static Output *
+  create(Region * region, ControlValueRepresentation value)
+  {
+    return CreateOpNode<ControlConstantOperation>(*region, std::move(value)).output(0);
+  }
+
+private:
+  ControlValueRepresentation value_;
+};
 
 /**
  * Match operator
@@ -248,13 +253,6 @@ match(
     uint64_t default_alternative,
     size_t nalternatives,
     jlm::rvsdg::Output * operand);
-
-// declare explicit instantiation
-extern template class DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>;
 
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
