@@ -479,6 +479,7 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     using namespace jlm::rvsdg::gvn;
     auto LOOP_EXIT  = gvn_.FromStr("LOOP_EXIT");
     auto LOOP_BACK  = gvn_.FromStr("LOOP_BACK");
+    auto OUTPUT_PARTITION = gvn_.FromStr("OUTPUT_PARTITION");
     auto OP_PRISM   = gvn_.FromStr("prism");
 
     auto lv = tn.GetLoopVars();
@@ -496,19 +497,19 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     }else{
       ///// Only called for nested loops. Not tested yet.
       {
-        throw std::runtime_error("Code not tested yet. Beware.");
+        std::cout << TR_RED << "Warning nested loops not tested yet." << TR_RESET << std::endl;
         // Similar to loop back at the end of simple loops.
         for (size_t i = 0; i < lv.size(); i++){
           auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
-          auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].disruptor).End();
+          auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].partition).End();
           thetas_[node].pre.elements[i].disruptor = merged;
         }
       }
     }
 
-    // Inputs from upstreams have now been placed in pre .disruptor fields
-
     auto& td = thetas_[node];
+
+    // Inputs from upstreams have now been placed in pre .disruptor fields
     while (thetas_[node].pre.Fracture() || td.stat_iteration_count == 0){
       // ================= PERFORM GVN IN LOOP BODY ========================
       for (size_t i = 0; i < lv.size(); i++){
@@ -523,39 +524,37 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       // ================= END LOOP BODY ====================================
 
       // Merge input and outputs for each loop variable in order to identify
-      // which variables to move into which partitions
+      // the most updated partitions
       for (size_t i = 0; i < lv.size(); i++){
         auto input  = td.pre.elements[i].disruptor;
         auto output = td.post.elements[i].disruptor;
         auto merged_io = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(input).Arg(output).End();
         td.post.elements[i].partition = merged_io;
       }
-
-      GVN_Val predicate = GVNOrPanic( tn.predicate()->origin(), node );
       /// This hash depends on the mapping between inputs to ouputs as well as the predicate
       /// Does not depend on order of loop variables or duplicate loop variables
-
+      GVN_Val predicate = GVNOrPanic( tn.predicate()->origin(), node );
       td.prism = gvn_.Op(OP_PRISM).Arg(predicate).FromPartitions(td.post).End();
 
       // Note: this doesn't use rvsdg::ThetaLoopVarIsInvariant()
-      //       state edges can be made invariant inside thetas only
-      //       if they pass through referentially transparent nodes.
-      //       There might be some instances of referential transparency
-      //          such as x+0 -> x not detected by other passes.
-      //       This also detects invariant values from crossed edges.
+      //  Because we pass in data from outside the theta it might be possible
+      //    to detect more invariance such as from
+      //    gammas inside the loop with constant match variables
+      //  However, using rvsdg::ThetaLoopVarIsInvariant() will work as well
+
       for (size_t i = 0; i < lv.size(); i++){
         // input and output for one loop body visit are stored in pre and post,  .disruptor
         bool was_invariant = td.pre.elements[i].disruptor == td.post.elements[i].disruptor;
 
         if (was_invariant){
           // no need to update the input for the next loop iteration
-          // , however store away whether the value is invariant for later use
+          // , however store away whether the value is invariant for when computing outputs from the theta
           td.post.elements[i].partition = GVN_INVARIANT;
         }else{
           auto lv_old   =  td.pre.elements[i].disruptor;
           auto lv_newer = td.post.elements[i].disruptor;
-          td.pre.elements[i].disruptor  = gvn_.Op(LOOP_BACK).Arg(td.prism).Arg(lv_old).Arg(lv_newer).End();
-          td.post.elements[i].partition = gvn_.Op(LOOP_EXIT).Arg(td.prism).Arg(td.post.elements[i].partition).End();
+          td.pre.elements[i].disruptor  = gvn_.Op(LOOP_BACK)      .Arg(td.prism).Arg(lv_old).Arg(lv_newer).End();
+          td.post.elements[i].partition = gvn_.Op(OUTPUT_PARTITION).Arg(td.prism).Arg(lv_old).Arg(lv_newer).End();
           //  hashing with prism here prevents accidental capture of values from outer loops.
         }
       }
@@ -563,12 +562,20 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     }
 
     // After the loop body has been evaluated until partitions reach a fixed point
-    // post.partition either contains contents compatible with the most recent partitions
-    //    or a token indicating invariance.
+
     // Note: inner loops are only re-evaluated when the outer loop passes in new data which
-    //  either causes a re-partitioning or a initial values changes for the first time (fracture).
+    //  either causes a re-partitioning or detects a change in an initial value for the first time (fracture).
+    //  That is if a value invariant with respect to the inner loop changes in the outer loop.
 
     /** ----------------------------------- COMPUTE LOOP OUTPUTS -------------------------------------- */
+
+    // =============================================================================================
+    //This is only required for nested loops
+    for (size_t i = 0; i < lv.size(); i++){
+      thetas_[node].pre.elements[i].disruptor = GVNOrWarn( lv[i].input->origin(), node );;
+    }
+    auto hash_from_inputs = gvn_.Op(LOOP_EXIT).OneDisruptorPerPartition(td.pre).End();
+    // =============================================================================================
 
     for (size_t i = 0; i < lv.size(); i++){
       auto inv = thetas_[node].post.elements[i].partition == GVN_INVARIANT;
@@ -578,7 +585,11 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
       }else{
         RegisterGVN(
           lv[i].output,
-          gvn_.Op(LOOP_EXIT).Arg(input_for_lv).Arg(thetas_[node].post.elements[i].partition).End()
+          gvn_.Op(LOOP_EXIT)
+                  .Arg(thetas_[node].post.elements[i].partition)
+                  .Arg(hash_from_inputs)
+                  .Arg(input_for_lv)
+                  .End()
         );
       }
     }
@@ -603,6 +614,7 @@ void PartialRedundancyElimination::GVN_FinalizeThetaNode(rvsdg::Node * node)
       }
     }
     GVN_VisitAllSubRegions(node);
+    thetas_[node].stat_iteration_count++;
     // Do not update output of thetas, just the gvn values in the loop body.
   });
 }

@@ -56,9 +56,9 @@ namespace jlm::rvsdg::gvn {
     inline std::string to_string(GVN_Val v) {
         auto n = static_cast<uint64_t>(v);
 
-        std::string s = "" + std::to_string(n);
-        if (s.length() > 5){
-          s = s.substr(0,4) + "...";
+        std::string s = std::to_string(n);
+        if (s.length() > 8){
+          s = s.substr(0,3) + "..." + s.substr(s.length() - 3, s.length());
         }
 
         //if ((v & GVN_HAS_DEPS) == 0) {s += "<L>";}
@@ -447,6 +447,21 @@ namespace jlm::rvsdg::gvn {
             while (i < brittle.elements.size())
             {
               Arg(brittle.elements[i].partition);
+              i += brittle.SpanPartition(i);
+            }
+            brittle.OrderByOriginal();
+          }
+          return *this;
+        }
+        GVN_Manager& OneDisruptorPerPartition(BrittlePrism& brittle)
+        {
+          // Call Arg( ) once for each partition
+          {
+            brittle.OrderByPartition();
+            size_t i = 0;
+            while (i < brittle.elements.size())
+            {
+              Arg(brittle.elements[i].disruptor);    // !!!!
               i += brittle.SpanPartition(i);
             }
             brittle.OrderByOriginal();
