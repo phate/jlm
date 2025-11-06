@@ -221,6 +221,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     match_node->output(0)->divert_users(match_replacement);
     // TODO: divert match users
     remove(match_node);
+    assert(0);
     return true;
   }
   return false;
