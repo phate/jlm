@@ -47,6 +47,12 @@ enum class CorrelationType
    * subregions of a gamma node.
    */
   MatchConstantCorrelation,
+
+  /**
+   * The predicate correlates with a MatchNode that also serves as predicate producer for a gamma
+   * node.
+   */
+  MatchCorrelation,
 };
 
 /**
@@ -58,14 +64,19 @@ class ThetaGammaPredicateCorrelation final
 public:
   using ControlConstantCorrelationData = std::vector<uint64_t>;
 
-  typedef struct MatchConstantCorrelationData
+  struct MatchConstantCorrelationData
   {
     rvsdg::Node * matchNode{};
     std::vector<uint64_t> alternatives{};
-  } MatchConstantCorrelationData;
+  };
 
-  using CorrelationData =
-      std::variant<ControlConstantCorrelationData, MatchConstantCorrelationData>;
+  struct MatchCorrelationData
+  {
+    rvsdg::Node * matchNode{};
+  };
+
+  using CorrelationData = std::
+      variant<ControlConstantCorrelationData, MatchConstantCorrelationData, MatchCorrelationData>;
 
 private:
   ThetaGammaPredicateCorrelation(
@@ -125,6 +136,19 @@ public:
   {
     return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
         CorrelationType::MatchConstantCorrelation,
+        thetaNode,
+        gammaNode,
+        std::move(data)));
+  }
+
+  static std::unique_ptr<ThetaGammaPredicateCorrelation>
+  CreateMatchCorrelation(
+      rvsdg::ThetaNode & thetaNode,
+      rvsdg::GammaNode & gammaNode,
+      MatchCorrelationData data)
+  {
+    return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
+        CorrelationType::MatchCorrelation,
         thetaNode,
         gammaNode,
         std::move(data)));
