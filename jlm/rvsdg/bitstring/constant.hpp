@@ -18,33 +18,37 @@
 namespace jlm::rvsdg
 {
 
-struct BitValueRepresentationTypeOfValue
+class BitConstantOperation final : public NullaryOperation
 {
-  std::shared_ptr<const BitType>
-  operator()(const BitValueRepresentation & repr) const
-  {
-    return BitType::Create(repr.nbits());
-  }
-};
+public:
+  ~BitConstantOperation() noexcept override;
 
-struct BitValueRepresentationFormatValue
-{
+  explicit BitConstantOperation(BitValueRepresentation value);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
   std::string
-  operator()(const BitValueRepresentation & repr) const
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] const BitValueRepresentation &
+  value() const noexcept
   {
-    if (repr.is_known() && repr.nbits() <= 64)
-      return jlm::util::strfmt("BITS", repr.nbits(), "(", repr.to_uint(), ")");
-
-    return repr.str();
+    return value_;
   }
-};
 
-typedef DomainConstOperation<
-    BitType,
-    BitValueRepresentation,
-    BitValueRepresentationFormatValue,
-    BitValueRepresentationTypeOfValue>
-    BitConstantOperation;
+  static Output *
+  create(Region * region, BitValueRepresentation value)
+  {
+    return CreateOpNode<BitConstantOperation>(*region, std::move(value)).output(0);
+  }
+
+private:
+  BitValueRepresentation value_;
+};
 
 inline BitConstantOperation
 uint_constant_op(size_t nbits, uint64_t value)
@@ -57,13 +61,6 @@ int_constant_op(size_t nbits, int64_t value)
 {
   return BitConstantOperation(BitValueRepresentation(nbits, value));
 }
-
-// declare explicit instantiation
-extern template class DomainConstOperation<
-    BitType,
-    BitValueRepresentation,
-    BitValueRepresentationFormatValue,
-    BitValueRepresentationTypeOfValue>;
 
 static inline jlm::rvsdg::Output *
 create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
