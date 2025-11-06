@@ -72,8 +72,8 @@ testControlConstantCorrelation()
 
   auto gammaNode = GammaNode::create(predicate, 2);
 
-  auto controlConstant0 = control_constant(gammaNode->subregion(0), 2, 0);
-  auto controlConstant1 = control_constant(gammaNode->subregion(1), 2, 1);
+  auto controlConstant0 = &ControlConstantOperation::create(*gammaNode->subregion(0), 2, 0);
+  auto controlConstant1 = &ControlConstantOperation::create(*gammaNode->subregion(1), 2, 1);
 
   auto controlExitVar = gammaNode->AddExitVar({ controlConstant0, controlConstant1 });
 

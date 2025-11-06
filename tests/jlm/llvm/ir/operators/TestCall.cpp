@@ -202,7 +202,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       auto innerTheta = jlm::rvsdg::ThetaNode::create(outerTheta->subregion());
       auto itf = innerTheta->AddLoopVar(otf.pre);
 
-      auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
+      auto predicate = &jlm::rvsdg::ControlConstantOperation::createFalse(*innerTheta->subregion());
       auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
       auto ev = gamma->AddEntryVar(itf.pre);
       auto xv = gamma->AddExitVar(ev.branchArgument);

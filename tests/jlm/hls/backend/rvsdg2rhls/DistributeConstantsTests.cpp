@@ -126,7 +126,7 @@ NestedGammas()
       { bit32Type });
 
   // gammaNodeOuter subregion 1
-  auto controlConstant = control_constant(gammaNodeOuter->subregion(1), 2, 0);
+  auto controlConstant = &ControlConstantOperation::create(*gammaNodeOuter->subregion(1), 2, 0);
   auto gammaNodeInner = GammaNode::create(controlConstant, 2);
   auto entryVariable = gammaNodeInner->AddEntryVar(entryVarConstant.branchArgument[1]);
   auto exitVariableInner = gammaNodeInner->AddExitVar(
