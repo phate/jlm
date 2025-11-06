@@ -201,7 +201,8 @@ TestCall()
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
     auto lambdaArgumentTest1 = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
-    auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
+    auto controlResult =
+        &jlm::rvsdg::ControlConstantOperation::create(*lambdaNode->subregion(), 2, 0);
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
@@ -298,7 +299,8 @@ TestCallWithMemoryStateNodes()
         outputs(&lambdaEntrySplitNode),
         { 0, 1 });
 
-    auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
+    auto controlResult =
+        &jlm::rvsdg::ControlConstantOperation::create(*lambdaNode->subregion(), 2, 0);
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
@@ -526,9 +528,9 @@ testThetaGammaRedirection()
   auto dummyNodeGamma1 = TestOperation::create(gammaNode->subregion(1), {}, { valueType });
 
   auto controlConstant0 =
-      ControlConstantOperation::create(gammaNode->subregion(0), ControlValueRepresentation(0, 2));
+      &ControlConstantOperation::create(*gammaNode->subregion(0), ControlValueRepresentation(0, 2));
   auto controlConstant1 =
-      ControlConstantOperation::create(gammaNode->subregion(1), ControlValueRepresentation(1, 2));
+      &ControlConstantOperation::create(*gammaNode->subregion(1), ControlValueRepresentation(1, 2));
 
   auto controlExitVar = gammaNode->AddExitVar({ controlConstant0, controlConstant1 });
   auto exitVar0 =

@@ -211,8 +211,8 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
           rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
       JLM_ASSERT(constantOperation);
       auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
-      auto no = rvsdg::ControlConstantOperation::create(
-          origin->region(),
+      auto no = &rvsdg::ControlConstantOperation::create(
+          *origin->region(),
           { ctl_value, matchOperation->nalternatives() });
       new_outputs.push_back(no);
     }
