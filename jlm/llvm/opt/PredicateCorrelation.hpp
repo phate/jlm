@@ -183,10 +183,10 @@ private:
   static void
   correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode);
 
-  static void
+  static bool
   handleControlConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
 
-  static void
+  static bool
   handleMatchConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
 };
 
