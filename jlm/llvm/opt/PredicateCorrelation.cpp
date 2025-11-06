@@ -217,27 +217,40 @@ PredicateCorrelation::correlatePredicatesInRegion(rvsdg::Region & region)
 void
 PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
 {
-  const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
-  if (!correlationOpt.has_value())
+  // FIXME: Reevaluate the fix-point computation after we introduced gamma-gamma predicate
+  // correlation. The pattern is a strict top-down pattern, which means that once we resolved the
+  // gamma-gamma predicate correlations, there should only be a single theta-gamma predicate
+  // correlation left, if any. Thus, it might be that the fix-point computation is unnecessary.
+  bool predicateWasRedirected = false;
+  do
   {
-    return;
-  }
-  const auto & correlation = correlationOpt.value();
+    predicateWasRedirected = false;
 
-  switch (correlation->type())
-  {
-  case CorrelationType::ControlConstantCorrelation:
-    handleControlConstantCorrelation(*correlation);
-    break;
-  case CorrelationType::MatchConstantCorrelation:
-    handleMatchConstantCorrelation(*correlation);
-    break;
-  default:
-    throw std::logic_error("Unhandled theta-gamma predicate correlation.");
-  }
+    const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+    if (!correlationOpt.has_value())
+    {
+      return;
+    }
+    const auto & correlation = correlationOpt.value();
+
+    switch (correlation->type())
+    {
+    case CorrelationType::ControlConstantCorrelation:
+      predicateWasRedirected = handleControlConstantCorrelation(*correlation);
+      break;
+    case CorrelationType::MatchConstantCorrelation:
+      predicateWasRedirected = handleMatchConstantCorrelation(*correlation);
+      break;
+    case CorrelationType::MatchCorrelation:
+      predicateWasRedirected = false;
+      break;
+    default:
+      throw std::logic_error("Unhandled theta-gamma predicate correlation.");
+    }
+  } while (predicateWasRedirected);
 }
 
-void
+bool
 PredicateCorrelation::handleControlConstantCorrelation(
     const ThetaGammaPredicateCorrelation & correlation)
 {
@@ -249,13 +262,14 @@ PredicateCorrelation::handleControlConstantCorrelation(
       std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation.data());
   if (controlAlternatives.size() != 2 || controlAlternatives[0] != 0 || controlAlternatives[1] != 1)
   {
-    return;
+    return false;
   }
 
   thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
+  return true;
 }
 
-void
+bool
 PredicateCorrelation::handleMatchConstantCorrelation(
     const ThetaGammaPredicateCorrelation & correlation)
 {
@@ -268,7 +282,7 @@ PredicateCorrelation::handleMatchConstantCorrelation(
 
   if (alternatives.size() != 2)
   {
-    return;
+    return false;
   }
 
   const auto matchOperation =
@@ -276,10 +290,11 @@ PredicateCorrelation::handleMatchConstantCorrelation(
   if (matchOperation->alternative(alternatives[0]) != 0
       || matchOperation->alternative(alternatives[1]) != 1)
   {
-    return;
+    return false;
   }
 
   thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
+  return true;
 }
 
 void
