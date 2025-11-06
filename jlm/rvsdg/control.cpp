@@ -145,8 +145,8 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
     auto & tracedOutput = traceOutputIntraProcedurally(*arg);
     auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantOperation);
-    return control_constant(
-        arg->region(),
+    return &ControlConstantOperation::create(
+        *arg->region(),
         nalternatives(),
         alternative(constantOperation->value().to_uint()));
   }
@@ -185,15 +185,6 @@ match(
              mapping,
              default_alternative,
              nalternatives)
-      .output(0);
-}
-
-jlm::rvsdg::Output *
-control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
-{
-  return CreateOpNode<ControlConstantOperation>(
-             *region,
-             ControlValueRepresentation(alternative, nalternatives))
       .output(0);
 }
 

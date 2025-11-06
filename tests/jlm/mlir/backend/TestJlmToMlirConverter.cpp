@@ -490,7 +490,7 @@ TestGamma()
 
     // Create a gamma operation
     std::cout << "Gamma Operation" << std::endl;
-    auto CtrlConstant = jlm::rvsdg::control_constant(&graph->GetRootRegion(), 3, 1);
+    auto CtrlConstant = &jlm::rvsdg::ControlConstantOperation::create(graph->GetRootRegion(), 3, 1);
     auto entryvar1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 6);
     auto rvsdgGammaNode = jlm::rvsdg::GammaNode::create(
@@ -608,7 +608,8 @@ TestTheta()
     auto entryvar2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 6);
     jlm::rvsdg::ThetaNode * rvsdgThetaNode = jlm::rvsdg::ThetaNode::create(&graph->GetRootRegion());
 
-    auto predicate = jlm::rvsdg::control_constant(rvsdgThetaNode->subregion(), 2, 0);
+    auto predicate =
+        &jlm::rvsdg::ControlConstantOperation::create(*rvsdgThetaNode->subregion(), 2, 0);
 
     rvsdgThetaNode->AddLoopVar(entryvar1);
     rvsdgThetaNode->AddLoopVar(entryvar2);

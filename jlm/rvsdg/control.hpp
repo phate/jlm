@@ -118,10 +118,28 @@ public:
     return value_;
   }
 
-  static Output *
-  create(Region * region, ControlValueRepresentation value)
+  static Output &
+  create(Region & region, ControlValueRepresentation value)
   {
-    return CreateOpNode<ControlConstantOperation>(*region, std::move(value)).output(0);
+    return *CreateOpNode<ControlConstantOperation>(region, std::move(value)).output(0);
+  }
+
+  static Output &
+  create(Region & region, size_t numAlternatives, size_t alternative)
+  {
+    return create(region, { alternative, numAlternatives });
+  }
+
+  static Output &
+  createFalse(Region & region)
+  {
+    return create(region, 2, 0);
+  }
+
+  static Output &
+  createTrue(Region & region)
+  {
+    return create(region, 2, 1);
   }
 
 private:
@@ -253,21 +271,6 @@ match(
     uint64_t default_alternative,
     size_t nalternatives,
     jlm::rvsdg::Output * operand);
-
-jlm::rvsdg::Output *
-control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
-
-static inline jlm::rvsdg::Output *
-control_false(rvsdg::Region * region)
-{
-  return control_constant(region, 2, 0);
-}
-
-static inline jlm::rvsdg::Output *
-control_true(rvsdg::Region * region)
-{
-  return control_constant(region, 2, 1);
-}
 
 }
 
