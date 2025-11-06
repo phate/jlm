@@ -841,8 +841,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
     JLM_ASSERT(::mlir::isa<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()));
-    return { rvsdg::control_constant(
-        &rvsdgRegion,
+    return { &rvsdg::ControlConstantOperation::create(
+        rvsdgRegion,
         ::mlir::cast<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()).getNumOptions(),
         MlirCtrlConst.getValue()) };
   }
