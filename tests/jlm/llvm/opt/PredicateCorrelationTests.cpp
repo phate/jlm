@@ -51,6 +51,35 @@ setupMatchConstantCorrelationTest(
   return { *gammaNode, *thetaNode, matchNode };
 }
 
+struct MatchCorrelationTest
+{
+  jlm::rvsdg::GammaNode & gammaNode;
+  jlm::rvsdg::ThetaNode & thetaNode;
+  jlm::rvsdg::Node & matchNode;
+};
+
+static MatchCorrelationTest
+setupMatchCorrelationTest(jlm::rvsdg::Graph & rvsdg)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto bitType32 = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+
+  auto constantNode = TestOperation::create(thetaNode->subregion(), {}, { bitType32 });
+  auto & matchNode = MatchOperation::CreateNode(*constantNode->output(0), { { 1, 1 } }, 0, 2);
+
+  auto gammaNode = GammaNode::create(matchNode.output(0), 2);
+
+  thetaNode->predicate()->divert_to(matchNode.output(0));
+
+  return { *gammaNode, *thetaNode, matchNode };
+}
+
 static void
 testControlConstantCorrelation()
 {
@@ -72,8 +101,8 @@ testControlConstantCorrelation()
 
   auto gammaNode = GammaNode::create(predicate, 2);
 
-  auto controlConstant0 = control_constant(gammaNode->subregion(0), 2, 0);
-  auto controlConstant1 = control_constant(gammaNode->subregion(1), 2, 1);
+  auto controlConstant0 = &ControlConstantOperation::create(*gammaNode->subregion(0), 2, 0);
+  auto controlConstant1 = &ControlConstantOperation::create(*gammaNode->subregion(1), 2, 1);
 
   auto controlExitVar = gammaNode->AddExitVar({ controlConstant0, controlConstant1 });
 
@@ -212,6 +241,39 @@ testMatchConstantCorrelation_Failure()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation_Failure",
     testMatchConstantCorrelation_Failure)
+
+static void
+testMatchCorrelationDetection()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto [gammaNode, thetaNode, matchNode] = setupMatchCorrelationTest(rvsdg);
+
+  view(rvsdg, stdout);
+
+  // Act
+  const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+
+  // Assert
+  assert(correlationOpt.value() != nullptr);
+  assert(correlationOpt.value()->type() == CorrelationType::MatchCorrelation);
+  assert(&correlationOpt.value()->thetaNode() == &thetaNode);
+  assert(&correlationOpt.value()->gammaNode() == &gammaNode);
+
+  const auto correlationData = std::get<ThetaGammaPredicateCorrelation::MatchCorrelationData>(
+      correlationOpt.value()->data());
+  assert(correlationData.matchNode == &matchNode);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/PredicateCorrelationTests-testMatchCorrelationDetection",
+    testMatchCorrelationDetection)
 
 static void
 testThetaGammaCorrelationFixPoint()

@@ -222,7 +222,7 @@ RouteToRegion_Nesting()
   const auto lambdaNode =
       LambdaNode::Create(rvsdg.GetRootRegion(), std::make_unique<LambdaOperation>(functionType));
 
-  const auto controlConstant = control_constant(lambdaNode->subregion(), 2, 0);
+  const auto controlConstant = &ControlConstantOperation::create(*lambdaNode->subregion(), 2, 0);
   const auto gammaNode = GammaNode::create(controlConstant, 2);
 
   // Act
