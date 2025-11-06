@@ -95,32 +95,6 @@ test_node_copy()
   assert(graph.GetRootRegion().numNodes() == 2);
 }
 
-static inline void
-test_node_depth()
-{
-  auto vt = jlm::tests::ValueType::Create();
-
-  jlm::rvsdg::Graph graph;
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-
-  auto null = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt });
-  auto bin =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
-  auto un = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
-
-  jlm::rvsdg::GraphExport::Create(*un->output(0), "x");
-
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
-
-  assert(null->depth() == 0);
-  assert(bin->depth() == 1);
-  assert(un->depth() == 2);
-
-  bin->input(0)->divert_to(x);
-  assert(bin->depth() == 0);
-  assert(un->depth() == 1);
-}
-
 /**
  * Test Node::RemoveOutputsWhere()
  */
@@ -232,7 +206,6 @@ static void
 test_nodes()
 {
   test_node_copy();
-  test_node_depth();
   TestRemoveOutputsWhere();
   TestRemoveInputsWhere();
 }

@@ -76,9 +76,6 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   old_origin->remove_user(this);
   new_origin->add_user(this);
 
-  if (auto node = TryGetOwnerNode<Node>(*this))
-    node->recompute_depth();
-
   region()->notifyInputChange(this, old_origin, new_origin);
 }
 
@@ -258,7 +255,6 @@ NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
 
 Node::Node(Region * region)
     : Id_(region->generateNodeId()),
-      depth_(0),
       region_(region)
 {
   region->onBottomNodeAdded(*this);
@@ -294,19 +290,12 @@ Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
   // If we used to be a top node, we no longer are
   if (ninputs() == 0)
   {
-    JLM_ASSERT(depth() == 0);
     region()->onTopNodeRemoved(*this);
   }
 
   input->index_ = ninputs();
   inputs_.push_back(std::move(input));
   const auto inputPtr = inputs_.back().get();
-
-  const auto producer = rvsdg::TryGetOwnerNode<Node>(*inputPtr->origin());
-  const auto new_depth = producer ? producer->depth() + 1 : 0;
-  if (new_depth > depth())
-    recompute_depth();
-
   if (notifyRegion)
     region()->notifyInputCreate(inputPtr);
 
@@ -321,9 +310,7 @@ Node::removeInput(size_t index, bool notifyRegion)
   if (notifyRegion)
     region()->notifyInputDestory(input(index));
 
-  auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
-
-  /* remove input */
+  // remove input
   for (size_t n = index; n < ninputs() - 1; n++)
   {
     inputs_[n] = std::move(inputs_[n + 1]);
@@ -331,20 +318,9 @@ Node::removeInput(size_t index, bool notifyRegion)
   }
   inputs_.pop_back();
 
-  /* recompute depth */
-  if (producer)
-  {
-    auto pdepth = producer->depth();
-    JLM_ASSERT(pdepth < depth());
-    if (pdepth != depth() - 1)
-      return;
-  }
-  recompute_depth();
-
   // If we no longer have any inputs we are now a top node
   if (ninputs() == 0)
   {
-    JLM_ASSERT(depth() == 0);
     region()->onTopNodeAdded(*this);
   }
 }
@@ -361,38 +337,6 @@ Node::removeOutput(size_t index)
     outputs_[n]->index_ = n;
   }
   outputs_.pop_back();
-}
-
-void
-Node::recompute_depth() noexcept
-{
-  /*
-    FIXME: This function is inefficient, as it can visit the
-    node's successors multiple times. Optimally, we would like
-    to visit the node's successors in top down order to ensure
-    that each node is only visited once.
-  */
-  size_t new_depth = 0;
-  for (size_t n = 0; n < ninputs(); n++)
-  {
-    auto producer = rvsdg::TryGetOwnerNode<Node>(*input(n)->origin());
-    new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
-  }
-  if (new_depth == depth())
-    return;
-
-  depth_ = new_depth;
-
-  for (size_t n = 0; n < noutputs(); n++)
-  {
-    for (auto & user : output(n)->Users())
-    {
-      if (auto node = TryGetOwnerNode<Node>(user))
-      {
-        node->recompute_depth();
-      }
-    }
-  }
 }
 
 Node *

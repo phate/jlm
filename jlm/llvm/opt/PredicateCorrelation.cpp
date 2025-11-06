@@ -127,6 +127,30 @@ computeMatchConstantCorrelation(rvsdg::ThetaNode & thetaNode)
       { matchNode, alternatives });
 }
 
+static std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
+computeMatchCorrelation(rvsdg::ThetaNode & thetaNode)
+{
+  auto [matchNode, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*thetaNode.predicate()->origin());
+  if (!matchOperation)
+  {
+    return std::nullopt;
+  }
+
+  for (auto & user : matchNode->output(0)->Users())
+  {
+    if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
+    {
+      return ThetaGammaPredicateCorrelation::CreateMatchCorrelation(
+          thetaNode,
+          *gammaNode,
+          { matchNode });
+    }
+  }
+
+  return std::nullopt;
+}
+
 std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
 {
@@ -136,6 +160,11 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
   }
 
   if (auto correlationOpt = computeMatchConstantCorrelation(thetaNode))
+  {
+    return correlationOpt;
+  }
+
+  if (auto correlationOpt = computeMatchCorrelation(thetaNode))
   {
     return correlationOpt;
   }
