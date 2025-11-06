@@ -304,8 +304,8 @@ testThetaGammaCorrelationFixPoint()
   // Arrange second gamma node
   auto gammaNode2 = GammaNode::create(matchNode.output(0), 2);
 
-  auto controlConstant0 = control_constant(gammaNode2->subregion(0), 2, 0);
-  auto controlConstant1 = control_constant(gammaNode2->subregion(1), 2, 1);
+  auto controlConstant0 = &ControlConstantOperation::create(*gammaNode2->subregion(0), 2, 0);
+  auto controlConstant1 = &ControlConstantOperation::create(*gammaNode2->subregion(1), 2, 1);
 
   auto controlExitVar = gammaNode2->AddExitVar({ controlConstant0, controlConstant1 });
 

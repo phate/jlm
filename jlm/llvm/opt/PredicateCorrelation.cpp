@@ -221,7 +221,7 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
   // correlation. The pattern is a strict top-down pattern, which means that once we resolved the
   // gamma-gamma predicate correlations, there should only be a single theta-gamma predicate
   // correlation left, if any. Thus, it might be that the fix-point computation is unnecessary.
-  bool predicateWasRedirected;
+  bool predicateWasRedirected = false;
   do
   {
     predicateWasRedirected = false;
@@ -240,6 +240,9 @@ PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
       break;
     case CorrelationType::MatchConstantCorrelation:
       predicateWasRedirected = handleMatchConstantCorrelation(*correlation);
+      break;
+    case CorrelationType::MatchCorrelation:
+      predicateWasRedirected = false;
       break;
     default:
       throw std::logic_error("Unhandled theta-gamma predicate correlation.");
