@@ -167,6 +167,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
         {
           o->divert_users(gamma->predicate()->origin());
           changed = true;
+          assert(0);
         }
       }
     }
