@@ -41,7 +41,9 @@ types_bitstring_arithmetic_test_bitand()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitand_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, +1));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, +1 }));
 
   return 0;
 }
@@ -87,10 +89,18 @@ types_bitstring_arithmetic_test_bitashr()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitashr_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, 4));
-  assert(TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation() == int_constant_op(32, 0));
-  assert(TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation() == int_constant_op(32, -4));
-  assert(TryGetOwnerNode<SimpleNode>(*ex4.origin())->GetOperation() == int_constant_op(32, -1));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, 4 }));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
+      == BitConstantOperation({ 32, 0 }));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation()
+      == BitConstantOperation({ 32, -4 }));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex4.origin())->GetOperation()
+      == BitConstantOperation({ 32, -1 }));
 
   return 0;
 }
@@ -153,8 +163,12 @@ types_bitstring_arithmetic_test_bitnegate()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitneg_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, -3));
-  assert(TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, -3 }));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
+      == BitConstantOperation({ 32, 3 }));
 
   return 0;
 }
@@ -189,8 +203,12 @@ types_bitstring_arithmetic_test_bitnot()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitnot_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, -4));
-  assert(TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, -4 }));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
+      == BitConstantOperation({ 32, 3 }));
 
   return 0;
 }
@@ -415,7 +433,9 @@ types_bitstring_arithmetic_test_bitsmod()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsmod_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, -1));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, -1 }));
 
   return 0;
 }
@@ -450,7 +470,9 @@ types_bitstring_arithmetic_test_bitsquotient()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsdiv_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, -2));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, -2 }));
 
   return 0;
 }
@@ -485,7 +507,9 @@ types_bitstring_arithmetic_test_bitsum()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitadd_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, 8));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, 8 }));
 
   return 0;
 }
@@ -548,7 +572,9 @@ types_bitstring_arithmetic_test_bitumod()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitumod_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, 1));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, 1 }));
 
   return 0;
 }
@@ -583,7 +609,9 @@ types_bitstring_arithmetic_test_bituquotient()
 
   // Assert
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitudiv_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, 2));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, 2 }));
 
   return 0;
 }
@@ -618,7 +646,9 @@ types_bitstring_arithmetic_test_bitxor()
 
   // Arrange
   assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitxor_op(32));
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation() == int_constant_op(32, 6));
+  assert(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
+      == BitConstantOperation({ 32, 6 }));
 
   return 0;
 }
@@ -1189,7 +1219,7 @@ types_bitstring_test_constant()
 
   // Act & Assert
   assert(b1.GetOperation() == BitConstantOperation({ 8, 204 }));
-  assert(b1.GetOperation() == int_constant_op(8, -52));
+  assert(b1.GetOperation() == BitConstantOperation({ 8, -52 }));
 
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex1.origin()));
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex2.origin()));
@@ -1201,20 +1231,20 @@ types_bitstring_test_constant()
 
   const auto node1 = TryGetOwnerNode<SimpleNode>(*ex1.origin());
   assert(node1->GetOperation() == BitConstantOperation({ 8, 204 }));
-  assert(node1->GetOperation() == int_constant_op(8, -52));
+  assert(node1->GetOperation() == BitConstantOperation({ 8, -52}));
 
   const auto node4 = TryGetOwnerNode<SimpleNode>(*ex4.origin());
   assert(node4->GetOperation() == BitConstantOperation({ 9, 204 }));
-  assert(node4->GetOperation() == int_constant_op(9, 204));
+  assert(node4->GetOperation() == BitConstantOperation({ 9, 204}));
 
   const auto & plus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), ONE_64 ZERO_64);
   assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1 }));
-  assert(plus_one_128.GetOperation() == int_constant_op(128, 1));
+  assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1}));
 
   const auto & minus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), MONE_64 MONE_64);
-  assert(minus_one_128.GetOperation() == int_constant_op(128, -1));
+  assert(minus_one_128.GetOperation() == BitConstantOperation({ 128, -1}));
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -1263,7 +1293,7 @@ types_bitstring_test_normalize()
     op2 = tmp;
   }
   /* FIXME: the graph traversers are currently broken, that is why it won't normalize */
-  assert(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation() == int_constant_op(32, 3 + 4));
+  assert(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation() == BitConstantOperation({ 32, 3 + 4}));
   assert(op2 == imp);
 
   view(&graph.GetRootRegion(), stdout);

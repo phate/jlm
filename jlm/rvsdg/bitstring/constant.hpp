@@ -50,12 +50,6 @@ private:
   BitValueRepresentation value_;
 };
 
-inline BitConstantOperation
-int_constant_op(size_t nbits, int64_t value)
-{
-  return BitConstantOperation(BitValueRepresentation(nbits, value));
-}
-
 static inline jlm::rvsdg::Output *
 create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
 {
