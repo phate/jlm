@@ -233,8 +233,7 @@ merge_gamma(rvsdg::Region * region)
           merge_gamma(structnode->subregion(n));
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
-          if (eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma) || merge_gamma(gamma)
-              )
+          if (eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma) || merge_gamma(gamma))
           {
             changed = true;
             break;
