@@ -304,6 +304,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
         }
         remove(old_gamma);
         remove(pred_node);
+        assert(0);
         return true;
       }
     }
