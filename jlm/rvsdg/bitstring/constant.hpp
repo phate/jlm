@@ -51,12 +51,6 @@ private:
 };
 
 inline BitConstantOperation
-uint_constant_op(size_t nbits, uint64_t value)
-{
-  return BitConstantOperation(BitValueRepresentation(nbits, value));
-}
-
-inline BitConstantOperation
 int_constant_op(size_t nbits, int64_t value)
 {
   return BitConstantOperation(BitValueRepresentation(nbits, value));
