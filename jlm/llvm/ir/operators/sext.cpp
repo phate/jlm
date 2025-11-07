@@ -122,7 +122,7 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantNode && constantOperation);
-    return create_bitconstant(
+    return rvsdg::BitConstantOperation::create(
         operand->region(),
         constantOperation->value().sext(ndstbits() - nsrcbits()));
   }

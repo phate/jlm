@@ -256,7 +256,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = jlm::rvsdg::create_bitconstant(unrolled_theta->subregion(), ev);
+    auto c = jlm::rvsdg::BitConstantOperation::create(unrolled_theta->subregion(), ev);
     input->divert_to(c);
   }
 }

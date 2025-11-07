@@ -51,29 +51,23 @@ private:
 };
 
 static inline jlm::rvsdg::Output *
-create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
-{
-  return CreateOpNode<BitConstantOperation>(*region, vr).output(0);
-}
-
-static inline jlm::rvsdg::Output *
 create_bitconstant(rvsdg::Region * region, size_t nbits, int64_t value)
 {
-  return create_bitconstant(region, { nbits, value });
+  return BitConstantOperation::create(region, { nbits, value });
 }
 
 static inline jlm::rvsdg::Output *
 create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'X');
-  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
+  return BitConstantOperation::create(region, BitValueRepresentation(s.c_str()));
 }
 
 static inline jlm::rvsdg::Output *
 create_bitconstant_defined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'D');
-  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
+  return BitConstantOperation::create(region, BitValueRepresentation(s.c_str()));
 }
 
 }

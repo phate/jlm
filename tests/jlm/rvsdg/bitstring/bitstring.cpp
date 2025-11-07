@@ -1231,20 +1231,20 @@ types_bitstring_test_constant()
 
   const auto node1 = TryGetOwnerNode<SimpleNode>(*ex1.origin());
   assert(node1->GetOperation() == BitConstantOperation({ 8, 204 }));
-  assert(node1->GetOperation() == BitConstantOperation({ 8, -52}));
+  assert(node1->GetOperation() == BitConstantOperation({ 8, -52 }));
 
   const auto node4 = TryGetOwnerNode<SimpleNode>(*ex4.origin());
   assert(node4->GetOperation() == BitConstantOperation({ 9, 204 }));
-  assert(node4->GetOperation() == BitConstantOperation({ 9, 204}));
+  assert(node4->GetOperation() == BitConstantOperation({ 9, 204 }));
 
   const auto & plus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), ONE_64 ZERO_64);
   assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1 }));
-  assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1}));
+  assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1 }));
 
   const auto & minus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), MONE_64 MONE_64);
-  assert(minus_one_128.GetOperation() == BitConstantOperation({ 128, -1}));
+  assert(minus_one_128.GetOperation() == BitConstantOperation({ 128, -1 }));
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -1293,7 +1293,7 @@ types_bitstring_test_normalize()
     op2 = tmp;
   }
   /* FIXME: the graph traversers are currently broken, that is why it won't normalize */
-  assert(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation() == BitConstantOperation({ 32, 3 + 4}));
+  assert(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation() == BitConstantOperation({ 32, 3 + 4 }));
   assert(op2 == imp);
 
   view(&graph.GetRootRegion(), stdout);
@@ -1319,8 +1319,8 @@ types_bitstring_test_reduction()
   auto bit4Type = BitType::Create(4);
   std::vector types({ bit4Type, bit4Type });
 
-  auto a = create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("1100"));
-  auto b = create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("1010"));
+  auto a = BitConstantOperation::create(&graph.GetRootRegion(), BitValueRepresentation("1100"));
+  auto b = BitConstantOperation::create(&graph.GetRootRegion(), BitValueRepresentation("1010"));
 
   auto & bitAndNode = CreateOpNode<bitand_op>({ a, b }, 4);
   auto & bitOrNode = CreateOpNode<bitor_op>({ a, b }, 4);
@@ -1461,7 +1461,7 @@ SliceOfConstant()
   auto bit8Type = BitType::Create(8);
 
   const auto constant =
-      create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("00110111"));
+      BitConstantOperation::create(&graph.GetRootRegion(), BitValueRepresentation("00110111"));
   auto & sliceNode = CreateOpNode<BitSliceOperation>({ constant }, bit8Type, 2, 6);
   auto & ex = GraphExport::Create(*sliceNode.output(0), "dummy");
 
@@ -1684,8 +1684,8 @@ ConcatOfConstants()
 
   // Arrange
   Graph graph;
-  auto c1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
-  auto c2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
+  auto c1 = BitConstantOperation::create(&graph.GetRootRegion(), "00110111");
+  auto c2 = BitConstantOperation::create(&graph.GetRootRegion(), "11001000");
 
   auto concatResult = bitconcat({ c1, c2 });
 
