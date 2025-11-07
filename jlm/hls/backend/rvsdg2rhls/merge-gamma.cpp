@@ -175,59 +175,6 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
 }
 
 bool
-bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
-{
-  // for some reason some gamma nodes seem to have bittypes followed by a match instead of ctltypes
-  for (size_t i = 0; i < old_gamma->noutputs(); ++i)
-  {
-    auto o = old_gamma->output(i);
-    if (!std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(o->Type()))
-      continue;
-    if (o->nusers() != 1)
-      continue;
-    auto & user = *o->Users().begin();
-    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(user);
-    if (!matchOperation)
-      continue;
-    // output is only used by match
-    bool all_bittype = true;
-    for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
-    {
-      auto origin = old_gamma->subregion(j)->result(i)->origin();
-      if (!rvsdg::IsOwnerNodeOperation<llvm::IntegerConstantOperation>(*origin))
-      {
-        all_bittype = false;
-        break;
-      }
-    }
-    if (!all_bittype)
-      continue;
-    // actual conversion - instead of copying we just add a new output
-    std::vector<rvsdg::Output *> new_outputs;
-    for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
-    {
-      auto origin = old_gamma->subregion(j)->result(i)->origin();
-      auto [_, constantOperation] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
-      JLM_ASSERT(constantOperation);
-      auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
-      auto no = &rvsdg::ControlConstantOperation::create(
-          *origin->region(),
-          { ctl_value, matchOperation->nalternatives() });
-      new_outputs.push_back(no);
-    }
-    auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
-    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
-    match_node->output(0)->divert_users(match_replacement);
-    // TODO: divert match users
-    remove(match_node);
-    assert(0);
-    return true;
-  }
-  return false;
-}
-
-bool
 fix_match_inversion(rvsdg::GammaNode * old_gamma)
 {
   // inverts match and swaps regions for gammas that contain swapped control constants
@@ -372,7 +319,7 @@ merge_gamma(rvsdg::Region * region)
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
           if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
-              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma))
+              || merge_gamma(gamma))
           {
             changed = true;
             break;
