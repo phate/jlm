@@ -227,92 +227,6 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
 }
 
 bool
-fix_match_inversion(rvsdg::GammaNode * old_gamma)
-{
-  // inverts match and swaps regions for gammas that contain swapped control constants
-  if (old_gamma->nsubregions() != 2)
-  {
-    return false;
-  }
-  bool swapped = false;
-  size_t ctl_cnt = 0;
-  for (size_t i = 0; i < old_gamma->noutputs(); ++i)
-  {
-    auto o = old_gamma->output(i);
-    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
-    {
-      ctl_cnt++;
-      swapped = true;
-      for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
-      {
-        auto r = old_gamma->subregion(j)->result(i);
-        if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
-        {
-          if (auto ctl = dynamic_cast<const rvsdg::ControlConstantOperation *>(
-                  &simpleNode->GetOperation()))
-          {
-            if (j != ctl->value().alternative())
-            {
-              continue;
-            }
-          }
-        }
-        swapped = false;
-      }
-    }
-  }
-  if (ctl_cnt != 1 || !swapped)
-  {
-    return false;
-  }
-  if (auto pred_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*old_gamma->predicate()->origin()))
-  {
-    if (old_gamma->predicate()->origin()->nusers() != 1)
-    {
-      return false;
-    }
-    if (auto match = dynamic_cast<const rvsdg::MatchOperation *>(&pred_node->GetOperation()))
-    {
-      if (match->nalternatives() == 2)
-      {
-        uint64_t default_alternative = match->default_alternative() ? 0 : 1;
-        auto new_match = rvsdg::MatchOperation::Create(
-            *pred_node->input(0)->origin(),
-            { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
-            default_alternative,
-            match->nalternatives());
-        auto new_gamma = rvsdg::GammaNode::create(new_match, match->nalternatives());
-        rvsdg::SubstitutionMap rmap0; // subregion 0 of the new gamma - 1 of the old
-        rvsdg::SubstitutionMap rmap1;
-        for (const auto & oev : old_gamma->GetEntryVars())
-        {
-          auto nev = new_gamma->AddEntryVar(oev.input->origin());
-          rmap0.insert(oev.branchArgument[1], nev.branchArgument[0]);
-          rmap1.insert(oev.branchArgument[0], nev.branchArgument[1]);
-        }
-        /* copy subregions */
-        old_gamma->subregion(0)->copy(new_gamma->subregion(1), rmap1, false, false);
-        old_gamma->subregion(1)->copy(new_gamma->subregion(0), rmap0, false, false);
-
-        for (auto oex : old_gamma->GetExitVars())
-        {
-          std::vector<rvsdg::Output *> operands;
-          operands.push_back(rmap0.lookup(oex.branchResult[1]->origin()));
-          operands.push_back(rmap1.lookup(oex.branchResult[0]->origin()));
-          auto nex = new_gamma->AddExitVar(operands).output;
-          oex.output->divert_users(nex);
-        }
-        remove(old_gamma);
-        remove(pred_node);
-        assert(0);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool
 eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 {
   // eliminates gammas that are only active at the end of the loop and have unused outputs
@@ -371,8 +285,8 @@ merge_gamma(rvsdg::Region * region)
           merge_gamma(structnode->subregion(n));
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
-          if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
-              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma))
+          if (eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma) || merge_gamma(gamma)
+              || bit_type_to_ctl_type(gamma))
           {
             changed = true;
             break;
