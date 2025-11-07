@@ -1410,7 +1410,7 @@ GammaTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = jlm::rvsdg::BitConstantOperation::create(fct->subregion(), { 32, 0});
+  auto zero = jlm::rvsdg::BitConstantOperation::create(fct->subregion(), { 32, 0 });
   auto biteq = jlm::rvsdg::biteq_op::create(32, fct->GetFunctionArguments()[0], zero);
   auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, biteq);
 
@@ -1490,7 +1490,7 @@ GammaTest2::SetupRvsdg()
           jlm::rvsdg::BitType::Create(32),
           4);
 
-      auto two = rvsdg::BitConstantOperation::create(gammaNode->subregion(1), { 32, 2});
+      auto two = rvsdg::BitConstantOperation::create(gammaNode->subregion(1), { 32, 2 });
       auto storeZRegion1Results = StoreNonVolatileOperation::Create(
           gammaInputZ.branchArgument[1],
           two,
@@ -1525,7 +1525,7 @@ GammaTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[3];
     auto memoryStateArgument = lambda->GetFunctionArguments()[4];
 
-    auto constantOne = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 1});
+    auto constantOne = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 1 });
 
     auto allocaZResults = AllocaOperation::create(pointerType, constantOne, 4);
 
@@ -1536,7 +1536,7 @@ GammaTest2::SetupRvsdg()
     auto storeZResults =
         StoreNonVolatileOperation::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
-    auto zero = rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 0});
+    auto zero = rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 0 });
     auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
     auto predicate = rvsdg::match(1, { { 0, 1 } }, 0, 2, bitEq);
 
@@ -1579,7 +1579,7 @@ GammaTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto lambdaFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto constantOne = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 4});
+    auto constantOne = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 4 });
 
     auto allocaXResults = AllocaOperation::create(rvsdg::BitType::Create(32), constantOne, 4);
     auto allocaYResults = AllocaOperation::create(pointerType, constantOne, 4);
@@ -1591,7 +1591,7 @@ GammaTest2::SetupRvsdg()
 
     auto predicate = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, cValue });
     auto x = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, xValue });
-    auto y = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, yValue});
+    auto y = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, yValue });
 
     auto storeXResults =
         StoreNonVolatileOperation::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
@@ -1659,7 +1659,7 @@ ThetaTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = jlm::rvsdg::BitConstantOperation::create(fct->subregion(), {32, 0});
+  auto zero = jlm::rvsdg::BitConstantOperation::create(fct->subregion(), { 32, 0 });
 
   auto thetanode = jlm::rvsdg::ThetaNode::create(fct->subregion());
 
@@ -1676,7 +1676,7 @@ ThetaTest::SetupRvsdg()
       pointerType);
   auto store = StoreNonVolatileOperation::Create(gepnode, c.pre, { s.pre }, 4);
 
-  auto one = jlm::rvsdg::BitConstantOperation::create(thetanode->subregion(), {32, 1});
+  auto one = jlm::rvsdg::BitConstantOperation::create(thetanode->subregion(), { 32, 1 });
   auto sum = jlm::rvsdg::bitadd_op::create(32, n.pre, one);
   auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l.pre);
   auto predicate = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
@@ -1718,7 +1718,7 @@ DeltaTest1::SetupRvsdg()
             "",
             false));
 
-    auto constant = jlm::rvsdg::BitConstantOperation::create(dfNode->subregion(), {32, 0});
+    auto constant = jlm::rvsdg::BitConstantOperation::create(dfNode->subregion(), { 32, 0 });
 
     return &dfNode->finalize(constant);
   };
@@ -1765,7 +1765,7 @@ DeltaTest1::SetupRvsdg()
     auto cvf = lambda->AddContextVar(*f).inner;
     auto cvg = lambda->AddContextVar(*g).inner;
 
-    auto five = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), {32, 5});
+    auto five = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 5 });
     auto st = StoreNonVolatileOperation::Create(cvf, five, { memoryStateArgument }, 4);
     auto & callG = CallOperation::CreateNode(
         cvg,
@@ -1816,7 +1816,7 @@ DeltaTest2::SetupRvsdg()
             "",
             false));
 
-    auto constant = jlm::rvsdg::BitConstantOperation::create(delta->subregion(), {32, 0});
+    auto constant = jlm::rvsdg::BitConstantOperation::create(delta->subregion(), { 32, 0 });
 
     return &delta->finalize(constant);
   };
@@ -1832,7 +1832,7 @@ DeltaTest2::SetupRvsdg()
             "",
             false));
 
-    auto constant = jlm::rvsdg::BitConstantOperation::create(delta->subregion(), {32, 0});
+    auto constant = jlm::rvsdg::BitConstantOperation::create(delta->subregion(), { 32, 0 });
 
     return &delta->finalize(constant);
   };
@@ -1852,7 +1852,7 @@ DeltaTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto cvd1 = lambda->AddContextVar(*d1).inner;
-    auto b2 = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), {32, 2});
+    auto b2 = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 2 });
     auto st = StoreNonVolatileOperation::Create(cvd1, b2, { memoryStateArgument }, 4);
 
     return lambda->finalize({ iOStateArgument, st[0] });
