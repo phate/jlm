@@ -62,91 +62,223 @@ struct MemoryNodeInterval
   // End index in the MemoryNodeOrdering. Exclusive
   MemoryNodeOrderingIndex end;
 
-  // Default ctor needed for vector resize. Do not use
-  MemoryNodeInterval() : start(0), end(0) {}
-
-  explicit MemoryNodeInterval(MemoryNodeOrderingIndex start) : start(start), end(start + 1) {}
-
-  MemoryNodeInterval(MemoryNodeOrderingIndex start, MemoryNodeOrderingIndex end) : start(start), end(end) {}
+  // Default ctor needed for vector resize
+  MemoryNodeInterval()
+      : start(0),
+        end(0)
+  {}
 
   /**
-   * Intervals are sorted primarily by start index.
-   * If the start indices are identical, the largest interval comes first.
+   * Creates an interval containing the single memory node with the given index
+   * @param index the position of the memory node in the MemoryNodeOrdering
    */
-  bool
+  explicit MemoryNodeInterval(MemoryNodeOrderingIndex index)
+      : start(index),
+        end(index + 1)
+  {}
+
+  /**
+   * Creates an interval contaning every memory node with index in the range [start, end).
+   * @param start the position of the first memory node in the MemoryNodeOrdering
+   * @param end the position one after the last memory node in the MemoryNodeOrdering
+   */
+  MemoryNodeInterval(MemoryNodeOrderingIndex start, MemoryNodeOrderingIndex end)
+      : start(start),
+        end(end)
+  {}
+
+  [[nodiscard]] bool
   operator<(const MemoryNodeInterval & other) const noexcept
   {
-    if (start < other.start)
-      return true;
-    if (start == other.start)
-      return end > other.end;
-    return false;
+    if (start != other.start)
+      return start < other.start;
+    return end < other.end;
   }
 };
 
-struct MemoryNodeIntervalSet
+class MemoryNodeIntervalSet
 {
-  // The set of intervals, which should be sorted according to the interval ordering rules.
-  std::vector<MemoryNodeInterval> intervals;
-
+public:
   MemoryNodeIntervalSet() = default;
 
+  /**
+   * Creates an interval set using the given \p intervals.
+   * The intervals will be sorted, merged when possible, and empty intervals will be removed.
+   * @param intervals the intervals in the set
+   */
   explicit MemoryNodeIntervalSet(std::vector<MemoryNodeInterval> intervals)
-      : intervals(std::move(intervals))
-  {}
+      : intervals_(std::move(intervals))
+  {
+    sortAndCompact();
+  }
 
+  [[nodiscard]] const std::vector<MemoryNodeInterval> &
+  getIntervals() const noexcept
+  {
+    return intervals_;
+  }
+
+  [[nodiscard]] size_t
+  numIntervals() const noexcept
+  {
+    return intervals_.size();
+  }
+
+private:
   /**
    * Sorts intervals and replaces overlapping/adjacent intervals with their union.
    */
   void
-  sortAndCompact()
-  {
-    if (intervals.empty())
-      return;
+  sortAndCompact();
 
-    std::sort(intervals.begin(), intervals.end());
-    size_t currentInterval = 0;
-
-    // Check if intervals can be merged into currentInterval instead of being new intervals
-    for (size_t i = 1; i < intervals.size(); i++)
-    {
-      if (intervals[currentInterval].end >= intervals[i].start)
-      {
-        // The intervals are mergeable!
-        intervals[currentInterval].end = std::max(intervals[currentInterval].end, intervals[i].end);
-      }
-      else
-      {
-        // The intervals are not mergeable, make i be the next currentInterval
-
-        // If currentInterval is an empty interval, override it instead of incrementing
-        if (intervals[currentInterval].start < intervals[currentInterval].end)
-          currentInterval++;
-        if (currentInterval != i)
-          intervals[currentInterval] = intervals[i];
-      }
-    }
-
-    // Move past the final interval, if it is non-empty
-    if (intervals[currentInterval].start < intervals[currentInterval].end)
-      currentInterval++;
-
-    // Discard any intervals after the final interval
-    intervals.resize(currentInterval);
-  }
+private:
+  std::vector<MemoryNodeInterval> intervals_;
 };
 
-struct ModRefSet
+/**
+ * Helper class for iterating over a memory node interval set
+ */
+class MemoryNodeIntervalSetIterator
 {
-  ModRefSet(MemoryNodeIntervalSet loads, MemoryNodeIntervalSet stores)
-      : loads(std::move(loads)),
-        stores(std::move(stores))
+public:
+  explicit MemoryNodeIntervalSetIterator(const MemoryNodeIntervalSet & set);
+
+  std::optional<MemoryNodeInterval>
+  peek() const;
+
+  void
+  next();
+
+private:
+  const MemoryNodeIntervalSet & set_;
+  size_t index_;
+};
+
+/**
+ * Helper class for iterating over the union of two MemoryNodeIntervalSets
+ */
+class MemoryNodeIntervalSetUnionIterator
+{
+public:
+  MemoryNodeIntervalSetUnionIterator(
+      MemoryNodeIntervalSetIterator a,
+      MemoryNodeIntervalSetIterator b);
+
+  std::optional<MemoryNodeInterval>
+  peek() const;
+
+  void
+  next();
+
+private:
+  MemoryNodeIntervalSetIterator a_;
+  MemoryNodeIntervalSetIterator b_;
+  std::optional<MemoryNodeInterval> current_;
+};
+
+/**
+ * Helper class for iterating over intervals that are stored to,
+ * and intervals that are loaded from but NOT stored to.
+ */
+class MemoryNodeIntervalSetDifferenceIterator
+{
+public:
+  MemoryNodeIntervalSetDifferenceIterator(
+      MemoryNodeIntervalSetIterator loads,
+      MemoryNodeIntervalSetIterator stores);
+
+  /**
+   * @return a pair representing the current interval, if there is one. Otherwise noneopt.
+   * The returned pair contains the interval itself, as well as a boolean that is true if the
+   * interval gets stored to.
+   */
+  std::optional<std::pair<MemoryNodeInterval, bool>>
+  peek() const;
+
+  void
+  next();
+
+private:
+  MemoryNodeIntervalSetIterator loads_;
+  MemoryNodeIntervalSetIterator stores_;
+  std::optional<std::pair<MemoryNodeInterval, bool>> current_;
+
+  // Due to the possibility of a store interval cutting off a load interval,
+  // we might need to restart in the middle of the load interval.
+  // This field gives the earliest possible start for the next interval.
+  MemoryNodeOrderingIndex lastEnd_;
+};
+
+class ModRefSet
+{
+public:
+  ModRefSet(MemoryNodeIntervalSet loadIntervals, MemoryNodeIntervalSet storeIntervals)
+      : loadIntervals_(std::move(loadIntervals)),
+        storeIntervals_(std::move(storeIntervals))
   {}
 
+  /**
+   * Checks if the ModRefSet represents doing absolutely nothing with any memory
+   * @return true if the ModRefSet does nothing to memory, false otherwise
+   */
+  [[nodiscard]]
+  bool isEmpty() const noexcept
+  {
+    return loadIntervals_.numIntervals() == 0 && storeIntervals_.numIntervals() == 0;
+  }
+
+  const MemoryNodeIntervalSet &
+  getLoadIntervals() const noexcept
+  {
+    return loadIntervals_;
+  }
+
+  MemoryNodeIntervalSetIterator
+  getLoadIntervalIterator() const noexcept
+  {
+    return MemoryNodeIntervalSetIterator(loadIntervals_);
+  }
+
+  const MemoryNodeIntervalSet &
+  getStoreIntervals() const noexcept
+  {
+    return storeIntervals_;
+  }
+
+  MemoryNodeIntervalSetIterator
+  getStoreIntervalIterator() const noexcept
+  {
+    return MemoryNodeIntervalSetIterator(storeIntervals_);
+  }
+
+  /**
+   * @return an iterator providing all intervals that are either loaded from or stored to
+   */
+  MemoryNodeIntervalSetUnionIterator
+  getLoadStoreIntervalIterator() const noexcept
+  {
+    return MemoryNodeIntervalSetUnionIterator(
+        getLoadIntervalIterator(),
+        getStoreIntervalIterator());
+  }
+
+  /**
+   * @return an iterator providing all intervals that are stored to,
+   * as well as all intervals that are loaded from but NOT stored to.
+   */
+  MemoryNodeIntervalSetDifferenceIterator
+  getLoadStoreIntervalDifferenceIterator() const noexcept
+  {
+    return MemoryNodeIntervalSetDifferenceIterator(
+        getLoadIntervalIterator(),
+        getStoreIntervalIterator());
+  }
+
+private:
   // The set of memory nodes that are loaded from (ref)
-  MemoryNodeIntervalSet loads;
+  MemoryNodeIntervalSet loadIntervals_;
   // The set of memory nodes that are stored to (mod)
-  MemoryNodeIntervalSet stores;
+  MemoryNodeIntervalSet storeIntervals_;
 };
 
 /** \brief Mod/Ref Summary
@@ -160,7 +292,7 @@ public:
   virtual ~ModRefSummary() noexcept = default;
 
   [[nodiscard]] virtual const MemoryNodeOrdering &
-  getMemoryNodeOrdering() = 0;
+  getMemoryNodeOrdering() const = 0;
 
   /**
    * Provides the set of MemoryNodes that represent memory locations that may be

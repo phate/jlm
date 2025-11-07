@@ -53,10 +53,10 @@ LambdaNode::GetOperation() const noexcept
   return *Operation_;
 }
 
-[[nodiscard]] std::vector<rvsdg::Output *>
+[[nodiscard]] std::vector<rvsdg::RegionArgument *>
 LambdaNode::GetFunctionArguments() const
 {
-  std::vector<rvsdg::Output *> arguments;
+  std::vector<rvsdg::RegionArgument *> arguments;
   const auto & type = GetOperation().Type();
   for (std::size_t n = 0; n < type->Arguments().size(); ++n)
   {

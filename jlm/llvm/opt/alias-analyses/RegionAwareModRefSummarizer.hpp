@@ -223,6 +223,8 @@ private:
 
   /**
    * Uses the results of solving the ModRefGraph to define an ordering of all relevant Memory Nodes.
+   * Stores the created MemoryNodeOrdering in the context,
+   * while also creating a MemoryNodeOrderingMetadata with important indices in the ordering.
    */
   void
   createMemoryNodeOrdering();

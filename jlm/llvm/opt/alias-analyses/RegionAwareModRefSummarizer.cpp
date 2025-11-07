@@ -836,7 +836,7 @@ public:
   {}
 
   const MemoryNodeOrdering &
-  getMemoryNodeOrdering() override
+  getMemoryNodeOrdering() const override
   {
     return memoryNodeOrdering_;
   }
@@ -1662,11 +1662,9 @@ RegionAwareModRefSummarizer::createMemoryNodeOrdering()
 
   // Sorting rules, in order of most important to least:
   // - All externally available memory comes first
-  // Among nodes that are not externally available:
-  //   - Memory nodes that are stored to but not loaded by external calls come first
-  //   - Then come memory nodes that are both stored to and loaded from by external calls
-  //   - Then come memory nodes that are only loaded from by external calls
-  //   - Then come memory nodes that are neither stored to or loaded from by external calls
+  // Among nodes that are not externally available,
+  // they are sorted by how they can be affected by external function calls:
+  //   [ stored but not loaded ][ stored and loaded ][ loaded but not stored ][ neither ]
   // - Memory nodes are sorted by increasing size, with unknown sizes at the end
   // - Memory nodes are sorted by kind
   // - Alloca and malloc nodes are sorted by the function they belong to
@@ -1811,8 +1809,8 @@ RegionAwareModRefSummarizer::createModRefSummary()
   // Convert each ModRefNode to a ModRefSet consisting of intervals
   for (ModRefNodeIndex i = 0; i < modRefGraph.numModRefNodes(); i++)
   {
-    MemoryNodeIntervalSet loads;
-    MemoryNodeIntervalSet stores;
+    std::vector<MemoryNodeInterval> loadIntervals;
+    std::vector<MemoryNodeInterval> storeIntervals;
 
     // Handle ModRefs that load from all external memory nodes with a size >= X
     const auto loadingFromExternal = modRefGraph.isLoadingFromExternal(i);
@@ -1822,8 +1820,7 @@ RegionAwareModRefSummarizer::createModRefSummary()
       const auto it = metadata.firstExternallyAvailableWithSize.lower_bound(*loadingFromExternal);
       if (it != metadata.firstExternallyAvailableWithSize.end())
       {
-        loads.intervals.push_back(
-            MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
+        loadIntervals.push_back(MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
       }
     }
 
@@ -1835,17 +1832,16 @@ RegionAwareModRefSummarizer::createModRefSummary()
       const auto it = metadata.firstExternallyAvailableWithSize.lower_bound(*storingToExternal);
       if (it != metadata.firstExternallyAvailableWithSize.end())
       {
-        stores.intervals.push_back(
-            MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
+        storeIntervals.push_back(MemoryNodeInterval(it->second, metadata.endOfExternallyAvailable));
       }
     }
 
     // Handle ModRefNodes that make calls to external functions
     if (modRefGraph.isCallingExternal(i))
     {
-      loads.intervals.push_back(
+      loadIntervals.push_back(
           MemoryNodeInterval(metadata.startOfLoadedByExternal, metadata.endOfLoadedByExternal));
-      stores.intervals.push_back(
+      storeIntervals.push_back(
           MemoryNodeInterval(metadata.startOfStoredByExternal, metadata.endOfStoredByExternal));
     }
 
@@ -1853,16 +1849,17 @@ RegionAwareModRefSummarizer::createModRefSummary()
     for (const auto load : modRefGraph.getExplicitLoads(i).Items())
     {
       const auto memoryOrderingIndex = metadata.ptgNodeIndexToMemoryOrderingIndex[load];
-      loads.intervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
+      loadIntervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
     }
     for (const auto store : modRefGraph.getExplicitStores(i).Items())
     {
       const auto memoryOrderingIndex = metadata.ptgNodeIndexToMemoryOrderingIndex[store];
-      stores.intervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
+      storeIntervals.push_back(MemoryNodeInterval(memoryOrderingIndex));
     }
 
-    loads.sortAndCompact();
-    stores.sortAndCompact();
+    // The constructor of MemoryNodeIntervalSet fixes sorting, merging and removing empty intervals
+    MemoryNodeIntervalSet loads(std::move(loadIntervals));
+    MemoryNodeIntervalSet stores(std::move(storeIntervals));
 
     modRefSets.push_back(ModRefSet(std::move(loads), std::move(stores)));
   }

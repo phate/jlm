@@ -34,7 +34,7 @@ namespace jlm::llvm
  *   The \p lambdaNode must conform to the modelling assumptions behind
  *   llvm function representation as lambdas and memory state encoding.
  */
-[[nodiscard]] rvsdg::Output &
+[[nodiscard]] rvsdg::RegionArgument &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 /**

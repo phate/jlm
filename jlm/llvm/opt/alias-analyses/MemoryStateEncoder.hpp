@@ -35,6 +35,7 @@ namespace aa
 {
 
 class ModRefSummary;
+class RegionIntervalOutputMapping;
 
 class MemoryStateEncoder final
 {
@@ -58,69 +59,61 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::Region & region);
+  EncodeInterProceduralRegion(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
+  EncodePhi(rvsdg::PhiNode & phiNode);
 
   void
-  EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode);
+  EncodeLambda(rvsdg::LambdaNode & lambda);
 
   void
-  EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
+  EncodeLambdaEntry(
+      rvsdg::LambdaNode & lambdaNode,
+      RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
+  EncodeLambdaExit(
+      rvsdg::LambdaNode & lambdaNode,
+      RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeLoad(const rvsdg::SimpleNode & node);
+  EncodeIntraProceduralRegion(rvsdg::Region & region, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeStore(const rvsdg::SimpleNode & node);
+  EncodeSimpleNode(
+      rvsdg::SimpleNode & simpleNode,
+      RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeFree(const rvsdg::SimpleNode & freeNode);
+  EncodeAlloca(rvsdg::SimpleNode & allocaNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeCall(const rvsdg::SimpleNode & callNode);
+  EncodeMalloc(rvsdg::SimpleNode & mallocNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
+  EncodeLoad(rvsdg::SimpleNode & node, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeLambda(const rvsdg::LambdaNode & lambda);
+  EncodeStore(rvsdg::SimpleNode & node, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
+  EncodeFree(rvsdg::SimpleNode & freeNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
+  EncodeCall(rvsdg::SimpleNode & callNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodePhi(const rvsdg::PhiNode & phiNode);
+  EncodeMemcpy(rvsdg::SimpleNode & memcpyNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeDelta(const rvsdg::DeltaNode & deltaNode);
+  EncodeGamma(rvsdg::GammaNode & gammaNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeGamma(rvsdg::GammaNode & gammaNode);
+  EncodeTheta(rvsdg::ThetaNode & thetaNode, RegionIntervalOutputMapping & liveIntervals);
 
-  void
-  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeTheta(rvsdg::ThetaNode & thetaNode);
-
-  std::vector<rvsdg::Output *>
-  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
-
-  void
-  EncodeThetaExit(
-      rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::Output *> & thetaStateOutputs);
+  [[nodiscard]] bool
+  ShouldHandle(const rvsdg::SimpleNode & simpleNode) const noexcept;
 
   std::unique_ptr<Context> Context_;
 };

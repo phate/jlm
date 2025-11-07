@@ -55,6 +55,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
+    jlm/llvm/opt/alias-analyses/ModRefSummary.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \

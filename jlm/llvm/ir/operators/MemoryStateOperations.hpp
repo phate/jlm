@@ -30,6 +30,41 @@ protected:
 };
 
 /**
+ * A memory state set operation takes zero or more memory states,
+ * and produces a single memory state representing some set of memory nodes.
+ * TODO: Include the set in the node itself
+ */
+class MemoryStateSetOperation final : public MemoryStateOperation
+{
+public:
+  ~MemoryStateSetOperation() noexcept override;
+
+  explicit MemoryStateSetOperation(const size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static rvsdg::SimpleNode &
+  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  {
+    if (!operands.empty())
+    {
+      return rvsdg::CreateOpNode<MemoryStateSetOperation>(operands, operands.size());
+    }
+
+    return rvsdg::CreateOpNode<MemoryStateSetOperation>(region, 0);
+  }
+};
+
+/**
  * A memory state merge operation takes multiple states as input and merges them together to a
  * single output state.
  *

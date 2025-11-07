@@ -89,6 +89,21 @@ public:
     return input;
   }
 
+  [[nodiscard]] static rvsdg::Node::InputIteratorRange
+  MemoryStateInputs(const rvsdg::SimpleNode & node) noexcept
+  {
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
+    if (storeOperation->NumMemoryStates_ == 0)
+    {
+      return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateInput =
+        node.input(storeOperation->narguments() - storeOperation->NumMemoryStates_);
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateInput->Type()));
+    return { rvsdg::Input::Iterator(firstMemoryStateInput), rvsdg::Input::Iterator(nullptr) };
+  }
+
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {

@@ -27,12 +27,8 @@ struct MemoryStateTypeCounter final
   // The number of entities that have been counted
   uint64_t NumEntities = 0;
 
-  // Count of total memory states, separated by MemoryNode type
-  uint64_t NumAllocas = 0;
-  uint64_t NumMallocs = 0;
-  uint64_t NumDeltas = 0;
-  uint64_t NumImports = 0;
-  uint64_t NumLambdas = 0;
+  // How many memory nodes have been counted, in total
+  uint64_t NumMemoryNodes = 0;
 
   // How many intervals have been counted in total across all entities
   uint64_t NumIntervals = 0;
@@ -40,40 +36,30 @@ struct MemoryStateTypeCounter final
   uint64_t MaxIntervals = 0;
 
   void
-  CountEntity(
-      uint64_t numAllocas,
-      uint64_t numMallocs,
-      uint64_t numDeltas,
-      uint64_t numImports,
-      uint64_t numLambdas,
-      uint64_t numIntervals)
+  CountEntity(uint64_t numMemoryNodes, uint16_t numIntervals)
   {
     NumEntities++;
-
-    NumAllocas += numAllocas;
-    NumMallocs += numMallocs;
-    NumDeltas += numDeltas;
-    NumImports += numImports;
-    NumLambdas += numLambdas;
-
-    NumImports += numIntervals;
+    NumMemoryNodes += numMemoryNodes;
+    NumIntervals += numIntervals;
     if (numIntervals > MaxIntervals)
       MaxIntervals = numIntervals;
   }
 
   void
-  CountEntity(const MemoryNodeOrdering & ordering, const MemoryNodeIntervalSet & intervalSet)
+  CountEntity(const ModRefSet & modRefSet)
   {
-    uint64_t numAllocas = 0;
-    uint64_t numMallocs = 0;
-    uint64_t numDeltas = 0;
-    uint64_t numImports = 0;
-    uint64_t numLambdas = 0;
-    uint64_t numIntervals = intervalSet.intervals.size();
+    uint64_t numMemoryNodes = 0;
+    uint64_t numIntervals = 0;
 
-    // TODO: Actually count the different types
+    auto intervals = modRefSet.getLoadStoreIntervalIterator();
+    while (const auto interval = intervals.peek())
+    {
+      numMemoryNodes += interval->end - interval->start;
+      numIntervals++;
+      intervals.next();
+    }
 
-    CountEntity(numAllocas, numMallocs, numDeltas, numImports, numLambdas, numIntervals);
+    CountEntity(numMemoryNodes, numIntervals);
   }
 };
 
@@ -83,11 +69,7 @@ struct MemoryStateTypeCounter final
 class EncodingStatistics final : public util::Statistics
 {
   // These are prefixes for statistics that count MemoryNode types
-  static constexpr auto NumTotalAllocaState_ = "#TotalAllocaState";
-  static constexpr auto NumTotalMallocState_ = "#TotalMallocState";
-  static constexpr auto NumTotalDeltaState_ = "#TotalDeltaState";
-  static constexpr auto NumTotalImportState_ = "#TotalImportState";
-  static constexpr auto NumTotalLambdaState_ = "#TotalLambdaState";
+  static constexpr auto NumTotalMemoryNodes_ = "#TotalMemoryNodes";
   static constexpr auto NumTotalIntervals_ = "#TotalIntervals";
   static constexpr auto MaxIntervals_ = "#MaxIntervals";
 
@@ -107,9 +89,9 @@ class EncodingStatistics final : public util::Statistics
   static constexpr auto StoreStateSuffix_ = "sThroughStore";
 
   // Counting call entry merges
-  static constexpr auto NumCallEntryMergeOperations_ = "#CallEntryMergeOperations";
+  static constexpr auto NumCallOperations_ = "#CallOperations";
   // Suffix used when counting memory states routed into call entry merges
-  static constexpr auto CallEntryMergeStateSuffix_ = "sIntoCallEntryMerge";
+  static constexpr auto CallStateSuffix_ = "sThroughCall";
 
 public:
   ~EncodingStatistics() override = default;
@@ -153,10 +135,10 @@ public:
   }
 
   void
-  AddCallEntryMergeStateCounts(const MemoryStateTypeCounter & counter)
+  AddCallMemoryStateCounts(const MemoryStateTypeCounter & counter)
   {
-    AddMeasurement(NumCallEntryMergeOperations_, counter.NumEntities);
-    AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counter);
+    AddMeasurement(NumCallOperations_, counter.NumEntities);
+    AddMemoryStateTypeCounter(CallStateSuffix_, counter);
   }
 
   static std::unique_ptr<EncodingStatistics>
@@ -169,11 +151,7 @@ private:
   void
   AddMemoryStateTypeCounter(const std::string & suffix, const MemoryStateTypeCounter & counter)
   {
-    AddMeasurement(NumTotalAllocaState_ + suffix, counter.NumAllocas);
-    AddMeasurement(NumTotalMallocState_ + suffix, counter.NumMallocs);
-    AddMeasurement(NumTotalDeltaState_ + suffix, counter.NumDeltas);
-    AddMeasurement(NumTotalImportState_ + suffix, counter.NumImports);
-    AddMeasurement(NumTotalLambdaState_ + suffix, counter.NumLambdas);
+    AddMeasurement(NumTotalMemoryNodes_ + suffix, counter.NumMemoryNodes);
     AddMeasurement(NumTotalIntervals_ + suffix, counter.NumIntervals);
     AddMeasurement(MaxIntervals_ + suffix, counter.MaxIntervals);
   }
@@ -223,9 +201,9 @@ public:
   }
 
   MemoryStateTypeCounter &
-  GetCallEntryMergeCounter()
+  GetCallCounter()
   {
-    return CallEntryMergeCounter_;
+    return CallCounter_;
   }
 
   static std::unique_ptr<Context>
@@ -241,14 +219,27 @@ private:
   MemoryStateTypeCounter InterProceduralRegionCounter_;
   MemoryStateTypeCounter LoadCounter_;
   MemoryStateTypeCounter StoreCounter_;
-  MemoryStateTypeCounter CallEntryMergeCounter_;
+  MemoryStateTypeCounter CallCounter_;
 };
 
+/**
+ * Represents a single interval that was stored to or loaded from by some operation
+ */
 struct LiveInterval
 {
-  MemoryNodeOrderingIndex start;
-  MemoryNodeOrderingIndex end;
-  const rvsdg::Output * output;
+  // The interval of memory nodes
+  MemoryNodeInterval interval;
+
+  // If true, the operation represents the modification of the memory nodes in its interval
+  bool isStore;
+
+  // The node containing the operation.
+  // Alternatively, nullptr if the live interval represents the region entry memory state
+  rvsdg::Node * node;
+
+  // The memory state output of the node.
+  // Alternatively, the region argument if this is the memory at the start of the region.
+  rvsdg::Output * memoryStateOutput;
 };
 
 /**
@@ -258,14 +249,317 @@ struct LiveInterval
 class RegionIntervalOutputMapping
 {
 public:
-  const rvsdg::Output * attachModRefSet(const ModRefSet & modRefSet)
-  {
+  RegionIntervalOutputMapping(rvsdg::Region & region)
+      : region_(region)
+  {}
 
+  /**
+   * Registers the region's memory state argument as the source of all MemoryNodes in its ModRefSet.
+   * This must be the first method called on the instance.
+   * @param memoryStateArgument the memory state argument of the region
+   * @param modRefSet the mod ref set of the region
+   */
+  void
+  createRegionEntry(rvsdg::Output & memoryStateArgument, const ModRefSet & modRefSet)
+  {
+    JLM_ASSERT(memoryStateArgument.region() == &region_);
+    JLM_ASSERT(liveIntervals_.empty());
+
+    auto intervals = modRefSet.getLoadStoreIntervalIterator();
+    while (const auto interval = intervals.peek())
+    {
+      liveIntervals_.push_back(LiveInterval{ *interval, true, nullptr, &memoryStateArgument });
+      intervals.next();
+    }
+
+    JLM_ASSERT(isValid());
+  }
+
+  /**
+   * Adds the intervals from the given ModRefSet to the live intervals,
+   * without removing any other live intervals.
+   * @param node the node that creates the memory state
+   * @param memoryStateOutput the memory state output
+   * @param modRefSet the ModRefSet of the node
+   */
+  void
+  addModRefSet(rvsdg::Node & node, rvsdg::Output & memoryStateOutput, const ModRefSet & modRefSet)
+  {
+    // Move the current live intervals into old live intervals
+    std::swap(oldLiveIntervals_, liveIntervals_);
+    // This method copies all surviving old intervals, as well as adding the new intervals.
+    liveIntervals_.clear();
+
+    // The index of the old interval being processed next, in the oldLiveIntervals_ array.
+    size_t oldLiveIntervalIndex = 0;
+    // The stream of new intervals
+    auto newIntervals = modRefSet.getLoadStoreIntervalDifferenceIterator();
+
+    while (const auto newIntervalPair = newIntervals.peek())
+    {
+      const auto [newInterval, newIntervalIsStore] = *newIntervalPair;
+
+      while (oldLiveIntervalIndex < oldLiveIntervals_.size())
+      {
+        const auto oldInterval = oldLiveIntervals_[oldLiveIntervalIndex];
+        if (oldInterval.interval.start > newInterval.start)
+        {
+          // We can not process this old interval yet
+          break;
+        }
+
+        liveIntervals_.push_back(oldInterval);
+        oldLiveIntervalIndex++;
+      }
+
+      liveIntervals_.push_back(
+          LiveInterval{ newInterval, newIntervalIsStore, &node, &memoryStateOutput });
+      newIntervals.next();
+    }
+
+    // Add any remaining old intervals
+    while (oldLiveIntervalIndex < oldLiveIntervals_.size())
+    {
+      liveIntervals_.push_back(oldLiveIntervals_[oldLiveIntervalIndex]);
+      oldLiveIntervalIndex++;
+    }
+
+    JLM_ASSERT(isValid());
+  }
+
+  /**
+   * Uses the current set of live loads and stores to attach a node with the given \p modRefSet.
+   * It consumes memory state outputs from operations it depends on.
+   * It also updates the sets of live loads and stores
+   *
+   * @param node the node being attached
+   * @param memoryStateOutput the node's memory state output
+   * @param modRefSet the ModRefSet of the node
+   * @return the MemoryStateSetNode created to provide the memory state for the node.
+   */
+  rvsdg::SimpleNode &
+  attachNode(rvsdg::Node & node, rvsdg::Output & memoryStateOutput, const ModRefSet & modRefSet)
+  {
+    // Keep track of which memory state outputs the attached node will depend on
+    std::vector<rvsdg::Output *> memoryStateOutputs;
+    // Outputs in this set are the ones we depend on, used to avoid duplication
+    util::HashSet<rvsdg::Output *> dependentOutputs;
+    // Outputs in this set have been confirmed to be safe to NOT depend on
+    util::HashSet<rvsdg::Output *> independentOutputs;
+
+    // Move the current live intervals into old live intervals
+    std::swap(oldLiveIntervals_, liveIntervals_);
+    // This method copies all surviving old intervals, as well as adding the new intervals.
+    liveIntervals_.clear();
+
+    // The index of the old interval being processed next, in the oldLiveIntervals_ array.
+    size_t oldLiveIntervalIndex = 0;
+
+    // When an old interval is partially removed, the part that is left over is placed here
+    std::vector<LiveInterval> leftoverOldIntervals;
+    // Double-buffering of leftoverOldIntervals
+    std::vector<LiveInterval> oldLeftoverOldIntervals;
+
+    // Importantly, while oldLiveIntervals are allowed to contain overlapping intervals,
+    // the new intervals never overlap!
+    auto newIntervals = modRefSet.getLoadStoreIntervalDifferenceIterator();
+    while (const auto newIntervalPair = newIntervals.peek())
+    {
+      const auto newInterval = newIntervalPair->first;
+      const auto newIntervalIsStore = newIntervalPair->second;
+
+      // Set to true once all old intervals that start earlier than newInterval have been processed,
+      // and the newInterval itself has been added
+      bool newIntervalAdded = false;
+
+      // Processes an old interval. Will possibly split up the interval and add what remains of it
+      // to the right of the newInterval into the leftoverOldIntervals.
+      // Every time it is called the start index must be at least as large as the last call.
+      // The start index of the old interval must be lower than the end of the new interval
+      const auto processOldInterval = [&](const LiveInterval & oldInterval)
+      {
+        JLM_ASSERT(oldInterval.interval.start < newInterval.end);
+
+        if (oldInterval.interval.end <= newInterval.start)
+        {
+          // The old interval finishes fully before newInterval, add is as it
+          liveIntervals_.push_back(oldInterval);
+          return;
+        }
+
+        // Make sure the new interval gets its proper place in the liveIntervals list
+        if (oldInterval.interval.start >= newInterval.start && !newIntervalAdded)
+        {
+          liveIntervals_.push_back({ newInterval, newIntervalIsStore, &node, &memoryStateOutput });
+          newIntervalAdded = true;
+        }
+
+        // If we get here there is overlap between the new and old interval
+        bool eraseOverlap = false;
+        if (newIntervalIsStore || oldInterval.isStore)
+        {
+          if (dependentOutputs.Contains(oldInterval.memoryStateOutput))
+          {
+            eraseOverlap = newIntervalIsStore;
+          }
+          else if (independentOutputs.Contains(oldInterval.memoryStateOutput))
+          {
+            eraseOverlap = false;
+          }
+          else
+          {
+            // TODO: Add pairwise alias analysis checking
+            dependentOutputs.insert(oldInterval.memoryStateOutput);
+            memoryStateOutputs.push_back(oldInterval.memoryStateOutput);
+            eraseOverlap = newIntervalIsStore;
+          }
+        }
+
+        if (eraseOverlap)
+        {
+          // We must erase overlap, which means keeping any part of oldInterval that precedes
+          // or comes after newInterval
+          if (oldInterval.interval.start < newInterval.start)
+          {
+            // There is a part of oldInterval before the newInterval
+            auto oldIntervalBeforeNew = oldInterval;
+            oldIntervalBeforeNew.interval.end = newInterval.start;
+            liveIntervals_.push_back({ oldIntervalBeforeNew });
+          }
+          if (oldInterval.interval.end > newInterval.end)
+          {
+            // There is a part of oldInterval after the newInterval, add it to the leftover list
+            auto leftoverInterval = oldInterval;
+            leftoverInterval.interval.start = newInterval.end;
+            leftoverOldIntervals.push_back(leftoverInterval);
+          }
+        }
+        else
+        {
+          // If we are not required to replace the overlap, we can just add the old interval as is
+          liveIntervals_.push_back(oldInterval);
+        }
+      };
+
+      // Any intervals left over after processing the last newInterval should be handled first
+      std::swap(leftoverOldIntervals, oldLeftoverOldIntervals);
+      leftoverOldIntervals.clear();
+
+      for (auto leftover : oldLeftoverOldIntervals)
+      {
+        processOldInterval(leftover);
+      }
+
+      // Process all intervals that start before the end of newInterval
+      while (oldLiveIntervalIndex < oldLiveIntervals_.size())
+      {
+        const auto oldInterval = oldLiveIntervals_[oldLiveIntervalIndex];
+        if (oldInterval.interval.start >= newInterval.end)
+        {
+          // oldInterval starts after the current newInterval. We are not ready to process it yet
+          break;
+        }
+
+        processOldInterval(oldInterval);
+        oldLiveIntervalIndex++;
+      }
+
+      // If the newInterval was never added during processing of old intervals, add it now
+      if (!newIntervalAdded)
+      {
+        liveIntervals_.push_back(
+            LiveInterval{ newInterval, newIntervalIsStore, &node, &memoryStateOutput });
+      }
+      newIntervals.next();
+    }
+
+    // All new intervals have been processed, add any remaining old intervals
+    while (oldLiveIntervalIndex < oldLiveIntervals_.size())
+    {
+      liveIntervals_.push_back(oldLiveIntervals_[oldLiveIntervalIndex]);
+      oldLiveIntervalIndex++;
+    }
+
+    JLM_ASSERT(isValid());
+
+    return MemoryStateSetOperation::CreateNode(region_, memoryStateOutputs);
+  }
+
+  /**
+   * Creates a memory state set node for the end of the region,
+   * joining together every live operation that has loaded from or stored to memory nodes that
+   * are included in the given \p modRefSet.
+   * This must be the last method called on the instance.
+   * @param modRefSet the ModRefSet of the region
+   * @return the MemoryStateSetNode created to provide the final memory state output
+   */
+  rvsdg::SimpleNode &
+  createSetNodeForRegionExit(const ModRefSet & modRefSet)
+  {
+    std::vector<rvsdg::Output *> memoryStateOutputs;
+    // Used to avoid duplicates
+    util::HashSet<rvsdg::Output *> outputSet;
+
+    size_t liveIntervalIndex = 0;
+
+    auto intervals = modRefSet.getLoadStoreIntervalIterator();
+    while (const auto interval = intervals.peek())
+    {
+      while (liveIntervalIndex < liveIntervals_.size())
+      {
+        auto & liveInterval = liveIntervals_[liveIntervalIndex];
+        if (liveInterval.interval.end < interval->start)
+        {
+          // We can move past this live interval, as it is fully behind the current interval
+          liveIntervalIndex++;
+          continue;
+        }
+        if (liveInterval.interval.start >= interval->end)
+        {
+          // We can not process this live interval yet, as it comes after the current interval
+          break;
+        }
+
+        // We have found a live interval that overlaps with the current interval
+        if (outputSet.insert(liveInterval.memoryStateOutput))
+          memoryStateOutputs.push_back(liveInterval.memoryStateOutput);
+        liveIntervalIndex++;
+      }
+
+      intervals.next();
+    }
+
+    return MemoryStateSetOperation::CreateNode(region_, memoryStateOutputs);
+  }
+
+  /**
+   * Checks that the set of live intervals does not contain any empty intervals,
+   * and that the intervals are sorted by increasing start index.
+   * @return false if validation failed
+   */
+  bool
+  isValid() const
+  {
+    for (size_t i = 0; i < liveIntervals_.size(); ++i)
+    {
+      if (liveIntervals_[i].interval.start >= liveIntervals_[i].interval.end)
+        return false;
+      if (i >= 1 && liveIntervals_[i].interval.start < liveIntervals_[i - 1].interval.start)
+        return false;
+    }
+
+    return true;
   }
 
 private:
-  std::vector<LiveInterval> liveLoads_;
-  std::vector<LiveInterval> liveStores_;
+  rvsdg::Region & region_;
+
+  // Live intervals, always stored in order of increasing start index
+  std::vector<LiveInterval> liveIntervals_;
+
+  // Used to "double-buffer" the set of live intervals, by swapping current and old.
+  // This avoids making new heap allocations for every traversal
+  std::vector<LiveInterval> oldLiveIntervals_;
 };
 
 MemoryStateEncoder::~MemoryStateEncoder() noexcept = default;
@@ -282,14 +576,14 @@ MemoryStateEncoder::Encode(
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->Start(rvsdgModule.Rvsdg());
-  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  EncodeInterProceduralRegion(rvsdgModule.Rvsdg().GetRootRegion());
   statistics->Stop();
 
   statistics->AddIntraProceduralRegionMemoryStateCounts(
       Context_->GetInterProceduralRegionCounter());
   statistics->AddLoadMemoryStateCounts(Context_->GetLoadCounter());
   statistics->AddStoreMemoryStateCounts(Context_->GetStoreCounter());
-  statistics->AddCallEntryMergeStateCounts(Context_->GetCallEntryMergeCounter());
+  statistics->AddCallMemoryStateCounts(Context_->GetCallCounter());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -302,10 +596,76 @@ MemoryStateEncoder::Encode(
 }
 
 void
-MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, )
+MemoryStateEncoder::EncodeInterProceduralRegion(rvsdg::Region & region)
 {
+  rvsdg::TopDownTraverser traverser(&region);
+  for (const auto node : traverser)
+  {
+    MatchTypeOrFail(
+        *node,
+        [&](rvsdg::PhiNode & phiNode)
+        {
+          EncodePhi(phiNode);
+        },
+        [&](rvsdg::LambdaNode & lambdaNode)
+        {
+          EncodeLambda(lambdaNode);
+        },
+        [&]([[maybe_unused]] rvsdg::DeltaNode & deltaNode)
+        {
+          // Nothing to be done for global variable definitions
+        });
+  }
+}
 
+void
+MemoryStateEncoder::EncodePhi(rvsdg::PhiNode & phiNode)
+{
+  EncodeInterProceduralRegion(*phiNode.subregion());
+}
 
+void
+MemoryStateEncoder::EncodeLambda(rvsdg::LambdaNode & lambdaNode)
+{
+  RegionIntervalOutputMapping liveIntervals(*lambdaNode.subregion());
+
+  EncodeLambdaEntry(lambdaNode, liveIntervals);
+  EncodeIntraProceduralRegion(*lambdaNode.subregion(), liveIntervals);
+  EncodeLambdaExit(lambdaNode, liveIntervals);
+}
+
+void
+MemoryStateEncoder::EncodeLambdaEntry(
+    rvsdg::LambdaNode & lambdaNode,
+    RegionIntervalOutputMapping & liveIntervals)
+{
+  const auto & modRefSummary = Context_->GetModRefSummary();
+  auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
+  const auto & lambdaModRefSet = modRefSummary.getLambdaEntryModRef(lambdaNode);
+  liveIntervals.createRegionEntry(memoryStateArgument, lambdaModRefSet);
+
+  Context_->GetInterProceduralRegionCounter().CountEntity(lambdaModRefSet);
+}
+
+void
+MemoryStateEncoder::EncodeLambdaExit(
+    rvsdg::LambdaNode & lambdaNode,
+    RegionIntervalOutputMapping & liveIntervals)
+{
+  const auto & modRefSummary = Context_->GetModRefSummary();
+  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
+  const auto & lambdaModRefSet = modRefSummary.getLambdaExitModRef(lambdaNode);
+
+  // Group together all memory nodes that appear loaded from or stored to from outside the function
+  auto & joinNode = liveIntervals.createSetNodeForRegionExit(lambdaModRefSet);
+  memoryStateResult.divert_to(joinNode.output(0));
+}
+
+void
+MemoryStateEncoder::EncodeIntraProceduralRegion(
+    rvsdg::Region & region,
+    RegionIntervalOutputMapping & liveIntervals)
+{
   rvsdg::TopDownTraverser traverser(&region);
   for (const auto node : traverser)
   {
@@ -313,555 +673,292 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, )
         *node,
         [&](rvsdg::SimpleNode & simpleNode)
         {
-          EncodeSimpleNode(simpleNode);
+          EncodeSimpleNode(simpleNode, liveIntervals);
         },
-        [&](rvsdg::StructuralNode & structuralNode)
+        [&](rvsdg::GammaNode & gammaNode)
         {
-          EncodeStructuralNode(structuralNode);
+          EncodeGamma(gammaNode, liveIntervals);
+        },
+        [&](rvsdg::ThetaNode & thetaNode)
+        {
+          EncodeTheta(thetaNode, liveIntervals);
         });
   }
 }
 
 void
-MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
-{
-  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&structuralNode))
-  {
-    EncodeLambda(*lambdaNode);
-  }
-  else if (auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&structuralNode))
-  {
-    EncodeDelta(*deltaNode);
-  }
-  else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&structuralNode))
-  {
-    EncodePhi(*phiNode);
-  }
-  else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
-  {
-    EncodeGamma(*gammaNode);
-  }
-  else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
-  {
-    EncodeTheta(*thetaNode);
-  }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled node type.");
-  }
-}
-
-void
-MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
+MemoryStateEncoder::EncodeSimpleNode(
+    rvsdg::SimpleNode & simpleNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   if (is<AllocaOperation>(&simpleNode))
   {
-    EncodeAlloca(simpleNode);
+    EncodeAlloca(simpleNode, liveIntervals);
   }
   else if (is<MallocOperation>(&simpleNode))
   {
-    EncodeMalloc(simpleNode);
+    EncodeMalloc(simpleNode, liveIntervals);
   }
   else if (is<LoadOperation>(&simpleNode))
   {
-    EncodeLoad(simpleNode);
+    EncodeLoad(simpleNode, liveIntervals);
   }
   else if (is<StoreOperation>(&simpleNode))
   {
-    EncodeStore(simpleNode);
+    EncodeStore(simpleNode, liveIntervals);
   }
   else if (is<CallOperation>(&simpleNode))
   {
-    EncodeCall(simpleNode);
+    EncodeCall(simpleNode, liveIntervals);
   }
   else if (is<FreeOperation>(&simpleNode))
   {
-    EncodeFree(simpleNode);
+    EncodeFree(simpleNode, liveIntervals);
   }
   else if (is<MemCpyOperation>(&simpleNode))
   {
-    EncodeMemcpy(simpleNode);
+    EncodeMemcpy(simpleNode, liveIntervals);
   }
   else if (is<MemoryStateOperation>(&simpleNode))
   {
     // Nothing needs to be done
   }
-  else
-  {
-    // Ensure we took care of all memory state consuming nodes
-    JLM_ASSERT(!ShouldHandle(simpleNode));
-  }
 }
 
 void
-MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
+MemoryStateEncoder::EncodeAlloca(
+    rvsdg::SimpleNode & allocaNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   JLM_ASSERT(is<AllocaOperation>(&allocaNode));
 
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode);
-  JLM_ASSERT(allocaMemoryNodes.Size() == 1);
-  auto & allocaMemoryNode = **allocaMemoryNodes.Items().begin();
-  auto & allocaNodeStateOutput = *allocaNode.output(1);
-
-  // If a state representing the alloca already exists in the region,
-  // merge it with the state created by the alloca using a MemoryStateJoin node.
-  if (const auto statePair = stateMap.TryGetState(*allocaNode.region(), allocaMemoryNode))
-  {
-    auto & joinNode =
-        MemoryStateJoinOperation::CreateNode({ &allocaNodeStateOutput, &statePair->State() });
-    auto & joinOutput = *joinNode.output(0);
-    statePair->ReplaceState(joinOutput);
-  }
-  else
-  {
-    stateMap.InsertState(allocaMemoryNode, allocaNodeStateOutput);
-  }
+  const auto & allocaModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(allocaNode);
+  auto & allocaMemoryStateOutput = *allocaNode.output(1);
+  liveIntervals.addModRefSet(allocaNode, allocaMemoryStateOutput, allocaModRefSet);
 }
 
 void
-MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
+MemoryStateEncoder::EncodeMalloc(
+    rvsdg::SimpleNode & mallocNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   JLM_ASSERT(is<MallocOperation>(&mallocNode));
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode);
-  JLM_ASSERT(mallocMemoryNodes.Size() == 1);
-  auto & mallocMemoryNode = **mallocMemoryNodes.Items().begin();
 
-  auto & mallocNodeStateOutput = *mallocNode.output(1);
-
-  // We use a static heap model. This means that multiple invocations of an malloc
-  // at runtime can refer to the same abstract memory location. We therefore need to
-  // merge the previous and the current state to ensure that the previous state
-  // is not just simply replaced and therefore "lost".
-  if (const auto statePair = stateMap.TryGetState(*mallocNode.region(), mallocMemoryNode))
-  {
-    auto & joinNode =
-        MemoryStateJoinOperation::CreateNode({ &mallocNodeStateOutput, &statePair->State() });
-    auto & joinOutput = *joinNode.output(0);
-    statePair->ReplaceState(joinOutput);
-  }
-  else
-  {
-    stateMap.InsertState(mallocMemoryNode, mallocNodeStateOutput);
-  }
+  const auto & mallocModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(mallocNode);
+  auto & mallocMemoryStateOutput = *mallocNode.output(1);
+  liveIntervals.addModRefSet(mallocNode, mallocMemoryStateOutput, mallocModRefSet);
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
+MemoryStateEncoder::EncodeLoad(
+    rvsdg::SimpleNode & node,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   JLM_ASSERT(is<LoadOperation>(&node));
-  auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
-  Context_->GetLoadCounter().CountEntity(memoryNodes);
+  const auto & loadModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(node);
+  Context_->GetLoadCounter().CountEntity(loadModRefSet);
 
-  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
-  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  auto memoryStateInputs = LoadOperation::MemoryStateInputs(node);
+  JLM_ASSERT(std::distance(memoryStateInputs.begin(), memoryStateInputs.end()) == 1);
+  auto & loadMemoryStateInput = *memoryStateInputs.begin();
 
-  const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
+  auto memoryStateOutputs = LoadOperation::MemoryStateOutputs(node);
+  JLM_ASSERT(std::distance(memoryStateOutputs.begin(), memoryStateOutputs.end()) == 1);
+  auto & loadMemoryStateOutput = *memoryStateOutputs.begin();
 
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      LoadOperation::MemoryStateOutputs(newLoadNode));
+  auto & setNode = liveIntervals.attachNode(node, loadMemoryStateOutput, loadModRefSet);
+  loadMemoryStateInput.divert_to(setNode.output(0));
 }
 
 void
-MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
+MemoryStateEncoder::EncodeStore(
+    rvsdg::SimpleNode & node,
+    RegionIntervalOutputMapping & liveIntervals)
 {
-  auto & stateMap = Context_->GetRegionalizedStateMap();
+  JLM_ASSERT(is<StoreOperation>(&node));
 
-  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
-  Context_->GetStoreCounter().CountEntity(memoryNodes);
+  const auto & storeModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(node);
+  Context_->GetStoreCounter().CountEntity(storeModRefSet);
 
-  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
-  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  auto memoryStateInputs = StoreOperation::MemoryStateInputs(node);
+  JLM_ASSERT(std::distance(memoryStateInputs.begin(), memoryStateInputs.end()) == 1);
+  auto & storeMemoryStateInput = *memoryStateInputs.begin();
 
-  const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
+  auto memoryStateOutputs = StoreOperation::MemoryStateOutputs(node);
+  JLM_ASSERT(std::distance(memoryStateOutputs.begin(), memoryStateOutputs.end()) == 1);
+  auto & storeMemoryStateOutput = *memoryStateOutputs.begin();
 
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      StoreOperation::MemoryStateOutputs(newStoreNode));
+  auto & setNode = liveIntervals.attachNode(node, storeMemoryStateOutput, storeModRefSet);
+  storeMemoryStateInput.divert_to(setNode.output(0));
 }
 
 void
-MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode)
+MemoryStateEncoder::EncodeFree(
+    rvsdg::SimpleNode & freeNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   JLM_ASSERT(is<FreeOperation>(&freeNode));
-  auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = freeNode.input(0)->origin();
-  auto ioState = freeNode.input(freeNode.ninputs() - 1)->origin();
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(freeNode);
-  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto & freeModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(freeNode);
 
-  auto outputs = FreeOperation::Create(address, inStates, ioState);
+  // TODO: Use proper accessors
+  JLM_ASSERT(freeNode.ninputs() == 2);
+  JLM_ASSERT(freeNode.noutputs() == 1);
+  auto & memoryStateInput = *freeNode.input(1);
+  auto & memoryStateOutput = *freeNode.output(0);
 
-  // Redirect IO state edge
-  freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      { outputs.begin(), std::prev(outputs.end()) });
+  auto & setNode = liveIntervals.attachNode(freeNode, memoryStateOutput, freeModRefSet);
+  memoryStateInput.divert_to(setNode.output(0));
 }
 
 void
-MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
+MemoryStateEncoder::EncodeCall(
+    rvsdg::SimpleNode & callNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
-  const auto region = callNode.region();
-  auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
+  JLM_ASSERT(is<CallOperation>(&callNode));
 
-  const auto & memoryNodes = regionalizedStateMap.GetSimpleNodeModRef(callNode);
-  Context_->GetCallEntryMergeCounter().CountEntity(memoryNodes);
+  const auto & callModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(callNode);
+  Context_->GetCallCounter().CountEntity(callModRefSet);
 
-  const auto statePairs = regionalizedStateMap.GetExistingStates(*region, memoryNodes);
+  auto & memoryStateInput = CallOperation::GetMemoryStateInput(callNode);
+  auto & memoryStateOutput = CallOperation::GetMemoryStateOutput(callNode);
 
-  std::vector<rvsdg::Output *> inputStates;
-  std::vector<MemoryNodeId> memoryNodeIds;
-  for (auto statePair : statePairs)
+  auto & setNode = liveIntervals.attachNode(callNode, memoryStateOutput, callModRefSet);
+  memoryStateInput.divert_to(setNode.output(0));
+}
+
+void
+MemoryStateEncoder::EncodeMemcpy(
+    rvsdg::SimpleNode & memcpyNode,
+    RegionIntervalOutputMapping & liveIntervals)
+{
+  const auto & memcpyModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(memcpyNode);
+
+  const auto & op = *util::assertedCast<const MemCpyOperation>(&memcpyNode.GetOperation());
+  JLM_ASSERT(op.NumMemoryStates() == 1);
+
+  // TODO: Use proper accessors
+  auto & memoryStateInput = *memcpyNode.input(memcpyNode.ninputs() - 1);
+  auto & memoryStateOutput = *memcpyNode.output(memcpyNode.noutputs() - 1);
+
+  auto & setNode = liveIntervals.attachNode(memcpyNode, memoryStateOutput, memcpyModRefSet);
+  memoryStateInput.divert_to(setNode.output(0));
+}
+
+void
+MemoryStateEncoder::EncodeGamma(
+    rvsdg::GammaNode & gammaNode,
+    RegionIntervalOutputMapping & liveIntervals)
+{
+  const auto & gammaModRefSet = Context_->GetModRefSummary().getGammaEntryModRef(gammaNode);
+
+  // Find a memory state entry variable we can use
+  std::optional<rvsdg::GammaNode::EntryVar> memoryStateEntryVar;
+  const auto entryVars = gammaNode.GetEntryVars();
+  for (auto & entryVar : entryVars)
   {
-    inputStates.emplace_back(&statePair->State());
-    memoryNodeIds.push_back(statePair->MemoryNode().GetId());
-  }
-
-  auto & entryMergeNode =
-      CallEntryMemoryStateMergeOperation::CreateNode(*region, inputStates, memoryNodeIds);
-  CallOperation::GetMemoryStateInput(callNode).divert_to(entryMergeNode.output(0));
-
-  auto & exitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
-      CallOperation::GetMemoryStateOutput(callNode),
-      memoryNodeIds);
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(statePairs, rvsdg::outputs(&exitSplitNode));
-}
-
-void
-MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
-{
-  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(memcpyNode);
-  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-
-  auto memoryStateResults = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
-}
-
-void
-MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
-{
-  EncodeLambdaEntry(lambdaNode);
-  EncodeRegion(*lambdaNode.subregion());
-  EncodeLambdaExit(lambdaNode);
-}
-
-void
-MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
-{
-  auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
-  JLM_ASSERT(memoryStateArgument.nusers() == 1);
-  auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
-
-  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
-
-  const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-
-  stateMap.PushRegion(*lambdaNode.subregion());
-  const auto states = rvsdg::outputs(
-      &LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds));
-
-  size_t n = 0;
-  for (auto & memoryNode : memoryNodes.Items())
-    stateMap.InsertState(*memoryNode, *states[n++]);
-
-  if (!states.empty())
-  {
-    // This additional MemoryStateMergeOperation node makes all other nodes in the function that
-    // consume the memory state dependent on this node and therefore transitively on the
-    // LambdaEntryMemoryStateSplitOperation. This ensures that the
-    // LambdaEntryMemoryStateSplitOperation is always visited before all other memory state
-    // consuming nodes:
-    //
-    // ... := LAMBDA[f]
-    //   [..., a1, ...]
-    //     o1, ..., ox := LambdaEntryMemoryStateSplit a1
-    //     oy = MemoryStateMerge o1, ..., ox
-    //     ....
-    //
-    // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
-    // should now consume a1.
-    auto state = MemoryStateMergeOperation::Create(states);
-    memoryStateArgumentUser.divert_to(state);
-  }
-}
-
-void
-MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
-{
-  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
-
-  std::vector<rvsdg::Output *> states;
-  std::vector<MemoryNodeId> memoryNodeIds;
-  auto & subregion = *lambdaNode.subregion();
-  const auto memoryNodeStatePairs = stateMap.GetStates(subregion, memoryNodes);
-  for (const auto memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    states.push_back(&memoryNodeStatePair->State());
-    memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode().GetId());
-  }
-
-  const auto mergedState =
-      LambdaExitMemoryStateMergeOperation::CreateNode(subregion, states, memoryNodeIds).output(0);
-  memoryStateResult.divert_to(mergedState);
-
-  stateMap.PopRegion(*lambdaNode.subregion());
-}
-
-void
-MemoryStateEncoder::EncodePhi(const rvsdg::PhiNode & phiNode)
-{
-  EncodeRegion(*phiNode.subregion());
-}
-
-void
-MemoryStateEncoder::EncodeDelta(const rvsdg::DeltaNode &)
-{
-  // Nothing needs to be done
-}
-
-void
-MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
-{
-  for (auto & subregion : gammaNode.Subregions())
-    Context_->GetRegionalizedStateMap().PushRegion(subregion);
-
-  EncodeGammaEntry(gammaNode);
-
-  for (auto & subregion : gammaNode.Subregions())
-    EncodeRegion(subregion);
-
-  EncodeGammaExit(gammaNode);
-
-  for (auto & subregion : gammaNode.Subregions())
-    Context_->GetRegionalizedStateMap().PopRegion(subregion);
-}
-
-void
-MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
-{
-  auto region = gammaNode.region();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
-
-  // Count the memory state arguments once per subregion
-  for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
-    Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
-
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
-    for (auto & argument : gammaInput.branchArgument)
-      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
-  }
-}
-
-void
-MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
-{
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), memoryNodes);
-
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    std::vector<rvsdg::Output *> states;
-
-    for (auto & subregion : gammaNode.Subregions())
+    if (is<MemoryStateType>(entryVar.input->Type()))
     {
-      auto & state = stateMap.GetState(subregion, memoryNodeStatePair->MemoryNode())->State();
-      states.push_back(&state);
+      if (memoryStateEntryVar.has_value())
+        throw std::logic_error("Multiple memory state entry variables found");
+      memoryStateEntryVar = entryVar;
+    }
+  }
+
+  std::optional<rvsdg::GammaNode::ExitVar> memoryStateExitVar;
+  const auto exitVars = gammaNode.GetExitVars();
+  for (auto & exitVar : exitVars)
+  {
+    if (is<MemoryStateType>(exitVar.output->Type()))
+    {
+      if (memoryStateExitVar.has_value())
+        throw std::logic_error("Multiple memory state exit variables found");
+      memoryStateExitVar = exitVar;
+    }
+  }
+
+  if (!gammaModRefSet.isEmpty())
+  {
+    if (!memoryStateEntryVar.has_value() || !memoryStateExitVar.has_value())
+    {
+      throw std::logic_error(
+          "Gamma node with ModRefSet must have a memory state entry and exit variable");
     }
 
-    auto state = gammaNode.AddExitVar(states).output;
-    memoryNodeStatePair->ReplaceState(*state);
+    auto & setNode =
+        liveIntervals.attachNode(gammaNode, *memoryStateExitVar->output, gammaModRefSet);
+    memoryStateEntryVar->input->divert_to(setNode.output(0));
+  }
+
+  for (size_t i = 0; i < gammaNode.nsubregions(); ++i)
+  {
+    auto & subregion = *gammaNode.subregion(i);
+    RegionIntervalOutputMapping subregionLiveIntervals(subregion);
+    if (memoryStateEntryVar.has_value())
+    {
+      subregionLiveIntervals.createRegionEntry(*memoryStateEntryVar->branchArgument[i], gammaModRefSet);
+    }
+
+    Context_->GetInterProceduralRegionCounter().CountEntity(gammaModRefSet);
+    EncodeIntraProceduralRegion(subregion, subregionLiveIntervals);
+
+    if (memoryStateExitVar.has_value())
+    {
+      auto & setNode = subregionLiveIntervals.createSetNodeForRegionExit(gammaModRefSet);
+      memoryStateExitVar->branchResult[i]->divert_to(setNode.output(0));
+    }
   }
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
+MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, RegionIntervalOutputMapping & liveIntervals)
 {
-  Context_->GetRegionalizedStateMap().PushRegion(*thetaNode.subregion());
+  const auto & thetaModRefSet = Context_->GetModRefSummary().getThetaModRef(thetaNode);
 
-  auto thetaStateOutputs = EncodeThetaEntry(thetaNode);
-  EncodeRegion(*thetaNode.subregion());
-  EncodeThetaExit(thetaNode, thetaStateOutputs);
-
-  Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
-}
-
-std::vector<rvsdg::Output *>
-MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
-{
-  auto region = thetaNode.region();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
-
-  std::vector<rvsdg::Output *> thetaStateOutputs;
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+  // Find a memory state loop variable we can use
+  std::optional<rvsdg::ThetaNode::LoopVar> memoryStateLoopVar;
+  const auto loopVars = thetaNode.GetLoopVars();
+  for (auto & loopVar : loopVars)
   {
-    auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
-    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
-    thetaStateOutputs.push_back(loopvar.output);
+    if (is<MemoryStateType>(loopVar.input->Type()))
+    {
+      if (memoryStateLoopVar.has_value())
+        throw std::logic_error("Multiple memory state loop variables found");
+      memoryStateLoopVar = loopVar;
+    }
   }
 
-  return thetaStateOutputs;
-}
-
-void
-MemoryStateEncoder::EncodeThetaExit(
-    rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::Output *> & thetaStateOutputs)
-{
-  auto subregion = thetaNode.subregion();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*thetaNode.region(), memoryNodes);
-
-  JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
-  for (size_t n = 0; n < thetaStateOutputs.size(); n++)
+  if (!thetaModRefSet.isEmpty())
   {
-    auto thetaStateOutput = thetaStateOutputs[n];
-    auto & memoryNodeStatePair = memoryNodeStatePairs[n];
-    auto & memoryNode = memoryNodeStatePair->MemoryNode();
-    auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
-    JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
+    if (!memoryStateLoopVar.has_value())
+    {
+      throw std::logic_error("Theta node with ModRefSet must have a memory state loop variable");
+    }
 
-    auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
-    loopvar.post->divert_to(&subregionState);
-    memoryNodeStatePair->ReplaceState(*thetaStateOutput);
-  }
-}
-
-rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceLoadNode(
-    const rvsdg::SimpleNode & node,
-    const std::vector<rvsdg::Output *> & memoryStates)
-{
-  JLM_ASSERT(is<LoadOperation>(&node));
-
-  if (const auto loadVolatileOperation =
-          dynamic_cast<const LoadVolatileOperation *>(&node.GetOperation()))
-  {
-    auto & newLoadNode = LoadVolatileOperation::CreateNode(
-        *LoadOperation::AddressInput(node).origin(),
-        *LoadVolatileOperation::IOStateInput(node).origin(),
-        memoryStates,
-        loadVolatileOperation->GetLoadedType(),
-        loadVolatileOperation->GetAlignment());
-    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
-    auto & newLoadedValueOutput = LoadOperation::LoadedValueOutput(newLoadNode);
-    auto & oldIOStateOutput = LoadVolatileOperation::IOStateOutput(node);
-    auto & newIOStateOutput = LoadVolatileOperation::IOStateOutput(newLoadNode);
-    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
-    oldIOStateOutput.divert_users(&newIOStateOutput);
-    return newLoadNode;
+    auto & setNode = liveIntervals.attachNode(thetaNode, *memoryStateLoopVar->output, thetaModRefSet);
+    memoryStateLoopVar->input->divert_to(setNode.output(0));
   }
 
-  if (const auto loadNonVolatileOperation =
-          dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
+  RegionIntervalOutputMapping subregionLiveIntervals(*thetaNode.subregion());
+  if (memoryStateLoopVar.has_value())
   {
-    auto & newLoadNode = LoadNonVolatileOperation::CreateNode(
-        *LoadOperation::AddressInput(node).origin(),
-        memoryStates,
-        loadNonVolatileOperation->GetLoadedType(),
-        loadNonVolatileOperation->GetAlignment());
-    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
-    auto & newLoadedValueOutput = LoadNonVolatileOperation::LoadedValueOutput(newLoadNode);
-    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
-    return newLoadNode;
+    subregionLiveIntervals.createRegionEntry(*memoryStateLoopVar->pre, thetaModRefSet);
   }
 
-  JLM_UNREACHABLE("Unhandled load node type.");
-}
+  Context_->GetInterProceduralRegionCounter().CountEntity(thetaModRefSet);
+  EncodeIntraProceduralRegion(*thetaNode.subregion(), subregionLiveIntervals);
 
-rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceStoreNode(
-    const rvsdg::SimpleNode & node,
-    const std::vector<rvsdg::Output *> & memoryStates)
-{
-  if (const auto oldStoreVolatileOperation =
-          dynamic_cast<const StoreVolatileOperation *>(&node.GetOperation()))
+  if (memoryStateLoopVar.has_value())
   {
-    auto & newStoreNode = StoreVolatileOperation::CreateNode(
-        *StoreOperation::AddressInput(node).origin(),
-        *StoreOperation::StoredValueInput(node).origin(),
-        *StoreVolatileOperation::IOStateInput(node).origin(),
-        memoryStates,
-        oldStoreVolatileOperation->GetAlignment());
-    auto & oldIOStateOutput = StoreVolatileOperation::IOStateOutput(node);
-    auto & newIOStateOutput = StoreVolatileOperation::IOStateOutput(newStoreNode);
-    oldIOStateOutput.divert_users(&newIOStateOutput);
-    return newStoreNode;
-  }
-
-  if (const auto oldStoreNonVolatileOperation =
-          dynamic_cast<const StoreNonVolatileOperation *>(&node.GetOperation()))
-  {
-    return StoreNonVolatileOperation::CreateNode(
-        *StoreOperation::AddressInput(node).origin(),
-        *StoreOperation::StoredValueInput(node).origin(),
-        memoryStates,
-        oldStoreNonVolatileOperation->GetAlignment());
-  }
-
-  JLM_UNREACHABLE("Unhandled store node type.");
-}
-
-std::vector<rvsdg::Output *>
-MemoryStateEncoder::ReplaceMemcpyNode(
-    const rvsdg::SimpleNode & memcpyNode,
-    const std::vector<rvsdg::Output *> & memoryStates)
-{
-  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
-
-  auto destination = memcpyNode.input(0)->origin();
-  auto source = memcpyNode.input(1)->origin();
-  auto length = memcpyNode.input(2)->origin();
-
-  if (is<MemCpyVolatileOperation>(&memcpyNode))
-  {
-    auto & ioState = *memcpyNode.input(3)->origin();
-    auto & newMemcpyNode =
-        MemCpyVolatileOperation::CreateNode(*destination, *source, *length, ioState, memoryStates);
-    auto results = rvsdg::outputs(&newMemcpyNode);
-
-    // Redirect I/O state
-    memcpyNode.output(0)->divert_users(results[0]);
-
-    // Skip I/O state and only return memory states
-    return { std::next(results.begin()), results.end() };
-  }
-  else if (is<MemCpyNonVolatileOperation>(&memcpyNode))
-  {
-    return MemCpyNonVolatileOperation::create(destination, source, length, memoryStates);
-  }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled memcpy operation type.");
+    auto & setNode = subregionLiveIntervals.createSetNodeForRegionExit(thetaModRefSet);
+    memoryStateLoopVar->post->divert_to(setNode.output(0));
   }
 }
 
 bool
-MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
+MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) const noexcept
 {
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
   {

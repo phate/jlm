@@ -128,7 +128,7 @@ public:
     rvsdg::Output * arg;
   };
 
-  [[nodiscard]] std::vector<rvsdg::Output *>
+  [[nodiscard]] std::vector<rvsdg::RegionArgument *>
   GetFunctionArguments() const;
 
   [[nodiscard]] std::vector<rvsdg::Input *>
