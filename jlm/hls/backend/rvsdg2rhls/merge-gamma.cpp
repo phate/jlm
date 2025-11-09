@@ -135,47 +135,6 @@ merge_gamma(rvsdg::GammaNode * gamma)
 }
 
 bool
-eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
-{
-  // eliminates gammas that just replicate the ctl input
-  bool changed = false;
-  for (size_t i = 0; i < gamma->noutputs(); ++i)
-  {
-    auto o = gamma->output(i);
-    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
-    {
-      bool eliminate = true;
-      for (size_t j = 0; j < gamma->nsubregions(); ++j)
-      {
-        auto r = gamma->subregion(j)->result(i);
-        if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
-        {
-          if (auto ctl = dynamic_cast<const rvsdg::ControlConstantOperation *>(
-                  &simpleNode->GetOperation()))
-          {
-            if (j == ctl->value().alternative())
-            {
-              continue;
-            }
-          }
-        }
-        eliminate = false;
-      }
-      if (eliminate)
-      {
-        if (o->nusers())
-        {
-          o->divert_users(gamma->predicate()->origin());
-          changed = true;
-          assert(0);
-        }
-      }
-    }
-  }
-  return changed;
-}
-
-bool
 eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 {
   // eliminates gammas that are only active at the end of the loop and have unused outputs
@@ -234,7 +193,7 @@ merge_gamma(rvsdg::Region * region)
           merge_gamma(structnode->subregion(n));
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
-          if (eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma) || merge_gamma(gamma))
+          if (eliminate_gamma_eol(gamma) || merge_gamma(gamma))
           {
             changed = true;
             break;
