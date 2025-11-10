@@ -57,13 +57,6 @@ private:
   BitValueRepresentation value_;
 };
 
-static inline jlm::rvsdg::Output *
-create_bitconstant_defined(rvsdg::Region * region, size_t nbits)
-{
-  std::string s(nbits, 'D');
-  return BitConstantOperation::create(region, BitValueRepresentation(s.c_str()));
-}
-
 }
 
 #endif
