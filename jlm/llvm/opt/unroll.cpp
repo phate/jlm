@@ -256,7 +256,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = jlm::rvsdg::create_bitconstant(unrolled_theta->subregion(), ev);
+    auto c = &rvsdg::BitConstantOperation::create(*unrolled_theta->subregion(), ev);
     input->divert_to(c);
   }
 }
@@ -341,7 +341,7 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
   auto step = ui.theta()->MapPreLoopVar(*ui.step()).input->origin();
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
-  auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
+  auto uf = &rvsdg::BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
   auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
   auto arm =
       rvsdg::SimpleNode::Create(*region, ui.armoperation().copy(), { ui.init(), mul }).output(0);
@@ -372,7 +372,7 @@ create_unrolled_theta_predicate(
   auto iend = i0->origin() == end ? i0 : i1;
   auto idv = i0->origin() == end ? i1 : i0;
 
-  auto uf = create_bitconstant(region, nbits, factor);
+  auto uf = &BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
   auto mul = bitmul_op::create(nbits, step, uf);
   auto arm =
       SimpleNode::Create(*region, ui.armoperation().copy(), { idv->origin(), mul }).output(0);

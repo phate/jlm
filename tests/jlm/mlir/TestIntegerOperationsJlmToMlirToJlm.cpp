@@ -46,8 +46,10 @@ TestIntegerBinaryOperation()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto constOp1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val1);
-    auto constOp2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val2);
+    auto constOp1 =
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { nbits, val1 });
+    auto constOp2 =
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { nbits, val2 });
     auto binaryOp = JlmOperation(nbits);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), binaryOp.copy(), { constOp1, constOp2 });
 
@@ -169,8 +171,10 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto constOp1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val1);
-    auto constOp2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val2);
+    auto constOp1 =
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { nbits, val1 });
+    auto constOp2 =
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { nbits, val2 });
     auto compOp = JlmOperation(nbits);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), compOp.copy(), { constOp1, constOp2 });
 
