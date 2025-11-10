@@ -170,6 +170,22 @@ private:
 std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode);
 
+typedef struct
+{
+  rvsdg::Region * repetitionSubregion;
+  rvsdg::Region * exitSubregion;
+} GammaSubregionRoles;
+
+/**
+ * Tries to assign the respective roles (exit or repetition) to the subregions of a gamma node
+ * that statically correlates with the predicate of a theta node.
+ *
+ * @param correlation The predicate correlation between a theta and gamma node.
+ * @return The roles of the gamma subregions, otherwise std::nullopt.
+ */
+std::optional<GammaSubregionRoles>
+determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation);
+
 /**
  * Predicate Correlation correlates the predicates between theta and gamma nodes, and
  * redirects their respective predicates to match operation nodes.

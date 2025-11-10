@@ -249,41 +249,6 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
   }
 }
 
-std::optional<InvariantValueRedirection::GammaSubregionRoles>
-InvariantValueRedirection::determineGammaSubregionRoles(
-    const ThetaGammaPredicateCorrelation & correlation)
-{
-  switch (correlation.type())
-  {
-  case CorrelationType::ControlConstantCorrelation:
-  {
-    const auto controlAlternatives =
-        std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(
-            correlation.data());
-    if (controlAlternatives.size() != 2)
-    {
-      return std::nullopt;
-    }
-
-    GammaSubregionRoles roles;
-    if (controlAlternatives[0] == 0)
-    {
-      roles.exitSubregion = correlation.gammaNode().subregion(0);
-      roles.repetitionSubregion = correlation.gammaNode().subregion(1);
-    }
-    else
-    {
-      roles.exitSubregion = correlation.gammaNode().subregion(1);
-      roles.repetitionSubregion = correlation.gammaNode().subregion(0);
-    }
-
-    return roles;
-  }
-  default:
-    return std::nullopt;
-  }
-}
-
 void
 InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 {
