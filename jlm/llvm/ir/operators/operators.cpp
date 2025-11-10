@@ -4,7 +4,6 @@
  */
 
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/bitstring/concat.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <llvm/ADT/SmallVector.h>
