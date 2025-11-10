@@ -9,7 +9,7 @@
 namespace jlm::llvm
 {
 
-rvsdg::RegionArgument &
+rvsdg::Output &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));

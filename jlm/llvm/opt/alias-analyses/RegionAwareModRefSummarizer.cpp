@@ -966,11 +966,11 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StopSolvingStatistics();
 
   // Print debug output
-  std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
-  std::cerr << "numSimpleAllocas: " << Context_->simpleAllocas.Size() << std::endl;
-  std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
-  std::cerr << "Call Graph SCCs:" << std::endl << callGraphSCCsToString() << std::endl;
-  std::cerr << "RegionTree:" << std::endl << dumpRegionTree(rvsdgModule.Rvsdg()) << std::endl;
+  // std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
+  // std::cerr << "numSimpleAllocas: " << Context_->simpleAllocas.Size() << std::endl;
+  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
+  // std::cerr << "Call Graph SCCs:" << std::endl << callGraphSCCsToString() << std::endl;
+  // std::cerr << "RegionTree:" << std::endl << dumpRegionTree(rvsdgModule.Rvsdg()) << std::endl;
 
   statistics->StartCreateMemoryNodeOrderingStatistics();
   createMemoryNodeOrdering();
@@ -1573,7 +1573,7 @@ RegionAwareModRefSummarizer::annotateMemcpy(
   auto count = tryGetConstantSignedInteger(*countOrigin);
 
   // Avoid underflow in signed -> unsigned conversion
-  if (*count && count < 0)
+  if (count && *count < 0)
     count = std::nullopt;
 
   addPointerOriginTargets<true>(nodeModRef, *dstOrigin, count, lambda);

@@ -93,6 +93,13 @@ class EncodingStatistics final : public util::Statistics
   // Suffix used when counting memory states routed into call entry merges
   static constexpr auto CallStateSuffix_ = "sThroughCall";
 
+  // Counting the amount of intervals we keep track of for each ModRefSet operation
+  static constexpr auto NumModRefSetOperations_ = "#ModRefSetOperations";
+  // Added up over all ModRefSet operations, how many intervals did each ModRefSet have
+  static constexpr auto NumTotalModRefSetIntervals_ = "#TotalModRefSetIntervals";
+  // Added up over all ModRefSet operations, how many intervals were live before the operation
+  static constexpr auto NumTotalLiveIntervals_ = "#TotalLiveIntervals";
+
 public:
   ~EncodingStatistics() override = default;
 
@@ -141,6 +148,17 @@ public:
     AddMemoryStateTypeCounter(CallStateSuffix_, counter);
   }
 
+  void
+  addModRefSetOperationStatistics(
+      uint64_t numModRefSetOperations,
+      uint64_t totalModRefSetIntervals,
+      uint64_t totalLiveIntervals)
+  {
+    AddMeasurement(NumModRefSetOperations_, numModRefSetOperations);
+    AddMeasurement(NumTotalModRefSetIntervals_, totalModRefSetIntervals);
+    AddMeasurement(NumTotalLiveIntervals_, totalLiveIntervals);
+  }
+
   static std::unique_ptr<EncodingStatistics>
   Create(const util::FilePath & sourceFile)
   {
@@ -155,71 +173,6 @@ private:
     AddMeasurement(NumTotalIntervals_ + suffix, counter.NumIntervals);
     AddMeasurement(MaxIntervals_ + suffix, counter.MaxIntervals);
   }
-};
-
-/** \brief Context for the memory state encoder
- */
-class MemoryStateEncoder::Context final
-{
-public:
-  explicit Context(const ModRefSummary & modRefSummary)
-      : ModRefSummary_(modRefSummary)
-  {}
-
-  Context(const Context &) = delete;
-
-  Context(Context &&) = delete;
-
-  Context &
-  operator=(const Context &) = delete;
-
-  Context &
-  operator=(Context &&) = delete;
-
-  const ModRefSummary &
-  GetModRefSummary() const noexcept
-  {
-    return ModRefSummary_;
-  }
-
-  MemoryStateTypeCounter &
-  GetInterProceduralRegionCounter()
-  {
-    return InterProceduralRegionCounter_;
-  }
-
-  MemoryStateTypeCounter &
-  GetLoadCounter()
-  {
-    return LoadCounter_;
-  }
-
-  MemoryStateTypeCounter &
-  GetStoreCounter()
-  {
-    return StoreCounter_;
-  }
-
-  MemoryStateTypeCounter &
-  GetCallCounter()
-  {
-    return CallCounter_;
-  }
-
-  static std::unique_ptr<Context>
-  Create(const ModRefSummary & modRefSummary)
-  {
-    return std::make_unique<Context>(modRefSummary);
-  }
-
-private:
-  const ModRefSummary & ModRefSummary_;
-
-  // Counters used for producing statistics about memory states
-  MemoryStateTypeCounter InterProceduralRegionCounter_;
-  MemoryStateTypeCounter LoadCounter_;
-  MemoryStateTypeCounter StoreCounter_;
-  MemoryStateTypeCounter CallCounter_;
 };
 
 /**
@@ -262,12 +215,16 @@ public:
   void
   createRegionEntry(rvsdg::Output & memoryStateArgument, const ModRefSet & modRefSet)
   {
+    numModRefSetOperations_++;
+
     JLM_ASSERT(memoryStateArgument.region() == &region_);
     JLM_ASSERT(liveIntervals_.empty());
 
     auto intervals = modRefSet.getLoadStoreIntervalIterator();
     while (const auto interval = intervals.peek())
     {
+      totalModRefSetIntervals_++;
+
       liveIntervals_.push_back(LiveInterval{ *interval, true, nullptr, &memoryStateArgument });
       intervals.next();
     }
@@ -285,6 +242,9 @@ public:
   void
   addModRefSet(rvsdg::Node & node, rvsdg::Output & memoryStateOutput, const ModRefSet & modRefSet)
   {
+    numModRefSetOperations_++;
+    totalLiveIntervals_ += liveIntervals_.size();
+
     // Move the current live intervals into old live intervals
     std::swap(oldLiveIntervals_, liveIntervals_);
     // This method copies all surviving old intervals, as well as adding the new intervals.
@@ -297,6 +257,8 @@ public:
 
     while (const auto newIntervalPair = newIntervals.peek())
     {
+      totalModRefSetIntervals_++;
+
       const auto [newInterval, newIntervalIsStore] = *newIntervalPair;
 
       while (oldLiveIntervalIndex < oldLiveIntervals_.size())
@@ -340,6 +302,9 @@ public:
   rvsdg::SimpleNode &
   attachNode(rvsdg::Node & node, rvsdg::Output & memoryStateOutput, const ModRefSet & modRefSet)
   {
+    numModRefSetOperations_++;
+    totalLiveIntervals_ += liveIntervals_.size();
+
     // Keep track of which memory state outputs the attached node will depend on
     std::vector<rvsdg::Output *> memoryStateOutputs;
     // Outputs in this set are the ones we depend on, used to avoid duplication
@@ -365,6 +330,8 @@ public:
     auto newIntervals = modRefSet.getLoadStoreIntervalDifferenceIterator();
     while (const auto newIntervalPair = newIntervals.peek())
     {
+      totalModRefSetIntervals_++;
+
       const auto newInterval = newIntervalPair->first;
       const auto newIntervalIsStore = newIntervalPair->second;
 
@@ -500,6 +467,9 @@ public:
   rvsdg::SimpleNode &
   createSetNodeForRegionExit(const ModRefSet & modRefSet)
   {
+    numModRefSetOperations_++;
+    totalLiveIntervals_ += liveIntervals_.size();
+
     std::vector<rvsdg::Output *> memoryStateOutputs;
     // Used to avoid duplicates
     util::HashSet<rvsdg::Output *> outputSet;
@@ -509,6 +479,8 @@ public:
     auto intervals = modRefSet.getLoadStoreIntervalIterator();
     while (const auto interval = intervals.peek())
     {
+      totalModRefSetIntervals_++;
+
       while (liveIntervalIndex < liveIntervals_.size())
       {
         auto & liveInterval = liveIntervals_[liveIntervalIndex];
@@ -534,6 +506,24 @@ public:
     }
 
     return MemoryStateSetOperation::CreateNode(region_, memoryStateOutputs);
+  }
+
+  [[nodiscard]] uint64_t
+  getNumModRefSetOperations() const noexcept
+  {
+    return numModRefSetOperations_;
+  }
+
+  [[nodiscard]] uint64_t
+  getTotalModRefSetIntervals() const noexcept
+  {
+    return totalModRefSetIntervals_;
+  }
+
+  [[nodiscard]] uint64_t
+  getTotalLiveIntervals() const noexcept
+  {
+    return totalLiveIntervals_;
   }
 
   /**
@@ -595,6 +585,121 @@ private:
   // Used to "double-buffer" the set of live intervals, by swapping current and old.
   // This avoids making new heap allocations for every traversal
   std::vector<LiveInterval> oldLiveIntervals_;
+
+  // How many operations are performed, where the set of live intervals is updated by a ModRefSet
+  uint64_t numModRefSetOperations_ = 0;
+  // How many intervals do the ModRefSets being operated on have, in total
+  uint64_t totalModRefSetIntervals_ = 0;
+  // How many intervals were already live at the start of the operation
+  uint64_t totalLiveIntervals_ = 0;
+};
+
+/** \brief Context for the memory state encoder
+ */
+class MemoryStateEncoder::Context final
+{
+public:
+  explicit Context(const ModRefSummary & modRefSummary)
+      : ModRefSummary_(modRefSummary)
+  {}
+
+  Context(const Context &) = delete;
+
+  Context(Context &&) = delete;
+
+  Context &
+  operator=(const Context &) = delete;
+
+  Context &
+  operator=(Context &&) = delete;
+
+  const ModRefSummary &
+  GetModRefSummary() const noexcept
+  {
+    return ModRefSummary_;
+  }
+
+  MemoryStateTypeCounter &
+  GetInterProceduralRegionCounter()
+  {
+    return InterProceduralRegionCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetLoadCounter()
+  {
+    return LoadCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetStoreCounter()
+  {
+    return StoreCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetCallCounter()
+  {
+    return CallCounter_;
+  }
+
+  void
+  registerRegionIntervalOutputMappingStatistics(const RegionIntervalOutputMapping & mapping)
+  {
+    numModRefSetOperations_ += mapping.getNumModRefSetOperations();
+    totalModRefSetIntervals_ += mapping.getTotalModRefSetIntervals();
+    totalLiveIntervals_ += mapping.getTotalLiveIntervals();
+  }
+
+  /**
+   * @return the number of ModRefSet operations that have been performed across all
+   * RegionIntervalOutputMappings
+   */
+  [[nodiscard]] uint64_t
+  getNumModRefSetOperations() const noexcept
+  {
+    return numModRefSetOperations_;
+  }
+
+  /**
+   * @return across all ModRefSet operations across all RegionIntervalOutputMappings,
+   * the total number of intervals in each ModRefSet.
+   */
+  [[nodiscard]] uint64_t
+  getTotalModRefSetIntervals() const noexcept
+  {
+    return totalModRefSetIntervals_;
+  }
+
+  /**
+   * @return across all ModRefSet operations across all RegionIntervalOutputMappings,
+   * how many intervals were live when the operation was performed.
+   */
+  [[nodiscard]] uint64_t
+  getTotalLiveIntervals() const noexcept
+  {
+    return totalLiveIntervals_;
+  }
+
+  static std::unique_ptr<Context>
+  Create(const ModRefSummary & modRefSummary)
+  {
+    return std::make_unique<Context>(modRefSummary);
+  }
+
+private:
+  const ModRefSummary & ModRefSummary_;
+
+  // Counters used for producing statistics about memory states
+  MemoryStateTypeCounter InterProceduralRegionCounter_;
+  MemoryStateTypeCounter LoadCounter_;
+  MemoryStateTypeCounter StoreCounter_;
+  MemoryStateTypeCounter CallCounter_;
+
+  // Statistics about operations added up across all RegionIntervalOutputMappings
+  uint64_t numModRefSetOperations_ = 0;
+  uint64_t totalModRefSetIntervals_ = 0;
+  uint64_t totalLiveIntervals_ = 0;
 };
 
 MemoryStateEncoder::~MemoryStateEncoder() noexcept = default;
@@ -610,7 +715,7 @@ MemoryStateEncoder::Encode(
   Context_ = Context::Create(modRefSummary);
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
-  std::cerr << modRefSummary.getMemoryNodeOrdering().getDebugString() << std::endl;
+  // std::cerr << modRefSummary.getMemoryNodeOrdering().getDebugString() << std::endl;
 
   statistics->Start(rvsdgModule.Rvsdg());
   EncodeInterProceduralRegion(rvsdgModule.Rvsdg().GetRootRegion());
@@ -621,6 +726,11 @@ MemoryStateEncoder::Encode(
   statistics->AddLoadMemoryStateCounts(Context_->GetLoadCounter());
   statistics->AddStoreMemoryStateCounts(Context_->GetStoreCounter());
   statistics->AddCallMemoryStateCounts(Context_->GetCallCounter());
+
+  statistics->addModRefSetOperationStatistics(
+      Context_->getNumModRefSetOperations(),
+      Context_->getTotalModRefSetIntervals(),
+      Context_->getTotalLiveIntervals());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -669,6 +779,9 @@ MemoryStateEncoder::EncodeLambda(rvsdg::LambdaNode & lambdaNode)
   EncodeLambdaEntry(lambdaNode, liveIntervals);
   EncodeIntraProceduralRegion(*lambdaNode.subregion(), liveIntervals);
   EncodeLambdaExit(lambdaNode, liveIntervals);
+
+  // Track statistics from the live interval mapping
+  Context_->registerRegionIntervalOutputMappingStatistics(liveIntervals);
 }
 
 void
@@ -681,9 +794,9 @@ MemoryStateEncoder::EncodeLambdaEntry(
   const auto & lambdaModRefSet = modRefSummary.getLambdaEntryModRef(lambdaNode);
   liveIntervals.createRegionEntry(memoryStateArgument, lambdaModRefSet);
 
-  std::cerr << "Encoding lamda region entry for " << lambdaNode.DebugString() << std::endl;
-  std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding lamda region entry for " << lambdaNode.DebugString() << std::endl;
+  // std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 
   Context_->GetInterProceduralRegionCounter().CountEntity(lambdaModRefSet);
 }
@@ -701,9 +814,9 @@ MemoryStateEncoder::EncodeLambdaExit(
   auto & joinNode = liveIntervals.createSetNodeForRegionExit(lambdaModRefSet);
   memoryStateResult.divert_to(joinNode.output(0));
 
-  std::cerr << "Encoding lamda region exit for " << lambdaNode.DebugString() << std::endl;
-  std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding lamda region exit for " << lambdaNode.DebugString() << std::endl;
+  // std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -781,9 +894,9 @@ MemoryStateEncoder::EncodeAlloca(
   auto & allocaMemoryStateOutput = *allocaNode.output(1);
   liveIntervals.addModRefSet(allocaNode, allocaMemoryStateOutput, allocaModRefSet);
 
-  std::cerr << "Encoding alloca " << &allocaNode << std::endl;
-  std::cerr << "ModRefSet:" << allocaModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding alloca " << &allocaNode << std::endl;
+  // std::cerr << "ModRefSet:" << allocaModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -819,9 +932,9 @@ MemoryStateEncoder::EncodeLoad(
   auto & setNode = liveIntervals.attachNode(node, loadMemoryStateOutput, loadModRefSet);
   loadMemoryStateInput.divert_to(setNode.output(0));
 
-  std::cerr << "Encoding load " << &node << std::endl;
-  std::cerr << "ModRefSet:" << loadModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding load " << &node << std::endl;
+  // std::cerr << "ModRefSet:" << loadModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -845,9 +958,9 @@ MemoryStateEncoder::EncodeStore(
   auto & setNode = liveIntervals.attachNode(node, storeMemoryStateOutput, storeModRefSet);
   storeMemoryStateInput.divert_to(setNode.output(0));
 
-  std::cerr << "Encoding store " << &node << std::endl;
-  std::cerr << "ModRefSet:" << storeModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding store " << &node << std::endl;
+  // std::cerr << "ModRefSet:" << storeModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -860,8 +973,8 @@ MemoryStateEncoder::EncodeFree(
   const auto & freeModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(freeNode);
 
   // TODO: Use proper accessors
-  JLM_ASSERT(freeNode.ninputs() == 2);
-  JLM_ASSERT(freeNode.noutputs() == 1);
+  JLM_ASSERT(freeNode.ninputs() == 3); // pointer, memory state, io
+  JLM_ASSERT(freeNode.noutputs() == 2); // memory state, io
   auto & memoryStateInput = *freeNode.input(1);
   auto & memoryStateOutput = *freeNode.output(0);
 
@@ -885,9 +998,9 @@ MemoryStateEncoder::EncodeCall(
   auto & setNode = liveIntervals.attachNode(callNode, memoryStateOutput, callModRefSet);
   memoryStateInput.divert_to(setNode.output(0));
 
-  std::cerr << "Encoding call node " << &callNode << std::endl;
-  std::cerr << "ModRefSet:" << callModRefSet.getDebugString() << std::endl;
-  std::cerr << liveIntervals.getDebugString() << std::endl;
+  // std::cerr << "Encoding call node " << &callNode << std::endl;
+  // std::cerr << "ModRefSet:" << callModRefSet.getDebugString() << std::endl;
+  // std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -972,6 +1085,9 @@ MemoryStateEncoder::EncodeGamma(
       auto & setNode = subregionLiveIntervals.createSetNodeForRegionExit(gammaModRefSet);
       memoryStateExitVar->branchResult[i]->divert_to(setNode.output(0));
     }
+
+    // Track statistics from the live interval mapping
+    Context_->registerRegionIntervalOutputMappingStatistics(subregionLiveIntervals);
   }
 }
 
@@ -1021,6 +1137,9 @@ MemoryStateEncoder::EncodeTheta(
     auto & setNode = subregionLiveIntervals.createSetNodeForRegionExit(thetaModRefSet);
     memoryStateLoopVar->post->divert_to(setNode.output(0));
   }
+
+  // Track statistics from the live interval mapping
+  Context_->registerRegionIntervalOutputMappingStatistics(subregionLiveIntervals);
 }
 
 bool
