@@ -35,7 +35,7 @@ TestSingleLoad()
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto constant = jlm::rvsdg::BitConstantOperation::create(theta->subregion(), { 1, 1 });
+  auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
   theta->set_predicate(match);
 
@@ -111,7 +111,7 @@ TestLoadStore()
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto constant = jlm::rvsdg::BitConstantOperation::create(theta->subregion(), { 1, 1 });
+  auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
   theta->set_predicate(match);
 
@@ -127,7 +127,7 @@ TestLoadStore()
       32);
   auto storeOutput = StoreNonVolatileOperation::Create(
       storeAddress.pre,
-      jlm::rvsdg::BitConstantOperation::create(theta->subregion(), { 32, 1 }),
+      &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 32, 1 }),
       { loadOutput[1] },
       32);
 
@@ -192,7 +192,7 @@ TestAddrQueue()
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto constant = jlm::rvsdg::BitConstantOperation::create(theta->subregion(), { 1, 1 });
+  auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
   theta->set_predicate(match);
 

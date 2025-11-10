@@ -37,11 +37,11 @@ setupMatchConstantCorrelationTest(
   auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode = GammaNode::create(predicate, 2);
 
-  auto constant0 = BitConstantOperation::create(
-      gammaNode->subregion(0),
+  auto constant0 = &BitConstantOperation::create(
+      *gammaNode->subregion(0),
       { 64, gammaSubregionAlternatives.first });
-  auto constant1 = BitConstantOperation::create(
-      gammaNode->subregion(1),
+  auto constant1 = &BitConstantOperation::create(
+      *gammaNode->subregion(1),
       { 64, gammaSubregionAlternatives.second });
 
   auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
@@ -297,8 +297,8 @@ testThetaGammaCorrelationFixPoint()
   auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode1 = GammaNode::create(predicate, 2);
 
-  auto constant0 = BitConstantOperation::create(gammaNode1->subregion(0), { 64, 0 });
-  auto constant1 = BitConstantOperation::create(gammaNode1->subregion(1), { 64, 1 });
+  auto constant0 = &BitConstantOperation::create(*gammaNode1->subregion(0), { 64, 0 });
+  auto constant1 = &BitConstantOperation::create(*gammaNode1->subregion(1), { 64, 1 });
 
   auto exitVar = gammaNode1->AddExitVar({ constant0, constant1 });
   auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);

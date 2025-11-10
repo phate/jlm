@@ -34,7 +34,7 @@ TestLambda()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 4 });
+    auto constant = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
 
     lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
 
@@ -160,8 +160,8 @@ TestAddOperation()
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
-    auto constant1 = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 4 });
-    auto constant2 = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 5 });
+    auto constant1 = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
+    auto constant2 = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
     auto add = jlm::rvsdg::bitadd_op::create(32, constant1, constant2);
 
     lambda->finalize({ add, iOStateArgument, memoryStateArgument });
@@ -258,9 +258,9 @@ TestComZeroExt()
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
-    auto constant1 = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 8, 4 });
-    jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 16, 5 }); // Unused constant
-    jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 16, 6 }); // Unused constant
+    auto constant1 = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 8, 4 });
+    jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 16, 5 }); // Unused constant
+    jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 16, 6 }); // Unused constant
 
     // zero extension of constant1
     const auto zeroExt = jlm::rvsdg::CreateOpNode<ZExtOperation>({ constant1 }, 8, 16).output(0);
@@ -397,7 +397,7 @@ TestMatch()
 
     // Create a match operation
     std::cout << "Match Operation" << std::endl;
-    auto predicateConst = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 8, 4 });
+    auto predicateConst = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 8, 4 });
 
     auto match =
         jlm::rvsdg::MatchOperation::Create(*predicateConst, { { 4, 0 }, { 5, 1 }, { 6, 1 } }, 2, 2);
@@ -491,8 +491,8 @@ TestGamma()
     // Create a gamma operation
     std::cout << "Gamma Operation" << std::endl;
     auto CtrlConstant = &jlm::rvsdg::ControlConstantOperation::create(graph->GetRootRegion(), 3, 1);
-    auto entryvar1 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 5 });
-    auto entryvar2 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 6 });
+    auto entryvar1 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 5 });
+    auto entryvar2 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 6 });
     auto rvsdgGammaNode = jlm::rvsdg::GammaNode::create(
         CtrlConstant, // predicate
         3             // nalternatives
@@ -506,9 +506,9 @@ TestGamma()
     for (int i = 0; i < 3; i++)
     {
       exitvars1.push_back(
-          jlm::rvsdg::BitConstantOperation::create(rvsdgGammaNode->subregion(i), { 32, i + 1 }));
-      exitvars2.push_back(jlm::rvsdg::BitConstantOperation::create(
-          rvsdgGammaNode->subregion(i),
+          &jlm::rvsdg::BitConstantOperation::create(*rvsdgGammaNode->subregion(i), { 32, i + 1 }));
+      exitvars2.push_back(&jlm::rvsdg::BitConstantOperation::create(
+          *rvsdgGammaNode->subregion(i),
           { 32, 10 * (i + 1) }));
     }
 
@@ -606,8 +606,8 @@ TestTheta()
   {
     // Create a theta operation
     std::cout << "Theta Operation" << std::endl;
-    auto entryvar1 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 5 });
-    auto entryvar2 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 6 });
+    auto entryvar1 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 5 });
+    auto entryvar2 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 6 });
     jlm::rvsdg::ThetaNode * rvsdgThetaNode = jlm::rvsdg::ThetaNode::create(&graph->GetRootRegion());
 
     auto predicate =

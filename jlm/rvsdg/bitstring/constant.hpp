@@ -40,17 +40,17 @@ public:
     return value_;
   }
 
-  static Output *
-  create(Region * region, BitValueRepresentation value)
+  static Output &
+  create(Region & region, BitValueRepresentation value)
   {
-    return CreateOpNode<BitConstantOperation>(*region, std::move(value)).output(0);
+    return *CreateOpNode<BitConstantOperation>(region, std::move(value)).output(0);
   }
 
   static Output &
   createUndefined(Region & region, const size_t numBits)
   {
     const std::string s(numBits, 'X');
-    return *create(&region, BitValueRepresentation(s.c_str()));
+    return create(region, BitValueRepresentation(s.c_str()));
   }
 
 private:

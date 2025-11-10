@@ -30,8 +30,8 @@ BitUnaryOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
     auto & tracedOperand = traceOutputIntraProcedurally(*arg);
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
-    return BitConstantOperation::create(
-        constantNode->region(),
+    return &BitConstantOperation::create(
+        *constantNode->region(),
         reduce_constant(constantOperation->value()));
   }
 
@@ -71,8 +71,8 @@ BitBinaryOperation::reduce_operand_pair(
     auto [constantNode2, constantOperation2] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
 
-    return BitConstantOperation::create(
-        arg1->region(),
+    return &BitConstantOperation::create(
+        *arg1->region(),
         reduce_constants(constantOperation1->value(), constantOperation2->value()));
   }
 
@@ -121,11 +121,11 @@ BitCompareOperation::reduce_operand_pair(
 {
   if (path == 1)
   {
-    return BitConstantOperation::create(arg1->region(), BitValueRepresentation("0"));
+    return &BitConstantOperation::create(*arg1->region(), BitValueRepresentation("0"));
   }
   if (path == 2)
   {
-    return BitConstantOperation::create(arg1->region(), BitValueRepresentation("1"));
+    return &BitConstantOperation::create(*arg1->region(), BitValueRepresentation("1"));
   }
 
   return nullptr;

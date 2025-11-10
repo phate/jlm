@@ -78,7 +78,7 @@ TestAlloca()
   {
     // Create a bits node for alloc size
     std::cout << "Bit Constanr" << std::endl;
-    auto bits = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 1 });
+    auto bits = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 1 });
 
     // Create alloca node
     std::cout << "Alloca Operation" << std::endl;
@@ -813,7 +813,7 @@ TestDelta()
             "section",
             false));
 
-    auto bitConstant = jlm::rvsdg::BitConstantOperation::create(delta1->subregion(), { 32, 1 });
+    auto bitConstant = &jlm::rvsdg::BitConstantOperation::create(*delta1->subregion(), { 32, 1 });
     delta1->finalize(bitConstant);
 
     auto delta2 = jlm::rvsdg::DeltaNode::Create(
@@ -824,7 +824,7 @@ TestDelta()
             Linkage::externalLinkage,
             "section",
             true));
-    auto bitConstant2 = jlm::rvsdg::BitConstantOperation::create(delta2->subregion(), { 32, 1 });
+    auto bitConstant2 = &jlm::rvsdg::BitConstantOperation::create(*delta2->subregion(), { 32, 1 });
     delta2->finalize(bitConstant2);
 
     // Convert the RVSDG to MLIR
@@ -916,9 +916,9 @@ TestConstantDataArray()
 
   {
     auto bitConstant1 =
-        jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 1 });
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 1 });
     auto bitConstant2 =
-        jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 2 });
+        &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 2 });
     auto bitType = jlm::rvsdg::BitType::Create(32);
     jlm::llvm::ConstantDataArray::Create({ bitConstant1, bitConstant2 });
 
@@ -1052,8 +1052,8 @@ TestVarArgList()
 
   {
     auto bitType = jlm::rvsdg::BitType::Create(32);
-    auto bits1 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 1 });
-    auto bits2 = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 32, 2 });
+    auto bits1 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 1 });
+    auto bits2 = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 2 });
     jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
@@ -1280,7 +1280,7 @@ TestTrunc()
   {
     auto bitType1 = jlm::rvsdg::BitType::Create(64);
     auto bitType2 = jlm::rvsdg::BitType::Create(32);
-    auto constOp = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 64, 2 });
+    auto constOp = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 64, 2 });
     jlm::rvsdg::CreateOpNode<TruncOperation>({ constOp }, bitType1, bitType2);
 
     // Convert the RVSDG to MLIR
@@ -1605,7 +1605,7 @@ TestIOBarrier()
     auto ioStateArgument = lambda->GetFunctionArguments()[0];
 
     // Create a value to pass through the barrier
-    auto value = jlm::rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 42 });
+    auto value = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 42 });
 
     // Create the IOBarrier operation
     jlm::rvsdg::CreateOpNode<jlm::llvm::IOBarrierOperation>(
@@ -1715,7 +1715,7 @@ TestMalloc()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto constOp = jlm::rvsdg::BitConstantOperation::create(&graph->GetRootRegion(), { 64, 2 });
+    auto constOp = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 64, 2 });
     MallocOperation::create(constOp);
 
     // Convert the RVSDG to MLIR

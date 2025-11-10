@@ -162,7 +162,7 @@ private:
       const auto importedCtxVar = lambdaNode.AddContextVar(*Outputs_.Imported).inner;
 
       const auto constantOne =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 1 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
 
       const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);

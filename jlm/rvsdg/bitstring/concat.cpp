@@ -106,7 +106,7 @@ BitConcatOperation::reduce_operand_pair(
 
     BitValueRepresentation bits(arg1_constant.value());
     bits.Append(arg2_constant.value());
-    return BitConstantOperation::create(arg1->region(), std::move(bits));
+    return &BitConstantOperation::create(*arg1->region(), std::move(bits));
   }
 
   if (path == binop_reduction_merge)

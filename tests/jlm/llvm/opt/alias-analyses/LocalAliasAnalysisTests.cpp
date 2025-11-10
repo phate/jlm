@@ -152,15 +152,15 @@ private:
       const auto globalCtxVar = lambdaNode.AddContextVar(*Outputs_.Global).inner;
 
       const auto constantOne =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 1 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
       const auto constantTwo =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 2 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 2 });
       const auto constantThree =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 3 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 3 });
       const auto constantFour =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 4 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 4 });
       const auto constantMinusTwo =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, -2 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, -2 });
 
       const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
@@ -398,9 +398,9 @@ private:
       auto memoryState = lambdaNode.GetFunctionArguments()[3];
 
       const auto constantZero =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 0 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 0 });
       const auto constantOne =
-          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 1 });
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
 
       const auto alloca1Outputs = AllocaOperation::create(int32Type, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(int64Type, constantOne, 4);
