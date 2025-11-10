@@ -134,51 +134,6 @@ merge_gamma(rvsdg::GammaNode * gamma)
   return false;
 }
 
-bool
-eliminate_gamma_eol(rvsdg::GammaNode * gamma)
-{
-  // eliminates gammas that are only active at the end of the loop and have unused outputs
-  // seems to be mostly loop variables
-  auto theta = dynamic_cast<rvsdg::ThetaNode *>(gamma->region()->node());
-  if (!theta || theta->predicate()->origin() != gamma->predicate()->origin())
-  {
-    return false;
-  }
-  if (gamma->nsubregions() != 2)
-  {
-    return false;
-  }
-  bool changed = false;
-  for (size_t i = 0; i < gamma->noutputs(); ++i)
-  {
-    auto o = gamma->output(i);
-    if (o->nusers() != 1)
-    {
-      continue;
-    }
-    auto & user = *o->Users().begin();
-    if (auto res = dynamic_cast<rvsdg::RegionResult *>(&user))
-    {
-      if (res->output() && res->output()->nusers() == 0)
-      {
-        // continue loop subregion
-        if (auto arg =
-                dynamic_cast<rvsdg::RegionArgument *>(gamma->subregion(1)->result(i)->origin()))
-        {
-          // value is just passed through
-          if (o->nusers())
-          {
-            o->divert_users(arg->input()->origin());
-            changed = true;
-            assert(0);
-          }
-        }
-      }
-    }
-  }
-  return changed;
-}
-
 void
 merge_gamma(rvsdg::Region * region)
 {
@@ -194,7 +149,7 @@ merge_gamma(rvsdg::Region * region)
           merge_gamma(structnode->subregion(n));
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
-          if (eliminate_gamma_eol(gamma) || merge_gamma(gamma))
+          if (merge_gamma(gamma))
           {
             changed = true;
             break;
