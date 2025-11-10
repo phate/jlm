@@ -65,7 +65,6 @@ class RegionAwareModRefSummarizer final : public ModRefSummarizer
   class RegionAwareModRefSummary;
 
 public:
-
   ~RegionAwareModRefSummarizer() noexcept override;
 
   RegionAwareModRefSummarizer();
@@ -233,8 +232,7 @@ private:
    * Uses the solved ModRefGraph and MemoryNodeOrdering to build the final ModRefSummary.
    * @return the created ModRefSummary
    */
-  [[nodiscard]]
-  std::unique_ptr<RegionAwareModRefSummary>
+  [[nodiscard]] std::unique_ptr<RegionAwareModRefSummary>
   createModRefSummary();
 
   /**

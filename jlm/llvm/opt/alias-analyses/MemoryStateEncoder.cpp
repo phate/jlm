@@ -474,6 +474,10 @@ public:
     }
 
     // All new intervals have been processed, add any remaining old intervals
+    for (auto leftover : leftoverOldIntervals)
+    {
+      liveIntervals_.push_back(leftover);
+    }
     while (oldLiveIntervalIndex < oldLiveIntervals_.size())
     {
       liveIntervals_.push_back(oldLiveIntervals_[oldLiveIntervalIndex]);
@@ -508,7 +512,7 @@ public:
       while (liveIntervalIndex < liveIntervals_.size())
       {
         auto & liveInterval = liveIntervals_[liveIntervalIndex];
-        if (liveInterval.interval.end < interval->start)
+        if (liveInterval.interval.end <= interval->start)
         {
           // We can move past this live interval, as it is fully behind the current interval
           liveIntervalIndex++;
@@ -551,6 +555,37 @@ public:
     return true;
   }
 
+  /**
+   * @return a string containing all live intervals
+   */
+  [[nodiscard]] std::string
+  getDebugString() const
+  {
+    std::ostringstream ss;
+    ss << "LiveIntervals for region " << &region_ << ":" << std::endl;
+    for (const auto & liveInterval : liveIntervals_)
+    {
+      ss << "[" << liveInterval.interval.start << ", " << (liveInterval.interval.end - 1) << "]";
+      if (liveInterval.isStore)
+      {
+        ss << " store";
+      }
+      else
+      {
+        ss << " load";
+      }
+
+      if (liveInterval.node)
+      {
+        ss << " (node " << liveInterval.node << ")";
+      }
+
+      ss << " (output " << liveInterval.memoryStateOutput << ")" << std::endl;
+    }
+
+    return ss.str();
+  }
+
 private:
   rvsdg::Region & region_;
 
@@ -574,6 +609,8 @@ MemoryStateEncoder::Encode(
 {
   Context_ = Context::Create(modRefSummary);
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
+
+  std::cerr << modRefSummary.getMemoryNodeOrdering().getDebugString() << std::endl;
 
   statistics->Start(rvsdgModule.Rvsdg());
   EncodeInterProceduralRegion(rvsdgModule.Rvsdg().GetRootRegion());
@@ -644,6 +681,10 @@ MemoryStateEncoder::EncodeLambdaEntry(
   const auto & lambdaModRefSet = modRefSummary.getLambdaEntryModRef(lambdaNode);
   liveIntervals.createRegionEntry(memoryStateArgument, lambdaModRefSet);
 
+  std::cerr << "Encoding lamda region entry for " << lambdaNode.DebugString() << std::endl;
+  std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
+
   Context_->GetInterProceduralRegionCounter().CountEntity(lambdaModRefSet);
 }
 
@@ -659,6 +700,10 @@ MemoryStateEncoder::EncodeLambdaExit(
   // Group together all memory nodes that appear loaded from or stored to from outside the function
   auto & joinNode = liveIntervals.createSetNodeForRegionExit(lambdaModRefSet);
   memoryStateResult.divert_to(joinNode.output(0));
+
+  std::cerr << "Encoding lamda region exit for " << lambdaNode.DebugString() << std::endl;
+  std::cerr << "ModRefSet:" << lambdaModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -735,6 +780,10 @@ MemoryStateEncoder::EncodeAlloca(
   const auto & allocaModRefSet = Context_->GetModRefSummary().getSimpleNodeModRef(allocaNode);
   auto & allocaMemoryStateOutput = *allocaNode.output(1);
   liveIntervals.addModRefSet(allocaNode, allocaMemoryStateOutput, allocaModRefSet);
+
+  std::cerr << "Encoding alloca " << &allocaNode << std::endl;
+  std::cerr << "ModRefSet:" << allocaModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -769,6 +818,10 @@ MemoryStateEncoder::EncodeLoad(
 
   auto & setNode = liveIntervals.attachNode(node, loadMemoryStateOutput, loadModRefSet);
   loadMemoryStateInput.divert_to(setNode.output(0));
+
+  std::cerr << "Encoding load " << &node << std::endl;
+  std::cerr << "ModRefSet:" << loadModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -791,6 +844,10 @@ MemoryStateEncoder::EncodeStore(
 
   auto & setNode = liveIntervals.attachNode(node, storeMemoryStateOutput, storeModRefSet);
   storeMemoryStateInput.divert_to(setNode.output(0));
+
+  std::cerr << "Encoding store " << &node << std::endl;
+  std::cerr << "ModRefSet:" << storeModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -827,6 +884,10 @@ MemoryStateEncoder::EncodeCall(
 
   auto & setNode = liveIntervals.attachNode(callNode, memoryStateOutput, callModRefSet);
   memoryStateInput.divert_to(setNode.output(0));
+
+  std::cerr << "Encoding call node " << &callNode << std::endl;
+  std::cerr << "ModRefSet:" << callModRefSet.getDebugString() << std::endl;
+  std::cerr << liveIntervals.getDebugString() << std::endl;
 }
 
 void
@@ -898,7 +959,9 @@ MemoryStateEncoder::EncodeGamma(
     RegionIntervalOutputMapping subregionLiveIntervals(subregion);
     if (memoryStateEntryVar.has_value())
     {
-      subregionLiveIntervals.createRegionEntry(*memoryStateEntryVar->branchArgument[i], gammaModRefSet);
+      subregionLiveIntervals.createRegionEntry(
+          *memoryStateEntryVar->branchArgument[i],
+          gammaModRefSet);
     }
 
     Context_->GetInterProceduralRegionCounter().CountEntity(gammaModRefSet);
@@ -913,7 +976,9 @@ MemoryStateEncoder::EncodeGamma(
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, RegionIntervalOutputMapping & liveIntervals)
+MemoryStateEncoder::EncodeTheta(
+    rvsdg::ThetaNode & thetaNode,
+    RegionIntervalOutputMapping & liveIntervals)
 {
   const auto & thetaModRefSet = Context_->GetModRefSummary().getThetaModRef(thetaNode);
 
@@ -937,7 +1002,8 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, RegionIntervalOutp
       throw std::logic_error("Theta node with ModRefSet must have a memory state loop variable");
     }
 
-    auto & setNode = liveIntervals.attachNode(thetaNode, *memoryStateLoopVar->output, thetaModRefSet);
+    auto & setNode =
+        liveIntervals.attachNode(thetaNode, *memoryStateLoopVar->output, thetaModRefSet);
     memoryStateLoopVar->input->divert_to(setNode.output(0));
   }
 

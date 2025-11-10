@@ -7,6 +7,36 @@
 
 namespace jlm::llvm::aa
 {
+
+std::string
+MemoryNodeOrdering::getDebugString() const
+{
+  std::ostringstream ss;
+  ss << "MemoryNodeOrdering: [" << std::endl;
+  for (MemoryNodeOrderingIndex i = 0; i < memoryNodeOrder_.size(); i++)
+  {
+    ss << "  " << std::setfill('0') << std::setw(3) << i << ": ";
+    ss << pointsToGraph_.getNodeDebugString(memoryNodeOrder_[i], ' ') << std::endl;
+  }
+  ss << "]";
+  return ss.str();
+}
+
+std::string
+MemoryNodeIntervalSet::getDebugString() const
+{
+  std::ostringstream ss;
+  ss << "{";
+  for (const auto & interval : intervals_)
+  {
+    if (&interval != &intervals_.front())
+      ss << ", ";
+    ss << "[" << interval.start << ", " << (interval.end - 1) << "]";
+  }
+  ss << "}";
+  return ss.str();
+}
+
 void
 MemoryNodeIntervalSet::sortAndCompact()
 {
@@ -94,7 +124,7 @@ MemoryNodeIntervalSetUnionIterator::next()
     start = a->start;
     end = a->end;
   }
-  if (const auto b = a_.peek(); b && b->start < start)
+  if (const auto b = b_.peek(); b && b->start < start)
   {
     start = b->start;
     end = b->end;
@@ -228,12 +258,21 @@ MemoryNodeIntervalSetDifferenceIterator::next()
     {
       break;
     }
-
   }
 
   // Keep track of where we ended, to ensure the next interval starts at-or-after it
   lastEnd_ = end;
   current_ = { MemoryNodeInterval(start, end), isStore };
+}
+
+std::string
+ModRefSet::getDebugString() const
+{
+  return util::strfmt(
+      "loads: ",
+      loadIntervals_.getDebugString(),
+      ", stores: ",
+      storeIntervals_.getDebugString());
 }
 
 }

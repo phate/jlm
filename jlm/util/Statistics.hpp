@@ -223,8 +223,10 @@ protected:
     inline static const char * NumPointsToGraphMallocNodes = "#PointsToGraphMallocNodes";
     inline static const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
     inline static const char * NumPointsToGraphRegisterNodes = "#PointsToGraphRegisterNodes";
-    inline static const char * NumPointsToGraphExternallyAvailableNodes = "#PointsToGraphExternallyAvailableNodes";
-    inline static const char * NumPointsToGraphNodesTargetsAllExternallyAvailable = "#PointsToGraphNodesTargetsAllExternallyAvailable";
+    inline static const char * NumPointsToGraphExternallyAvailableNodes =
+        "#PointsToGraphExternallyAvailableNodes";
+    inline static const char * NumPointsToGraphNodesTargetsAllExternallyAvailable =
+        "#PointsToGraphNodesTargetsAllExternallyAvailable";
 
     inline static const char * NumPointsToGraphExplicitEdges = "#PointsToGraphExplicitEdges";
     inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";

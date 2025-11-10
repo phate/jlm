@@ -68,22 +68,16 @@ private:
   EncodeLambda(rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(
-      rvsdg::LambdaNode & lambdaNode,
-      RegionIntervalOutputMapping & liveIntervals);
+  EncodeLambdaEntry(rvsdg::LambdaNode & lambdaNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeLambdaExit(
-      rvsdg::LambdaNode & lambdaNode,
-      RegionIntervalOutputMapping & liveIntervals);
+  EncodeLambdaExit(rvsdg::LambdaNode & lambdaNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
   EncodeIntraProceduralRegion(rvsdg::Region & region, RegionIntervalOutputMapping & liveIntervals);
 
   void
-  EncodeSimpleNode(
-      rvsdg::SimpleNode & simpleNode,
-      RegionIntervalOutputMapping & liveIntervals);
+  EncodeSimpleNode(rvsdg::SimpleNode & simpleNode, RegionIntervalOutputMapping & liveIntervals);
 
   void
   EncodeAlloca(rvsdg::SimpleNode & allocaNode, RegionIntervalOutputMapping & liveIntervals);

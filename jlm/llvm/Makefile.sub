@@ -51,7 +51,6 @@ libllvm_SOURCES = \
     \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.cpp \
-    jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
@@ -59,7 +58,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
-    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
@@ -89,7 +87,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/push.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
-    jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/Andersen.hpp \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
     jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
@@ -105,7 +102,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
-    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/pull.hpp \
     jlm/llvm/opt/reduction.hpp \
     jlm/llvm/opt/IfConversion.hpp \
@@ -206,7 +202,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TraceTests \
     tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \

@@ -20,6 +20,7 @@
 
 #include <map>
 #include <queue>
+#include <set>
 #include <vector>
 
 namespace jlm::llvm::aa
@@ -543,37 +544,47 @@ public:
   {
     JLM_ASSERT(index < modRefNodes_.size());
 
-    std::string result = std::to_string(index);
-    result += " loads:{";
+    std::ostringstream ss;
+    ss << "(MRNode#" << std::setfill('0') << std::setw(3) << index << std::setw(0);
+    ss << " loads:{";
+    bool printSep = false;
     for (const auto load : modRefNodes_[index].explicitLoads.Items())
     {
-      result += load;
-      result += ",";
+      if (printSep)
+        ss << ", ";
+      else
+        printSep = true;
+      ss << pointsToGraph_.getNodeDebugString(load);
     }
-    result += "} stores:{";
+    ss << "} stores:{";
+    printSep = false;
     for (const auto store : modRefNodes_[index].explicitStores.Items())
     {
-      result += store;
-      result += ",";
+      if (printSep)
+        ss << ", ";
+      else
+        printSep = true;
+      ss << pointsToGraph_.getNodeDebugString(store);
     }
-    result += "}";
+    ss << "}";
 
     const auto loadingFromExternal = modRefNodes_[index].isLoadingFromExternal();
-    const auto storingToExternal = modRefNodes_[index].isLoadingFromExternal();
+    const auto storingToExternal = modRefNodes_[index].isStoringToExternal();
     if (loadingFromExternal)
     {
-      result += " (lFromExt>= " + std::to_string(*loadingFromExternal) + ")";
+      ss << " (lFromExt>=" << *loadingFromExternal << ")";
     }
     if (storingToExternal)
     {
-      result += " (sToExtr>= " + std::to_string(*storingToExternal) + ")";
+      ss << " (sToExtr>= " << *storingToExternal << ")";
     }
     if (modRefNodes_[index].callsExternal)
     {
-      result += " (callsExt)";
+      ss << " (callsExt)";
     }
+    ss << " )";
 
-    return result;
+    return ss.str();
   }
 
 private:
@@ -1914,7 +1925,7 @@ RegionAwareModRefSummarizer::dumpRegionTree(const rvsdg::Graph & rvsdg)
       return;
 
     indent(depth, ' ');
-    ss << node.DebugString() << " ";
+    ss << node.DebugString() << ": (" << &node << ") ";
     auto modRefIndex = modRefGraph.getModRefForNode(node);
     ss << modRefGraph.debugStringForSet(modRefIndex) << std::endl;
 

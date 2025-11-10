@@ -8,8 +8,6 @@
 #include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
-#include <RVSDG/Ops.h.inc>
-#include <typeindex>
 #include <unordered_map>
 
 namespace jlm::llvm::aa
@@ -236,27 +234,28 @@ PointsToGraph::numEdges() const noexcept
 std::string
 PointsToGraph::getNodeDebugString(NodeIndex index, char seperator) const
 {
-  std::string result = std::to_string(index) + ": ";
+  std::ostringstream ss;
+  ss << "(PtG#" << std::setfill('0') << std::setw(3) << index << std::setw(0) << " ";
 
   switch (getKind(index))
   {
   case NodeKind::AllocaNode:
-    result += getAllocaNodeObject(index).DebugString();
+    ss << getAllocaNodeObject(index).DebugString();
     break;
   case NodeKind::DeltaNode:
-    result += getDeltaNodeObject(index).DebugString();
+    ss << getDeltaNodeObject(index).DebugString();
     break;
   case NodeKind::ImportNode:
-    result += getImportNodeObject(index).debug_string();
+    ss << getImportNodeObject(index).debug_string();
     break;
   case NodeKind::LambdaNode:
-    result += getLambdaNodeObject(index).DebugString();
+    ss << getLambdaNodeObject(index).DebugString();
     break;
   case NodeKind::MallocNode:
-    result += getMallocNodeObject(index).DebugString();
+    ss << getMallocNodeObject(index).DebugString();
     break;
   case NodeKind::RegisterNode:
-    result += "register"; // TODO: Include which outputs it maps to
+    ss << "register"; // TODO: Include which outputs it maps to
     break;
   default:
     JLM_UNREACHABLE("Unknown PtG node kind");
@@ -264,28 +263,24 @@ PointsToGraph::getNodeDebugString(NodeIndex index, char seperator) const
 
   if (isExternallyAvailable(index))
   {
-    result += seperator;
-    result += "ExtAv";
+    ss << seperator << "(ExtAv)";
   }
   if (isTargetingAllExternallyAvailable(index))
   {
-    result += seperator;
-    result += "->?";
+    ss << seperator << "(TgtAllExtAv)";
   }
 
-  const auto size = tryGetNodeSize(index);
-  if (size.has_value())
+  if (const auto size = tryGetNodeSize(index))
   {
-    result += util::strfmt(seperator, "(", size.value(), " bytes)");
+    ss << seperator << "(" << size.value() << " bytes)";
   }
-  const auto isConst = isNodeConstant(index);
-  if (isConst)
+  if (isNodeConstant(index))
   {
-    result += seperator;
-    result += "(const)";
+    ss << seperator << "(const)";
   }
+  ss << " )";
 
-  return result;
+  return ss.str();
 }
 
 bool

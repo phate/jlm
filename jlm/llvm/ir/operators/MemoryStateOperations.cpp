@@ -13,6 +13,27 @@
 namespace jlm::llvm
 {
 
+MemoryStateSetOperation::~MemoryStateSetOperation() noexcept = default;
+
+bool
+MemoryStateSetOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const MemoryStateMergeOperation *>(&other);
+  return operation && operation->narguments() == narguments();
+}
+
+std::string
+MemoryStateSetOperation::debug_string() const
+{
+  return "MemoryStateSet";
+}
+
+std::unique_ptr<rvsdg::Operation>
+MemoryStateSetOperation::copy() const
+{
+  return std::make_unique<MemoryStateSetOperation>(*this);
+}
+
 MemoryStateMergeOperation::~MemoryStateMergeOperation() noexcept = default;
 
 bool

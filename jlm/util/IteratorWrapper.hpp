@@ -155,8 +155,7 @@ using MapValuePtrIterator =
  * @tparam BaseIterator the type of the iterator being wrapped
  */
 template<typename T, typename BaseIterator>
-using MapValueIterator =
-    IteratorWrapper<T, BaseIterator, MapValueDereferenceFunc<T, BaseIterator>>;
+using MapValueIterator = IteratorWrapper<T, BaseIterator, MapValueDereferenceFunc<T, BaseIterator>>;
 
 }
 

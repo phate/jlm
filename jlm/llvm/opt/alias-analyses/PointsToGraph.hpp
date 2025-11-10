@@ -87,24 +87,19 @@ private:
   using MallocNodeMap = std::unordered_map<const rvsdg::Node *, NodeIndex>;
   using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, NodeIndex>;
 
-  using AllocaNodeIterator =
-      util::MapValueIterator<const NodeIndex, AllocaNodeMap::const_iterator>;
+  using AllocaNodeIterator = util::MapValueIterator<const NodeIndex, AllocaNodeMap::const_iterator>;
   using AllocaNodeRange = util::IteratorRange<AllocaNodeIterator>;
 
-  using DeltaNodeIterator =
-      util::MapValueIterator<const NodeIndex, DeltaNodeMap::const_iterator>;
+  using DeltaNodeIterator = util::MapValueIterator<const NodeIndex, DeltaNodeMap::const_iterator>;
   using DeltaNodeRange = util::IteratorRange<DeltaNodeIterator>;
 
-  using ImportNodeIterator =
-      util::MapValueIterator<const NodeIndex, ImportNodeMap::const_iterator>;
+  using ImportNodeIterator = util::MapValueIterator<const NodeIndex, ImportNodeMap::const_iterator>;
   using ImportNodeRange = util::IteratorRange<ImportNodeIterator>;
 
-  using LambdaNodeIterator =
-      util::MapValueIterator<const NodeIndex, LambdaNodeMap::const_iterator>;
+  using LambdaNodeIterator = util::MapValueIterator<const NodeIndex, LambdaNodeMap::const_iterator>;
   using LambdaNodeRange = util::IteratorRange<LambdaNodeIterator>;
 
-  using MallocNodeIterator =
-      util::MapValueIterator<const NodeIndex, MallocNodeMap::const_iterator>;
+  using MallocNodeIterator = util::MapValueIterator<const NodeIndex, MallocNodeMap::const_iterator>;
   using MallocNodeRange = util::IteratorRange<MallocNodeIterator>;
 
   using RegisterNodeIterator = std::vector<NodeIndex>::const_iterator;
@@ -495,7 +490,12 @@ public:
 
 private:
   NodeIndex
-  addNode(NodeKind kind, bool externallyAvailable, bool isConstant, std::optional<size_t> memorySize, const void * object);
+  addNode(
+      NodeKind kind,
+      bool externallyAvailable,
+      bool isConstant,
+      std::optional<size_t> memorySize,
+      const void * object);
 
   std::vector<NodeData> nodeData_;
   std::vector<util::HashSet<NodeIndex>> nodeTargets_;

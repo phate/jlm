@@ -49,6 +49,9 @@ public:
     return memoryNodeOrder_[index];
   }
 
+  [[nodiscard]] std::string
+  getDebugString() const;
+
 private:
   const PointsToGraph & pointsToGraph_;
 
@@ -104,7 +107,7 @@ public:
   /**
    * Creates an interval set using the given \p intervals.
    * The intervals will be sorted, merged when possible, and empty intervals will be removed.
-   * @param intervals the intervals in the set
+   * @param intervals the intervals to include in the set
    */
   explicit MemoryNodeIntervalSet(std::vector<MemoryNodeInterval> intervals)
       : intervals_(std::move(intervals))
@@ -124,6 +127,9 @@ public:
     return intervals_.size();
   }
 
+  [[nodiscard]] std::string
+  getDebugString() const;
+
 private:
   /**
    * Sorts intervals and replaces overlapping/adjacent intervals with their union.
@@ -131,7 +137,6 @@ private:
   void
   sortAndCompact();
 
-private:
   std::vector<MemoryNodeInterval> intervals_;
 };
 
@@ -221,8 +226,8 @@ public:
    * Checks if the ModRefSet represents doing absolutely nothing with any memory
    * @return true if the ModRefSet does nothing to memory, false otherwise
    */
-  [[nodiscard]]
-  bool isEmpty() const noexcept
+  [[nodiscard]] bool
+  isEmpty() const noexcept
   {
     return loadIntervals_.numIntervals() == 0 && storeIntervals_.numIntervals() == 0;
   }
@@ -233,7 +238,7 @@ public:
     return loadIntervals_;
   }
 
-  MemoryNodeIntervalSetIterator
+  [[nodiscard]] MemoryNodeIntervalSetIterator
   getLoadIntervalIterator() const noexcept
   {
     return MemoryNodeIntervalSetIterator(loadIntervals_);
@@ -245,16 +250,17 @@ public:
     return storeIntervals_;
   }
 
-  MemoryNodeIntervalSetIterator
+  [[nodiscard]] MemoryNodeIntervalSetIterator
   getStoreIntervalIterator() const noexcept
   {
     return MemoryNodeIntervalSetIterator(storeIntervals_);
   }
 
   /**
-   * @return an iterator providing all intervals that are either loaded from or stored to
+   * @return an iterator providing intervals containing all memory locations that are either
+   * stored to or loaded from.
    */
-  MemoryNodeIntervalSetUnionIterator
+  [[nodiscard]] MemoryNodeIntervalSetUnionIterator
   getLoadStoreIntervalIterator() const noexcept
   {
     return MemoryNodeIntervalSetUnionIterator(
@@ -263,16 +269,21 @@ public:
   }
 
   /**
-   * @return an iterator providing all intervals that are stored to,
-   * as well as all intervals that are loaded from but NOT stored to.
+   * @return an iterator providing intervals containing all memory locations that are stored to
+   * or loaded from, or both.
+   * For each interval provided by the stream, a boolean indicates if the memory locations are
+   * being stored to, or only loaded from.
    */
-  MemoryNodeIntervalSetDifferenceIterator
+  [[nodiscard]] MemoryNodeIntervalSetDifferenceIterator
   getLoadStoreIntervalDifferenceIterator() const noexcept
   {
     return MemoryNodeIntervalSetDifferenceIterator(
         getLoadIntervalIterator(),
         getStoreIntervalIterator());
   }
+
+  [[nodiscard]] std::string
+  getDebugString() const;
 
 private:
   // The set of memory nodes that are loaded from (ref)
