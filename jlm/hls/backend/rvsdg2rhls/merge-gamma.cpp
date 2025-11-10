@@ -170,6 +170,7 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
           {
             o->divert_users(arg->input()->origin());
             changed = true;
+            assert(0);
           }
         }
       }
