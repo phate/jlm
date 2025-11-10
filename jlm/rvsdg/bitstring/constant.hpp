@@ -40,53 +40,22 @@ public:
     return value_;
   }
 
-  static Output *
-  create(Region * region, BitValueRepresentation value)
+  static Output &
+  create(Region & region, BitValueRepresentation value)
   {
-    return CreateOpNode<BitConstantOperation>(*region, std::move(value)).output(0);
+    return *CreateOpNode<BitConstantOperation>(region, std::move(value)).output(0);
+  }
+
+  static Output &
+  createUndefined(Region & region, const size_t numBits)
+  {
+    const std::string s(numBits, 'X');
+    return create(region, BitValueRepresentation(s.c_str()));
   }
 
 private:
   BitValueRepresentation value_;
 };
-
-inline BitConstantOperation
-uint_constant_op(size_t nbits, uint64_t value)
-{
-  return BitConstantOperation(BitValueRepresentation(nbits, value));
-}
-
-inline BitConstantOperation
-int_constant_op(size_t nbits, int64_t value)
-{
-  return BitConstantOperation(BitValueRepresentation(nbits, value));
-}
-
-static inline jlm::rvsdg::Output *
-create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
-{
-  return CreateOpNode<BitConstantOperation>(*region, vr).output(0);
-}
-
-static inline jlm::rvsdg::Output *
-create_bitconstant(rvsdg::Region * region, size_t nbits, int64_t value)
-{
-  return create_bitconstant(region, { nbits, value });
-}
-
-static inline jlm::rvsdg::Output *
-create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
-{
-  std::string s(nbits, 'X');
-  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
-}
-
-static inline jlm::rvsdg::Output *
-create_bitconstant_defined(rvsdg::Region * region, size_t nbits)
-{
-  std::string s(nbits, 'D');
-  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
-}
 
 }
 

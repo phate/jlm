@@ -409,8 +409,8 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOperand);
     JLM_ASSERT(constantOperation);
-    return create_bitconstant(
-        rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
+    return &rvsdg::BitConstantOperation::create(
+        *rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
         constantOperation->value().zext(ndstbits() - nsrcbits()));
   }
 
