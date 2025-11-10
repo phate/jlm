@@ -97,7 +97,7 @@ ConstantForkInsertion()
   auto subregion = loop->subregion();
   rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
-  auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
+  auto bitConstant1 = rvsdg::BitConstantOperation::create(subregion, { 32, 1 });
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, bitConstant1 }, 32).output(0);
   auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, bitConstant1 }, 32).output(0);

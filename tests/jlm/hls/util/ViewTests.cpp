@@ -30,7 +30,7 @@ TestDumpDot()
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
 
-  auto bitConstant = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+  auto bitConstant = rvsdg::BitConstantOperation::create(lambda->subregion(), { 32, 0 });
 
   auto f = lambda->finalize({ bitConstant });
   rvsdg::GraphExport::Create(*f, "");

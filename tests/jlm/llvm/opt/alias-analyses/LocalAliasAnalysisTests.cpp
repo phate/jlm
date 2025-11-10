@@ -151,11 +151,16 @@ private:
       const auto arrayCtxVar = lambdaNode.AddContextVar(*Outputs_.Array).inner;
       const auto globalCtxVar = lambdaNode.AddContextVar(*Outputs_.Global).inner;
 
-      const auto constantOne = create_bitconstant(lambdaNode.subregion(), 32, 1);
-      const auto constantTwo = create_bitconstant(lambdaNode.subregion(), 32, 2);
-      const auto constantThree = create_bitconstant(lambdaNode.subregion(), 32, 3);
-      const auto constantFour = create_bitconstant(lambdaNode.subregion(), 32, 4);
-      const auto constantMinusTwo = create_bitconstant(lambdaNode.subregion(), 32, -2);
+      const auto constantOne =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 1 });
+      const auto constantTwo =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 2 });
+      const auto constantThree =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 3 });
+      const auto constantFour =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 4 });
+      const auto constantMinusTwo =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, -2 });
 
       const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
@@ -392,8 +397,10 @@ private:
       auto ioState = lambdaNode.GetFunctionArguments()[2];
       auto memoryState = lambdaNode.GetFunctionArguments()[3];
 
-      const auto constantZero = create_bitconstant(lambdaNode.subregion(), 32, 0);
-      const auto constantOne = create_bitconstant(lambdaNode.subregion(), 32, 1);
+      const auto constantZero =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 0 });
+      const auto constantOne =
+          rvsdg::BitConstantOperation::create(lambdaNode.subregion(), { 32, 1 });
 
       const auto alloca1Outputs = AllocaOperation::create(int32Type, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(int64Type, constantOne, 4);

@@ -51,12 +51,6 @@ private:
 };
 
 static inline jlm::rvsdg::Output *
-create_bitconstant(rvsdg::Region * region, size_t nbits, int64_t value)
-{
-  return BitConstantOperation::create(region, { nbits, value });
-}
-
-static inline jlm::rvsdg::Output *
 create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'X');
