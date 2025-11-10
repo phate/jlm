@@ -46,16 +46,16 @@ public:
     return CreateOpNode<BitConstantOperation>(*region, std::move(value)).output(0);
   }
 
+  static Output &
+  createUndefined(Region & region, const size_t numBits)
+  {
+    const std::string s(numBits, 'X');
+    return *create(&region, BitValueRepresentation(s.c_str()));
+  }
+
 private:
   BitValueRepresentation value_;
 };
-
-static inline jlm::rvsdg::Output *
-create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
-{
-  std::string s(nbits, 'X');
-  return BitConstantOperation::create(region, BitValueRepresentation(s.c_str()));
-}
 
 static inline jlm::rvsdg::Output *
 create_bitconstant_defined(rvsdg::Region * region, size_t nbits)

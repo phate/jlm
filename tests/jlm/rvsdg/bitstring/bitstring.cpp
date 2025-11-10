@@ -680,7 +680,7 @@ types_bitstring_comparison_test_bitequal()
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
   auto c0 = BitConstantOperation::create(&graph.GetRootRegion(), { 32, 4 });
   auto c1 = BitConstantOperation::create(&graph.GetRootRegion(), { 32, 5 });
-  auto c2 = create_bitconstant_undefined(&graph.GetRootRegion(), 32);
+  auto c2 = &BitConstantOperation::createUndefined(graph.GetRootRegion(), 32);
 
   auto & equal0 = CreateOpNode<biteq_op>({ s0, s1 }, 32);
   auto & equal1 = CreateOpNode<biteq_op>({ c0, c0 }, 32);
@@ -723,7 +723,7 @@ types_bitstring_comparison_test_bitnotequal()
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
   auto c0 = BitConstantOperation::create(&graph.GetRootRegion(), { 32, 4 });
   auto c1 = BitConstantOperation::create(&graph.GetRootRegion(), { 32, 5 });
-  auto c2 = create_bitconstant_undefined(&graph.GetRootRegion(), 32);
+  auto c2 = &BitConstantOperation::createUndefined(graph.GetRootRegion(), 32);
 
   auto & nequal0 = CreateOpNode<bitne_op>({ s0, s1 }, 32);
   auto & nequal1 = CreateOpNode<bitne_op>({ c0, c0 }, 32);
