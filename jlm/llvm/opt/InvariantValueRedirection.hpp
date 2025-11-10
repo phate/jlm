@@ -112,22 +112,6 @@ private:
   static void
   redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode);
 
-  typedef struct
-  {
-    rvsdg::Region * repetitionSubregion;
-    rvsdg::Region * exitSubregion;
-  } GammaSubregionRoles;
-
-  /**
-   * Tries to assign the respective roles (exit or repetition) to the subregions of a gamma node
-   * that statically determines the predicate of a theta node.
-   *
-   * @param correlation The predicate correlation between a theta and gamma node.
-   * @return The roles of the gamma subregions, otherwise std::nullopt.
-   */
-  static std::optional<GammaSubregionRoles>
-  determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation);
-
   static void
   RedirectCallOutputs(rvsdg::SimpleNode & callNode);
 };

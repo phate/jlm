@@ -172,6 +172,75 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
   return std::nullopt;
 }
 
+std::optional<GammaSubregionRoles>
+determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation)
+{
+  switch (correlation.type())
+  {
+  case CorrelationType::ControlConstantCorrelation:
+  {
+    const auto controlAlternatives =
+        std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(
+            correlation.data());
+    if (controlAlternatives.size() != 2)
+    {
+      return std::nullopt;
+    }
+
+    GammaSubregionRoles roles;
+    if (controlAlternatives[0] == 0)
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(0);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    }
+    else
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(1);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(0);
+    }
+
+    return roles;
+  }
+  case CorrelationType::MatchConstantCorrelation:
+  {
+    const auto [matchNode, alternatives] =
+        std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(correlation.data());
+
+    if (alternatives.size() != 2)
+    {
+      return std::nullopt;
+    }
+
+    GammaSubregionRoles roles;
+    const auto matchOperation =
+        util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+    if (matchOperation->alternative(alternatives[0]) == 0)
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(0);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    }
+    else
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(1);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(0);
+    }
+
+    return roles;
+  }
+  case CorrelationType::MatchCorrelation:
+  {
+    JLM_ASSERT(correlation.gammaNode().nsubregions() == 2);
+
+    GammaSubregionRoles roles;
+    roles.exitSubregion = correlation.gammaNode().subregion(0);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    return roles;
+  }
+  default:
+    return std::nullopt;
+  }
+}
+
 PredicateCorrelation::~PredicateCorrelation() noexcept = default;
 
 void
