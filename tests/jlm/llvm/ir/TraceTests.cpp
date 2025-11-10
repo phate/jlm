@@ -93,8 +93,8 @@ testGetConstantSignedInteger()
   const auto int64Type = rvsdg::BitType::Create(64);
   const auto int32Type = rvsdg::BitType::Create(32);
 
-  const auto bits64Output = rvsdg::BitConstantOperation::create(
-      &graph.GetRootRegion(),
+  const auto bits64Output = &rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
       rvsdg::BitValueRepresentation(64, -37));
 
   const auto functionType = rvsdg::FunctionType::Create({}, { int32Type });

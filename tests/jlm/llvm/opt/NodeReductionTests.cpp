@@ -30,14 +30,14 @@ MultipleReductionsPerRegion()
   auto allocaResults = AllocaOperation::create(bitType, &sizeArgument, 4);
 
   const auto c3 =
-      BitConstantOperation::create(&graph.GetRootRegion(), BitValueRepresentation(32, 3));
+      &BitConstantOperation::create(graph.GetRootRegion(), BitValueRepresentation(32, 3));
   auto storeResults =
       StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
   const auto c5 =
-      BitConstantOperation::create(&graph.GetRootRegion(), BitValueRepresentation(32, 5));
+      &BitConstantOperation::create(graph.GetRootRegion(), BitValueRepresentation(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
   auto & sumExport = jlm::rvsdg::GraphExport::Create(*sum, "sum");
