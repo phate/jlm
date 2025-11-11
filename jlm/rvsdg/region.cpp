@@ -257,43 +257,30 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 {
   smap.insert(this, target);
 
-  // order nodes top-down
-  std::vector<std::vector<const Node *>> context(numNodes());
-  for (const auto & node : Nodes())
-  {
-    JLM_ASSERT(node.depth() < context.size());
-    context[node.depth()].push_back(&node);
-  }
-
   if (copy_arguments)
   {
-    for (size_t n = 0; n < narguments(); n++)
+    for (const auto oldArgument : Arguments())
     {
-      auto oldArgument = argument(n);
-      auto input = smap.lookup(oldArgument->input());
+      const auto input = smap.lookup(oldArgument->input());
       auto & newArgument = oldArgument->Copy(*target, input);
       smap.insert(oldArgument, &newArgument);
     }
   }
 
   // copy nodes
-  for (size_t n = 0; n < context.size(); n++)
+  for (const auto node : TopDownConstTraverser(this))
   {
-    for (const auto node : context[n])
-    {
-      JLM_ASSERT(target == smap.lookup(node->region()));
-      node->copy(target, smap);
-    }
+    JLM_ASSERT(target == smap.lookup(node->region()));
+    node->copy(target, smap);
   }
 
   if (copy_results)
   {
-    for (size_t n = 0; n < nresults(); n++)
+    for (const auto oldResult : Results())
     {
-      auto oldResult = result(n);
-      auto newOrigin = smap.lookup(oldResult->origin());
+      const auto newOrigin = smap.lookup(oldResult->origin());
       JLM_ASSERT(newOrigin != nullptr);
-      auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
+      const auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
       oldResult->Copy(*newOrigin, newOutput);
     }
   }

@@ -106,26 +106,6 @@ test_prune_replace()
 JLM_UNIT_TEST_REGISTER("rvsdg/test-prune-replace", test_prune_replace)
 
 static void
-test_graph()
-{
-  using namespace jlm::rvsdg;
-
-  auto type = jlm::tests::ValueType::Create();
-
-  Graph graph;
-
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  assert(n1);
-  assert(n1->depth() == 0);
-
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, {});
-  assert(n2);
-  assert(n2->depth() == 1);
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
-
-static void
 Copy()
 {
   using namespace jlm::rvsdg;

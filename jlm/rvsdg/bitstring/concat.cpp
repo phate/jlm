@@ -63,8 +63,8 @@ BitConcatOperation::can_reduce_operand_pair(
   if (!node1 || !node2)
     return binop_reduction_none;
 
-  auto arg1_constant = is<bitconstant_op>(node1);
-  auto arg2_constant = is<bitconstant_op>(node2);
+  auto arg1_constant = is<BitConstantOperation>(node1);
+  auto arg2_constant = is<BitConstantOperation>(node2);
 
   if (arg1_constant && arg2_constant)
   {
@@ -101,12 +101,12 @@ BitConcatOperation::reduce_operand_pair(
 
   if (path == binop_reduction_constants)
   {
-    auto & arg1_constant = static_cast<const bitconstant_op &>(node1.GetOperation());
-    auto & arg2_constant = static_cast<const bitconstant_op &>(node2.GetOperation());
+    auto & arg1_constant = static_cast<const BitConstantOperation &>(node1.GetOperation());
+    auto & arg2_constant = static_cast<const BitConstantOperation &>(node2.GetOperation());
 
     BitValueRepresentation bits(arg1_constant.value());
     bits.Append(arg2_constant.value());
-    return create_bitconstant(arg1->region(), std::move(bits));
+    return &BitConstantOperation::create(*arg1->region(), std::move(bits));
   }
 
   if (path == binop_reduction_merge)

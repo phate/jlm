@@ -297,7 +297,7 @@ LoopNode::create(rvsdg::Region * parent, bool init)
   auto ln = new LoopNode(parent);
   if (init)
   {
-    auto predicate = jlm::rvsdg::control_false(ln->subregion());
+    auto predicate = &rvsdg::ControlConstantOperation::createFalse(*ln->subregion());
     auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready

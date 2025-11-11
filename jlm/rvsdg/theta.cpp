@@ -41,7 +41,7 @@ ThetaNode::GetOperation() const noexcept
 ThetaNode::ThetaNode(rvsdg::Region & parent)
     : StructuralNode(&parent, 1)
 {
-  auto predicate = control_false(subregion());
+  auto predicate = &ControlConstantOperation::createFalse(*subregion());
   RegionResult::Create(*subregion(), *predicate, nullptr, ControlType::Create(2));
 }
 

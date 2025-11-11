@@ -96,32 +96,55 @@ private:
   size_t nalternatives_;
 };
 
-/* control constant */
-
-struct ControlValueRepresentationTypeOfValue
+class ControlConstantOperation final : public NullaryOperation
 {
-  std::shared_ptr<const ControlType>
-  operator()(const ControlValueRepresentation & repr) const
-  {
-    return ControlType::Create(repr.nalternatives());
-  }
-};
+public:
+  ~ControlConstantOperation() noexcept override;
 
-struct ControlValueRepresentationFormatValue
-{
+  explicit ControlConstantOperation(ControlValueRepresentation value);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
   std::string
-  operator()(const ControlValueRepresentation & repr) const
-  {
-    return jlm::util::strfmt("CTL(", repr.alternative(), ")");
-  }
-};
+  debug_string() const override;
 
-typedef DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>
-    ControlConstantOperation;
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] const ControlValueRepresentation &
+  value() const noexcept
+  {
+    return value_;
+  }
+
+  static Output &
+  create(Region & region, ControlValueRepresentation value)
+  {
+    return *CreateOpNode<ControlConstantOperation>(region, std::move(value)).output(0);
+  }
+
+  static Output &
+  create(Region & region, size_t numAlternatives, size_t alternative)
+  {
+    return create(region, { alternative, numAlternatives });
+  }
+
+  static Output &
+  createFalse(Region & region)
+  {
+    return create(region, 2, 0);
+  }
+
+  static Output &
+  createTrue(Region & region)
+  {
+    return create(region, 2, 1);
+  }
+
+private:
+  ControlValueRepresentation value_;
+};
 
 /**
  * Match operator
@@ -199,21 +222,30 @@ public:
     return mapping_.end();
   }
 
+  static Node &
+  CreateNode(
+      Output & predicate,
+      const std::unordered_map<uint64_t, uint64_t> & mapping,
+      const uint64_t defaultAlternative,
+      const size_t numAlternatives)
+  {
+    const auto bitType = CheckAndExtractBitType(*predicate.Type());
+    return CreateOpNode<MatchOperation>(
+        { &predicate },
+        bitType.nbits(),
+        mapping,
+        defaultAlternative,
+        numAlternatives);
+  }
+
   static Output *
   Create(
       Output & predicate,
       const std::unordered_map<uint64_t, uint64_t> & mapping,
-      uint64_t defaultAlternative,
-      size_t numAlternatives)
+      const uint64_t defaultAlternative,
+      const size_t numAlternatives)
   {
-    auto bitType = CheckAndExtractBitType(*predicate.Type());
-    return CreateOpNode<MatchOperation>(
-               { &predicate },
-               bitType.nbits(),
-               mapping,
-               defaultAlternative,
-               numAlternatives)
-        .output(0);
+    return CreateNode(predicate, mapping, defaultAlternative, numAlternatives).output(0);
   }
 
 private:
@@ -239,28 +271,6 @@ match(
     uint64_t default_alternative,
     size_t nalternatives,
     jlm::rvsdg::Output * operand);
-
-// declare explicit instantiation
-extern template class DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>;
-
-jlm::rvsdg::Output *
-control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
-
-static inline jlm::rvsdg::Output *
-control_false(rvsdg::Region * region)
-{
-  return control_constant(region, 2, 0);
-}
-
-static inline jlm::rvsdg::Output *
-control_true(rvsdg::Region * region)
-{
-  return control_constant(region, 2, 1);
-}
 
 }
 

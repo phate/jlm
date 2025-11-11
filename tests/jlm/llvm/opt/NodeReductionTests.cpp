@@ -29,13 +29,15 @@ MultipleReductionsPerRegion()
   auto & sizeArgument = jlm::rvsdg::GraphImport::Create(graph, bitType, "size");
   auto allocaResults = AllocaOperation::create(bitType, &sizeArgument, 4);
 
-  const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), BitValueRepresentation(32, 3));
+  const auto c3 =
+      &BitConstantOperation::create(graph.GetRootRegion(), BitValueRepresentation(32, 3));
   auto storeResults =
       StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 = bitconstant_op::create(&graph.GetRootRegion(), BitValueRepresentation(32, 5));
+  const auto c5 =
+      &BitConstantOperation::create(graph.GetRootRegion(), BitValueRepresentation(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
   auto & sumExport = jlm::rvsdg::GraphExport::Create(*sum, "sum");
@@ -59,7 +61,8 @@ MultipleReductionsPerRegion()
   assert(graph.GetRootRegion().numNodes() == 1);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*sumExport.origin());
-  auto constantOperation = dynamic_cast<const bitconstant_op *>(&constantNode->GetOperation());
+  auto constantOperation =
+      dynamic_cast<const BitConstantOperation *>(&constantNode->GetOperation());
   assert(constantOperation->value().to_uint() == 8);
 
   // We expect that the node reductions transformation iterated over the root region 2 times.
