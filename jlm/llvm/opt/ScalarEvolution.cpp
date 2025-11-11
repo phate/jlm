@@ -323,19 +323,18 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 
       // Find the start value for the recurrence
       if (auto simpleNode =
-              rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin()))
+              rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin());
+          simpleNode && rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
       {
-        if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
-        {
-          // If the input value is a constant, get it's SCEV representation
-          chainRecurrence->SetStartValue(
-              GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone());
-        }
+        // If the input value is a constant, get it's SCEV representation, and set it as the start
+        // value (first operand in rec)
+        chainRecurrence->AddOperandToFront(
+            GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone());
       }
       else
       {
         // If not, create a SCEVInit node representing the start value
-        chainRecurrence->SetStartValue(std::make_unique<SCEVInit>(*loopVarPre));
+        chainRecurrence->AddOperandToFront(std::make_unique<SCEVInit>(*loopVarPre));
       }
       ChainRecurrenceMap_.emplace(loopVarPre, std::move(chainRecurrence));
     }
@@ -371,30 +370,29 @@ ScalarEvolution::CreateChainRecurrence(
   {
     // This is a constant, we add it as the only operand
     chrec->AddOperand(scevConstant->Clone());
+    return chrec;
   }
-  else if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
+  if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {
     if (scevPlaceholder->GetPrePointer() == &IV)
     {
       // Since we are only interested in the step value, and not the initial value, we can ignore
       // ourselves by adding a 0, which is the identity element
       chrec->AddOperand(std::make_unique<SCEVConstant>(0));
+      return chrec;
     }
-    else
+    if (ChainRecurrenceMap_.find(scevPlaceholder->GetPrePointer()) != ChainRecurrenceMap_.end())
     {
-      if (ChainRecurrenceMap_.find(scevPlaceholder->GetPrePointer()) != ChainRecurrenceMap_.end())
-      {
-        // We have a dependency of another IV
-        // Get it's saved value. This is safe to do due to the topological ordering
-        auto storedRec = ChainRecurrenceMap_.at(scevPlaceholder->GetPrePointer())->Clone();
-
-        return std::unique_ptr<SCEVChainRecurrence>(
-            dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
-      }
-      chrec->AddOperand(std::make_unique<SCEVUnknown>());
+      // We have a dependency of another IV
+      // Get it's saved value. This is safe to do due to the topological ordering
+      auto storedRec = ChainRecurrenceMap_.at(scevPlaceholder->GetPrePointer())->Clone();
+      return std::unique_ptr<SCEVChainRecurrence>(
+          dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
     }
+    chrec->AddOperand(std::make_unique<SCEVUnknown>());
+    return chrec;
   }
-  else if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
+  if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
     const auto lhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetLeftOperand(), thetaNode);
     const auto rhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetRightOperand(), thetaNode);
@@ -412,10 +410,9 @@ ScalarEvolution::CreateChainRecurrence(
         rhsOperand = rhsChrec->GetOperand(i);
       chrec->AddOperand(ApplyFolding(lhsOperand, rhsOperand));
     }
+    return chrec;
   }
-  else
-    JLM_ASSERT(false && "Unknown SCEV type in CreateChainRecurrence!");
-
+  JLM_ASSERT(false && "Unknown SCEV type in CreateChainRecurrence!");
   return chrec;
 }
 

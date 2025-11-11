@@ -226,7 +226,7 @@ public:
   }
 
   void
-  SetStartValue(const std::unique_ptr<SCEV> & initScev)
+  AddOperandToFront(const std::unique_ptr<SCEV> & initScev)
   {
     Operands_.insert(Operands_.begin(), initScev->Clone());
   }
