@@ -462,11 +462,12 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
   // The if-chain below goes through each of the possible combinations of lhs and rhs values
   if (lhsUnknown || rhsUnknown)
   {
+    // If one of the sides is unknown. Return unknown
     return std::make_unique<SCEVUnknown>();
   }
   if (lhsInit && rhsInit)
   {
-    // We have to init nodes. Create a nAryAdd with lhsInit and rhsInit
+    // We have two init nodes. Create a nAryAdd with lhsInit and rhsInit
     return std::make_unique<SCEVNAryAddExpr>(lhsInit->Clone(), rhsInit->Clone());
   }
   if ((lhsInit && rhsNAryAddExpr) || (rhsInit && lhsNAryAddExpr))
@@ -486,7 +487,7 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
   }
   if (lhsInit || rhsInit)
   {
-    // Only one operand, add it
+    // Only one operand. Add it
     const auto * init = lhsInit ? lhsInit : rhsInit;
     return init->Clone();
   }

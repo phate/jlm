@@ -370,7 +370,7 @@ ThirdDegreePolynomialInductionVariable()
   assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv2 is a third degree polynomial induction variable with three operands,
-  //{ 4, +, 3, +, 2, +, 1 } < THETA >
+  // Recurrence: {4,+,3,+,2,+,1}<THETA>
   auto lv3TestChrec = SCEVChainRecurrence(*theta);
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(4));
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(3));
@@ -407,6 +407,8 @@ InductionVariablesWithNonConstantInitialValues()
           jlm::rvsdg::FunctionType::Create({ intType }, { intType }),
           "f",
           Linkage::externalLinkage));
+
+  // We wrap the theta in a lambda node to get init nodes in the SCEV tree
 
   auto cv1 = lambda->AddContextVar(*x).inner;
   auto cv2 = lambda->AddContextVar(*y).inner;
@@ -447,13 +449,15 @@ InductionVariablesWithNonConstantInitialValues()
   assert(chrecMap.find(lv3.pre) != chrecMap.end());
   assert(chrecMap.find(lv4.pre) != chrecMap.end());
 
-  // lv1 is a trivial (constant) induction variable Recurrence: {Init(a0)}
+  // lv1 is a trivial (constant) induction variable.
+  // Recurrence: {Init(a0)}
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
   assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a general induction variable which is incremented by the value of lv1 for each
-  // iteration. Recurrence: {Init(a1),+,Init(a0)}
+  // iteration.
+  // Recurrence: {Init(a1),+,Init(a0)}
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv2.pre));
   lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
