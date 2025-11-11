@@ -279,6 +279,82 @@ protected:
   const rvsdg::ThetaNode * Loop_;
 };
 
+class SCEVNAryAddExpr final : public SCEV
+{
+  friend class ScalarEvolution;
+
+public:
+  explicit SCEVNAryAddExpr()
+      : Operands_{}
+  {}
+
+  template<typename... Args>
+  explicit SCEVNAryAddExpr(Args &&... operands)
+      : Operands_{}
+  {
+    (AddOperand(std::forward<Args>(operands)), ...);
+  }
+
+  template<typename... Args>
+  void
+  AddOperands(Args &&... operands)
+  {
+    (AddOperand(std::forward<Args>(operands)), ...);
+  }
+
+  void
+  AddOperand(std::unique_ptr<SCEV> scev)
+  {
+    Operands_.push_back(std::move(scev));
+  }
+
+  std::vector<const SCEV *>
+  GetOperands() const
+  {
+    std::vector<const SCEV *> operands{};
+    for (auto & op : Operands_)
+    {
+      operands.push_back(op.get());
+    }
+    return operands;
+  }
+
+  SCEV *
+  GetOperand(const size_t index) const
+  {
+    return Operands_.at(index).get();
+  }
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "(";
+    for (size_t i = 0; i < Operands_.size(); ++i)
+    {
+      oss << Operands_.at(i)->DebugString();
+      if (i < Operands_.size() - 1)
+        oss << " + ";
+    }
+    oss << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    auto copy = std::make_unique<SCEVNAryAddExpr>();
+    for (const auto & op : Operands_)
+    {
+      copy->AddOperand(op->Clone());
+    }
+    return copy;
+  }
+
+protected:
+  std::vector<std::unique_ptr<SCEV>> Operands_;
+};
+
 class ScalarEvolution final : public jlm::rvsdg::Transformation
 {
   class Statistics;
@@ -345,6 +421,9 @@ private:
       const rvsdg::Output & IV,
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode);
+
+  static std::unique_ptr<SCEV>
+  ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand);
 
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);

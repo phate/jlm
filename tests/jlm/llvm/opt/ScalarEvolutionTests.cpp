@@ -4,8 +4,10 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <test-registry.hpp>
@@ -50,7 +52,8 @@ ConstantInductionVariable()
   // Assert
   assert(chrecMap.size() == 1);
 
-  // Since lv1 is not a valid induction variable, it's chain recurrence should be {Unknown}<THETA>
+  // Since lv1 is not a valid induction variable, it's chain recurrence should be
+  // {Unknown}<THETA>
   auto testChrec = SCEVChainRecurrence(*theta);
   testChrec.AddOperand(std::make_unique<SCEVUnknown>());
   assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
@@ -167,7 +170,8 @@ InductionVariableWithMultiplication()
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
   assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
-  // lv2 is not an induction variable because of illegal mult operation. Recurrence {Unknown}<THETA>
+  // lv2 is not an induction variable because of illegal mult operation.
+  // Recurrence: {Unknown}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVUnknown>());
   assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
@@ -293,7 +297,8 @@ PolynomialInductionVariable()
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
   assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
-  // lv2 is a (second degree) polynomial induction variable with three operands, {2,+,1,+,1}<THETA>
+  // lv2 is a (second degree) polynomial induction variable with three operands,
+  // Recurrence: {2,+,1,+,1}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
@@ -364,7 +369,8 @@ ThirdDegreePolynomialInductionVariable()
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
   assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
-  // lv2 is a third degree polynomial induction variable with three operands, {4,+,3,+,2,+,1}<THETA>
+  // lv2 is a third degree polynomial induction variable with three operands,
+  //{ 4, +, 3, +, 2, +, 1 } < THETA >
   auto lv3TestChrec = SCEVChainRecurrence(*theta);
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(4));
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(3));
@@ -376,6 +382,117 @@ ThirdDegreePolynomialInductionVariable()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/ScalarEvolutionTests-ThirdDegreePolynomialInductionVariable",
     ThirdDegreePolynomialInductionVariable)
+
+static void
+InductionVariablesWithNonConstantInitialValues()
+{
+  // This test checks the functionality of the folding rules for variables that have start values
+  // that are not constants. These will get a SCEVInit node instead, which cannot be folded like a
+  // constant.
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::rvsdg::Graph & graph = rvsdgModule.Rvsdg();
+
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, intType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, intType, "z");
+  auto w = &jlm::rvsdg::GraphImport::Create(graph, intType, "w");
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          jlm::rvsdg::FunctionType::Create({ intType }, { intType }),
+          "f",
+          Linkage::externalLinkage));
+
+  auto cv1 = lambda->AddContextVar(*x).inner;
+  auto cv2 = lambda->AddContextVar(*y).inner;
+  auto cv3 = lambda->AddContextVar(*z).inner;
+  auto cv4 = lambda->AddContextVar(*w).inner;
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
+  auto lv1 = theta->AddLoopVar(cv1);
+  auto lv2 = theta->AddLoopVar(cv2);
+  auto lv3 = theta->AddLoopVar(cv3);
+  auto lv4 = theta->AddLoopVar(cv4);
+
+  auto & addNode_1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, lv1.pre }, 32);
+  const auto res_1 = addNode_1.output(0);
+
+  auto & addNode_2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3.pre, res_1 }, 32);
+  const auto res_2 = addNode_2.output(0);
+
+  auto & addNode_3 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ res_2, res_1 }, 32);
+  const auto res_3 = addNode_3.output(0);
+
+  auto & addNode_4 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv4.pre, res_3 }, 32);
+  const auto res_4 = addNode_4.output(0);
+
+  lv2.post->divert_to(res_1);
+  lv3.post->divert_to(res_2);
+  lv4.post->divert_to(res_4);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(*theta);
+
+  // Assert
+  assert(chrecMap.size() == 4);
+  assert(chrecMap.find(lv1.pre) != chrecMap.end());
+  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  assert(chrecMap.find(lv3.pre) != chrecMap.end());
+  assert(chrecMap.find(lv4.pre) != chrecMap.end());
+
+  // lv1 is a trivial (constant) induction variable Recurrence: {Init(a0)}
+  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  lv1TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
+  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+
+  // lv2 is a general induction variable which is incremented by the value of lv1 for each
+  // iteration. Recurrence: {Init(a1),+,Init(a0)}
+  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv2.pre));
+  lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
+  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+
+  // Tests that two init nodes folded together creates an NAryAdd expression
+  // Recurrence: {Init(a2),+,(Init(a1) + Init(a0)),+,Init(a0)}
+  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  lv3TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv3.pre));
+  lv3TestChrec.AddOperand(std::make_unique<SCEVNAryAddExpr>(
+      std::make_unique<SCEVInit>(*lv2.pre),
+      std::make_unique<SCEVInit>(*lv1.pre)));
+  lv3TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
+  assert(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+
+  // Tests that when two NAryAdd expressions are folded together, the operands of the RHS add is
+  // added to the LHS add
+  // Recurrence: {Init(a3),+,(Init(a1) + Init(a0) + Init(a2) + Init(a1) + Init(a0)),+,(Init(a1) +
+  // Init(a0) + Init(a0) + Init(a0)),+,Init(a0)}
+  auto lv4TestChrec = SCEVChainRecurrence(*theta);
+  lv4TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv4.pre));
+  lv4TestChrec.AddOperand(std::make_unique<SCEVNAryAddExpr>(
+      std::make_unique<SCEVInit>(*lv2.pre),
+      std::make_unique<SCEVInit>(*lv1.pre),
+      std::make_unique<SCEVInit>(*lv3.pre),
+      std::make_unique<SCEVInit>(*lv2.pre),
+      std::make_unique<SCEVInit>(*lv1.pre)));
+  lv4TestChrec.AddOperand(std::make_unique<SCEVNAryAddExpr>(
+      std::make_unique<SCEVInit>(*lv2.pre),
+      std::make_unique<SCEVInit>(*lv1.pre),
+      std::make_unique<SCEVInit>(*lv1.pre),
+      std::make_unique<SCEVInit>(*lv1.pre)));
+  lv4TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
+  assert(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/ScalarEvolutionTests-InductionVariablesWithNonConstantInitialValues",
+    InductionVariablesWithNonConstantInitialValues)
 
 static void
 SelfRecursiveInductionVariable()
