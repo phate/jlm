@@ -268,4 +268,23 @@ LambdaBuilder::Finalize(
   return *output;
 }
 
+[[nodiscard]] rvsdg::LambdaNode &
+getSurroundingLambdaNode(rvsdg::Node & node)
+{
+  auto it = &node;
+  while (it)
+  {
+    if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(it))
+      return *lambda;
+    it = it->region()->node();
+  }
+  throw std::logic_error("node was not in a lambda");
+}
+
+[[nodiscard]] const rvsdg::LambdaNode &
+getSurroundingLambdaNode(const rvsdg::Node & node)
+{
+  return getSurroundingLambdaNode(const_cast<rvsdg::Node &>(node));
+}
+
 }

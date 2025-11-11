@@ -638,6 +638,15 @@ private:
   util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
 
+/**
+ * Checks if the given node takes any inputs, or produces any outputs,
+ * that are of the memory state type.
+ * @param node the node in question
+ * @return true if any input or output is a memory state, otherwise false.
+ */
+[[nodiscard]] bool
+anyMemoryStateInputOrOutput(const rvsdg::Node & node);
+
 }
 
 #endif

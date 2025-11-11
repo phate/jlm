@@ -27,12 +27,15 @@ public:
   GetPointsToGraph() const noexcept = 0;
 
   /**
-   * Provides the set of MemoryNodes that represent memory locations that may be
+   * Provides the set of memory nodes that represent memory locations that may be
    * modified or referenced by the given simple node.
    *
-   * The simple node can be any operation that affects memory:
-   *  - Load, Store, Memcpy, Free, Call, which have memory states routed through them
-   *  - Alloca or Malloc, which produce memory states
+   * The simple node can be any operation that reads from memory, or produces value of memory, e.g.:
+   *  - \ref LoadOperation and \ref StoreOperation nodes
+   *  - \ref MemcpyOperation nodes
+   *  - \ref FreeOperation nodes
+   *  - \ref CallOperation nodes, i.e., function calls
+   *  - \ref AllocaOperation and \ref MallocOperation nodes, which produce memory states
    *
    * @param node the node operating on memory
    * @return the Mod/Ref set of the node.
@@ -41,41 +44,41 @@ public:
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const = 0;
 
   /**
-   * Provides the set of MemoryNodes that should be routed into a given Gamma node
-   * @param gamma the Gamma node
-   * @return the entry Mod/Ref set for the Gamma
+   * Provides the set of memory nodes that should be routed into a given gamma node
+   * @param gamma the gamma node
+   * @return the entry Mod/Ref set for the gamma
    */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetGammaEntryModRef(const rvsdg::GammaNode & gamma) const = 0;
 
   /**
-   * Provides the set of MemoryNodes that should be routed out of a given Gamma node
-   * @param gamma the Gamma node
-   * @return the exit Mod/Ref set for the Gamma
+   * Provides the set of memory nodes that should be routed out of a given gamma node
+   * @param gamma the gamma node
+   * @return the exit Mod/Ref set for the gamma
    */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetGammaExitModRef(const rvsdg::GammaNode & gamma) const = 0;
 
   /**
-   * Provides the set of MemoryNodes that should be routed in and out of a Theta node
-   * @param theta the Theta node
-   * @return the Mod/Ref set for the Theta
+   * Provides the set of memory nodes that should be routed in and out of a theta node
+   * @param theta the theta node
+   * @return the Mod/Ref set for the theta
    */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetThetaModRef(const rvsdg::ThetaNode & theta) const = 0;
 
   /**
-   * Provides the set of MemoryNodes that are routed in to the given Lambda's subregion
-   * @param lambda the Lambda node
-   * @return the entry Mod/Ref set for the Lambda
+   * Provides the set of memory nodes that are routed in to the given lambda's subregion
+   * @param lambda the lambda node
+   * @return the entry Mod/Ref set for the lambda
    */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const = 0;
 
   /**
-   * Provides the set of MemoryNodes that are routed out of the given Lambda's subregion
-   * @param lambda the Lambda node
-   * @return the exit Mod/Ref set for the Lambda
+   * Provides the set of memory nodes that are routed out of the given lambda's subregion
+   * @param lambda the lambda node
+   * @return the exit Mod/Ref set for the lambda
    */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const = 0;

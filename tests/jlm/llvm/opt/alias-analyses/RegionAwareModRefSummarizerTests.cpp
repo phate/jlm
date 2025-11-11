@@ -4,13 +4,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/DotWriter.hpp>
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 

@@ -18,8 +18,8 @@ using ModRefSetIndex = uint32_t;
 
 /** \brief Region-aware mod/ref summarizer
  *
- * The key idea of the region-aware memory mod/ref summarizer is to only provide memory locations
- * for a structural node that are actually utilized within its regions. This ensures that no
+ * The key idea of the region-aware memory mod/ref summarizer is to only route memory locations
+ * into structural nodes if the memory is actually used within its regions. This ensures that no
  * superfluous states will be routed through structural nodes and renders them independent if they
  * do not reference the same memory location. The region-aware analysis proceeds as follows:
  *
@@ -32,11 +32,15 @@ using ModRefSetIndex = uint32_t;
  * or within one of its predecessors, can be live.
  * All other allocas are placed in the DeadAllocasInScc lists.
  *
- * 3. Simple Alloca Set Creation: An Alloca is "simple" if its address is never stored to
- * any memory location, except for other simple Allocas.
+ * 3. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
+ * any memory location, except for other simple allocas.
  * The PointsToGraph is used to determine which allocas are simple.
  *
- * 4. Create sets of Non-Reentrant allocas for each region.
+ * 4. Create sets of non-reentrant allocas for each region.
+ * The requirements are:
+ *  - the alloca must be simple
+ *  - the alloca must not be reachable from any of the region's arguments,
+ *    when following points-to edges in the \ref PointsToGraph.
  *
  * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
  * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
@@ -131,13 +135,15 @@ private:
    * @return true if it is possible for lambda to be involved in recursion, false otherwise
    */
   bool
-  IsRecursionPossible(const rvsdg::LambdaNode & lambda);
+  IsRecursionPossible(const rvsdg::LambdaNode & lambda) const;
 
   /**
    * Creates a set for each region that contains alloca definitions,
-   * where the alloca fits the requirements for being non-reentrant.
+   * where the alloca fits the requirements for being non-reentrant:
+   *  - the alloca is simple
+   *  - it is not possible to reach the alloca from any of the region's arguments,
+   *    by following edges in the \ref PointsToGraph.
    * @return the total number of non-reentrant alloca never involved in any recursion
-    // the alloca is definitely non-reentrant.s in the module.
    */
   size_t
   CreateNonReentrantAllocaSets();
@@ -157,14 +163,14 @@ private:
   AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to);
 
   /**
-   * Defines a set of MemoryNodes that should be blocked from the ModRefSet with the given \p index.
+   * Defines a set of memory nodes to be blocked from the ModRefSet with the given \p index.
    * A ModRefSet can have at most one such blocklist.
    * The reference to the blocklist must stay valid until solving is finished.
    *
    * Note: The blocklist only prevents propagation during solving,
-   * so the user must avoid adding blocked MemoryNodes manually.
+   * so the user must avoid adding blocked memory nodes manually.
    *
-   * @see VerifyBlocklists to check that no blocked MemoryNodes have been added
+   * @see VerifyBlocklists to check that no blocked memory nodes have been added
    */
   void
   AddModRefSetBlocklist(

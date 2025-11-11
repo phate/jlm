@@ -392,6 +392,19 @@ private:
   LambdaNode * Node_;
 };
 
+/**
+ * Traverses from the given \p node up the region hierarchy until a lambda node is found.
+ * If the \p node is itself a lambda node, it is returned.
+ * @param node the starting node
+ * @return the surrounding lambda node that contains \p node
+ * @throws std::logic_error if \p node is not within a lambda node
+ */
+[[nodiscard]] rvsdg::LambdaNode &
+getSurroundingLambdaNode(rvsdg::Node & node);
+
+[[nodiscard]] const rvsdg::LambdaNode &
+getSurroundingLambdaNode(const rvsdg::Node & node);
+
 }
 
 #endif

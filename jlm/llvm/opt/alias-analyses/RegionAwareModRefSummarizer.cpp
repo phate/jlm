@@ -13,6 +13,7 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/TarjanScc.hpp>
@@ -30,7 +31,7 @@ namespace jlm::llvm::aa
 static const bool ENABLE_DEAD_ALLOCA_BLOCKLIST = !std::getenv("JLM_DISABLE_DEAD_ALLOCA_BLOCKLIST");
 
 /**
- * In a region with an alloca definition, the MemoryNode representing the alloca does not need to
+ * In a region with an alloca definition, the memory node representing the alloca does not need to
  * be routed into the region if the alloca is shown to be non-reentrant.
  * Such allocas are added to the NonReentrantBlocklist.
  */
@@ -308,7 +309,7 @@ public:
   const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetGammaExitModRef(const rvsdg::GammaNode & gamma) const override
   {
-    return ModRefSets_[GetSetForNode(gamma)].GetMemoryNodes();
+    return GetGammaEntryModRef(gamma);
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
@@ -326,7 +327,7 @@ public:
   const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const override
   {
-    return ModRefSets_[GetSetForNode(lambda)].GetMemoryNodes();
+    return GetLambdaEntryModRef(lambda);
   }
 
   [[nodiscard]] static std::unique_ptr<RegionAwareModRefSummary>
@@ -417,7 +418,7 @@ struct RegionAwareModRefSummarizer::Context
 
   /**
    * For each region, this field contains the set of allocas defined in the region,
-   * that have been show to be Non-Reentrant.
+   * that have been shown to be non-reentrant.
    *
    * Assigned in \ref CreateNonReentrantAllocaSets(). Remains constant after.
    */
@@ -636,7 +637,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
 
   // Used by the implementation of Tarjan's SCC algorithm
-  const auto GetSuccessors = [&](size_t nodeIndex)
+  const auto getSuccessors = [&](size_t nodeIndex)
   {
     return callGraphSuccessors[nodeIndex].Items();
   };
@@ -646,7 +647,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   std::vector<size_t> reverseTopologicalOrder;
   auto numSCCs = util::FindStronglyConnectedComponents<size_t>(
       numCallGraphNodes,
-      GetSuccessors,
+      getSuccessors,
       sccIndex,
       reverseTopologicalOrder);
 
@@ -673,19 +674,6 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   Context_->ExternalNodeSccIndex = sccIndex[externalNodeIndex];
 }
 
-[[nodiscard]] static const rvsdg::LambdaNode &
-GetSurroundingLambdaNode(const rvsdg::Node & node)
-{
-  auto it = &node;
-  while (it)
-  {
-    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(it))
-      return *lambda;
-    it = it->region()->node();
-  }
-  JLM_UNREACHABLE("node was not in a lambda");
-}
-
 void
 RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
 {
@@ -699,7 +687,7 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   for (auto & allocaNode : Context_->pointsToGraph.AllocaNodes())
   {
     allAllocas.insert(&allocaNode);
-    const auto & lambdaNode = GetSurroundingLambdaNode(allocaNode.GetAllocaNode());
+    const auto & lambdaNode = rvsdg::getSurroundingLambdaNode(allocaNode.GetAllocaNode());
     JLM_ASSERT(Context_->FunctionToSccIndex.count(&lambdaNode));
     const auto sccIndex = Context_->FunctionToSccIndex[&lambdaNode];
     liveAllocas[sccIndex].insert(&allocaNode);
@@ -735,7 +723,7 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
   // A queue used to visit all allocas that have been found to not be simple
   std::queue<const PointsToGraph::MemoryNode *> notSimple;
 
-  const auto OnlyAllocaSources = [](const PointsToGraph::MemoryNode & node)
+  const auto onlyAllocaSources = [](const PointsToGraph::MemoryNode & node)
   {
     // Allocas that have escaped the module are never simple
     if (node.IsModuleEscaping())
@@ -753,13 +741,13 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
 
   for (const auto & allocaNode : pointsToGraph.AllocaNodes())
   {
-    if (OnlyAllocaSources(allocaNode))
+    if (onlyAllocaSources(allocaNode))
       simpleAllocas.insert(&allocaNode);
     else
       notSimple.push(&allocaNode);
   }
 
-  // Now all Allocas are either in the simpleAllocas candidate set,
+  // Now all allocas are either in the simpleAllocas candidate set,
   // or in the notSimple queue. Process the queue until empty
   while (!notSimple.empty())
   {
@@ -769,7 +757,7 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
     // Any node targeted by the allocaNode can not be simple
     for (const auto & target : allocaNode.Targets())
     {
-      // If the target is currently in the simple allocas candiate set, move it to the queue
+      // If the target is currently in the simple allocas candidate set, move it to the queue
       if (simpleAllocas.Remove(&target))
         notSimple.push(&target);
     }
@@ -824,7 +812,7 @@ RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
 }
 
 bool
-RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda)
+RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda) const
 {
   const auto scc = Context_->FunctionToSccIndex[&lambda];
   return Context_->SccCallTargets[scc].Contains(scc);
@@ -838,7 +826,7 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
   std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
       simpleAllocasReachableFromRegionArguments;
 
-  // Only simple allocas are candidates for being Non-Reentrant
+  // Only simple allocas are candidates for being non-reentrant
   for (auto memoryNode : Context_->SimpleAllocas.Items())
   {
     auto & allocaMemoryNode = *util::assertedCast<const PointsToGraph::AllocaNode>(memoryNode);
@@ -847,10 +835,10 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
 
     // If the alloca's function is never involved in any recursion
     // the alloca is definitely non-reentrant.
-    const auto & lambda = GetSurroundingLambdaNode(allocaNode);
+    const auto & lambda = rvsdg::getSurroundingLambdaNode(allocaNode);
 
     // In lambdas where recursion is possible, only simple allocas that are provably not
-    // passed in through region arguments can be considered Non-Reentrant
+    // passed in through region arguments can be considered non-reentrant
     if (IsRecursionPossible(lambda))
     {
       auto it = simpleAllocasReachableFromRegionArguments.find(&region);
@@ -965,24 +953,21 @@ RegionAwareModRefSummarizer::AnnotateRegion(
 
   for (auto & node : region.Nodes())
   {
-    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    {
-      const auto nodeModRefSet = AnnotateStructuralNode(*structuralNode, lambda);
-      AddModRefSimpleConstraint(nodeModRefSet, regionModRefSet);
-    }
-    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
-    {
-      const auto nodeModRefSet = AnnotateSimpleNode(*simpleNode, lambda);
-      if (nodeModRefSet)
-        AddModRefSimpleConstraint(*nodeModRefSet, regionModRefSet);
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled node type!");
-    }
+    rvsdg::MatchTypeOrFail(
+        node,
+        [&](const rvsdg::StructuralNode & structuralNode)
+        {
+          const auto nodeModRefSet = AnnotateStructuralNode(structuralNode, lambda);
+          AddModRefSimpleConstraint(nodeModRefSet, regionModRefSet);
+        },
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          if (const auto nodeModRefSet = AnnotateSimpleNode(simpleNode, lambda))
+            AddModRefSimpleConstraint(*nodeModRefSet, regionModRefSet);
+        });
   }
 
-  // Check if this region has any Non-Reentrant Allocas. If so, block them
+  // Check if this region has any non-reentrant allocas. If so, block them
   if (const auto it = Context_->NonReentrantAllocas.find(&region);
       it != Context_->NonReentrantAllocas.end() && ENABLE_NON_REENTRANT_ALLOCA_BLOCKLIST)
   {
@@ -1034,6 +1019,15 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
 
   if (is<CallOperation>(&simpleNode))
     return AnnotateCall(simpleNode, lambda);
+
+  if (is<MemoryStateOperation>(&simpleNode))
+  {
+    // MemoryStateOperations are only used to route memory states, and can be ignored
+    return std::nullopt;
+  }
+
+  // Any remaining type of node should not involve any memory states
+  JLM_ASSERT(!anyMemoryStateInputOrOutput(simpleNode));
 
   return std::nullopt;
 }
@@ -1120,7 +1114,8 @@ RegionAwareModRefSummarizer::AnnotateFree(
   JLM_ASSERT(is<FreeOperation>(&freeNode));
 
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(freeNode);
-  const auto origin = freeNode.input(0)->origin();
+  const auto origin = FreeOperation::addressInput(freeNode).origin();
+
   // TODO: Only free MallocMemoryNodes
   AddPointerOriginTargets(nodeModRef, *origin, std::nullopt, lambda);
   return nodeModRef;

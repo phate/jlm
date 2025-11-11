@@ -76,43 +76,36 @@ public:
 
 private:
   /**
-   * Creates a set containing all MemoryNodes in the given \p pointsToGraph
+   * Creates a set containing all memory nodes in the given \p pointsToGraph
    */
   [[nodiscard]] static util::HashSet<const PointsToGraph::MemoryNode *>
   GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
 
   /**
-   * Helper for adding all MemoryNodes the given \p output may target to a ModRefSet
+   * Helper for adding all memory nodes the given \p output may target to a Mod/Ref set
    * @param output the pointer typed output
-   * @param modRefSet the set of MemoryNodes that should be expanded with \p outputs targets
+   * @param modRefSet the set of memory nodes that should be expanded with \p output's targets
    */
   void
-  AddPointerToModRefSet(
+  AddPointerTargetsToModRefSet(
       const rvsdg::Output & output,
-      util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet);
+      util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet) const;
 
   /**
-   * Recursively traverses the given \p region, creating ModRef sets for simple nodes.
+   * Recursively traverses the given \p region, creating Mod/Ref sets for simple nodes.
    * @param region the region to traverse
    */
   void
   AnnotateRegion(const rvsdg::Region & region);
 
   /**
-   * Creates a ModRef set for the given simple node if it belongs in the ModRefSet map.
-   * Only nodes that affect memory are given ModRefSets.
-   * CallOperations are not included, since the agnostic summary assumes calls touch everything.
+   * Creates a Mod/Ref set for the given simple node if it belongs in the Mod/Ref set map.
+   * Only nodes that affect memory are given Mod/Ref sets.
+   * \ref CallOperations are not included, as the agnostic summary assumes calls touch everything.
    * @param node the simple node
    */
   void
   AnnotateSimpleNode(const rvsdg::SimpleNode & node);
-
-  /**
-   * Recursively traverses the regions of the given structural node to annotate simple nodes
-   * @param node the structural node to traverse
-   */
-  void
-  AnnotateStructuralNode(const rvsdg::StructuralNode & node);
 
   // The ModRefSummary being created by this class
   std::unique_ptr<AgnosticModRefSummary> ModRefSummary_;

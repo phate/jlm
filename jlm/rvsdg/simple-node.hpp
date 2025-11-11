@@ -279,12 +279,10 @@ TryGetSimpleNodeAndOptionalOp(const Node & node) noexcept
   {
     return std::make_pair(nullptr, nullptr);
   }
-
   if (auto operation = dynamic_cast<const TOperation *>(&simpleNode->GetOperation()))
   {
     return std::make_pair(simpleNode, operation);
   }
-
   return std::make_pair(simpleNode, nullptr);
 }
 

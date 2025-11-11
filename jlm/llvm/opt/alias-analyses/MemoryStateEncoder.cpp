@@ -475,19 +475,19 @@ public:
   std::vector<StateMap::MemoryNodeStatePair *>
   GetExistingStates(
       const rvsdg::Region & region,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+      const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
   {
     return GetStateMap(region).GetExistingStates(memoryNodes);
   }
 
   std::vector<StateMap::MemoryNodeStatePair *>
-  GetExistingStates(const rvsdg::SimpleNode & node) noexcept
+  GetExistingStates(const rvsdg::SimpleNode & node) const
   {
     return GetExistingStates(*node.region(), GetSimpleNodeModRef(node));
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetSimpleNodeModRef(const rvsdg::SimpleNode & node)
+  GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const
   {
     return ModRefSummary_.GetSimpleNodeModRef(node);
   }
@@ -637,8 +637,6 @@ MemoryStateEncoder::Encode(
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
-rvsdg::Region * TARGET_REGION = nullptr;
-
 void
 MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
@@ -726,8 +724,8 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   }
   else
   {
-    // Ensure we took care of all memory state consuming nodes
-    JLM_ASSERT(!ShouldHandle(simpleNode));
+    // Ensure we took care of all memory state consuming/producing nodes
+    JLM_ASSERT(!anyMemoryStateInputOrOutput(simpleNode));
   }
 }
 
@@ -1188,38 +1186,12 @@ MemoryStateEncoder::ReplaceMemcpyNode(
     // Skip I/O state and only return memory states
     return { std::next(results.begin()), results.end() };
   }
-  else if (is<MemCpyNonVolatileOperation>(&memcpyNode))
+  if (is<MemCpyNonVolatileOperation>(&memcpyNode))
   {
     return MemCpyNonVolatileOperation::create(destination, source, length, memoryStates);
   }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled memcpy operation type.");
-  }
-}
 
-bool
-MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
-{
-  for (size_t n = 0; n < simpleNode.ninputs(); n++)
-  {
-    auto input = simpleNode.input(n);
-    if (is<MemoryStateType>(input->Type()))
-    {
-      return true;
-    }
-  }
-
-  for (size_t n = 0; n < simpleNode.noutputs(); n++)
-  {
-    auto output = simpleNode.output(n);
-    if (is<MemoryStateType>(output->Type()))
-    {
-      return true;
-    }
-  }
-
-  return false;
+  throw std::logic_error("Unhandled memcpy operation type.");
 }
 
 }
