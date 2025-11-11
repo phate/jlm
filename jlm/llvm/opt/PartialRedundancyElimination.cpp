@@ -576,7 +576,7 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
   });
 
   for (size_t i = 0; i < node->ninputs(); i++){
-    dbg_out << TR_GREEN;
+    dbg_out << TR_YELLOW;
     dbg_out << " : " << to_string(pe->GVNOrZero( node->input(i)->origin() ));
   }
 
