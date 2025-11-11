@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 namespace jlm::rvsdg
@@ -90,23 +91,14 @@ region_header(const rvsdg::Region * region, std::unordered_map<const Output *, s
 
 static std::string
 region_body(
-    const rvsdg::Region * region,
-    size_t depth,
+    const Region * region,
+    const size_t depth,
     std::unordered_map<const Output *, std::string> & map)
 {
-  std::vector<std::vector<const Node *>> context;
-  for (const auto & node : region->Nodes())
-  {
-    if (node.depth() >= context.size())
-      context.resize(node.depth() + 1);
-    context[node.depth()].push_back(&node);
-  }
-
   std::string body;
-  for (const auto & nodes : context)
+  for (const auto node : TopDownConstTraverser(region))
   {
-    for (const auto & node : nodes)
-      body += node_to_string(node, depth, map);
+    body += node_to_string(node, depth, map);
   }
 
   return body;

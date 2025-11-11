@@ -127,6 +127,30 @@ computeMatchConstantCorrelation(rvsdg::ThetaNode & thetaNode)
       { matchNode, alternatives });
 }
 
+static std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
+computeMatchCorrelation(rvsdg::ThetaNode & thetaNode)
+{
+  auto [matchNode, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*thetaNode.predicate()->origin());
+  if (!matchOperation)
+  {
+    return std::nullopt;
+  }
+
+  for (auto & user : matchNode->output(0)->Users())
+  {
+    if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
+    {
+      return ThetaGammaPredicateCorrelation::CreateMatchCorrelation(
+          thetaNode,
+          *gammaNode,
+          { matchNode });
+    }
+  }
+
+  return std::nullopt;
+}
+
 std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
 {
@@ -140,7 +164,81 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
     return correlationOpt;
   }
 
+  if (auto correlationOpt = computeMatchCorrelation(thetaNode))
+  {
+    return correlationOpt;
+  }
+
   return std::nullopt;
+}
+
+std::optional<GammaSubregionRoles>
+determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation)
+{
+  switch (correlation.type())
+  {
+  case CorrelationType::ControlConstantCorrelation:
+  {
+    const auto controlAlternatives =
+        std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(
+            correlation.data());
+    if (controlAlternatives.size() != 2)
+    {
+      return std::nullopt;
+    }
+
+    GammaSubregionRoles roles;
+    if (controlAlternatives[0] == 0)
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(0);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    }
+    else
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(1);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(0);
+    }
+
+    return roles;
+  }
+  case CorrelationType::MatchConstantCorrelation:
+  {
+    const auto [matchNode, alternatives] =
+        std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(correlation.data());
+
+    if (alternatives.size() != 2)
+    {
+      return std::nullopt;
+    }
+
+    GammaSubregionRoles roles;
+    const auto matchOperation =
+        util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+    if (matchOperation->alternative(alternatives[0]) == 0)
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(0);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    }
+    else
+    {
+      roles.exitSubregion = correlation.gammaNode().subregion(1);
+      roles.repetitionSubregion = correlation.gammaNode().subregion(0);
+    }
+
+    return roles;
+  }
+  case CorrelationType::MatchCorrelation:
+  {
+    JLM_ASSERT(correlation.gammaNode().nsubregions() == 2);
+
+    GammaSubregionRoles roles;
+    roles.exitSubregion = correlation.gammaNode().subregion(0);
+    roles.repetitionSubregion = correlation.gammaNode().subregion(1);
+    return roles;
+  }
+  default:
+    return std::nullopt;
+  }
 }
 
 PredicateCorrelation::~PredicateCorrelation() noexcept = default;
@@ -188,26 +286,84 @@ PredicateCorrelation::correlatePredicatesInRegion(rvsdg::Region & region)
 void
 PredicateCorrelation::correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode)
 {
-  const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
-  if (!correlationOpt.has_value())
+  // FIXME: Reevaluate the fix-point computation after we introduced gamma-gamma predicate
+  // correlation. The pattern is a strict top-down pattern, which means that once we resolved the
+  // gamma-gamma predicate correlations, there should only be a single theta-gamma predicate
+  // correlation left, if any. Thus, it might be that the fix-point computation is unnecessary.
+  bool predicateWasRedirected = false;
+  do
   {
-    return;
-  }
-  const auto & correlation = correlationOpt.value();
+    predicateWasRedirected = false;
 
-  if (correlation->type() != CorrelationType::ControlConstantCorrelation)
-  {
-    return;
-  }
+    const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+    if (!correlationOpt.has_value())
+    {
+      return;
+    }
+    const auto & correlation = correlationOpt.value();
+
+    switch (correlation->type())
+    {
+    case CorrelationType::ControlConstantCorrelation:
+      predicateWasRedirected = handleControlConstantCorrelation(*correlation);
+      break;
+    case CorrelationType::MatchConstantCorrelation:
+      predicateWasRedirected = handleMatchConstantCorrelation(*correlation);
+      break;
+    case CorrelationType::MatchCorrelation:
+      predicateWasRedirected = false;
+      break;
+    default:
+      throw std::logic_error("Unhandled theta-gamma predicate correlation.");
+    }
+  } while (predicateWasRedirected);
+}
+
+bool
+PredicateCorrelation::handleControlConstantCorrelation(
+    const ThetaGammaPredicateCorrelation & correlation)
+{
+  JLM_ASSERT(correlation.type() == CorrelationType::ControlConstantCorrelation);
+  const auto & gammaNode = correlation.gammaNode();
+  const auto & thetaNode = correlation.thetaNode();
 
   const auto controlAlternatives =
-      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation->data());
+      std::get<ThetaGammaPredicateCorrelation::ControlConstantCorrelationData>(correlation.data());
   if (controlAlternatives.size() != 2 || controlAlternatives[0] != 0 || controlAlternatives[1] != 1)
   {
-    return;
+    return false;
   }
 
-  thetaNode.predicate()->divert_to(correlation->gammaNode().predicate()->origin());
+  thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
+  return true;
+}
+
+bool
+PredicateCorrelation::handleMatchConstantCorrelation(
+    const ThetaGammaPredicateCorrelation & correlation)
+{
+  JLM_ASSERT(correlation.type() == CorrelationType::MatchConstantCorrelation);
+  const auto & gammaNode = correlation.gammaNode();
+  const auto & thetaNode = correlation.thetaNode();
+
+  const auto [matchNode, alternatives] =
+      std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(correlation.data());
+
+  if (alternatives.size() != 2)
+  {
+    return false;
+  }
+
+  const auto matchOperation =
+      util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+  if (matchOperation->alternative(alternatives[0]) != 0
+      || matchOperation->alternative(alternatives[1]) != 1)
+  {
+    return false;
+  }
+
+  thetaNode.predicate()->divert_to(gammaNode.predicate()->origin());
+  return true;
 }
 
 void

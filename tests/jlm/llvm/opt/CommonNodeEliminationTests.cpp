@@ -395,7 +395,7 @@ MultipleThetas()
 
   // Loop 2
   auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
-  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  auto predicate = &ControlConstantOperation::create(*thetaNode2->subregion(), 2, 1);
   thetaNode2->set_predicate(predicate);
   auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
   auto node2 = TestOperation::create(thetaNode1->subregion(), { loopVariable2.pre }, { valueType });
@@ -446,7 +446,7 @@ MultipleThetasPassthrough()
 
   // Loop 2
   auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
-  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  auto predicate = &ControlConstantOperation::create(*thetaNode2->subregion(), 2, 1);
   thetaNode2->set_predicate(predicate);
   auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
 

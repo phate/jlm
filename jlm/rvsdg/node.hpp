@@ -675,9 +675,6 @@ public:
     return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 
-  inline void
-  recompute_depth() noexcept;
-
   /**
    * \brief Determines whether the node is dead.
    *
@@ -842,12 +839,6 @@ public:
   virtual Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const = 0;
 
-  inline size_t
-  depth() const noexcept
-  {
-    return depth_;
-  }
-
 private:
   util::IntrusiveListAnchor<Node> region_node_list_anchor_{};
 
@@ -867,7 +858,6 @@ public:
 
 private:
   Id Id_;
-  size_t depth_;
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<NodeOutput>> outputs_;

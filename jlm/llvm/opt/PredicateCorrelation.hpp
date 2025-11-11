@@ -47,6 +47,12 @@ enum class CorrelationType
    * subregions of a gamma node.
    */
   MatchConstantCorrelation,
+
+  /**
+   * The predicate correlates with a MatchNode that also serves as predicate producer for a gamma
+   * node.
+   */
+  MatchCorrelation,
 };
 
 /**
@@ -58,14 +64,19 @@ class ThetaGammaPredicateCorrelation final
 public:
   using ControlConstantCorrelationData = std::vector<uint64_t>;
 
-  typedef struct MatchConstantCorrelationData
+  struct MatchConstantCorrelationData
   {
     rvsdg::Node * matchNode{};
     std::vector<uint64_t> alternatives{};
-  } MatchConstantCorrelationData;
+  };
 
-  using CorrelationData =
-      std::variant<ControlConstantCorrelationData, MatchConstantCorrelationData>;
+  struct MatchCorrelationData
+  {
+    rvsdg::Node * matchNode{};
+  };
+
+  using CorrelationData = std::
+      variant<ControlConstantCorrelationData, MatchConstantCorrelationData, MatchCorrelationData>;
 
 private:
   ThetaGammaPredicateCorrelation(
@@ -130,6 +141,19 @@ public:
         std::move(data)));
   }
 
+  static std::unique_ptr<ThetaGammaPredicateCorrelation>
+  CreateMatchCorrelation(
+      rvsdg::ThetaNode & thetaNode,
+      rvsdg::GammaNode & gammaNode,
+      MatchCorrelationData data)
+  {
+    return std::unique_ptr<ThetaGammaPredicateCorrelation>(new ThetaGammaPredicateCorrelation(
+        CorrelationType::MatchCorrelation,
+        thetaNode,
+        gammaNode,
+        std::move(data)));
+  }
+
 private:
   CorrelationType type_;
   rvsdg::ThetaNode & thetaNode_;
@@ -145,6 +169,22 @@ private:
  */
 std::optional<std::unique_ptr<ThetaGammaPredicateCorrelation>>
 computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode);
+
+typedef struct
+{
+  rvsdg::Region * repetitionSubregion;
+  rvsdg::Region * exitSubregion;
+} GammaSubregionRoles;
+
+/**
+ * Tries to assign the respective roles (exit or repetition) to the subregions of a gamma node
+ * that statically correlates with the predicate of a theta node.
+ *
+ * @param correlation The predicate correlation between a theta and gamma node.
+ * @return The roles of the gamma subregions, otherwise std::nullopt.
+ */
+std::optional<GammaSubregionRoles>
+determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation);
 
 /**
  * Predicate Correlation correlates the predicates between theta and gamma nodes, and
@@ -182,6 +222,12 @@ private:
    */
   static void
   correlatePredicatesInTheta(rvsdg::ThetaNode & thetaNode);
+
+  static bool
+  handleControlConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
+
+  static bool
+  handleMatchConstantCorrelation(const ThetaGammaPredicateCorrelation & correlation);
 };
 
 }

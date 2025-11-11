@@ -11,15 +11,6 @@
 namespace jlm::rvsdg
 {
 
-/* control constant */
-
-// explicit instantiation
-template class DomainConstOperation<
-    ControlType,
-    ControlValueRepresentation,
-    ControlValueRepresentationFormatValue,
-    ControlValueRepresentationTypeOfValue>;
-
 ControlType::~ControlType() noexcept = default;
 
 ControlType::ControlType(size_t nalternatives)
@@ -90,6 +81,32 @@ ControlValueRepresentation::ControlValueRepresentation(size_t alternative, size_
     throw util::Error("Alternative is bigger than the number of possible alternatives.");
 }
 
+ControlConstantOperation::~ControlConstantOperation() noexcept = default;
+
+ControlConstantOperation::ControlConstantOperation(ControlValueRepresentation value)
+    : NullaryOperation(ControlType::Create(value.nalternatives())),
+      value_(std::move(value))
+{}
+
+bool
+ControlConstantOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const ControlConstantOperation *>(&other);
+  return operation && operation->value_ == value_;
+}
+
+std::string
+ControlConstantOperation::debug_string() const
+{
+  return jlm::util::strfmt("CTL(", value_.alternative(), ")");
+}
+
+std::unique_ptr<Operation>
+ControlConstantOperation::copy() const
+{
+  return std::make_unique<ControlConstantOperation>(value_);
+}
+
 MatchOperation::~MatchOperation() noexcept = default;
 
 MatchOperation::MatchOperation(
@@ -128,8 +145,8 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
     auto & tracedOutput = traceOutputIntraProcedurally(*arg);
     auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantOperation);
-    return control_constant(
-        arg->region(),
+    return &ControlConstantOperation::create(
+        *arg->region(),
         nalternatives(),
         alternative(constantOperation->value().to_uint()));
   }
@@ -168,15 +185,6 @@ match(
              mapping,
              default_alternative,
              nalternatives)
-      .output(0);
-}
-
-jlm::rvsdg::Output *
-control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
-{
-  return CreateOpNode<ControlConstantOperation>(
-             *region,
-             ControlValueRepresentation(alternative, nalternatives))
       .output(0);
 }
 
