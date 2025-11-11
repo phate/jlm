@@ -148,8 +148,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::CommonNodeElimination_ },
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
-{ OptimizationId::PartialRedundancyElimination,
-OptimizationCommandLineArgument::PartialRedundancyElimination_ },
+        { OptimizationId::PartialRedundancyElimination,
+        OptimizationCommandLineArgument::PartialRedundancyElimination_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
         { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
@@ -519,7 +519,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               "Collect dead node elimination pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::PartialRedundancyElimination,
-             "Collect dead node elimination2 pass statistics."),
+             "PRE under construction. Currently performs GVN."),
           CreateStatisticsOption(
               util::Statistics::Id::FunctionInlining,
               "Collect function inlining pass statistics."),

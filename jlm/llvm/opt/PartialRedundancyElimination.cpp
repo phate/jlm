@@ -18,21 +18,17 @@
 #define  TR_CYAN    TR_FG(64, 255, 255)
 #define  TR_GRAY    TR_FG(52,52,52)
 
-#include "../../../tests/test-operation.hpp"
-#include "../../rvsdg/gamma.hpp"
-#include "../../rvsdg/lambda.hpp"
-#include "../../rvsdg/delta.hpp"
-#include "../../rvsdg/MatchType.hpp"
-#include "../../rvsdg/node.hpp"
-#include "../../rvsdg/nullary.hpp"
-#include "../../rvsdg/structural-node.hpp"
-#include "../../rvsdg/theta.hpp"
-#include "../../util/GraphWriter.hpp"
-#include "../ir/operators/call.hpp"
-#include "../ir/operators/IntegerOperations.hpp"
-#include "../ir/operators/operators.hpp"
+#include "jlm/rvsdg/gamma.hpp"
+#include "jlm/rvsdg/lambda.hpp"
+#include "jlm/rvsdg/delta.hpp"
+#include "jlm/rvsdg/MatchType.hpp"
+#include "jlm/rvsdg/node.hpp"
+#include "jlm/rvsdg/structural-node.hpp"
+#include "jlm/rvsdg/theta.hpp"
+#include "jlm/util/GraphWriter.hpp"
+#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include "PartialRedundancyElimination.hpp"
-#include "../../rvsdg/control.hpp"
+#include "jlm/rvsdg/control.hpp"
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -53,46 +49,15 @@
 #include <jlm/util/GraphWriter.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-#include "../../rvsdg/binary.hpp"
-#include "../../util/common.hpp"
-#include "../ir/types.hpp"
-#include "gvn.hpp"
+#include "jlm/rvsdg/binary.hpp"
+#include "jlm/util/common.hpp"
+#include "jlm/llvm/ir/types.hpp"
+#include "jlm/llvm/opt/gvn.hpp"
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
 #include <typeinfo>
 
-/**
- *  Partial redundancy elimination:
- *  -invariants: after each insertion of a new GVN all GVN shall have unique values
- *               -including op clusters
- *  -GVN source:
- *        -create a variant type for flows into an operator and gvn from constants
- *            -GVN map responsible for comparing constants
- *  -Collisions:
- *        -a GVN value is always generated when a new tuple of (op, flow0, flow1, ...) is inserted
- *        -on a collision generate a unique symbol
- *            -this prevents accidental matches downstream and keep the invariant of one gvn per
- * value -it should be possible to recompute tuples from edges -outputs -operators: -keep around
- * vectors of leaves with a count after performing the operation -vecs only required for internal
- * nodes in op clusters -compare vectors rather than GVN arguments -in effect operator nodes whose
- * args have the same op return a vector of leaf inputs to the operator dag -tracebacks from op
- * nodes will thus bypasses non-leaf nodes -vectors of leaf counts stored per output edge -possible
- * to discard for too large vectors, preventing excess memory usage -Theta nodes: -Complicated:
- *          -initial values passed into thetas must not match
- *          -the outputs might depend on other loop variables transitively
- *        -Solution:
- *          -dynamically switch between which table to insert values into
- *          -compute a GVN value by setting each loop input to a simple (OP-LOOP-PARAM, index)
- *               -these are placed in a separate table
- *          -this value unique identifies a loop
- *          -this scales well as each loop body is only scanned once for identifying structure
- *              and once afterwards to trickle down values from outer contexts
- *          -for a given set of loop inputs and loop hash, outputs are unique
- *              -that is treat theta nodes as operators from the outside
- *          -once such hashes have been calculated for all thetas proceed by passing
- *              -values into thetas hashed with loop hashes
- *              -two identical loops called with the same values give the same outputs
- */
+
 
 namespace jlm::rvsdg
 {
@@ -126,50 +91,31 @@ public:
   }
 };
 
+class DbgPrint{
+public:
+  const bool verbose;
+
+  explicit DbgPrint(const bool verbose):verbose(verbose){}
+  template<typename T>
+  DbgPrint& operator<<(const T& message) {
+    if (verbose) {std::cout << message;}
+    return *this;
+  }
+
+  DbgPrint& operator<<(std::ostream& (*o)(std::ostream&)) {
+    if (verbose) {std::cout << o;}
+    return *this;
+  }
+};
+
+static DbgPrint dbg_out(false);
+
 /** -------------------------------------------------------------------------------------------- **/
 
 namespace jlm::llvm
 {
 
-/** \brief PRE statistics
- *
- */
-class PartialRedundancyElimination::Statistics final : public util::Statistics
-{
-  const char * MarkTimerLabel_ = "MarkTime";
-  const char * SweepTimerLabel_ = "SweepTime";
-
-public:
-  ~Statistics() override = default;
-
-  explicit Statistics(const util::FilePath & sourceFile)
-      : util::Statistics(Statistics::Id::PartialRedundancyElimination, sourceFile)
-  {}
-
-  void
-  StartMarkStatistics(const rvsdg::Graph & graph) noexcept
-  {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
-    AddTimer(MarkTimerLabel_).start();
-  }
-
-  void
-  StopMarkStatistics() noexcept
-  {
-    GetTimer(MarkTimerLabel_).stop();
-  }
-
-  static std::unique_ptr<Statistics>
-  Create(const util::FilePath & sourceFile)
-  {
-    return std::make_unique<Statistics>(sourceFile);
-  }
-};
-
 /** -------------------------------------------------------------------------------------------- **/
-
-
 
 PartialRedundancyElimination::~PartialRedundancyElimination() noexcept {}
 PartialRedundancyElimination::PartialRedundancyElimination() :
@@ -191,7 +137,7 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
       for (auto& reg : sn.Subregions())
       {
         this->TraverseTopDownRecursively(reg, cb);
-        std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
+        dbg_out << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
       }
     });
   }
@@ -210,39 +156,20 @@ PartialRedundancyElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  std::cout << TR_BLUE << "Hello JLM its me." << TR_RESET << std::endl;
-  jlm::rvsdg::gvn::RunAllTests();
   auto & rvsdg = module.Rvsdg();
-  auto statistics = Statistics::Create(module.SourceFilePath().value());
-
   auto& root = rvsdg.GetRootRegion();
   this->TraverseTopDownRecursively(root, initialize_stats);
 
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
-  std::cout <<TR_CYAN << "Gamma node count:"  << stat_gamma_count << TR_RESET << std::endl;
-  std::cout <<TR_CYAN << "Theta node count:"  << stat_theta_count << TR_RESET << std::endl;
-  std::cout << TR_GRAY << "=================================================" << TR_RESET << std::endl;
-
   GVN(root);
-
-  TraverseTopDownRecursively(root, dump_node);
-  TraverseTopDownRecursively(root, dump_region);
-  std::cout << TR_PURPLE << "=================================================" << TR_RESET << std::endl;
-
-  for (auto kv : thetas_){
-    auto ic = kv.second.stat_iteration_count;
-    std::cout << TR_ORANGE << kv.first->DebugString() << kv.first->GetNodeId() << " Iteration count: " << ic << TR_RESET << std::endl;
-  }
 
   if (gvn_.stat_collisions){
     throw std::runtime_error("gvn_.stat_collisions");
   }
- // PassDownRegion(root);
 }
 
 /** -------------------------------------------------------------------------------------------- **/
 static size_t reg_counter = 0;
-void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe, rvsdg::Node* node)
+void PartialRedundancyElimination::dump_region(rvsdg::Node* node)
 {
   std::string name = node->DebugString() + std::to_string(node->GetNodeId());
 
@@ -256,22 +183,22 @@ void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe,
       my_dot_writer.WriteGraphs(my_graph_writer , reg, false);
 
       std::string full_name = "reg_dump/" + name+"__"+std::to_string(reg_counter)+"__.dot"; reg_counter++;
-      std::cout<< TR_RED<<full_name<<TR_RESET<<std::endl;
+      dbg_out<< TR_RED<<full_name<<TR_RESET<<std::endl;
 
       std::ofstream my_dot_oss (full_name);
       my_graph_writer.outputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
-      std::cout << TR_GREEN << "-------------------------------------" << TR_RESET << std::endl;
+      dbg_out << TR_GREEN << "-------------------------------------" << TR_RESET << std::endl;
     }
   });
 }
 
 void PartialRedundancyElimination::initialize_stats(PartialRedundancyElimination *pe, rvsdg::Node* node)
 {
-  MatchType(*node, [&pe, &node](rvsdg::ThetaNode& tn){
+  MatchType(*node, [&pe](rvsdg::ThetaNode& _){
     pe->stat_theta_count++;
   });
 
-  MatchType(*node, [&pe, &node](rvsdg::GammaNode& tn){
+  MatchType(*node, [&pe](rvsdg::GammaNode& _){
     pe->stat_gamma_count++;
   });
 }
@@ -289,50 +216,9 @@ void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node* node)
   });
 }
 
-struct StateEdgesAt
-{
-  std::optional< std::pair<size_t, size_t> > io_state;
-  std::optional< std::pair<size_t, size_t> > mem_state;
-};
-/*
-static StateEdgesAt findStateIndices(rvsdg::Node* node)
-{
-  StateEdgesAt edge_indices;
-  edge_indices.io_state = std::make_pair(0,0);
-  edge_indices.mem_state = std::make_pair(0,0);
-
-  bool found_io_state = false;
-  bool found_mem_state = false;
-
-  for (size_t i = 0 ; i < node->ninputs() ; i++){
-    if ( rvsdg::is<MemoryStateType>(node->input(i)->Type()) ){
-      edge_indices.mem_state->first = i;
-      found_io_state = true;
-    }
-    if ( rvsdg::is<IOStateType>(node->input(i)->Type()) ){
-      edge_indices.io_state->first = i;
-      found_mem_state = true;
-    }
-  }
-
-  for (size_t o = 0 ; o < node->noutputs() ; o++){
-    if ( rvsdg::is<MemoryStateType>(node->output(o)->Type()) ){
-      edge_indices.mem_state->second = o;
-    }
-    if ( rvsdg::is<IOStateType>(node->input(o)->Type()) ){
-      edge_indices.io_state->second = o;
-    }
-  }
-
-  if (!found_io_state){edge_indices.io_state = std::nullopt;}
-  if (!found_mem_state){edge_indices.mem_state = std::nullopt;}
-
-  return edge_indices;
-}
-*/
 void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 {
-  std::cout << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
+  dbg_out << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
   // Treats state edges just like any other value
   if (node->ninputs() && node->noutputs()){
     auto op_opaque = gvn_.FromStr( node->DebugString() );
@@ -352,7 +238,6 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 
   MatchType(node->GetOperation(),
     [this, node](const jlm::llvm::IntegerConstantOperation& iconst){
-      //std::cout << TR_RED << "FOUND: " << iconst.Representation().str() << TR_RESET << std::endl;
       size_t value = 0;
       auto istr = iconst.Representation().str();
       for (size_t i = 0 ; i < istr.length() ; i++){
@@ -371,8 +256,6 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
 
       auto a     = GVNOrWarn( node->input(0)->origin(), node);
       auto b     = GVNOrWarn( node->input(1)->origin(), node);
-
-      //std::cout << TR_RED << "BINOP" << to_string(op) << "[" << to_string(a) << " , " << to_string(b) << "]" << TR_RESET << std::endl;
 
       RegisterGVN(node->output(0), gvn_.Op(op).Arg(a).Arg(b).End());
     }
@@ -398,8 +281,6 @@ void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
     if (jlm::rvsdg::gvn::GVN_IsSmallValue(pred)){
       RegisterGVN( node->output(0), mop.alternative(static_cast<size_t>(pred)) );
     }
-    //std::cout << "MAPPED MATCH" << std::endl;
-    //dump_node(this, node);
   });
 }
 
@@ -408,7 +289,7 @@ void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
   using namespace jlm::rvsdg::gvn;
 
   MatchType(*node, [this,node](rvsdg::GammaNode& gn){
-    std::cout << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+    dbg_out << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
 
     //Route gvn values into alternatives
     for (auto br : gn.GetEntryVars()){
@@ -502,7 +383,7 @@ void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
     }else{
       ///// Only called for nested loops. Not tested yet.
       {
-        std::cout << TR_RED << "Warning nested loops not tested yet." << TR_RESET << std::endl;
+        dbg_out << TR_RED << "Warning nested loops not tested yet." << TR_RESET << std::endl;
         // Similar to loop back at the end of simple loops.
         for (size_t i = 0; i < lv.size(); i++){
           thetas_[node].pre.elements[i].disruptor = mergeIntoLV(
@@ -650,7 +531,7 @@ void PartialRedundancyElimination::GVN_VisitLambdaNode(rvsdg::Node * node)
       auto from = arg.input->origin();
       RegisterGVN(arg.inner, GVNOrWarn(from, node));
     }
-    std::cout << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+    dbg_out << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
     GVN_VisitAllSubRegions(node);
   });
 }
@@ -658,20 +539,20 @@ void PartialRedundancyElimination::GVN_VisitLambdaNode(rvsdg::Node * node)
 void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
 {
   MatchTypeWithDefault(*node,
-  [this,node](rvsdg::DeltaNode& dn){
-      std::cout << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+  [this,node](rvsdg::DeltaNode& _){
+      dbg_out << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
       GVN_VisitAllSubRegions(node);
     },
-    [this,node](rvsdg::ThetaNode& tn){
+    [this,node](rvsdg::ThetaNode& _){
       switch (gvn_mode_thetas_){
         case ThetaMode::GVN_FIND_FIXED_POINT: GVN_VisitThetaNode(node); break;
         case ThetaMode::GVN_FINALIZE:         GVN_FinalizeThetaNode(node); break;
       };
     },
-    [this,node](rvsdg::GammaNode& gn){
+    [this,node](rvsdg::GammaNode& _){
       GVN_VisitGammaNode(node);
     },
-    [this,node](rvsdg::LambdaNode& ln){
+    [this,node](rvsdg::LambdaNode& _){
       GVN_VisitLambdaNode(node);
     },
     //DEFAULT
@@ -684,100 +565,29 @@ void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
 void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node* node)
 {
   using namespace jlm::rvsdg::gvn;
-  std::cout << ind() << TR_BLUE << node->DebugString() << "<"<<node->GetNodeId() <<">"<< TR_RESET;
+  dbg_out << ind() << TR_BLUE << node->DebugString() << "<"<<node->GetNodeId() <<">"<< TR_RESET;
 
   MatchType(*node, [&pe, &node](rvsdg::LambdaNode& ln){
-    std::cout <<TR_ORANGE;
+    dbg_out <<TR_ORANGE;
     for (auto arg : ln.GetFunctionArguments()){
-      std::cout << " : " << pe->GVNOrZero(arg);
+      dbg_out << " : " << pe->GVNOrZero(arg);
     }
-    std::cout << TR_RESET;
-  });
-
-  MatchType(node->GetOperation(), [&pe, node](const jlm::llvm::IntegerConstantOperation& iconst)
-  {
-    JLM_ASSERT(node->noutputs() == 1);
-    std::cout << TR_CYAN;
-    std::cout << to_string(pe->GVNOrZero( node->output(0) ));
-    std::cout << TR_RESET;
+    dbg_out << TR_RESET;
   });
 
   for (size_t i = 0; i < node->ninputs(); i++){
-    std::cout << TR_GREEN;
-    std::cout << " : " << to_string(pe->GVNOrZero( node->input(i)->origin() ));
+    dbg_out << TR_GREEN;
+    dbg_out << " : " << to_string(pe->GVNOrZero( node->input(i)->origin() ));
   }
-  std::cout << TR_GRAY << " => ";
+
+  dbg_out << TR_GRAY << " => ";
   for (size_t i = 0; i < node->noutputs(); i++){
-    std::cout << TR_RED;
-    std::cout << " : " << to_string(pe->GVNOrZero( node->output(i) ));
+    dbg_out << TR_RED;
+    dbg_out << " : " << to_string(pe->GVNOrZero( node->output(i) ));
   }
-  std::cout << std::endl;
+
+  dbg_out << std::endl;
 }
-
-/** ********************************************************************************************* */
-/** ********************************************************************************************* */
-/** ********************************************************************************************* */
-
-void PartialRedundancyElimination::PassDownRegion(rvsdg::Region& reg)
-{
-  IndentMan indenter = IndentMan();
-
-  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg)){PassDownNode(node);}
-}
-
-void PartialRedundancyElimination::PassDownAllSubRegions(rvsdg::Node* node)
-{
-  MatchType(*node,[this](rvsdg::StructuralNode& sn){
-    for (auto& reg : sn.Subregions()){PassDownRegion(reg);}
-  });
-}
-
-void PartialRedundancyElimination::PassDownNode(rvsdg::Node* node)
-{
-  MatchTypeWithDefault(*node,
-  [this,node](rvsdg::DeltaNode& dn){
-      std::cout << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
-      PassDownAllSubRegions(node);
-    },
-    [this,node](rvsdg::ThetaNode& tn){
-      PassDownThetaNode(node);
-    },
-    [this, node](rvsdg::GammaNode& gn)
-    {
-      PassDownGammaNode(node);
-    },
-    [this,node](rvsdg::LambdaNode& ln){
-      PassDownLambdaNode(node);
-    },
-    //DEFAULT
-    [this, node](){
-      PassDownLeafNode(node);
-    }
-  );
-}
-
-void PartialRedundancyElimination::PassDownThetaNode(rvsdg::Node* node)
-{
-  PassDownAllSubRegions(node);
-}
-
-void PartialRedundancyElimination::PassDownGammaNode(rvsdg::Node* node)
-{
-  PassDownAllSubRegions(node);
-}
-
-void PartialRedundancyElimination::PassDownLeafNode(rvsdg::Node* node)
-{
-   std::cout << ind() <<TR_CYAN << node->DebugString()<<node->GetNodeId() << TR_RESET;
-}
-
-void
-PartialRedundancyElimination::PassDownLambdaNode(rvsdg::Node * ln)
-{
-  std::cout << ind() << TR_GREEN << ln->GetNodeId() << TR_RESET;
-  PassDownAllSubRegions(ln);
-}
-
 
 }
 

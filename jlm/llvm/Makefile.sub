@@ -63,13 +63,13 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
     jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
-    jlm/llvm/opt/PartialRedundancyElimination.cpp \
     jlm/llvm/opt/gvn.cpp \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
+    jlm/llvm/opt/PartialRedundancyElimination.cpp \
     jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
@@ -86,7 +86,6 @@ libllvm_HEADERS = \
     \
     jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
-    jlm/llvm/opt/PartialRedundancyElimination.hpp \
     jlm/llvm/opt/gvn.hpp \
     jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/CommonNodeElimination.hpp \
@@ -117,6 +116,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
+    jlm/llvm/opt/PartialRedundancyElimination.hpp \
     jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \

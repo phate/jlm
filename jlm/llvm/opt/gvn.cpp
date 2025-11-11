@@ -1,12 +1,9 @@
-//
-// Created by lars-astrup-sundt on 10/27/25.
-//
+/*
+ * Copyright 2025 Lars Astrup Sundt <larsastr@stud.ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
-#include "gvn.hpp"
-
-//
-// Created by lars-astrup-sundt on 10/26/25.
-//
+#include "jlm/llvm/opt/gvn.hpp"
 
 bool jlm::rvsdg::gvn::gvn_verbose = false;
 namespace jlm::rvsdg::gvn {
@@ -155,19 +152,6 @@ namespace jlm::rvsdg::gvn {
         if (gvn_verbose){std::cout << "=======================================" << std::endl;}
         if (gvn_verbose){p2.dump();}
         if (gvn_verbose){std::cout << "=======================================" << std::endl;}
-
-        auto shatter_good = [](BrittlePrismEle& ele, size_t index) {
-            ele.partition = index;
-        };
-        auto shatter_bad = [](BrittlePrismEle& ele, size_t index) {
-            ele.partition = 88;
-        };
-        Shatter(p0, shatter_good);
-        try {
-            Shatter(p2, shatter_bad);
-        }catch (std::runtime_error& e) {
-            if (gvn_verbose){std::cout << "success : should throw : detected bad shatter : " << e.what() << std::endl;}
-        }
     }
 
     void BrittlePrism::Test1()

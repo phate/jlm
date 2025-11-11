@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_PartialRedundancyElimination_HPP
-#define JLM_LLVM_OPT_PartialRedundancyElimination_HPP
+#ifndef JLM_LLVM_OPT_PARTIAL_REDUNDANCY_ELIMINATION_HPP
+#define JLM_LLVM_OPT_PARTIAL_REDUNDANCY_ELIMINATION_HPP
 
 #include "gvn.hpp"
 #include "jlm/llvm/ir/operators/IntegerOperations.hpp"
@@ -33,6 +33,7 @@ namespace jlm::llvm{
 
 struct ThetaData
 {
+  ThetaData():stat_iteration_count(0), prism(0){}
   size_t stat_iteration_count;
   jlm::rvsdg::gvn::GVN_Val prism;
   jlm::rvsdg::gvn::BrittlePrism pre;
@@ -74,7 +75,7 @@ private:
   ThetaMode gvn_mode_thetas_ = ThetaMode::GVN_FIND_FIXED_POINT;
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node));
 
-  static void dump_region(          PartialRedundancyElimination *pe, rvsdg::Node* node);
+  static void dump_region(rvsdg::Node* node);
   static void dump_node(            PartialRedundancyElimination *pe, rvsdg::Node* node);
   static void initialize_stats(     PartialRedundancyElimination *pe, rvsdg::Node* node);
 
@@ -123,14 +124,6 @@ private:
   void GVN_FinalizeThetaNode(rvsdg::Node * node);
   void GVN_VisitLambdaNode(rvsdg::Node* ln);
   void GVN_VisitLeafNode(rvsdg::Node* node);
-
-  void PassDownRegion(rvsdg::Region& reg);
-  void PassDownAllSubRegions(rvsdg::Node* node);
-  void PassDownNode(rvsdg::Node* node);
-  void PassDownGammaNode(rvsdg::Node* gn);
-  void PassDownThetaNode(rvsdg::Node* tn);
-  void PassDownLambdaNode(rvsdg::Node* ln);
-  void PassDownLeafNode(rvsdg::Node* node);
 };
 
 }

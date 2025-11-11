@@ -425,7 +425,6 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_unique<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::PartialRedundancyElimination:
     return std::make_unique<llvm::PartialRedundancyElimination>();
-    return std::make_shared<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_shared<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:

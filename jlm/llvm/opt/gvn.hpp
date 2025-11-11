@@ -1,19 +1,18 @@
-//
-// Created by lars-astrup-sundt on 10/27/25.
-//
+/*
+* Copyright 2025 Lars Astrup Sundt <larsastr@stud.ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
-#ifndef JLM_GVN_H
-#define JLM_GVN_H
+
+#ifndef JLM_LLVM_OPT_GVN_H
+#define JLM_LLVM_OPT_GVN_H
 
 #include <vector>
 #include <algorithm>
 #include <iostream>
 #include <optional>
 #include <unordered_map>
-#include <unordered_set>
-#include <iostream>
-
-#include <stdint.h>
+#include <cstdint>
 
 namespace jlm::rvsdg::gvn {
     extern bool gvn_verbose;
@@ -314,6 +313,7 @@ namespace jlm::rvsdg::gvn {
     class GVN_Manager{
 
         struct GVN_Deps {
+            GVN_Deps():op(0){}
             GVN_Val op;
             std::vector<std::pair< GVN_Val, size_t> > args;
             void push(GVN_Val v, size_t count){args.emplace_back(v, count);}
@@ -524,7 +524,7 @@ namespace jlm::rvsdg::gvn {
             return SymGen(0);
         }
         GVN_Val SymGen(GVN_Val flags) {
-            GVN_Val g;
+            GVN_Val g = 0;
             do{
                 g = random() & ~GVN_MASK;
                 g |= flags | GVN_IS_SYMBOLIC;
