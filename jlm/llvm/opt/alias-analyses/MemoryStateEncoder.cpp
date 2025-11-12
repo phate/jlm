@@ -725,7 +725,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   else
   {
     // Ensure we took care of all memory state consuming/producing nodes
-    JLM_ASSERT(!anyMemoryStateInputOrOutput(simpleNode));
+    JLM_ASSERT(!hasMemoryState(simpleNode));
   }
 }
 

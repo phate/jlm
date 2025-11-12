@@ -32,7 +32,7 @@ public:
    *
    * The simple node can be any operation that reads from memory, or produces value of memory, e.g.:
    *  - \ref LoadOperation and \ref StoreOperation nodes
-   *  - \ref MemcpyOperation nodes
+   *  - \ref MemCpyOperation nodes
    *  - \ref FreeOperation nodes
    *  - \ref CallOperation nodes, i.e., function calls
    *  - \ref AllocaOperation and \ref MallocOperation nodes, which produce memory states

@@ -645,7 +645,7 @@ private:
  * @return true if any input or output is a memory state, otherwise false.
  */
 [[nodiscard]] bool
-anyMemoryStateInputOrOutput(const rvsdg::Node & node);
+hasMemoryState(const rvsdg::Node & node);
 
 }
 

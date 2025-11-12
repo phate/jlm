@@ -684,7 +684,7 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
 }
 
 bool
-anyMemoryStateInputOrOutput(const rvsdg::Node & node)
+hasMemoryState(const rvsdg::Node & node)
 {
   for (auto & input : node.Inputs())
   {

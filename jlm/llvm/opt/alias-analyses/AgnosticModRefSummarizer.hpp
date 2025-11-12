@@ -101,7 +101,7 @@ private:
   /**
    * Creates a Mod/Ref set for the given simple node if it belongs in the Mod/Ref set map.
    * Only nodes that affect memory are given Mod/Ref sets.
-   * \ref CallOperations are not included, as the agnostic summary assumes calls touch everything.
+   * \ref llvm::CallOperation nodes are not included, as calls are assumed to touch everything.
    * @param node the simple node
    */
   void

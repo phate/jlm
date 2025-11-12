@@ -254,7 +254,7 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
   else
   {
     // Any remaining type of node should not involve any memory states
-    JLM_ASSERT(!anyMemoryStateInputOrOutput(node));
+    JLM_ASSERT(!hasMemoryState(node));
   }
 }
 

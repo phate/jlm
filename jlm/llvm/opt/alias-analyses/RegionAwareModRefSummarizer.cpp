@@ -1027,7 +1027,7 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   }
 
   // Any remaining type of node should not involve any memory states
-  JLM_ASSERT(!anyMemoryStateInputOrOutput(simpleNode));
+  JLM_ASSERT(!hasMemoryState(simpleNode));
 
   return std::nullopt;
 }
