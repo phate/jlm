@@ -101,6 +101,7 @@ then
 	echo "make -j ${PARALLEL_THREADS} -O update-golden"
 	make -j ${PARALLEL_THREADS} -O update-golden
 	cd src
+	rm -rf ${GOLDEN_DIR}
 	mkdir -p ${GOLDEN_DIR}
 	cp --parents `find -name \*.cycles` ${GOLDEN_DIR}
 fi
