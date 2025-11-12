@@ -111,11 +111,11 @@ private:
 class SCEVConstant final : public SCEV
 {
 public:
-  explicit SCEVConstant(const uint64_t value)
+  explicit SCEVConstant(const int64_t value)
       : Value_{ value }
   {}
 
-  uint64_t
+  int64_t
   GetValue() const
   {
     return Value_;
@@ -134,7 +134,7 @@ public:
   }
 
 private:
-  uint64_t Value_;
+  int64_t Value_;
 };
 
 class SCEVAddExpr final : public SCEV

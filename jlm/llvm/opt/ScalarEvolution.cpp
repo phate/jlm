@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -110,7 +111,7 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
     {
       const auto constOp =
           dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
-      const auto value = constOp->Representation().to_uint();
+      const auto value = constOp->Representation().to_int();
       result = std::make_unique<SCEVConstant>(value);
     }
     if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation()))
@@ -350,6 +351,7 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
+    std::cout << loopVar.pre->debug_string() << ": " << storedRec->DebugString() << '\n';
     // Workaround for the fact that Clone() is an overrided method that returns a unique_ptr of SCEV
     chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
         dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
