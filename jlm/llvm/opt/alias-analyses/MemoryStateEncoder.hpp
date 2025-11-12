@@ -104,12 +104,6 @@ private:
   EncodeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallEntry(const rvsdg::SimpleNode & callNode);
-
-  void
-  EncodeCallExit(const rvsdg::SimpleNode & callNode);
-
-  void
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   void
@@ -189,15 +183,6 @@ private:
   ReplaceMemcpyNode(
       const rvsdg::SimpleNode & memcpyNode,
       const std::vector<rvsdg::Output *> & memoryStates);
-
-  /**
-   * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.
-   *
-   * @param simpleNode A SimpleNode.
-   * @return True, if \p simpleNode should be handled, otherwise false.
-   */
-  [[nodiscard]] static bool
-  ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept;
 
   std::unique_ptr<Context> Context_;
 };
