@@ -437,7 +437,7 @@ public:
   }
 
   StateMap::MemoryNodeStatePair *
-  TryGetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
+  TryGetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode) const
   {
     return GetStateMap(region).TryGetState(memoryNode);
   }
