@@ -12,7 +12,6 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 
 GOLDEN_DIR=${JLM_ROOT_DIR}/.github/golden/hls-test-suite
 UPDATE_GOLDEN=false
-CHECL_CYCLES=false
 
 # Set default path for where the benchmark will be cloned and make target for running it
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
@@ -57,10 +56,6 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--update-golden)
 			UPDATE_GOLDEN=true
-			shift
-			;;
-		--check)
-			CHECK_CYCLES=true
 			shift
 			;;
 		--get-commit-hash)
