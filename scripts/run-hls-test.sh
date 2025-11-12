@@ -107,15 +107,14 @@ fi
 
 for GOLDEN_FILE in `find ${GOLDEN_DIR} -name "*.cycles" -type f`
 do
-	BENCHMARK_TMP=$(basename ${GOLDEN_FILE})
+	BENCHMARK_TMP=${GOLDEN_FILE#${GOLDEN_DIR}/}
 	BENCHMARK=${BENCHMARK_TMP%.cycles}
-	DIR=$(basename $(dirname ${GOLDEN_FILE}))
-	LOG_FILE=${BENCHMARK_DIR}/build/${DIR}/${BENCHMARK}.hls.log
+	LOG_FILE=${BENCHMARK_DIR}/build/${BENCHMARK}.hls.log
 	CYCLES=$(grep 'finished - took' ${LOG_FILE} | tr -dc '0-9')
 	GOLDEN=$(cat ${GOLDEN_FILE})
 	if [ "$CYCLES" != "$GOLDEN" ] ; then
 		printf '%s\n    %s\n    %s\n' \
-		"The execution time of ${DIR}/${BENCHMARK} has changed" \
+		"The execution time of ${BENCHMARK} has changed" \
 		"Golden cycle time: ${GOLDEN}" \
 		"Simulated cycles: ${CYCLES}"
 		exit 1
