@@ -15,8 +15,6 @@
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <iostream>
-
 template<class Test, class Analysis, class TModRefSummarizer>
 static void
 ValidateTest(std::function<void(const Test &)> validateEncoding)
@@ -40,13 +38,13 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   Test test;
   auto & rvsdgModule = test.module();
-  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
-  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   TModRefSummarizer summarizer;
   auto modRefSummary =
@@ -55,7 +53,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   jlm::llvm::aa::MemoryStateEncoder encoder;
   std::cout << "run encoder\n";
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
-  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   validateEncoding(test);
 }
@@ -118,45 +116,11 @@ ValidateStoreTest1SteensgaardRegionAware(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 14);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 4, 1));
-
-  // Agnostic ModRef summaries lead to Join operations for all allocas
-  auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_a->output(1)->SingleUser());
-  auto [bJoinNode, bJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_b->output(1)->SingleUser());
-  auto [cJoinNode, cJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_c->output(1)->SingleUser());
-  auto [dJoinNode, dJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_d->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(cJoinOp && cJoinNode->output(0)->nusers() == 1);
-  assert(dJoinOp && dJoinNode->output(0)->nusers() == 1);
-
-  // the d alloca is not used by any operation, and goes straight to the call exit
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(dJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-
-  auto storeD = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(cJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD, 3, 1));
-  assert(storeD->input(0)->origin() == test.alloca_c->output(0));
-  assert(storeD->input(1)->origin() == test.alloca_d->output(0));
-
-  auto storeC = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeC, 3, 1));
-  assert(storeC->input(0)->origin() == test.alloca_b->output(0));
-  assert(storeC->input(1)->origin() == test.alloca_c->output(0));
-
-  auto storeB = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
-  assert(storeB->input(0)->origin() == test.alloca_a->output(0));
-  assert(storeB->input(1)->origin() == test.alloca_b->output(0));
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
 static void
@@ -221,57 +185,11 @@ static void
 ValidateStoreTest2SteensgaardRegionAware(const jlm::tests::StoreTest2 & test)
 {
   using namespace jlm::llvm;
-  assert(test.lambda->subregion()->numNodes() == 17);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
-
-  // Agnostic ModRef summaries lead to Join operations for all allocas
-  auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_a->output(1)->SingleUser());
-  auto [bJoinNode, bJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_b->output(1)->SingleUser());
-  auto [xJoinNode, xJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_x->output(1)->SingleUser());
-  auto [yJoinNode, yJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_y->output(1)->SingleUser());
-  auto [pJoinNode, pJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_p->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(xJoinOp && xJoinNode->output(0)->nusers() == 1);
-  assert(yJoinOp && yJoinNode->output(0)->nusers() == 1);
-  assert(pJoinOp && pJoinNode->output(0)->nusers() == 1);
-
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-
-  auto storeA =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
-  assert(storeA->input(0)->origin() == test.alloca_x->output(0));
-
-  auto storeB =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
-  assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(2)->origin()) == storeA);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(3)->origin()) == storeA);
-
-  auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
-  assert(storeX->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-
-  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
-  assert(storeY->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeY->input(1)->origin() == test.alloca_y->output(0));
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
 static void
@@ -312,20 +230,20 @@ ValidateLoadTest1SteensgaardRegionAware(const jlm::tests::LoadTest1 & test)
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
   auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(0)->origin());
 
-  assert(is<LoadNonVolatileOperation>(*loadA, 3, 3));
+  assert(is<LoadNonVolatileOperation>(*loadA, 2, 2));
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()) == loadX);
 
-  assert(is<LoadNonVolatileOperation>(*loadX, 3, 3));
+  assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
   assert(loadX->input(0)->origin() == test.lambda->GetFunctionArguments()[0]);
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
@@ -404,67 +322,11 @@ static void
 ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
-  assert(test.lambda->subregion()->numNodes() == 19);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
-
-  // Agnostic ModRef summaries lead to Join operations for all allocas
-  auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_a->output(1)->SingleUser());
-  auto [bJoinNode, bJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_b->output(1)->SingleUser());
-  auto [xJoinNode, xJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_x->output(1)->SingleUser());
-  auto [yJoinNode, yJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_y->output(1)->SingleUser());
-  auto [pJoinNode, pJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-      test.alloca_p->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(xJoinOp && xJoinNode->output(0)->nusers() == 1);
-  assert(yJoinOp && yJoinNode->output(0)->nusers() == 1);
-  assert(pJoinOp && pJoinNode->output(0)->nusers() == 1);
-
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-
-  auto storeA =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
-  assert(storeA->input(0)->origin() == test.alloca_x->output(0));
-
-  auto storeB =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
-  assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(2)->origin()) == storeA);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(3)->origin()) == storeA);
-
-  auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
-  assert(storeX->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-
-  auto loadP = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadP, 2, 2));
-  assert(loadP->input(0)->origin() == test.alloca_p->output(0));
-
-  auto loadXY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(loadP->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadXY, 3, 3));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadXY->input(1)->origin()) == storeB);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadXY->input(2)->origin()) == storeB);
-
-  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(loadXY->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeY, 4, 2));
-  assert(storeY->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeY->input(2)->origin()) == loadXY);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeY->input(3)->origin()) == loadXY);
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
 static void
@@ -633,19 +495,14 @@ ValidateCallTest1SteensgaardRegionAware(const jlm::tests::CallTest1 & test)
   {
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallF().input(4)->origin());
-    auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallF().output(2)->SingleUser());
-
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 2));
+    // There is no call exit split, as it has been removed by dead node elimination
+    assert(test.CallF().output(2)->nusers() == 0);
 
     callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
-    callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallG().output(2)->SingleUser());
-
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
+    assert(test.CallG().output(2)->nusers() == 0);
   }
 }
 
@@ -949,11 +806,11 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function test()
   {
-    assert(test.GetLambdaTest().subregion()->numNodes() == 18);
+    assert(test.GetLambdaTest().subregion()->numNodes() == 14);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
+    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
     auto loadG1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetContextVars()[2].inner->SingleUser());
@@ -965,20 +822,19 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
   }
 
   // validate function test2()
   {
-    assert(test.GetLambdaTest2().subregion()->numNodes() == 8);
+    assert(test.GetLambdaTest2().subregion()->numNodes() == 5);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        test.GetLambdaTest2().GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    // The entry memory state is unused
+    assert(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers() == 0);
   }
 }
 
@@ -1009,18 +865,18 @@ ValidateGammaTestSteensgaardRegionAware(const jlm::tests::GammaTest & test)
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto loadTmp2 =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp2, 3, 3));
+  assert(is<LoadNonVolatileOperation>(*loadTmp2, 2, 2));
 
   auto loadTmp1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp2->input(1)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp1, 3, 3));
+  assert(is<LoadNonVolatileOperation>(*loadTmp1, 2, 2));
 
   auto lambdaEntrySplit =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp1->input(1)->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
 static void
@@ -1057,7 +913,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto thetaOutput = lambdaExitMerge->input(0)->origin();
   auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
@@ -1066,11 +922,11 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
 
   auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeStateOutput);
-  assert(is<StoreNonVolatileOperation>(*store, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
   assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loopvar.input->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
 static void
@@ -1445,29 +1301,18 @@ ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
 {
   using namespace jlm::llvm;
 
-  auto arrayStateIndex = test.alloca->output(1)->SingleUser().index();
-
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-      *lambdaExitMerge->input(arrayStateIndex)->origin());
-  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
-
-  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
+  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *test.lambda_fib->GetFunctionResults()[0]->origin());
   assert(gamma == test.gamma);
 
-  auto gammaStateIndex = store->input(2)->origin()->index();
-
-  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-      *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
-  assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
-
-  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load1->input(1)->origin());
-  assert(is<LoadNonVolatileOperation>(*load2, 2, 2));
-
-  assert(load2->input(1)->origin()->index() == arrayStateIndex);
+  // In the region aware, we know that the alloca is non-reentrant, so there is no Join
+  auto [node, op] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+      test.alloca->output(1)->SingleUser());
+  assert(!op);
 }
 
 static void

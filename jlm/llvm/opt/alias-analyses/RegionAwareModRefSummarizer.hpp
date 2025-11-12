@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -13,12 +14,12 @@ namespace jlm::llvm::aa
 {
 
 class RegionAwareModRefSummary;
-class RegionSummary;
+using ModRefSetIndex = uint32_t;
 
 /** \brief Region-aware mod/ref summarizer
  *
- * The key idea of the region-aware memory mod/ref summarizer is to only provide memory locations
- * for a structural node that are actually utilized within its regions. This ensures that no
+ * The key idea of the region-aware memory mod/ref summarizer is to only route memory locations
+ * into structural nodes if the memory is actually used within its regions. This ensures that no
  * superfluous states will be routed through structural nodes and renders them independent if they
  * do not reference the same memory location. The region-aware analysis proceeds as follows:
  *
@@ -26,17 +27,27 @@ class RegionSummary;
  * This graph includes calls to external functions, and calls from external functions.
  * Each function is assigned to a strongly connected component.
  *
- * 2. These strongly connected components are then visited in reverse topological order.
- * This process is called Annotation, and creates summaries for all regions and calls.
- * These summaries contain the sets of memory locations that may be read from or written to
- * inside the region or by the target of the call.
+ * 2. Find allocas that are dead in each SCC:
+ * For each SCC in the call graph, only allocas defined within the SCC,
+ * or within one of its predecessors, can be live.
+ * All other allocas are placed in the DeadAllocasInScc lists.
  *
- * Since a call may target another function in the same SCC that has not been annotated yet,
- * a flag is set on all RegionSummary and CallSummary instances that may contain recursion.
+ * 3. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
+ * any memory location, except for other simple allocas.
+ * The PointsToGraph is used to determine which allocas are simple.
  *
- * 3. Propagation: Once all functions have been annotated, we go back to all summaries that
- * were flagged as possibly containing recursion. Their sets of memory locations are expanded to
- * include all memory locations that may be affected by any function inside the SCC.
+ * 4. Create sets of non-reentrant allocas for each region.
+ * The requirements are:
+ *  - the alloca must be simple
+ *  - the alloca must not be reachable from any of the region's arguments,
+ *    when following points-to edges in the \ref PointsToGraph.
+ *
+ * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
+ * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
+ * Special edges are used between function body region -> function,
+ * which filter away all simple allocas defined in the function that are not recursive.
+ *
+ * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
  *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
@@ -45,6 +56,7 @@ class RegionAwareModRefSummarizer final : public ModRefSummarizer
 {
 public:
   class Statistics;
+  struct Context;
 
   ~RegionAwareModRefSummarizer() noexcept override;
 
@@ -52,13 +64,8 @@ public:
 
   RegionAwareModRefSummarizer(const RegionAwareModRefSummarizer &) = delete;
 
-  RegionAwareModRefSummarizer(RegionAwareModRefSummarizer &&) = delete;
-
   RegionAwareModRefSummarizer &
   operator=(const RegionAwareModRefSummarizer &) = delete;
-
-  RegionAwareModRefSummarizer &
-  operator=(RegionAwareModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(
@@ -95,7 +102,7 @@ public:
 private:
   /**
    * Creates a call graph including all functions in the module, and groups all functions into SCCs.
-   * The resulting SCCs and topological order will be stored in the `FunctionSCCs_` field.
+   * The resulting SCCs and topological order will be stored in the Context_ field.
    *
    * @param rvsdgModule the module for which a mod/ref summary is computed.
    */
@@ -103,76 +110,145 @@ private:
   CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
-   * Creates RegionSummaries and CallSummaries for the given function.
-   * These summaries will contain the memory locations utilized in each region / call,
-   * including in sub-regions and inside call targets.
+   * For each SCC in the call graph, determines which allocas can be known to not be live
+   * when a function from the SCC is at the top of the call stack.
+   */
+  void
+  FindAllocasDeadInSccs();
+
+  /**
+   * Creates a set containing all simple Allocas is the PointsToGraph.
+   * An Alloca is simple if it is only reachable from other simple Allocas,
+   * or from RegisterNodes, in the PointsToGraph.
+   */
+  static util::HashSet<const PointsToGraph::MemoryNode *>
+  CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
+
+  util::HashSet<const PointsToGraph::MemoryNode *>
+  GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+
+  /**
+   * Uses the call graph to determine if the given function can ever be involved
+   * in a recursive chain of function calls.
    *
-   * Assumes that all functions with lower sccIndex have already been annotated.
-   * If regions or calls may contain recursion, a flag is set, to signal that the summaries are not
-   * complete. By the time all functions in an SCC have been annotated, the field
-   * SCCMemoryNodesAffected_ will contain the complete set of memory locations affected by the SCC.
+   * @param lambda the function in question.
+   * @return true if it is possible for lambda to be involved in recursion, false otherwise
    */
-  void
-  AnnotateFunction(const rvsdg::LambdaNode & lambda, size_t sccIndex);
+  bool
+  IsRecursionPossible(const rvsdg::LambdaNode & lambda) const;
 
   /**
-   * Recursive call used to create summaries for the given region and all sub-regions.
-   * @param region the region to create summaries for.
-   * @param sccIndex the SCC index of the function being analyzed
+   * Creates a set for each region that contains alloca definitions,
+   * where the alloca fits the requirements for being non-reentrant:
+   *  - the alloca is simple
+   *  - it is not possible to reach the alloca from any of the region's arguments,
+   *    by following edges in the \ref PointsToGraph.
+   * @return the total number of non-reentrant alloca never involved in any recursion
    */
-  RegionSummary &
-  AnnotateRegion(rvsdg::Region & region, size_t sccIndex);
+  size_t
+  CreateNonReentrantAllocaSets();
 
   /**
-   * Recursively annotates all subregions in the given structural node.
-   * Propagates memory locations to the parent region.
-   * @param structuralNode the structural node
-   * @param regionSummary the summary of the region containing the structural node
+   * Creates one ModRefSet which is responsible for representing all reads and writes
+   * that may happen in external functions.
    */
   void
+  CreateExternalModRefSet();
+
+  /**
+   * Adds the fact that everything in the ModRefSet \p from should also be included
+   * in the ModRefSet \p to.
+   */
+  void
+  AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to);
+
+  /**
+   * Defines a set of memory nodes to be blocked from the ModRefSet with the given \p index.
+   * A ModRefSet can have at most one such blocklist.
+   * The reference to the blocklist must stay valid until solving is finished.
+   *
+   * Note: The blocklist only prevents propagation during solving,
+   * so the user must avoid adding blocked memory nodes manually.
+   *
+   * @see VerifyBlocklists to check that no blocked memory nodes have been added
+   */
+  void
+  AddModRefSetBlocklist(
+      ModRefSetIndex index,
+      const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist);
+
+  /**
+   * Creates ModRefSets for regions and nodes within the function.
+   * The flow of MemoryNodes between sets is modeled by adding edges to the constraint graph.
+   */
+  void
+  AnnotateFunction(const rvsdg::LambdaNode & lambda);
+
+  /**
+   * Recursive call used to create ModRefSets for the given region, its nodes and its sub-regions.
+   * @param region the region to create ModRefSets for.
+   * @param lambda the function this region belongs to
+   */
+  ModRefSetIndex
+  AnnotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
   AnnotateStructuralNode(
       const rvsdg::StructuralNode & structuralNode,
-      RegionSummary & regionSummary);
+      const rvsdg::LambdaNode & lambda);
 
-  void
-  AnnotateSimpleNode(const rvsdg::SimpleNode & simpleNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateLoad(const rvsdg::SimpleNode & loadNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateStore(const rvsdg::SimpleNode & storeNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateFree(const rvsdg::SimpleNode & freeNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode, RegionSummary & regionSummary);
-
-  void
-  AnnotateCall(const rvsdg::SimpleNode & callNode, RegionSummary & regionSummary);
+  std::optional<ModRefSetIndex>
+  AnnotateSimpleNode(const rvsdg::SimpleNode & simpleNode, const rvsdg::LambdaNode & lambda);
 
   /**
-   * Revisits all Region- and Call-Summaries and adds utilized memory locations that were not
-   * added during annotation, due to possibly being a part of a recursive call chain.
-   * For summaries that are known to not contain recursion, nothing is done.
+   * Helper function for filling ModRefSets based on the pointer being operated on
+   * @param modRefSetIndex the index of the ModRefSet representing some memory operation
+   * @param origin the output producing the pointer value being operated on
+   * @param minTargetSize an optional size requirement for targeted memory locations
+   * @param lambda the function the operation is happening in
    */
   void
-  PropagateRecursiveMemoryLocations();
+  AddPointerOriginTargets(
+      ModRefSetIndex modRefSetIndex,
+      const rvsdg::Output & origin,
+      std::optional<size_t> minTargetSize,
+      const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
+  AnnotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
+  AnnotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
+  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
+
+  ModRefSetIndex
+  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
+
+  ModRefSetIndex
+  AnnotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
+  AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
+  AnnotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
 
   /**
-   * Collects all lambda nodes defined in the given module, in an unspecified order.
-   * @param rvsdgModule the module
-   * @return a list of all lambda nodes in the module
+   * Uses the simple and complex constraints to propagate MemoryNodes between ModRefSets
+   * until all constraints are satisfied.
    */
-  static std::vector<const rvsdg::LambdaNode *>
-  CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule);
+  void
+  SolveModRefSetConstraintGraph();
+
+  /**
+   * For all ModRefSets where a blocklist is defined,
+   * checks that none of the MemoryNodes from the blocklist have been added to the ModRefSet.
+   * @return true if all blocklists are satisfied.
+   */
+  bool
+  VerifyBlocklists() const;
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
@@ -197,36 +273,7 @@ private:
    */
   std::unique_ptr<RegionAwareModRefSummary> ModRefSummary_;
 
-  /**
-   * Struct holding temporary data used during the creation of a single mod/ref summary
-   */
-  struct Context
-  {
-    /**
-     * The set of functions belonging to each SCC in the call graph.
-     * The SCCs are ordered in reverse topological order, so
-     * if function a() calls b(), and they are not in the same SCC,
-     * the SCC containing a() comes after the SCC containing b().
-     */
-    std::vector<util::HashSet<const rvsdg::LambdaNode *>> SccFunctions;
-
-    /**
-     * Which SCC contains the node representing external functions
-     */
-    size_t ExternalNodeSccIndex = 0;
-
-    /**
-     * A mapping from functions to the index of the SCC they belong to in the call graph
-     */
-    std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex;
-
-    /**
-     * The set of memory nodes that may be affected within a given SCC. Indexed by sccIndex.
-     */
-    std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> SccSummaries;
-  };
-
-  Context Context_;
+  std::unique_ptr<Context> Context_;
 };
 
 }
