@@ -166,6 +166,7 @@ public:
  * \code{.c}
  *   void f()
  *   {
+ *     // Represented using allocas
  *     uint32_t a, b;
  *     uint32_t * x, * y;
  *     uint32_t ** p;
@@ -173,7 +174,11 @@ public:
  *     x = &a;
  *     y = &b;
  *     p = &x;
- *     y = *p;
+ *
+ *     // Represented as virtual registers
+ *     uint32_t * load_x = *p;
+ *     uint32_t load_a = *load_x;
+ *     y = load_a;
  *   }
  * \endcode
  *
@@ -1830,7 +1835,7 @@ public:
  *  int
  *  g()
  *  {
- *    int localArray[5] = {0, 1, 2, 3 , 4};
+ *    int localArray[5] = {0, 1, 2, 3, 4};
  *    memcpy(globalArray, localArray, sizeof(int)*5);
  *    return f();
  *  }

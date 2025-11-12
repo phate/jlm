@@ -107,7 +107,7 @@ TestJlmOptStatistics()
 
   // Arrange
   HashSet<Statistics::Id> expectedStatistics(
-      { Statistics::Id::Aggregation, Statistics::Id::SteensgaardAnalysis });
+      { Statistics::Id::Aggregation, Statistics::Id::AndersenAnalysis });
 
   jlm::tooling::JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back(
