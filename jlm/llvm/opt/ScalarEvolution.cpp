@@ -323,14 +323,11 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       }
 
       // Find the start value for the recurrence
-      if (auto simpleNode =
-              rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin());
-          simpleNode && rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+      if (auto const constantInteger = tryGetConstantSignedInteger(*loopVar.input->origin()))
       {
-        // If the input value is a constant, get it's SCEV representation, and set it as the start
-        // value (first operand in rec)
-        chainRecurrence->AddOperandToFront(
-            GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone());
+        // If the input value is a constant, create a SCEV representation and set it as start value
+        // (first operand in rec)
+        chainRecurrence->AddOperandToFront(std::make_unique<SCEVConstant>(*constantInteger));
       }
       else
       {
