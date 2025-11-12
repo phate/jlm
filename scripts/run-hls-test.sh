@@ -105,6 +105,8 @@ then
 	cp --parents `find -name \*.cycles` ${GOLDEN_DIR}
 fi
 
+FAILED_TEST=false
+
 for GOLDEN_FILE in `find ${GOLDEN_DIR} -name "*.cycles" -type f`
 do
 	BENCHMARK_TMP=${GOLDEN_FILE#${GOLDEN_DIR}/}
@@ -117,6 +119,12 @@ do
 		"The execution time of ${BENCHMARK} has changed" \
 		"Golden cycle time: ${GOLDEN}" \
 		"Simulated cycles: ${CYCLES}"
-		exit 1
+		FAILED_TEST=true
 	fi
 done
+
+if [ "$FAILED_TEST" = true ]
+then
+	echo "The testsuite failed."
+	exit 1
+fi
