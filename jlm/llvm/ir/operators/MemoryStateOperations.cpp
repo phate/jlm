@@ -683,4 +683,26 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   return newOperands;
 }
 
+bool
+hasMemoryState(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (is<MemoryStateType>(input.Type()))
+    {
+      return true;
+    }
+  }
+
+  for (auto & output : node.Outputs())
+  {
+    if (is<MemoryStateType>(output.Type()))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 }
