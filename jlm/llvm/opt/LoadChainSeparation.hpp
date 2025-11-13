@@ -76,6 +76,9 @@ private:
   static util::HashSet<rvsdg::Output *>
   findLoadChainBottoms(rvsdg::Region & region);
 
+  static void
+  findLoadChainEnds(rvsdg::Region & region, util::HashSet<rvsdg::Output *> & loadChainEnds);
+
   /**
    * @return True, if the origin of \p input is a \ref LoadOperation node, otherwise false.
    */
