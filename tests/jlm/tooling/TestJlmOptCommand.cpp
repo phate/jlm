@@ -23,7 +23,7 @@ TestStatistics()
   FilePath expectedStatisticsDir("/tmp/myStatisticsDir/");
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      { jlm::util::Statistics::Id::SteensgaardAnalysis },
+      { jlm::util::Statistics::Id::AndersenAnalysis },
       expectedStatisticsDir,
       "inputFile");
 
@@ -50,7 +50,7 @@ TestStatistics()
       "--output-format=llvm ",
       "--DeadNodeElimination --LoopUnrolling ",
       "-s " + expectedStatisticsDir.to_str() + " ",
-      "--print-steensgaard-analysis ",
+      "--print-andersen-analysis ",
       "-o outputFile.ll ",
       "inputFile.ll");
 
