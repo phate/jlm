@@ -12,7 +12,6 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -53,9 +52,7 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
 }
 
-// Explicitly initialize all combinations
-template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareModRefSummarizer>;
+// Explicitly instantiate combinations
 template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 

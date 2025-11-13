@@ -68,13 +68,3 @@ jobs:
         uses: ./.github/actions/BuildJlm
       - name: "Run the llvm-test-suite-andersen-region-aware"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-region-aware
-
-  llvm-test-suite-steensgaard-agnostic:
-    if: contains(github.event.pull_request.title, '[SteensgaardAgnostic]')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Build jlm"
-        uses: ./.github/actions/BuildJlm
-      - name: "Run the llvm-test-suite-steensgard-agnostic"
-        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-steensgaard-agnostic

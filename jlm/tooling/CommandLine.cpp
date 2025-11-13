@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
@@ -99,10 +98,6 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
-        { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
-          OptimizationId::AASteensgaardAgnostic },
-        { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
-          OptimizationId::AASteensgaardRegionAware },
         { OptimizationCommandLineArgument::CommonNodeElimination_,
           OptimizationId::CommonNodeElimination },
         { OptimizationCommandLineArgument::DeadNodeElimination_,
@@ -139,10 +134,6 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
-        { OptimizationId::AASteensgaardAgnostic,
-          OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
-        { OptimizationId::AASteensgaardRegionAware,
-          OptimizationCommandLineArgument::AaSteensgaardRegionAware_ },
         { OptimizationId::CommonNodeElimination,
           OptimizationCommandLineArgument::CommonNodeElimination_ },
         { OptimizationId::DeadNodeElimination,
@@ -246,7 +237,6 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
     { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
-    { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -555,9 +545,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::ScalarEvolution,
               "Collect scalar evolution analysis pass statistics."),
           CreateStatisticsOption(
-              util::Statistics::Id::SteensgaardAnalysis,
-              "Collect Steensgaard alias analysis pass statistics."),
-          CreateStatisticsOption(
               util::Statistics::Id::LoopUnswitching,
               "Collect loop unswitching pass statistics.")),
       cl::desc("Collect jlm-opt pass statistics"));
@@ -792,9 +779,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::ScalarEvolution,
               "Write scalar evolution statistics to file."),
           CreateStatisticsOption(
-              util::Statistics::Id::SteensgaardAnalysis,
-              "Write Steensgaard analysis statistics to file."),
-          CreateStatisticsOption(
               util::Statistics::Id::LoopUnswitching,
               "Collect loop unswitching pass statistics.")),
       cl::desc("Write statistics"));
@@ -840,9 +824,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
-  auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
-  auto aASteensgaardRegionAware =
-      JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
@@ -870,14 +851,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
-          ::clEnumValN(
-              aASteensgaardAgnostic,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
-              "Steensgaard alias analysis with agnostic memory state encoding"),
-          ::clEnumValN(
-              aASteensgaardRegionAware,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardRegionAware),
-              "Steensgaard alias analysis with region-aware memory state encoding"),
           ::clEnumValN(
               commonNodeElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeElimination),

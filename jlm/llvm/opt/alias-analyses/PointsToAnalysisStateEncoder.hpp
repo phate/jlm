@@ -26,7 +26,6 @@ namespace jlm::llvm::aa
  * @tparam TPointsToAnalysis the subclass of \ref PointsToAnalysis to use
  * @tparam TModRefSummarizer the subclass of \ref ModRefSummarizer to use
  *
- * @see Steensgaard
  * @see Andersen
  * @see AgnosticModRefSummarizer
  * @see RegionAwareModRefSummarizer
