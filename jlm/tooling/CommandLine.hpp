@@ -210,8 +210,6 @@ private:
   {
     inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
-    inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
     inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
     inline static const char * FunctionInlining_ = "FunctionInlining";
