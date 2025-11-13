@@ -157,21 +157,21 @@ public:
   }
 
   static OptimizationId
-  FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
+  FromCommandLineArgumentToOptimizationId(std::string_view commandLineArgument);
 
   static util::Statistics::Id
-  FromCommandLineArgumentToStatisticsId(const std::string & commandLineArgument);
+  FromCommandLineArgumentToStatisticsId(std::string_view commandLineArgument);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(OptimizationId optimizationId);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(util::Statistics::Id statisticsId);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(InputFormat inputFormat);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(OutputFormat outputFormat);
 
   static std::unique_ptr<JlmOptCommandLineOptions>
@@ -276,10 +276,10 @@ public:
         OutputFile_("a.out")
   {}
 
-  static std::string
+  static std::string_view
   ToString(const OptimizationLevel & optimizationLevel);
 
-  static std::string
+  static std::string_view
   ToString(const LanguageStandard & languageStandard);
 
   void
