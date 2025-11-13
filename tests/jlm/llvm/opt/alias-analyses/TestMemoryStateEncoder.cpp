@@ -9,10 +9,10 @@
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 template<class Test, class Analysis, class TModRefSummarizer>
@@ -66,7 +66,7 @@ is(const jlm::rvsdg::Node & node, size_t numInputs, size_t numOutputs)
 }
 
 static void
-ValidateStoreTest1SteensgaardAgnostic(const jlm::tests::StoreTest1 & test)
+ValidateStoreTest1AndersenAgnostic(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -112,7 +112,7 @@ ValidateStoreTest1SteensgaardAgnostic(const jlm::tests::StoreTest1 & test)
 }
 
 static void
-ValidateStoreTest1SteensgaardRegionAware(const jlm::tests::StoreTest1 & test)
+ValidateStoreTest1AndersenRegionAware(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -124,7 +124,7 @@ ValidateStoreTest1SteensgaardRegionAware(const jlm::tests::StoreTest1 & test)
 }
 
 static void
-ValidateStoreTest2SteensgaardAgnostic(const jlm::tests::StoreTest2 & test)
+ValidateStoreTest2AndersenAgnostic(const jlm::tests::StoreTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -160,29 +160,33 @@ ValidateStoreTest2SteensgaardAgnostic(const jlm::tests::StoreTest2 & test)
 
   auto storeA =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 3, 1));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
+  assert(storeA->input(1)->origin() == test.alloca_a->output(0));
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(2)->origin()) == storeA);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(3)->origin()) == storeA);
+  assert(storeB->input(1)->origin() == test.alloca_b->output(0));
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
   auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
   assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
   auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
   assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   assert(storeY->input(0)->origin() == test.alloca_p->output(0));
   assert(storeY->input(1)->origin() == test.alloca_y->output(0));
+  assert(storeY->input(2)->origin() == storeX->output(0));
 }
 
 static void
-ValidateStoreTest2SteensgaardRegionAware(const jlm::tests::StoreTest2 & test)
+ValidateStoreTest2AndersenRegionAware(const jlm::tests::StoreTest2 & test)
 {
   using namespace jlm::llvm;
   assert(test.lambda->subregion()->numNodes() == 1);
@@ -193,7 +197,7 @@ ValidateStoreTest2SteensgaardRegionAware(const jlm::tests::StoreTest2 & test)
 }
 
 static void
-ValidateLoadTest1SteensgaardAgnostic(const jlm::tests::LoadTest1 & test)
+ValidateLoadTest1AndersenAgnostic(const jlm::tests::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -222,7 +226,7 @@ ValidateLoadTest1SteensgaardAgnostic(const jlm::tests::LoadTest1 & test)
 }
 
 static void
-ValidateLoadTest1SteensgaardRegionAware(const jlm::tests::LoadTest1 & test)
+ValidateLoadTest1AndersenRegionAware(const jlm::tests::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -251,7 +255,7 @@ ValidateLoadTest1SteensgaardRegionAware(const jlm::tests::LoadTest1 & test)
 }
 
 static void
-ValidateLoadTest2SteensgaardAgnostic(const jlm::tests::LoadTest2 & test)
+ValidateLoadTest2AndersenAgnostic(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -287,39 +291,39 @@ ValidateLoadTest2SteensgaardAgnostic(const jlm::tests::LoadTest2 & test)
 
   auto storeA =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 3, 1));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(2)->origin()) == storeA);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeB->input(3)->origin()) == storeA);
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
   auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
   assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
+  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
-  auto loadP = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadP, 2, 2));
-  assert(loadP->input(0)->origin() == test.alloca_p->output(0));
+  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
+  assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
+  assert(load1->input(0)->origin() == test.alloca_p->output(0));
+  assert(load1->input(1)->origin() == storeX->output(0));
 
-  auto loadXY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(loadP->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadXY, 3, 3));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadXY->input(1)->origin()) == storeB);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadXY->input(2)->origin()) == storeB);
+  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load1->output(0)->SingleUser());
+  assert(is<LoadNonVolatileOperation>(*load2, 2, 2));
+  assert(load2->input(1)->origin() == storeA->output(0));
 
-  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(loadXY->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeY, 4, 2));
+  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load2->output(0)->SingleUser());
+  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   assert(storeY->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeY->input(2)->origin()) == loadXY);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeY->input(3)->origin()) == loadXY);
+  assert(storeY->input(2)->origin() == storeB->output(0));
 }
 
 static void
-ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
+ValidateLoadTest2AndersenRegionAware(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
   assert(test.lambda->subregion()->numNodes() == 1);
@@ -330,7 +334,7 @@ ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
 }
 
 static void
-ValidateLoadFromUndefSteensgaardAgnostic(const jlm::tests::LoadFromUndefTest & test)
+ValidateLoadFromUndefAndersenAgnostic(const jlm::tests::LoadFromUndefTest & test)
 {
   using namespace jlm::llvm;
 
@@ -350,7 +354,7 @@ ValidateLoadFromUndefSteensgaardAgnostic(const jlm::tests::LoadFromUndefTest & t
 }
 
 static void
-ValidateLoadFromUndefSteensgaardRegionAware(const jlm::tests::LoadFromUndefTest & test)
+ValidateLoadFromUndefAndersenRegionAware(const jlm::tests::LoadFromUndefTest & test)
 {
   using namespace jlm::llvm;
 
@@ -366,7 +370,7 @@ ValidateLoadFromUndefSteensgaardRegionAware(const jlm::tests::LoadFromUndefTest 
 }
 
 static void
-ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
+ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -439,7 +443,7 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
 }
 
 static void
-ValidateCallTest1SteensgaardRegionAware(const jlm::tests::CallTest1 & test)
+ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -507,7 +511,7 @@ ValidateCallTest1SteensgaardRegionAware(const jlm::tests::CallTest1 & test)
 }
 
 static void
-ValidateCallTest2SteensgaardAgnostic(const jlm::tests::CallTest2 & test)
+ValidateCallTest2AndersenAgnostic(const jlm::tests::CallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -544,7 +548,7 @@ ValidateCallTest2SteensgaardAgnostic(const jlm::tests::CallTest2 & test)
 }
 
 static void
-ValidateCallTest2SteensgaardRegionAware(const jlm::tests::CallTest2 & test)
+ValidateCallTest2AndersenRegionAware(const jlm::tests::CallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -581,7 +585,7 @@ ValidateCallTest2SteensgaardRegionAware(const jlm::tests::CallTest2 & test)
 }
 
 static void
-ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1 & test)
+ValidateIndirectCallTest1AndersenAgnostic(const jlm::tests::IndirectCallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -643,7 +647,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
 }
 
 static void
-ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTest1 & test)
+ValidateIndirectCallTest1AndersenRegionAware(const jlm::tests::IndirectCallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -690,7 +694,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 }
 
 static void
-ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2 & test)
+ValidateIndirectCallTest2AndersenAgnostic(const jlm::tests::IndirectCallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -743,7 +747,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
 }
 
 static void
-ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTest2 & test)
+ValidateIndirectCallTest2AndersenRegionAware(const jlm::tests::IndirectCallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -839,7 +843,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 }
 
 static void
-ValidateGammaTestSteensgaardAgnostic(const jlm::tests::GammaTest & test)
+ValidateGammaTestAndersenAgnostic(const jlm::tests::GammaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -859,7 +863,7 @@ ValidateGammaTestSteensgaardAgnostic(const jlm::tests::GammaTest & test)
 }
 
 static void
-ValidateGammaTestSteensgaardRegionAware(const jlm::tests::GammaTest & test)
+ValidateGammaTestAndersenRegionAware(const jlm::tests::GammaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -880,7 +884,7 @@ ValidateGammaTestSteensgaardRegionAware(const jlm::tests::GammaTest & test)
 }
 
 static void
-ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
+ValidateThetaTestAndersenAgnostic(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -905,7 +909,7 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
 }
 
 static void
-ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
+ValidateThetaTestAndersenRegionAware(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -930,7 +934,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
 }
 
 static void
-ValidateDeltaTest1SteensgaardAgnostic(const jlm::tests::DeltaTest1 & test)
+ValidateDeltaTest1AndersenAgnostic(const jlm::tests::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -956,7 +960,7 @@ ValidateDeltaTest1SteensgaardAgnostic(const jlm::tests::DeltaTest1 & test)
 }
 
 static void
-ValidateDeltaTest1SteensgaardRegionAware(const jlm::tests::DeltaTest1 & test)
+ValidateDeltaTest1AndersenRegionAware(const jlm::tests::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -982,7 +986,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const jlm::tests::DeltaTest1 & test)
 }
 
 static void
-ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
+ValidateDeltaTest2AndersenAgnostic(const jlm::tests::DeltaTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -1015,7 +1019,7 @@ ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
 }
 
 static void
-ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
+ValidateDeltaTest2AndersenRegionAware(const jlm::tests::DeltaTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -1077,7 +1081,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
 }
 
 static void
-ValidateDeltaTest3SteensgaardAgnostic(const jlm::tests::DeltaTest3 & test)
+ValidateDeltaTest3AndersenAgnostic(const jlm::tests::DeltaTest3 & test)
 {
   using namespace jlm::llvm;
 
@@ -1123,7 +1127,7 @@ ValidateDeltaTest3SteensgaardAgnostic(const jlm::tests::DeltaTest3 & test)
 }
 
 static void
-ValidateDeltaTest3SteensgaardRegionAware(const jlm::tests::DeltaTest3 & test)
+ValidateDeltaTest3AndersenRegionAware(const jlm::tests::DeltaTest3 & test)
 {
   using namespace jlm::llvm;
 
@@ -1169,7 +1173,7 @@ ValidateDeltaTest3SteensgaardRegionAware(const jlm::tests::DeltaTest3 & test)
 }
 
 static void
-ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
+ValidateImportTestAndersenAgnostic(const jlm::tests::ImportTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1202,7 +1206,7 @@ ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
 }
 
 static void
-ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
+ValidateImportTestAndersenRegionAware(const jlm::tests::ImportTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1264,7 +1268,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
 }
 
 static void
-ValidatePhiTestSteensgaardAgnostic(const jlm::tests::PhiTest1 & test)
+ValidatePhiTestAndersenAgnostic(const jlm::tests::PhiTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -1297,7 +1301,7 @@ ValidatePhiTestSteensgaardAgnostic(const jlm::tests::PhiTest1 & test)
 }
 
 static void
-ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
+ValidatePhiTestAndersenRegionAware(const jlm::tests::PhiTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -1316,7 +1320,7 @@ ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
 }
 
 static void
-ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
+ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1330,10 +1334,10 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
 
     auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<LoadNonVolatileOperation>(*load, 3, 3));
+    assert(is<LoadNonVolatileOperation>(*load, 2, 2));
 
     auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
-    assert(is<StoreNonVolatileOperation>(*store, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
@@ -1376,7 +1380,7 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
 }
 
 static void
-ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
+ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1386,18 +1390,18 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
   {
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<LoadNonVolatileOperation>(*load, 3, 3));
+    assert(is<LoadNonVolatileOperation>(*load, 2, 2));
 
     auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
-    assert(is<StoreNonVolatileOperation>(*store, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
   /*
@@ -1410,11 +1414,11 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callNode->input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
+    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callNode->output(2)->SingleUser());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 2));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto memcpyNode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
@@ -1434,7 +1438,7 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
 }
 
 static void
-ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
+ValidateFreeNullTestAndersenAgnostic(const jlm::tests::FreeNullTest & test)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -1457,93 +1461,93 @@ TestMemoryStateEncoder()
 {
   using namespace jlm::llvm::aa;
 
-  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateStoreTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::StoreTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateStoreTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::StoreTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidateStoreTest1AndersenAgnostic);
+  ValidateTest<jlm::tests::StoreTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidateStoreTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateStoreTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::StoreTest2, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateStoreTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::StoreTest2, Andersen, AgnosticModRefSummarizer>(
+      ValidateStoreTest2AndersenAgnostic);
+  ValidateTest<jlm::tests::StoreTest2, Andersen, RegionAwareModRefSummarizer>(
+      ValidateStoreTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateLoadTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateLoadTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidateLoadTest1AndersenAgnostic);
+  ValidateTest<jlm::tests::LoadTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidateLoadTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateLoadTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadTest2, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateLoadTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadTest2, Andersen, AgnosticModRefSummarizer>(
+      ValidateLoadTest2AndersenAgnostic);
+  ValidateTest<jlm::tests::LoadTest2, Andersen, RegionAwareModRefSummarizer>(
+      ValidateLoadTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateLoadFromUndefSteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateLoadFromUndefSteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateLoadFromUndefAndersenAgnostic);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, RegionAwareModRefSummarizer>(
+      ValidateLoadFromUndefAndersenRegionAware);
 
-  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateCallTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::CallTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateCallTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::CallTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidateCallTest1AndersenAgnostic);
+  ValidateTest<jlm::tests::CallTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidateCallTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::CallTest2, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateCallTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::CallTest2, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateCallTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::CallTest2, Andersen, AgnosticModRefSummarizer>(
+      ValidateCallTest2AndersenAgnostic);
+  ValidateTest<jlm::tests::CallTest2, Andersen, RegionAwareModRefSummarizer>(
+      ValidateCallTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidateIndirectCallTest1AndersenAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidateIndirectCallTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, AgnosticModRefSummarizer>(
+      ValidateIndirectCallTest2AndersenAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, RegionAwareModRefSummarizer>(
+      ValidateIndirectCallTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateGammaTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::GammaTest, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateGammaTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::GammaTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateGammaTestAndersenAgnostic);
+  ValidateTest<jlm::tests::GammaTest, Andersen, RegionAwareModRefSummarizer>(
+      ValidateGammaTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateThetaTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::ThetaTest, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateThetaTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::ThetaTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateThetaTestAndersenAgnostic);
+  ValidateTest<jlm::tests::ThetaTest, Andersen, RegionAwareModRefSummarizer>(
+      ValidateThetaTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateDeltaTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidateDeltaTest1AndersenAgnostic);
+  ValidateTest<jlm::tests::DeltaTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidateDeltaTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateDeltaTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest2, Andersen, AgnosticModRefSummarizer>(
+      ValidateDeltaTest2AndersenAgnostic);
+  ValidateTest<jlm::tests::DeltaTest2, Andersen, RegionAwareModRefSummarizer>(
+      ValidateDeltaTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateDeltaTest3SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest3SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest3, Andersen, AgnosticModRefSummarizer>(
+      ValidateDeltaTest3AndersenAgnostic);
+  ValidateTest<jlm::tests::DeltaTest3, Andersen, RegionAwareModRefSummarizer>(
+      ValidateDeltaTest3AndersenRegionAware);
 
-  ValidateTest<jlm::tests::ImportTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateImportTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::ImportTest, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateImportTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::ImportTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateImportTestAndersenAgnostic);
+  ValidateTest<jlm::tests::ImportTest, Andersen, RegionAwareModRefSummarizer>(
+      ValidateImportTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticModRefSummarizer>(
-      ValidatePhiTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::PhiTest1, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidatePhiTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::PhiTest1, Andersen, AgnosticModRefSummarizer>(
+      ValidatePhiTestAndersenAgnostic);
+  ValidateTest<jlm::tests::PhiTest1, Andersen, RegionAwareModRefSummarizer>(
+      ValidatePhiTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateMemcpySteensgaardAgnostic);
-  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, RegionAwareModRefSummarizer>(
-      ValidateMemcpySteensgaardRegionAware);
+  ValidateTest<jlm::tests::MemcpyTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateMemcpyAndersenAgnostic);
+  ValidateTest<jlm::tests::MemcpyTest, Andersen, RegionAwareModRefSummarizer>(
+      ValidateMemcpyAndersenRegionAware);
 
-  ValidateTest<jlm::tests::FreeNullTest, Steensgaard, AgnosticModRefSummarizer>(
-      ValidateFreeNullTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::FreeNullTest, Andersen, AgnosticModRefSummarizer>(
+      ValidateFreeNullTestAndersenAgnostic);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder", TestMemoryStateEncoder)
