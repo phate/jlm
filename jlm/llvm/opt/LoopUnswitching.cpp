@@ -22,7 +22,7 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::FilePath & sourceFile)
-      : util::Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
+      : util::Statistics(Id::LoopUnswitching, sourceFile)
   {}
 
   void
