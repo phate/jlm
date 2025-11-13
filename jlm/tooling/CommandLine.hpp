@@ -67,8 +67,6 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
-    AASteensgaardAgnostic,
-    AASteensgaardRegionAware,
     CommonNodeElimination,
     DeadNodeElimination,
     FunctionInlining,

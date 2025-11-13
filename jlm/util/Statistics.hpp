@@ -58,7 +58,6 @@ public:
     RvsdgDestruction,
     RvsdgOptimization,
     RvsdgTreePrinter,
-    SteensgaardAnalysis,
     ScalarEvolution,
 
     LastEnumValue // must always be the last enum value, used for iteration
