@@ -19,10 +19,10 @@ namespace jlm::tooling
 
 CommandLineOptions::~CommandLineOptions() = default;
 
-std::string_view
+std::string
 JlcCommandLineOptions::ToString(const OptimizationLevel & optimizationLevel)
 {
-  static std::unordered_map<OptimizationLevel, std::string_view> map({
+  static std::unordered_map<OptimizationLevel, const char *> map({
       { OptimizationLevel::O0, "O0" },
       { OptimizationLevel::O1, "O1" },
       { OptimizationLevel::O2, "O2" },
@@ -33,10 +33,10 @@ JlcCommandLineOptions::ToString(const OptimizationLevel & optimizationLevel)
   return map[optimizationLevel];
 }
 
-std::string_view
+std::string
 JlcCommandLineOptions::ToString(const LanguageStandard & languageStandard)
 {
-  static std::unordered_map<LanguageStandard, std::string_view> map(
+  static std::unordered_map<LanguageStandard, const char *> map(
       { { LanguageStandard::None, "" },
         { LanguageStandard::Gnu89, "gnu89" },
         { LanguageStandard::Gnu99, "gnu99" },
@@ -91,9 +91,9 @@ JlmOptCommandLineOptions::Reset() noexcept
 
 JlmOptCommandLineOptions::OptimizationId
 JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
-    std::string_view commandLineArgument)
+    const std::string & commandLineArgument)
 {
-  static std::unordered_map<std::string_view, OptimizationId> map(
+  static std::unordered_map<std::string, OptimizationId> map(
       { { OptimizationCommandLineArgument::AaAndersenAgnostic_,
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
@@ -123,13 +123,13 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
   if (map.find(commandLineArgument) != map.end())
     return map[commandLineArgument];
 
-  throw util::Error(util::strfmt("Unknown command line argument: ", commandLineArgument));
+  throw util::Error("Unknown command line argument: " + commandLineArgument);
 }
 
-std::string_view
+const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
-  static std::unordered_map<OptimizationId, std::string_view> map(
+  static std::unordered_map<OptimizationId, const char *> map(
       { { OptimizationId::AAAndersenAgnostic,
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
@@ -164,7 +164,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 
 util::Statistics::Id
 JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
-    std::string_view commandLineArgument)
+    const std::string & commandLineArgument)
 {
   try
   {
@@ -172,16 +172,16 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
   }
   catch (...)
   {
-    throw util::Error(util::strfmt("Unknown command line argument: ", commandLineArgument));
+    throw util::Error("Unknown command line argument: " + commandLineArgument);
   }
 }
 
-std::string_view
+const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsId)
 {
   try
   {
-    return GetStatisticsIdCommandLineArguments().LookupKey(statisticsId);
+    return GetStatisticsIdCommandLineArguments().LookupKey(statisticsId).data();
   }
   catch (...)
   {
@@ -189,10 +189,10 @@ JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsI
   }
 }
 
-std::string_view
+const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(InputFormat inputFormat)
 {
-  static std::unordered_map<InputFormat, std::string_view> map(
+  static std::unordered_map<InputFormat, const char *> map(
       { { InputFormat::Llvm, "llvm" }, { InputFormat::Mlir, "mlir" } });
 
   if (map.find(inputFormat) != map.end())
@@ -201,11 +201,11 @@ JlmOptCommandLineOptions::ToCommandLineArgument(InputFormat inputFormat)
   throw util::Error("Unknown input format");
 }
 
-std::string_view
+const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
   auto & mapping = GetOutputFormatCommandLineArguments();
-  return mapping.at(outputFormat);
+  return mapping.at(outputFormat).data();
 }
 
 const util::BijectiveMap<util::Statistics::Id, std::string_view> &
@@ -278,7 +278,7 @@ JhlsCommandLineOptions::Reset() noexcept
 }
 
 static ::llvm::cl::OptionEnumValue
-CreateStatisticsOption(util::Statistics::Id statisticsId, std::string_view description)
+CreateStatisticsOption(util::Statistics::Id statisticsId, const char * description)
 {
   return ::clEnumValN(
       statisticsId,
@@ -289,7 +289,7 @@ CreateStatisticsOption(util::Statistics::Id statisticsId, std::string_view descr
 static ::llvm::cl::OptionEnumValue
 CreateOutputFormatOption(
     JlmOptCommandLineOptions::OutputFormat outputFormat,
-    std::string_view description)
+    const char * description)
 {
   return ::clEnumValN(
       outputFormat,
