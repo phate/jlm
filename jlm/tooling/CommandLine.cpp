@@ -114,6 +114,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::LoadChainSeparation_,
           OptimizationId::LoadChainSeparation },
         { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling },
+        { OptimizationCommandLineArgument::LoopUnswitching_, OptimizationId::LoopUnswitching },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
@@ -153,6 +154,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::LoadChainSeparation,
           OptimizationCommandLineArgument::LoadChainSeparation_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
+        { OptimizationId::LoopUnswitching, OptimizationCommandLineArgument::LoopUnswitching_ },
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
@@ -233,6 +235,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
+    { util::Statistics::Id::LoopUnswitching, "print-ivt-stat" },
     { util::Statistics::Id::MemoryStateEncoder, "print-basicencoder-encoding" },
     { util::Statistics::Id::PullNodes, "print-pull-stat" },
     { util::Statistics::Id::PushNodes, "print-push-stat" },
@@ -244,7 +247,6 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
     { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
-    { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -556,8 +558,8 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
           CreateStatisticsOption(
-              util::Statistics::Id::ThetaGammaInversion,
-              "Collect theta-gamma inversion pass statistics.")),
+              util::Statistics::Id::LoopUnswitching,
+              "Collect loop unswitching pass statistics.")),
       cl::desc("Collect jlm-opt pass statistics"));
 
   cl::ParseCommandLineOptions(argc, argv);
@@ -793,8 +795,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
-              util::Statistics::Id::ThetaGammaInversion,
-              "Write theta-gamma inversion statistics to file.")),
+              util::Statistics::Id::LoopUnswitching,
+              "Collect loop unswitching pass statistics.")),
       cl::desc("Write statistics"));
 
 #ifdef ENABLE_MLIR
@@ -847,6 +849,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
+  auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
+  auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
+  auto loopUnswitching = JlmOptCommandLineOptions::OptimizationId::LoopUnswitching;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
@@ -854,8 +859,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
   auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
-  auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
-  auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -904,6 +907,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
               "Loop Unrolling"),
           ::clEnumValN(
+              loopUnswitching,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnswitching),
+              "Move conditionals outside loops"),
+          ::clEnumValN(
               nodePushOut,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
               "Node Push Out"),
@@ -930,7 +937,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
-              "Theta-Gamma Inversion")),
+              "[DEPRECATED] Use --LoopUnswitching instead.")),
       cl::desc("Perform optimization"));
 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(

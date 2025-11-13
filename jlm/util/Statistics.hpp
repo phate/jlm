@@ -48,6 +48,7 @@ public:
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
+    LoopUnswitching,
     MemoryStateEncoder,
     PullNodes,
     PushNodes,
@@ -58,7 +59,6 @@ public:
     RvsdgOptimization,
     RvsdgTreePrinter,
     SteensgaardAnalysis,
-    ThetaGammaInversion,
     ScalarEvolution,
 
     LastEnumValue // must always be the last enum value, used for iteration
