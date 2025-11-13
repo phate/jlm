@@ -172,6 +172,42 @@ computeThetaGammaPredicateCorrelation(rvsdg::ThetaNode & thetaNode)
   return std::nullopt;
 }
 
+static std::optional<std::unique_ptr<GammaGammaPredicateCorrelation>>
+computeMatchCorrelation(rvsdg::GammaNode & gammaNode1)
+{
+  auto [matchNode, matchOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(
+      *gammaNode1.predicate()->origin());
+  if (!matchOperation)
+  {
+    return std::nullopt;
+  }
+
+  for (auto & user : matchNode->output(0)->Users())
+  {
+    if (const auto gammaNode2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
+        gammaNode2 != &gammaNode1)
+    {
+      return GammaGammaPredicateCorrelation::CreateMatchCorrelation(
+          gammaNode1,
+          *gammaNode2,
+          { matchNode });
+    }
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::unique_ptr<GammaGammaPredicateCorrelation>>
+computeGammaGammaPredicateCorrelation(rvsdg::GammaNode & gammaNode)
+{
+  if (auto correlationOpt = computeMatchCorrelation(gammaNode))
+  {
+    return correlationOpt;
+  }
+
+  return std::nullopt;
+}
+
 std::optional<GammaSubregionRoles>
 determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation)
 {

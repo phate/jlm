@@ -56,6 +56,79 @@ enum class CorrelationType
 };
 
 /**
+ * Represents the predicate correlation between two gamma nodes.
+ */
+class GammaGammaPredicateCorrelation final
+{
+public:
+  struct MatchCorrelationData
+  {
+    rvsdg::Node * matchNode{};
+  };
+
+  using CorrelationData = std::variant<MatchCorrelationData>;
+
+private:
+  GammaGammaPredicateCorrelation(
+      const CorrelationType type,
+      rvsdg::GammaNode & gammaNode1,
+      rvsdg::GammaNode & gammaNode2,
+      CorrelationData correlationData)
+      : type_(type),
+        gammaNode1_(gammaNode1),
+        gammaNode2_(gammaNode2),
+        correlationData_(std::move(correlationData))
+  {}
+
+public:
+  [[nodiscard]] CorrelationType
+  type() const noexcept
+  {
+    return type_;
+  }
+
+  [[nodiscard]] rvsdg::GammaNode &
+  gammaNode1() const noexcept
+  {
+    return gammaNode1_;
+  }
+
+  [[nodiscard]] rvsdg::GammaNode &
+  gammaNode2() const noexcept
+  {
+    return gammaNode2_;
+  }
+
+  [[nodiscard]] const CorrelationData &
+  correlationData() const noexcept
+  {
+    return correlationData_;
+  }
+
+  static std::unique_ptr<GammaGammaPredicateCorrelation>
+  CreateMatchCorrelation(
+      rvsdg::GammaNode & gammaNode1,
+      rvsdg::GammaNode & gammaNode2,
+      MatchCorrelationData correlationData)
+  {
+    return std::unique_ptr<GammaGammaPredicateCorrelation>(new GammaGammaPredicateCorrelation(
+        CorrelationType::MatchCorrelation,
+        gammaNode1,
+        gammaNode2,
+        std::move(correlationData)));
+  }
+
+private:
+  CorrelationType type_;
+  rvsdg::GammaNode & gammaNode1_;
+  rvsdg::GammaNode & gammaNode2_;
+  CorrelationData correlationData_;
+};
+
+std::optional<std::unique_ptr<GammaGammaPredicateCorrelation>>
+computeGammaGammaPredicateCorrelation(rvsdg::GammaNode & gammaNode);
+
+/**
  * Represents the predicate correlation between a theta node and a gamma node that resides in the
  * theta node's subregion.
  */
