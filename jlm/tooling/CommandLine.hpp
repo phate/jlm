@@ -76,13 +76,14 @@ public:
     InvariantValueRedirection,
     LoadChainSeparation,
     LoopUnrolling,
+    LoopUnswitching,
     NodePullIn,
     NodePushOut,
     NodeReduction,
     PredicateCorrelation,
     RvsdgTreePrinter,
     ScalarEvolution,
-    ThetaGammaInversion,
+    ThetaGammaInversion, // Deprecated. To be removed.
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -223,6 +224,7 @@ private:
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
     inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
+    inline static const char * LoopUnswitching_ = "LoopUnswitching";
     inline static const char * NodeReduction_ = "NodeReduction";
     inline static const char * PredicateCorrelation_ = "PredicateCorrelation";
     inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
