@@ -41,30 +41,30 @@ public:
   }
 
   int
-  GetNumOfChrecsWithOrder(const int n = -1) const
+  GetNumOfChrecsWithOrder(const int n) const
   {
     int count = 0;
     for (auto & [theta, chrecs] : ChrecMap_)
     {
       for (auto & chrec : chrecs.Items())
       {
-        if (n != -1)
-        {
-          // Count chrecs with specific order
-          if (static_cast<int>(chrec->GetOperands().size()) == n + 1)
-            count++;
-        }
-        else
-        {
-          const bool isTrivialUnknown =
-              chrec->GetOperands().size() == 1 && dynamic_cast<SCEVUnknown *>(chrec->GetOperand(0));
-          if (!isTrivialUnknown)
-            // Count all non-trivial chrecs
-            count++;
-        }
+        // Count chrecs with specific order
+        if (static_cast<int>(chrec->GetOperands().size()) == n + 1)
+          count++;
       }
     }
     return count;
+  }
+
+  size_t
+  GetNumOfTotalChrecs() const
+  {
+    size_t total = 0;
+    for (const auto & [theta, chrecs] : ChrecMap_)
+    {
+      total += chrecs.Size();
+    }
+    return total;
   }
 
   void
@@ -111,7 +111,7 @@ public:
   Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumTotalRecurrences, context.GetNumOfChrecsWithOrder());
+    AddMeasurement(Label::NumTotalRecurrences, context.GetNumOfTotalChrecs());
     AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
     AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
     AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
@@ -170,8 +170,13 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         auto chrecMap = PerformSCEVAnalysis(*thetaNode);
         for (auto & [output, chrec] : chrecMap)
         {
-          // Add computed chrecs to context for statistics
-          Context_.get()->InsertChrec(*thetaNode, chrec);
+          // Add computed (non-trivially unknown) chrecs to context for statistics
+          const bool isTrivialUnknown =
+              chrec->GetOperands().size() == 1 && dynamic_cast<SCEVUnknown *>(chrec->GetOperand(0));
+          if (!isTrivialUnknown)
+          {
+            Context_.get()->InsertChrec(*thetaNode, chrec);
+          }
         }
       }
     }
