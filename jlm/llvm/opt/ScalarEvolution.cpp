@@ -16,6 +16,81 @@
 
 namespace jlm::llvm
 {
+
+class ScalarEvolution::Context final
+{
+public:
+  ~Context() = default;
+
+  Context() = default;
+
+  Context(const Context &) = delete;
+
+  Context(Context &&) = delete;
+
+  Context &
+  operator=(const Context &) = delete;
+
+  Context &
+  operator=(Context &&) = delete;
+
+  void
+  InsertChrec(const rvsdg::ThetaNode & thetaNode, std::unique_ptr<SCEVChainRecurrence> & chrec)
+  {
+    ChrecMap_[&thetaNode].insert(std::unique_ptr<SCEVChainRecurrence>(chrec.release()));
+  }
+
+  int
+  GetNumOfChrecsWithOrder(const int n = -1) const
+  {
+    int count = 0;
+    for (auto & [theta, chrecs] : ChrecMap_)
+    {
+      for (auto & chrec : chrecs.Items())
+      {
+        if (n != -1)
+        {
+          // Count chrecs with specific order
+          if (static_cast<int>(chrec->GetOperands().size()) == n + 1)
+            count++;
+        }
+        else
+        {
+          const bool isTrivialUnknown =
+              chrec->GetOperands().size() == 1 && dynamic_cast<SCEVUnknown *>(chrec->GetOperand(0));
+          if (!isTrivialUnknown)
+            // Count all non-trivial chrecs
+            count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  void
+  AddLoopVar(const rvsdg::Output & var)
+  {
+    LoopVars_.push_back(&var);
+  }
+
+  size_t
+  GetNumTotalLoopVars() const
+  {
+    return LoopVars_.size();
+  }
+
+  static std::unique_ptr<Context>
+  Create()
+  {
+    return std::make_unique<Context>();
+  }
+
+private:
+  std::unordered_map<const rvsdg::ThetaNode *, util::HashSet<std::unique_ptr<SCEVChainRecurrence>>>
+      ChrecMap_;
+  std::vector<const rvsdg::Output *> LoopVars_;
+};
+
 class ScalarEvolution::Statistics final : public util::Statistics
 {
 
@@ -33,9 +108,15 @@ public:
   }
 
   void
-  Stop() noexcept
+  Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
+    AddMeasurement(Label::NumTotalRecurrences, context.GetNumOfChrecsWithOrder());
+    AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
+    AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
+    AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
+    AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
+    AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
   }
 
   static std::unique_ptr<Statistics>
@@ -44,6 +125,9 @@ public:
     return std::make_unique<Statistics>(sourceFile);
   }
 };
+
+ScalarEvolution::ScalarEvolution()
+    : Transformation("ScalarEvolution") {};
 
 ScalarEvolution::~ScalarEvolution() noexcept = default;
 
@@ -55,16 +139,17 @@ ScalarEvolution::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
+  Context_ = Context::Create();
   InductionVariableMap_.clear();
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
-  TraverseRegion(rootRegion);
+  AnalyzeRegion(rootRegion);
 
-  statistics->Stop();
+  statistics->Stop(*Context_.get());
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
 
 void
-ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
+ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 {
   for (const auto & node : region.Nodes())
   {
@@ -72,11 +157,22 @@ ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
     {
       for (auto & subregion : structuralNode->Subregions())
       {
-        TraverseRegion(subregion);
+        AnalyzeRegion(subregion);
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
-        PerformSCEVAnalysis(*thetaNode);
+        // Add number of loop vars in theta (for statistics)
+        for (const auto loopVar : thetaNode->GetLoopVars())
+        {
+          Context_.get()->AddLoopVar(*loopVar.pre);
+        }
+
+        auto chrecMap = PerformSCEVAnalysis(*thetaNode);
+        for (auto & [output, chrec] : chrecMap)
+        {
+          // Add computed chrecs to context for statistics
+          Context_.get()->InsertChrec(*thetaNode, chrec);
+        }
       }
     }
   }
@@ -348,7 +444,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
-    // Workaround for the fact that Clone() is an overrided method that returns a unique_ptr of SCEV
+    // Workaround for the fact that Clone() is an overridden method that returns a unique_ptr of
+    // SCEV
     chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
         dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
   }

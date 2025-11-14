@@ -178,8 +178,8 @@ public:
   DebugString() const override
   {
     std::ostringstream oss;
-    std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
-    std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
+    const std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
+    const std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
     oss << "(" << leftStr << " + " << rightStr << ")";
     return oss.str();
   }
@@ -357,6 +357,7 @@ protected:
 
 class ScalarEvolution final : public jlm::rvsdg::Transformation
 {
+  class Context;
   class Statistics;
 
 public:
@@ -369,9 +370,7 @@ public:
 
   ~ScalarEvolution() noexcept override;
 
-  ScalarEvolution()
-      : Transformation("ScalarEvolution")
-  {}
+  ScalarEvolution();
 
   ScalarEvolution(const ScalarEvolution &) = delete;
 
@@ -399,7 +398,7 @@ private:
       ChainRecurrenceMap_;
 
   void
-  TraverseRegion(const rvsdg::Region & region);
+  AnalyzeRegion(const rvsdg::Region & region);
 
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
@@ -434,6 +433,8 @@ private:
       IVDependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
+
+  std::unique_ptr<Context> Context_;
 };
 
 }

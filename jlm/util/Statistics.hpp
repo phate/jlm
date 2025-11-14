@@ -233,6 +233,13 @@ protected:
     inline static const char * NumPointsToGraphPointsToRelations =
         "#PointsToGraphPointsToRelations";
 
+    inline static const char * NumLoopVariablesTotal = "#LoopVariablesTotal";
+    inline static const char * NumTotalRecurrences = "#TotalRecurrences";
+    inline static const char * NumConstantRecurrences = "#ConstantRecurrences";
+    inline static const char * NumFirstOrderRecurrences = "#FirstOrderRecurrences";
+    inline static const char * NumSecondOrderRecurrences = "#SecondOrderRecurrences";
+    inline static const char * NumThirdOrderRecurrences = "#ThirdOrderRecurrences";
+
     static inline const char * Timer = "Time";
   };
 
