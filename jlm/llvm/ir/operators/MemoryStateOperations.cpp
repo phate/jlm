@@ -39,8 +39,13 @@ MemoryStateMergeOperation::NormalizeSingleOperand(
     const MemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  if (operands.size() == 1)
-    return operands;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+  if (operands.size() == 1){
+    return {operands};
+  }
+#pragma GCC diagnostic pop
 
   return std::nullopt;
 }
@@ -157,8 +162,13 @@ MemoryStateJoinOperation::NormalizeSingleOperand(
     const MemoryStateJoinOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  if (operands.size() == 1)
-    return operands;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+  if (operands.size() == 1){
+    return {operands};
+  }
+#pragma GCC diagnostic pop
 
   return std::nullopt;
 }

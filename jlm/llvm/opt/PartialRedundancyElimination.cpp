@@ -1,0 +1,594 @@
+/*
+ * Copyright 2025 Lars Astrup Sundt <lars.astrup.sundt@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#define  TR_CMD  "\033"
+#define  TR_RESET TR_CMD "[0m"
+
+#define  TR_FG(r,g,b)  TR_CMD "[38;2;" #r ";" #g ";" #b "m"
+#define  TR_RED     TR_FG(255,64,64)
+#define  TR_GREEN   TR_FG(64, 255, 64)
+
+#define  TR_PURPLE  TR_FG(128,0,128)
+#define  TR_YELLOW  TR_FG(255, 255, 64)
+#define  TR_ORANGE  TR_FG(255, 128, 0)
+#define  TR_BLUE    TR_FG(64, 64, 255)
+#define  TR_PINK    TR_FG(255,128,128)
+#define  TR_CYAN    TR_FG(64, 255, 255)
+#define  TR_GRAY    TR_FG(52,52,52)
+
+#include "jlm/rvsdg/gamma.hpp"
+#include "jlm/rvsdg/lambda.hpp"
+#include "jlm/rvsdg/delta.hpp"
+#include "jlm/rvsdg/MatchType.hpp"
+#include "jlm/rvsdg/node.hpp"
+#include "jlm/rvsdg/structural-node.hpp"
+#include "jlm/rvsdg/theta.hpp"
+#include "jlm/util/GraphWriter.hpp"
+#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
+#include "PartialRedundancyElimination.hpp"
+#include "jlm/rvsdg/control.hpp"
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <unordered_map>
+
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/PartialRedundancyElimination.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/operation.hpp>
+#include <jlm/util/Statistics.hpp>
+#include <jlm/util/time.hpp>
+#include <ostream>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/llvm/DotWriter.hpp>
+#include <jlm/util/GraphWriter.hpp>
+#include <jlm/rvsdg/traverser.hpp>
+
+#include "jlm/rvsdg/binary.hpp"
+#include "jlm/util/common.hpp"
+#include "jlm/llvm/ir/types.hpp"
+#include "jlm/llvm/opt/gvn.hpp"
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+
+#include <typeinfo>
+
+
+
+namespace jlm::rvsdg
+{
+class Operation;
+}
+
+/** This might be moved to util if proven useful elsewhere **/
+static int indentation_level = 0;
+
+inline std::string ind()
+{
+  std::string acc = "";
+  for (int i = 0;i<indentation_level;i++)
+  {
+    acc += "    ";
+  }
+  return acc;
+}
+
+class IndentMan
+{
+
+public:
+  IndentMan()
+  {
+    indentation_level++;
+  }
+  ~IndentMan()
+  {
+    indentation_level--;
+  }
+};
+
+class DbgPrint{
+public:
+  const bool verbose;
+
+  explicit DbgPrint(const bool verbose):verbose(verbose){}
+  template<typename T>
+  DbgPrint& operator<<(const T& message) {
+    if (verbose) {std::cout << message;}
+    return *this;
+  }
+
+  DbgPrint& operator<<(std::ostream& (*o)(std::ostream&)) {
+    if (verbose) {std::cout << o;}
+    return *this;
+  }
+};
+
+static DbgPrint dbg_out(false);
+
+/** -------------------------------------------------------------------------------------------- **/
+
+namespace jlm::llvm
+{
+
+/** -------------------------------------------------------------------------------------------- **/
+
+PartialRedundancyElimination::~PartialRedundancyElimination() noexcept {}
+PartialRedundancyElimination::PartialRedundancyElimination() :
+  jlm::rvsdg::Transformation("PartialRedundancyElimination"),
+  stat_theta_count(0),
+  stat_gamma_count(0)
+{
+
+}
+
+void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node* node))
+{
+  IndentMan indenter = IndentMan();
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
+  {
+    cb(this, node);
+    MatchType(*node, [this,cb](rvsdg::StructuralNode& sn)
+    {
+      for (auto& reg : sn.Subregions())
+      {
+        this->TraverseTopDownRecursively(reg, cb);
+        dbg_out << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
+      }
+    });
+  }
+}
+
+void PartialRedundancyElimination::GVN(rvsdg::Region& root)
+{
+  gvn_mode_thetas_ = ThetaMode::GVN_FIND_FIXED_POINT;
+  GVN_VisitRegion(root);
+  gvn_mode_thetas_ = ThetaMode::GVN_FINALIZE;
+  GVN_VisitRegion(root);
+}
+
+void
+PartialRedundancyElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
+{
+  auto & rvsdg = module.Rvsdg();
+  auto& root = rvsdg.GetRootRegion();
+  this->TraverseTopDownRecursively(root, initialize_stats);
+
+  GVN(root);
+
+  if (gvn_.stat_collisions){
+    throw std::runtime_error("gvn_.stat_collisions");
+  }
+}
+
+/** -------------------------------------------------------------------------------------------- **/
+static size_t reg_counter = 0;
+void PartialRedundancyElimination::dump_region(rvsdg::Node* node)
+{
+  std::string name = node->DebugString() + std::to_string(node->GetNodeId());
+
+  MatchType(*node, [&name](rvsdg::StructuralNode& sn)
+  {
+    for (auto& reg : sn.Subregions())
+    {
+      auto my_graph_writer = jlm::util::graph::Writer();
+
+      jlm::llvm::LlvmDotWriter my_dot_writer;
+      my_dot_writer.WriteGraphs(my_graph_writer , reg, false);
+
+      std::string full_name = "reg_dump/" + name+"__"+std::to_string(reg_counter)+"__.dot"; reg_counter++;
+      dbg_out<< TR_RED<<full_name<<TR_RESET<<std::endl;
+
+      std::ofstream my_dot_oss (full_name);
+      my_graph_writer.outputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
+      dbg_out << TR_GREEN << "-------------------------------------" << TR_RESET << std::endl;
+    }
+  });
+}
+
+void PartialRedundancyElimination::initialize_stats(PartialRedundancyElimination *pe, rvsdg::Node* node)
+{
+  MatchType(*node, [&pe](rvsdg::ThetaNode& _){
+    pe->stat_theta_count++;
+  });
+
+  MatchType(*node, [&pe](rvsdg::GammaNode& _){
+    pe->stat_gamma_count++;
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitRegion(rvsdg::Region& reg)
+{
+  IndentMan indenter = IndentMan();
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg)){GVN_VisitNode(node);}
+}
+
+void PartialRedundancyElimination::GVN_VisitAllSubRegions(rvsdg::Node* node)
+{
+  MatchType(*node,[this](rvsdg::StructuralNode& sn){
+    for (auto& reg : sn.Subregions()){GVN_VisitRegion(reg);}
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitLeafNode(rvsdg::Node* node)
+{
+  dbg_out << ind() << "Leaf node: " << node->DebugString() << node->GetNodeId() << std::endl;
+  // Treats state edges just like any other value
+  if (node->ninputs() && node->noutputs()){
+    auto op_opaque = gvn_.FromStr( node->DebugString() );
+    auto hash_call_out = gvn_.FromStr("hash_call_out");
+    gvn_.Op(op_opaque);
+    for (size_t i = 0 ; i <node->ninputs() ; i++){
+      auto from = node->input(i)->origin();
+      gvn_.Arg( GVNOrWarn(from, node) );
+    }
+    auto hash_all_inputs = gvn_.End();
+    for (size_t i = 0 ; i < node->noutputs() ; i++){
+      auto arg_pos = gvn_.FromWord(i);
+      auto g_out = gvn_.Op(hash_call_out).Arg(hash_all_inputs).Arg(arg_pos).End();
+      RegisterGVN( node->output(i), g_out );
+    }
+  }
+
+  MatchType(node->GetOperation(),
+    [this, node](const jlm::llvm::IntegerConstantOperation& iconst){
+      size_t value = 0;
+      auto istr = iconst.Representation().str();
+      for (size_t i = 0 ; i < istr.length() ; i++){
+        value += istr[i] == '1' ? 1 << i : 0;
+      }
+      RegisterGVN( node->output(0), gvn_.FromWord(value) );
+    },
+    [this, node](const jlm::rvsdg::BinaryOperation& binop){
+      using namespace jlm::rvsdg::gvn;
+      JLM_ASSERT(node->ninputs() >= 2);
+      auto op    = gvn_.FromStr(binop.debug_string());
+      if (binop.debug_string() == "IAdd"){op = GVN_OP_ADDITION; }
+      if (binop.debug_string() == "IMul"){op = GVN_OP_MULTIPLY; }
+      if (binop.debug_string() == "INe"){op = GVN_OP_NEQ; }
+      if (binop.debug_string() == "IEq"){op = GVN_OP_EQ; }
+
+      auto a     = GVNOrWarn( node->input(0)->origin(), node);
+      auto b     = GVNOrWarn( node->input(1)->origin(), node);
+
+      RegisterGVN(node->output(0), gvn_.Op(op).Arg(a).Arg(b).End());
+    }
+  );
+
+  for (size_t i = 0; i < node->noutputs(); i++){
+    if (output_to_gvn_.find(node->output(i)) == output_to_gvn_.end()){
+      if (node->DebugString() == std::string("undef")){
+        RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
+      }
+      /*auto& op = node->GetOperation();
+      if ( rvsdg::is_ctlconstant_op( op ) ){
+        RegisterGVN( node->output(i), rvsdg::gvn::GVN_NO_VALUE );
+      }*/
+    }
+  }
+
+  MatchType(node->GetOperation(), [this, node](const rvsdg::MatchOperation& mop){
+    using namespace jlm::rvsdg::gvn;
+    auto pred = GVNOrPanic( node->input(0)->origin(), node );
+    if (pred == GVN_TRUE) {pred = 1;}
+    if (pred == GVN_FALSE){pred = 0;}
+    if (jlm::rvsdg::gvn::GVN_IsSmallValue(pred)){
+      RegisterGVN( node->output(0), mop.alternative(static_cast<size_t>(pred)) );
+    }
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitGammaNode(rvsdg::Node * node)
+{
+  using namespace jlm::rvsdg::gvn;
+
+  MatchType(*node, [this,node](rvsdg::GammaNode& gn){
+    dbg_out << ind() << TR_YELLOW << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+
+    //Route gvn values into alternatives
+    for (auto br : gn.GetEntryVars()){
+      auto out = br.input->origin();
+      for (auto into_branch : br.branchArgument){
+        RegisterGVN(into_branch, GVNOrWarn(out, node));
+      }
+    }
+
+    auto mv_edge = gn.GetMatchVar().input->origin();
+    auto mv_val  = GVNOrWarn( mv_edge, node );
+    for (auto mv : gn.GetMatchVar().matchContent){
+      RegisterGVN(mv, mv_val);
+    }
+
+    //  --------------------------------------------------------------------------------------------
+    GVN_VisitAllSubRegions(node);
+    //  --------------------------------------------------------------------------------------------
+
+    auto GAMMA_VARIABLE_OUT = gvn_.FromStr("GAMMA_VARIABLE_OUT");
+    auto BRANCHES_CONDITIONALLY = gvn_.FromStr("CONDITIONAL_BRANCHING");
+
+    auto entry_vars = gn.GetEntryVars();
+    auto exit_vars = gn.GetExitVars();
+    auto match_var = gn.GetMatchVar();
+    auto predicate = GVNOrPanic(gn.predicate()->origin(), node);
+
+    for (auto ev : exit_vars){
+      auto any_branch_value = GVN_NO_VALUE;
+      auto value_from_branch_always_taken = BRANCHES_CONDITIONALLY;
+      gvn_.Op(GVN_OP_ANY_ORDERED);         // Returns input if all inputs are the same.
+      for (size_t b = 0; b < ev.branchResult.size(); b++){
+        auto leaving_branch = ev.branchResult[b];
+        auto from_inner = GVNOrZero(leaving_branch->origin());
+        gvn_.Arg( from_inner );
+
+        // Special case all branches return the same value
+        any_branch_value = from_inner;
+        // Special case. Match variable was known.
+        // --------------------- check if predicate is known and maps to this branch -------------
+        auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>( *(match_var.input->origin()) );
+        if (match_node){
+          MatchType(match_node->GetOperation(), [&value_from_branch_always_taken, predicate, b, from_inner](const rvsdg::MatchOperation& mop){
+            if (jlm::rvsdg::gvn::GVN_IsSmallValue(predicate) && mop.alternative(static_cast<size_t>(predicate)) == b){
+              value_from_branch_always_taken = from_inner;
+            }
+          });
+        }
+        // ---------------------
+      }
+      auto branches_merged = gvn_.End();
+
+      RegisterGVN( ev.output,
+        gvn_.Op(GAMMA_VARIABLE_OUT).Arg(predicate).Arg(branches_merged).End()
+      );
+
+      // If all branches output the same value
+      if (any_branch_value == branches_merged){ RegisterGVN(ev.output, any_branch_value); }
+      // If the match variable has a known value
+      if (value_from_branch_always_taken != BRANCHES_CONDITIONALLY){ RegisterGVN(ev.output, value_from_branch_always_taken); }
+    }
+  });
+}
+
+static rvsdg::gvn::GVN_Val mergeIntoLV(rvsdg::gvn::GVN_Manager& gvn, rvsdg::gvn::GVN_Val olderValue, rvsdg::gvn::GVN_Val newerValue, rvsdg::gvn::GVN_Val prism)
+{
+  if (olderValue == newerValue){return olderValue;}
+  auto MERGE_ON_LOOP_ENTRY = gvn.FromStr("MERGE_ON_LOOP_ENTRY");
+  return gvn.Op(MERGE_ON_LOOP_ENTRY).Arg(prism).Arg(olderValue).Arg(newerValue).End();
+}
+
+void PartialRedundancyElimination::GVN_VisitThetaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
+    using namespace jlm::rvsdg::gvn;
+    auto LOOP_EXIT  = gvn_.FromStr("LOOP_EXIT");
+    auto OP_PRISM   = gvn_.FromStr("prism");
+
+    auto lv = tn.GetLoopVars();
+
+    /** ----------------------------------- LOAD INPUTS INTO PRE.disruptors ------------------- */
+
+    if (thetas_.find(node) == thetas_.end()){
+      thetas_.insert({node, ThetaData()});
+      thetas_[node].prism = 0;           // This value capture the behavior of thetas given their context
+      thetas_[node].stat_iteration_count = 0;
+      for (auto v : tn.GetLoopVars()){
+        thetas_[node].pre.Add( GVNOrWarn( v.input->origin() , node ) );
+        thetas_[node].post.Add( 0 );
+      }
+    }else{
+      ///// Only called for nested loops. Not tested yet.
+      {
+        dbg_out << TR_RED << "Warning nested loops not tested yet." << TR_RESET << std::endl;
+        // Similar to loop back at the end of simple loops.
+        for (size_t i = 0; i < lv.size(); i++){
+          thetas_[node].pre.elements[i].disruptor = mergeIntoLV(
+            gvn_,
+            thetas_[node].pre.elements[i].partition,
+            GVNOrWarn( lv[i].input->origin(), node ),
+            thetas_[node].prism
+          );
+        }
+      }
+    }
+
+    auto& td = thetas_[node];
+
+    // Inputs from upstreams have now been placed in pre .disruptor fields
+    while (thetas_[node].pre.Fracture() || td.stat_iteration_count == 0){
+      // ================= PERFORM GVN IN LOOP BODY ========================
+      for (size_t i = 0; i < lv.size(); i++){
+        RegisterGVN( lv[i].pre, td.pre.elements[i].disruptor );
+      }
+
+      GVN_VisitAllSubRegions(node);
+
+      for (size_t i = 0; i < lv.size(); i++){
+        td.post.elements[i].disruptor = GVNOrWarn( lv[i].post->origin(), node );
+      }
+      // ================= END LOOP BODY ====================================
+
+      // Merge input and outputs for each loop variable in order to identify
+      // the most updated partitions
+      for (size_t i = 0; i < lv.size(); i++){
+        auto input  = td.pre.elements[i].disruptor;
+        auto output = td.post.elements[i].disruptor;
+        auto merged_io = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(input).Arg(output).End();
+        td.post.elements[i].partition = merged_io;
+      }
+      /// This hash depends on the mapping between inputs to ouputs as well as the predicate
+      /// Does not depend on order of loop variables or duplicate loop variables
+      GVN_Val predicate = GVNOrPanic( tn.predicate()->origin(), node );
+      td.prism = gvn_.Op(OP_PRISM).Arg(predicate).FromPartitions(td.post).End();
+
+      // Why hashing solely with the predicate might not work:
+      //  Update in parallel
+      //         i -> i + 1 + a     , i control the predicate.
+      //         a -> a + 2 + b
+      //         b -> b + 3 + c
+      //         c -> c + 4 + K     , K eventually affects i
+      //                              however, it reaches a fixed point in 2 iterations
+
+      // Note: this doesn't use rvsdg::ThetaLoopVarIsInvariant()
+      //  Because we pass in data from outside the theta it might be possible
+      //    to detect more invariance such as from
+      //    gammas inside the loop with constant match variables
+      //  However, using rvsdg::ThetaLoopVarIsInvariant() will work as well
+
+      for (size_t i = 0; i < lv.size(); i++){
+        // input and output for one loop body visit are stored in pre and post,  .disruptor
+        bool was_invariant = td.pre.elements[i].disruptor == td.post.elements[i].disruptor;
+
+        if (was_invariant){
+          // no need to update the input for the next loop iteration
+          // , however store away whether the value is invariant for when computing outputs from the theta
+          td.post.elements[i].partition = GVN_INVARIANT;
+        }else{
+          auto lv_old   =  td.pre.elements[i].disruptor;
+          auto lv_newer = td.post.elements[i].disruptor;
+
+          //  hashing with prism here prevents accidental capture of values from outer loops.
+          auto g = mergeIntoLV(gvn_, lv_old, lv_newer, td.prism);
+          td.pre.elements[i].disruptor  = g;
+          td.post.elements[i].partition = g;
+        }
+      }
+      td.stat_iteration_count++;
+    }
+
+    // After the loop body has been evaluated until partitions reach a fixed point
+
+    // Note: inner loops are only re-evaluated when the outer loop passes in new data which
+    //  either causes a re-partitioning or detects a change in an initial value for the first time (fracture).
+    //  That is if a value invariant with respect to the inner loop changes in the outer loop.
+
+    /** ----------------------------------- COMPUTE LOOP OUTPUTS -------------------------------------- */
+
+    // =============================================================================================
+    //This is only required for nested loops
+    for (size_t i = 0; i < lv.size(); i++){
+      thetas_[node].pre.elements[i].disruptor = GVNOrWarn( lv[i].input->origin(), node );;
+    }
+    auto hash_from_inputs = gvn_.Op(LOOP_EXIT).OneDisruptorPerPartition(td.pre).End();
+    // =============================================================================================
+
+    for (size_t i = 0; i < lv.size(); i++){
+      auto inv = thetas_[node].post.elements[i].partition == GVN_INVARIANT;
+      auto input_for_lv = GVNOrWarn(lv[i].input->origin(), node);
+      if (inv){
+        RegisterGVN(lv[i].output, input_for_lv);
+      }else{
+        RegisterGVN(
+          lv[i].output,
+          gvn_.Op(LOOP_EXIT)
+                  .Arg(thetas_[node].post.elements[i].partition)
+                  .Arg(hash_from_inputs)
+                  .Arg(input_for_lv)
+                  .End()
+        );
+      }
+    }
+  });
+}
+
+void PartialRedundancyElimination::GVN_FinalizeThetaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::ThetaNode& tn){
+    using namespace jlm::rvsdg::gvn;
+    auto lv = tn.GetLoopVars();
+
+    // Visit each loop body one more time, but let the most recent values for invariant values from
+    //    outer loops inside.
+    for (size_t i = 0; i < lv.size(); i++){
+      auto from_outer = GVNOrWarn( lv[i].input->origin(), node );
+      auto merged = gvn_.Op(GVN_OP_ANY_ORDERED).Arg(from_outer).Arg(thetas_[node].pre.elements[i].disruptor).End();
+      if (thetas_[node].post.elements[i].partition == GVN_INVARIANT){
+        RegisterGVN( lv[i].pre, from_outer );
+      }else{
+        RegisterGVN( lv[i].pre, merged );
+      }
+    }
+    GVN_VisitAllSubRegions(node);
+    thetas_[node].stat_iteration_count++;
+    // Do not update output of thetas, just the gvn values in the loop body.
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitLambdaNode(rvsdg::Node * node)
+{
+  MatchType(*node, [this,node](rvsdg::LambdaNode& ln){
+    size_t i = 0;
+    for (auto arg : ln.GetFunctionArguments()){
+      auto g = gvn_.FromStr("Param:" + std::to_string(i));
+      RegisterGVN(arg, g ); i++;
+    }
+    for (auto arg : ln.GetContextVars())
+    {
+      auto from = arg.input->origin();
+      RegisterGVN(arg.inner, GVNOrWarn(from, node));
+    }
+    dbg_out << ind() << TR_PURPLE << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+    GVN_VisitAllSubRegions(node);
+  });
+}
+
+void PartialRedundancyElimination::GVN_VisitNode(rvsdg::Node* node)
+{
+  MatchTypeWithDefault(*node,
+  [this,node](rvsdg::DeltaNode& _){
+      dbg_out << ind() << TR_CYAN << node->DebugString() << node->GetNodeId() << TR_RESET << std::endl;
+      GVN_VisitAllSubRegions(node);
+    },
+    [this,node](rvsdg::ThetaNode& _){
+      switch (gvn_mode_thetas_){
+        case ThetaMode::GVN_FIND_FIXED_POINT: GVN_VisitThetaNode(node); break;
+        case ThetaMode::GVN_FINALIZE:         GVN_FinalizeThetaNode(node); break;
+      };
+    },
+    [this,node](rvsdg::GammaNode& _){
+      GVN_VisitGammaNode(node);
+    },
+    [this,node](rvsdg::LambdaNode& _){
+      GVN_VisitLambdaNode(node);
+    },
+    //DEFAULT
+    [this, node](){
+      GVN_VisitLeafNode(node);
+    }
+  );
+}
+
+void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node* node)
+{
+  using namespace jlm::rvsdg::gvn;
+  dbg_out << ind() << TR_BLUE << node->DebugString() << "<"<<node->GetNodeId() <<">"<< TR_RESET;
+
+  MatchType(*node, [&pe, &node](rvsdg::LambdaNode& ln){
+    dbg_out <<TR_ORANGE;
+    for (auto arg : ln.GetFunctionArguments()){
+      dbg_out << " : " << pe->GVNOrZero(arg);
+    }
+    dbg_out << TR_RESET;
+  });
+
+  for (size_t i = 0; i < node->ninputs(); i++){
+    dbg_out << TR_YELLOW;
+    dbg_out << " : " << to_string(pe->GVNOrZero( node->input(i)->origin() ));
+  }
+
+  dbg_out << TR_GRAY << " => ";
+  for (size_t i = 0; i < node->noutputs(); i++){
+    dbg_out << TR_RED;
+    dbg_out << " : " << to_string(pe->GVNOrZero( node->output(i) ));
+  }
+
+  dbg_out << std::endl;
+}
+
+}
+
+
