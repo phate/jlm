@@ -10,6 +10,9 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 
+GOLDEN_DIR=${JLM_ROOT_DIR}/.github/golden/hls-test-suite
+UPDATE_GOLDEN=false
+
 # Set default path for where the benchmark will be cloned and make target for running it
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
@@ -34,6 +37,7 @@ function usage()
 	echo "                        Default=[${BENCHMARK_DIR}]"
 	echo "  --parallel #THREADS   The number of threads to run in parallel."
 	echo "                        Default=[${PARALLEL_THREADS}]"
+	echo "  --update-golden       Update the simulated golden cycles."
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
@@ -48,6 +52,10 @@ while [[ "$#" -ge 1 ]] ; do
 		--parallel)
 			shift
 			PARALLEL_THREADS=$1
+			shift
+			;;
+		--update-golden)
+			UPDATE_GOLDEN=true
 			shift
 			;;
 		--get-commit-hash)
@@ -82,3 +90,37 @@ git checkout ${GIT_COMMIT}
 make clean
 echo "make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}"
 make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}
+
+if [ "$UPDATE_GOLDEN" = true ]
+then
+	echo "make -j ${PARALLEL_THREADS} -O update-golden"
+	make -j ${PARALLEL_THREADS} -O update-golden
+	cd src
+	rm -rf ${GOLDEN_DIR}
+	mkdir -p ${GOLDEN_DIR}
+	cp --parents `find -name \*.cycles` ${GOLDEN_DIR}
+fi
+
+FAILED_TEST=false
+
+for GOLDEN_FILE in `find ${GOLDEN_DIR} -name "*.cycles" -type f`
+do
+	BENCHMARK_TMP=${GOLDEN_FILE#${GOLDEN_DIR}/}
+	BENCHMARK=${BENCHMARK_TMP%.cycles}
+	LOG_FILE=${BENCHMARK_DIR}/build/${BENCHMARK}.hls.log
+	CYCLES=$(grep 'finished - took' ${LOG_FILE} | tr -dc '0-9')
+	GOLDEN=$(cat ${GOLDEN_FILE})
+	if [ "$CYCLES" != "$GOLDEN" ] ; then
+		printf '%s\n    %s\n    %s\n' \
+		"The execution time of ${BENCHMARK} has changed" \
+		"Golden cycle time: ${GOLDEN}" \
+		"Simulated cycles: ${CYCLES}"
+		FAILED_TEST=true
+	fi
+done
+
+if [ "$FAILED_TEST" = true ]
+then
+	echo "The testsuite failed."
+	exit 1
+fi

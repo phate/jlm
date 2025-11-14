@@ -31,6 +31,7 @@ GetStatisticsIdNames()
     { Statistics::Id::IfConversion, "IfConversion" },
     { Statistics::Id::JlmToRvsdgConversion, "ControlFlowGraphToLambda" },
     { Statistics::Id::LoopUnrolling, "UNROLL" },
+    { Statistics::Id::LoopUnswitching, "LoopUnswitching" },
     { Statistics::Id::InvariantValueRedirection, "InvariantValueRedirection" },
     { Statistics::Id::MemoryStateEncoder, "MemoryStateEncoder" },
     { Statistics::Id::PullNodes, "PULL" },
@@ -42,8 +43,6 @@ GetStatisticsIdNames()
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },
     { Statistics::Id::RvsdgTreePrinter, "RvsdgTreePrinter" },
     { Statistics::Id::ScalarEvolution, "ScalarEvolution" },
-    { Statistics::Id::SteensgaardAnalysis, "SteensgaardAnalysis" },
-    { Statistics::Id::ThetaGammaInversion, "IVT" },
   };
   // Make sure every Statistic is mentioned in the mapping
   auto lastIdx = static_cast<size_t>(Statistics::Id::LastEnumValue);

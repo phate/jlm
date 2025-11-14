@@ -3,26 +3,24 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
-
-#include <jlm/rvsdg/view.hpp>
+#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <iostream>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunSteensgaard(const jlm::llvm::RvsdgModule & module)
+RunAndersen(const jlm::llvm::RvsdgModule & module)
 {
   using namespace jlm::llvm;
 
-  aa::Steensgaard stgd;
+  aa::Andersen andersen;
   jlm::util::StatisticsCollector statisticsCollector;
-  return stgd.Analyze(module, statisticsCollector);
+  return andersen.Analyze(module, statisticsCollector);
 }
 
 static void
@@ -45,7 +43,7 @@ TestStore1()
   jlm::tests::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -80,7 +78,7 @@ TestStore2()
   jlm::tests::StoreTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -115,7 +113,7 @@ TestLoad1()
   jlm::tests::LoadTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -150,7 +148,7 @@ TestLoad2()
   jlm::tests::LoadTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
 
   /*
    * Act
@@ -184,7 +182,7 @@ TestLoadFromUndef()
   jlm::tests::LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
@@ -252,7 +250,7 @@ TestCall1()
   jlm::tests::CallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -326,7 +324,7 @@ TestCall2()
   jlm::tests::CallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -408,7 +406,7 @@ TestIndirectCall()
   jlm::tests::IndirectCallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -447,7 +445,7 @@ TestGamma()
   jlm::tests::GammaTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -484,7 +482,7 @@ TestTheta()
   jlm::tests::ThetaTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -537,7 +535,7 @@ TestDelta1()
   jlm::tests::DeltaTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -590,7 +588,7 @@ TestDelta2()
   jlm::tests::DeltaTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -643,7 +641,7 @@ TestImports()
   jlm::tests::ImportTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg);
 
   /*
@@ -704,7 +702,7 @@ TestPhi1()
   jlm::tests::PhiTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -759,7 +757,7 @@ TestMemcpy()
   jlm::tests::MemcpyTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
@@ -779,7 +777,7 @@ TestStatistics()
 {
   // Arrange
   jlm::tests::LoadTest1 test;
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::AgnosticModRefSummarizer });
