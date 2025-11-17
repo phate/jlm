@@ -647,12 +647,13 @@ ScalarEvolution::IsValidInductionVariable(
   // Then check for cycles through other variables
   std::unordered_set<const rvsdg::Output *> visited{};
   std::unordered_set<const rvsdg::Output *> recursionStack{};
-  return !HasCycleThroughOthers(variable, dependencyGraph, visited, recursionStack);
+  return !HasCycleThroughOthers(variable, variable, dependencyGraph, visited, recursionStack);
 }
 
 bool
 ScalarEvolution::HasCycleThroughOthers(
     const rvsdg::Output & currentIV,
+    const rvsdg::Output & originalIV,
     IVDependencyGraph & dependencyGraph,
     std::unordered_set<const rvsdg::Output *> & visited,
     std::unordered_set<const rvsdg::Output *> & recursionStack)
@@ -666,16 +667,17 @@ ScalarEvolution::HasCycleThroughOthers(
     if (depPtr == &currentIV)
       continue;
 
-    // Found a cycle back to a variable in our path
-    if (recursionStack.find(depPtr) != recursionStack.end())
+    // Found a cycle back to the ORIGINAL node we started from
+    // This means the original IV is explicitly part of the cycle
+    if (depPtr == &originalIV)
       return true;
 
-    // Already explored this branch, no cycle
+    // Already explored this branch, no cycle containing the original IV
     if (visited.find(depPtr) != visited.end())
       continue;
 
-    // Recursively check dependencies
-    if (HasCycleThroughOthers(*depPtr, dependencyGraph, visited, recursionStack))
+    // Recursively check dependencies, keeping track of the original node
+    if (HasCycleThroughOthers(*depPtr, originalIV, dependencyGraph, visited, recursionStack))
       return true;
   }
 

@@ -439,6 +439,7 @@ private:
   static bool
   HasCycleThroughOthers(
       const rvsdg::Output & currentIV,
+      const rvsdg::Output & originalIV,
       IVDependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
