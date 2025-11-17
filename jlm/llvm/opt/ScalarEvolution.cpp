@@ -37,7 +37,7 @@ public:
   void
   InsertChrec(const rvsdg::ThetaNode & thetaNode, std::unique_ptr<SCEVChainRecurrence> & chrec)
   {
-    ChrecMap_[&thetaNode].insert(std::unique_ptr<SCEVChainRecurrence>(chrec.release()));
+    ChrecMap_[&thetaNode].insert(std::move(chrec));
   }
 
   int
@@ -144,9 +144,22 @@ ScalarEvolution::Run(
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   AnalyzeRegion(rootRegion);
 
-  statistics->Stop(*Context_.get());
+  statistics->Stop(*Context_);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
+
+bool
+ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
+{
+  for (const auto operand : chrec.GetOperands())
+  {
+    if (dynamic_cast<const SCEVUnknown *>(operand))
+    {
+      return true;
+    }
+  }
+  return false;
+}
 
 void
 ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
@@ -170,13 +183,8 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         auto chrecMap = PerformSCEVAnalysis(*thetaNode);
         for (auto & [output, chrec] : chrecMap)
         {
-          // Add computed (non-trivially unknown) chrecs to context for statistics
-          const bool isTrivialUnknown =
-              chrec->GetOperands().size() == 1 && dynamic_cast<SCEVUnknown *>(chrec->GetOperand(0));
-          if (!isTrivialUnknown)
-          {
+          if (!IsUnknown(*chrec))
             Context_.get()->InsertChrec(*thetaNode, chrec);
-          }
         }
       }
     }
@@ -451,6 +459,7 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
     auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
     // Workaround for the fact that Clone() is an overridden method that returns a unique_ptr of
     // SCEV
+    std::cout << loopVar.pre->debug_string() << ": " << storedRec->DebugString() << '\n';
     chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
         dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
   }

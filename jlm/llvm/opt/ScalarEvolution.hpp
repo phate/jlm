@@ -427,6 +427,15 @@ private:
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
 
+  /**
+   * Checks the operands of the given \p chrec to see if any of them are unknown.
+   *
+   * @param chrec the chain recurrence to be checked
+   * @return true if the recurrence contains an unknown, false otherwise
+   */
+  static bool
+  IsUnknown(const SCEVChainRecurrence & chrec);
+
   static bool
   HasCycleThroughOthers(
       const rvsdg::Output & currentIV,
