@@ -459,7 +459,6 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
     auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
     // Workaround for the fact that Clone() is an overridden method that returns a unique_ptr of
     // SCEV
-    std::cout << loopVar.pre->debug_string() << ": " << storedRec->DebugString() << '\n';
     chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
         dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
   }
