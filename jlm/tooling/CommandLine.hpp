@@ -69,6 +69,7 @@ public:
     AAAndersenRegionAware,
     CommonNodeElimination,
     DeadNodeElimination,
+    PartialRedundancyElimination,
     FunctionInlining,
     IfConversion,
     InvariantValueRedirection,
@@ -84,6 +85,7 @@ public:
     ThetaGammaInversion, // Deprecated. To be removed.
 
     LastEnumValue // must always be the last enum value, used for iteration
+    ,
   };
 
   JlmOptCommandLineOptions(
@@ -212,6 +214,7 @@ private:
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
     inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
+    inline static const char * PartialRedundancyElimination_ = "PartialRedundancyElimination";
     inline static const char * FunctionInlining_ = "FunctionInlining";
     inline static const char * IfConversion_ = "IfConversion";
     inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";

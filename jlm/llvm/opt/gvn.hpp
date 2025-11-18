@@ -1,0 +1,692 @@
+/*
+* Copyright 2025 Lars Astrup Sundt <larsastr@stud.ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
+
+
+#ifndef JLM_LLVM_OPT_GVN_H
+#define JLM_LLVM_OPT_GVN_H
+
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <optional>
+#include <unordered_map>
+#include <cstdint>
+
+namespace jlm::rvsdg::gvn {
+    extern bool gvn_verbose;
+    typedef uint64_t GVN_Val;
+
+    constexpr GVN_Val GVN_SMALL_VALUE = 0xFFFFFFFF;  // Must not collide with flags below.
+
+    // -------------------------------------------------------------------------------
+    /* Flags stored as part of GVN values */
+    constexpr GVN_Val GVN_IS_SYMBOLIC                   =  1ull << 33;  /* Not a small integer */
+    constexpr GVN_Val GVN_HAS_DEPS                      =  1ull << 34;  /* \brief : By setting a single bit for internal nodes it becomes impossible for leaf and internal nodes to have the same hash making code simpler. */
+    constexpr GVN_Val GVN_CONST_SYMBOL                  =  1ull << 35;
+
+    constexpr GVN_Val GVN_MASK_INHERIT     = GVN_IS_SYMBOLIC;
+    constexpr GVN_Val GVN_MASK             = GVN_IS_SYMBOLIC | GVN_HAS_DEPS | GVN_CONST_SYMBOL;
+
+    inline bool GVN_IsSmallValue(GVN_Val v)            {return (v & GVN_SMALL_VALUE) == v;}
+    inline bool GVN_ValueHasDeps(GVN_Val v)            {return v & GVN_HAS_DEPS;}
+
+    // -------------------------------------------------------------------------------
+    constexpr GVN_Val GVN_PREDEFS = GVN_CONST_SYMBOL | GVN_IS_SYMBOLIC;
+
+    /* GLOBAL OPERATION */
+    constexpr GVN_Val GVN_OP_ANY_ORDERED       = GVN_PREDEFS | 1;
+    constexpr GVN_Val GVN_OP_ADDITION          = GVN_PREDEFS | 2;
+    constexpr GVN_Val GVN_OP_MULTIPLY          = GVN_PREDEFS | 3;
+    constexpr GVN_Val GVN_OP_EQ                = GVN_PREDEFS | 4;   // N-ary checks if all values are the same
+    constexpr GVN_Val GVN_OP_NEQ               = GVN_PREDEFS | 5;   // N-ary checks is two values are distinct
+    constexpr GVN_Val GVN_INVARIANT            = GVN_PREDEFS | 6;
+    constexpr GVN_Val GVN_TOMBSTONE            = (~0ull & ~GVN_MASK) | GVN_PREDEFS;  // Largest possible value
+
+    /* GLOBAL CONSTANTS */
+    constexpr GVN_Val GVN_NO_VALUE             = GVN_PREDEFS | GVN_CONST_SYMBOL | 100;
+    constexpr GVN_Val GVN_TRUE                 = GVN_PREDEFS | GVN_CONST_SYMBOL | 101;
+    constexpr GVN_Val GVN_FALSE                = GVN_PREDEFS | GVN_CONST_SYMBOL | 102;
+
+    /* SPECIAL VALUES */
+    constexpr GVN_Val GVN_IGNORE = GVN_PREDEFS | GVN_CONST_SYMBOL | 103;
+
+    inline std::string to_string(GVN_Val v) {
+        auto n = static_cast<uint64_t>(v);
+
+        std::string s = std::to_string(n);
+        if (s.length() > 8){
+          s = s.substr(0,3) + "..." + s.substr(s.length() - 3, s.length());
+        }
+
+        //if ((v & GVN_HAS_DEPS) == 0) {s += "<L>";}
+        if (v & GVN_IS_SYMBOLIC){s += "$";}
+        // Constant predefined symbols
+        if (v == GVN_TRUE)        {s = "TRUE";}
+        if (v == GVN_FALSE)       {s = "FALSE";}
+        if (v == GVN_NO_VALUE)    {s = "NO_VALUE";}
+        if (v == GVN_OP_ADDITION) {s = "+";}
+        if (v == GVN_OP_MULTIPLY) {s = "*";}
+        return s;
+    }
+
+    struct BrittlePrismEle {
+        GVN_Val partition;
+        GVN_Val disruptor;
+        GVN_Val original_partition;
+        size_t  original_position;
+    };
+
+    constexpr const char* ORD_ORIGINAL = "order:original";
+    constexpr const char* ORD_PARTITION  = "order:partition";
+    constexpr const char* ORD_DISRUPTOR  = "order:disruptor";
+    constexpr const char* ORD_PARTITION_DISRUPTOR = "order:partition>disruptor";
+    constexpr const char* ORD_DISRUPTOR_PARTITION = "order:disruptor>partition";
+
+    class BrittlePrism {
+    private:
+        const char* current_ordering;
+
+    public:
+        bool did_shatter;
+        size_t fracture_count;
+        std::vector<BrittlePrismEle> elements;
+
+        /// ---------------------------  ORDERINGS -----------------------------------------------------------------
+        explicit BrittlePrism(std::vector<GVN_Val> base) : did_shatter(false), fracture_count(0)
+        {
+            // set gvn values and original indices
+            // partition same as unique values
+            for (size_t i = 0; i < base.size(); i++) {
+                elements.emplace_back(BrittlePrismEle{base[i], base[i], base[i],i});
+            }
+            current_ordering = ORD_ORIGINAL;
+        }
+        BrittlePrism() : did_shatter(false), fracture_count(0){
+          current_ordering = ORD_ORIGINAL;
+        }
+        void Add(GVN_Val v){
+          elements.emplace_back(BrittlePrismEle{v, v, v,elements.size()});
+        }
+
+        void OrderByPartition() {
+            std::sort(elements.begin(), elements.end(),
+                [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                    return a.partition < b.partition;
+                }
+            );
+            current_ordering = ORD_PARTITION;
+        }
+
+        void OrderByDisruptor() {
+            std::sort(elements.begin(), elements.end(),
+                 [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                     return a.disruptor < b.disruptor;
+                 }
+             );
+            current_ordering = ORD_DISRUPTOR;
+        }
+
+        void OrderByOriginal()
+        {
+            std::sort(elements.begin(), elements.end(),
+                [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                    return a.original_position < b.original_position;
+                }
+            );
+            current_ordering = ORD_ORIGINAL;
+        }
+        void OrderByPartitionThenDisruptor()
+        {
+            std::sort(elements.begin(), elements.end(),
+                [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                    if (a.partition == b.partition){return a.disruptor < b.disruptor;}
+                    return a.partition < b.partition;
+                }
+            );
+            current_ordering = ORD_PARTITION_DISRUPTOR;
+        }
+        void OrderByDisruptorThenPartition()
+        {
+            std::sort(elements.begin(), elements.end(),
+            [](BrittlePrismEle& a, BrittlePrismEle& b) {
+                    if (a.disruptor == b.disruptor){return a.partition < b.partition;}
+                    return a.disruptor < b.disruptor;
+                }
+            );
+            current_ordering = ORD_DISRUPTOR_PARTITION;
+        }
+        /// ---------------------------  SPANS -----------------------------------------------------------------
+        size_t SpanPartition(size_t start)
+        {
+            size_t span = 1;
+            GVN_Val partition = elements[start].partition;
+            for (size_t i = start+1; i < elements.size(); i++) {
+                if (elements[i].partition == partition) {span++;}else{break;}
+            }
+            return span;
+        }
+
+        size_t SpanDisruptor(size_t start) const
+        {
+            size_t span = 1;
+            GVN_Val disruptor = elements[start].disruptor;
+            for (size_t i = start+1; i < elements.size(); i++) {
+                if (elements[i].disruptor == disruptor) {span++;}else{break;}
+            }
+            return span;
+        }
+
+        size_t SpanDisruptorAndPartition(size_t start)
+        {
+            size_t span = 1;
+            GVN_Val partition       = elements[start].partition;
+            GVN_Val disruptor = elements[start].disruptor;
+            for (size_t i = start+1; i < elements.size(); i++) {
+                auto e = elements[i];
+                if (e.partition == partition && e.disruptor == disruptor) {span++;}else{break;}
+            }
+            return span;
+        }
+
+        /// --------------------------- INSPECT -----------------------------------------------------------------
+
+        void dump() const
+        {
+            std::cout << "gvn_partition -- " << current_ordering << std::endl;
+
+            for (size_t i = 0; i < elements.size(); i++) {
+                auto e = elements[i];
+                std::cout << "["<<i<<"] : part("
+                    << e.partition <<") pos("
+                    << e.original_position << ")  disruptor("
+                    << to_string(e.disruptor) << ")   init("
+                    << e.original_partition << ")"
+                    << std::endl;
+            }
+        }
+
+        void dump_partitions()
+        {
+            GVN_Val checksum = 0;
+            OrderByPartition();
+            size_t it = 0;
+            if (elements.empty()){return;}
+            while (it < elements.size()) {
+                std::cout << "(" << elements[it].partition <<" <- "<< elements[it].original_partition << ")" << std::endl;
+                checksum += elements[it].partition + elements[it].original_partition;
+                it += SpanPartition(it);
+            }
+            std::cout << std::endl;
+            std::cout << "[[" << checksum << "]]" << std::endl;
+        }
+        /// --------------------------- CORE -----------------------------------------------------------------
+
+        template<typename Fn>
+        static void EachPartition(BrittlePrism& p, Fn cb)
+        {
+            p.OrderByPartition();
+            size_t it = 0;
+            while (it < p.elements.size()) {
+                size_t p_span = p.SpanPartition(it);
+                cb(p.elements[it], p_span);
+                it += p_span;
+            }
+        }
+
+        template<typename Fn>
+        static void Shatter(BrittlePrism& p, Fn reassign) {
+            if (p.did_shatter){return;}
+            // Call this when a loop body has been invoked too many times.
+            // This should assign unique partitions to all elements
+            // Provable loop invariant variables can be set to GVN_NULL
+            p.OrderByOriginal();
+            for (size_t i = 0; i < p.elements.size(); i++) {
+                reassign(p.elements[i], i);
+            }
+            p.OrderByPartition();
+            for (size_t i = 1; i < p.elements.size(); i++) {
+                if (p.elements[i].partition && (p.elements[i].partition == p.elements[i-1].partition) ) {
+                    throw std::runtime_error("Shatter failed. All partitions must be unique.");
+                }
+            }
+            p.did_shatter = true;
+        }
+
+        bool Fracture()
+        {
+          // Partition again based on disruptors
+          // Either because a single partition faces distinct disruptors or when
+          //     the disruptor does equal the original value.
+          bool did_fracture = false;
+          OrderByPartitionThenDisruptor();
+
+          size_t it = 0;
+          while (it < elements.size()) {
+              size_t pspan        = SpanPartition(it);
+              size_t gspan        = SpanDisruptorAndPartition(it);
+              size_t p_end = it + pspan;
+
+              if (pspan == gspan) {
+                  // Check if value changes for first time
+                  while (it < p_end) {
+                      BrittlePrismEle& e = elements[it];
+                      if (e.original_partition == e.partition && e.disruptor != e.original_partition) {
+                          elements[it].partition = e.disruptor;
+                          did_fracture = true;
+                      }
+                      it++;
+                  }
+              }else {
+                  // Partition was given multiple different disruptors
+                  did_fracture = true;
+                  while (it < p_end) {
+                      BrittlePrismEle& e = elements[it];
+                      if (e.partition != e.disruptor && e.disruptor != e.original_partition) {
+                          elements[it].partition = e.disruptor;
+                      }
+                      it++;
+                  }
+              }
+          }
+          if (did_fracture) {
+              fracture_count++;
+              if (fracture_count > elements.size() * 2) {
+                  throw std::runtime_error("Brittle prism invariant broken. Possible missing updates to by reassign callback.");
+              }
+          }
+          OrderByOriginal();
+          return did_fracture;
+        }
+
+        static void Test0();
+        static void Test1();
+    };
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+
+    class GVN_Manager{
+
+        struct GVN_Deps {
+            GVN_Deps():op(0){}
+            GVN_Val op;
+            std::vector<std::pair< GVN_Val, size_t> > args;
+            void push(GVN_Val v, size_t count){args.emplace_back(v, count);}
+            void push(GVN_Val v)              {args.emplace_back(v, 1);}
+
+            void dump() {
+                std::cout << "op: " << op << std::endl;
+                for (size_t i = 0; i < args.size(); ++i) {
+                    std::cout << "    [" <<i<< "]" << args[i].first << " : " << args[i].second << std::endl;
+                }
+            }
+        };
+
+        std::vector<GVN_Val>   builder_args_;
+        std::optional<GVN_Val> builder_op_;
+        std::optional<GVN_Val> builder_flags_;
+
+        std::unordered_map< std::string,  GVN_Val > str_to_gvn_;     // Convenience map
+        std::unordered_map< const void*, GVN_Val > ptr_to_gvn_;      // Convenience map
+        std::unordered_map< size_t, GVN_Val > word_to_gvn_;          // Convenience map
+        std::unordered_map< GVN_Val, std::optional<GVN_Deps> > gvn_;
+
+    public:
+        size_t stat_collisions;
+        size_t stat_leaf_collisions;
+        size_t stat_ca_too_big;
+
+        size_t max_ca_size;
+
+        GVN_Manager() : stat_collisions(0), stat_leaf_collisions(0), stat_ca_too_big(0), max_ca_size(32) {
+            // Add constant symbols to the table of all values such that
+            //     values cannot collide.
+            DefineConst(GVN_OP_ANY_ORDERED);
+            DefineConst(GVN_OP_ADDITION);
+            DefineConst(GVN_OP_MULTIPLY);
+            DefineConst(GVN_OP_EQ);
+            DefineConst(GVN_OP_NEQ);
+
+            DefineConst(GVN_NO_VALUE);
+            DefineConst(GVN_TRUE);
+            DefineConst(GVN_FALSE);
+
+            DefineConst(GVN_IGNORE);
+            DefineConst(GVN_INVARIANT);
+
+            DefineConst(~0ull);
+        }
+
+        GVN_Val Leaf() {
+            return Leaf(0);
+        }
+        GVN_Val Leaf(GVN_Val flags) {
+            auto g = SymGen(flags);
+            gvn_.insert({g,std::nullopt});
+            return g;
+        }
+        GVN_Manager& Op(GVN_Val op) {
+            if (builder_op_){throw std::runtime_error("Multiple calls to Op(...) or missing End()");}
+            builder_op_ = op;
+            builder_flags_ = 0;
+            return *this;
+        }
+        GVN_Manager& Arg(GVN_Val arg) {
+            builder_args_.emplace_back(arg);
+            return *this;
+        }
+
+        GVN_Val Args(const std::vector<GVN_Val>& args) {
+            if (args.empty()){throw std::runtime_error("Args cannot be empty. Make empty argument lists explicit by passing a dummy leaf.");}
+            builder_args_ = args;
+            return End();
+        }
+
+        GVN_Val End() {
+            if (!builder_op_) {throw std::runtime_error("Operator not specified");}
+            if (builder_args_.empty()){throw std::runtime_error("Args not specified");}
+            GVN_Val g = Create(*builder_op_, builder_args_);
+            builder_flags_ = std::nullopt;
+            builder_args_.clear();
+            builder_op_ = std::nullopt;
+            return g;
+        }
+        GVN_Val FromStr(const std::string& str) {return FromStr(str, 0);}
+        GVN_Val FromStr(const std::string s, uint64_t flags)
+        {
+            flags |= GVN_IS_SYMBOLIC;
+            auto q = str_to_gvn_.find(s);
+            if (q == str_to_gvn_.end()) {
+                str_to_gvn_.insert({s,Leaf(flags)});
+                q = str_to_gvn_.find(s);
+            }
+            if (q == str_to_gvn_.end()) {throw std::runtime_error("Expected some value");}
+            if ((q->second & GVN_MASK) != flags) {
+                throw std::runtime_error("Inconsistent flags for literal: " + s);
+            }
+            return str_to_gvn_[s];
+        }
+        GVN_Val FromWord(size_t w)
+        {
+          if (w <= GVN_SMALL_VALUE) {return w;}
+          auto q = word_to_gvn_.find(w);
+          if (q == word_to_gvn_.end()) {
+            word_to_gvn_.insert({w,Leaf(0)});
+            q = word_to_gvn_.find(w);
+          }
+          if (q == word_to_gvn_.end()) {throw std::runtime_error("Expected some value");}
+          return word_to_gvn_[w];
+        }
+        GVN_Val FromPtr(const void* p) {return FromPtr(p, 0);}
+        GVN_Val FromPtr(const void* p, uint64_t flags)
+        {
+            flags |= GVN_IS_SYMBOLIC;
+            auto q = ptr_to_gvn_.find(p);
+            if (q == ptr_to_gvn_.end()) {
+                ptr_to_gvn_.insert({p,Leaf(flags)});
+                q = ptr_to_gvn_.find(p);
+            }
+            if (q == ptr_to_gvn_.end()) {throw std::runtime_error("Expected some value");}
+            if ((q->second & GVN_MASK) != flags) {
+                throw std::runtime_error("Inconsistent flags for gvn generated from pointer: " + std::to_string(reinterpret_cast<size_t>(p)));
+            }
+            return ptr_to_gvn_[p];
+        }
+
+        GVN_Manager& FromPartitions(BrittlePrism& brittle)
+        {
+          // Call Arg( ) once for each partition
+          {
+            brittle.OrderByPartition();
+            size_t i = 0;
+            while (i < brittle.elements.size())
+            {
+              Arg(brittle.elements[i].partition);
+              i += brittle.SpanPartition(i);
+            }
+            brittle.OrderByOriginal();
+          }
+          return *this;
+        }
+        GVN_Manager& OneDisruptorPerPartition(BrittlePrism& brittle)
+        {
+          // Call Arg( ) once for each partition
+          {
+            brittle.OrderByPartition();
+            size_t i = 0;
+            while (i < brittle.elements.size())
+            {
+              Arg(brittle.elements[i].disruptor);    // !!!!
+              i += brittle.SpanPartition(i);
+            }
+            brittle.OrderByOriginal();
+          }
+          return *this;
+        }
+
+    private:
+        void DefineConst(GVN_Val v)
+        {
+            if (gvn_.find(v) != gvn_.end()) {
+                throw std::runtime_error("Duplicate constant definition.");
+            }
+            gvn_[v] = std::nullopt;
+        }
+        GVN_Val Create(GVN_Val op, const std::vector<GVN_Val>& args) {
+            if (args.empty()){throw std::runtime_error("Logic error: GVN operator applied to zero args.");}
+            GVN_Deps new_gvn = GVN_Deps();
+            new_gvn.op = op;
+            // Initialize new_gvn.args
+            //      Either a copy of args or count of operator cluster leaves
+
+            for (auto a : args) {
+                if (a != GVN_IGNORE) {
+                    new_gvn.push(a);
+                }
+            }
+
+            std::pair<GVN_Val, bool> pr = CalculateHash(new_gvn);
+
+            GVN_Val v = pr.first;
+            bool is_older_value = pr.second;
+            if (is_older_value) {return v;}    //Note: if the hash is a small number return here.
+
+            // The memory usage for large dags of ca type operations might be too large
+            if (new_gvn.args.size() > max_ca_size) {
+                stat_ca_too_big++;
+                return Leaf();
+            }
+
+            bool did_linear_probe = false;
+            // Check if gvn is already in use, compare with existing gvn if so
+            while ( gvn_.find(v) != gvn_.end() ) {
+                if (DepsEqual(*gvn_[v] , new_gvn)){break;}
+                v = (v & ~GVN_SMALL_VALUE) | ((v + 1) & GVN_SMALL_VALUE);
+                did_linear_probe = true;
+                throw std::runtime_error("True hash collision detected.");
+            }
+
+            // ----------------- commit ---------------------
+            if (gvn_.find(v) == gvn_.end()) {
+                if (did_linear_probe) { stat_collisions++; }
+                gvn_.insert({v,new_gvn});
+            }
+            return v;
+        }
+
+    private:
+        GVN_Val SymGen() {
+            return SymGen(0);
+        }
+        GVN_Val SymGen(GVN_Val flags) {
+            GVN_Val g = 0;
+            do{
+                g = random() & ~GVN_MASK;
+                g |= flags | GVN_IS_SYMBOLIC;
+            }while(gvn_.find(g) != gvn_.end());
+            return g;
+        }
+        void NormalizeCa(GVN_Deps& deps)
+        {
+          // Flatten
+          for (size_t i = 0; i < deps.args.size(); i++) {
+            auto leaf = deps.args[i].first;
+            if (leaf & GVN_HAS_DEPS) {
+              auto leaf_deps = *gvn_[leaf];
+              if (leaf_deps.op == deps.op) {
+                for (auto lf : leaf_deps.args) {deps.args.emplace_back(lf);}
+                deps.args[i].first = GVN_TOMBSTONE;  //mark for deletion
+              }
+            }
+            if (deps.op == GVN_OP_ADDITION && deps.args[i].first == 0) {deps.args[i].first = GVN_TOMBSTONE;}
+            if (deps.op == GVN_OP_MULTIPLY && deps.args[i].first == 1) {deps.args[i].first = GVN_TOMBSTONE;} //delete zeroes
+          }
+          std::sort(deps.args.begin(), deps.args.end());
+          // Coalesce
+          for (size_t i = 1; i < deps.args.size(); i++)
+          {
+            if (deps.args[i  ].first == deps.args[i-1].first){
+              deps.args[i].second += deps.args[i-1].second;
+              deps.args[i-1].first = GVN_TOMBSTONE;
+            }
+          }
+          std::sort(deps.args.begin(), deps.args.end());
+          // Collect
+          while (deps.args.size() && deps.args[ deps.args.size() - 1 ].first == GVN_TOMBSTONE) {deps.args.pop_back();}
+        }
+
+        std::pair<GVN_Val, bool> CalculateHash(GVN_Deps& deps) {
+            // Return a gvn value based on operator and arguments
+            // The second element of the pair is true if the value cannot collide
+            if (deps.op == GVN_OP_ADDITION || deps.op == GVN_OP_MULTIPLY){NormalizeCa(deps);}
+
+            // The lower bits are used to store properties for operations and
+            //    keep track of context dependence of values
+            GVN_Val flags = 0;
+            for (auto arg : deps.args) {
+                flags |= arg.first & GVN_MASK_INHERIT;
+            }
+
+            GVN_Val v = 0;
+
+            switch (deps.op) {
+                case GVN_OP_NEQ: {
+                    // Note:   NEQ cannot assume two symbol values are different.
+                    bool must_be_different = false;
+                    bool all_same = true;
+                    for (size_t i = 1; i<deps.args.size(); i++) {
+                        auto a = deps.args[i].first;
+                        auto b = deps.args[i-1].first;
+                        if (a != b) {all_same = false;}
+                        if ((a & GVN_CONST_SYMBOL) && (b & GVN_CONST_SYMBOL) && a != b) {must_be_different = true;}
+                        if (GVN_IsSmallValue(a) && GVN_IsSmallValue(b) && a != b)       {must_be_different = true;}
+                    }
+                    if (all_same){return {GVN_FALSE, true};}
+                    if (must_be_different) {return {GVN_TRUE, true};}
+                }break;
+                case GVN_OP_EQ: {
+                    bool all_same = true;
+                    bool must_be_different = false;
+                    for (size_t i = 1; i<deps.args.size(); i++) {
+                        auto a = deps.args[i].first;
+                        auto b = deps.args[i-1].first;
+                        if (a != b) {all_same = false;}
+                        if ( (a & GVN_CONST_SYMBOL) && (b & GVN_CONST_SYMBOL) && a != b) {must_be_different = true;}
+                        if (GVN_IsSmallValue(a) && GVN_IsSmallValue(b) && a != b) {must_be_different = true;}
+                    }
+                    if (all_same) {return {GVN_TRUE, true};}
+                    if (must_be_different) {return {GVN_FALSE, true};}
+                }break;
+                case GVN_OP_ADDITION: {
+                    if (deps.args.size() == 0){return {0, true};}
+                    if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x + 0 == x
+                    // -------------------------------------------------------------------------------------------------
+                    if (!(flags & GVN_IS_SYMBOLIC)) {
+                        GVN_Val num = 0;
+                        bool overflow = false;
+                        for (auto arg : deps.args) {
+                            num += arg.first * arg.second;
+                            if (!GVN_IsSmallValue(num)){overflow=true;}
+                        }
+                        if (!overflow && GVN_IsSmallValue(num)){return {num, true};}
+                    }
+                }break;
+                case GVN_OP_MULTIPLY: {
+                    if (deps.args.size() && deps.args[0].first == 0){return {0, true};}  //x * 0 == 0
+                    if (deps.args.size() == 0){return {1, true};} // all ones were removed above.
+                    if (deps.args.size() == 1 && deps.args[0].second == 1){return {deps.args[0].first, true};}  // x * 1 == x
+                    if (!(flags & GVN_IS_SYMBOLIC)) {
+                        GVN_Val num = 1;
+                        bool overflow = false;
+                        for (auto arg : deps.args) {
+                            for (size_t i = 0 ; i < arg.second; i++) {
+                                num *= arg.first;
+                                if (!GVN_IsSmallValue(num)){overflow=true;}
+                            }
+                        }
+                        if (!overflow && GVN_IsSmallValue(num)){return {num, true};}
+                    }
+                }break;
+                case GVN_OP_ANY_ORDERED:{
+                    bool all_same = true;
+                    GVN_Val ele = deps.args[0].first;
+                    for (auto a : deps.args) {
+                        if (a.first != ele) {
+                            all_same = false;
+                            break;
+                        }
+                    }
+                    if (all_same) {return {ele, true};}
+                }break;
+                default:break;
+            }
+
+            v ^= deps.op;
+            for (size_t i = 0; i < deps.args.size(); i++) {
+                v ^= deps.args[i].first * (i+1) + deps.args[i].second * (i+131);
+            }
+
+            v = (v & ~GVN_MASK) | flags | GVN_HAS_DEPS;
+            return {v, false};
+        }
+
+        static bool DepsEqual(GVN_Deps& a, GVN_Deps& b) {
+            if (a.op != b.op) {return false;}
+            if (a.args.size() != b.args.size()) {return false;}
+            for (size_t i = 0; i < a.args.size(); i++) {
+                if (a.args[i] != b.args[i]) {return false;}
+            }
+            return true;
+        }
+
+    public:
+        static void Test0();
+        static void Test1();
+        static void Test2();
+        static void Test3();
+        static void Test4();
+        static void Test5();
+        static void Test6();
+    };
+
+    inline void RunAllTests()
+    {
+        BrittlePrism::Test0();
+        BrittlePrism::Test1();
+        GVN_Manager::Test0();
+        GVN_Manager::Test1();
+        GVN_Manager::Test2();
+        GVN_Manager::Test3();
+        GVN_Manager::Test4();
+        GVN_Manager::Test5();
+        GVN_Manager::Test6();
+    }
+};
+
+#endif
+

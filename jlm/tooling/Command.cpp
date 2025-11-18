@@ -21,6 +21,9 @@
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/PartialRedundancyElimination.hpp>
+#include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
@@ -412,7 +415,9 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_shared<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
-    return std::make_shared<llvm::DeadNodeElimination>();
+    return std::make_unique<llvm::DeadNodeElimination>();
+  case JlmOptCommandLineOptions::OptimizationId::PartialRedundancyElimination:
+    return std::make_unique<llvm::PartialRedundancyElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_shared<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
