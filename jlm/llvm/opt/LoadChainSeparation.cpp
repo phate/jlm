@@ -95,13 +95,14 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
 }
 
 void
-LoadChainSeparation::separateLoadChain(rvsdg::Output & memoryStateOutput)
+LoadChainSeparation::separateLoadChain(rvsdg::Output & loadChainEnd)
 {
-  JLM_ASSERT(rvsdg::is<MemoryStateType>(memoryStateOutput.Type()));
-  JLM_ASSERT(rvsdg::IsOwnerNodeOperation<LoadOperation>(memoryStateOutput));
+  JLM_ASSERT(rvsdg::is<MemoryStateType>(loadChainEnd.Type()));
+  JLM_ASSERT(rvsdg::IsOwnerNodeOperation<LoadOperation>(loadChainEnd));
+  JLM_ASSERT(!hasLoadNodeAsUserOwner(loadChainEnd));
 
   std::vector<rvsdg::Output *> joinOperands;
-  auto & newMemoryStateOperand = traceLoadNodeMemoryState(memoryStateOutput, joinOperands);
+  auto & newMemoryStateOperand = traceLoadNodeMemoryState(loadChainEnd, joinOperands);
   JLM_ASSERT(joinOperands.size() > 1);
 
   // Divert the operands of the respective inputs for each encountered memory state output
@@ -113,7 +114,7 @@ LoadChainSeparation::separateLoadChain(rvsdg::Output & memoryStateOutput)
 
   // Create join node and divert the current memory state output
   auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-  memoryStateOutput.divertUsersWhere(
+  loadChainEnd.divertUsersWhere(
       *joinNode.output(0),
       [&joinNode](const rvsdg::Input & user)
       {
@@ -127,6 +128,40 @@ LoadChainSeparation::traceLoadNodeMemoryState(
     std::vector<rvsdg::Output *> & joinOperands)
 {
   JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+
+  // Handle gamma subregion arguments
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      return traceLoadNodeMemoryState(*entryVar->input->origin(), joinOperands);
+    }
+
+    // We should never end up here
+    throw std::logic_error("Unsupported gamma role");
+  }
+
+  // Handle gamma outputs
+  if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  {
+    util::HashSet<rvsdg::Output *> traceResults;
+    auto [branchResults, _] = gammaNode->MapOutputExitVar(output);
+    for (const auto branchResult : branchResults)
+    {
+      traceResults.insert(&traceLoadNodeMemoryState(*branchResult->origin(), joinOperands));
+    }
+
+    if (traceResults.Size() == 1)
+    {
+      // We could trace the memory states to a single origin. This means the load chain's origin is
+      // outside the gamma node.
+      const auto origin = *traceResults.Items().begin();
+      return traceLoadNodeMemoryState(*origin, joinOperands);
+    }
+
+    // FIXME: handle multiple origin case
+  }
 
   if (!is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)))
     return output;
@@ -187,13 +222,6 @@ LoadChainSeparation::hasLoadNodeAsOperandOwner(const rvsdg::Input & input)
     return false;
   }
 
-  // Handle theta outputs
-  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(operand))
-  {
-    const auto loopVar = thetaNode->MapOutputLoopVar(operand);
-    return hasLoadNodeAsOperandOwner(*loopVar.post);
-  }
-
   // Handle gamma subregion arguments
   if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(operand))
   {
@@ -204,13 +232,6 @@ LoadChainSeparation::hasLoadNodeAsOperandOwner(const rvsdg::Input & input)
     }
 
     return false;
-  }
-
-  // Handle theta subregion arguments
-  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(operand))
-  {
-    const auto loopVar = thetaNode->MapOutputLoopVar(operand);
-    return hasLoadNodeAsOperandOwner(*loopVar.input);
   }
 
   return false;
@@ -242,25 +263,11 @@ LoadChainSeparation::hasLoadNodeAsUserOwner(const rvsdg::Output & output)
       return false;
     }
 
-    // Handle theta inputs
-    if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
-    {
-      const auto loopVar = thetaNode->MapInputLoopVar(user);
-      return hasLoadNodeAsUserOwner(*loopVar.pre);
-    }
-
     // Handle gamma subregion results
     if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(user))
     {
       const auto [_, gammaOutput] = gammaNode->MapBranchResultExitVar(user);
       return hasLoadNodeAsUserOwner(*gammaOutput);
-    }
-
-    // Handle theta subregion results
-    if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(user))
-    {
-      const auto loopVar = thetaNode->MapPostLoopVar(user);
-      return hasLoadNodeAsUserOwner(*loopVar.output);
     }
   }
 

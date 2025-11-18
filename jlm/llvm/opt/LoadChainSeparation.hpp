@@ -51,7 +51,7 @@ private:
    * MemoryStateJoinOperation node.
    */
   static void
-  separateLoadChain(rvsdg::Output & memoryStateOutput);
+  separateLoadChain(rvsdg::Output & loadChainEnd);
 
   /**
    * Traces the memory state output of a \ref LoadOperation upwards through the load node chain,
