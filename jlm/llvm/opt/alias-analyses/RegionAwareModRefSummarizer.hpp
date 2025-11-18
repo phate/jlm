@@ -121,10 +121,18 @@ private:
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
    */
-  static util::HashSet<const PointsToGraph::MemoryNode *>
+  static util::HashSet<PointsToGraph::NodeIndex>
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
-  util::HashSet<const PointsToGraph::MemoryNode *>
+  /**
+   * Gets the set of simple alloca nodes that it is possible to reach from \p region's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph. A simple alloca is by definition
+   * only reachable from register nodes and other simple alloca nodes,
+   * so other types of memory nodes in the points-to graph can be ignored.
+   * @param region the region whose arguments are checked
+   * @return the set of simple allocas reachable from region arguments
+   */
+  util::HashSet<PointsToGraph::NodeIndex>
   GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
 
   /**
@@ -138,12 +146,13 @@ private:
   IsRecursionPossible(const rvsdg::LambdaNode & lambda) const;
 
   /**
-   * Creates a set for each region that contains alloca definitions,
-   * where the alloca fits the requirements for being non-reentrant:
-   *  - the alloca is simple
-   *  - it is not possible to reach the alloca from any of the region's arguments,
+   * Creates subsets of the allocas defined in each region in the program,
+   * containing only the allocas that are determined to be non-reentrant.
+   * The requirements are:
+   *  - The alloca is simple, i.e., not reachable from memory nodes in the \ref PointsToGraph.
+   *  - It is not possible to reach the alloca from any of the region's arguments,
    *    by following edges in the \ref PointsToGraph.
-   * @return the total number of non-reentrant alloca never involved in any recursion
+   * @return the total number of non-reentrant allocas in the program
    */
   size_t
   CreateNonReentrantAllocaSets();
@@ -175,7 +184,7 @@ private:
   void
   AddModRefSetBlocklist(
       ModRefSetIndex index,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist);
+      const util::HashSet<PointsToGraph::NodeIndex> & blocklist);
 
   /**
    * Creates ModRefSets for regions and nodes within the function.

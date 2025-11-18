@@ -78,7 +78,7 @@ private:
   /**
    * Creates a set containing all memory nodes in the given \p pointsToGraph
    */
-  [[nodiscard]] static util::HashSet<const PointsToGraph::MemoryNode *>
+  [[nodiscard]] static util::HashSet<PointsToGraph::NodeIndex>
   GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
 
   /**
@@ -89,7 +89,7 @@ private:
   void
   AddPointerTargetsToModRefSet(
       const rvsdg::Output & output,
-      util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet) const;
+      util::HashSet<PointsToGraph::NodeIndex> & modRefSet) const;
 
   /**
    * Recursively traverses the given \p region, creating Mod/Ref sets for simple nodes.
@@ -130,7 +130,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.numMemoryNodes());
   }
 
   [[nodiscard]] size_t

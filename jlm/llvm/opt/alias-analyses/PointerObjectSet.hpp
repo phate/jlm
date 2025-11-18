@@ -168,9 +168,9 @@ class PointerObjectSet final
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
   std::unordered_map<const rvsdg::Output *, PointerObjectIndex> RegisterMap_;
 
-  std::unordered_map<const rvsdg::Node *, PointerObjectIndex> AllocaMap_;
+  std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> AllocaMap_;
 
-  std::unordered_map<const rvsdg::Node *, PointerObjectIndex> MallocMap_;
+  std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> MallocMap_;
 
   std::unordered_map<const rvsdg::DeltaNode *, PointerObjectIndex> GlobalMap_;
 
@@ -274,10 +274,10 @@ public:
   CreateDummyRegisterPointerObject();
 
   [[nodiscard]] PointerObjectIndex
-  CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool canPoint);
+  CreateAllocaMemoryObject(const rvsdg::SimpleNode & allocaNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint);
+  CreateMallocMemoryObject(const rvsdg::SimpleNode & mallocNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
   CreateGlobalMemoryObject(const rvsdg::DeltaNode & deltaNode, bool canPoint);
@@ -313,10 +313,10 @@ public:
   const std::unordered_map<const rvsdg::Output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
+  const std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> &
   GetAllocaMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
+  const std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> &
   GetMallocMap() const noexcept;
 
   const std::unordered_map<const rvsdg::DeltaNode *, PointerObjectIndex> &

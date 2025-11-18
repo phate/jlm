@@ -18,14 +18,14 @@ class AgnosticModRefSummary final : public ModRefSummary
 {
 public:
   using SimpleNodeModRefMap = std::
-      unordered_map<const rvsdg::SimpleNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
+      unordered_map<const rvsdg::SimpleNode *, util::HashSet<PointsToGraph::NodeIndex>>;
 
   ~AgnosticModRefSummary() noexcept override = default;
 
 private:
   AgnosticModRefSummary(
       const PointsToGraph & pointsToGraph,
-      util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes)
+      util::HashSet<PointsToGraph::NodeIndex> allMemoryNodes)
       : PointsToGraph_(pointsToGraph),
         AllMemoryNodes_(std::move(allMemoryNodes))
   {}
@@ -50,13 +50,13 @@ public:
   void
   SetSimpleNodeModRef(
       const rvsdg::SimpleNode & node,
-      util::HashSet<const PointsToGraph::MemoryNode *> modRefSet)
+      util::HashSet<PointsToGraph::NodeIndex> modRefSet)
   {
     JLM_ASSERT(SimpleNodeModRefs_.find(&node) == SimpleNodeModRefs_.end());
     SimpleNodeModRefs_[&node] = std::move(modRefSet);
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const override
   {
     if (const auto it = SimpleNodeModRefs_.find(&node); it != SimpleNodeModRefs_.end())
@@ -70,31 +70,31 @@ public:
     throw std::logic_error("Unhandled node type.");
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaEntryModRef([[maybe_unused]] const rvsdg::GammaNode & gamma) const override
   {
     return AllMemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaExitModRef([[maybe_unused]] const rvsdg::GammaNode & gamma) const override
   {
     return AllMemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetThetaModRef([[maybe_unused]] const rvsdg::ThetaNode & theta) const override
   {
     return AllMemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaEntryModRef([[maybe_unused]] const rvsdg::LambdaNode & lambda) const override
   {
     return AllMemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaExitModRef([[maybe_unused]] const rvsdg::LambdaNode & lambda) const override
   {
     return AllMemoryNodes_;
@@ -103,7 +103,7 @@ public:
   static std::unique_ptr<AgnosticModRefSummary>
   Create(
       const PointsToGraph & pointsToGraph,
-      util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
+      util::HashSet<PointsToGraph::NodeIndex> memoryNodes)
   {
     return std::unique_ptr<AgnosticModRefSummary>(
         new AgnosticModRefSummary(pointsToGraph, std::move(memoryNodes)));
@@ -112,7 +112,7 @@ public:
 private:
   const PointsToGraph & PointsToGraph_;
   SimpleNodeModRefMap SimpleNodeModRefs_;
-  util::HashSet<const PointsToGraph::MemoryNode *> AllMemoryNodes_;
+  util::HashSet<PointsToGraph::NodeIndex> AllMemoryNodes_;
 };
 
 AgnosticModRefSummarizer::AgnosticModRefSummarizer() = default;
@@ -142,26 +142,26 @@ AgnosticModRefSummarizer::SummarizeModRefs(
   return std::move(ModRefSummary_);
 }
 
-util::HashSet<const PointsToGraph::MemoryNode *>
+util::HashSet<PointsToGraph::NodeIndex>
 AgnosticModRefSummarizer::GetAllMemoryNodes(const PointsToGraph & pointsToGraph)
 {
-  util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-  for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    memoryNodes.insert(&allocaNode);
+  util::HashSet<PointsToGraph::NodeIndex> memoryNodes;
+  for (const auto allocaNode : pointsToGraph.allocaNodes())
+    memoryNodes.insert(allocaNode);
 
-  for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    memoryNodes.insert(&deltaNode);
+  for (const auto deltaNode : pointsToGraph.deltaNodes())
+    memoryNodes.insert(deltaNode);
 
-  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    memoryNodes.insert(&lambdaNode);
+  for (const auto lambdaNode : pointsToGraph.lambdaNodes())
+    memoryNodes.insert(lambdaNode);
 
-  for (auto & mallocNode : pointsToGraph.MallocNodes())
-    memoryNodes.insert(&mallocNode);
+  for (const auto mallocNode : pointsToGraph.mallocNodes())
+    memoryNodes.insert(mallocNode);
 
-  for (auto & importNode : pointsToGraph.ImportNodes())
-    memoryNodes.insert(&importNode);
+  for (const auto importNode : pointsToGraph.importNodes())
+    memoryNodes.insert(importNode);
 
-  memoryNodes.insert(&pointsToGraph.GetExternalMemoryNode());
+  JLM_ASSERT(memoryNodes.Size() == pointsToGraph.numMemoryNodes());
 
   return memoryNodes;
 }
@@ -190,13 +190,21 @@ AgnosticModRefSummarizer::AnnotateRegion(const rvsdg::Region & region)
 void
 AgnosticModRefSummarizer::AddPointerTargetsToModRefSet(
     const rvsdg::Output & output,
-    util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet) const
+    util::HashSet<PointsToGraph::NodeIndex> & modRefSet) const
 {
+  const auto & pointsToGraph = ModRefSummary_->GetPointsToGraph();
   JLM_ASSERT(IsPointerCompatible(output));
-  const auto & addressReg = ModRefSummary_->GetPointsToGraph().GetRegisterNode(output);
-  for (auto & target : addressReg.Targets())
+  const auto & addressReg = pointsToGraph.getNodeForRegister(output);
+  for (const auto target : pointsToGraph.getExplicitTargets(addressReg).Items())
   {
-    modRefSet.insert(&target);
+    modRefSet.insert(target);
+  }
+  if (pointsToGraph.isTargetingAllExternallyAvailable(addressReg))
+  {
+    for (const auto implicitTarget : pointsToGraph.getExternallyAvailableNodes())
+    {
+      modRefSet.insert(implicitTarget);
+    }
   }
 }
 
@@ -206,20 +214,20 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
   if (is<StoreOperation>(&node))
   {
     const auto & address = *StoreOperation::AddressInput(node).origin();
-    util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
+    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
     AddPointerTargetsToModRefSet(address, modRefSet);
     ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
   }
   else if (is<LoadOperation>(&node))
   {
     const auto & address = *LoadOperation::AddressInput(node).origin();
-    util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
+    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
     AddPointerTargetsToModRefSet(address, modRefSet);
     ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
   }
   else if (is<MemCpyOperation>(&node))
   {
-    util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
+    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
     const auto & srcAddress = *MemCpyOperation::sourceInput(node).origin();
     const auto & dstAddress = *MemCpyOperation::destinationInput(node).origin();
     AddPointerTargetsToModRefSet(srcAddress, modRefSet);
@@ -228,20 +236,20 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
   }
   else if (is<FreeOperation>(&node))
   {
-    util::HashSet<const PointsToGraph::MemoryNode *> modRefSet;
+    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
     const auto & freeAddress = *FreeOperation::addressInput(node).origin();
     AddPointerTargetsToModRefSet(freeAddress, modRefSet);
     ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
   }
   else if (is<AllocaOperation>(&node))
   {
-    const auto & allocaMemoryNode = ModRefSummary_->GetPointsToGraph().GetAllocaNode(node);
-    ModRefSummary_->SetSimpleNodeModRef(node, { &allocaMemoryNode });
+    const auto allocaMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForAlloca(node);
+    ModRefSummary_->SetSimpleNodeModRef(node, { allocaMemoryNode });
   }
   else if (is<MallocOperation>(&node))
   {
-    const auto & mallocMemoryNode = ModRefSummary_->GetPointsToGraph().GetMallocNode(node);
-    ModRefSummary_->SetSimpleNodeModRef(node, { &mallocMemoryNode });
+    const auto mallocMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForMalloc(node);
+    ModRefSummary_->SetSimpleNodeModRef(node, { mallocMemoryNode });
   }
   else if (is<CallOperation>(&node))
   {

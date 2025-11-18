@@ -53,12 +53,12 @@ StoreTest1::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*constantOne);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*constantOne);
 
-  this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
-  this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
-  this->alloca_c = rvsdg::TryGetOwnerNode<rvsdg::Node>(*c[0]);
-  this->alloca_d = rvsdg::TryGetOwnerNode<rvsdg::Node>(*d[0]);
+  this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*a[0]);
+  this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*b[0]);
+  this->alloca_c = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*c[0]);
+  this->alloca_d = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*d[0]);
 
   return module;
 }
@@ -3628,7 +3628,7 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create alloca node
   auto allocaSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 1 });
   auto allocaOutputs = AllocaOperation::create(pointerType, allocaSize, 8);
-  Alloca_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
+  Alloca_ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*allocaOutputs[0]);
 
   auto afterAllocaMemoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ entryMemoryState, allocaOutputs[1] });
@@ -3636,7 +3636,7 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create malloc node
   auto mallocSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 4 });
   auto mallocOutputs = MallocOperation::create(mallocSize);
-  Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
+  Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ afterAllocaMemoryState, mallocOutputs[1] });

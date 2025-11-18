@@ -25,8 +25,8 @@ namespace jlm::llvm::aa
 {
 
 /**
- * allocas that are not defined in f(), and not defined in a predecessors of f() in the call graph,
- * can not be live inside f(). They are added to the DeadAllocaBlocklist.
+ * allocas that are not defined in f(), and not defined in a predecessor of f() in the call graph,
+ * cannot be live inside f(). They are added to the DeadAllocaBlocklist.
  */
 static const bool ENABLE_DEAD_ALLOCA_BLOCKLIST = !std::getenv("JLM_DISABLE_DEAD_ALLOCA_BLOCKLIST");
 
@@ -84,7 +84,7 @@ public:
     AddMeasurement(
         NumRvsdgRegionsLabel_,
         rvsdg::Region::NumRegions(rvsdgModule.Rvsdg().GetRootRegion()));
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.numMemoryNodes());
   }
 
   void
@@ -190,20 +190,20 @@ class ModRefSet final
 public:
   ModRefSet() = default;
 
-  [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] util::HashSet<PointsToGraph::NodeIndex> &
   GetMemoryNodes()
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetMemoryNodes() const
   {
     return MemoryNodes_;
   }
 
 private:
-  util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
+  util::HashSet<PointsToGraph::NodeIndex> MemoryNodes_;
 };
 
 /** \brief Mod/Ref summary of region-aware mod/ref summarizer
@@ -231,7 +231,7 @@ public:
     return ModRefSets_.size();
   }
 
-  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
   GetModRefSet(ModRefSetIndex index) const
   {
     JLM_ASSERT(index < ModRefSets_.size());
@@ -239,10 +239,10 @@ public:
   }
 
   bool
-  AddToModRefSet(ModRefSetIndex index, const PointsToGraph::MemoryNode & node)
+  AddToModRefSet(ModRefSetIndex index, PointsToGraph::NodeIndex ptgNode)
   {
     JLM_ASSERT(index < ModRefSets_.size());
-    return ModRefSets_[index].GetMemoryNodes().insert(&node);
+    return ModRefSets_[index].GetMemoryNodes().insert(ptgNode);
   }
 
   bool
@@ -294,37 +294,37 @@ public:
     NodeMap_[&node] = index;
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const override
   {
     return ModRefSets_[GetSetForNode(node)].GetMemoryNodes();
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaEntryModRef(const rvsdg::GammaNode & gamma) const override
   {
     return ModRefSets_[GetSetForNode(gamma)].GetMemoryNodes();
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaExitModRef(const rvsdg::GammaNode & gamma) const override
   {
     return GetGammaEntryModRef(gamma);
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetThetaModRef(const rvsdg::ThetaNode & theta) const override
   {
     return ModRefSets_[GetSetForNode(theta)].GetMemoryNodes();
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const override
   {
     return ModRefSets_[GetSetForNode(lambda)].GetMemoryNodes();
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const override
   {
     return GetLambdaEntryModRef(lambda);
@@ -407,14 +407,14 @@ struct RegionAwareModRefSummarizer::Context
    *
    * Assigned in \ref FindAllocasDeadInSccs(). Remains constant after.
    */
-  std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> AllocasDeadInScc;
+  std::vector<util::HashSet<PointsToGraph::NodeIndex>> AllocasDeadInScc;
 
   /**
    * The set of all Simple Allocas in the module.
    *
    * Assigned in \ref CreateSimpleAllocaSet(). Remains constant after.
    */
-  util::HashSet<const PointsToGraph::MemoryNode *> SimpleAllocas;
+  util::HashSet<PointsToGraph::NodeIndex> SimpleAllocas;
 
   /**
    * For each region, this field contains the set of allocas defined in the region,
@@ -422,7 +422,7 @@ struct RegionAwareModRefSummarizer::Context
    *
    * Assigned in \ref CreateNonReentrantAllocaSets(). Remains constant after.
    */
-  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
+  std::unordered_map<const rvsdg::Region *, util::HashSet<PointsToGraph::NodeIndex>>
       NonReentrantAllocas;
 
   /**
@@ -445,7 +445,7 @@ struct RegionAwareModRefSummarizer::Context
    * will be skipped if x is in the Blocklist associated with a.
    * The pointer to the blocklist must remain valid until solving is finished.
    */
-  std::unordered_map<ModRefSetIndex, const util::HashSet<const PointsToGraph::MemoryNode *> *>
+  std::unordered_map<ModRefSetIndex, const util::HashSet<PointsToGraph::NodeIndex> *>
       ModRefSetBlocklists;
 };
 
@@ -566,22 +566,23 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   const auto externalNodeIndex = lambdaNodes.size();
   const auto numCallGraphNodes = externalNodeIndex + 1;
 
-  // Outgoing edges for each node in the call graph
+  // Outgoing edges for each node in the call graph, indexed by position in lambdaNodes
   std::vector<util::HashSet<size_t>> callGraphSuccessors(numCallGraphNodes);
 
   // Add outgoing edges from the given caller to any function the call may target
   const auto HandleCall = [&](rvsdg::Node & callNode, size_t callerIndex) -> void
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
-    const auto targetPtr = callNode.input(0)->origin();
-    const auto & targetPtrNode = pointsToGraph.GetRegisterNode(*targetPtr);
+    const auto target = callNode.input(0)->origin();
+    const auto targetPtgNode = pointsToGraph.getNodeForRegister(*target);
 
     // Go through all locations the called function pointer may target
-    for (auto & callee : targetPtrNode.Targets())
+    for (const auto calleePtgNode : pointsToGraph.getExplicitTargets(targetPtgNode).Items())
     {
-      if (auto lambdaCallee = dynamic_cast<const PointsToGraph::LambdaNode *>(&callee))
+      const auto kind = pointsToGraph.getNodeKind(calleePtgNode);
+      if (kind == PointsToGraph::NodeKind::LambdaNode)
       {
-        const auto & lambdaNode = lambdaCallee->GetLambdaNode();
+        const auto & lambdaNode = pointsToGraph.getLambdaForNode(calleePtgNode);
 
         // Look up which call graph node represents the target lambda
         JLM_ASSERT(callGraphNodeIndex.find(&lambdaNode) != callGraphNodeIndex.end());
@@ -590,13 +591,17 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
         // Add the edge caller -> callee to the call graph
         callGraphSuccessors[callerIndex].insert(calleeCallGraphNode);
       }
-      else if (
-          PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
-          || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
+      else if (kind == PointsToGraph::NodeKind::ImportNode)
       {
         // Add the edge caller -> node representing external functions
         callGraphSuccessors[callerIndex].insert(externalNodeIndex);
       }
+    }
+
+    if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
+    {
+      // If the call target pointer is flagged, add an edge to external functions
+      callGraphSuccessors[callerIndex].insert(externalNodeIndex);
     }
   };
 
@@ -626,14 +631,13 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     HandleCalls(*lambdaNodes[i]->subregion(), i);
 
     // If the function has escaped, add an edge from the node representing all external functions
-    const auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*lambdaNodes[i]);
-    if (pointsToGraph.GetEscapedMemoryNodes().Contains(&lambdaMemoryNode))
+    if (pointsToGraph.isExternallyAvailable(pointsToGraph.getNodeForLambda(*lambdaNodes[i])))
     {
       callGraphSuccessors[externalNodeIndex].insert(i);
     }
   }
 
-  // Finally add the fact that the external node may call itself
+  // Finally, add the fact that the external node may call itself
   callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
 
   // Used by the implementation of Tarjan's SCC algorithm
@@ -677,20 +681,22 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
 void
 RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
 {
-  // First find which allocas may be live in each SCC
-  std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> liveAllocas(
-      Context_->SccFunctions.size());
+  const auto & pointsToGraph = Context_->pointsToGraph;
 
-  util::HashSet<const PointsToGraph::MemoryNode *> allAllocas;
+  // First find which allocas may be live in each SCC
+  std::vector<util::HashSet<PointsToGraph::NodeIndex>> liveAllocas(Context_->SccFunctions.size());
+
+  util::HashSet<PointsToGraph::NodeIndex> allAllocas;
 
   // Add all Allocas to the SCC of the function they are defined in
-  for (auto & allocaNode : Context_->pointsToGraph.AllocaNodes())
+  for (auto allocaPtgNode : Context_->pointsToGraph.allocaNodes())
   {
-    allAllocas.insert(&allocaNode);
-    const auto & lambdaNode = rvsdg::getSurroundingLambdaNode(allocaNode.GetAllocaNode());
+    allAllocas.insert(allocaPtgNode);
+    const auto & allocaNode = pointsToGraph.getAllocaForNode(allocaPtgNode);
+    const auto & lambdaNode = rvsdg::getSurroundingLambdaNode(allocaNode);
     JLM_ASSERT(Context_->FunctionToSccIndex.count(&lambdaNode));
     const auto sccIndex = Context_->FunctionToSccIndex[&lambdaNode];
-    liveAllocas[sccIndex].insert(&allocaNode);
+    liveAllocas[sccIndex].insert(allocaPtgNode);
   }
 
   // Propagate live allocas to targets of function calls.
@@ -701,6 +707,7 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   {
     for (auto targetScc : Context_->SccCallTargets[sccIndex].Items())
     {
+      JLM_ASSERT(targetScc <= sccIndex);
       if (targetScc != sccIndex)
         liveAllocas[targetScc].UnionWith(liveAllocas[sccIndex]);
     }
@@ -715,96 +722,77 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   }
 }
 
-util::HashSet<const PointsToGraph::MemoryNode *>
+util::HashSet<PointsToGraph::NodeIndex>
 RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph)
 {
   // The set of allocas that are simple. Starts off as an over-approximation
-  util::HashSet<const PointsToGraph::MemoryNode *> simpleAllocas;
-  // A queue used to visit all allocas that have been found to not be simple
-  std::queue<const PointsToGraph::MemoryNode *> notSimple;
+  util::HashSet<PointsToGraph::NodeIndex> simpleAllocas;
+  // A queue used to visit all PtG memory nodes that are not simple allocas
+  std::queue<PointsToGraph::NodeIndex> notSimple;
 
-  const auto onlyAllocaSources = [](const PointsToGraph::MemoryNode & node)
+  for (PointsToGraph::NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
   {
-    // Allocas that have escaped the module are never simple
-    if (node.IsModuleEscaping())
-      return false;
+    // Only memory nodes are relevant
+    if (!pointsToGraph.isMemoryNode(ptgNode))
+      continue;
 
-    for (const auto & source : node.Sources())
-    {
-      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(source)
-          && !PointsToGraph::Node::Is<PointsToGraph::RegisterNode>(source))
-        return false;
-    }
-
-    return true;
-  };
-
-  for (const auto & allocaNode : pointsToGraph.AllocaNodes())
-  {
-    if (onlyAllocaSources(allocaNode))
-      simpleAllocas.insert(&allocaNode);
+    // Allocas that are not externally available start of as presumed simple
+    if (pointsToGraph.getNodeKind(ptgNode) == PointsToGraph::NodeKind::AllocaNode
+        && !pointsToGraph.isExternallyAvailable(ptgNode))
+      simpleAllocas.insert(ptgNode);
     else
-      notSimple.push(&allocaNode);
+      notSimple.push(ptgNode);
   }
 
-  // Now all allocas are either in the simpleAllocas candidate set,
-  // or in the notSimple queue. Process the queue until empty
+  // Process the queue to visit all memory nodes that may disqualify allocas from being simple
   while (!notSimple.empty())
   {
-    const auto & allocaNode = *notSimple.front();
+    const auto ptgNode = notSimple.front();
     notSimple.pop();
 
-    // Any node targeted by the allocaNode can not be simple
-    for (const auto & target : allocaNode.Targets())
+    // Any node targeted by the not-simple memory node can themselves not be simple
+    for (const auto targetPtgNode : pointsToGraph.getExplicitTargets(ptgNode).Items())
     {
-      // If the target is currently in the simple allocas candidate set, move it to the queue
-      if (simpleAllocas.Remove(&target))
-        notSimple.push(&target);
+      // If the target is currently in the simple allocas candiate set, move it to the queue
+      if (simpleAllocas.Remove(targetPtgNode))
+        notSimple.push(targetPtgNode);
     }
   }
 
   return simpleAllocas;
 }
 
-/**
- * Gets the set of simple AllocaMemoryNodes that it is possible to reach from region arguments.
- * Reachability is defined in terms of the PointsToGraph. A simple alloca is by definition
- * only reachable from RegisterNodes and other simple AllocaMemoryNodes,
- * so other types of MemoryNodes can be ignored.
- * @param region the region whose arguments are checked
- * @return the set of simple allocas reachable from region arguments
- */
-util::HashSet<const PointsToGraph::MemoryNode *>
+util::HashSet<PointsToGraph::NodeIndex>
 RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
     const rvsdg::Region & region)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
   // Use a queue and a set to traverse the PointsToGraph
-  util::HashSet<const PointsToGraph::MemoryNode *> reachableSimpleAllocas;
-  std::queue<const PointsToGraph::Node *> nodes;
+  util::HashSet<PointsToGraph::NodeIndex> reachableSimpleAllocas;
+  std::queue<PointsToGraph::NodeIndex> nodes;
   for (auto argument : region.Arguments())
   {
     if (!IsPointerCompatible(*argument))
       continue;
-    auto & ptgNode = pointsToGraph.GetRegisterNode(*argument);
-    nodes.push(&ptgNode);
+    const auto ptgNode = pointsToGraph.getNodeForRegister(*argument);
+    nodes.push(ptgNode);
   }
 
   // Traverse along PointsToGraph edges to find all reachable simple allocas
   while (!nodes.empty())
   {
-    auto & ptgNode = *nodes.front();
+    const auto ptgNode = nodes.front();
     nodes.pop();
 
-    for (auto & target : ptgNode.Targets())
+    for (const auto targetPtgNode : pointsToGraph.getExplicitTargets(ptgNode).Items())
     {
       // We only are about following simple allocas, as simple allocas are only reachable from them.
-      if (!Context_->SimpleAllocas.Contains(&target))
+      if (!Context_->SimpleAllocas.Contains(targetPtgNode))
         continue;
 
-      if (reachableSimpleAllocas.insert(&target))
-        nodes.push(&target);
+      if (reachableSimpleAllocas.insert(targetPtgNode))
+        nodes.push(targetPtgNode);
     }
   }
 
@@ -821,41 +809,56 @@ RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambd
 size_t
 RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
 {
-  size_t numNonReentrantAllocas = 0;
+  const auto & pointsToGraph = Context_->pointsToGraph;
 
-  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
-      simpleAllocasReachableFromRegionArguments;
+  // Caching the sets of simple allocas reachable from region arguments
+  std::unordered_map<const rvsdg::Region *, util::HashSet<PointsToGraph::NodeIndex>>
+      reachableSimpleAllocas;
 
-  // Only simple allocas are candidates for being non-reentrant
-  for (auto memoryNode : Context_->SimpleAllocas.Items())
+  // Returns the set of simple allocas reachable from the region's arguments
+  const auto getReachableSimpleAllocas =
+      [&](const rvsdg::Region & region) -> const util::HashSet<PointsToGraph::NodeIndex> &
   {
-    auto & allocaMemoryNode = *util::assertedCast<const PointsToGraph::AllocaNode>(memoryNode);
-    auto & allocaNode = allocaMemoryNode.GetAllocaNode();
+    if (const auto it = reachableSimpleAllocas.find(&region); it != reachableSimpleAllocas.end())
+    {
+      return it->second;
+    }
+    return reachableSimpleAllocas[&region] = GetSimpleAllocasReachableFromRegionArguments(region);
+  };
+
+  // Checks if the simple alloca represented by the given points-to graph node is non-reentrant
+  const auto isNonReentrant = [&](PointsToGraph::NodeIndex simpleAllocaPtgNode) -> bool
+  {
+    auto & allocaNode = pointsToGraph.getAllocaForNode(simpleAllocaPtgNode);
     const auto & region = *allocaNode.region();
 
-    // If the alloca's function is never involved in any recursion
-    // the alloca is definitely non-reentrant.
-    const auto & lambda = rvsdg::getSurroundingLambdaNode(allocaNode);
+    // If the alloca's function is never involved in any recursion,
+    // the alloca is trivially non-reentrant.
+    const auto & lambda = getSurroundingLambdaNode(allocaNode);
+    if (!IsRecursionPossible(lambda))
+      return true;
 
-    // In lambdas where recursion is possible, only simple allocas that are provably not
-    // passed in through region arguments can be considered non-reentrant
-    if (IsRecursionPossible(lambda))
+    // In lambdas where recursion is possible, simple allocas that are reachable from
+    // region arguments via edges in the points-to graph must be considered reentrant.
+    if (getReachableSimpleAllocas(region).Contains(simpleAllocaPtgNode))
+      return false;
+
+    // Otherwise the simple alloca is non-reentrant
+    return true;
+  };
+
+  size_t numNonReentrantAllocas = 0;
+
+  // Only simple allocas are candidates for being non-reentrant
+  for (auto simpleAllocaPtgNode : Context_->SimpleAllocas.Items())
+  {
+    if (isNonReentrant(simpleAllocaPtgNode))
     {
-      auto it = simpleAllocasReachableFromRegionArguments.find(&region);
-      if (it == simpleAllocasReachableFromRegionArguments.end())
-      {
-        it = simpleAllocasReachableFromRegionArguments.insert(
-            it,
-            { &region, GetSimpleAllocasReachableFromRegionArguments(region) });
-      }
-
-      if (it->second.Contains(&allocaMemoryNode))
-        continue;
+      const auto region = pointsToGraph.getAllocaForNode(simpleAllocaPtgNode).region();
+      // Creates a set for the region if it does not already have one, and add the alloca
+      Context_->NonReentrantAllocas[region].insert(simpleAllocaPtgNode);
+      numNonReentrantAllocas++;
     }
-
-    // Creates a set for the region if it does not already have one, and add the alloca
-    Context_->NonReentrantAllocas[&region].insert(&allocaMemoryNode);
-    numNonReentrantAllocas++;
   }
 
   return numNonReentrantAllocas;
@@ -864,58 +867,27 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
 void
 RegionAwareModRefSummarizer::CreateExternalModRefSet()
 {
+  const auto & pointsToGraph = Context_->pointsToGraph;
+
   Context_->ExternalModRefIndex = ModRefSummary_->CreateModRefSet();
 
   // Go through all types of memory node and add them to the external ModRefSet if escaping
-  for (auto & alloca : Context_->pointsToGraph.AllocaNodes())
+  for (PointsToGraph::NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
   {
-    if (!alloca.IsModuleEscaping())
-      continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && alloca.isConstant())
-      continue;
-    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, alloca);
-  }
-  for (auto & malloc : Context_->pointsToGraph.MallocNodes())
-  {
-    if (!malloc.IsModuleEscaping())
-      continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && malloc.isConstant())
-      continue;
-    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, malloc);
-  }
-  for (auto & delta : Context_->pointsToGraph.DeltaNodes())
-  {
-    if (!delta.IsModuleEscaping())
-      continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && delta.isConstant())
-      continue;
-    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, delta);
-  }
-  for (auto & lambda : Context_->pointsToGraph.LambdaNodes())
-  {
-    if (!lambda.IsModuleEscaping())
+    // Must be a memory node
+    if (!pointsToGraph.isMemoryNode(ptgNode))
       continue;
 
-    // Add a call from external to the function
-    auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda.GetLambdaNode());
-    AddModRefSimpleConstraint(lambdaModRefIndex, Context_->ExternalModRefIndex);
+    // Must be externally available
+    if (!pointsToGraph.isExternallyAvailable(ptgNode))
+      continue;
 
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && lambda.isConstant())
+    // Must be non-constant
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(ptgNode))
       continue;
-    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, lambda);
-  }
-  for (auto & import : Context_->pointsToGraph.ImportNodes())
-  {
-    if (!import.IsModuleEscaping())
-      continue;
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && import.isConstant())
-      continue;
-    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, import);
-  }
 
-  ModRefSummary_->AddToModRefSet(
-      Context_->ExternalModRefIndex,
-      Context_->pointsToGraph.GetExternalMemoryNode());
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, ptgNode);
+  }
 }
 
 void
@@ -929,7 +901,7 @@ RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModR
 void
 RegionAwareModRefSummarizer::AddModRefSetBlocklist(
     ModRefSetIndex index,
-    const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist)
+    const util::HashSet<PointsToGraph::NodeIndex> & blocklist)
 {
   JLM_ASSERT(Context_->ModRefSetBlocklists.find(index) == Context_->ModRefSetBlocklists.end());
   Context_->ModRefSetBlocklists[index] = &blocklist;
@@ -1039,24 +1011,39 @@ RegionAwareModRefSummarizer::AddPointerOriginTargets(
     std::optional<size_t> minTargetSize,
     const rvsdg::LambdaNode & lambda)
 {
-  // TODO Re-use ModRefSets for all uses of the registerNode in this function
-  const auto & registerNode = Context_->pointsToGraph.GetRegisterNode(origin);
-
+  const auto & pointsToGraph = Context_->pointsToGraph;
   const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
-  for (const auto & target : registerNode.Targets())
+
+  // TODO: Re-use ModRefSets for all uses of the registerNode in this function
+  const auto registerPtgNode = pointsToGraph.getNodeForRegister(origin);
+
+  const auto tryAddToModRefSet = [&](PointsToGraph::NodeIndex targetPtgNode)
   {
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING && target.isConstant())
-      continue;
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(targetPtgNode))
+      return;
     if (ENABLE_OPERATION_SIZE_BLOCKING && minTargetSize)
     {
-      const auto targetSize = target.tryGetSize();
+      const auto targetSize = pointsToGraph.tryGetNodeSize(targetPtgNode);
       if (targetSize && *targetSize < minTargetSize)
-        continue;
+        return;
     }
-    if (ENABLE_DEAD_ALLOCA_BLOCKLIST && allocasDead.Contains(&target))
-      continue;
+    if (ENABLE_DEAD_ALLOCA_BLOCKLIST && allocasDead.Contains(targetPtgNode))
+      return;
+    ModRefSummary_->AddToModRefSet(modRefSetIndex, targetPtgNode);
+  };
 
-    ModRefSummary_->AddToModRefSet(modRefSetIndex, target);
+  // If the pointer is targeting everything external, add it all to the Mod/Ref set
+  if (pointsToGraph.isTargetingAllExternallyAvailable(registerPtgNode))
+  {
+    for (const auto targetPtgNode : pointsToGraph.getExternallyAvailableNodes())
+    {
+      tryAddToModRefSet(targetPtgNode);
+    }
+  }
+
+  for (const auto targetPtgNode : pointsToGraph.getExplicitTargets(registerPtgNode).Items())
+  {
+    tryAddToModRefSet(targetPtgNode);
   }
 }
 
@@ -1092,7 +1079,7 @@ ModRefSetIndex
 RegionAwareModRefSummarizer::AnnotateAlloca(const rvsdg::SimpleNode & allocaNode)
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(allocaNode);
-  const auto & allocaMemoryNode = Context_->pointsToGraph.GetAllocaNode(allocaNode);
+  const auto allocaMemoryNode = Context_->pointsToGraph.getNodeForAlloca(allocaNode);
   ModRefSummary_->AddToModRefSet(nodeModRef, allocaMemoryNode);
   return nodeModRef;
 }
@@ -1101,7 +1088,7 @@ ModRefSetIndex
 RegionAwareModRefSummarizer::AnnotateMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(mallocNode);
-  const auto & mallocMemoryNode = Context_->pointsToGraph.GetMallocNode(mallocNode);
+  const auto mallocMemoryNode = Context_->pointsToGraph.getNodeForMalloc(mallocNode);
   ModRefSummary_->AddToModRefSet(nodeModRef, mallocMemoryNode);
   return nodeModRef;
 }
@@ -1145,28 +1132,33 @@ RegionAwareModRefSummarizer::AnnotateCall(
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
 
+  const auto & pointsToGraph = Context_->pointsToGraph;
+
   // This ModRefSet represents everything the call may affect
   const auto callModRef = ModRefSummary_->GetOrCreateSetForNode(callNode);
 
   // Go over all possible targets of the call and add them to the call summary
   const auto targetPtr = callNode.input(0)->origin();
-  const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
+  const auto targetPtgNode = Context_->pointsToGraph.getNodeForRegister(*targetPtr);
 
   // Go through all locations the called function pointer may target
-  for (auto & callee : targetPtrNode.Targets())
+  for (const auto calleePtgNode : pointsToGraph.getExplicitTargets(targetPtgNode).Items())
   {
-    if (auto lambdaCallee = dynamic_cast<const PointsToGraph::LambdaNode *>(&callee))
+    const auto kind = pointsToGraph.getNodeKind(calleePtgNode);
+    if (kind == PointsToGraph::NodeKind::LambdaNode)
     {
-      const auto & lambdaNode = lambdaCallee->GetLambdaNode();
-      const auto targetModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambdaNode);
+      const auto & calleeLambda = pointsToGraph.getLambdaForNode(calleePtgNode);
+      const auto targetModRefSet = ModRefSummary_->GetOrCreateSetForNode(calleeLambda);
       AddModRefSimpleConstraint(targetModRefSet, callModRef);
     }
-    else if (
-        PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
-        || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
+    else if (kind == PointsToGraph::NodeKind::ImportNode)
     {
       AddModRefSimpleConstraint(Context_->ExternalModRefIndex, callModRef);
     }
+  }
+  if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
+  {
+    AddModRefSimpleConstraint(Context_->ExternalModRefIndex, callModRef);
   }
 
   // Allocas that are live within the call, might no longer be live from the call site
@@ -1207,7 +1199,7 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
         {
           if (blocklist->second->Contains(memoryNode))
             continue;
-          changed |= ModRefSummary_->AddToModRefSet(target, *memoryNode);
+          changed |= ModRefSummary_->AddToModRefSet(target, memoryNode);
         }
       }
       else
@@ -1267,14 +1259,16 @@ RegionAwareModRefSummarizer::ToRegionTree(
     const rvsdg::Graph & rvsdg,
     const RegionAwareModRefSummary & modRefSummary)
 {
+  const auto & pointsToGraph = modRefSummary.GetPointsToGraph();
+
   std::ostringstream ss;
 
-  auto toString = [&](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  auto toString = [&](const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
   {
     ss << "MemoryNodes: {";
     for (auto & memoryNode : memoryNodes.Items())
     {
-      ss << memoryNode->DebugString();
+      ss << pointsToGraph.getNodeDebugString(memoryNode);
       ss << ", ";
     }
     ss << "}" << std::endl;

@@ -83,12 +83,12 @@ private:
 public:
   jlm::rvsdg::LambdaNode * lambda;
 
-  rvsdg::Node * size;
+  rvsdg::SimpleNode * size;
 
-  rvsdg::Node * alloca_a;
-  rvsdg::Node * alloca_b;
-  rvsdg::Node * alloca_c;
-  rvsdg::Node * alloca_d;
+  rvsdg::SimpleNode * alloca_a;
+  rvsdg::SimpleNode * alloca_b;
+  rvsdg::SimpleNode * alloca_c;
+  rvsdg::SimpleNode * alloca_d;
 };
 
 /** \brief StoreTest2 class
@@ -2134,7 +2134,7 @@ public:
     return *Lambda_->output();
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetAllocaNode() const noexcept
   {
     JLM_ASSERT(Alloca_);
@@ -2148,7 +2148,7 @@ public:
     return *Alloca_->output(0);
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetMallocNode() const noexcept
   {
     JLM_ASSERT(Malloc_);
@@ -2172,9 +2172,9 @@ private:
 
   jlm::rvsdg::LambdaNode * Lambda_ = {};
 
-  rvsdg::Node * Alloca_ = {};
+  rvsdg::SimpleNode * Alloca_ = {};
 
-  rvsdg::Node * Malloc_ = {};
+  rvsdg::SimpleNode * Malloc_ = {};
 };
 
 /** \brief RVSDG module with an arbitrary amount of alloca nodes.
