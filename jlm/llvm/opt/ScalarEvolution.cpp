@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -15,6 +16,81 @@
 
 namespace jlm::llvm
 {
+
+class ScalarEvolution::Context final
+{
+public:
+  ~Context() = default;
+
+  Context() = default;
+
+  Context(const Context &) = delete;
+
+  Context(Context &&) = delete;
+
+  Context &
+  operator=(const Context &) = delete;
+
+  Context &
+  operator=(Context &&) = delete;
+
+  void
+  InsertChrec(const rvsdg::ThetaNode & thetaNode, std::unique_ptr<SCEVChainRecurrence> & chrec)
+  {
+    ChrecMap_[&thetaNode].insert(std::move(chrec));
+  }
+
+  int
+  GetNumOfChrecsWithOrder(const int n) const
+  {
+    int count = 0;
+    for (auto & [theta, chrecs] : ChrecMap_)
+    {
+      for (auto & chrec : chrecs.Items())
+      {
+        // Count chrecs with specific order
+        if (static_cast<int>(chrec->GetOperands().size()) == n + 1)
+          count++;
+      }
+    }
+    return count;
+  }
+
+  size_t
+  GetNumOfTotalChrecs() const
+  {
+    size_t total = 0;
+    for (const auto & [theta, chrecs] : ChrecMap_)
+    {
+      total += chrecs.Size();
+    }
+    return total;
+  }
+
+  void
+  AddLoopVar(const rvsdg::Output & var)
+  {
+    LoopVars_.push_back(&var);
+  }
+
+  size_t
+  GetNumTotalLoopVars() const
+  {
+    return LoopVars_.size();
+  }
+
+  static std::unique_ptr<Context>
+  Create()
+  {
+    return std::make_unique<Context>();
+  }
+
+private:
+  std::unordered_map<const rvsdg::ThetaNode *, util::HashSet<std::unique_ptr<SCEVChainRecurrence>>>
+      ChrecMap_;
+  std::vector<const rvsdg::Output *> LoopVars_;
+};
+
 class ScalarEvolution::Statistics final : public util::Statistics
 {
 
@@ -32,9 +108,15 @@ public:
   }
 
   void
-  Stop() noexcept
+  Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
+    AddMeasurement(Label::NumTotalRecurrences, context.GetNumOfTotalChrecs());
+    AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
+    AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
+    AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
+    AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
+    AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
   }
 
   static std::unique_ptr<Statistics>
@@ -43,6 +125,9 @@ public:
     return std::make_unique<Statistics>(sourceFile);
   }
 };
+
+ScalarEvolution::ScalarEvolution()
+    : Transformation("ScalarEvolution") {};
 
 ScalarEvolution::~ScalarEvolution() noexcept = default;
 
@@ -54,16 +139,30 @@ ScalarEvolution::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
+  Context_ = Context::Create();
   InductionVariableMap_.clear();
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
-  TraverseRegion(rootRegion);
+  AnalyzeRegion(rootRegion);
 
-  statistics->Stop();
+  statistics->Stop(*Context_);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
 
+bool
+ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
+{
+  for (const auto operand : chrec.GetOperands())
+  {
+    if (dynamic_cast<const SCEVUnknown *>(operand))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 void
-ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
+ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 {
   for (const auto & node : region.Nodes())
   {
@@ -71,11 +170,22 @@ ScalarEvolution::TraverseRegion(const rvsdg::Region & region)
     {
       for (auto & subregion : structuralNode->Subregions())
       {
-        TraverseRegion(subregion);
+        AnalyzeRegion(subregion);
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
-        PerformSCEVAnalysis(*thetaNode);
+        // Add number of loop vars in theta (for statistics)
+        for (const auto loopVar : thetaNode->GetLoopVars())
+        {
+          Context_.get()->AddLoopVar(*loopVar.pre);
+        }
+
+        auto chrecMap = PerformSCEVAnalysis(*thetaNode);
+        for (auto & [output, chrec] : chrecMap)
+        {
+          if (!IsUnknown(*chrec))
+            Context_.get()->InsertChrec(*thetaNode, chrec);
+        }
       }
     }
   }
@@ -110,7 +220,7 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
     {
       const auto constOp =
           dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
-      const auto value = constOp->Representation().to_uint();
+      const auto value = constOp->Representation().to_int();
       result = std::make_unique<SCEVConstant>(value);
     }
     if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation()))
@@ -322,14 +432,11 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       }
 
       // Find the start value for the recurrence
-      if (auto simpleNode =
-              rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*loopVar.input->origin());
-          simpleNode && rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+      if (auto const constantInteger = tryGetConstantSignedInteger(*loopVar.input->origin()))
       {
-        // If the input value is a constant, get it's SCEV representation, and set it as the start
-        // value (first operand in rec)
-        chainRecurrence->AddOperandToFront(
-            GetOrCreateSCEVForOutput(*loopVar.input->origin())->Clone());
+        // If the input value is a constant, create a SCEV representation and set it as start value
+        // (first operand in rec)
+        chainRecurrence->AddOperandToFront(std::make_unique<SCEVConstant>(*constantInteger));
       }
       else
       {
@@ -350,7 +457,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     auto storedRec = ChainRecurrenceMap_.at(loopVar.pre)->Clone();
-    // Workaround for the fact that Clone() is an overrided method that returns a unique_ptr of SCEV
+    // Workaround for the fact that Clone() is an overridden method that returns a unique_ptr of
+    // SCEV
     chrecMap[loopVar.pre] = std::unique_ptr<SCEVChainRecurrence>(
         dynamic_cast<SCEVChainRecurrence *>(storedRec.release()));
   }
@@ -539,12 +647,13 @@ ScalarEvolution::IsValidInductionVariable(
   // Then check for cycles through other variables
   std::unordered_set<const rvsdg::Output *> visited{};
   std::unordered_set<const rvsdg::Output *> recursionStack{};
-  return !HasCycleThroughOthers(variable, dependencyGraph, visited, recursionStack);
+  return !HasCycleThroughOthers(variable, variable, dependencyGraph, visited, recursionStack);
 }
 
 bool
 ScalarEvolution::HasCycleThroughOthers(
     const rvsdg::Output & currentIV,
+    const rvsdg::Output & originalIV,
     IVDependencyGraph & dependencyGraph,
     std::unordered_set<const rvsdg::Output *> & visited,
     std::unordered_set<const rvsdg::Output *> & recursionStack)
@@ -558,16 +667,17 @@ ScalarEvolution::HasCycleThroughOthers(
     if (depPtr == &currentIV)
       continue;
 
-    // Found a cycle back to a variable in our path
-    if (recursionStack.find(depPtr) != recursionStack.end())
+    // Found a cycle back to the ORIGINAL node we started from
+    // This means the original IV is explicitly part of the cycle
+    if (depPtr == &originalIV)
       return true;
 
-    // Already explored this branch, no cycle
+    // Already explored this branch, no cycle containing the original IV
     if (visited.find(depPtr) != visited.end())
       continue;
 
-    // Recursively check dependencies
-    if (HasCycleThroughOthers(*depPtr, dependencyGraph, visited, recursionStack))
+    // Recursively check dependencies, keeping track of the original node
+    if (HasCycleThroughOthers(*depPtr, originalIV, dependencyGraph, visited, recursionStack))
       return true;
   }
 
