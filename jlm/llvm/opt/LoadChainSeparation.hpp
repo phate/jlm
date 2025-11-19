@@ -11,6 +11,9 @@
 namespace jlm::llvm
 {
 
+struct ChainLink;
+struct LoadChainLink;
+
 /**
  * Separates chains of \ref LoadOperation nodes from each other by rendering them independent in the
  * RVSDG through the insertion of a \ref MemoryStateJoinOperation node.
@@ -42,16 +45,13 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  static void
-  handleRegion(rvsdg::Region & region);
-
   /**
    * Takes the memory state output of a \ref LoadOperation node and separates all the load nodes
    * that are connected to the respective memory state edge above the graph by inserting a \ref
    * MemoryStateJoinOperation node.
    */
   static void
-  separateLoadChain(rvsdg::Output & loadChainEnd);
+  separateLoadChain(const LoadChainLink & chainLink);
 
   /**
    * Traces the memory state output of a \ref LoadOperation upwards through the load node chain,
@@ -59,12 +59,14 @@ private:
    * returning the final output that is not owned by a \ref LoadOperation node.
    *
    * @param output The memory state output of a \ref LoadOperation node.
-   * @param [out] joinOperands A vector of all the memory state outputs encountered while tracing up
-   * the load chain.
+   * @param [out] joinOperands A vector of all the memory state outputs encountered while
+   * tracing up the load chain.
    * @return The final output that is not owned by a \ref LoadOperation node.
    */
-  static rvsdg::Output &
-  traceLoadNodeMemoryState(rvsdg::Output & output, std::vector<rvsdg::Output *> & joinOperands);
+
+  // FIXME: fix documentation
+  static std::shared_ptr<const LoadChainLink>
+  traceLoadChain(rvsdg::Output & output);
 
   /**
    * Finds all memory state outputs of a \ref LoadOperation node that does not have a \ref
@@ -73,11 +75,8 @@ private:
    * @param region The region in which to find the memory state outputs.
    * @return A set of memory state outputs.
    */
-  static util::HashSet<rvsdg::Output *>
-  findLoadChainBottoms(rvsdg::Region & region);
-
   static void
-  findLoadChainEnds(rvsdg::Region & region, util::HashSet<rvsdg::Output *> & loadChainEnds);
+  findLoadChainStarts(rvsdg::Region & region, util::HashSet<rvsdg::Output *> & loadChainStarts);
 
   /**
    * @return True, if the origin of \p input is a \ref LoadOperation node, otherwise false.

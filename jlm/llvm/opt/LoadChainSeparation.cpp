@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -14,6 +15,139 @@
 
 namespace jlm::llvm
 {
+
+struct ChainLink
+{
+  virtual ~ChainLink() noexcept = default;
+};
+
+struct LoadChainLink final : ChainLink
+{
+  ~LoadChainLink() noexcept override = default;
+
+  LoadChainLink(rvsdg::Output & output, std::shared_ptr<ChainLink> nextLink)
+      : output(output),
+        nextLink(std::move(nextLink))
+
+  {
+    JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+    JLM_ASSERT(is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)));
+  }
+
+  static std::shared_ptr<ChainLink>
+  Create(rvsdg::Output & output, std::shared_ptr<ChainLink> nextLink)
+  {
+    return std::make_shared<LoadChainLink>(output, std::move(nextLink));
+  }
+
+  rvsdg::Output & output;
+  std::shared_ptr<ChainLink> nextLink;
+};
+
+struct ChainLinkEnd final : ChainLink
+{
+  ~ChainLinkEnd() noexcept override = default;
+
+  explicit ChainLinkEnd(rvsdg::Output & output)
+      : output(output)
+  {
+    JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+    JLM_ASSERT(!is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)));
+  }
+
+  static std::shared_ptr<ChainLink>
+  Create(rvsdg::Output & output)
+  {
+    return std::make_shared<ChainLinkEnd>(output);
+  }
+
+  rvsdg::Output & output;
+};
+
+struct GammaChainLink final : ChainLink
+{
+  ~GammaChainLink() noexcept override = default;
+
+  explicit GammaChainLink(std::vector<std::shared_ptr<ChainLink>> subregionChainLinks)
+      : subregionChainLinks(std::move(subregionChainLinks))
+  {}
+
+  static std::shared_ptr<ChainLink>
+  Create(std::vector<std::shared_ptr<ChainLink>> subregionChainLinks)
+  {
+    return std::make_shared<GammaChainLink>(std::move(subregionChainLinks));
+  }
+
+  bool
+  hasSingleSubregionChainEnd() const noexcept
+  {
+    JLM_ASSERT(!subregionChainLinks.empty());
+    auto & chainLink = subregionChainLinks[0];
+
+    for ()
+  }
+
+  std::vector<std::shared_ptr<ChainLink>> subregionChainLinks{};
+};
+
+static std::unordered_map<const LoadChainLink *, rvsdg::Output *>
+createNewLoadMemoryStateOperands(const ChainLink & chainLink)
+{
+  using LoadStateOperandMap = std::unordered_map<const LoadChainLink *, rvsdg::Output *>;
+
+  std::function<rvsdg::Output *(
+      const ChainLink &,
+      std::unordered_map<const LoadChainLink *, rvsdg::Output *> &)>
+      createOperands = [&](const ChainLink & chainLink,
+                           std::unordered_map<const LoadChainLink *, rvsdg::Output *> & operandMap)
+  {
+    return rvsdg::MatchTypeOrFail(
+        chainLink,
+        [&](const ChainLinkEnd & chainLinkEnd)
+        {
+          return &chainLinkEnd.output;
+        },
+        [&](const LoadChainLink & loadChainLink)
+        {
+          const auto newOperand = createOperands(*loadChainLink.nextLink, operandMap);
+          operandMap[&loadChainLink] = newOperand;
+          return newOperand;
+        },
+        [&](const GammaChainLink & gammaChainLink)
+        {
+          JLM_ASSERT(0);
+          return nullptr;
+        });
+  };
+
+  LoadStateOperandMap operandMap;
+  createOperands(chainLink, operandMap);
+  return operandMap;
+}
+
+std::vector<rvsdg::Output *> static computeJoinOperands(const ChainLink & chainLink)
+{
+  std::function<void(const ChainLink &, std::vector<rvsdg::Output *> &)> compute =
+      [&](const ChainLink & chainLink, std::vector<rvsdg::Output *> & joinOperands)
+  {
+    rvsdg::MatchTypeOrFail(
+        chainLink,
+        [](const ChainLinkEnd &)
+        {
+          // Nothing needs to be done
+        },
+        [&](const LoadChainLink & loadChainLink)
+        {
+          joinOperands.push_back(&loadChainLink.output);
+          compute(*loadChainLink.nextLink, joinOperands);
+        });
+  };
+
+  std::vector<rvsdg::Output *> joinOperands;
+  compute(chainLink, joinOperands);
+  return joinOperands;
+}
+
 LoadChainSeparation::~LoadChainSeparation() noexcept = default;
 
 LoadChainSeparation::LoadChainSeparation()
@@ -23,19 +157,18 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  handleRegion(module.Rvsdg().GetRootRegion());
+  util::HashSet<rvsdg::Output *> loadChainStarts;
+  findLoadChainStarts(module.Rvsdg().GetRootRegion(), loadChainStarts);
 
-  util::HashSet<rvsdg::Output *> loadChainEnds;
-  findLoadChainEnds(module.Rvsdg().GetRootRegion(), loadChainEnds);
-
-  for (auto & memoryStateOutput : loadChainEnds.Items())
+  for (auto & memoryStateOutput : loadChainStarts.Items())
   {
-    separateLoadChain(*memoryStateOutput);
+    auto loadChain = traceLoadChain(*memoryStateOutput);
+    separateLoadChain(*loadChain);
   }
 }
 
 void
-LoadChainSeparation::findLoadChainEnds(
+LoadChainSeparation::findLoadChainStarts(
     rvsdg::Region & region,
     util::HashSet<rvsdg::Output *> & loadChainEnds)
 {
@@ -46,7 +179,7 @@ LoadChainSeparation::findLoadChainEnds(
     {
       for (auto & subregion : structuralNode->Subregions())
       {
-        findLoadChainEnds(subregion, loadChainEnds);
+        findLoadChainStarts(subregion, loadChainEnds);
       }
     }
 
@@ -72,49 +205,22 @@ LoadChainSeparation::findLoadChainEnds(
 }
 
 void
-LoadChainSeparation::handleRegion(rvsdg::Region & region)
+LoadChainSeparation::separateLoadChain(const LoadChainLink & loadChainLink)
 {
-  // Handle innermost regions first
-  for (auto & node : region.Nodes())
-  {
-    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
-    {
-      for (auto & subregion : structuralNode->Subregions())
-      {
-        handleRegion(subregion);
-      }
-    }
-  }
-
-  // Separate load chains
-  const auto loadChainBottoms = findLoadChainBottoms(region);
-  for (auto & memoryStateOutput : loadChainBottoms.Items())
-  {
-    separateLoadChain(*memoryStateOutput);
-  }
-}
-
-void
-LoadChainSeparation::separateLoadChain(rvsdg::Output & loadChainEnd)
-{
-  JLM_ASSERT(rvsdg::is<MemoryStateType>(loadChainEnd.Type()));
-  JLM_ASSERT(rvsdg::IsOwnerNodeOperation<LoadOperation>(loadChainEnd));
-  JLM_ASSERT(!hasLoadNodeAsUserOwner(loadChainEnd));
-
-  std::vector<rvsdg::Output *> joinOperands;
-  auto & newMemoryStateOperand = traceLoadNodeMemoryState(loadChainEnd, joinOperands);
+  auto operandMap = createNewLoadMemoryStateOperands(loadChainLink);
+  auto joinOperands = computeJoinOperands(loadChainLink);
   JLM_ASSERT(joinOperands.size() > 1);
 
-  // Divert the operands of the respective inputs for each encountered memory state output
-  for (const auto output : joinOperands)
+  // Divert the operands of the respective inputs for each encountered load
+  for (auto [loadChainLink, newOperand] : operandMap)
   {
-    auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(*output);
-    memoryStateInput.divert_to(&newMemoryStateOperand);
+    auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(loadChainLink->output);
+    memoryStateInput.divert_to(newOperand);
   }
 
   // Create join node and divert the current memory state output
   auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-  loadChainEnd.divertUsersWhere(
+  loadChainLink.output.divertUsersWhere(
       *joinNode.output(0),
       [&joinNode](const rvsdg::Input & user)
       {
@@ -122,83 +228,73 @@ LoadChainSeparation::separateLoadChain(rvsdg::Output & loadChainEnd)
       });
 }
 
-rvsdg::Output &
-LoadChainSeparation::traceLoadNodeMemoryState(
-    rvsdg::Output & output,
-    std::vector<rvsdg::Output *> & joinOperands)
+std::shared_ptr<const LoadChainLink>
+LoadChainSeparation::traceLoadChain(rvsdg::Output & output)
 {
-  JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+  using ChainLinkMap = std::unordered_map<rvsdg::Output *, std::shared_ptr<ChainLink>>;
 
-  // Handle gamma subregion arguments
-  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  std::function<std::shared_ptr<ChainLink>(rvsdg::Output &, ChainLinkMap &)> trace =
+      [&](rvsdg::Output & output, ChainLinkMap & chainLinkMap)
   {
-    const auto roleVar = gammaNode->MapBranchArgument(output);
-    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+
+    // If we have seen this output before, just return the chain link
+    if (const auto it = chainLinkMap.find(&output); it != chainLinkMap.end())
     {
-      return traceLoadNodeMemoryState(*entryVar->input->origin(), joinOperands);
+      return it->second;
     }
 
-    // We should never end up here
-    throw std::logic_error("Unsupported gamma role");
-  }
-
-  // Handle gamma outputs
-  if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
-  {
-    util::HashSet<rvsdg::Output *> traceResults;
-    auto [branchResults, _] = gammaNode->MapOutputExitVar(output);
-    for (const auto branchResult : branchResults)
+    // Handle gamma subregion arguments
+    if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
     {
-      traceResults.insert(&traceLoadNodeMemoryState(*branchResult->origin(), joinOperands));
-    }
-
-    if (traceResults.Size() == 1)
-    {
-      // We could trace the memory states to a single origin. This means the load chain's origin is
-      // outside the gamma node.
-      const auto origin = *traceResults.Items().begin();
-      return traceLoadNodeMemoryState(*origin, joinOperands);
-    }
-
-    // FIXME: handle multiple origin case
-  }
-
-  if (!is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)))
-    return output;
-
-  joinOperands.push_back(&output);
-  return traceLoadNodeMemoryState(
-      *LoadOperation::MapMemoryStateOutputToInput(output).origin(),
-      joinOperands);
-}
-
-util::HashSet<rvsdg::Output *>
-LoadChainSeparation::findLoadChainBottoms(rvsdg::Region & region)
-{
-  util::HashSet<rvsdg::Output *> loadChainBottoms;
-  for (auto & node : region.Nodes())
-  {
-    if (!rvsdg::is<LoadOperation>(&node))
-    {
-      continue;
-    }
-
-    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
-    {
-      if (hasLoadNodeAsUserOwner(memoryStateOutput))
+      const auto roleVar = gammaNode->MapBranchArgument(output);
+      if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
       {
-        continue;
+        const auto argument = entryVar->input->origin();
+        auto chainLink = trace(*argument, chainLinkMap);
+        chainLinkMap[argument] = chainLink;
+        return chainLink;
       }
 
-      auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput);
-      if (hasLoadNodeAsOperandOwner(memoryStateInput))
-      {
-        loadChainBottoms.insert(&memoryStateOutput);
-      }
+      // We should never end up here
+      throw std::logic_error("Unsupported gamma role");
     }
-  }
 
-  return loadChainBottoms;
+    // Handle gamma outputs
+    if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+    {
+      std::vector<std::shared_ptr<ChainLink>> subregionChainLinks;
+      auto [branchResults, _] = gammaNode->MapOutputExitVar(output);
+      for (const auto branchResult : branchResults)
+      {
+        auto chainLink = trace(*branchResult->origin(), chainLinkMap);
+        subregionChainLinks.push_back(chainLink);
+      }
+
+      auto chainLink = GammaChainLink::Create(std::move(subregionChainLinks));
+      chainLinkMap[&output] = chainLink;
+      return chainLink;
+    }
+
+    if (is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)))
+    {
+      auto nextLink =
+          trace(*LoadOperation::MapMemoryStateOutputToInput(output).origin(), chainLinkMap);
+      const auto chainLink = LoadChainLink::Create(output, nextLink);
+      chainLinkMap[&output] = chainLink;
+      return chainLink;
+    }
+
+    auto chainLink = ChainLinkEnd::Create(output);
+    chainLinkMap[&output] = chainLink;
+    return chainLink;
+  };
+
+  std::unordered_map<rvsdg::Output *, std::shared_ptr<ChainLink>> chainLinkMap;
+  const auto chainLink = trace(output, chainLinkMap);
+
+  JLM_ASSERT(std::dynamic_pointer_cast<const LoadChainLink>(chainLink));
+  return std::static_pointer_cast<const LoadChainLink>(chainLink);
 }
 
 bool
