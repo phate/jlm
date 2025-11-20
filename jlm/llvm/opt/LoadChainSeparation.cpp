@@ -3,14 +3,60 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm
 {
+
+class LoadChainSeparation::Context final
+{
+public:
+  void
+  addModRefType(const rvsdg::Input & input, const ModRefType modRefType)
+  {
+    JLM_ASSERT(!hasModRefType(input));
+    inputModRefType_[&input] = modRefType;
+  }
+
+  void
+  addModRefType(const rvsdg::Output & output, const ModRefType modRefType)
+  {
+    JLM_ASSERT(!hasModRefType(output));
+    outputModRefType_[&output] = modRefType;
+  }
+
+  bool
+  hasModRefType(const rvsdg::Input & input) const noexcept
+  {
+    return inputModRefType_.find(&input) != inputModRefType_.end();
+  }
+
+  bool
+  hasModRefType(const rvsdg::Output & output) const noexcept
+  {
+    return outputModRefType_.find(&output) != outputModRefType_.end();
+  }
+
+  static std::unique_ptr<Context>
+  create()
+  {
+    return std::make_unique<Context>();
+  }
+
+private:
+  std::unordered_map<const rvsdg::Input *, ModRefType> inputModRefType_;
+  std::unordered_map<const rvsdg::Output *, ModRefType> outputModRefType_;
+};
+
 LoadChainSeparation::~LoadChainSeparation() noexcept = default;
 
 LoadChainSeparation::LoadChainSeparation()
@@ -20,12 +66,38 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
+  context_ = Context::create();
+
   handleRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
 LoadChainSeparation::handleRegion(rvsdg::Region & region)
 {
+  // Handle innermost regions first
+  // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
+  {
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        handleRegion(subregion);
+      }
+    }
+
+    rvsdg::MatchTypeOrFail(
+        *node,
+        [&](const rvsdg::LambdaNode & lambdaNode)
+        {
+          // Handle innermost regions first
+          handleRegion(*lambdaNode.subregion());
+          separateModRefChain(*lambdaNode.subregion());
+        });
+  }
+
+  separateModRefChains(region);
+#if 0
   // Handle innermost regions first
   for (auto & node : region.Nodes())
   {
@@ -44,6 +116,114 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
   {
     separateLoadChain(*memoryStateOutput);
   }
+#endif
+}
+
+void
+LoadChainSeparation::separateModRefChainsInLambda(rvsdg::LambdaNode & lambdaNode)
+{
+  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
+
+  auto [exitMergeNode, exitMergeOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(
+          *memoryStateResult.origin());
+  if (exitMergeOperation)
+  {
+    for (auto & input : exitMergeNode->Inputs())
+    {
+      separateModRefChain(input);
+    }
+  }
+  else
+  {
+    separateModRefChain(memoryStateResult);
+  }
+}
+
+void
+LoadChainSeparation::separateModRefChain(rvsdg::Input & input)
+{
+  JLM_ASSERT(is<MemoryStateType>(input.Type()));
+
+  const auto modRefChain = computeModRefChain(input);
+  const auto refSubchains = computeReferenceSubchains(modRefChain);
+
+  for (auto [start, end] : refSubchains)
+  {
+    JLM_ASSERT(end - start > 1);
+  }
+}
+
+std::vector<std::pair<size_t, size_t>>
+LoadChainSeparation::computeReferenceSubchains(const std::vector<ModRefChainLink> & modRefChain)
+{
+#if 0
+  for (size_t i = 0; i < modRefChain.size(); ++i)
+  {
+    if (modRefChain[i].modRefType != ModRefChainLinkType::Reference)
+      continue;
+
+    size_t end = 0;
+    size_t start = i;
+    for (size_t j = i + 1; j < modRefChain.size(); ++j)
+    {
+      if (modRefChain[j].modRefType != ModRefChainLinkType::Reference)
+      {
+        end = j;
+      }
+    }
+
+    JLM_ASSERT(end > start);
+    if (end - start > 1)
+    {
+    }
+  }
+#endif
+  return {};
+}
+
+std::vector<LoadChainSeparation::ModRefChainLink>
+LoadChainSeparation::computeModRefChain(rvsdg::Input & input)
+{
+  std::vector<ModRefChainLink> modRefChain;
+  modRefChain.push_back({ &input, ModRefChainLinkType::Start });
+
+  rvsdg::Input * currentInput = &input;
+  do
+  {
+    const auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*currentInput->origin());
+    if (!node)
+    {
+      // We hit a region argument. Just return with the so far found mod-ref chain
+      return modRefChain;
+    }
+
+    rvsdg::MatchTypeOrFail(
+        *node,
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          rvsdg::MatchTypeOrFail(
+              simpleNode.GetOperation(),
+              [&](const LoadOperation &)
+              {
+                currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
+                modRefChain.push_back({ currentInput, ModRefChainLinkType::Reference });
+              },
+              [&](const StoreOperation &)
+              {
+                currentInput =
+                    &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
+                modRefChain.push_back({ currentInput, ModRefChainLinkType::Modify });
+              },
+              [&](const LambdaEntryMemoryStateSplitOperation &)
+              {
+                currentInput = nullptr;
+              });
+        });
+
+  } while (currentInput);
+
+  return modRefChain;
 }
 
 void

@@ -8,6 +8,11 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class LambdaNode;
+}
+
 namespace jlm::llvm
 {
 
@@ -28,6 +33,8 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
+  class Context;
+
 public:
   ~LoadChainSeparation() noexcept override;
 
@@ -42,7 +49,7 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  static void
+  void
   handleRegion(rvsdg::Region & region);
 
   /**
@@ -88,6 +95,33 @@ private:
    */
   static bool
   hasLoadNodeAsUserOwner(const rvsdg::Output & output);
+
+  void
+  separateModRefChainsInLambda(rvsdg::LambdaNode & lambdaNode);
+
+  void
+  separateModRefChain(rvsdg::Input & input);
+
+  enum class ModRefChainLinkType
+  {
+    Modify,
+    Reference,
+    Start,
+  };
+
+  struct ModRefChainLink
+  {
+    rvsdg::Input * input;
+    ModRefChainLinkType modRefType;
+  };
+
+  std::vector<ModRefChainLink>
+  computeModRefChain(rvsdg::Input & input);
+
+  std::vector<std::pair<size_t, size_t>>
+  computeReferenceSubchains(const std::vector<ModRefChainLink> & modRefChain);
+
+  std::unique_ptr<Context> context_;
 };
 
 }
