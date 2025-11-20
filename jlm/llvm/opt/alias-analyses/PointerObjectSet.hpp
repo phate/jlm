@@ -99,8 +99,7 @@ class PointerObjectSet final
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
       // Ensure that certain kinds of PointerObject always CanPoint or never CanPoint
-      if (kind == PointerObjectKind::FunctionMemoryObject
-          || kind == PointerObjectKind::ImportMemoryObject)
+      if (kind == PointerObjectKind::FunctionMemoryObject)
         JLM_ASSERT(!CanPoint());
       else if (kind == PointerObjectKind::Register)
         JLM_ASSERT(CanPoint());
@@ -308,7 +307,7 @@ public:
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const GraphImport & importNode);
+  CreateImportMemoryObject(const GraphImport & importNode, bool canPoint);
 
   const std::unordered_map<const rvsdg::Output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;

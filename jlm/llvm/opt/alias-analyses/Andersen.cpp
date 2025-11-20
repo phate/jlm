@@ -1326,11 +1326,13 @@ Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
     if (!IsOrContainsPointerType(*argument.Type()))
       continue;
 
+    // Imported symbols are always externally available, so all pointees can be implicit.
+    // The value of CanPoint thus has no effect on the solver, only the final PointsToGraph node.
+    const bool canPoint = IsOrContainsPointerType(*argument.ValueType());
+
     // Create a memory PointerObject representing the target of the external symbol
-    // We can assume that two external symbols don't alias, clang does.
-    // Imported memory objects are always marked as CanPoint() == false, due to the fact that
-    // the analysis can't ever hope to track points-to sets of external memory with any precision.
-    const auto importObjectPO = Set_->CreateImportMemoryObject(argument);
+    // We can assume that two external symbols don't alias. This is the assumption clang makes.
+    const auto importObjectPO = Set_->CreateImportMemoryObject(argument, canPoint);
 
     // Create a register PointerObject representing the address value itself
     const auto importRegisterPO = Set_->CreateRegisterPointerObject(argument);
@@ -1575,6 +1577,13 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // PointerObject's points-to set.
   auto applyPointsToSet = [&](PointsToGraph::NodeIndex ptgNode, PointerObjectIndex index)
   {
+    // PointerObjectSets that are marked as not containing pointers can be added to the
+    // PointsToGraph without any explicit or implicit pointees.
+    if (!set.CanPoint(index))
+    {
+      return;
+    }
+
     // Mark nodes that target everything that is externally available
     if (set.IsPointingToExternal(index))
     {

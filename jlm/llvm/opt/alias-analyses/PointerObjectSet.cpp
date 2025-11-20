@@ -166,13 +166,11 @@ PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode)
+PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode, bool canPoint)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
 
-  // All import memory objects are marked as CanPoint() == false, as the analysis has no chance at
-  // tracking the points-to set of pointers located in separate modules
-  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject, false);
+  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject, canPoint);
   ImportMap_[&importNode] = importMemoryObject;
 
   // Memory objects defined in other modules are definitely not private to this module

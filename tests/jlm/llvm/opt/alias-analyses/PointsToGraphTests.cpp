@@ -52,7 +52,7 @@ private:
 
     for (auto & node : region.Nodes())
     {
-      if (jlm::rvsdg::is<MallocOperation>(&node))
+      if (jlm::rvsdg::is<AllocaOperation>(&node))
       {
         auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
         auto ptgAllocaNode = pointsToGraph_->addNodeForAlloca(*simpleNode, false);
@@ -190,7 +190,7 @@ TestNodeIterators()
   assert(pointsToGraph->getExplicitTargets(ptgMallocRegister).Contains(ptgMallocNode));
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestNodeIterators",
+    "jlm/llvm/opt/alias-analyses/PointsToGraphTests-TestNodeIterators",
     TestNodeIterators)
 
 static void
@@ -247,7 +247,7 @@ TestIsSupergraphOf()
   assert(graph1->isSupergraphOf(*graph0));
 
   // To make them identical, the both the delta and alloca registers must point to the alloca
-  graph0->mapRegisterToNode(rvsdg.GetDeltaOutput(), alloca0);
+  graph0->addTarget(deltaRegister0, alloca0);
   assert(graph0->isSupergraphOf(*graph1));
   assert(graph1->isSupergraphOf(*graph0));
 
@@ -262,10 +262,10 @@ TestIsSupergraphOf()
   assert(graph1->isSupergraphOf(*graph0));
 
   // Finally test all the other memory node types
-  const auto delta0 = graph0->addNodeForDelta(rvsdg.GetDeltaNode(), false);
-  const auto delta1 = graph1->addNodeForDelta(rvsdg.GetDeltaNode(), false);
-  const auto import0 = graph0->addNodeForImport(rvsdg.GetImportOutput(), false);
-  const auto import1 = graph1->addNodeForImport(rvsdg.GetImportOutput(), false);
+  graph0->addNodeForDelta(rvsdg.GetDeltaNode(), false);
+  graph1->addNodeForDelta(rvsdg.GetDeltaNode(), false);
+  const auto import0 = graph0->addNodeForImport(rvsdg.GetImportOutput(), true);
+  const auto import1 = graph1->addNodeForImport(rvsdg.GetImportOutput(), true);
   const auto lambda0 = graph0->addNodeForLambda(rvsdg.GetLambdaNode(), false);
   const auto lambda1 = graph1->addNodeForLambda(rvsdg.GetLambdaNode(), false);
   const auto malloc0 = graph0->addNodeForMalloc(rvsdg.GetMallocNode(), false);
@@ -288,7 +288,7 @@ TestIsSupergraphOf()
   assert(graph1->isSupergraphOf(*graph0));
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-TestIsSupergraphOf",
+    "jlm/llvm/opt/alias-analyses/PointsToGraphTests-TestIsSupergraphOf",
     TestIsSupergraphOf)
 
 static void
@@ -348,7 +348,7 @@ testMemoryNodeSize()
   }
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-testMemoryNodeSize",
+    "jlm/llvm/opt/alias-analyses/PointsToGraphTests-testMemoryNodeSize",
     testMemoryNodeSize)
 
 static void
@@ -415,5 +415,5 @@ testIsMemoryNodeConstant()
   }
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestPointsToGraph-testIsMemoryNodeConstant",
+    "jlm/llvm/opt/alias-analyses/PointsToGraphTests-testIsMemoryNodeConstant",
     testIsMemoryNodeConstant)

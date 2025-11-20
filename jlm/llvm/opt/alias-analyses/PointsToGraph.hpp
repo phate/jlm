@@ -178,7 +178,7 @@ public:
    * using the flag for marking memory as externally available.
    */
   NodeIndex
-  getExternalNode() const noexcept;
+  getExternalMemoryNode() const noexcept;
 
   /**
    * @return iterator range of all nodes in the PointsToGraph that are of the RegisterNode kind.
@@ -771,6 +771,13 @@ public:
    */
   static void
   dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph & pointsToGraph);
+
+  /**
+   * Shorthand for dumping the given \p pointsToGraph as a string in the GraphViz dot format.
+   * @return the points to graph in dot format.
+   */
+  static std::string
+  dumpDot(const PointsToGraph & pointsToGraph);
 
   static std::unique_ptr<PointsToGraph>
   create()

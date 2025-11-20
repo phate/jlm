@@ -17,8 +17,8 @@ namespace jlm::llvm::aa
 class AgnosticModRefSummary final : public ModRefSummary
 {
 public:
-  using SimpleNodeModRefMap = std::
-      unordered_map<const rvsdg::SimpleNode *, util::HashSet<PointsToGraph::NodeIndex>>;
+  using SimpleNodeModRefMap =
+      std::unordered_map<const rvsdg::SimpleNode *, util::HashSet<PointsToGraph::NodeIndex>>;
 
   ~AgnosticModRefSummary() noexcept override = default;
 
@@ -101,9 +101,7 @@ public:
   }
 
   static std::unique_ptr<AgnosticModRefSummary>
-  Create(
-      const PointsToGraph & pointsToGraph,
-      util::HashSet<PointsToGraph::NodeIndex> memoryNodes)
+  Create(const PointsToGraph & pointsToGraph, util::HashSet<PointsToGraph::NodeIndex> memoryNodes)
   {
     return std::unique_ptr<AgnosticModRefSummary>(
         new AgnosticModRefSummary(pointsToGraph, std::move(memoryNodes)));
@@ -160,6 +158,8 @@ AgnosticModRefSummarizer::GetAllMemoryNodes(const PointsToGraph & pointsToGraph)
 
   for (const auto importNode : pointsToGraph.importNodes())
     memoryNodes.insert(importNode);
+
+  memoryNodes.insert(pointsToGraph.getExternalMemoryNode());
 
   JLM_ASSERT(memoryNodes.Size() == pointsToGraph.numMemoryNodes());
 

@@ -52,7 +52,7 @@ PointsToGraph::mallocNodes() const noexcept
 }
 
 PointsToGraph::NodeIndex
-PointsToGraph::getExternalNode() const noexcept
+PointsToGraph::getExternalMemoryNode() const noexcept
 {
   return externalMemoryNode_;
 }
@@ -160,7 +160,7 @@ PointsToGraph::addNodeForLambda(const rvsdg::LambdaNode & lambdaNode, bool exter
 PointsToGraph::NodeIndex
 PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool externallyAvailable)
 {
-  if (!is<AllocaOperation>(&mallocNode))
+  if (!is<MallocOperation>(&mallocNode))
     throw std::logic_error("Node is not an alloca operation");
 
   auto [it, added] = mallocMap_.try_emplace(&mallocNode, 0);
@@ -364,7 +364,7 @@ PointsToGraph::isSupergraphOf(const PointsToGraph & subgraph) const
     }
     if (kind == NodeKind::ExternalNode)
     {
-      return other.getExternalNode();
+      return other.getExternalMemoryNode();
     }
 
     throw std::logic_error("Unknown type of memory node");
@@ -466,16 +466,35 @@ PointsToGraph::isSupergraphOf(const PointsToGraph & subgraph) const
   return true;
 }
 
+PointsToGraph::NodeIndex
+PointsToGraph::addNode(
+    NodeKind kind,
+    bool externallyAvailable,
+    bool isConstant,
+    std::optional<size_t> memorySize,
+    const void * object)
+{
+  const auto index = nodeData_.size();
+
+  nodeData_.emplace_back(NodeData(kind, externallyAvailable, false, isConstant, memorySize));
+  nodeExplicitTargets_.emplace_back();
+  nodeObjects_.push_back(object);
+
+  if (externallyAvailable)
+    externallyAvailableNodes_.push_back(index);
+
+  return index;
+}
+
 void
-PointsToGraph::dumpGraph(
-    util::graph::Writer & graphWriter,
-    const PointsToGraph & pointsToGraph)
+PointsToGraph::dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph & pointsToGraph)
 {
   const auto [explicitEdges, totalEdges] = pointsToGraph.numEdges();
 
   auto & graph = graphWriter.CreateGraph();
   graph.SetLabel("Points-to graph");
-  graph.AppendToLabel(util::strfmt("Explicit edges: ", explicitEdges, ", total edges: ", totalEdges));
+  graph.AppendToLabel(
+      util::strfmt("Explicit edges: ", explicitEdges, ", total edges: ", totalEdges));
 
   std::vector<util::graph::Node *> nodes;
   nodes.reserve(pointsToGraph.numNodes());
@@ -520,23 +539,14 @@ PointsToGraph::dumpGraph(
   }
 }
 
-PointsToGraph::NodeIndex
-PointsToGraph::addNode(
-    NodeKind kind,
-    bool externallyAvailable,
-    bool isConstant,
-    std::optional<size_t> memorySize,
-    const void * object)
+std::string
+PointsToGraph::dumpDot(const PointsToGraph & pointsToGraph)
 {
-  const auto index = nodeData_.size();
-
-  nodeData_.emplace_back(NodeData(kind, externallyAvailable, false, isConstant, memorySize));
-  nodeExplicitTargets_.emplace_back();
-  nodeObjects_.push_back(object);
-
-  if (externallyAvailable)
-    externallyAvailableNodes_.push_back(index);
-
-  return index;
+  util::graph::Writer writer;
+  dumpGraph(writer, pointsToGraph);
+  std::ostringstream ss;
+  writer.outputAllGraphs(ss, util::graph::OutputFormat::Dot);
+  return ss.str();
 }
+
 }

@@ -499,7 +499,7 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StopSolvingStatistics();
 
   // Print debug output
-  // std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
+  // std::cerr << PointsToGraph::dumpDot(pointsToGraph) << std::endl;
   // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
   // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
   // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;

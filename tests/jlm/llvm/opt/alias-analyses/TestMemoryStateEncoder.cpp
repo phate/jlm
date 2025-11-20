@@ -44,7 +44,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpDot(*pointsToGraph);
 
   TModRefSummarizer summarizer;
   auto modRefSummary =
