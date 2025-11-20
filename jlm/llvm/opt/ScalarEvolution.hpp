@@ -111,11 +111,11 @@ private:
 class SCEVConstant final : public SCEV
 {
 public:
-  explicit SCEVConstant(const uint64_t value)
+  explicit SCEVConstant(const int64_t value)
       : Value_{ value }
   {}
 
-  uint64_t
+  int64_t
   GetValue() const
   {
     return Value_;
@@ -134,7 +134,7 @@ public:
   }
 
 private:
-  uint64_t Value_;
+  int64_t Value_;
 };
 
 class SCEVAddExpr final : public SCEV
@@ -178,8 +178,8 @@ public:
   DebugString() const override
   {
     std::ostringstream oss;
-    std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
-    std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
+    const std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
+    const std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
     oss << "(" << leftStr << " + " << rightStr << ")";
     return oss.str();
   }
@@ -357,6 +357,7 @@ protected:
 
 class ScalarEvolution final : public jlm::rvsdg::Transformation
 {
+  class Context;
   class Statistics;
 
 public:
@@ -369,9 +370,7 @@ public:
 
   ~ScalarEvolution() noexcept override;
 
-  ScalarEvolution()
-      : Transformation("ScalarEvolution")
-  {}
+  ScalarEvolution();
 
   ScalarEvolution(const ScalarEvolution &) = delete;
 
@@ -399,7 +398,7 @@ private:
       ChainRecurrenceMap_;
 
   void
-  TraverseRegion(const rvsdg::Region & region);
+  AnalyzeRegion(const rvsdg::Region & region);
 
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
@@ -428,12 +427,24 @@ private:
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
 
+  /**
+   * Checks the operands of the given \p chrec to see if any of them are unknown.
+   *
+   * @param chrec the chain recurrence to be checked
+   * @return true if the recurrence contains an unknown, false otherwise
+   */
+  static bool
+  IsUnknown(const SCEVChainRecurrence & chrec);
+
   static bool
   HasCycleThroughOthers(
       const rvsdg::Output & currentIV,
+      const rvsdg::Output & originalIV,
       IVDependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
+
+  std::unique_ptr<Context> Context_;
 };
 
 }

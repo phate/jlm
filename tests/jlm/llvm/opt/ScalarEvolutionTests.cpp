@@ -18,7 +18,6 @@ static std::
     unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>
     RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
 {
-  jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::ScalarEvolution scalarEvolution;
   auto chrecMap = scalarEvolution.PerformSCEVAnalysis(thetaNode);
   return chrecMap;
@@ -47,7 +46,7 @@ ConstantInductionVariable()
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  const auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
   assert(chrecMap.size() == 1);
@@ -514,11 +513,12 @@ SelfRecursiveInductionVariable()
   const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   const auto lv1 = theta->AddLoopVar(c0.output(0));
 
-  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, lv1.pre }, 32);
+  const auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, lv1.pre }, 32);
   const auto result = addNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
-  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
+  const auto & sltNode =
+      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
