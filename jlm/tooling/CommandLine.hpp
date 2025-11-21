@@ -81,7 +81,6 @@ public:
     PredicateCorrelation,
     RvsdgTreePrinter,
     ScalarEvolution,
-    ThetaGammaInversion, // Deprecated. To be removed.
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -206,32 +205,14 @@ private:
   llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
   bool DumpRvsdgDotGraphs_;
 
-  struct OptimizationCommandLineArgument
-  {
-    inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
-    inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
-    inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
-    inline static const char * FunctionInlining_ = "FunctionInlining";
-    inline static const char * IfConversion_ = "IfConversion";
-    inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";
-    inline static const char * NodePullIn_ = "NodePullIn";
-    inline static const char * NodePushOut_ = "NodePushOut";
-    inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
-    inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
-    inline static const char * LoopUnrolling_ = "LoopUnrolling";
-    inline static const char * LoopUnswitching_ = "LoopUnswitching";
-    inline static const char * NodeReduction_ = "NodeReduction";
-    inline static const char * PredicateCorrelation_ = "PredicateCorrelation";
-    inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
-    inline static const char * ScalarEvolution_ = "ScalarEvolution";
-  };
-
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
   GetStatisticsIdCommandLineArguments();
 
   static const std::unordered_map<OutputFormat, std::string_view> &
   GetOutputFormatCommandLineArguments();
+
+  static const util::BijectiveMap<OptimizationId, std::string_view> &
+  GetOptimizationIdCommandLineMap();
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions
