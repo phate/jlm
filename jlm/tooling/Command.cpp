@@ -423,6 +423,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::LoadChainSeparation>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
     return std::make_shared<llvm::LoopUnrolling>(4);
+  case JlmOptCommandLineOptions::OptimizationId::LoopUnswitching:
+    return std::make_shared<llvm::LoopUnswitching>();
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_shared<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
@@ -436,8 +438,6 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
     return std::make_shared<llvm::ScalarEvolution>();
-  case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_shared<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
