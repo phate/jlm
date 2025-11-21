@@ -3,15 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -26,32 +29,47 @@ LoadNonVolatile()
 
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
   const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & iAddress = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
-  auto & iMemoryState1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState1");
-  auto & iMemoryState2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[2];
+
+  auto & lambdaEntrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, { 0, 1 });
 
   auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
-      iAddress,
-      { &iMemoryState1, &iMemoryState2 },
+      addressArgument,
+      { lambdaEntrySplitNode.output(0), lambdaEntrySplitNode.output(1) },
       valueType,
       4);
 
   auto & loadNode2 = LoadNonVolatileOperation::CreateNode(
-      iAddress,
+      addressArgument,
       { loadNode1.output(1), loadNode1.output(2) },
       valueType,
       4);
 
   auto & loadNode3 =
-      LoadNonVolatileOperation::CreateNode(iAddress, { loadNode2.output(2) }, valueType, 4);
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode2.output(2) }, valueType, 4);
 
-  auto & xMemoryState1 = GraphExport::Create(*loadNode2.output(1), "memoryState1");
-  auto & xMemoryState2 = GraphExport::Create(*loadNode3.output(1), "memoryState2");
+  auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+      *lambdaNode->subregion(),
+      { loadNode2.output(1), loadNode3.output(1) },
+      { 0, 1 });
+
+  lambdaNode->finalize({ &ioStateArgument, lambdaExitMergeNode.output(0) });
 
   view(rvsdg, stdout);
 
@@ -68,25 +86,25 @@ LoadNonVolatile()
 
   // Check transformation for the chain of memory state 1
   {
-    auto [joinNode, joinOperation] =
-        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*xMemoryState1.origin());
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *lambdaExitMergeNode.input(0)->origin());
     assert(joinNode && joinOperation);
     assert(joinNode->ninputs() == 2);
 
     assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()) == &loadNode2);
     assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode1);
 
-    assert(loadNode1.input(1)->origin() == &iMemoryState1);
-    assert(loadNode1.input(2)->origin() == &iMemoryState2);
+    assert(loadNode1.input(1)->origin() == lambdaEntrySplitNode.output(0));
+    assert(loadNode1.input(2)->origin() == lambdaEntrySplitNode.output(1));
 
-    assert(loadNode2.input(1)->origin() == &iMemoryState1);
-    assert(loadNode2.input(2)->origin() == &iMemoryState2);
+    assert(loadNode2.input(1)->origin() == lambdaEntrySplitNode.output(0));
+    assert(loadNode2.input(2)->origin() == lambdaEntrySplitNode.output(1));
   }
 
   // Check transformation for the chain of memory state 2
   {
-    auto [joinNode, joinOperation] =
-        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*xMemoryState2.origin());
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *lambdaExitMergeNode.input(1)->origin());
     assert(joinNode && joinOperation);
     assert(joinNode->ninputs() == 3);
 
@@ -94,7 +112,7 @@ LoadNonVolatile()
     assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode2);
     assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(2)->origin()) == &loadNode1);
 
-    assert(loadNode3.input(1)->origin() == &iMemoryState2);
+    assert(loadNode3.input(1)->origin() == lambdaEntrySplitNode.output(1));
   }
 }
 
@@ -113,26 +131,36 @@ LoadVolatile()
   const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & iAddress = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
-  auto & iIOState = jlm::rvsdg::GraphImport::Create(rvsdg, ioStateType, "ioState");
-  auto & iMemoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
-  auto & loadNode1 =
-      LoadVolatileOperation::CreateNode(iAddress, iIOState, { &iMemoryState }, valueType, 4);
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[2];
+
+  auto & loadNode1 = LoadVolatileOperation::CreateNode(
+      addressArgument,
+      ioStateArgument,
+      { &memoryStateArgument },
+      valueType,
+      4);
 
   auto & loadNode2 = LoadVolatileOperation::CreateNode(
-      iAddress,
+      addressArgument,
       LoadVolatileOperation::IOStateOutput(loadNode1),
       { &*LoadOperation::MemoryStateOutputs(loadNode1).begin() },
       valueType,
       4);
 
-  auto & xMemoryState =
-      GraphExport::Create(*LoadOperation::MemoryStateOutputs(loadNode2).begin(), "memoryState");
+  lambdaNode->finalize({ &ioStateArgument, loadNode2.output(2) });
 
   view(rvsdg, stdout);
 
@@ -148,16 +176,16 @@ LoadVolatile()
   // We expect the transformation to create a single join node with the memory state outputs of the
   // two load nodes as operands
 
-  auto [joinNode, joinOperation] =
-      TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*xMemoryState.origin());
+  auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+      *GetMemoryStateRegionResult(*lambdaNode).origin());
   assert(joinNode && joinOperation);
   assert(joinNode->ninputs() == 2);
 
   assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()) == &loadNode2);
   assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode1);
 
-  assert(loadNode1.input(2)->origin() == &iMemoryState);
-  assert(loadNode2.input(2)->origin() == &iMemoryState);
+  assert(loadNode1.input(2)->origin() == &memoryStateArgument);
+  assert(loadNode2.input(2)->origin() == &memoryStateArgument);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-LoadVolatile", LoadVolatile)
@@ -172,19 +200,28 @@ SingleLoad()
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
+  const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & iAddress = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
-  auto & iMemoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(iAddress, { &iMemoryState }, valueType, 4);
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[2];
 
-  auto & xMemoryState =
-      GraphExport::Create(*LoadOperation::MemoryStateOutputs(loadNode).begin(), "memoryState");
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { &memoryStateArgument }, valueType, 4);
+
+  lambdaNode->finalize({ &ioStateArgument, loadNode.output(1) });
 
   view(rvsdg, stdout);
 
@@ -197,8 +234,9 @@ SingleLoad()
 
   // Assert
   // We expect nothing to happen as there is no chain of load nodes
-  assert(TryGetOwnerNode<SimpleNode>(*xMemoryState.origin()) == &loadNode);
-  assert(LoadOperation::MemoryStateInputs(loadNode).begin()->origin() == &iMemoryState);
+  assert(
+      TryGetOwnerNode<SimpleNode>(*GetMemoryStateRegionResult(*lambdaNode).origin()) == &loadNode);
+  assert(LoadOperation::MemoryStateInputs(loadNode).begin()->origin() == &memoryStateArgument);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-SingleLoad", SingleLoad)

@@ -33,7 +33,7 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
-  class Context;
+  // class Context;
 
 public:
   ~LoadChainSeparation() noexcept override;
@@ -104,9 +104,13 @@ private:
 
   enum class ModRefChainLinkType
   {
-    Modify,
+    Modification,
     Reference,
-    Start,
+    /**
+     * Any other operation that is performed on memory states, but is not a reference or
+     * modification. For example, \ref JoinOperation or \ref SplitOperation.
+     */
+    Other
   };
 
   struct ModRefChainLink
@@ -121,7 +125,10 @@ private:
   std::vector<std::pair<size_t, size_t>>
   computeReferenceSubchains(const std::vector<ModRefChainLink> & modRefChain);
 
-  std::unique_ptr<Context> context_;
+  rvsdg::Output &
+  mapMemoryStateInputToOutput(const rvsdg::Input & input);
+
+  // std::unique_ptr<Context> context_;
 };
 
 }
