@@ -70,7 +70,7 @@ private:
     // When set, the node is available from other modules in the program
     uint8_t isExternallyAvailable : 1;
 
-    // When set, the PointsToGraph Node implicitly targets all externally available nodes
+    // When set, the points-to graph node implicitly targets all externally available nodes
     uint8_t isTargetingAllExternallyAvailable : 1;
 
     // When set, the node represents constant memory / a constant register
@@ -340,7 +340,7 @@ public:
   }
 
   /**
-   * Retrieves the index of the PointsToGraph node mapped to the given \ref SimpleNode.
+   * Retrieves the index of the PointsToGraph node mapped to the given \ref rvsdg::SimpleNode.
    * @param node the node being looked up, which must contain an \ref AllocaOperation.
    * @return the PointsToGraph node mapped to \p node, always of AllocaNode kind.
    * @throws std::out_of_range if the alloca node is not mapped to a PointsToGraph node.
@@ -388,7 +388,7 @@ public:
   }
 
   /**
-   * Retrieves the index of the PointsToGraph node mapped to the given \ref SimpleNode.
+   * Retrieves the index of the PointsToGraph node mapped to the given \ref rvsdg::SimpleNode.
    * @param node the node being looked up, which must contain a \ref MallocOperation.
    * @return the PointsToGraph node mapped to \p node, always of MallocNode kind.
    * @throws std::out_of_range if the malloc node is not mapped to a PointsToGraph node.

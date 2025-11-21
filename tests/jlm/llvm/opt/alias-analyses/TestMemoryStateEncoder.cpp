@@ -38,13 +38,13 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   Test test;
   auto & rvsdgModule = test.module();
-  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
-  // std::cout << jlm::llvm::aa::PointsToGraph::dumpDot(*pointsToGraph);
+  std::cout << jlm::llvm::aa::PointsToGraph::dumpDot(*pointsToGraph);
 
   TModRefSummarizer summarizer;
   auto modRefSummary =
@@ -53,7 +53,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   jlm::llvm::aa::MemoryStateEncoder encoder;
   std::cout << "run encoder\n";
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
-  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   validateEncoding(test);
 }

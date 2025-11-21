@@ -119,7 +119,7 @@ TestNodeIterators()
   using NodeIndex = jlm::llvm::aa::PointsToGraph::NodeIndex;
   using NodeKind = jlm::llvm::aa::PointsToGraph::NodeKind;
 
-  // Act and Arrange
+  // Act and Assert
   assert(pointsToGraph->numImportNodes() == 1);
   for (auto importNode : pointsToGraph->importNodes())
   {
