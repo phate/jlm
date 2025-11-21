@@ -73,7 +73,9 @@ struct MemoryStateTypeCounter final
   }
 
   void
-  CountEntity(util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
+  CountEntity(
+      const PointsToGraph & pointsToGraph,
+      util::HashSet<PointsToGraph::NodeIndex> memoryNodes)
   {
     uint64_t numAllocas = 0;
     uint64_t numMallocs = 0;
@@ -86,23 +88,33 @@ struct MemoryStateTypeCounter final
 
     for (const auto memoryNode : memoryNodes.Items())
     {
-      if (!memoryNode->IsModuleEscaping())
+      if (!pointsToGraph.isExternallyAvailable(memoryNode))
         numNonEscaped++;
 
-      if (PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(*memoryNode))
+      const auto kind = pointsToGraph.getNodeKind(memoryNode);
+      switch (kind)
+      {
+      case PointsToGraph::NodeKind::AllocaNode:
         numAllocas++;
-      else if (PointsToGraph::Node::Is<PointsToGraph::MallocNode>(*memoryNode))
-        numMallocs++;
-      else if (PointsToGraph::Node::Is<PointsToGraph::DeltaNode>(*memoryNode))
+        break;
+      case PointsToGraph::NodeKind::DeltaNode:
         numDeltas++;
-      else if (PointsToGraph::Node::Is<PointsToGraph::ImportNode>(*memoryNode))
-        numImports++;
-      else if (PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(*memoryNode))
+        break;
+      case PointsToGraph::NodeKind::LambdaNode:
         numLambdas++;
-      else if (PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(*memoryNode))
+        break;
+      case PointsToGraph::NodeKind::ImportNode:
+        numImports++;
+        break;
+      case PointsToGraph::NodeKind::MallocNode:
+        numMallocs++;
+        break;
+      case PointsToGraph::NodeKind::ExternalNode:
         numExternal++;
-      else
-        JLM_UNREACHABLE("Unknown MemoryNode type");
+        break;
+      default:
+        throw std::logic_error("Unknown MemoryNode kind");
+      }
     }
 
     CountEntity(
@@ -236,18 +248,18 @@ public:
   {
     friend StateMap;
 
-    MemoryNodeStatePair(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
-        : MemoryNode_(&memoryNode),
+    MemoryNodeStatePair(PointsToGraph::NodeIndex memoryNode, rvsdg::Output & state)
+        : MemoryNode_(memoryNode),
           State_(&state)
     {
       JLM_ASSERT(is<MemoryStateType>(state.Type()));
     }
 
   public:
-    [[nodiscard]] const PointsToGraph::MemoryNode &
+    [[nodiscard]] PointsToGraph::NodeIndex
     MemoryNode() const noexcept
     {
-      return *MemoryNode_;
+      return MemoryNode_;
     }
 
     [[nodiscard]] rvsdg::Output &
@@ -300,7 +312,7 @@ public:
     }
 
   private:
-    const PointsToGraph::MemoryNode * MemoryNode_;
+    PointsToGraph::NodeIndex MemoryNode_;
     rvsdg::Output * State_;
   };
 
@@ -317,28 +329,28 @@ public:
   operator=(StateMap &&) = delete;
 
   MemoryNodeStatePair *
-  TryGetState(const PointsToGraph::MemoryNode & memoryNode) noexcept
+  TryGetState(PointsToGraph::NodeIndex memoryNode) noexcept
   {
-    if (const auto it = states_.find(&memoryNode); it != states_.end())
+    if (const auto it = states_.find(memoryNode); it != states_.end())
       return &it->second;
 
     return nullptr;
   }
 
   const MemoryNodeStatePair *
-  TryGetState(const PointsToGraph::MemoryNode & memoryNode) const noexcept
+  TryGetState(PointsToGraph::NodeIndex memoryNode) const noexcept
   {
     return const_cast<StateMap *>(this)->TryGetState(memoryNode);
   }
 
   bool
-  HasState(const PointsToGraph::MemoryNode & memoryNode) const noexcept
+  HasState(PointsToGraph::NodeIndex memoryNode) const noexcept
   {
     return TryGetState(memoryNode) != nullptr;
   }
 
   MemoryNodeStatePair *
-  GetState(const PointsToGraph::MemoryNode & memoryNode)
+  GetState(PointsToGraph::NodeIndex memoryNode)
   {
     if (const auto statePair = TryGetState(memoryNode))
       return statePair;
@@ -346,12 +358,12 @@ public:
   }
 
   std::vector<MemoryNodeStatePair *>
-  GetStates(const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  GetStates(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
     for (auto & memoryNode : memoryNodes.Items())
     {
-      memoryNodeStatePairs.push_back(GetState(*memoryNode));
+      memoryNodeStatePairs.push_back(GetState(memoryNode));
     }
 
     return memoryNodeStatePairs;
@@ -365,12 +377,12 @@ public:
    * @see RegionalizedStateMap::GetExistingStates()
    */
   std::vector<MemoryNodeStatePair *>
-  GetExistingStates(const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  GetExistingStates(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
     for (auto & memoryNode : memoryNodes.Items())
     {
-      if (const auto statePair = TryGetState(*memoryNode))
+      if (const auto statePair = TryGetState(memoryNode))
         memoryNodeStatePairs.push_back(statePair);
     }
 
@@ -385,9 +397,9 @@ public:
    * @return pointer to the new pair
    */
   MemoryNodeStatePair *
-  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
+  InsertState(PointsToGraph::NodeIndex memoryNode, rvsdg::Output & state)
   {
-    auto [it, added] = states_.insert({ &memoryNode, { memoryNode, state } });
+    auto [it, added] = states_.insert({ memoryNode, { memoryNode, state } });
     if (!added)
       throw std::logic_error("Memory node already has a state.");
     return &it->second;
@@ -402,7 +414,7 @@ public:
 private:
   // std::unordered_map guarantees pointers to keys and values remain valid even when
   // new pairs are added to the container.
-  std::unordered_map<const PointsToGraph::MemoryNode *, MemoryNodeStatePair> states_;
+  std::unordered_map<PointsToGraph::NodeIndex, MemoryNodeStatePair> states_;
 };
 
 /** \brief Hash map for mapping Rvsdg regions to StateMap class instances.
@@ -431,25 +443,25 @@ public:
   operator=(RegionalizedStateMap &&) = delete;
 
   StateMap::MemoryNodeStatePair *
-  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
+  InsertState(PointsToGraph::NodeIndex memoryNode, rvsdg::Output & state)
   {
     return GetStateMap(*state.region()).InsertState(memoryNode, state);
   }
 
   StateMap::MemoryNodeStatePair *
-  TryGetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode) const
+  TryGetState(const rvsdg::Region & region, PointsToGraph::NodeIndex memoryNode) const
   {
     return GetStateMap(region).TryGetState(memoryNode);
   }
 
   bool
-  HasState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode) const
+  HasState(const rvsdg::Region & region, PointsToGraph::NodeIndex memoryNode) const
   {
     return GetStateMap(region).HasState(memoryNode);
   }
 
   StateMap::MemoryNodeStatePair *
-  GetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
+  GetState(const rvsdg::Region & region, PointsToGraph::NodeIndex memoryNode)
   {
     return GetStateMap(region).GetState(memoryNode);
   }
@@ -457,7 +469,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair *>
   GetStates(
       const rvsdg::Region & region,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+      const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
@@ -475,7 +487,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair *>
   GetExistingStates(
       const rvsdg::Region & region,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
+      const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes) const
   {
     return GetStateMap(region).GetExistingStates(memoryNodes);
   }
@@ -486,7 +498,7 @@ public:
     return GetExistingStates(*node.region(), GetSimpleNodeModRef(node));
   }
 
-  const util::HashSet<const PointsToGraph::MemoryNode *> &
+  const util::HashSet<PointsToGraph::NodeIndex> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const
   {
     return ModRefSummary_.GetSimpleNodeModRef(node);
@@ -593,12 +605,12 @@ private:
 };
 
 static std::vector<MemoryNodeId>
-GetMemoryNodeIds(const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+GetMemoryNodeIds(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
 {
   std::vector<MemoryNodeId> memoryNodeIds;
   for (const auto memoryNode : memoryNodes.Items())
   {
-    memoryNodeIds.push_back(memoryNode->GetId());
+    memoryNodeIds.push_back(memoryNode);
   }
 
   return memoryNodeIds;
@@ -737,7 +749,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode);
   JLM_ASSERT(allocaMemoryNodes.Size() == 1);
-  auto & allocaMemoryNode = **allocaMemoryNodes.Items().begin();
+  auto allocaMemoryNode = *allocaMemoryNodes.Items().begin();
   auto & allocaNodeStateOutput = *allocaNode.output(1);
 
   // If a state representing the alloca already exists in the region,
@@ -762,7 +774,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode);
   JLM_ASSERT(mallocMemoryNodes.Size() == 1);
-  auto & mallocMemoryNode = **mallocMemoryNodes.Items().begin();
+  auto mallocMemoryNode = *mallocMemoryNodes.Items().begin();
 
   auto & mallocNodeStateOutput = *mallocNode.output(1);
 
@@ -790,7 +802,9 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
-  Context_->GetLoadCounter().CountEntity(memoryNodes);
+  Context_->GetLoadCounter().CountEntity(
+      Context_->GetModRefSummary().GetPointsToGraph(),
+      memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
@@ -808,7 +822,9 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
-  Context_->GetStoreCounter().CountEntity(memoryNodes);
+  Context_->GetStoreCounter().CountEntity(
+      Context_->GetModRefSummary().GetPointsToGraph(),
+      memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
@@ -848,7 +864,9 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
   auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
 
   const auto & memoryNodes = regionalizedStateMap.GetSimpleNodeModRef(callNode);
-  Context_->GetCallEntryMergeCounter().CountEntity(memoryNodes);
+  Context_->GetCallEntryMergeCounter().CountEntity(
+      Context_->GetModRefSummary().GetPointsToGraph(),
+      memoryNodes);
 
   const auto statePairs = regionalizedStateMap.GetExistingStates(*region, memoryNodes);
 
@@ -857,7 +875,7 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
   for (auto statePair : statePairs)
   {
     inputStates.emplace_back(&statePair->State());
-    memoryNodeIds.push_back(statePair->MemoryNode().GetId());
+    memoryNodeIds.push_back(statePair->MemoryNode());
   }
 
   auto & entryMergeNode =
@@ -901,7 +919,9 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
+  Context_->GetInterProceduralRegionCounter().CountEntity(
+      Context_->GetModRefSummary().GetPointsToGraph(),
+      memoryNodes);
 
   const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -912,7 +932,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
-    stateMap.InsertState(*memoryNode, *states[n++]);
+    stateMap.InsertState(memoryNode, *states[n++]);
 
   if (!states.empty())
   {
@@ -949,7 +969,7 @@ MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
   for (const auto memoryNodeStatePair : memoryNodeStatePairs)
   {
     states.push_back(&memoryNodeStatePair->State());
-    memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode().GetId());
+    memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode());
   }
 
   const auto mergedState =
@@ -997,7 +1017,9 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 
   // Count the memory state arguments once per subregion
   for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
-    Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
+    Context_->GetInterProceduralRegionCounter().CountEntity(
+        Context_->GetModRefSummary().GetPointsToGraph(),
+        memoryNodes);
 
   auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
@@ -1048,7 +1070,9 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
+  Context_->GetInterProceduralRegionCounter().CountEntity(
+      Context_->GetModRefSummary().GetPointsToGraph(),
+      memoryNodes);
 
   std::vector<rvsdg::Output *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
@@ -1077,7 +1101,7 @@ MemoryStateEncoder::EncodeThetaExit(
   {
     auto thetaStateOutput = thetaStateOutputs[n];
     auto & memoryNodeStatePair = memoryNodeStatePairs[n];
-    auto & memoryNode = memoryNodeStatePair->MemoryNode();
+    auto memoryNode = memoryNodeStatePair->MemoryNode();
     auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
     JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
 

@@ -318,6 +318,17 @@ public:
   }
 
   /**
+   * Maps a memory node identifier to the respective output of a
+   * LambdaEntryMemoryStateSplitOperation node.
+   *
+   * @param node A LambdaEntryMemoryStateSplitOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Output *
+  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  /**
    * Maps the output a \ref LambdaEntryMemoryStateSplitOperation node to the respective \ref
    * MemoryNodeId.
    *

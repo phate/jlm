@@ -331,11 +331,11 @@ TestCallWithMemoryStateNodes()
   assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[0]);
   assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[1]);
 
-  auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
-  auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
+  auto lambdaEntrySplit = tryGetMemoryStateEntrySplit(lambdaNode);
+  auto lambdaExitMerge = tryGetMemoryStateExitMerge(lambdaNode);
 
-  assert(lambdaEntrySplit->noutputs() == 2);
-  assert(lambdaExitMerge->ninputs() == 2);
+  assert(lambdaEntrySplit && lambdaEntrySplit->noutputs() == 2);
+  assert(lambdaExitMerge && lambdaExitMerge->ninputs() == 2);
   assert(lambdaExitMerge->input(0)->origin() == lambdaEntrySplit->output(1));
   assert(lambdaExitMerge->input(1)->origin() == lambdaEntrySplit->output(0));
 }
@@ -438,16 +438,16 @@ TestCallWithMissingMemoryStateNodes()
   // Assert
   // Nothing should have been redirected
   const auto & lambdaNode1 = AssertGetOwnerNode<LambdaNode>(*lambdaOutputTest1);
-  const auto lambdaEntrySplit1 = GetMemoryStateEntrySplit(lambdaNode1);
-  const auto lambdaExitMerge1 = GetMemoryStateExitMerge(lambdaNode1);
+  const auto lambdaEntrySplit1 = tryGetMemoryStateEntrySplit(lambdaNode1);
+  const auto lambdaExitMerge1 = tryGetMemoryStateExitMerge(lambdaNode1);
   assert(lambdaEntrySplit1 == nullptr);
-  assert(lambdaExitMerge1->ninputs() == 1);
+  assert(lambdaExitMerge1 && lambdaExitMerge1->ninputs() == 1);
 
   const auto & lambdaNode2 = AssertGetOwnerNode<LambdaNode>(*lambdaOutputTest2);
-  const auto lambdaEntrySplit2 = GetMemoryStateEntrySplit(lambdaNode2);
-  const auto lambdaExitMerge2 = GetMemoryStateExitMerge(lambdaNode2);
-  assert(lambdaEntrySplit2->noutputs() == 1);
-  assert(lambdaExitMerge2->ninputs() == 1);
+  const auto lambdaEntrySplit2 = tryGetMemoryStateEntrySplit(lambdaNode2);
+  const auto lambdaExitMerge2 = tryGetMemoryStateExitMerge(lambdaNode2);
+  assert(lambdaEntrySplit2 && lambdaEntrySplit2->noutputs() == 1);
+  assert(lambdaExitMerge2 && lambdaExitMerge2->ninputs() == 1);
   const auto & [callExitSplitNode, _] =
       TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(
           *lambdaExitMerge2->input(0)->origin());

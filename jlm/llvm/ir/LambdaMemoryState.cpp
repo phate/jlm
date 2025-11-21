@@ -28,7 +28,7 @@ GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 }
 
 rvsdg::SimpleNode *
-GetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept
+tryGetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto & result = GetMemoryStateRegionResult(lambdaNode);
 
@@ -37,7 +37,7 @@ GetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept
 }
 
 rvsdg::SimpleNode *
-GetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
+tryGetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto & argument = GetMemoryStateRegionArgument(lambdaNode);
 

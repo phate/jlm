@@ -207,13 +207,13 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphTests \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
-    tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/CommonNodeEliminationTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
