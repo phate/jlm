@@ -333,6 +333,28 @@ LambdaEntryMemoryStateSplitOperation::copy() const
   return std::make_unique<LambdaEntryMemoryStateSplitOperation>(*this);
 }
 
+rvsdg::Output *
+LambdaEntryMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+    const rvsdg::SimpleNode & node,
+    const MemoryNodeId memoryNodeId)
+{
+  const auto operation =
+      dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&node.GetOperation());
+  if (!operation)
+  {
+    return nullptr;
+  }
+
+  if (!operation->memoryNodeIdToIndexMap_.HasKey(memoryNodeId))
+  {
+    return nullptr;
+  }
+
+  const auto index = operation->memoryNodeIdToIndexMap_.LookupKey(memoryNodeId);
+  JLM_ASSERT(index < node.noutputs());
+  return node.output(index);
+}
+
 MemoryNodeId
 LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output & output)
 {
