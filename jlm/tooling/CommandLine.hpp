@@ -81,7 +81,6 @@ public:
     PredicateCorrelation,
     RvsdgTreePrinter,
     ScalarEvolution,
-    ThetaGammaInversion, // Deprecated. To be removed.
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -217,7 +216,6 @@ private:
     inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";
     inline static const char * NodePullIn_ = "NodePullIn";
     inline static const char * NodePushOut_ = "NodePushOut";
-    inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
     inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * LoopUnswitching_ = "LoopUnswitching";
@@ -232,6 +230,9 @@ private:
 
   static const std::unordered_map<OutputFormat, std::string_view> &
   GetOutputFormatCommandLineArguments();
+
+  static const util::BijectiveMap<OptimizationId, std::string_view> &
+  GetOptimizationIdCommandLineMap();
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions
