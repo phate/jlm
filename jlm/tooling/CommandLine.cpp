@@ -92,26 +92,22 @@ const util::BijectiveMap<JlmOptCommandLineOptions::OptimizationId, std::string_v
 JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
 {
   static util::BijectiveMap<OptimizationId, std::string_view> map = {
-    { OptimizationId::AAAndersenAgnostic, OptimizationCommandLineArgument::AaAndersenAgnostic_ },
-    { OptimizationId::AAAndersenRegionAware,
-      OptimizationCommandLineArgument::AaAndersenRegionAware_ },
-    { OptimizationId::CommonNodeElimination,
-      OptimizationCommandLineArgument::CommonNodeElimination_ },
-    { OptimizationId::DeadNodeElimination, OptimizationCommandLineArgument::DeadNodeElimination_ },
-    { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
-    { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
-    { OptimizationId::InvariantValueRedirection,
-      OptimizationCommandLineArgument::InvariantValueRedirection_ },
-    { OptimizationId::LoadChainSeparation, OptimizationCommandLineArgument::LoadChainSeparation_ },
-    { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
-    { OptimizationId::LoopUnswitching, OptimizationCommandLineArgument::LoopUnswitching_ },
-    { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
-    { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
-    { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
-    { OptimizationId::PredicateCorrelation,
-      OptimizationCommandLineArgument::PredicateCorrelation_ },
-    { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
-    { OptimizationId::ScalarEvolution, OptimizationCommandLineArgument::ScalarEvolution_ }
+    { OptimizationId::AAAndersenAgnostic, "AAAndersenAgnostic" },
+    { OptimizationId::AAAndersenRegionAware, "AAAndersenRegionAware" },
+    { OptimizationId::CommonNodeElimination, "CommonNodeElimination" },
+    { OptimizationId::DeadNodeElimination, "DeadNodeElimination" },
+    { OptimizationId::FunctionInlining, "FunctionInlining" },
+    { OptimizationId::IfConversion, "IfConversion" },
+    { OptimizationId::InvariantValueRedirection, "InvariantValueRedirection" },
+    { OptimizationId::LoadChainSeparation, "LoadChainSeparation" },
+    { OptimizationId::LoopUnrolling, "LoopUnrolling" },
+    { OptimizationId::LoopUnswitching, "LoopUnswitching" },
+    { OptimizationId::NodePullIn, "NodePullIn" },
+    { OptimizationId::NodePushOut, "NodePushOut" },
+    { OptimizationId::NodeReduction, "NodeReduction" },
+    { OptimizationId::PredicateCorrelation, "PredicateCorrelation" },
+    { OptimizationId::RvsdgTreePrinter, "RvsdgTreePrinter" },
+    { OptimizationId::ScalarEvolution, "ScalarEvolution" }
   };
 
   auto firstIndex = static_cast<size_t>(OptimizationId::FirstEnumValue);
@@ -124,6 +120,10 @@ JlmOptCommandLineOptions::OptimizationId
 JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     std::string_view commandLineArgument)
 {
+  // TODO: Deprecated, to be removed
+  if (commandLineArgument == "ThetaGammaInversion")
+    return OptimizationId::LoopUnswitching;
+
   const auto & map = GetOptimizationIdCommandLineMap();
 
   if (map.HasValue(commandLineArgument))
