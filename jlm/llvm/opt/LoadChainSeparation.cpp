@@ -179,7 +179,7 @@ LoadChainSeparation::computeReferenceSubchains(const ModRefChain & modRefChain)
 
     if (end - start > 1)
     {
-      // We only care about reference subchains that are longer than one element
+      // We only care about reference subchains that are longer than a single element
       refSubchains.push_back({ start, end });
     }
   }
@@ -192,7 +192,6 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
 {
   std::vector<ModRefChain> modRefChains;
   modRefChains.push_back(ModRefChain());
-  modRefChains.back().links.push_back({ &startInput, ModRefChainLinkType::Other });
 
   rvsdg::Input * currentInput = &startInput;
   bool doneTracing = false;

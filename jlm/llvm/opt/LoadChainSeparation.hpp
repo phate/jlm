@@ -33,6 +33,7 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
+  // FIXME: I really would like to rename this pass to ModRefChainSeparation
 public:
   ~LoadChainSeparation() noexcept override;
 
@@ -54,15 +55,11 @@ private:
   void
   separateModRefChains(rvsdg::Input & input);
 
+  // FIXME: documentation
   enum class ModRefChainLinkType
   {
     Modification,
     Reference,
-    /**
-     * Any other operation that is performed on memory states, but is not a reference or
-     * modification. For example, \ref JoinOperation or \ref SplitOperation.
-     */
-    Other
   };
 
   struct ModRefChainLink
