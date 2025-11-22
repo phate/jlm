@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -84,6 +85,25 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
           // Handle innermost regions first
           handleRegion(*lambdaNode.subregion());
           separateModRefChains(GetMemoryStateRegionResult(lambdaNode));
+        },
+        [&](rvsdg::GammaNode & gammaNode)
+        {
+          // Handle innermost regions first
+          for (auto & subregion : gammaNode.Subregions())
+          {
+            handleRegion(subregion);
+          }
+
+          for (auto & [branchResults, output] : gammaNode.GetExitVars())
+          {
+            if (is<MemoryStateType>(output->Type()))
+            {
+              for (const auto branchResult : branchResults)
+              {
+                separateModRefChains(*branchResult);
+              }
+            }
+          }
         },
         [](rvsdg::SimpleNode &)
         {
@@ -194,6 +214,23 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
     auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentInput->origin());
     rvsdg::MatchTypeOrFail(
         node,
+        [&](const rvsdg::GammaNode & gammaNode)
+        {
+          // FIXME: I really would like that state edges through gammas would be recognized as
+          // either modifying or just referencing. However, we would need to know what the
+          // operations in the gamma on all branches are and which memory state exit variable maps
+          // to which memory state entry variable. We need some more machinery for it first before
+          // we can do that.
+          for (auto [entryVarInput, _] : gammaNode.GetEntryVars())
+          {
+            if (is<MemoryStateType>(entryVarInput->Type()))
+            {
+              auto tmpChains = computeModRefChains(*entryVarInput);
+              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+            }
+          }
+          doneTracing = true;
+        },
         [&](const rvsdg::SimpleNode & simpleNode)
         {
           rvsdg::MatchTypeOrFail(
