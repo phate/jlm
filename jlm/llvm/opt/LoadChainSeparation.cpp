@@ -261,6 +261,11 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
         },
         [&](const rvsdg::ThetaNode & thetaNode)
         {
+          // FIXME: I really would like that state edges through thetas would be recognized as
+          // either modifying or just referencing. However, we would need to know what the
+          // operations in the gamma on all branches are and which memory state exit variable maps
+          // to which memory state entry variable. We need some more machinery for it first before
+          // we can do that.
           for (const auto loopVar : thetaNode.GetLoopVars())
           {
             if (is<MemoryStateType>(loopVar.input->Type()))
