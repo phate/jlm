@@ -83,7 +83,7 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
         {
           // Handle innermost regions first
           handleRegion(*lambdaNode.subregion());
-          separateModRefChainsInLambda(lambdaNode);
+          separateModRefChains(GetMemoryStateRegionResult(lambdaNode));
         },
         [](rvsdg::SimpleNode &)
         {
@@ -93,58 +93,40 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
 }
 
 void
-LoadChainSeparation::separateModRefChainsInLambda(rvsdg::LambdaNode & lambdaNode)
-{
-  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
-
-  auto [exitMergeNode, exitMergeOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(
-          *memoryStateResult.origin());
-  if (exitMergeOperation)
-  {
-    for (auto & input : exitMergeNode->Inputs())
-    {
-      separateModRefChain(input);
-    }
-  }
-  else
-  {
-    separateModRefChain(memoryStateResult);
-  }
-}
-
-void
-LoadChainSeparation::separateModRefChain(rvsdg::Input & input)
+LoadChainSeparation::separateModRefChains(rvsdg::Input & input)
 {
   JLM_ASSERT(is<MemoryStateType>(input.Type()));
 
-  const auto modRefChain = computeModRefChain(input);
-  const auto refSubchains = computeReferenceSubchains(modRefChain);
-
-  for (auto [start, end] : refSubchains)
+  const auto modRefChains = computeModRefChains(input);
+  for (auto & modRefChain : modRefChains)
   {
-    // Divert the operands of the respective inputs for each encountered memory reference node and
-    // collect join operands
-    size_t n = start;
-    std::vector<rvsdg::Output *> joinOperands;
-    const auto newMemoryStateOperand = modRefChain[end - 1].input->origin();
-    while (n != end)
-    {
-      const auto modRefChainInput = modRefChain[n].input;
-      modRefChainInput->divert_to(newMemoryStateOperand);
-      joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
-      n++;
-    }
+    const auto refSubchains = computeReferenceSubchains(modRefChain);
 
-    // Create join node and divert the current memory state output
-    auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-    mapMemoryStateInputToOutput(*modRefChain[start].input)
-        .divertUsersWhere(
-            *joinNode.output(0),
-            [&joinNode](const rvsdg::Input & user)
-            {
-              return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
-            });
+    for (auto [start, end] : refSubchains)
+    {
+      // Divert the operands of the respective inputs for each encountered memory reference node and
+      // collect join operands
+      size_t n = start;
+      std::vector<rvsdg::Output *> joinOperands;
+      const auto newMemoryStateOperand = modRefChain.links[end - 1].input->origin();
+      while (n != end)
+      {
+        const auto modRefChainInput = modRefChain.links[n].input;
+        modRefChainInput->divert_to(newMemoryStateOperand);
+        joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
+        n++;
+      }
+
+      // Create join node and divert the current memory state output
+      auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
+      mapMemoryStateInputToOutput(*modRefChain.links[start].input)
+          .divertUsersWhere(
+              *joinNode.output(0),
+              [&joinNode](const rvsdg::Input & user)
+              {
+                return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
+              });
+    }
   }
 }
 
@@ -161,22 +143,22 @@ LoadChainSeparation::mapMemoryStateInputToOutput(const rvsdg::Input & input)
 }
 
 std::vector<std::pair<size_t, size_t>>
-LoadChainSeparation::computeReferenceSubchains(const std::vector<ModRefChainLink> & modRefChain)
+LoadChainSeparation::computeReferenceSubchains(const ModRefChain & modRefChain)
 {
   std::vector<std::pair<size_t, size_t>> refSubchains;
-  for (size_t i = 0; i < modRefChain.size();)
+  for (size_t i = 0; i < modRefChain.links.size();)
   {
-    if (modRefChain[i].modRefType != ModRefChainLinkType::Reference)
+    if (modRefChain.links[i].modRefType != ModRefChainLinkType::Reference)
     {
       i++;
       continue;
     }
 
     size_t start = i;
-    size_t end = modRefChain.size();
-    for (size_t j = i + 1; j < modRefChain.size(); ++j)
+    size_t end = modRefChain.links.size();
+    for (size_t j = i + 1; j < modRefChain.links.size(); ++j)
     {
-      if (modRefChain[j].modRefType != ModRefChainLinkType::Reference)
+      if (modRefChain.links[j].modRefType != ModRefChainLinkType::Reference)
       {
         end = j;
       }
@@ -192,24 +174,26 @@ LoadChainSeparation::computeReferenceSubchains(const std::vector<ModRefChainLink
   return refSubchains;
 }
 
-std::vector<LoadChainSeparation::ModRefChainLink>
-LoadChainSeparation::computeModRefChain(rvsdg::Input & input)
+std::vector<LoadChainSeparation::ModRefChain>
+LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
 {
-  std::vector<ModRefChainLink> modRefChain;
-  modRefChain.push_back({ &input, ModRefChainLinkType::Other });
+  std::vector<ModRefChain> modRefChains;
+  modRefChains.push_back(ModRefChain());
+  modRefChains.back().links.push_back({ &input, ModRefChainLinkType::Other });
 
   rvsdg::Input * currentInput = &input;
+  bool doneTracing = false;
   do
   {
-    const auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*currentInput->origin());
-    if (!node)
+    if (rvsdg::TryGetOwnerRegion(*currentInput->origin()))
     {
-      // We hit a region argument. Just return with the so far found mod-ref chain
-      return modRefChain;
+      // We have a region argument. Return the chains we found so far.
+      return modRefChains;
     }
 
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentInput->origin());
     rvsdg::MatchTypeOrFail(
-        *node,
+        node,
         [&](const rvsdg::SimpleNode & simpleNode)
         {
           rvsdg::MatchTypeOrFail(
@@ -217,23 +201,36 @@ LoadChainSeparation::computeModRefChain(rvsdg::Input & input)
               [&](const LoadOperation &)
               {
                 currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
-                modRefChain.push_back({ currentInput, ModRefChainLinkType::Reference });
+                modRefChains.back().links.push_back(
+                    { currentInput, ModRefChainLinkType::Reference });
               },
               [&](const StoreOperation &)
               {
                 currentInput =
                     &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
-                modRefChain.push_back({ currentInput, ModRefChainLinkType::Modification });
+                modRefChains.back().links.push_back(
+                    { currentInput, ModRefChainLinkType::Modification });
+              },
+              [&](const LambdaExitMemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = computeModRefChains(nodeInput);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
               },
               [&](const LambdaEntryMemoryStateSplitOperation &)
               {
-                currentInput = nullptr;
+                // LambdaEntryMemoryStateSplitOperation nodes should always be connected to a lambda
+                // argument. In other words, this is as far as we can trace in the graph. Just
+                // return what we found so far.
+                doneTracing = true;
               });
         });
+  } while (!doneTracing);
 
-  } while (currentInput);
-
-  return modRefChain;
+  return modRefChains;
 }
 
 void

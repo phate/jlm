@@ -97,10 +97,7 @@ private:
   hasLoadNodeAsUserOwner(const rvsdg::Output & output);
 
   void
-  separateModRefChainsInLambda(rvsdg::LambdaNode & lambdaNode);
-
-  void
-  separateModRefChain(rvsdg::Input & input);
+  separateModRefChains(rvsdg::Input & input);
 
   enum class ModRefChainLinkType
   {
@@ -119,11 +116,16 @@ private:
     ModRefChainLinkType modRefType;
   };
 
-  std::vector<ModRefChainLink>
-  computeModRefChain(rvsdg::Input & input);
+  struct ModRefChain
+  {
+    std::vector<ModRefChainLink> links{};
+  };
+
+  std::vector<ModRefChain>
+  computeModRefChains(rvsdg::Input & input);
 
   std::vector<std::pair<size_t, size_t>>
-  computeReferenceSubchains(const std::vector<ModRefChainLink> & modRefChain);
+  computeReferenceSubchains(const ModRefChain & modRefChain);
 
   rvsdg::Output &
   mapMemoryStateInputToOutput(const rvsdg::Input & input);
