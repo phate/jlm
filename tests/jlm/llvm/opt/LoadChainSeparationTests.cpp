@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -460,3 +461,105 @@ GammaWithLoadsAndStores()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/LoadChainSeparationTests-GammaWithLoadsAndStores",
     GammaWithLoadsAndStores)
+
+static void
+ThetaWithLoadsOnly()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto valueType = ValueType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto functionType = FunctionType::Create(
+      { controlType, pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[2];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[3];
+
+  auto & loadNode1 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { &memoryStateArgument }, valueType, 4);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode1.output(1) }, valueType, 4);
+
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+
+  auto addressLoopVar = thetaNode->AddLoopVar(&addressArgument);
+  auto memoryStateLoopVar = thetaNode->AddLoopVar(loadNode2.output(1));
+
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(
+      *addressLoopVar.pre,
+      { memoryStateLoopVar.pre },
+      valueType,
+      4);
+
+  auto & loadNode4 = LoadNonVolatileOperation::CreateNode(
+      *addressLoopVar.pre,
+      { loadNode3.output(1) },
+      valueType,
+      4);
+
+  memoryStateLoopVar.post->divert_to(loadNode4.output(1));
+
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(
+      addressArgument,
+      { memoryStateLoopVar.output },
+      valueType,
+      4);
+
+  auto & loadNode6 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode5.output(1) }, valueType, 4);
+
+  lambdaNode->finalize({ &ioStateArgument, loadNode6.output(1) });
+
+  view(rvsdg, stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  LoadChainSeparation loadChainSeparation;
+  loadChainSeparation.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect three join nodes to appear
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *GetMemoryStateRegionResult(*lambdaNode).origin());
+    assert(joinOperation);
+    assert(joinNode->ninputs() == 2);
+  }
+
+  {
+    auto [joinNode, joinOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*memoryStateLoopVar.post->origin());
+    assert(joinOperation);
+    assert(joinNode->ninputs() == 2);
+  }
+
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *memoryStateLoopVar.input->origin());
+    assert(joinOperation);
+    assert(joinNode->ninputs() == 2);
+  }
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/LoadChainSeparationTests-ThetaWithLoadsOnly",
+    ThetaWithLoadsOnly)

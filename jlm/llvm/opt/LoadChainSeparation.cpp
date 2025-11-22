@@ -13,6 +13,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm
@@ -78,7 +79,7 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
   // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
   for (const auto & node : rvsdg::TopDownTraverser(&region))
   {
-    rvsdg::MatchTypeOrFail(
+    rvsdg::MatchTypeWithDefault(
         *node,
         [&](rvsdg::LambdaNode & lambdaNode)
         {
@@ -105,9 +106,26 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
             }
           }
         },
+        [&](rvsdg::ThetaNode & thetaNode)
+        {
+          // Handle innermost region first
+          handleRegion(*thetaNode.subregion());
+
+          for (const auto loopVar : thetaNode.GetLoopVars())
+          {
+            if (is<MemoryStateType>(loopVar.output->Type()))
+            {
+              separateModRefChains(*loopVar.post);
+            }
+          }
+        },
         [](rvsdg::SimpleNode &)
         {
           // Nothing needs to be done
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node->DebugString()));
         });
   }
 }
@@ -212,7 +230,7 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
     }
 
     auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentInput->origin());
-    rvsdg::MatchTypeOrFail(
+    rvsdg::MatchTypeWithDefault(
         node,
         [&](const rvsdg::GammaNode & gammaNode)
         {
@@ -231,10 +249,23 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
           }
           doneTracing = true;
         },
+        [&](const rvsdg::ThetaNode & thetaNode)
+        {
+          for (const auto loopVar : thetaNode.GetLoopVars())
+          {
+            if (is<MemoryStateType>(loopVar.input->Type()))
+            {
+              auto tmpChains = computeModRefChains(*loopVar.input);
+              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+            }
+          }
+          doneTracing = true;
+        },
         [&](const rvsdg::SimpleNode & simpleNode)
         {
-          rvsdg::MatchTypeOrFail(
-              simpleNode.GetOperation(),
+          auto & operation = simpleNode.GetOperation();
+          rvsdg::MatchTypeWithDefault(
+              operation,
               [&](const LoadOperation &)
               {
                 currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
@@ -263,7 +294,16 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
                 // argument. In other words, this is as far as we can trace in the graph. Just
                 // return what we found so far.
                 doneTracing = true;
+              },
+              [&]()
+              {
+                throw std::logic_error(
+                    util::strfmt("Unhandled node type: ", operation.debug_string()));
               });
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node.DebugString()));
         });
   } while (!doneTracing);
 
