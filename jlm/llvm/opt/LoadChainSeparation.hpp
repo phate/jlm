@@ -33,8 +33,6 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
-  // class Context;
-
 public:
   ~LoadChainSeparation() noexcept override;
 
@@ -52,50 +50,7 @@ private:
   void
   separateModRefChainsInRegion(rvsdg::Region & region);
 
-  /**
-   * Takes the memory state output of a \ref LoadOperation node and separates all the load nodes
-   * that are connected to the respective memory state edge above the graph by inserting a \ref
-   * MemoryStateJoinOperation node.
-   */
-  static void
-  separateLoadChain(rvsdg::Output & memoryStateOutput);
-
-  /**
-   * Traces the memory state output of a \ref LoadOperation upwards through the load node chain,
-   * collecting the memory state outputs of each \ref LoadOperation node along the way, and
-   * returning the final output that is not owned by a \ref LoadOperation node.
-   *
-   * @param output The memory state output of a \ref LoadOperation node.
-   * @param [out] joinOperands A vector of all the memory state outputs encountered while tracing up
-   * the load chain.
-   * @return The final output that is not owned by a \ref LoadOperation node.
-   */
-  static rvsdg::Output &
-  traceLoadNodeMemoryState(rvsdg::Output & output, std::vector<rvsdg::Output *> & joinOperands);
-
-  /**
-   * Finds all memory state outputs of a \ref LoadOperation node that does not have a \ref
-   * LoadOperation node as owner of its users.
-   *
-   * @param region The region in which to find the memory state outputs.
-   * @return A set of memory state outputs.
-   */
-  static util::HashSet<rvsdg::Output *>
-  findLoadChainBottoms(rvsdg::Region & region);
-
-  /**
-   * @return True, if the origin of \p input is a \ref LoadOperation node, otherwise false.
-   */
-  static bool
-  hasLoadNodeAsOperandOwner(const rvsdg::Input & input);
-
-  /**
-   * @return True, if \p output has a \ref LoadOperation node as one of its users' owners, otherwise
-   * false.
-   */
-  static bool
-  hasLoadNodeAsUserOwner(const rvsdg::Output & output);
-
+  // FIXME: documentation
   void
   separateModRefChains(rvsdg::Input & input);
 
@@ -121,16 +76,17 @@ private:
     std::vector<ModRefChainLink> links{};
   };
 
+  // FIXME: documentation
   std::vector<ModRefChain>
   traceModRefChains(rvsdg::Input & startInput);
 
+  // FIXME: documentation
   std::vector<std::pair<size_t, size_t>>
   computeReferenceSubchains(const ModRefChain & modRefChain);
 
+  // FIXME: documentation
   rvsdg::Output &
   mapMemoryStateInputToOutput(const rvsdg::Input & input);
-
-  // std::unique_ptr<Context> context_;
 };
 
 }
