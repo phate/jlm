@@ -8,9 +8,11 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -87,6 +89,10 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
           separateModRefChainsInRegion(*lambdaNode.subregion());
           separateModRefChains(GetMemoryStateRegionResult(lambdaNode));
         },
+        [&](rvsdg::PhiNode & phiNode)
+        {
+          separateModRefChainsInRegion(*phiNode.subregion());
+        },
         [&](rvsdg::GammaNode & gammaNode)
         {
           // Handle innermost regions first
@@ -118,6 +124,10 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
               separateModRefChains(*loopVar.post);
             }
           }
+        },
+        [](rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done
         },
         [](rvsdg::SimpleNode &)
         {
