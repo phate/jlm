@@ -50,7 +50,7 @@ public:
 
 private:
   void
-  handleRegion(rvsdg::Region & region);
+  separateModRefChainsInRegion(rvsdg::Region & region);
 
   /**
    * Takes the memory state output of a \ref LoadOperation node and separates all the load nodes
@@ -122,7 +122,7 @@ private:
   };
 
   std::vector<ModRefChain>
-  computeModRefChains(rvsdg::Input & input);
+  traceModRefChains(rvsdg::Input & startInput);
 
   std::vector<std::pair<size_t, size_t>>
   computeReferenceSubchains(const ModRefChain & modRefChain);

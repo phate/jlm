@@ -70,11 +70,11 @@ LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector 
 {
   // context_ = Context::create();
 
-  handleRegion(module.Rvsdg().GetRootRegion());
+  separateModRefChainsInRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
-LoadChainSeparation::handleRegion(rvsdg::Region & region)
+LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
 {
   // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
   for (const auto & node : rvsdg::TopDownTraverser(&region))
@@ -84,7 +84,7 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
         [&](rvsdg::LambdaNode & lambdaNode)
         {
           // Handle innermost regions first
-          handleRegion(*lambdaNode.subregion());
+          separateModRefChainsInRegion(*lambdaNode.subregion());
           separateModRefChains(GetMemoryStateRegionResult(lambdaNode));
         },
         [&](rvsdg::GammaNode & gammaNode)
@@ -92,7 +92,7 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
           // Handle innermost regions first
           for (auto & subregion : gammaNode.Subregions())
           {
-            handleRegion(subregion);
+            separateModRefChainsInRegion(subregion);
           }
 
           for (auto & [branchResults, output] : gammaNode.GetExitVars())
@@ -109,7 +109,7 @@ LoadChainSeparation::handleRegion(rvsdg::Region & region)
         [&](rvsdg::ThetaNode & thetaNode)
         {
           // Handle innermost region first
-          handleRegion(*thetaNode.subregion());
+          separateModRefChainsInRegion(*thetaNode.subregion());
 
           for (const auto loopVar : thetaNode.GetLoopVars())
           {
@@ -135,12 +135,12 @@ LoadChainSeparation::separateModRefChains(rvsdg::Input & input)
 {
   JLM_ASSERT(is<MemoryStateType>(input.Type()));
 
-  const auto modRefChains = computeModRefChains(input);
+  const auto modRefChains = traceModRefChains(input);
   for (auto & modRefChain : modRefChains)
   {
-    const auto refSubchains = computeReferenceSubchains(modRefChain);
+    const auto subChain = computeReferenceSubchains(modRefChain);
 
-    for (auto [start, end] : refSubchains)
+    for (auto [start, end] : subChain)
     {
       // Divert the operands of the respective inputs for each encountered memory reference node and
       // collect join operands
@@ -213,13 +213,13 @@ LoadChainSeparation::computeReferenceSubchains(const ModRefChain & modRefChain)
 }
 
 std::vector<LoadChainSeparation::ModRefChain>
-LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
+LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
 {
   std::vector<ModRefChain> modRefChains;
   modRefChains.push_back(ModRefChain());
-  modRefChains.back().links.push_back({ &input, ModRefChainLinkType::Other });
+  modRefChains.back().links.push_back({ &startInput, ModRefChainLinkType::Other });
 
-  rvsdg::Input * currentInput = &input;
+  rvsdg::Input * currentInput = &startInput;
   bool doneTracing = false;
   do
   {
@@ -243,7 +243,7 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
             {
-              auto tmpChains = computeModRefChains(*entryVarInput);
+              auto tmpChains = traceModRefChains(*entryVarInput);
               modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
             }
           }
@@ -255,7 +255,7 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
           {
             if (is<MemoryStateType>(loopVar.input->Type()))
             {
-              auto tmpChains = computeModRefChains(*loopVar.input);
+              auto tmpChains = traceModRefChains(*loopVar.input);
               modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
             }
           }
@@ -283,7 +283,7 @@ LoadChainSeparation::computeModRefChains(rvsdg::Input & input)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = computeModRefChains(nodeInput);
+                  auto tmpChains = traceModRefChains(nodeInput);
                   modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 }
                 doneTracing = true;
