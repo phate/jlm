@@ -5,8 +5,12 @@
 
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -159,6 +163,7 @@ LoadChainSeparation::separateModRefChains(rvsdg::Input & input)
       const auto newMemoryStateOperand = modRefChain.links[end - 1].input->origin();
       while (n != end)
       {
+        JLM_ASSERT(modRefChain.links[n].modRefType == ModRefChainLinkType::Reference);
         const auto modRefChainInput = modRefChain.links[n].input;
         modRefChainInput->divert_to(newMemoryStateOperand);
         joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
@@ -181,7 +186,7 @@ LoadChainSeparation::separateModRefChains(rvsdg::Input & input)
 rvsdg::Output &
 LoadChainSeparation::mapMemoryStateInputToOutput(const rvsdg::Input & input)
 {
-  if (auto [_, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(input);
+  if (auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(input);
       loadOperation)
   {
     return LoadOperation::mapMemoryStateInputToOutput(input);
@@ -209,12 +214,14 @@ LoadChainSeparation::computeReferenceSubchains(const ModRefChain & modRefChain)
       if (modRefChain.links[j].modRefType != ModRefChainLinkType::Reference)
       {
         end = j;
+        break;
       }
     }
     i = end;
 
     if (end - start > 1)
     {
+      // We only care about reference subchains that are longer than one element
       refSubchains.push_back({ start, end });
     }
   }
@@ -262,10 +269,7 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
         [&](const rvsdg::ThetaNode & thetaNode)
         {
           // FIXME: I really would like that state edges through thetas would be recognized as
-          // either modifying or just referencing. However, we would need to know what the
-          // operations in the gamma on all branches are and which memory state exit variable maps
-          // to which memory state entry variable. We need some more machinery for it first before
-          // we can do that.
+          // either modifying or just referencing.
           for (const auto loopVar : thetaNode.GetLoopVars())
           {
             if (is<MemoryStateType>(loopVar.input->Type()))
@@ -294,6 +298,22 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
                 modRefChains.back().links.push_back(
                     { currentInput, ModRefChainLinkType::Modification });
               },
+              [&](const MemCpyOperation &)
+              {
+                // FIXME: We really would like to know here which memory state belongs to the source
+                // and which to the dst address. This would allow us to be more precise in the
+                // separation.
+                currentInput =
+                    &MemCpyOperation::mapMemoryStateOutputToInput(*currentInput->origin());
+                modRefChains.back().links.push_back(
+                    { currentInput, ModRefChainLinkType::Modification });
+              },
+              [&](const CallOperation &)
+              {
+                // FIXME: I really would like that state edges through calls would be recognized as
+                // either modifying or just referencing.
+                doneTracing = true;
+              },
               [&](const LambdaExitMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
@@ -310,10 +330,51 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
                 // return what we found so far.
                 doneTracing = true;
               },
+              [&](const CallExitMemoryStateSplitOperation &)
+              {
+                // FIXME: I really would like that state edges through calls would be recognized as
+                // either modifying or just referencing.
+                doneTracing = true;
+              },
+              [&](const CallEntryMemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const MemoryStateJoinOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const MemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const AllocaOperation &)
+              {
+                doneTracing = true;
+              },
+              [&](const MallocOperation &)
+              {
+                doneTracing = true;
+              },
               [&]()
               {
                 throw std::logic_error(
-                    util::strfmt("Unhandled node type: ", operation.debug_string()));
+                    util::strfmt("Unhandled operation type: ", operation.debug_string()));
               });
         },
         [&]()
