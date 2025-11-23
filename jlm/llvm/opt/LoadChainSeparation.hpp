@@ -17,7 +17,7 @@ namespace jlm::llvm
 {
 
 /**
- * Separates chains of \ref LoadOperation nodes from each other by rendering them independent in the
+ * Separates chains of memory region references from each other by rendering them independent in the
  * RVSDG through the insertion of a \ref MemoryStateJoinOperation node.
  *
  * The following example illustrate the transformation:
@@ -48,24 +48,45 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  void
+  static void
   separateModRefChainsInRegion(rvsdg::Region & region);
 
-  // FIXME: documentation
-  void
+  /**
+   * Separates the reference links of the mod/ref chain starting at memory state input \p
+   * startInput.
+   *
+   * @param startInput The starting input of the mod/ref chain. Must be of type \ref
+   * MemoryStateType.
+   */
+  static void
   separateModRefChains(rvsdg::Input & startInput);
 
-  // FIXME: documentation
-  enum class ModRefChainLinkType
-  {
-    Modification,
-    Reference,
-  };
-
+  /**
+   * Represents a single link in a mod/ref chain
+   */
   struct ModRefChainLink
   {
+    /**
+     * The type of the mod/ref chain link
+     */
+    enum class Type
+    {
+      /**
+       * The link modifies the memory region.
+       */
+      Modification,
+
+      /**
+       * The link only references the memory region.
+       */
+      Reference,
+    };
+
+    /**
+     * The memory state input associated with the node that references/modifies a memory region.
+     */
     rvsdg::Input * input;
-    ModRefChainLinkType modRefType;
+    Type type;
   };
 
   struct ModRefChain
@@ -73,16 +94,35 @@ private:
     std::vector<ModRefChainLink> links{};
   };
 
-  // FIXME: documentation
-  std::vector<ModRefChain>
+  /**
+   * Traces from the starting input \p startInput upwards to find all mod/ref chains within a single
+   * region.
+   *
+   * @param startInput The starting input for the tracing. Must be of type \ref MemoryStateType.
+   * @return A vector of mod/ref chains.
+   */
+  static std::vector<ModRefChain>
   traceModRefChains(rvsdg::Input & startInput);
 
-  // FIXME: documentation
-  std::vector<ModRefChain>
+  /**
+   * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain
+   * is defined as followed:
+   * 1. Must only contain mod/ref chain links of type \ref ModRefChainLink::Type::Reference
+   * 2. Must have at least two links
+   *
+   * @param modRefChain The mod/ref chain from which to extract the reference subchains
+   * @return A vector of reference subchains.
+   */
+  static std::vector<ModRefChain>
   extractReferenceSubchains(const ModRefChain & modRefChain);
 
-  // FIXME: documentation
-  rvsdg::Output &
+  /**
+   * Maps a memory state input of a node to the respective memory state output.
+   *
+   * @param input The input that is mapped.
+   * @return A memory state output, if the input can be mapped.
+   */
+  static rvsdg::Output &
   mapMemoryStateInputToOutput(const rvsdg::Input & input);
 };
 

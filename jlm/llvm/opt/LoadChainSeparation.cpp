@@ -119,7 +119,7 @@ LoadChainSeparation::separateModRefChains(rvsdg::Input & startInput)
       const auto newMemoryStateOperand = links.back().input->origin();
       for (auto [linkInput, linkModRefType] : links)
       {
-        JLM_ASSERT(linkModRefType == ModRefChainLinkType::Reference);
+        JLM_ASSERT(linkModRefType == ModRefChainLink::Type::Reference);
         const auto modRefChainInput = linkInput;
         modRefChainInput->divert_to(newMemoryStateOperand);
         joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
@@ -156,7 +156,7 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
   std::vector<ModRefChain> refSubchains;
   for (auto linkIt = modRefChain.links.begin(); linkIt != modRefChain.links.end();)
   {
-    if (linkIt->modRefType != ModRefChainLinkType::Reference)
+    if (linkIt->type != ModRefChainLink::Type::Reference)
     {
       // The current link is not a reference. Let's continue with the next one.
       ++linkIt;
@@ -165,7 +165,7 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 
     auto nextLinkIt = std::next(linkIt);
     if (nextLinkIt == modRefChain.links.end()
-        || nextLinkIt->modRefType != ModRefChainLinkType::Reference)
+        || nextLinkIt->type != ModRefChainLink::Type::Reference)
     {
       // We only want to separate reference chains with at least two links
       ++linkIt;
@@ -174,8 +174,7 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 
     // We found a new reference subchain. Let's grab all the links
     refSubchains.push_back({});
-    while (linkIt != modRefChain.links.end()
-           && linkIt->modRefType == ModRefChainLinkType::Reference)
+    while (linkIt != modRefChain.links.end() && linkIt->type == ModRefChainLink::Type::Reference)
     {
       refSubchains.back().links.push_back(*linkIt);
       ++linkIt;
@@ -244,14 +243,14 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
               {
                 currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
                 modRefChains.back().links.push_back(
-                    { currentInput, ModRefChainLinkType::Reference });
+                    { currentInput, ModRefChainLink::Type::Reference });
               },
               [&](const StoreOperation &)
               {
                 currentInput =
                     &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
                 modRefChains.back().links.push_back(
-                    { currentInput, ModRefChainLinkType::Modification });
+                    { currentInput, ModRefChainLink::Type::Modification });
               },
               [&](const MemCpyOperation &)
               {
@@ -261,7 +260,7 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
                 currentInput =
                     &MemCpyOperation::mapMemoryStateOutputToInput(*currentInput->origin());
                 modRefChains.back().links.push_back(
-                    { currentInput, ModRefChainLinkType::Modification });
+                    { currentInput, ModRefChainLink::Type::Modification });
               },
               [&](const CallOperation &)
               {
