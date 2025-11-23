@@ -2479,6 +2479,17 @@ public:
     return *input;
   }
 
+  [[nodiscard]] static rvsdg::Input &
+  mapMemoryStateOutputToInput(rvsdg::Output & output) noexcept
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [freeNode, freeOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<FreeOperation>(output);
+    JLM_ASSERT(freeOperation);
+    const auto input = freeNode->input(output.index() + 1);
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const Variable * pointer,

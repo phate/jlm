@@ -40,6 +40,9 @@ LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector 
 void
 LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
 {
+  // FIXME: We currently do not recognize mod/ref chains that do not start at a result. For example,
+  // the state output of a lod node that is dead would not be recognized.
+
   // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
   for (const auto & node : rvsdg::TopDownTraverser(&region))
   {
@@ -249,6 +252,12 @@ LoadChainSeparation::traceModRefChains(rvsdg::Input & startInput)
               {
                 currentInput =
                     &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
+                modRefChains.back().links.push_back(
+                    { currentInput, ModRefChainLink::Type::Modification });
+              },
+              [&](const FreeOperation &)
+              {
+                currentInput = &FreeOperation::mapMemoryStateOutputToInput(*currentInput->origin());
                 modRefChains.back().links.push_back(
                     { currentInput, ModRefChainLink::Type::Modification });
               },
