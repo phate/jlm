@@ -103,34 +103,31 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
 }
 
 void
-LoadChainSeparation::separateModRefChains(rvsdg::Input & input)
+LoadChainSeparation::separateModRefChains(rvsdg::Input & startInput)
 {
-  JLM_ASSERT(is<MemoryStateType>(input.Type()));
+  JLM_ASSERT(is<MemoryStateType>(startInput.Type()));
 
-  const auto modRefChains = traceModRefChains(input);
+  const auto modRefChains = traceModRefChains(startInput);
   for (auto & modRefChain : modRefChains)
   {
-    const auto subChain = computeReferenceSubchains(modRefChain);
-
-    for (auto [start, end] : subChain)
+    const auto refSubchains = extractReferenceSubchains(modRefChain);
+    for (auto [links] : refSubchains)
     {
-      // Divert the operands of the respective inputs for each encountered memory reference node and
+      // Divert the operands of the respective inputs for each encountered reference node and
       // collect join operands
-      size_t n = start;
       std::vector<rvsdg::Output *> joinOperands;
-      const auto newMemoryStateOperand = modRefChain.links[end - 1].input->origin();
-      while (n != end)
+      const auto newMemoryStateOperand = links.back().input->origin();
+      for (auto [linkInput, linkModRefType] : links)
       {
-        JLM_ASSERT(modRefChain.links[n].modRefType == ModRefChainLinkType::Reference);
-        const auto modRefChainInput = modRefChain.links[n].input;
+        JLM_ASSERT(linkModRefType == ModRefChainLinkType::Reference);
+        const auto modRefChainInput = linkInput;
         modRefChainInput->divert_to(newMemoryStateOperand);
         joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
-        n++;
       }
 
       // Create join node and divert the current memory state output
       auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-      mapMemoryStateInputToOutput(*modRefChain.links[start].input)
+      mapMemoryStateInputToOutput(*links.front().input)
           .divertUsersWhere(
               *joinNode.output(0),
               [&joinNode](const rvsdg::Input & user)
@@ -153,34 +150,35 @@ LoadChainSeparation::mapMemoryStateInputToOutput(const rvsdg::Input & input)
   throw std::logic_error("Unhandled node type!");
 }
 
-std::vector<std::pair<size_t, size_t>>
-LoadChainSeparation::computeReferenceSubchains(const ModRefChain & modRefChain)
+std::vector<LoadChainSeparation::ModRefChain>
+LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 {
-  std::vector<std::pair<size_t, size_t>> refSubchains;
-  for (size_t i = 0; i < modRefChain.links.size();)
+  std::vector<ModRefChain> refSubchains;
+  for (auto linkIt = modRefChain.links.begin(); linkIt != modRefChain.links.end();)
   {
-    if (modRefChain.links[i].modRefType != ModRefChainLinkType::Reference)
+    if (linkIt->modRefType != ModRefChainLinkType::Reference)
     {
-      i++;
+      // The current link is not a reference. Let's continue with the next one.
+      ++linkIt;
       continue;
     }
 
-    size_t start = i;
-    size_t end = modRefChain.links.size();
-    for (size_t j = i + 1; j < modRefChain.links.size(); ++j)
+    auto nextLinkIt = std::next(linkIt);
+    if (nextLinkIt == modRefChain.links.end()
+        || nextLinkIt->modRefType != ModRefChainLinkType::Reference)
     {
-      if (modRefChain.links[j].modRefType != ModRefChainLinkType::Reference)
-      {
-        end = j;
-        break;
-      }
+      // We only want to separate reference chains with at least two links
+      ++linkIt;
+      continue;
     }
-    i = end;
 
-    if (end - start > 1)
+    // We found a new reference subchain. Let's grab all the links
+    refSubchains.push_back({});
+    while (linkIt != modRefChain.links.end()
+           && linkIt->modRefType == ModRefChainLinkType::Reference)
     {
-      // We only care about reference subchains that are longer than a single element
-      refSubchains.push_back({ start, end });
+      refSubchains.back().links.push_back(*linkIt);
+      ++linkIt;
     }
   }
 

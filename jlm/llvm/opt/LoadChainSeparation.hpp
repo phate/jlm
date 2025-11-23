@@ -53,7 +53,7 @@ private:
 
   // FIXME: documentation
   void
-  separateModRefChains(rvsdg::Input & input);
+  separateModRefChains(rvsdg::Input & startInput);
 
   // FIXME: documentation
   enum class ModRefChainLinkType
@@ -78,8 +78,8 @@ private:
   traceModRefChains(rvsdg::Input & startInput);
 
   // FIXME: documentation
-  std::vector<std::pair<size_t, size_t>>
-  computeReferenceSubchains(const ModRefChain & modRefChain);
+  std::vector<ModRefChain>
+  extractReferenceSubchains(const ModRefChain & modRefChain);
 
   // FIXME: documentation
   rvsdg::Output &

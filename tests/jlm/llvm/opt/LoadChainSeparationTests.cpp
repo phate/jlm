@@ -246,6 +246,93 @@ SingleLoad()
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-SingleLoad", SingleLoad)
 
 static void
+LoadAndStore()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[2];
+
+  auto valueNode = TestOperation::create(lambdaNode->subregion(), {}, { valueType });
+
+  auto & loadNode1 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { &memoryStateArgument }, valueType, 4);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode1.output(1) }, valueType, 4);
+
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
+      addressArgument,
+      *valueNode->output(0),
+      { loadNode2.output(1) },
+      4);
+
+  auto & loadNode3 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { storeNode1.output(0) }, valueType, 4);
+
+  auto & loadNode4 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode3.output(1) }, valueType, 4);
+
+  auto & storeNode2 = StoreNonVolatileOperation::CreateNode(
+      addressArgument,
+      *valueNode->output(0),
+      { loadNode4.output(1) },
+      4);
+
+  auto & loadNode5 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { storeNode2.output(0) }, valueType, 4);
+
+  lambdaNode->finalize({ &ioStateArgument, loadNode5.output(1) });
+
+  view(rvsdg, stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  LoadChainSeparation loadChainSeparation;
+  loadChainSeparation.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect two join nodes to appear.
+  {
+    auto [joinNode, joinOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode2.input(2)->origin());
+    assert(joinOperation);
+    assert(joinNode->ninputs() == 2);
+  }
+
+  {
+    auto [joinNode, joinOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode1.input(2)->origin());
+    assert(joinOperation);
+    assert(joinNode->ninputs() == 2);
+  }
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-LoadAndStore", LoadAndStore)
+
+static void
 GammaWithOnlyLoads()
 {
   // Arrange
