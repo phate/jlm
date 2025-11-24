@@ -35,7 +35,7 @@ tryFindExecutablePath(const std::string_view & programName)
     result.pop_back();
   }
 
-  return { std::filesystem::path(result) };
+  return std::filesystem::path(result);
 }
 
 int
