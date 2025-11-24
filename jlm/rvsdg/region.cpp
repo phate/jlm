@@ -4,12 +4,16 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "DotWriter.hpp"
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/AnnotationMap.hpp>
+#include <jlm/util/file.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <fstream>
 
 namespace jlm::rvsdg
 {
@@ -303,6 +307,22 @@ Region::prune(bool recursive)
         snode->subregion(n)->prune(recursive);
     }
   }
+}
+
+void
+Region::view() const
+{
+  DotWriter dotWriter;
+  util::graph::Writer graphWriter;
+  dotWriter.WriteGraphs(graphWriter, *this, false);
+
+  const util::FilePath outputFilePath =
+      util::FilePath::createUniqueFileName(util::FilePath::TempDirectoryPath(), "region-", ".dot");
+
+  std::ofstream outputFile(outputFilePath.to_str());
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+
+  system(util::strfmt("/usr/bin/xdot ", outputFilePath.to_str()).c_str());
 }
 
 void

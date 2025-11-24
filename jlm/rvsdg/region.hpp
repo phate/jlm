@@ -578,6 +578,9 @@ public:
   void
   prune(bool recursive);
 
+  void
+  view() const;
+
   /**
    * @return the Node:Id that will be used for the next node created in the region.
    */
