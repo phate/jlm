@@ -13,6 +13,28 @@ namespace jlm::rvsdg
 
 DotWriter::~DotWriter() noexcept = default;
 
+void
+DotWriter::AnnotateTypeGraphNode(const Type & type, util::graph::Node & node)
+{}
+
+void
+DotWriter::AnnotateGraphNode(
+    const Node & rvsdgNode,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{}
+
+void
+DotWriter::AnnotateEdge(const Input & rvsdgInput, util::graph::Edge & edge)
+{}
+
+void
+DotWriter::AnnotateRegionArgument(
+    const RegionArgument & regionArgument,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{}
+
 /**
  * Creates a node in the \p typeGraph representing the given \p type,
  * or returns such a node if it has already been created.
