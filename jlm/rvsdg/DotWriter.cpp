@@ -89,7 +89,7 @@ DotWriter::AttachNodeOutput(
 void
 DotWriter::CreateGraphNodes(
     util::graph::Graph & graph,
-    rvsdg::Region & region,
+    const Region & region,
     util::graph::Graph * typeGraph)
 {
   graph.SetProgramObject(region);
@@ -120,7 +120,7 @@ DotWriter::CreateGraphNodes(
 
   // Create a node for each node in the region in topological order.
   // Inputs expect the node representing their origin to exist before being visited.
-  rvsdg::TopDownTraverser traverser(&region);
+  TopDownConstTraverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
@@ -170,7 +170,10 @@ DotWriter::CreateGraphNodes(
 }
 
 util::graph::Graph &
-DotWriter::WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
+DotWriter::WriteGraphs(
+    util::graph::Writer & writer,
+    const Region & region,
+    const bool emitTypeGraph)
 {
   util::graph::Graph * typeGraph = nullptr;
   if (emitTypeGraph)
