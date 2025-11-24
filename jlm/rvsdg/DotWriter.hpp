@@ -29,7 +29,7 @@ public:
    * @return a reference to the top-level graph corresponding to the region
    */
   util::graph::Graph &
-  WriteGraphs(util::graph::Writer & writer, Region & region, bool emitTypeGraph);
+  WriteGraphs(util::graph::Writer & writer, const Region & region, bool emitTypeGraph);
 
 protected:
   util::graph::Node &
@@ -55,7 +55,10 @@ protected:
 
 private:
   void
-  CreateGraphNodes(util::graph::Graph & graph, Region & region, util::graph::Graph * typeGraph);
+  CreateGraphNodes(
+      util::graph::Graph & graph,
+      const Region & region,
+      util::graph::Graph * typeGraph);
 
   void
   AttachNodeInput(util::graph::Port & inputPort, const Input & rvsdgInput);
