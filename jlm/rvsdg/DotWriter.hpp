@@ -18,6 +18,19 @@ public:
   virtual ~DotWriter() noexcept;
 
   /**
+   * Convert a region into a DOT graph. All nodes in each region become InOutNodes, with edges
+   * showing data and state dependencies. Arguments and results are represented using ArgumentNode
+   * and ResultNode, respectively. All created nodes, inputs, and outputs, get associated to the
+   * rvsdg nodes, inputs and outputs.
+   *
+   * @param writer The writer to use
+   * @param region The RVSDG region to convert.
+   * @return A reference to the DOT graph corresponding to the region.
+   */
+  util::graph::Graph &
+  WriteGraph(util::graph::Writer & writer, const Region & region);
+
+  /**
    * Recursively converts a region and all sub-regions into graphs and sub-graphs.
    * All nodes in each region become InOutNodes, with edges showing data and state dependencies.
    * Arguments and results are represented using ArgumentNode and ResultNode, respectively.
@@ -58,7 +71,8 @@ private:
   CreateGraphNodes(
       util::graph::Graph & graph,
       const Region & region,
-      util::graph::Graph * typeGraph);
+      util::graph::Graph * typeGraph,
+      bool traverseRecursively);
 
   void
   AttachNodeInput(util::graph::Port & inputPort, const Input & rvsdgInput);
