@@ -26,7 +26,7 @@ tryFindExecutablePath(std::string_view programName);
  *
  * @param programPath The path to the program.
  * @param programArguments The arguments for the program.
- * @return EXIT_FAILURE if the program could not be executed, otherwise the return code of the executed program.
+ * @return The return code of the executed program, or EXIT_FAILURE if the program could not be executed.
  */
 int
 executeProgramAndWait(
