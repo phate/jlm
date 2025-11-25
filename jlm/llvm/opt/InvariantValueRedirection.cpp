@@ -301,7 +301,7 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 
   // Next, handle lambda bodies that contain memory state split and merge nodes.
   // Memory state edges can only be routed around the call if the corresponding memory node id
-  // in invariant between the LambdaEntrySplit and the LambdaExitMerge.
+  // is invariant between the LambdaEntrySplit and the LambdaExitMerge.
   const auto callExitSplit = CallOperation::tryGetMemoryStateExitSplit(callNode);
   const auto callEntryMerge = CallOperation::tryGetMemoryStateEntryMerge(callNode);
   const auto lambdaEntrySplit = tryGetMemoryStateEntrySplit(lambdaNode);
@@ -316,9 +316,10 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       *util::assertedCast<const CallExitMemoryStateSplitOperation>(&callExitSplit->GetOperation());
   for (const auto memoryNodeId : callExitSplitOp.getMemoryNodeIds())
   {
-    const auto result =
-        LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(*lambdaExitMerge, memoryNodeId);
-    const auto argument = LambdaEntryMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+    const auto result = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+        *lambdaExitMerge,
+        memoryNodeId);
+    const auto argument = LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
         *lambdaEntrySplit,
         memoryNodeId);
 
@@ -332,9 +333,10 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 
     // If we get here, the memory state is invariant, and can be routed around the call
     const auto output =
-        CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(*callExitSplit, memoryNodeId);
-    const auto input =
-        CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(*callEntryMerge, memoryNodeId);
+        CallExitMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(*callExitSplit, memoryNodeId);
+    const auto input = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+        *callEntryMerge,
+        memoryNodeId);
 
     JLM_ASSERT(output);
     if (!input)

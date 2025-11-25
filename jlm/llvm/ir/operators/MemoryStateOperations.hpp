@@ -326,7 +326,7 @@ public:
    * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Output *
-  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Maps the output a \ref LambdaEntryMemoryStateSplitOperation node to the respective \ref
@@ -420,7 +420,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Maps the input a \ref LambdaExitMemoryStateMergeOperation node to the respective \ref
@@ -547,7 +547,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   static rvsdg::SimpleNode &
   CreateNode(
@@ -618,7 +618,7 @@ public:
    * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Output *
-  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Perform the following transformation:
