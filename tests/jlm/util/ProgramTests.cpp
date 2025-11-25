@@ -35,12 +35,22 @@ testExecuteProgramAndWait()
 {
   using namespace jlm::util;
 
-  const auto path = tryFindExecutablePath("ls");
-  assert(!path.empty());
+  {
+    const auto path = tryFindExecutablePath("ls");
+    assert(!path.empty());
 
-  const auto returnValue =
-      executeProgramAndWait(path, { std::filesystem::temp_directory_path().string() });
-  assert(returnValue == 0);
+    const auto status =
+        executeProgramAndWait(path, { std::filesystem::temp_directory_path().string() });
+    assert(status == EXIT_SUCCESS);
+  }
+
+  {
+    const auto path = tryFindExecutablePath("xyz123");
+    assert(path.empty());
+
+    const auto status = executeProgramAndWait(path, {});
+    assert(status == EXIT_FAILURE);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/ProgramTests-testExecuteProgramAndWait", testExecuteProgramAndWait)
