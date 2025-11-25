@@ -372,9 +372,9 @@ GetTypeSize(const rvsdg::Type & type)
 {
   if (const auto bits = dynamic_cast<const rvsdg::BitType *>(&type))
   {
-    // Assume 8 bits per byte, and round up to a power of 2 bytes
+    // Assume 8 bits per byte, and round up to nearest whole byte
     const auto bytes = (bits->nbits() + 7) / 8;
-    return util::RoundUpToPowerOf2(bytes);
+    return bytes;
   }
   if (jlm::rvsdg::is<PointerType>(type))
   {
