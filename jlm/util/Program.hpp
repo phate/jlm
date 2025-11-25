@@ -19,7 +19,7 @@ namespace jlm::util
  * @return The path to the executable if found, otherwise an empty path.
  */
 std::filesystem::path
-tryFindExecutablePath(const std::string_view & programName);
+tryFindExecutablePath(std::string_view programName);
 
 /**
  * Executes a program given by its path \p programPath and its arguments \p programArguments.
