@@ -235,7 +235,7 @@ StructType::GetFieldOffset(size_t fieldIndex) const
       return offset;
 
     // Add the size of the field
-    offset += GetTypeSize(field);
+    offset += GetTypeAllocSize(field);
   }
 
   JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
@@ -368,13 +368,13 @@ MemoryStateType::Create()
 }
 
 size_t
-GetTypeSize(const rvsdg::Type & type)
+GetTypeStoreSize(const rvsdg::Type & type)
 {
   if (const auto bits = dynamic_cast<const rvsdg::BitType *>(&type))
   {
-    // Assume 8 bits per byte, and round up to a power of 2 bytes
+    // Assume 8 bits per byte, and round up to nearest whole byte
     const auto bytes = (bits->nbits() + 7) / 8;
-    return util::RoundUpToPowerOf2(bytes);
+    return bytes;
   }
   if (jlm::rvsdg::is<PointerType>(type))
   {
@@ -383,7 +383,7 @@ GetTypeSize(const rvsdg::Type & type)
   }
   if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
-    return arrayType->nelements() * GetTypeSize(*arrayType->GetElementType());
+    return arrayType->nelements() * GetTypeAllocSize(*arrayType->GetElementType());
   }
   if (const auto floatType = dynamic_cast<const FloatingPointType *>(&type))
   {
@@ -398,7 +398,7 @@ GetTypeSize(const rvsdg::Type & type)
     case fpsize::fp128:
       return 16;
     case fpsize::x86fp80:
-      return 16; // Will never actually be written to memory, but we round up
+      return 10;
     default:
       JLM_UNREACHABLE("Unknown float size");
     }
@@ -415,11 +415,16 @@ GetTypeSize(const rvsdg::Type & type)
     for (size_t i = 0; i < decl.NumElements(); i++)
     {
       auto & field = decl.GetElement(i);
-      auto fieldSize = GetTypeSize(field);
+
+      // Note: It is correct to use the TypeAllocSize here.
+      // An unpacked LLVM struct { i8, i33, i8 } takes up 24 bytes in store size.
+      // Even in a packed struct <{ i8, i33, i8 }>, it still takes up 10 bytes.
+      auto fieldSize = GetTypeAllocSize(field);
       auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
 
-      // Add the size of the field, including any needed padding
+      // First add any padding needed to align the start of the field
       totalSize = util::RoundUpToMultipleOf(totalSize, fieldAlignment);
+      // Add the size of the field
       totalSize += fieldSize;
 
       // The struct as a whole must be at least as aligned as each field
@@ -437,10 +442,10 @@ GetTypeSize(const rvsdg::Type & type)
   if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     // In LLVM, vectors always have alignment >= the number of bytes of data stored in the vector
-    const auto bytesNeeded = vectorType->size() * GetTypeSize(*vectorType->Type());
-    return util::RoundUpToPowerOf2(bytesNeeded);
+    const auto bytesNeeded = vectorType->size() * GetTypeAllocSize(*vectorType->Type());
+    return bytesNeeded;
   }
-  if (jlm::rvsdg::is<rvsdg::FunctionType>(type))
+  if (rvsdg::is<rvsdg::FunctionType>(type))
   {
     // Functions should never read from or written to, so give them size 0
     // Note: this is not the same as a function pointer, which is a PointerType
@@ -451,13 +456,25 @@ GetTypeSize(const rvsdg::Type & type)
 }
 
 size_t
+GetTypeAllocSize(const rvsdg::Type & type)
+{
+  if (rvsdg::is<StructType>(type) || rvsdg::is<ArrayType>(type))
+  {
+    // These types already have aligned store size, so skip calculating alignment
+    return GetTypeStoreSize(type);
+  }
+
+  return util::RoundUpToMultipleOf(GetTypeStoreSize(type), GetTypeAlignment(type));
+}
+
+size_t
 GetTypeAlignment(const rvsdg::Type & type)
 {
   if (jlm::rvsdg::is<rvsdg::BitType>(type) || jlm::rvsdg::is<PointerType>(type)
       || jlm::rvsdg::is<FloatingPointType>(type) || jlm::rvsdg::is<VectorType>(type))
   {
-    // These types all have alignment equal to their size
-    return GetTypeSize(type);
+    // These types all have alignment equal to their byte size, rounded up to a power of two
+    return util::RoundUpToPowerOf2(GetTypeStoreSize(type));
   }
   if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
@@ -482,6 +499,12 @@ GetTypeAlignment(const rvsdg::Type & type)
     }
 
     return alignment;
+  }
+  if (rvsdg::is<rvsdg::FunctionType>(type))
+  {
+    // While the ABI might enforce some sort of function alignment,
+    // this is irrelevant to memory operations in the program or struct layouts
+    return 1;
   }
 
   JLM_UNREACHABLE("Unknown type");
