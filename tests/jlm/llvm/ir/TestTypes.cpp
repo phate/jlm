@@ -74,32 +74,39 @@ TestGetTypeSizeAndAlignment()
   using namespace jlm::llvm;
 
   auto pointerType = PointerType::Create();
-  assert(GetTypeSize(*pointerType) == 8);
+  assert(GetTypeStoreSize(*pointerType) == 8);
+  assert(GetTypeAllocSize(*pointerType) == 8);
   assert(GetTypeAlignment(*pointerType) == 8);
 
   auto bits32 = jlm::rvsdg::BitType::Create(32);
   auto bits50 = jlm::rvsdg::BitType::Create(50);
-  assert(GetTypeSize(*bits32) == 4);
+  assert(GetTypeStoreSize(*bits32) == 4);
+  assert(GetTypeAllocSize(*bits32) == 4);
   assert(GetTypeAlignment(*bits32) == 4);
 
-  assert(GetTypeSize(*bits50) == 8);
+  assert(GetTypeStoreSize(*bits50) == 7);
+  assert(GetTypeAllocSize(*bits50) == 8);
   assert(GetTypeAlignment(*bits50) == 8);
 
   auto floatType = FloatingPointType::Create(fpsize::fp128);
-  assert(GetTypeSize(*floatType) == 16);
+  assert(GetTypeStoreSize(*floatType) == 16);
+  assert(GetTypeAllocSize(*floatType) == 16);
   assert(GetTypeAlignment(*floatType) == 16);
   floatType = FloatingPointType::Create(fpsize::half);
-  assert(GetTypeSize(*floatType) == 2);
+  assert(GetTypeStoreSize(*floatType) == 2);
+  assert(GetTypeAllocSize(*floatType) == 2);
   assert(GetTypeAlignment(*floatType) == 2);
 
   auto arrayType = ArrayType::Create(bits32, 5);
-  assert(GetTypeSize(*arrayType) == 4 * 5);
+  assert(GetTypeStoreSize(*arrayType) == 4 * 5);
+  assert(GetTypeAllocSize(*arrayType) == 4 * 5);
   assert(GetTypeAlignment(*arrayType) == 4);
 
   // Vectors are always aligned up, so a <3 x i32> is 12 bytes of data and 4 bytes of padding.
   // Vectors are also very aligned
   auto vectorType = FixedVectorType::Create(bits32, 3);
-  assert(GetTypeSize(*vectorType) == 16);
+  assert(GetTypeStoreSize(*vectorType) == 12);
+  assert(GetTypeAllocSize(*vectorType) == 16);
   assert(GetTypeAlignment(*vectorType) == 16);
 
   auto structDeclaration = StructType::Declaration::Create();
@@ -115,7 +122,8 @@ TestGetTypeSizeAndAlignment()
   assert(structType->GetFieldOffset(2) == 16);
   assert(structType->GetFieldOffset(3) == 48); // 12 bytes of padding after array
   assert(structType->GetFieldOffset(4) == 64);
-  assert(GetTypeSize(*structType) == 80); // Struct ends with 12 bytes of padding
+  assert(GetTypeStoreSize(*structType) == 80); // Struct ends with 12 bytes of padding
+  assert(GetTypeAllocSize(*structType) == 80);
   assert(GetTypeAlignment(*structType) == 16);
 
   auto packedStructType = StructType::Create("myPackedStruct", true, *structDeclaration);
@@ -124,7 +132,8 @@ TestGetTypeSizeAndAlignment()
   assert(packedStructType->GetFieldOffset(2) == 12);
   assert(packedStructType->GetFieldOffset(3) == 32); // array is 20 bytes
   assert(packedStructType->GetFieldOffset(4) == 48); // vector is 16 bytes
-  assert(GetTypeSize(*packedStructType) == 52);
+  assert(GetTypeStoreSize(*packedStructType) == 52);
+  assert(GetTypeAllocSize(*packedStructType) == 52);
   assert(GetTypeAlignment(*packedStructType) == 1);
 }
 JLM_UNIT_TEST_REGISTER(
