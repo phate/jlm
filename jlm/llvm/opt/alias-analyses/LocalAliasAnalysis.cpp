@@ -210,7 +210,7 @@ CalculateIntraTypeGepOffset(
   if (auto array = dynamic_cast<const ArrayType *>(&type))
   {
     const auto & elementType = array->GetElementType();
-    int64_t offset = *indexingValue * GetTypeSize(*elementType);
+    int64_t offset = *indexingValue * GetTypeAllocSize(*elementType);
 
     // Get the offset into the element type as well, if any
     const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *elementType);
@@ -252,7 +252,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
 
-  int64_t offset = *wholeTypeIndexing * GetTypeSize(pointeeType);
+  int64_t offset = *wholeTypeIndexing * GetTypeAllocSize(pointeeType);
 
   // In addition to offsetting by whole types, a GEP can also offset within a type
   const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, pointeeType);
@@ -466,10 +466,10 @@ std::optional<size_t>
 LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
   if (auto delta = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(pointer))
-    return GetTypeSize(*delta->GetOperation().Type());
+    return GetTypeAllocSize(*delta->GetOperation().Type());
   if (auto import = dynamic_cast<const GraphImport *>(&pointer))
   {
-    auto size = GetTypeSize(*import->ValueType());
+    auto size = GetTypeAllocSize(*import->ValueType());
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
     if (size == 0)
       return std::nullopt;
@@ -481,7 +481,7 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   {
     const auto elementCount = tryGetConstantSignedInteger(*node->input(0)->origin());
     if (elementCount.has_value())
-      return *elementCount * GetTypeSize(*allocaOp->ValueType());
+      return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)

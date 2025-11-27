@@ -352,7 +352,7 @@ public:
    * @see GetMemoryStateExitSplit()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
+  tryGetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
     const auto node =
@@ -370,7 +370,7 @@ public:
    * @see GetMemoryStateEntryMerge()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
+  tryGetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
 

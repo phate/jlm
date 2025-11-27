@@ -333,6 +333,27 @@ LambdaEntryMemoryStateSplitOperation::copy() const
   return std::make_unique<LambdaEntryMemoryStateSplitOperation>(*this);
 }
 
+rvsdg::Output *
+LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
+    const rvsdg::SimpleNode & node,
+    const MemoryNodeId memoryNodeId)
+{
+  const auto operation =
+      dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&node.GetOperation());
+  if (!operation)
+  {
+    return nullptr;
+  }
+
+  if (!operation->memoryNodeIdToIndexMap_.HasKey(memoryNodeId))
+  {
+    return nullptr;
+  }
+
+  const auto index = operation->memoryNodeIdToIndexMap_.LookupKey(memoryNodeId);
+  return node.output(index);
+}
+
 MemoryNodeId
 LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output & output)
 {
@@ -360,7 +381,7 @@ LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : lambdaEntrySplitOperation.getMemoryNodeIds())
   {
-    const auto input = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+    const auto input = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
         *callEntryMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);
@@ -403,7 +424,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -581,7 +602,7 @@ CallEntryMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -635,7 +656,7 @@ CallExitMemoryStateSplitOperation::copy() const
 }
 
 rvsdg::Output *
-CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+CallExitMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -673,7 +694,7 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : callExitSplitOperation.getMemoryNodeIds())
   {
-    const auto input = LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+    const auto input = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
         *lambdaExitMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);
