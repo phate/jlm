@@ -9,9 +9,6 @@
 
 #include <cassert>
 
-namespace
-{
-
 struct MyItem
 {
   MyItem()
@@ -79,6 +76,8 @@ test_simple_list()
   assert(l2.size() == 2);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-list-test-simple-list", test_simple_list)
+
 static void
 test_owner_list()
 {
@@ -142,13 +141,4 @@ test_owner_list()
   assert(v3 == 0);
 }
 
-void
-test_main()
-{
-  test_simple_list();
-  test_owner_list();
-}
-
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-list", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-list-test-owner-list", test_owner_list)
