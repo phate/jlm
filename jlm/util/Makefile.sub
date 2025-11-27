@@ -1,6 +1,7 @@
 libutil_SOURCES = \
     jlm/util/common.cpp \
     jlm/util/GraphWriter.cpp \
+    jlm/util/Program.cpp \
     jlm/util/Statistics.cpp \
     jlm/util/strfmt.cpp \
 
@@ -18,6 +19,7 @@ libutil_HEADERS = \
     jlm/util/iterator_range.hpp \
     jlm/util/IteratorWrapper.hpp \
     jlm/util/Math.hpp \
+    jlm/util/Program.hpp \
     jlm/util/Statistics.hpp \
     jlm/util/strfmt.hpp \
     jlm/util/TarjanScc.hpp \
@@ -27,6 +29,7 @@ libutil_HEADERS = \
 libutil_TESTS += \
     tests/jlm/util/AnnotationMapTests \
     tests/jlm/util/IteratorWrapperTests \
+    tests/jlm/util/ProgramTests \
     tests/jlm/util/test-disjointset \
     tests/jlm/util/test-intrusive-hash \
     tests/jlm/util/test-intrusive-list \
