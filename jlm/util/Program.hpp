@@ -14,12 +14,11 @@ namespace jlm::util
 {
 
 /**
- * Executes a program given by its path \p programPath and its arguments \p programArguments.
+ * Executes a program given by its path \p programName and its arguments \p programArguments.
  *
  * @param programName The name of the program.
  * @param programArguments The arguments for the program.
- * @return The return code of the executed program, or EXIT_FAILURE if the program could not be
- * executed.
+ * @return EXIT_SUCCESS if program executed successfully, otherwise EXIT_FAILURE.
  */
 int
 executeProgramAndWait(
