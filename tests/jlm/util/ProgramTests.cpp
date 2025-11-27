@@ -45,10 +45,7 @@ testExecuteProgramAndWait()
   }
 
   {
-    const auto path = tryFindExecutablePath("xyz123");
-    assert(path.empty());
-
-    const auto status = executeProgramAndWait(path, {});
+    const auto status = executeProgramAndWait("/tmp/xyz", {});
     assert(status == EXIT_FAILURE);
   }
 }

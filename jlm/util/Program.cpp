@@ -7,8 +7,8 @@
 #include <jlm/util/Program.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <spawn.h>
 #include <sys/wait.h>
-#include <unistd.h>
 
 namespace jlm::util
 {
@@ -46,28 +46,22 @@ executeProgramAndWait(
     const std::filesystem::path & programPath,
     const std::vector<std::string> & programArguments)
 {
-  const pid_t pid = fork();
-  if (pid == -1)
+  std::vector<char *> args(programArguments.size() + 2, nullptr);
+  args[0] = const_cast<char *>(programPath.filename().c_str());
+  for (const auto & argument : programArguments)
+  {
+    args.push_back(const_cast<char *>(argument.c_str()));
+  }
+
+  pid_t pid;
+  int status = posix_spawn(&pid, programPath.string().c_str(), nullptr, nullptr, args.data(), {});
+  if (status != 0)
   {
     return EXIT_FAILURE;
   }
 
-  if (pid == 0)
-  {
-    std::vector<char *> arguments(programArguments.size() + 1, nullptr);
-    for (const auto & argument : programArguments)
-    {
-      arguments.push_back(const_cast<char *>(argument.c_str()));
-    }
-
-    execv(programPath.string().data(), arguments.data());
-    exit(EXIT_FAILURE);
-  }
-
-  int status = EXIT_FAILURE;
   waitpid(pid, &status, 0);
-
-  return WEXITSTATUS(status);
+  return EXIT_SUCCESS;
 }
 
 std::filesystem::path
