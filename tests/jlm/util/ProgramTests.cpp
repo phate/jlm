@@ -10,45 +10,18 @@
 #include <cassert>
 
 static void
-testTryFindExecutablePath()
-{
-  using namespace jlm::util;
-
-  // Test unknown executable
-  {
-    // This assumes that this executable does not exist
-    const auto path = tryFindExecutablePath("xyz123");
-    assert(path.empty());
-  }
-
-  // Test known executable
-  {
-    const auto path = tryFindExecutablePath("ls");
-    assert(!path.empty());
-  }
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/ProgramTests-testTryFindExecutablePath", testTryFindExecutablePath)
-
-static void
 testExecuteProgramAndWait()
 {
   using namespace jlm::util;
 
   {
-    const auto path = tryFindExecutablePath("ls");
-    assert(!path.empty());
-
     const auto status =
-        executeProgramAndWait(path, { std::filesystem::temp_directory_path().string() });
+        executeProgramAndWait("ls", { std::filesystem::temp_directory_path().string() });
     assert(status == EXIT_SUCCESS);
   }
 
   {
-    const auto path = tryFindExecutablePath("xyz123");
-    assert(path.empty());
-
-    const auto status = executeProgramAndWait(path, {});
+    const auto status = executeProgramAndWait("xyz123", {});
     assert(status == EXIT_FAILURE);
   }
 }
