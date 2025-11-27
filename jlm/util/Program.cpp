@@ -40,7 +40,7 @@ executeProgramAndWait(
 std::string
 getDotViewer()
 {
-  return "xdot"; // tryFindExecutablePath("xdot");
+  return "xdot";
 }
 
 }
