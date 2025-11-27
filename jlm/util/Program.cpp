@@ -16,7 +16,7 @@ namespace jlm::util
 std::filesystem::path
 tryFindExecutablePath(const std::string_view programName)
 {
-  const auto command = strfmt("which ", programName);
+  const auto command = strfmt("bash ", "-c ", "'which ", programName, "'");
   FILE * pipe = popen(command.c_str(), "r");
   if (!pipe)
   {
