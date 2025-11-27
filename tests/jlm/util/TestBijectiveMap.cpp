@@ -64,6 +64,10 @@ TestBijectiveMapConstructors()
   assert(biMap.LookupValue("Twenty") == 20);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/util/TestBijectiveMap-TestBijectiveMapConstructors",
+    TestBijectiveMapConstructors)
+
 static void
 TestBijectiveMapClear()
 {
@@ -78,6 +82,8 @@ TestBijectiveMapClear()
   squares.Insert(5, 25);
   assert(squares.Size() == 1);
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapClear", TestBijectiveMapClear)
 
 static void
 TestBijectiveMapInsert()
@@ -96,6 +102,8 @@ TestBijectiveMapInsert()
   inserted = squares.Insert(6, 36);
   assert(inserted && squares.Size() == 2);
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapInsert", TestBijectiveMapInsert)
 
 static void
 TestBijectiveMapInsertPairs()
@@ -121,6 +129,10 @@ TestBijectiveMapInsertPairs()
   assert(biMap.LookupValue("ten") == 10);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/util/TestBijectiveMap-TestBijectiveMapInsertPairs",
+    TestBijectiveMapInsertPairs)
+
 static void
 TestBijectiveMapLookup()
 {
@@ -136,6 +148,8 @@ TestBijectiveMapLookup()
   JLM_ASSERT_THROWS((void)biMap.LookupKey(3));
   JLM_ASSERT_THROWS((void)biMap.LookupValue("three"));
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapLookup", TestBijectiveMapLookup)
 
 static void
 TestBijectiveMapIterators()
@@ -170,6 +184,10 @@ TestBijectiveMapIterators()
   assert(count == 3 && sum == 6);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/util/TestBijectiveMap-TestBijectiveMapIterators",
+    TestBijectiveMapIterators)
+
 static void
 TestBijectiveMapErase()
 {
@@ -195,6 +213,8 @@ TestBijectiveMapErase()
   assert(biMap.Size() == 2);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapErase", TestBijectiveMapErase)
+
 static void
 TestBijectiveMapRemoves()
 {
@@ -210,6 +230,8 @@ TestBijectiveMapRemoves()
   removed = biMap.RemoveValue("five");
   assert(!removed);
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapRemoves", TestBijectiveMapRemoves)
 
 static void
 TestBijectiveMapRemoveWhere()
@@ -255,18 +277,6 @@ TestBijectiveMapRemoveWhere()
   assert(biMap.Size() == 1 && biMap.HasValue("six"));
 }
 
-static void
-TestBijectiveMap()
-{
-  TestBijectiveMapConstructors();
-  TestBijectiveMapClear();
-  TestBijectiveMapInsert();
-  TestBijectiveMapInsertPairs();
-  TestBijectiveMapLookup();
-  TestBijectiveMapIterators();
-  TestBijectiveMapErase();
-  TestBijectiveMapRemoves();
-  TestBijectiveMapRemoveWhere();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap", TestBijectiveMap)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/util/TestBijectiveMap-TestBijectiveMapRemoveWhere",
+    TestBijectiveMapRemoveWhere)

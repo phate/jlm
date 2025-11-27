@@ -88,6 +88,8 @@ TestGraphElement()
   assert(StringContains(attributes, "another-graph=\"graph0\""));
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphElement", TestGraphElement)
+
 static void
 TestNode()
 {
@@ -118,6 +120,8 @@ TestNode()
   assert(StringContains(string2, "label=MyNode"));
   assert(StringContains(string2, "shape=rect"));
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestNode", TestNode)
 
 static void
 TestASCIIEdges()
@@ -151,6 +155,8 @@ TestASCIIEdges()
   assert(StringContains(string, "node1:NODE1<-node0"));
   assert(StringContains(string, "NODE2<-[node0, node1]"));
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestASCIIEdges", TestASCIIEdges)
 
 static void
 TestInOutNode()
@@ -200,6 +206,8 @@ TestInOutNode()
   auto string0 = out2.str();
   assert(StringContains(string0, "My<BR/>InOutNode"));
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestInOutNode", TestInOutNode)
 
 static void
 TestEdge()
@@ -264,6 +272,8 @@ TestEdge()
   assert(StringContains(string2, "style=tapered"));
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestEdge", TestEdge)
+
 static void
 TestGraphCreateNodes()
 {
@@ -303,6 +313,8 @@ TestGraphCreateNodes()
   assert(inOutNode.IsFinalized());
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphCreateNodes", TestGraphCreateNodes)
+
 static void
 TestGraphAttributes()
 {
@@ -337,6 +349,8 @@ TestGraphAttributes()
   assert(StringContains(string, "friend=node0"));
   assert(StringContains(string, "foe=graph0"));
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphAttributes", TestGraphAttributes)
 
 static void
 TestGraphWriterClass()
@@ -375,17 +389,4 @@ TestGraphWriterClass()
   assert(StringContains(string, "friend=node1"));
 }
 
-static void
-TestGraphWriter()
-{
-  TestGraphElement();
-  TestNode();
-  TestASCIIEdges();
-  TestInOutNode();
-  TestEdge();
-  TestGraphCreateNodes();
-  TestGraphAttributes();
-  TestGraphWriterClass();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter", TestGraphWriter)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphWriterClass", TestGraphWriterClass)
