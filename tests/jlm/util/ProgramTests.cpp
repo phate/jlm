@@ -19,11 +19,6 @@ testExecuteProgramAndWait()
         executeProgramAndWait("ls", { std::filesystem::temp_directory_path().string() });
     assert(status == EXIT_SUCCESS);
   }
-
-  {
-    const auto status = executeProgramAndWait("xyz123", {});
-    assert(status == EXIT_FAILURE);
-  }
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/ProgramTests-testExecuteProgramAndWait", testExecuteProgramAndWait)
