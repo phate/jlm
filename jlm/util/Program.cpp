@@ -53,7 +53,7 @@ executeProgramAndWait(
     args.push_back(const_cast<char *>(argument.c_str()));
   }
 
-  pid_t pid;
+  pid_t pid = -1;
   int status = posix_spawn(&pid, programPath.string().c_str(), nullptr, nullptr, args.data(), {});
   if (status != 0)
   {
