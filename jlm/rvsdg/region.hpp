@@ -578,6 +578,11 @@ public:
   void
   prune(bool recursive);
 
+  /**
+   * This function is meant to be used from the debugger. You can just
+   * invoke it and a xdot window should pop up with a DOT visualization of the region. This depends
+   * on xdot being in the PATH.
+   */
   void
   view() const;
 
