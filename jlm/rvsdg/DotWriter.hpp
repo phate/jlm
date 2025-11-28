@@ -18,6 +18,19 @@ public:
   virtual ~DotWriter() noexcept;
 
   /**
+   * Convert a region into a DOT graph. All nodes in each region become InOutNodes, with edges
+   * showing data and state dependencies. Arguments and results are represented using ArgumentNode
+   * and ResultNode, respectively. All created nodes, inputs, and outputs, get associated to the
+   * rvsdg nodes, inputs and outputs.
+   *
+   * @param writer The writer to use
+   * @param region The RVSDG region to convert.
+   * @return A reference to the DOT graph corresponding to the region.
+   */
+  util::graph::Graph &
+  WriteGraph(util::graph::Writer & writer, const Region & region);
+
+  /**
    * Recursively converts a region and all sub-regions into graphs and sub-graphs.
    * All nodes in each region become InOutNodes, with edges showing data and state dependencies.
    * Arguments and results are represented using ArgumentNode and ResultNode, respectively.
@@ -29,33 +42,37 @@ public:
    * @return a reference to the top-level graph corresponding to the region
    */
   util::graph::Graph &
-  WriteGraphs(util::graph::Writer & writer, Region & region, bool emitTypeGraph);
+  WriteGraphs(util::graph::Writer & writer, const Region & region, bool emitTypeGraph);
 
 protected:
   util::graph::Node &
   GetOrCreateTypeGraphNode(const Type & type, util::graph::Graph & typeGraph);
 
   virtual void
-  AnnotateTypeGraphNode(const Type & type, util::graph::Node & node) = 0;
+  AnnotateTypeGraphNode(const Type & type, util::graph::Node & node);
 
   virtual void
   AnnotateGraphNode(
       const Node & rvsdgNode,
       util::graph::Node & node,
-      util::graph::Graph * typeGraph) = 0;
+      util::graph::Graph * typeGraph);
 
   virtual void
-  AnnotateEdge(const Input & rvsdgInput, util::graph::Edge & edge) = 0;
+  AnnotateEdge(const Input & rvsdgInput, util::graph::Edge & edge);
 
   virtual void
   AnnotateRegionArgument(
       const RegionArgument & regionArgument,
       util::graph::Node & node,
-      util::graph::Graph * typeGraph) = 0;
+      util::graph::Graph * typeGraph);
 
 private:
   void
-  CreateGraphNodes(util::graph::Graph & graph, Region & region, util::graph::Graph * typeGraph);
+  CreateGraphNodes(
+      util::graph::Graph & graph,
+      const Region & region,
+      util::graph::Graph * typeGraph,
+      bool traverseRecursively);
 
   void
   AttachNodeInput(util::graph::Port & inputPort, const Input & rvsdgInput);

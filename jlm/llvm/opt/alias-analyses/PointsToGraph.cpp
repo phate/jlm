@@ -570,7 +570,7 @@ PointsToGraph::AllocaNode::tryGetSize() const noexcept
   // An alloca has a count parameter, which on rare occasions is not just the constant 1.
   const auto elementCount = tryGetConstantSignedInteger(*AllocaNode_->input(0)->origin());
   if (elementCount.has_value())
-    return *elementCount * GetTypeSize(*allocaOp->ValueType());
+    return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
 
   return std::nullopt;
 }
@@ -592,7 +592,7 @@ PointsToGraph::DeltaNode::DebugString() const
 std::optional<size_t>
 PointsToGraph::DeltaNode::tryGetSize() const noexcept
 {
-  return GetTypeSize(*DeltaNode_->GetOperation().Type());
+  return GetTypeAllocSize(*DeltaNode_->GetOperation().Type());
 }
 
 bool
@@ -660,7 +660,7 @@ PointsToGraph::ImportNode::DebugString() const
 std::optional<size_t>
 PointsToGraph::ImportNode::tryGetSize() const noexcept
 {
-  auto size = GetTypeSize(*GraphImport_->ValueType());
+  auto size = GetTypeAllocSize(*GraphImport_->ValueType());
 
   // C code can contain declarations like this:
   //     extern char myArray[];

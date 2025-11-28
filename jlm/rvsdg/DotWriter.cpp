@@ -13,6 +13,28 @@ namespace jlm::rvsdg
 
 DotWriter::~DotWriter() noexcept = default;
 
+void
+DotWriter::AnnotateTypeGraphNode(const Type & type, util::graph::Node & node)
+{}
+
+void
+DotWriter::AnnotateGraphNode(
+    const Node & rvsdgNode,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{}
+
+void
+DotWriter::AnnotateEdge(const Input & rvsdgInput, util::graph::Edge & edge)
+{}
+
+void
+DotWriter::AnnotateRegionArgument(
+    const RegionArgument & regionArgument,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{}
+
 /**
  * Creates a node in the \p typeGraph representing the given \p type,
  * or returns such a node if it has already been created.
@@ -89,8 +111,9 @@ DotWriter::AttachNodeOutput(
 void
 DotWriter::CreateGraphNodes(
     util::graph::Graph & graph,
-    rvsdg::Region & region,
-    util::graph::Graph * typeGraph)
+    const Region & region,
+    util::graph::Graph * typeGraph,
+    const bool traverseRecursively)
 {
   graph.SetProgramObject(region);
 
@@ -120,7 +143,7 @@ DotWriter::CreateGraphNodes(
 
   // Create a node for each node in the region in topological order.
   // Inputs expect the node representing their origin to exist before being visited.
-  rvsdg::TopDownTraverser traverser(&region);
+  TopDownConstTraverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
@@ -134,12 +157,13 @@ DotWriter::CreateGraphNodes(
       AttachNodeOutput(node.GetOutputPort(i), *rvsdgNode->output(i), typeGraph);
 
     // Structural nodes also have subgraphs
-    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(rvsdgNode))
+    const auto structuralNode = dynamic_cast<const StructuralNode *>(rvsdgNode);
+    if (structuralNode && traverseRecursively)
     {
-      for (size_t i = 0; i < structuralNode->nsubregions(); i++)
+      for (auto & subregion : structuralNode->Subregions())
       {
         auto & subGraph = node.CreateSubgraph();
-        CreateGraphNodes(subGraph, *structuralNode->subregion(i), typeGraph);
+        CreateGraphNodes(subGraph, subregion, typeGraph, traverseRecursively);
       }
     }
 
@@ -170,7 +194,10 @@ DotWriter::CreateGraphNodes(
 }
 
 util::graph::Graph &
-DotWriter::WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
+DotWriter::WriteGraphs(
+    util::graph::Writer & writer,
+    const Region & region,
+    const bool emitTypeGraph)
 {
   util::graph::Graph * typeGraph = nullptr;
   if (emitTypeGraph)
@@ -180,9 +207,17 @@ DotWriter::WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, boo
   }
   util::graph::Graph & rootGraph = writer.CreateGraph();
   rootGraph.SetLabel("RVSDG root graph");
-  CreateGraphNodes(rootGraph, region, typeGraph);
+  CreateGraphNodes(rootGraph, region, typeGraph, true);
 
   return rootGraph;
+}
+
+util::graph::Graph &
+DotWriter::WriteGraph(util::graph::Writer & writer, const Region & region)
+{
+  util::graph::Graph & graph = writer.CreateGraph();
+  CreateGraphNodes(graph, region, nullptr, false);
+  return graph;
 }
 
 }
