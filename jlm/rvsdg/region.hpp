@@ -579,6 +579,14 @@ public:
   prune(bool recursive);
 
   /**
+   * This function is meant to be used from the debugger. You can just
+   * invoke it and a xdot window should pop up with a DOT visualization of the region. This depends
+   * on xdot being in the PATH.
+   */
+  void
+  view() const;
+
+  /**
    * @return the Node:Id that will be used for the next node created in the region.
    */
   [[nodiscard]] Node::Id

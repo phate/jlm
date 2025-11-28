@@ -19,15 +19,16 @@ executeProgramAndWait(
     const std::string & programName,
     const std::vector<std::string> & programArguments)
 {
-  std::vector<char *> args(programArguments.size() + 2, nullptr);
-  args[0] = const_cast<char *>(programName.c_str());
+  std::vector<char *> arguments;
+  arguments.push_back(const_cast<char *>(programName.c_str()));
   for (const auto & argument : programArguments)
   {
-    args.push_back(const_cast<char *>(argument.c_str()));
+    arguments.push_back(const_cast<char *>(argument.c_str()));
   }
+  arguments.push_back(nullptr);
 
   pid_t pid = -1;
-  int status = posix_spawnp(&pid, programName.c_str(), nullptr, nullptr, args.data(), environ);
+  int status = posix_spawnp(&pid, programName.c_str(), nullptr, nullptr, arguments.data(), environ);
   if (status != 0)
   {
     return EXIT_FAILURE;
