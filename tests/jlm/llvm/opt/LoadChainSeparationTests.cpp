@@ -8,6 +8,7 @@
 #include <test-types.hpp>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -650,3 +651,158 @@ ThetaWithLoadsOnly()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/LoadChainSeparationTests-ThetaWithLoadsOnly",
     ThetaWithLoadsOnly)
+
+static void
+ExternalCall()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto valueType = ValueType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto functionType = FunctionType::Create(
+      { controlType, pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+  const auto externalFunctionType =
+      FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & externalFunction = jlm::rvsdg::GraphImport::Create(rvsdg, externalFunctionType, "g");
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[2];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[3];
+  auto externalFunctionCtxVar = lambdaNode->AddContextVar(externalFunction);
+
+  auto & lambdaEntrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, { 0, 1 });
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
+      addressArgument,
+      { lambdaEntrySplitNode.output(0) },
+      valueType,
+      4);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode1.output(1) }, valueType, 4);
+
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(
+      addressArgument,
+      { lambdaEntrySplitNode.output(1) },
+      valueType,
+      4);
+
+  auto & loadNode4 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode3.output(1) }, valueType, 4);
+
+  auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
+      *lambdaNode->subregion(),
+      { loadNode2.output(1), loadNode4.output(1) },
+      { 0, 1 });
+
+  auto & callNode = CallOperation::CreateNode(
+      externalFunctionCtxVar.inner,
+      externalFunctionType,
+      { &ioStateArgument, callEntryMergeNode.output(0) });
+
+  auto & callExitSplitNode =
+      CallExitMemoryStateSplitOperation::CreateNode(*callNode.output(1), { 0, 1 });
+
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(
+      addressArgument,
+      { callExitSplitNode.output(0) },
+      valueType,
+      4);
+
+  auto & loadNode6 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode5.output(1) }, valueType, 4);
+
+  auto & loadNode7 = LoadNonVolatileOperation::CreateNode(
+      addressArgument,
+      { callExitSplitNode.output(1) },
+      valueType,
+      4);
+
+  auto & loadNode8 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode7.output(1) }, valueType, 4);
+
+  auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+      *lambdaNode->subregion(),
+      { loadNode6.output(1), loadNode8.output(1) },
+      { 0, 1 });
+
+  lambdaNode->finalize({ callNode.output(0), lambdaExitMergeNode.output(0) });
+
+  view(rvsdg, stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  LoadChainSeparation loadChainSeparation;
+  loadChainSeparation.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect 4 MemoryStateJoinOperation nodes in the graph
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *lambdaExitMergeNode.input(0)->origin());
+    assert(joinOperation);
+
+    assert(joinNode->input(0)->origin() == loadNode6.output(1));
+    assert(loadNode6.input(1)->origin() == callExitSplitNode.output(0));
+
+    assert(joinNode->input(1)->origin() == loadNode5.output(1));
+    assert(loadNode5.input(1)->origin() == callExitSplitNode.output(0));
+  }
+
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *lambdaExitMergeNode.input(1)->origin());
+    assert(joinOperation);
+
+    assert(joinNode->input(0)->origin() == loadNode8.output(1));
+    assert(loadNode8.input(1)->origin() == callExitSplitNode.output(1));
+
+    assert(joinNode->input(1)->origin() == loadNode7.output(1));
+    assert(loadNode7.input(1)->origin() == callExitSplitNode.output(1));
+  }
+
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *callEntryMergeNode.input(0)->origin());
+    assert(joinOperation);
+
+    assert(joinNode->input(0)->origin() == loadNode2.output(1));
+    assert(loadNode2.input(1)->origin() == lambdaEntrySplitNode.output(0));
+
+    assert(joinNode->input(1)->origin() == loadNode1.output(1));
+    assert(loadNode1.input(1)->origin() == lambdaEntrySplitNode.output(0));
+  }
+
+  {
+    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
+        *callEntryMergeNode.input(1)->origin());
+    assert(joinOperation);
+
+    assert(joinNode->input(0)->origin() == loadNode4.output(1));
+    assert(loadNode4.input(1)->origin() == lambdaEntrySplitNode.output(1));
+
+    assert(joinNode->input(1)->origin() == loadNode3.output(1));
+    assert(loadNode3.input(1)->origin() == lambdaEntrySplitNode.output(1));
+  }
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-ExternalCall", ExternalCall)

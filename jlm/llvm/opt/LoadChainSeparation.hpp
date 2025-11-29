@@ -95,14 +95,16 @@ private:
   };
 
   /**
-   * Traces from the starting input \p startInput upwards to find all mod/ref chains within a single
-   * region.
+   * Recursively traces from input \p startInput upwards to find all mod/ref chains
+   * within a single region.
    *
    * @param startInput The starting input for the tracing. Must be of type \ref MemoryStateType.
+   * @param visitedInputs The set of inputs that were already visited throughout the recursive
+   * tracing.
    * @return A vector of mod/ref chains.
    */
   static std::vector<ModRefChain>
-  traceModRefChains(rvsdg::Input & startInput);
+  traceModRefChains(rvsdg::Input & startInput, util::HashSet<rvsdg::Input *> & visitedInputs);
 
   /**
    * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain
