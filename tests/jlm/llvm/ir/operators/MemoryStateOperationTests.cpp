@@ -398,29 +398,39 @@ MemoryStateJoin_NormalizeDuplicateOperands()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
-  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i0");
+  auto & i1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i1");
 
-  auto & node = MemoryStateJoinOperation::CreateNode({ &ix0, &ix0, &ix1, &ix1 });
+  auto & node0 = MemoryStateJoinOperation::CreateNode({ &i0, &i0, &i1, &i1 });
+  auto & node1 = MemoryStateJoinOperation::CreateNode({ &i0, &i0, &i0, &i0 });
 
-  auto & ex = GraphExport::Create(*node.output(0), "x");
+  auto & x0 = GraphExport::Create(*node0.output(0), "x0");
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeDuplicateOperands, node);
+  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeDuplicateOperands, node0);
+  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeDuplicateOperands, node1);
   rvsdg.PruneNodes();
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
   assert(rvsdg.GetRootRegion().numNodes() == 1);
-  auto [joinNode, joinOperation] =
-      TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
-  assert(joinNode && joinOperation);
 
-  assert(joinNode->ninputs() == 2);
-  assert(joinNode->input(0)->origin() == &ix0);
-  assert(joinNode->input(1)->origin() == &ix1);
+  {
+    auto [joinNode, joinOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*x0.origin());
+    assert(joinNode && joinOperation);
+
+    assert(joinNode->ninputs() == 2);
+    assert(joinNode->input(0)->origin() == &i0);
+    assert(joinNode->input(1)->origin() == &i1);
+  }
+
+  {
+    assert(x1.origin() == &i0);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER(
