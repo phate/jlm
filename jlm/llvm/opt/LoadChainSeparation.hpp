@@ -20,7 +20,7 @@ namespace jlm::llvm
  * Separates chains of memory region references from each other by rendering them independent in the
  * RVSDG through the insertion of a \ref MemoryStateJoinOperation node.
  *
- * The following example illustrate the transformation:
+ * The following example illustrates the transformation:
  *
  * v1 s2 = LoadNonVolatileOperation a1 s1
  * v2 s3 = LoadNonVolatileOperation a2 s2
@@ -33,7 +33,7 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
-  // FIXME: I really would like to rename this pass to ModRefChainSeparation
+  // FIXME: I really would like to rename this pass to ReferenceChainSeparation
 public:
   ~LoadChainSeparation() noexcept override;
 
