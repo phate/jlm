@@ -80,6 +80,45 @@ TestWriteGraphs()
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/dot/DotWriterTests-TestWriteGraphs", TestWriteGraphs)
 
 static void
+TestWriteGraph()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+  using namespace jlm::util::graph;
+
+  // Arrange
+  jlm::tests::GammaTest gammaTest;
+
+  // Act
+  Writer writer;
+  LlvmDotWriter dotWriter;
+  dotWriter.WriteGraph(writer, gammaTest.graph().GetRootRegion());
+
+  // Assert
+  auto & rootGraph = writer.GetGraph(0);
+  assert(
+      rootGraph.GetProgramObject()
+      == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
+  assert(rootGraph.NumNodes() == 1);       // Only the lambda node for "f"
+  assert(rootGraph.NumResultNodes() == 1); // Exporting the function "f"
+  auto & lambdaNode = *assertedCast<InOutNode>(&rootGraph.GetNode(0));
+
+  // The lambda only has one output, and a single subgraph
+  assert(lambdaNode.GetLabel() == gammaTest.lambda->DebugString());
+  assert(lambdaNode.NumInputPorts() == 0);
+  assert(lambdaNode.NumOutputPorts() == 1);
+  assert(lambdaNode.NumSubgraphs() == 0);
+
+  // Check that the output of the lambda leads to a graph export
+  auto & lambdaConnections = lambdaNode.GetOutputPort(0).GetConnections();
+  assert(lambdaConnections.size() == 1);
+  auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
+  assert(graphExport.GetLabel() == "export[f]");
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/dot/DotWriterTests-TestWriteGraph", TestWriteGraph)
+
+static void
 TestTypeGraph()
 {
   using namespace jlm::llvm;

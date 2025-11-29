@@ -1068,7 +1068,7 @@ RegionAwareModRefSummarizer::AnnotateLoad(
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(loadNode);
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
   const auto loadOperation = util::assertedCast<const LoadOperation>(&loadNode.GetOperation());
-  const auto loadSize = GetTypeSize(*loadOperation->GetLoadedType());
+  const auto loadSize = GetTypeStoreSize(*loadOperation->GetLoadedType());
 
   AddPointerOriginTargets(nodeModRef, *origin, loadSize, lambda);
   return nodeModRef;
@@ -1082,7 +1082,7 @@ RegionAwareModRefSummarizer::AnnotateStore(
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(storeNode);
   const auto origin = StoreOperation::AddressInput(storeNode).origin();
   const auto storeOperation = util::assertedCast<const StoreOperation>(&storeNode.GetOperation());
-  const auto storeSize = GetTypeSize(storeOperation->GetStoredType());
+  const auto storeSize = GetTypeStoreSize(storeOperation->GetStoredType());
 
   AddPointerOriginTargets(nodeModRef, *origin, storeSize, lambda);
   return nodeModRef;
