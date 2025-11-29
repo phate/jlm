@@ -49,7 +49,7 @@ public:
 
 private:
   static void
-  separateModRefChainsInRegion(rvsdg::Region & region);
+  separateReferenceChainsInRegion(rvsdg::Region & region);
 
   /**
    * Separates the reference links of the mod/ref chain starting at memory state input \p
@@ -59,7 +59,7 @@ private:
    * MemoryStateType.
    */
   static void
-  separateModRefChains(rvsdg::Input & startInput);
+  separateReferenceChains(rvsdg::Input & startInput);
 
   /**
    * Represents a single link in a mod/ref chain

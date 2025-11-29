@@ -34,11 +34,11 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  separateModRefChainsInRegion(module.Rvsdg().GetRootRegion());
+  separateReferenceChainsInRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
-LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
+LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
 {
   // FIXME: We currently do not recognize mod/ref chains that do not start at a result. For example,
   // the state output of a lod node that is dead would not be recognized.
@@ -51,19 +51,19 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
         [&](rvsdg::LambdaNode & lambdaNode)
         {
           // Handle innermost regions first
-          separateModRefChainsInRegion(*lambdaNode.subregion());
-          separateModRefChains(GetMemoryStateRegionResult(lambdaNode));
+          separateReferenceChainsInRegion(*lambdaNode.subregion());
+          separateReferenceChains(GetMemoryStateRegionResult(lambdaNode));
         },
         [&](rvsdg::PhiNode & phiNode)
         {
-          separateModRefChainsInRegion(*phiNode.subregion());
+          separateReferenceChainsInRegion(*phiNode.subregion());
         },
         [&](rvsdg::GammaNode & gammaNode)
         {
           // Handle innermost regions first
           for (auto & subregion : gammaNode.Subregions())
           {
-            separateModRefChainsInRegion(subregion);
+            separateReferenceChainsInRegion(subregion);
           }
 
           for (auto & [branchResults, output] : gammaNode.GetExitVars())
@@ -72,7 +72,7 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
             {
               for (const auto branchResult : branchResults)
               {
-                separateModRefChains(*branchResult);
+                separateReferenceChains(*branchResult);
               }
             }
           }
@@ -80,13 +80,13 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
         [&](rvsdg::ThetaNode & thetaNode)
         {
           // Handle innermost region first
-          separateModRefChainsInRegion(*thetaNode.subregion());
+          separateReferenceChainsInRegion(*thetaNode.subregion());
 
           for (const auto loopVar : thetaNode.GetLoopVars())
           {
             if (is<MemoryStateType>(loopVar.output->Type()))
             {
-              separateModRefChains(*loopVar.post);
+              separateReferenceChains(*loopVar.post);
             }
           }
         },
@@ -106,7 +106,7 @@ LoadChainSeparation::separateModRefChainsInRegion(rvsdg::Region & region)
 }
 
 void
-LoadChainSeparation::separateModRefChains(rvsdg::Input & startInput)
+LoadChainSeparation::separateReferenceChains(rvsdg::Input & startInput)
 {
   JLM_ASSERT(is<MemoryStateType>(startInput.Type()));
 
