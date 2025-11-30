@@ -3,14 +3,28 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm
 {
+
 LoadChainSeparation::~LoadChainSeparation() noexcept = default;
 
 LoadChainSeparation::LoadChainSeparation()
@@ -20,120 +34,362 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  handleRegion(module.Rvsdg().GetRootRegion());
+  separateReferenceChainsInRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
-LoadChainSeparation::handleRegion(rvsdg::Region & region)
+LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
+{
+  // FIXME: We currently do not recognize mod/ref chains that do not start at a result. For example,
+  // the state output of a lod node that is dead would not be recognized.
+
+  // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
+  {
+    rvsdg::MatchTypeWithDefault(
+        *node,
+        [&](rvsdg::LambdaNode & lambdaNode)
+        {
+          separateReferenceChainsInLambda(lambdaNode);
+        },
+        [&](rvsdg::PhiNode & phiNode)
+        {
+          separateReferenceChainsInRegion(*phiNode.subregion());
+        },
+        [&](rvsdg::GammaNode & gammaNode)
+        {
+          separateRefenceChainsInGamma(gammaNode);
+        },
+        [&](rvsdg::ThetaNode & thetaNode)
+        {
+          separateRefenceChainsInTheta(thetaNode);
+        },
+        [](rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done
+        },
+        [](rvsdg::SimpleNode &)
+        {
+          // Nothing needs to be done
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node->DebugString()));
+        });
+  }
+}
+
+void
+LoadChainSeparation::separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode)
 {
   // Handle innermost regions first
-  for (auto & node : region.Nodes())
+  separateReferenceChainsInRegion(*lambdaNode.subregion());
+
+  util::HashSet<rvsdg::Input *> visitedInputs;
+  separateReferenceChains(GetMemoryStateRegionResult(lambdaNode), visitedInputs);
+}
+
+void
+LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
+{
+  // Handle innermost regions first
+  for (auto & subregion : gammaNode.Subregions())
   {
-    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    separateReferenceChainsInRegion(subregion);
+  }
+
+  std::vector<util::HashSet<rvsdg::Input *>> visitedInputs(gammaNode.nsubregions());
+  for (auto & [branchResults, output] : gammaNode.GetExitVars())
+  {
+    if (is<MemoryStateType>(output->Type()))
     {
-      for (auto & subregion : structuralNode->Subregions())
+      for (const auto branchResult : branchResults)
       {
-        handleRegion(subregion);
+        const auto regionIndex = branchResult->region()->index();
+        JLM_ASSERT(regionIndex < visitedInputs.size());
+        separateReferenceChains(*branchResult, visitedInputs[regionIndex]);
       }
     }
   }
+}
 
-  // Separate load chains
-  const auto loadChainBottoms = findLoadChainBottoms(region);
-  for (auto & memoryStateOutput : loadChainBottoms.Items())
+void
+LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
+{
+  // Handle innermost region first
+  separateReferenceChainsInRegion(*thetaNode.subregion());
+
+  util::HashSet<rvsdg::Input *> visitedInputs;
+  for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    separateLoadChain(*memoryStateOutput);
+    if (is<MemoryStateType>(loopVar.output->Type()))
+    {
+      separateReferenceChains(*loopVar.post, visitedInputs);
+    }
   }
 }
 
 void
-LoadChainSeparation::separateLoadChain(rvsdg::Output & memoryStateOutput)
+LoadChainSeparation::separateReferenceChains(
+    rvsdg::Input & startInput,
+    util::HashSet<rvsdg::Input *> & visitedInputs)
 {
-  JLM_ASSERT(rvsdg::is<MemoryStateType>(memoryStateOutput.Type()));
-  JLM_ASSERT(rvsdg::IsOwnerNodeOperation<LoadOperation>(memoryStateOutput));
+  JLM_ASSERT(is<MemoryStateType>(startInput.Type()));
 
-  std::vector<rvsdg::Output *> joinOperands;
-  auto & newMemoryStateOperand = traceLoadNodeMemoryState(memoryStateOutput, joinOperands);
-  JLM_ASSERT(joinOperands.size() > 1);
-
-  // Divert the operands of the respective inputs for each encountered memory state output
-  for (const auto output : joinOperands)
+  const auto modRefChains = traceModRefChains(startInput, visitedInputs);
+  for (auto & modRefChain : modRefChains)
   {
-    auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(*output);
-    memoryStateInput.divert_to(&newMemoryStateOperand);
-  }
-
-  // Create join node and divert the current memory state output
-  auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-  memoryStateOutput.divertUsersWhere(
-      *joinNode.output(0),
-      [&joinNode](const rvsdg::Input & user)
+    const auto refSubchains = extractReferenceSubchains(modRefChain);
+    for (auto [links] : refSubchains)
+    {
+      // Divert the operands of the respective inputs for each encountered reference node and
+      // collect join operands
+      std::vector<rvsdg::Output *> joinOperands;
+      const auto newMemoryStateOperand = links.back().input->origin();
+      for (auto [linkInput, linkModRefType] : links)
       {
-        return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
-      });
+        JLM_ASSERT(linkModRefType == ModRefChainLink::Type::Reference);
+        const auto modRefChainInput = linkInput;
+        modRefChainInput->divert_to(newMemoryStateOperand);
+        joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
+      }
+
+      // Create join node and divert the current memory state output
+      auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
+      mapMemoryStateInputToOutput(*links.front().input)
+          .divertUsersWhere(
+              *joinNode.output(0),
+              [&joinNode](const rvsdg::Input & user)
+              {
+                return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
+              });
+    }
+  }
 }
 
 rvsdg::Output &
-LoadChainSeparation::traceLoadNodeMemoryState(
-    rvsdg::Output & output,
-    std::vector<rvsdg::Output *> & joinOperands)
+LoadChainSeparation::mapMemoryStateInputToOutput(const rvsdg::Input & input)
 {
-  JLM_ASSERT(rvsdg::is<MemoryStateType>(output.Type()));
+  if (auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(input);
+      loadOperation)
+  {
+    return LoadOperation::mapMemoryStateInputToOutput(input);
+  }
 
-  if (!is<LoadOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output)))
-    return output;
-
-  joinOperands.push_back(&output);
-  return traceLoadNodeMemoryState(
-      *LoadOperation::MapMemoryStateOutputToInput(output).origin(),
-      joinOperands);
+  throw std::logic_error("Unhandled node type!");
 }
 
-util::HashSet<rvsdg::Output *>
-LoadChainSeparation::findLoadChainBottoms(rvsdg::Region & region)
+std::vector<LoadChainSeparation::ModRefChain>
+LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 {
-  util::HashSet<rvsdg::Output *> loadChainBottoms;
-  for (auto & node : region.Nodes())
+  std::vector<ModRefChain> refSubchains;
+  for (auto linkIt = modRefChain.links.begin(); linkIt != modRefChain.links.end();)
   {
-    if (!rvsdg::is<LoadOperation>(&node))
+    if (linkIt->type != ModRefChainLink::Type::Reference)
     {
+      // The current link is not a reference. Let's continue with the next one.
+      ++linkIt;
       continue;
     }
 
-    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
+    auto nextLinkIt = std::next(linkIt);
+    if (nextLinkIt == modRefChain.links.end()
+        || nextLinkIt->type != ModRefChainLink::Type::Reference)
     {
-      if (hasLoadNodeAsUserOwner(memoryStateOutput))
-      {
-        continue;
-      }
+      // We only want to separate reference chains with at least two links
+      ++linkIt;
+      continue;
+    }
 
-      auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput);
-      if (hasLoadNodeAsOperandOwner(memoryStateInput))
-      {
-        loadChainBottoms.insert(&memoryStateOutput);
-      }
+    // We found a new reference subchain. Let's grab all the links
+    refSubchains.push_back({});
+    while (linkIt != modRefChain.links.end() && linkIt->type == ModRefChainLink::Type::Reference)
+    {
+      refSubchains.back().links.push_back(*linkIt);
+      ++linkIt;
     }
   }
 
-  return loadChainBottoms;
+  return refSubchains;
 }
 
-bool
-LoadChainSeparation::hasLoadNodeAsOperandOwner(const rvsdg::Input & input)
+std::vector<LoadChainSeparation::ModRefChain>
+LoadChainSeparation::traceModRefChains(
+    rvsdg::Input & startInput,
+    util::HashSet<rvsdg::Input *> & visitedInputs)
 {
-  return rvsdg::IsOwnerNodeOperation<LoadOperation>(*input.origin());
-}
-
-bool
-LoadChainSeparation::hasLoadNodeAsUserOwner(const rvsdg::Output & output)
-{
-  for (auto & user : output.Users())
+  if (!visitedInputs.insert(&startInput))
   {
-    if (rvsdg::IsOwnerNodeOperation<LoadOperation>(user))
-      return true;
+    return {};
   }
 
-  return false;
+  ModRefChain currentModRefChain;
+  std::vector<ModRefChain> modRefChains;
+  rvsdg::Input * currentInput = &startInput;
+  bool doneTracing = false;
+  do
+  {
+    if (rvsdg::TryGetOwnerRegion(*currentInput->origin()))
+    {
+      // We have a region argument. Stop tracing.
+      break;
+    }
+
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentInput->origin());
+    rvsdg::MatchTypeWithDefault(
+        node,
+        [&](const rvsdg::GammaNode & gammaNode)
+        {
+          // FIXME: I really would like that state edges through gammas would be recognized as
+          // either modifying or just referencing. However, we would need to know what the
+          // operations in the gamma on all branches are and which memory state exit variable maps
+          // to which memory state entry variable. We need some more machinery for it first before
+          // we can do that.
+          for (auto [entryVarInput, _] : gammaNode.GetEntryVars())
+          {
+            if (is<MemoryStateType>(entryVarInput->Type()))
+            {
+              auto tmpChains = traceModRefChains(*entryVarInput, visitedInputs);
+              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+            }
+          }
+          doneTracing = true;
+        },
+        [&](const rvsdg::ThetaNode & thetaNode)
+        {
+          // FIXME: I really would like that state edges through thetas would be recognized as
+          // either modifying or just referencing.
+          for (const auto loopVar : thetaNode.GetLoopVars())
+          {
+            if (is<MemoryStateType>(loopVar.input->Type()))
+            {
+              auto tmpChains = traceModRefChains(*loopVar.input, visitedInputs);
+              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+            }
+          }
+          doneTracing = true;
+        },
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          auto & operation = simpleNode.GetOperation();
+          rvsdg::MatchTypeWithDefault(
+              operation,
+              [&](const LoadOperation &)
+              {
+                currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
+                currentModRefChain.links.push_back(
+                    { currentInput, ModRefChainLink::Type::Reference });
+              },
+              [&](const StoreOperation &)
+              {
+                currentInput =
+                    &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
+                currentModRefChain.links.push_back(
+                    { currentInput, ModRefChainLink::Type::Modification });
+              },
+              [&](const FreeOperation &)
+              {
+                currentInput = &FreeOperation::mapMemoryStateOutputToInput(*currentInput->origin());
+                currentModRefChain.links.push_back(
+                    { currentInput, ModRefChainLink::Type::Modification });
+              },
+              [&](const MemCpyOperation &)
+              {
+                // FIXME: We really would like to know here which memory state belongs to the source
+                // and which to the dst address. This would allow us to be more precise in the
+                // separation.
+                currentInput =
+                    &MemCpyOperation::mapMemoryStateOutputToInput(*currentInput->origin());
+                currentModRefChain.links.push_back(
+                    { currentInput, ModRefChainLink::Type::Modification });
+              },
+              [&](const CallOperation &)
+              {
+                // FIXME: I really would like that state edges through calls would be recognized as
+                // either modifying or just referencing.
+                auto tmpChains =
+                    traceModRefChains(CallOperation::GetMemoryStateInput(node), visitedInputs);
+                modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                doneTracing = true;
+              },
+              [&](const LambdaExitMemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const LambdaEntryMemoryStateSplitOperation &)
+              {
+                // LambdaEntryMemoryStateSplitOperation nodes should always be connected to a lambda
+                // argument. In other words, this is as far as we can trace in the graph. Just
+                // return what we found so far.
+                doneTracing = true;
+              },
+              [&](const CallExitMemoryStateSplitOperation &)
+              {
+                // FIXME: I really would like that state edges through calls would be recognized as
+                // either modifying or just referencing.
+                auto tmpChains = traceModRefChains(*node.input(0), visitedInputs);
+                modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                doneTracing = true;
+              },
+              [&](const CallEntryMemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const MemoryStateJoinOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const MemoryStateMergeOperation &)
+              {
+                for (auto & nodeInput : node.Inputs())
+                {
+                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                }
+                doneTracing = true;
+              },
+              [&](const AllocaOperation &)
+              {
+                doneTracing = true;
+              },
+              [&](const MallocOperation &)
+              {
+                doneTracing = true;
+              },
+              [&]()
+              {
+                throw std::logic_error(
+                    util::strfmt("Unhandled operation type: ", operation.debug_string()));
+              });
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node.DebugString()));
+        });
+  } while (!doneTracing);
+
+  // We only care about chains that have at least two links
+  if (currentModRefChain.links.size() >= 2)
+  {
+    modRefChains.emplace_back(currentModRefChain);
+  }
+
+  return modRefChains;
 }
 
 }

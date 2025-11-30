@@ -99,6 +99,40 @@ public:
     JLM_ASSERT(is<rvsdg::BitType>(input->Type()));
     return *input;
   }
+
+  /**
+   * Maps a memory state output to its corresponding memory state input.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  mapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [memCpyNode, memCpyOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemCpyOperation>(output);
+    JLM_ASSERT(memCpyOperation);
+    const auto numNonMemoryStateInputs = memCpyNode->ninputs() - memCpyOperation->NumMemoryStates();
+    const auto inputIndex = numNonMemoryStateInputs + output.index();
+    const auto input = memCpyNode->input(inputIndex);
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * Maps a memory state input to its corresponding memory state output.
+   */
+  [[nodiscard]] static rvsdg::Output &
+  mapMemoryStateInputToOutput(const rvsdg::Input & input)
+  {
+    JLM_ASSERT(is<MemoryStateType>(input.Type()));
+    auto [memCpyNode, memCpyOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemCpyOperation>(input);
+    JLM_ASSERT(memCpyOperation);
+    const auto numNonMemoryStateInputs = memCpyNode->ninputs() - memCpyOperation->NumMemoryStates();
+    const auto outputIndex = input.index() - numNonMemoryStateInputs;
+    const auto output = memCpyNode->output(outputIndex);
+    JLM_ASSERT(is<MemoryStateType>(output->Type()));
+    return *output;
+  }
 };
 
 /**
