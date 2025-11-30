@@ -50,9 +50,7 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         *node,
         [&](rvsdg::LambdaNode & lambdaNode)
         {
-          // Handle innermost regions first
-          separateReferenceChainsInRegion(*lambdaNode.subregion());
-          separateReferenceChains(GetMemoryStateRegionResult(lambdaNode));
+          separateReferenceChainsInLambda(lambdaNode);
         },
         [&](rvsdg::PhiNode & phiNode)
         {
@@ -60,35 +58,11 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         },
         [&](rvsdg::GammaNode & gammaNode)
         {
-          // Handle innermost regions first
-          for (auto & subregion : gammaNode.Subregions())
-          {
-            separateReferenceChainsInRegion(subregion);
-          }
-
-          for (auto & [branchResults, output] : gammaNode.GetExitVars())
-          {
-            if (is<MemoryStateType>(output->Type()))
-            {
-              for (const auto branchResult : branchResults)
-              {
-                separateReferenceChains(*branchResult);
-              }
-            }
-          }
+          separateRefenceChainsInGamma(gammaNode);
         },
         [&](rvsdg::ThetaNode & thetaNode)
         {
-          // Handle innermost region first
-          separateReferenceChainsInRegion(*thetaNode.subregion());
-
-          for (const auto loopVar : thetaNode.GetLoopVars())
-          {
-            if (is<MemoryStateType>(loopVar.output->Type()))
-            {
-              separateReferenceChains(*loopVar.post);
-            }
-          }
+          separateRefenceChainsInTheta(thetaNode);
         },
         [](rvsdg::DeltaNode &)
         {
@@ -106,11 +80,62 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
 }
 
 void
-LoadChainSeparation::separateReferenceChains(rvsdg::Input & startInput)
+LoadChainSeparation::separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode)
+{
+  // Handle innermost regions first
+  separateReferenceChainsInRegion(*lambdaNode.subregion());
+
+  util::HashSet<rvsdg::Input *> visitedInputs;
+  separateReferenceChains(GetMemoryStateRegionResult(lambdaNode), visitedInputs);
+}
+
+void
+LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
+{
+  // Handle innermost regions first
+  for (auto & subregion : gammaNode.Subregions())
+  {
+    separateReferenceChainsInRegion(subregion);
+  }
+
+  std::vector<util::HashSet<rvsdg::Input *>> visitedInputs(gammaNode.nsubregions());
+  for (auto & [branchResults, output] : gammaNode.GetExitVars())
+  {
+    if (is<MemoryStateType>(output->Type()))
+    {
+      for (const auto branchResult : branchResults)
+      {
+        const auto regionIndex = branchResult->region()->index();
+        JLM_ASSERT(regionIndex < visitedInputs.size());
+        separateReferenceChains(*branchResult, visitedInputs[regionIndex]);
+      }
+    }
+  }
+}
+
+void
+LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
+{
+  // Handle innermost region first
+  separateReferenceChainsInRegion(*thetaNode.subregion());
+
+  util::HashSet<rvsdg::Input *> visitedInputs;
+  for (const auto loopVar : thetaNode.GetLoopVars())
+  {
+    if (is<MemoryStateType>(loopVar.output->Type()))
+    {
+      separateReferenceChains(*loopVar.post, visitedInputs);
+    }
+  }
+}
+
+void
+LoadChainSeparation::separateReferenceChains(
+    rvsdg::Input & startInput,
+    util::HashSet<rvsdg::Input *> & visitedInputs)
 {
   JLM_ASSERT(is<MemoryStateType>(startInput.Type()));
 
-  util::HashSet<rvsdg::Input *> visitedInputs;
   const auto modRefChains = traceModRefChains(startInput, visitedInputs);
   for (auto & modRefChain : modRefChains)
   {

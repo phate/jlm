@@ -10,7 +10,9 @@
 
 namespace jlm::rvsdg
 {
+class GammaNode;
 class LambdaNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -51,15 +53,26 @@ private:
   static void
   separateReferenceChainsInRegion(rvsdg::Region & region);
 
+  static void
+  separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode);
+
+  static void
+  separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode);
+
+  static void
+  separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode);
+
   /**
    * Separates the reference links of the mod/ref chain starting at memory state input \p
    * startInput.
    *
    * @param startInput The starting input of the mod/ref chain. Must be of type \ref
    * MemoryStateType.
+   * @param visitedInputs The set of inputs that were already visited throughout the separation in
+   * the region.
    */
   static void
-  separateReferenceChains(rvsdg::Input & startInput);
+  separateReferenceChains(rvsdg::Input & startInput, util::HashSet<rvsdg::Input *> & visitedInputs);
 
   /**
    * Represents a single link in a mod/ref chain
