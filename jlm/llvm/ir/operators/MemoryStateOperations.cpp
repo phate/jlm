@@ -182,6 +182,12 @@ MemoryStateJoinOperation::NormalizeDuplicateOperands(
   if (newOperands.size() == operands.size())
     return std::nullopt;
 
+  if (newOperands.size() == 1)
+  {
+    // There is no need to create a join node if there is only a single operand.
+    return newOperands;
+  }
+
   return { { CreateNode(newOperands).output(0) } };
 }
 
