@@ -59,14 +59,26 @@ empty(const rvsdg::GammaNode * gamma)
 static bool
 single_successor(const rvsdg::Node * node)
 {
-  std::unordered_set<rvsdg::Node *> successors;
+  size_t successors = 0;
+  bool NullPointer = false;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : node->output(n)->Users())
-      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(user));
+    {
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(user) == nullptr)
+      {
+        NullPointer = true;
+      }
+      else
+      {
+        successors++;
+        if (successors > 1)
+          return false;
+      }
+    }
   }
 
-  return successors.size() == 1;
+  return (!NullPointer && successors == 1) || (NullPointer && successors == 0);
 }
 
 static void
