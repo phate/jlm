@@ -40,9 +40,6 @@ LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector 
 void
 LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
 {
-  // FIXME: We currently do not recognize mod/ref chains that do not start at a result. For example,
-  // the state output of a lod node that is dead would not be recognized.
-
   // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
   for (const auto & node : rvsdg::TopDownTraverser(&region))
   {
@@ -68,9 +65,18 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         {
           // Nothing needs to be done
         },
-        [](rvsdg::SimpleNode &)
+        [](rvsdg::SimpleNode & simpleNode)
         {
-          // Nothing needs to be done
+          for (auto & output : simpleNode.Outputs())
+          {
+            if (output.IsDead() && is<MemoryStateType>(output.Type()))
+            {
+              // Dead memory state outputs will never be reachable from structural node results.
+              // Thus, we need to handle them here in order to separate all reference chains.
+              util::HashSet<rvsdg::Output *> visitedOutputs;
+              separateReferenceChains(output, visitedOutputs);
+            }
+          }
         },
         [&]()
         {
@@ -155,13 +161,16 @@ LoadChainSeparation::separateReferenceChains(
       }
 
       // Create join node and divert the current memory state output
-      auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-      links.front().output->divertUsersWhere(
-          *joinNode.output(0),
-          [&joinNode](const rvsdg::Input & user)
-          {
-            return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
-          });
+      if (!links.front().output->IsDead())
+      {
+        auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
+        links.front().output->divertUsersWhere(
+            *joinNode.output(0),
+            [&joinNode](const rvsdg::Input & user)
+            {
+              return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
+            });
+      }
     }
   }
 }
