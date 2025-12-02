@@ -85,8 +85,8 @@ LoadChainSeparation::separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaN
   // Handle innermost regions first
   separateReferenceChainsInRegion(*lambdaNode.subregion());
 
-  util::HashSet<rvsdg::Input *> visitedInputs;
-  separateReferenceChains(GetMemoryStateRegionResult(lambdaNode), visitedInputs);
+  util::HashSet<rvsdg::Output *> visitedOutputs;
+  separateReferenceChains(*GetMemoryStateRegionResult(lambdaNode).origin(), visitedOutputs);
 }
 
 void
@@ -98,7 +98,7 @@ LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
     separateReferenceChainsInRegion(subregion);
   }
 
-  std::vector<util::HashSet<rvsdg::Input *>> visitedInputs(gammaNode.nsubregions());
+  std::vector<util::HashSet<rvsdg::Output *>> visitedOutputs(gammaNode.nsubregions());
   for (auto & [branchResults, output] : gammaNode.GetExitVars())
   {
     if (is<MemoryStateType>(output->Type()))
@@ -106,8 +106,8 @@ LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
       for (const auto branchResult : branchResults)
       {
         const auto regionIndex = branchResult->region()->index();
-        JLM_ASSERT(regionIndex < visitedInputs.size());
-        separateReferenceChains(*branchResult, visitedInputs[regionIndex]);
+        JLM_ASSERT(regionIndex < visitedOutputs.size());
+        separateReferenceChains(*branchResult->origin(), visitedOutputs[regionIndex]);
       }
     }
   }
@@ -119,24 +119,24 @@ LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
   // Handle innermost region first
   separateReferenceChainsInRegion(*thetaNode.subregion());
 
-  util::HashSet<rvsdg::Input *> visitedInputs;
+  util::HashSet<rvsdg::Output *> visitedOutputs;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     if (is<MemoryStateType>(loopVar.output->Type()))
     {
-      separateReferenceChains(*loopVar.post, visitedInputs);
+      separateReferenceChains(*loopVar.post->origin(), visitedOutputs);
     }
   }
 }
 
 void
 LoadChainSeparation::separateReferenceChains(
-    rvsdg::Input & startInput,
-    util::HashSet<rvsdg::Input *> & visitedInputs)
+    rvsdg::Output & startOutput,
+    util::HashSet<rvsdg::Output *> & visitedOutputs)
 {
-  JLM_ASSERT(is<MemoryStateType>(startInput.Type()));
+  JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
 
-  const auto modRefChains = traceModRefChains(startInput, visitedInputs);
+  const auto modRefChains = traceModRefChains(startOutput, visitedOutputs);
   for (auto & modRefChain : modRefChains)
   {
     const auto refSubchains = extractReferenceSubchains(modRefChain);
@@ -145,35 +145,34 @@ LoadChainSeparation::separateReferenceChains(
       // Divert the operands of the respective inputs for each encountered reference node and
       // collect join operands
       std::vector<rvsdg::Output *> joinOperands;
-      const auto newMemoryStateOperand = links.back().input->origin();
-      for (auto [linkInput, linkModRefType] : links)
+      const auto newMemoryStateOperand = mapMemoryStateOutputToInput(*links.back().output).origin();
+      for (auto [linkOutput, linkModRefType] : links)
       {
         JLM_ASSERT(linkModRefType == ModRefChainLink::Type::Reference);
-        const auto modRefChainInput = linkInput;
-        modRefChainInput->divert_to(newMemoryStateOperand);
-        joinOperands.push_back(&mapMemoryStateInputToOutput(*modRefChainInput));
+        auto & modRefChainInput = mapMemoryStateOutputToInput(*linkOutput);
+        modRefChainInput.divert_to(newMemoryStateOperand);
+        joinOperands.push_back(linkOutput);
       }
 
       // Create join node and divert the current memory state output
       auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-      mapMemoryStateInputToOutput(*links.front().input)
-          .divertUsersWhere(
-              *joinNode.output(0),
-              [&joinNode](const rvsdg::Input & user)
-              {
-                return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
-              });
+      links.front().output->divertUsersWhere(
+          *joinNode.output(0),
+          [&joinNode](const rvsdg::Input & user)
+          {
+            return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &joinNode;
+          });
     }
   }
 }
 
-rvsdg::Output &
-LoadChainSeparation::mapMemoryStateInputToOutput(const rvsdg::Input & input)
+rvsdg::Input &
+LoadChainSeparation::mapMemoryStateOutputToInput(const rvsdg::Output & output)
 {
-  if (auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(input);
+  if (auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(output);
       loadOperation)
   {
-    return LoadOperation::mapMemoryStateInputToOutput(input);
+    return LoadOperation::MapMemoryStateOutputToInput(output);
   }
 
   throw std::logic_error("Unhandled node type!");
@@ -215,27 +214,27 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 
 std::vector<LoadChainSeparation::ModRefChain>
 LoadChainSeparation::traceModRefChains(
-    rvsdg::Input & startInput,
-    util::HashSet<rvsdg::Input *> & visitedInputs)
+    rvsdg::Output & startOutput,
+    util::HashSet<rvsdg::Output *> & visitedOutputs)
 {
-  if (!visitedInputs.insert(&startInput))
+  if (!visitedOutputs.insert(&startOutput))
   {
     return {};
   }
 
   ModRefChain currentModRefChain;
   std::vector<ModRefChain> modRefChains;
-  rvsdg::Input * currentInput = &startInput;
+  rvsdg::Output * currentOutput = &startOutput;
   bool doneTracing = false;
   do
   {
-    if (rvsdg::TryGetOwnerRegion(*currentInput->origin()))
+    if (rvsdg::TryGetOwnerRegion(*currentOutput))
     {
       // We have a region argument. Stop tracing.
       break;
     }
 
-    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentInput->origin());
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(*currentOutput);
     rvsdg::MatchTypeWithDefault(
         node,
         [&](const rvsdg::GammaNode & gammaNode)
@@ -249,7 +248,7 @@ LoadChainSeparation::traceModRefChains(
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
             {
-              auto tmpChains = traceModRefChains(*entryVarInput, visitedInputs);
+              auto tmpChains = traceModRefChains(*entryVarInput->origin(), visitedOutputs);
               modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
             }
           }
@@ -263,7 +262,7 @@ LoadChainSeparation::traceModRefChains(
           {
             if (is<MemoryStateType>(loopVar.input->Type()))
             {
-              auto tmpChains = traceModRefChains(*loopVar.input, visitedInputs);
+              auto tmpChains = traceModRefChains(*loopVar.input->origin(), visitedOutputs);
               modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
             }
           }
@@ -276,39 +275,41 @@ LoadChainSeparation::traceModRefChains(
               operation,
               [&](const LoadOperation &)
               {
-                currentInput = &LoadOperation::MapMemoryStateOutputToInput(*currentInput->origin());
                 currentModRefChain.links.push_back(
-                    { currentInput, ModRefChainLink::Type::Reference });
+                    { currentOutput, ModRefChainLink::Type::Reference });
+                currentOutput = LoadOperation::MapMemoryStateOutputToInput(*currentOutput).origin();
               },
               [&](const StoreOperation &)
               {
-                currentInput =
-                    &StoreOperation::MapMemoryStateOutputToInput(*currentInput->origin());
                 currentModRefChain.links.push_back(
-                    { currentInput, ModRefChainLink::Type::Modification });
+                    { currentOutput, ModRefChainLink::Type::Modification });
+                currentOutput =
+                    StoreOperation::MapMemoryStateOutputToInput(*currentOutput).origin();
               },
               [&](const FreeOperation &)
               {
-                currentInput = &FreeOperation::mapMemoryStateOutputToInput(*currentInput->origin());
                 currentModRefChain.links.push_back(
-                    { currentInput, ModRefChainLink::Type::Modification });
+                    { currentOutput, ModRefChainLink::Type::Modification });
+                currentOutput = FreeOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
               },
               [&](const MemCpyOperation &)
               {
                 // FIXME: We really would like to know here which memory state belongs to the source
                 // and which to the dst address. This would allow us to be more precise in the
                 // separation.
-                currentInput =
-                    &MemCpyOperation::mapMemoryStateOutputToInput(*currentInput->origin());
+
                 currentModRefChain.links.push_back(
-                    { currentInput, ModRefChainLink::Type::Modification });
+                    { currentOutput, ModRefChainLink::Type::Modification });
+                currentOutput =
+                    MemCpyOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
               },
               [&](const CallOperation &)
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                auto tmpChains =
-                    traceModRefChains(CallOperation::GetMemoryStateInput(node), visitedInputs);
+                auto tmpChains = traceModRefChains(
+                    *CallOperation::GetMemoryStateInput(node).origin(),
+                    visitedOutputs);
                 modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 doneTracing = true;
               },
@@ -316,7 +317,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
                   modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 }
                 doneTracing = true;
@@ -332,7 +333,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                auto tmpChains = traceModRefChains(*node.input(0), visitedInputs);
+                auto tmpChains = traceModRefChains(*node.input(0)->origin(), visitedOutputs);
                 modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 doneTracing = true;
               },
@@ -340,7 +341,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
                   modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 }
                 doneTracing = true;
@@ -349,7 +350,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
                   modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 }
                 doneTracing = true;
@@ -358,7 +359,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(nodeInput, visitedInputs);
+                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
                   modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
                 }
                 doneTracing = true;
@@ -368,6 +369,10 @@ LoadChainSeparation::traceModRefChains(
                 doneTracing = true;
               },
               [&](const MallocOperation &)
+              {
+                doneTracing = true;
+              },
+              [&](const UndefValueOperation &)
               {
                 doneTracing = true;
               },
