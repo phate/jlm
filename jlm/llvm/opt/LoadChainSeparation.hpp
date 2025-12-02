@@ -63,16 +63,18 @@ private:
   separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode);
 
   /**
-   * Separates the reference links of the mod/ref chain starting at memory state input \p
-   * startInput.
+   * Separates the reference links of the mod/ref chain starting at memory state output \p
+   * startOutput.
    *
-   * @param startInput The starting input of the mod/ref chain. Must be of type \ref
+   * @param startOutput The starting output of the mod/ref chain. Must be of type \ref
    * MemoryStateType.
-   * @param visitedInputs The set of inputs that were already visited throughout the separation in
+   * @param visitedOutputs The set of outputs that were already visited throughout the separation in
    * the region.
    */
   static void
-  separateReferenceChains(rvsdg::Input & startInput, util::HashSet<rvsdg::Input *> & visitedInputs);
+  separateReferenceChains(
+      rvsdg::Output & startOutput,
+      util::HashSet<rvsdg::Output *> & visitedOutputs);
 
   /**
    * Represents a single link in a mod/ref chain
@@ -96,9 +98,9 @@ private:
     };
 
     /**
-     * The memory state input associated with the node that references/modifies a memory region.
+     * The memory state output associated with the node that references/modifies a memory region.
      */
-    rvsdg::Input * input;
+    rvsdg::Output * output;
     Type type;
   };
 
@@ -108,16 +110,16 @@ private:
   };
 
   /**
-   * Recursively traces from input \p startInput upwards to find all mod/ref chains
+   * Recursively traces from output \p startOutput upwards to find all mod/ref chains
    * within a single region.
    *
-   * @param startInput The starting input for the tracing. Must be of type \ref MemoryStateType.
-   * @param visitedInputs The set of inputs that were already visited throughout the recursive
+   * @param startOutput The starting output for the tracing. Must be of type \ref MemoryStateType.
+   * @param visitedOutputs The set of outputs that were already visited throughout the recursive
    * tracing.
    * @return A vector of mod/ref chains.
    */
   static std::vector<ModRefChain>
-  traceModRefChains(rvsdg::Input & startInput, util::HashSet<rvsdg::Input *> & visitedInputs);
+  traceModRefChains(rvsdg::Output & startOutput, util::HashSet<rvsdg::Output *> & visitedOutputs);
 
   /**
    * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain
@@ -132,13 +134,13 @@ private:
   extractReferenceSubchains(const ModRefChain & modRefChain);
 
   /**
-   * Maps a memory state input of a node to the respective memory state output.
+   * Maps a memory state output of a node to the respective memory state input.
    *
-   * @param input The input that is mapped.
-   * @return A memory state output, if the input can be mapped.
+   * @param output The output that is mapped.
+   * @return A memory state input, if the output can be mapped.
    */
-  static rvsdg::Output &
-  mapMemoryStateInputToOutput(const rvsdg::Input & input);
+  static rvsdg::Input &
+  mapMemoryStateOutputToInput(const rvsdg::Output & output);
 };
 
 }

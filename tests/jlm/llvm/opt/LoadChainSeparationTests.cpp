@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -806,3 +807,70 @@ ExternalCall()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-ExternalCall", ExternalCall)
+
+static void
+DeadOutputs()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  const auto bit32Type = BitType::Create(32);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, valueType, ioStateType, memoryStateType },
+      { valueType, ioStateType, memoryStateType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto & addressArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & valueArgument = *lambdaNode->GetFunctionArguments()[1];
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[2];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[3];
+
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(
+      addressArgument,
+      valueArgument,
+      { &memoryStateArgument },
+      4);
+
+  auto & loadNode1 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { storeNode.output(0) }, valueType, 4);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(addressArgument, { loadNode1.output(1) }, valueType, 4);
+
+  auto undefValue = UndefValueOperation::Create(*lambdaNode->subregion(), memoryStateType);
+
+  lambdaNode->finalize({
+      loadNode2.output(0),
+      &ioStateArgument,
+      undefValue,
+  });
+
+  view(rvsdg, stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  LoadChainSeparation loadChainSeparation;
+  loadChainSeparation.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  assert(loadNode1.output(1)->IsDead());
+  assert(loadNode1.input(1)->origin() == storeNode.output(0));
+  assert(loadNode2.output(1)->IsDead());
+  assert(loadNode2.input(1)->origin() == storeNode.output(0));
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-DeadOutputs", DeadOutputs)
