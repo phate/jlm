@@ -25,6 +25,40 @@
 namespace jlm::llvm
 {
 
+class LoadChainSeparation::Context
+{
+public:
+  bool
+  hasModRefChainLinkType(const rvsdg::Output & output) const noexcept
+  {
+    return Types_.find(&output) != Types_.end();
+  }
+
+  void
+  add(const rvsdg::Output & output, const ModRefChainLink::Type & type)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    JLM_ASSERT(!hasModRefChainLinkType(output));
+    Types_[&output] = type;
+  }
+
+  ModRefChainLink::Type
+  getModRefChainLinkType(const rvsdg::Output & output) const
+  {
+    JLM_ASSERT(hasModRefChainLinkType(output));
+    return Types_.find(&output)->second;
+  }
+
+  static std::unique_ptr<Context>
+  Create()
+  {
+    return std::make_unique<Context>();
+  }
+
+private:
+  std::unordered_map<const rvsdg::Output *, ModRefChainLink::Type> Types_{};
+};
+
 LoadChainSeparation::~LoadChainSeparation() noexcept = default;
 
 LoadChainSeparation::LoadChainSeparation()
@@ -34,6 +68,8 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
+  Context_ = Context::Create();
+
   separateReferenceChainsInRegion(module.Rvsdg().GetRootRegion());
 }
 
@@ -65,7 +101,7 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         {
           // Nothing needs to be done
         },
-        [](rvsdg::SimpleNode & simpleNode)
+        [&](rvsdg::SimpleNode & simpleNode)
         {
           for (auto & output : simpleNode.Outputs())
           {
@@ -125,17 +161,22 @@ LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
   // Handle innermost region first
   separateReferenceChainsInRegion(*thetaNode.subregion());
 
-  util::HashSet<rvsdg::Output *> visitedOutputs;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     if (is<MemoryStateType>(loopVar.output->Type()))
     {
-      separateReferenceChains(*loopVar.post->origin(), visitedOutputs);
+      util::HashSet<rvsdg::Output *> visitedOutputs;
+      auto hasModificationChainLink =
+          separateReferenceChains(*loopVar.post->origin(), visitedOutputs);
+      Context_->add(
+          *loopVar.output,
+          hasModificationChainLink ? ModRefChainLink::Type::Modification
+                                   : ModRefChainLink::Type::Reference);
     }
   }
 }
 
-void
+bool
 LoadChainSeparation::separateReferenceChains(
     rvsdg::Output & startOutput,
     util::HashSet<rvsdg::Output *> & visitedOutputs)
@@ -147,14 +188,13 @@ LoadChainSeparation::separateReferenceChains(
   for (auto & modRefChain : summary.modRefChains)
   {
     const auto refSubchains = extractReferenceSubchains(modRefChain);
-    for (auto & refSubChain : refSubchains)
+    for (const auto & [_, links] : refSubchains)
     {
       // Divert the operands of the respective inputs for each encountered reference node and
       // collect join operands
       std::vector<rvsdg::Output *> joinOperands;
-      const auto newMemoryStateOperand =
-          mapMemoryStateOutputToInput(*refSubChain.links.back().output).origin();
-      for (auto [linkOutput, linkModRefType] : refSubChain.links)
+      const auto newMemoryStateOperand = mapMemoryStateOutputToInput(*links.back().output).origin();
+      for (auto [linkOutput, linkModRefType] : links)
       {
         JLM_ASSERT(linkModRefType == ModRefChainLink::Type::Reference);
         auto & modRefChainInput = mapMemoryStateOutputToInput(*linkOutput);
@@ -163,10 +203,10 @@ LoadChainSeparation::separateReferenceChains(
       }
 
       // Create join node and divert the current memory state output
-      if (!refSubChain.links.front().output->IsDead())
+      if (!links.front().output->IsDead())
       {
         auto & joinNode = MemoryStateJoinOperation::CreateNode(joinOperands);
-        refSubChain.links.front().output->divertUsersWhere(
+        links.front().output->divertUsersWhere(
             *joinNode.output(0),
             [&joinNode](const rvsdg::Input & user)
             {
@@ -175,6 +215,8 @@ LoadChainSeparation::separateReferenceChains(
       }
     }
   }
+
+  return summary.hasModificationChainLink;
 }
 
 rvsdg::Input &
@@ -184,6 +226,11 @@ LoadChainSeparation::mapMemoryStateOutputToInput(const rvsdg::Output & output)
       loadOperation)
   {
     return LoadOperation::MapMemoryStateOutputToInput(output);
+  }
+
+  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  {
+    return *thetaNode->MapOutputLoopVar(output).input;
   }
 
   throw std::logic_error("Unhandled node type!");
@@ -229,6 +276,8 @@ LoadChainSeparation::traceModRefChains(
     util::HashSet<rvsdg::Output *> & visitedOutputs,
     ModRefChainSummary & summary)
 {
+  JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
+
   if (!visitedOutputs.insert(&startOutput))
   {
     return;
@@ -266,16 +315,15 @@ LoadChainSeparation::traceModRefChains(
         },
         [&](const rvsdg::ThetaNode & thetaNode)
         {
-          // FIXME: I really would like that state edges through thetas would be recognized as
-          // either modifying or just referencing.
           for (const auto loopVar : thetaNode.GetLoopVars())
           {
-            if (is<MemoryStateType>(loopVar.input->Type()))
+            if (is<MemoryStateType>(loopVar.output->Type()))
             {
-              traceModRefChains(*loopVar.input->origin(), visitedOutputs, summary);
+              const auto modRefChainLinkType = Context_->getModRefChainLinkType(*loopVar.output);
+              currentModRefChain.add({ loopVar.output, modRefChainLinkType });
+              currentOutput = loopVar.input->origin();
             }
           }
-          doneTracing = true;
         },
         [&](const rvsdg::SimpleNode & simpleNode)
         {
