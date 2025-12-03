@@ -110,6 +110,15 @@ private:
   CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
+   * For each SCC in the call graph, determines if the SCC either contains all external functions,
+   * or can call into external functions, either directly or indirectly.
+   *
+   * @return the number of SCCs that can call external functions
+   */
+  size_t
+  FindSccsThatCanCallExternal();
+
+  /**
    * For each SCC in the call graph, determines which allocas can be known to not be live
    * when a function from the SCC is at the top of the call stack.
    */
