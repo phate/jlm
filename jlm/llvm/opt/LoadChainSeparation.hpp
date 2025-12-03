@@ -106,7 +106,28 @@ private:
 
   struct ModRefChain
   {
+    void
+    add(ModRefChainLink modRefChainLink)
+    {
+      hasModificationChainLink |= modRefChainLink.type == ModRefChainLink::Type::Modification;
+      links.push_back(std::move(modRefChainLink));
+    }
+
+    bool hasModificationChainLink = false;
     std::vector<ModRefChainLink> links{};
+  };
+
+  struct ModRefChainSummary
+  {
+    void
+    add(ModRefChain modRefChain)
+    {
+      modRefChains.push_back(std::move(modRefChain));
+      hasModificationChainLink |= modRefChain.hasModificationChainLink;
+    }
+
+    bool hasModificationChainLink = false;
+    std::vector<ModRefChain> modRefChains{};
   };
 
   /**
@@ -116,10 +137,13 @@ private:
    * @param startOutput The starting output for the tracing. Must be of type \ref MemoryStateType.
    * @param visitedOutputs The set of outputs that were already visited throughout the recursive
    * tracing.
-   * @return A vector of mod/ref chains.
+   * @param summary The tracing summary.
    */
-  static std::vector<ModRefChain>
-  traceModRefChains(rvsdg::Output & startOutput, util::HashSet<rvsdg::Output *> & visitedOutputs);
+  static void
+  traceModRefChains(
+      rvsdg::Output & startOutput,
+      util::HashSet<rvsdg::Output *> & visitedOutputs,
+      ModRefChainSummary & summary);
 
   /**
    * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain
