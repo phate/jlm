@@ -142,8 +142,8 @@ LoadChainSeparation::separateReferenceChains(
 {
   JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
 
-  const auto modRefChains = traceModRefChains(startOutput, visitedOutputs);
-  for (auto & modRefChain : modRefChains)
+  const auto modRefChainSummary = traceModRefChains(startOutput, visitedOutputs);
+  for (auto & modRefChain : modRefChainSummary.modRefChains)
   {
     const auto refSubchains = extractReferenceSubchains(modRefChain);
     for (auto [links] : refSubchains)
@@ -221,7 +221,7 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
   return refSubchains;
 }
 
-std::vector<LoadChainSeparation::ModRefChain>
+LoadChainSeparation::ModRefChainSummary
 LoadChainSeparation::traceModRefChains(
     rvsdg::Output & startOutput,
     util::HashSet<rvsdg::Output *> & visitedOutputs)
@@ -231,8 +231,8 @@ LoadChainSeparation::traceModRefChains(
     return {};
   }
 
+  ModRefChainSummary summary;
   ModRefChain currentModRefChain;
-  std::vector<ModRefChain> modRefChains;
   rvsdg::Output * currentOutput = &startOutput;
   bool doneTracing = false;
   do
@@ -257,8 +257,8 @@ LoadChainSeparation::traceModRefChains(
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
             {
-              auto tmpChains = traceModRefChains(*entryVarInput->origin(), visitedOutputs);
-              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+              auto tmpSummary = traceModRefChains(*entryVarInput->origin(), visitedOutputs);
+              summary.insert(tmpSummary);
             }
           }
           doneTracing = true;
@@ -271,8 +271,8 @@ LoadChainSeparation::traceModRefChains(
           {
             if (is<MemoryStateType>(loopVar.input->Type()))
             {
-              auto tmpChains = traceModRefChains(*loopVar.input->origin(), visitedOutputs);
-              modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+              auto tmpSummary = traceModRefChains(*loopVar.input->origin(), visitedOutputs);
+              summary.insert(tmpSummary);
             }
           }
           doneTracing = true;
@@ -316,18 +316,18 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                auto tmpChains = traceModRefChains(
+                auto tmpSummary = traceModRefChains(
                     *CallOperation::GetMemoryStateInput(node).origin(),
                     visitedOutputs);
-                modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                summary.insert(tmpSummary);
                 doneTracing = true;
               },
               [&](const LambdaExitMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
-                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                  auto tmpSummary = traceModRefChains(*nodeInput.origin(), visitedOutputs);
+                  summary.insert(tmpSummary);
                 }
                 doneTracing = true;
               },
@@ -342,16 +342,16 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                auto tmpChains = traceModRefChains(*node.input(0)->origin(), visitedOutputs);
-                modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                auto tmpSummary = traceModRefChains(*node.input(0)->origin(), visitedOutputs);
+                summary.insert(tmpSummary);
                 doneTracing = true;
               },
               [&](const CallEntryMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
-                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                  auto tmpSummary = traceModRefChains(*nodeInput.origin(), visitedOutputs);
+                  summary.insert(tmpSummary);
                 }
                 doneTracing = true;
               },
@@ -359,8 +359,8 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
-                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                  auto tmpSummary = traceModRefChains(*nodeInput.origin(), visitedOutputs);
+                  summary.insert(tmpSummary);
                 }
                 doneTracing = true;
               },
@@ -368,8 +368,8 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  auto tmpChains = traceModRefChains(*nodeInput.origin(), visitedOutputs);
-                  modRefChains.insert(modRefChains.end(), tmpChains.begin(), tmpChains.end());
+                  auto tmpSummary = traceModRefChains(*nodeInput.origin(), visitedOutputs);
+                  summary.insert(tmpSummary);
                 }
                 doneTracing = true;
               },
@@ -400,10 +400,10 @@ LoadChainSeparation::traceModRefChains(
   // We only care about chains that have at least two links
   if (currentModRefChain.links.size() >= 2)
   {
-    modRefChains.emplace_back(currentModRefChain);
+    summary.modRefChains.emplace_back(currentModRefChain);
   }
 
-  return modRefChains;
+  return summary;
 }
 
 }

@@ -109,6 +109,20 @@ private:
     std::vector<ModRefChainLink> links{};
   };
 
+  struct ModRefChainSummary
+  {
+    void
+    insert(ModRefChainSummary & summary)
+    {
+      modRefChains.insert(
+          modRefChains.end(),
+          summary.modRefChains.begin(),
+          summary.modRefChains.end());
+    }
+
+    std::vector<ModRefChain> modRefChains{};
+  };
+
   /**
    * Recursively traces from output \p startOutput upwards to find all mod/ref chains
    * within a single region.
@@ -118,7 +132,7 @@ private:
    * tracing.
    * @return A vector of mod/ref chains.
    */
-  static std::vector<ModRefChain>
+  static ModRefChainSummary
   traceModRefChains(rvsdg::Output & startOutput, util::HashSet<rvsdg::Output *> & visitedOutputs);
 
   /**
