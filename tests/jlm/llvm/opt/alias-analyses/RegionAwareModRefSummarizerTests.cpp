@@ -1468,9 +1468,9 @@ TestSetjmpHandling()
       DeltaOperation::Create(jmpBufType, "buf", Linkage::externalLinkage, "", false));
   bufGlobal.finalize(UndefValueOperation::Create(*bufGlobal.subregion(), jmpBufType));
 
-  rvsdg::SimpleNode* callOpaqueNode = nullptr;
-  rvsdg::SimpleNode* callHNode = nullptr;
-  rvsdg::SimpleNode* allocaNode = nullptr;
+  rvsdg::SimpleNode * callOpaqueNode = nullptr;
+  rvsdg::SimpleNode * callHNode = nullptr;
+  rvsdg::SimpleNode * allocaNode = nullptr;
 
   auto & hLambdaNode = *rvsdg::LambdaNode::Create(
       rootRegion,
@@ -1548,7 +1548,8 @@ TestSetjmpHandling()
 
     const auto gCtxVar = fLambdaNode.AddContextVar(*gLambdaNode.output());
 
-    const auto constant1 = IntegerConstantOperation::Create(*fLambdaNode.subregion(), 32, 1).output(0);
+    const auto constant1 =
+        IntegerConstantOperation::Create(*fLambdaNode.subregion(), 32, 1).output(0);
     const auto aAlloca = AllocaOperation::create(int32Type, constant1, 4);
     allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*aAlloca[0]);
 
@@ -1560,7 +1561,7 @@ TestSetjmpHandling()
         gFunctionType,
         { aAlloca[0], ioStateIn, memoryStateJoin.output(0) });
 
-    auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], {gCall[1]}, int32Type, 4);
+    auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], { gCall[1] }, int32Type, 4);
 
     fLambdaNode.finalize({ loadOutputs[0], gCall[0], loadOutputs[1] });
   }
@@ -1573,7 +1574,7 @@ TestSetjmpHandling()
   // gw.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
 
   // Act
-  util::StatisticsCollectorSettings settings({util::Statistics::Id::RegionAwareModRefSummarizer});
+  util::StatisticsCollectorSettings settings({ util::Statistics::Id::RegionAwareModRefSummarizer });
   util::StatisticsCollector collector(settings);
   const auto ptg = RunAndersen(rvsdgModule);
   const auto modRefSummary = aa::RegionAwareModRefSummarizer::Create(rvsdgModule, *ptg, collector);

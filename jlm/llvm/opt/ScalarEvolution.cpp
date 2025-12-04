@@ -127,7 +127,7 @@ public:
 };
 
 ScalarEvolution::ScalarEvolution()
-    : Transformation("ScalarEvolution") {};
+    : Transformation("ScalarEvolution"){};
 
 ScalarEvolution::~ScalarEvolution() noexcept = default;
 
