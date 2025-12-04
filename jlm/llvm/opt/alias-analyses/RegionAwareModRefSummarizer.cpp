@@ -722,7 +722,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
 
   // Go through the call graph and mark all functions that can be called while a setjmp is active.
-  // Calls via external functions do not count, so this can not be done on the call graph's SCCs.
+  // Calls via external functions do not count, so we skip going through that node.
   std::queue<size_t> onSetjmpStackQueue;
   for (const auto function : nodesCallingSetjmp.Items())
     onSetjmpStackQueue.push(function);
@@ -737,6 +737,8 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     // Go through all successors and mark them as on a setjmp stack if not already marked
     for (const auto calleeNodeIndex : callGraphSuccessors[functionNodeIndex].Items())
     {
+      if (calleeNodeIndex == externalNodeIndex)
+        continue;
       if (nodesCallingSetjmp.insert(calleeNodeIndex))
         onSetjmpStackQueue.push(calleeNodeIndex);
     }
