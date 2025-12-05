@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -7,715 +8,545 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-
-#include <typeindex>
-#include <unordered_map>
+#include <jlm/util/GraphWriter.hpp>
 
 namespace jlm::llvm::aa
 {
 
 PointsToGraph::PointsToGraph()
-    : NextMemoryNodeId_(0)
 {
-  UnknownMemoryNode_ = UnknownMemoryNode::Create(*this);
-  ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
-
-  // The external memory node has by definition always escaped
-  EscapedMemoryNodes_.insert(ExternalMemoryNode_.get());
-}
-
-void
-PointsToGraph::AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode)
-{
-  JLM_ASSERT(&memoryNode.Graph() == this);
-  EscapedMemoryNodes_.insert(&memoryNode);
+  // Create the single external node, representing all memory not represented by any other node
+  externalMemoryNode_ = addNode(NodeKind::ExternalNode, true, false, std::nullopt, nullptr);
+  // The external node can never be explicitly targeted and never explicitly target any other node
+  markAsTargetsAllExternallyAvailable(externalMemoryNode_);
 }
 
 PointsToGraph::AllocaNodeRange
-PointsToGraph::AllocaNodes()
+PointsToGraph::allocaNodes() const noexcept
 {
-  return { AllocaNodeIterator(AllocaNodes_.begin()), AllocaNodeIterator(AllocaNodes_.end()) };
-}
-
-PointsToGraph::AllocaNodeConstRange
-PointsToGraph::AllocaNodes() const
-{
-  return { AllocaNodeConstIterator(AllocaNodes_.begin()),
-           AllocaNodeConstIterator(AllocaNodes_.end()) };
+  return { AllocaNodeIterator(allocaMap_.cbegin()), AllocaNodeIterator(allocaMap_.cend()) };
 }
 
 PointsToGraph::DeltaNodeRange
-PointsToGraph::DeltaNodes()
+PointsToGraph::deltaNodes() const noexcept
 {
-  return { DeltaNodeIterator(DeltaNodes_.begin()), DeltaNodeIterator(DeltaNodes_.end()) };
-}
-
-PointsToGraph::DeltaNodeConstRange
-PointsToGraph::DeltaNodes() const
-{
-  return { DeltaNodeConstIterator(DeltaNodes_.begin()), DeltaNodeConstIterator(DeltaNodes_.end()) };
-}
-
-PointsToGraph::LambdaNodeRange
-PointsToGraph::LambdaNodes()
-{
-  return { LambdaNodeIterator(LambdaNodes_.begin()), LambdaNodeIterator(LambdaNodes_.end()) };
-}
-
-PointsToGraph::LambdaNodeConstRange
-PointsToGraph::LambdaNodes() const
-{
-  return { LambdaNodeConstIterator(LambdaNodes_.begin()),
-           LambdaNodeConstIterator(LambdaNodes_.end()) };
-}
-
-PointsToGraph::MallocNodeRange
-PointsToGraph::MallocNodes()
-{
-  return { MallocNodeIterator(MallocNodes_.begin()), MallocNodeIterator(MallocNodes_.end()) };
-}
-
-PointsToGraph::MallocNodeConstRange
-PointsToGraph::MallocNodes() const
-{
-  return { MallocNodeConstIterator(MallocNodes_.begin()),
-           MallocNodeConstIterator(MallocNodes_.end()) };
+  return { DeltaNodeIterator(deltaMap_.cbegin()), DeltaNodeIterator(deltaMap_.cend()) };
 }
 
 PointsToGraph::ImportNodeRange
-PointsToGraph::ImportNodes()
+PointsToGraph::importNodes() const noexcept
 {
-  return { ImportNodeIterator(ImportNodes_.begin()), ImportNodeIterator(ImportNodes_.end()) };
+  return { ImportNodeIterator(importMap_.cbegin()), ImportNodeIterator(importMap_.cend()) };
 }
 
-PointsToGraph::ImportNodeConstRange
-PointsToGraph::ImportNodes() const
+PointsToGraph::LambdaNodeRange
+PointsToGraph::lambdaNodes() const noexcept
 {
-  return { ImportNodeConstIterator(ImportNodes_.begin()),
-           ImportNodeConstIterator(ImportNodes_.end()) };
+  return { LambdaNodeIterator(lambdaMap_.cbegin()), LambdaNodeIterator(lambdaMap_.cend()) };
+}
+
+PointsToGraph::MallocNodeRange
+PointsToGraph::mallocNodes() const noexcept
+{
+  return { MallocNodeIterator(mallocMap_.cbegin()), MallocNodeIterator(mallocMap_.cend()) };
+}
+
+PointsToGraph::NodeIndex
+PointsToGraph::getExternalMemoryNode() const noexcept
+{
+  return externalMemoryNode_;
 }
 
 PointsToGraph::RegisterNodeRange
-PointsToGraph::RegisterNodes()
+PointsToGraph::registerNodes() const noexcept
 {
-  return { RegisterNodeIterator(RegisterNodes_.begin()),
-           RegisterNodeIterator(RegisterNodes_.end()) };
+  return { registerNodes_.cbegin(), registerNodes_.cend() };
 }
 
-PointsToGraph::RegisterNodeConstRange
-PointsToGraph::RegisterNodes() const
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForAlloca(const rvsdg::SimpleNode & allocaNode, bool externallyAvailable)
 {
-  return { RegisterNodeConstIterator(RegisterNodes_.begin()),
-           RegisterNodeConstIterator(RegisterNodes_.end()) };
-}
+  if (!is<AllocaOperation>(&allocaNode))
+    throw std::logic_error("Node is not an alloca operation");
 
-PointsToGraph::AllocaNode &
-PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
-{
-  auto tmp = node.get();
-  AllocaNodes_[&node->GetAllocaNode()] = std::move(node);
+  auto [it, added] = allocaMap_.try_emplace(&allocaNode, 0);
+  if (!added)
+    throw std::logic_error("Alloca node already exists in the graph.");
 
-  return *tmp;
-}
-
-PointsToGraph::DeltaNode &
-PointsToGraph::AddDeltaNode(std::unique_ptr<PointsToGraph::DeltaNode> node)
-{
-  auto tmp = node.get();
-  DeltaNodes_[&node->GetDeltaNode()] = std::move(node);
-
-  return *tmp;
-}
-
-PointsToGraph::LambdaNode &
-PointsToGraph::AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node)
-{
-  auto tmp = node.get();
-  LambdaNodes_[&node->GetLambdaNode()] = std::move(node);
-
-  return *tmp;
-}
-
-PointsToGraph::MallocNode &
-PointsToGraph::AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node)
-{
-  auto tmp = node.get();
-  MallocNodes_[&node->GetMallocNode()] = std::move(node);
-
-  return *tmp;
-}
-
-PointsToGraph::RegisterNode &
-PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
-{
-  auto tmp = node.get();
-  for (auto output : node->GetOutputs().Items())
-    RegisterNodeMap_[output] = tmp;
-
-  RegisterNodes_.emplace_back(std::move(node));
-
-  return *tmp;
-}
-
-PointsToGraph::ImportNode &
-PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
-{
-  auto tmp = node.get();
-  ImportNodes_[&node->GetArgument()] = std::move(node);
-
-  return *tmp;
-}
-
-std::pair<size_t, size_t>
-PointsToGraph::NumEdges() const noexcept
-{
-  size_t numEdges = 0;
-
-  auto countMemoryNodes = [&](auto iterable)
+  // Try to include the size of the allocation in the created node
+  const auto getMemorySize = [](const rvsdg::Node & allocaNode) -> std::optional<size_t>
   {
-    for (const MemoryNode & node : iterable)
-    {
-      numEdges += node.NumTargets();
-    }
+    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+
+    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
+    if (elementCount.has_value() && *elementCount >= 0)
+      return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
+    return std::nullopt;
   };
 
-  countMemoryNodes(AllocaNodes());
-  countMemoryNodes(DeltaNodes());
-  countMemoryNodes(ImportNodes());
-  countMemoryNodes(LambdaNodes());
-  countMemoryNodes(MallocNodes());
+  return it->second = addNode(
+             NodeKind::AllocaNode,
+             externallyAvailable,
+             false,
+             getMemorySize(allocaNode),
+             &allocaNode);
+}
 
-  numEdges += GetExternalMemoryNode().NumTargets();
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForDelta(const rvsdg::DeltaNode & deltaNode, bool externallyAvailable)
+{
+  auto [it, added] = deltaMap_.try_emplace(&deltaNode, 0);
+  if (!added)
+    throw std::logic_error("Delta node already exists in the graph.");
 
-  // For register nodes, the number of edges and number of points-to relations is different
-  size_t numPointsToRelations = numEdges;
-  for (auto & registerNode : RegisterNodes())
+  const auto isConstant = deltaNode.GetOperation().constant();
+  const auto memorySize = GetTypeAllocSize(*deltaNode.GetOperation().Type());
+
+  return it->second =
+             addNode(NodeKind::DeltaNode, externallyAvailable, isConstant, memorySize, &deltaNode);
+}
+
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForImport(const rvsdg::GraphImport & import, bool externallyAvailable)
+{
+  auto [it, added] = importMap_.try_emplace(&import, 0);
+  if (!added)
+    throw std::logic_error("Import node already exists in the graph.");
+
+  const auto isConstant = [](const rvsdg::GraphImport & import) -> bool
   {
-    numEdges += registerNode.NumTargets();
-    numPointsToRelations += registerNode.NumTargets() * registerNode.GetOutputs().Size();
-  }
+    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+      return graphImport->isConstant();
+    return false;
+  };
 
-  return std::make_pair(numEdges, numPointsToRelations);
+  const auto getMemorySize = [](const rvsdg::GraphImport & import) -> std::optional<size_t>
+  {
+    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+    {
+      auto size = GetTypeAllocSize(*graphImport->ValueType());
+
+      // C code can contain declarations like this:
+      //     extern char myArray[];
+      // which means there is an array of unknown size defined in a different module.
+      // In the LLVM IR the import gets an array length of 0, but that is not correct.
+      if (size != 0)
+        return size;
+    }
+    return std::nullopt;
+  };
+
+  return it->second = addNode(
+             NodeKind::ImportNode,
+             externallyAvailable,
+             isConstant(import),
+             getMemorySize(import),
+             &import);
+}
+
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForLambda(const rvsdg::LambdaNode & lambdaNode, bool externallyAvailable)
+{
+  auto [it, added] = lambdaMap_.try_emplace(&lambdaNode, 0);
+  if (!added)
+    throw std::logic_error("Lambda node already exists in the graph.");
+
+  // A function can never be written to, so it is regarded constant
+  // It should never be read from either, so its size is 0
+  return it->second = addNode(NodeKind::LambdaNode, externallyAvailable, true, 0, &lambdaNode);
+}
+
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool externallyAvailable)
+{
+  if (!is<MallocOperation>(&mallocNode))
+    throw std::logic_error("Node is not an alloca operation");
+
+  auto [it, added] = mallocMap_.try_emplace(&mallocNode, 0);
+  if (!added)
+    throw std::logic_error("Malloc node already exists in the graph.");
+
+  const auto tryGetMemorySize = [](const rvsdg::Node & mallocNode) -> std::optional<size_t>
+  {
+    // If the size parameter of the malloc node is a constant, that is our size
+    auto size = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+
+    // Only return the size if it is a positive integer, to avoid unsigned underflow
+    if (size.has_value() && *size >= 0)
+      return *size;
+
+    return std::nullopt;
+  };
+
+  return it->second = addNode(
+             NodeKind::MallocNode,
+             externallyAvailable,
+             false,
+             tryGetMemorySize(mallocNode),
+             &mallocNode);
+}
+
+PointsToGraph::NodeIndex
+PointsToGraph::addNodeForRegisters()
+{
+  // Registers need to be static single assignment, so they are regarded as constants
+  // Their size in memory is not known, as most registers never even live in memory.
+  auto index = addNode(NodeKind::RegisterNode, false, true, std::nullopt, nullptr);
+  registerNodes_.emplace_back(index);
+  return index;
+}
+
+void
+PointsToGraph::mapRegisterToNode(const rvsdg::Output & output, NodeIndex nodeIndex)
+{
+  if (!isRegisterNode(nodeIndex))
+    throw std::logic_error("Node is not a register node");
+
+  const auto [_, added] = registerMap_.emplace(&output, nodeIndex);
+  if (!added)
+    throw std::logic_error("Register is already mapped in the graph.");
+}
+
+void
+PointsToGraph::markAsTargetsAllExternallyAvailable(NodeIndex index)
+{
+  JLM_ASSERT(index < nodeData_.size());
+  if (!nodeData_[index].isTargetingAllExternallyAvailable)
+  {
+    numNodesTargetingAllExternallyAvailable_++;
+    nodeData_[index].isTargetingAllExternallyAvailable = true;
+  }
 }
 
 bool
-PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) const
+PointsToGraph::addTarget(NodeIndex source, NodeIndex target)
 {
-  // Given a memory node representing a memory object in an RVSDG module, this function finds
-  // a memory node representing the same memory object in a different PointsToGraph.
-  // If no corresponding memory node exists in the graph, nullptr is returned
-  auto GetCorrespondingMemoryNode =
-      [](const PointsToGraph::MemoryNode & node,
-         const PointsToGraph & graph) -> const PointsToGraph::MemoryNode *
-  {
-    if (auto allocaNode = dynamic_cast<const AllocaNode *>(&node))
-    {
-      if (auto it = graph.AllocaNodes_.find(&allocaNode->GetAllocaNode());
-          it != graph.AllocaNodes_.end())
-        return it->second.get();
-    }
-    else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
-    {
-      if (auto it = graph.DeltaNodes_.find(&deltaNode->GetDeltaNode());
-          it != graph.DeltaNodes_.end())
-        return it->second.get();
-    }
-    else if (auto importNode = dynamic_cast<const ImportNode *>(&node))
-    {
-      if (auto it = graph.ImportNodes_.find(&importNode->GetArgument());
-          it != graph.ImportNodes_.end())
-        return it->second.get();
-    }
-    else if (auto lambdaNode = dynamic_cast<const LambdaNode *>(&node))
-    {
-      if (auto it = graph.LambdaNodes_.find(&lambdaNode->GetLambdaNode());
-          it != graph.LambdaNodes_.end())
-        return it->second.get();
-    }
-    else if (auto mallocNode = dynamic_cast<const MallocNode *>(&node))
-    {
-      if (auto it = graph.MallocNodes_.find(&mallocNode->GetMallocNode());
-          it != graph.MallocNodes_.end())
-        return it->second.get();
-    }
-    else if (MemoryNode::Is<UnknownMemoryNode>(node))
-    {
-      return &graph.GetUnknownMemoryNode();
-    }
-    else if (MemoryNode::Is<ExternalMemoryNode>(node))
-    {
-      return &graph.GetExternalMemoryNode();
-    }
-    else
-      JLM_UNREACHABLE("Unknown type of MemoryNode");
+  JLM_ASSERT(source < nodeExplicitTargets_.size());
 
-    return nullptr;
+  // The external memory node should never be an explicit target
+  JLM_ASSERT(target != externalMemoryNode_);
+  // The external memory node should never have explicit targets
+  JLM_ASSERT(source != externalMemoryNode_);
+
+  // Register nodes can never be targeted
+  JLM_ASSERT(getNodeKind(target) != NodeKind::RegisterNode);
+
+  // Skip adding the target if it is already being targeted implicitly
+  if (isTargetingAllExternallyAvailable(source) && isExternallyAvailable(target))
+    return false;
+  return nodeExplicitTargets_[source].insert(target);
+}
+
+std::pair<size_t, size_t>
+PointsToGraph::numEdges() const noexcept
+{
+  size_t numExplicitEdges = 0;
+  size_t numImplicitEdges = 0;
+  size_t numDoubledUpEdges = 0;
+
+  for (NodeIndex i = 0; i < numNodes(); i++)
+  {
+    for (auto target : getExplicitTargets(i).Items())
+    {
+      numExplicitEdges++;
+      if (isTargetingAllExternallyAvailable(i) && isExternallyAvailable(target))
+        numDoubledUpEdges++;
+    }
+
+    if (isTargetingAllExternallyAvailable(i))
+      numImplicitEdges += externallyAvailableNodes_.size();
+  }
+
+  return std::make_pair(numExplicitEdges, numExplicitEdges + numImplicitEdges - numDoubledUpEdges);
+}
+
+std::string
+PointsToGraph::getNodeDebugString(NodeIndex index, char seperator) const
+{
+  std::ostringstream ss;
+  ss << "(PtG#" << std::setfill('0') << std::setw(3) << index << std::setw(0) << " ";
+
+  switch (getNodeKind(index))
+  {
+  case NodeKind::AllocaNode:
+    ss << getAllocaForNode(index).DebugString();
+    break;
+  case NodeKind::DeltaNode:
+    ss << getDeltaForNode(index).DebugString();
+    break;
+  case NodeKind::ImportNode:
+    ss << getImportForNode(index).debug_string();
+    break;
+  case NodeKind::LambdaNode:
+    ss << getLambdaForNode(index).DebugString();
+    break;
+  case NodeKind::MallocNode:
+    ss << getMallocForNode(index).DebugString();
+    break;
+  case NodeKind::ExternalNode:
+    ss << "external";
+    break;
+  case NodeKind::RegisterNode:
+    ss << "register";
+    break;
+  default:
+    throw std::logic_error("Unknown PtG node kind");
+  }
+
+  if (isExternallyAvailable(index))
+  {
+    ss << seperator << "(ExtAv)";
+  }
+  if (isTargetingAllExternallyAvailable(index))
+  {
+    ss << seperator << "(TgtAllExtAv)";
+  }
+
+  if (const auto size = tryGetNodeSize(index))
+  {
+    ss << seperator << "(" << size.value() << " bytes)";
+  }
+  if (isNodeConstant(index))
+  {
+    ss << seperator << "(const)";
+  }
+  ss << " )";
+
+  return ss.str();
+}
+
+bool
+PointsToGraph::isSupergraphOf(const PointsToGraph & subgraph) const
+{
+  // Given a memory node in the PointsToGraph called "original",
+  // finds the corresponding memory node in the PointsToGraph called "other".
+  // If no corresponding memory node exists in the graph, nullopt is returned.
+  auto getCorrespondingMemoryNode = [](NodeIndex node,
+                                       const PointsToGraph & original,
+                                       const PointsToGraph & other) -> std::optional<NodeIndex>
+  {
+    const auto kind = original.getNodeKind(node);
+    if (kind == NodeKind::AllocaNode)
+    {
+      const auto & alloca = original.getAllocaForNode(node);
+      if (!other.hasNodeForAlloca(alloca))
+        return std::nullopt;
+      return other.getNodeForAlloca(alloca);
+    }
+    if (kind == NodeKind::DeltaNode)
+    {
+      const auto & delta = original.getDeltaForNode(node);
+      if (!other.hasNodeForDelta(delta))
+        return std::nullopt;
+      return other.getNodeForDelta(delta);
+    }
+    if (kind == NodeKind::ImportNode)
+    {
+      const auto & argument = original.getImportForNode(node);
+      if (!other.hasNodeForImport(argument))
+        return std::nullopt;
+      return other.getNodeForImport(argument);
+    }
+    if (kind == NodeKind::LambdaNode)
+    {
+      const auto & lambda = original.getLambdaForNode(node);
+      if (!other.hasNodeForLambda(lambda))
+        return std::nullopt;
+      return other.getNodeForLambda(lambda);
+    }
+    if (kind == NodeKind::MallocNode)
+    {
+      const auto & malloc = original.getMallocForNode(node);
+      if (!other.hasNodeForMalloc(malloc))
+        return std::nullopt;
+      return other.getNodeForMalloc(malloc);
+    }
+    if (kind == NodeKind::ExternalNode)
+    {
+      return other.getExternalMemoryNode();
+    }
+
+    throw std::logic_error("Unknown type of memory node");
   };
 
-  // Given two nodes, checks if the first node points to everything the second points to.
-  // The nodes can belong to different PointsToGraphs.
-  auto HasSupersetOfPointees = [&GetCorrespondingMemoryNode](
-                                   const PointsToGraph::Node & superset,
-                                   const PointsToGraph::Node & subset)
+  // Given two nodes, checks if the superset node points to everything the subset node points to,
+  // and that the superset node has all flags the subset node has
+  auto isNodeSuperset = [&](const PointsToGraph & supersetGraph,
+                            NodeIndex supersetNode,
+                            const PointsToGraph & subsetGraph,
+                            NodeIndex subsetNode)
   {
-    // Early return if the subset is larger
-    if (subset.NumTargets() > superset.NumTargets())
+    // The superset node must have any flags set on the subset node
+    if (subsetGraph.isExternallyAvailable(subsetNode)
+        && !supersetGraph.isExternallyAvailable(supersetNode))
       return false;
 
-    for (auto & subsetTarget : subset.Targets())
-    {
-      auto correspondingTarget = GetCorrespondingMemoryNode(subsetTarget, superset.Graph());
+    if (subsetGraph.isTargetingAllExternallyAvailable(subsetNode)
+        && !supersetGraph.isTargetingAllExternallyAvailable(supersetNode))
+      return false;
 
-      // Check if the superset is pointing to the target
-      if (correspondingTarget == nullptr || !superset.HasTarget(*correspondingTarget))
+    // Make sure all targets of the subset node are also targets of the superset node
+    for (auto subsetTarget : subsetGraph.getExplicitTargets(subsetNode).Items())
+    {
+      // There must be a corresponding memory node representing the target in the superset graph
+      auto correspondingTarget =
+          getCorrespondingMemoryNode(subsetTarget, subsetGraph, supersetGraph);
+      if (!correspondingTarget.has_value())
         return false;
+
+      // If the target is a member of the explicit targets of the superset node, it is OK
+      if (supersetGraph.getExplicitTargets(supersetNode).Contains(*correspondingTarget))
+        continue;
+
+      // The target can also be an implicit target of the superset node
+      if (supersetGraph.isTargetingAllExternallyAvailable(supersetNode)
+          && supersetGraph.isExternallyAvailable(*correspondingTarget))
+        continue;
+
+      // If we get here, the subset node has a target that the superset node does not
+      return false;
     }
+
     return true;
   };
 
   // Given a memory node from the subgraph, check that a corresponding node exists in this graph.
   // All edges the other node has, must have corresponding edges in this graph.
   // If the other node is marked as escaping, the corresponding node must be as well.
-  auto HasSuperOfMemoryNode = [&](const PointsToGraph::MemoryNode & subNode)
+  auto hasSuperOfMemoryNode = [&](NodeIndex subsetNode)
   {
-    auto thisNode = GetCorrespondingMemoryNode(subNode, *this);
-    if (thisNode == nullptr)
+    auto thisNode = getCorrespondingMemoryNode(subsetNode, subgraph, *this);
+    if (!thisNode.has_value())
       return false;
 
-    if (subNode.IsModuleEscaping() && !thisNode->IsModuleEscaping())
-      return false;
-
-    return HasSupersetOfPointees(*thisNode, subNode);
+    return isNodeSuperset(*this, *thisNode, subgraph, subsetNode);
   };
 
-  // Early return if the subgraph is representing more memory objects or registers than us
-  if (subgraph.NumMemoryNodes() > NumMemoryNodes())
-    return false;
-  if (subgraph.RegisterNodeMap_.size() > RegisterNodeMap_.size())
-    return false;
-
   // Iterate through all memory nodes in the subgraph, and make sure we have corresponding nodes
-  for (auto & node : subgraph.AllocaNodes())
+  for (const auto node : subgraph.allocaNodes())
   {
-    if (!HasSuperOfMemoryNode(node))
+    if (!hasSuperOfMemoryNode(node))
       return false;
   }
-  for (auto & node : subgraph.DeltaNodes())
+  for (const auto node : subgraph.deltaNodes())
   {
-    if (!HasSuperOfMemoryNode(node))
+    if (!hasSuperOfMemoryNode(node))
       return false;
   }
-  for (auto & node : subgraph.ImportNodes())
+  for (const auto node : subgraph.importNodes())
   {
-    if (!HasSuperOfMemoryNode(node))
+    if (!hasSuperOfMemoryNode(node))
       return false;
   }
-  for (auto & node : subgraph.LambdaNodes())
+  for (const auto node : subgraph.lambdaNodes())
   {
-    if (!HasSuperOfMemoryNode(node))
+    if (!hasSuperOfMemoryNode(node))
       return false;
   }
-  for (auto & node : subgraph.MallocNodes())
+  for (const auto node : subgraph.mallocNodes())
   {
-    if (!HasSuperOfMemoryNode(node))
+    if (!hasSuperOfMemoryNode(node))
       return false;
   }
 
   // For each register mapped to a RegisterNode in the subgraph, this graph must also have mapped
   // the same register to be a supergraph. The RegisterNode must point to a superset of what
   // the subgraph's RegisterNode points to.
-  for (auto [rvsdgOutput, subNode] : subgraph.RegisterNodeMap_)
+  for (auto [rvsdgOutput, subNode] : subgraph.registerMap_)
   {
-    auto correspondingRegisterNode = RegisterNodeMap_.find(rvsdgOutput);
-    if (correspondingRegisterNode == RegisterNodeMap_.end())
+    if (!hasNodeForRegister(*rvsdgOutput))
       return false;
+    const auto supersetRegisterNode = getNodeForRegister(*rvsdgOutput);
 
-    if (!HasSupersetOfPointees(*correspondingRegisterNode->second, *subNode))
+    if (!isNodeSuperset(*this, supersetRegisterNode, subgraph, subNode))
       return false;
   }
 
   return true;
 }
 
-std::string
-PointsToGraph::ToDot(
-    const PointsToGraph & pointsToGraph,
-    const std::unordered_map<const rvsdg::Output *, std::string> & outputMap)
+PointsToGraph::NodeIndex
+PointsToGraph::addNode(
+    NodeKind kind,
+    bool externallyAvailable,
+    bool isConstant,
+    std::optional<size_t> memorySize,
+    const void * object)
 {
-  auto nodeFill = [&](const PointsToGraph::Node & node)
-  {
-    // Nodes that are marked as having escaped the module get a background color
-    if (const auto memoryNode = dynamic_cast<const MemoryNode *>(&node))
-      if (pointsToGraph.GetEscapedMemoryNodes().Contains(memoryNode))
-        return "style=filled, fillcolor=\"yellow\", ";
-    return "";
-  };
+  const auto index = nodeData_.size();
 
-  auto nodeShape = [](const PointsToGraph::Node & node)
-  {
-    static std::unordered_map<std::type_index, std::string> shapes(
-        { { typeid(AllocaNode), "box" },
-          { typeid(DeltaNode), "box" },
-          { typeid(ImportNode), "box" },
-          { typeid(LambdaNode), "box" },
-          { typeid(MallocNode), "box" },
-          { typeid(RegisterNode), "oval" },
-          { typeid(UnknownMemoryNode), "box" },
-          { typeid(ExternalMemoryNode), "box" } });
+  nodeData_.emplace_back(NodeData(kind, externallyAvailable, false, isConstant, memorySize));
+  nodeExplicitTargets_.emplace_back();
+  nodeObjects_.push_back(object);
 
-    if (shapes.find(typeid(node)) != shapes.end())
-      return shapes[typeid(node)];
+  if (externallyAvailable)
+    externallyAvailableNodes_.push_back(index);
 
-    JLM_UNREACHABLE("Unknown points-to graph Node type.");
-  };
-
-  auto nodeLabel = [&](const PointsToGraph::Node & node)
-  {
-    // If the node is NOT a register node, then the label is just the DebugString
-    auto registerNode = dynamic_cast<const RegisterNode *>(&node);
-    if (registerNode == nullptr)
-    {
-      return node.DebugString();
-    }
-
-    // Otherwise, include the mapped name (if any) to its rvsdg::outputs.
-    std::string label;
-    auto outputs = registerNode->GetOutputs();
-    for (auto output : outputs.Items())
-    {
-      label += RegisterNode::ToString(*output);
-      if (auto it = outputMap.find(output); it != outputMap.end())
-      {
-        label += util::strfmt(" (", it->second, ")");
-      }
-      label += "\\n";
-    }
-
-    return label;
-  };
-
-  auto nodeString = [&](const PointsToGraph::Node & node)
-  {
-    return util::strfmt(
-        "{ ",
-        reinterpret_cast<uintptr_t>(&node),
-        " [",
-        nodeFill(node),
-        "label = \"",
-        nodeLabel(node),
-        "\" ",
-        "shape = \"",
-        nodeShape(node),
-        "\"]; }\n");
-  };
-
-  auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
-  {
-    return util::strfmt(
-        reinterpret_cast<uintptr_t>(&node),
-        " -> ",
-        reinterpret_cast<uintptr_t>(&target),
-        "\n");
-  };
-
-  auto printNodeAndEdges = [&](const PointsToGraph::Node & node)
-  {
-    std::string dot;
-    dot += nodeString(node);
-    for (auto & target : node.Targets())
-      dot += edgeString(node, target);
-
-    return dot;
-  };
-
-  std::string dot("digraph PointsToGraph {\n");
-  for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    dot += printNodeAndEdges(allocaNode);
-
-  for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    dot += printNodeAndEdges(deltaNode);
-
-  for (auto & importNode : pointsToGraph.ImportNodes())
-    dot += printNodeAndEdges(importNode);
-
-  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    dot += printNodeAndEdges(lambdaNode);
-
-  for (auto & mallocNode : pointsToGraph.MallocNodes())
-    dot += printNodeAndEdges(mallocNode);
-
-  for (auto & registerNode : pointsToGraph.RegisterNodes())
-    dot += printNodeAndEdges(registerNode);
-
-  dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
-  dot += nodeString(pointsToGraph.GetExternalMemoryNode());
-  dot += "label=\"Yellow = Escaping memory node\"\n";
-  dot += "}\n";
-
-  return dot;
-}
-
-PointsToGraph::Node::~Node() noexcept = default;
-
-PointsToGraph::Node::TargetRange
-PointsToGraph::Node::Targets()
-{
-  return { TargetIterator(Targets_.begin()), TargetIterator(Targets_.end()) };
-}
-
-PointsToGraph::Node::TargetConstRange
-PointsToGraph::Node::Targets() const
-{
-  return { TargetConstIterator(Targets_.begin()), TargetConstIterator(Targets_.end()) };
-}
-
-bool
-PointsToGraph::Node::HasTarget(const PointsToGraph::MemoryNode & target) const
-{
-  return Targets_.find(const_cast<MemoryNode *>(&target)) != Targets_.end();
-}
-
-PointsToGraph::Node::SourceRange
-PointsToGraph::Node::Sources()
-{
-  return { SourceIterator(Sources_.begin()), SourceIterator(Sources_.end()) };
-}
-
-PointsToGraph::Node::SourceConstRange
-PointsToGraph::Node::Sources() const
-{
-  return { SourceConstIterator(Sources_.begin()), SourceConstIterator(Sources_.end()) };
-}
-
-bool
-PointsToGraph::Node::HasSource(const PointsToGraph::Node & source) const
-{
-  return Sources_.find(const_cast<Node *>(&source)) != Sources_.end();
+  return index;
 }
 
 void
-PointsToGraph::Node::AddEdge(PointsToGraph::MemoryNode & target)
+PointsToGraph::dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph & pointsToGraph)
 {
-  if (&Graph() != &target.Graph())
-    throw util::Error("Points-to graph nodes are not in the same graph.");
+  const auto [explicitEdges, totalEdges] = pointsToGraph.numEdges();
 
-  Targets_.insert(&target);
-  target.Sources_.insert(this);
-}
+  auto & graph = graphWriter.CreateGraph();
+  graph.SetLabel("Points-to graph");
+  graph.AppendToLabel(
+      util::strfmt("Explicit edges: ", explicitEdges, ", total edges: ", totalEdges));
 
-void
-PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
-{
-  if (&Graph() != &target.Graph())
-    throw util::Error("Points-to graph nodes are not in the same graph.");
+  std::vector<util::graph::Node *> nodes;
+  nodes.resize(pointsToGraph.numNodes());
 
-  target.Sources_.erase(this);
-  Targets_.erase(&target);
-}
-
-PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
-
-std::string
-PointsToGraph::RegisterNode::ToString(const rvsdg::Output & output)
-{
-  auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
-
-  if (node != nullptr)
-    return util::strfmt(node->DebugString(), ":o", output.index());
-
-  node = output.region()->node();
-  if (node != nullptr)
-    return util::strfmt(node->DebugString(), ":a", output.index());
-
-  if (auto graphImport = dynamic_cast<const GraphImport *>(&output))
+  for (NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
   {
-    return util::strfmt("import:", graphImport->Name());
+    auto & node = graph.CreateNode();
+    node.SetLabel(pointsToGraph.getNodeDebugString(ptgNode, '\n'));
+    if (pointsToGraph.isExternallyAvailable(ptgNode))
+      node.SetFillColor(util::graph::Colors::Yellow);
+
+    if (pointsToGraph.isMemoryNode(ptgNode))
+    {
+      // Memory nodes are boxes, and have an associated object
+      node.SetShape("box");
+      node.SetAttributeObject("rvsdgObject", pointsToGraph.nodeObjects_[ptgNode]);
+    }
+    else
+    {
+      // Register nodes are oval
+      node.SetShape("oval");
+    }
+
+    nodes[ptgNode] = &node;
   }
 
-  return "RegisterNode";
-}
-
-std::string
-PointsToGraph::RegisterNode::DebugString() const
-{
-  auto & outputs = GetOutputs();
-
-  size_t n = 0;
-  std::string debugString;
-  for (auto output : outputs.Items())
+  // Attach all rvsdg outputs to their RegisterNode, using incrementing attribute names
+  std::unordered_map<NodeIndex, size_t> outputCount;
+  for (const auto & [rvsdgOutput, ptgNode] : pointsToGraph.registerMap_)
   {
-    debugString += ToString(*output);
-    debugString += n != (outputs.Size() - 1) ? "\n" : "";
-    n++;
+    const auto count = outputCount[ptgNode]++;
+    nodes[ptgNode]->SetAttributeObject(util::strfmt("output", count), rvsdgOutput);
   }
 
-  return debugString;
+  // Add all explicit edges
+  for (NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
+  {
+    for (auto target : pointsToGraph.getExplicitTargets(ptgNode).Items())
+    {
+      graph.CreateEdge(*nodes[ptgNode], *nodes[target], true);
+    }
+  }
 }
-
-PointsToGraph::MemoryNode::~MemoryNode() noexcept = default;
-
-PointsToGraph::AllocaNode::~AllocaNode() noexcept = default;
 
 std::string
-PointsToGraph::AllocaNode::DebugString() const
+PointsToGraph::dumpDot(const PointsToGraph & pointsToGraph)
 {
-  return GetAllocaNode().DebugString();
-}
-
-std::optional<size_t>
-PointsToGraph::AllocaNode::tryGetSize() const noexcept
-{
-  const auto allocaOp = util::assertedCast<const AllocaOperation>(&AllocaNode_->GetOperation());
-
-  // An alloca has a count parameter, which on rare occasions is not just the constant 1.
-  const auto elementCount = tryGetConstantSignedInteger(*AllocaNode_->input(0)->origin());
-  if (elementCount.has_value())
-    return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
-
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::AllocaNode::isConstant() const noexcept
-{
-  return false;
-}
-
-PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
-
-std::string
-PointsToGraph::DeltaNode::DebugString() const
-{
-  return GetDeltaNode().DebugString();
-}
-
-std::optional<size_t>
-PointsToGraph::DeltaNode::tryGetSize() const noexcept
-{
-  return GetTypeAllocSize(*DeltaNode_->GetOperation().Type());
-}
-
-bool
-PointsToGraph::DeltaNode::isConstant() const noexcept
-{
-  return DeltaNode_->constant();
-}
-
-PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
-
-std::string
-PointsToGraph::LambdaNode::DebugString() const
-{
-  return GetLambdaNode().DebugString();
-}
-
-std::optional<size_t>
-PointsToGraph::LambdaNode::tryGetSize() const noexcept
-{
-  // Functions should never be read from or written to, so they have no size
-  return 0;
-}
-
-bool
-PointsToGraph::LambdaNode::isConstant() const noexcept
-{
-  return true;
-}
-
-PointsToGraph::MallocNode::~MallocNode() noexcept = default;
-
-std::string
-PointsToGraph::MallocNode::DebugString() const
-{
-  return GetMallocNode().DebugString();
-}
-
-std::optional<size_t>
-PointsToGraph::MallocNode::tryGetSize() const noexcept
-{
-  // If the size parameter of the malloc node is a constant, that is our size
-  auto size = tryGetConstantSignedInteger(*MallocNode_->input(0)->origin());
-
-  // Only return the size if it is a positive integer, to avoid unsigned underflow
-  if (size.has_value() && *size >= 0)
-    return *size;
-
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::MallocNode::isConstant() const noexcept
-{
-  return false;
-}
-
-PointsToGraph::ImportNode::~ImportNode() noexcept = default;
-
-std::string
-PointsToGraph::ImportNode::DebugString() const
-{
-  return GetArgument().Name();
-}
-
-std::optional<size_t>
-PointsToGraph::ImportNode::tryGetSize() const noexcept
-{
-  auto size = GetTypeAllocSize(*GraphImport_->ValueType());
-
-  // C code can contain declarations like this:
-  //     extern char myArray[];
-  // which means there is an array of unknown size defined in a different module.
-  // In the LLVM IR the import gets an array length of 0, but that is not correct.
-  if (size == 0)
-    return std::nullopt;
-
-  return size;
-}
-
-bool
-PointsToGraph::ImportNode::isConstant() const noexcept
-{
-  return GraphImport_->isConstant();
-}
-
-PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;
-
-std::string
-PointsToGraph::UnknownMemoryNode::DebugString() const
-{
-  return "UnknownMemory";
-}
-
-std::optional<size_t>
-PointsToGraph::UnknownMemoryNode::tryGetSize() const noexcept
-{
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::UnknownMemoryNode::isConstant() const noexcept
-{
-  return false;
-}
-
-PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept = default;
-
-std::string
-PointsToGraph::ExternalMemoryNode::DebugString() const
-{
-  return "ExternalMemory";
-}
-
-std::optional<size_t>
-PointsToGraph::ExternalMemoryNode::tryGetSize() const noexcept
-{
-  return std::nullopt;
-}
-
-bool
-PointsToGraph::ExternalMemoryNode::isConstant() const noexcept
-{
-  return false;
+  util::graph::Writer writer;
+  dumpGraph(writer, pointsToGraph);
+  std::ostringstream ss;
+  writer.outputAllGraphs(ss, util::graph::OutputFormat::Dot);
+  return ss.str();
 }
 
 }

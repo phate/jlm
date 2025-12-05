@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -40,7 +41,7 @@ public:
    * @param node the node operating on memory
    * @return the Mod/Ref set of the node.
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const = 0;
 
   /**
@@ -48,7 +49,7 @@ public:
    * @param gamma the gamma node
    * @return the entry Mod/Ref set for the gamma
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaEntryModRef(const rvsdg::GammaNode & gamma) const = 0;
 
   /**
@@ -56,7 +57,7 @@ public:
    * @param gamma the gamma node
    * @return the exit Mod/Ref set for the gamma
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetGammaExitModRef(const rvsdg::GammaNode & gamma) const = 0;
 
   /**
@@ -64,7 +65,7 @@ public:
    * @param theta the theta node
    * @return the Mod/Ref set for the theta
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetThetaModRef(const rvsdg::ThetaNode & theta) const = 0;
 
   /**
@@ -72,7 +73,7 @@ public:
    * @param lambda the lambda node
    * @return the entry Mod/Ref set for the lambda
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const = 0;
 
   /**
@@ -80,7 +81,7 @@ public:
    * @param lambda the lambda node
    * @return the exit Mod/Ref set for the lambda
    */
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  [[nodiscard]] virtual const util::HashSet<PointsToGraph::NodeIndex> &
   GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const = 0;
 };
 
