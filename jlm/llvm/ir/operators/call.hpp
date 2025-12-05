@@ -38,7 +38,7 @@ public:
     RecursiveDirectCall,
 
     /**
-     * A call to an imported function, i.e., a function from outside of the module.
+     * A direct call to an imported function, i.e., a function from outside the current module.
      */
     ExternalCall,
 

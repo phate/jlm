@@ -13,6 +13,7 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -65,8 +66,11 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto NumSimpleAllocas_ = "#SimpleAllocas";
   static constexpr auto NumNonReentrantAllocas_ = "#NonReentrantAllocas";
   static constexpr auto NumCallGraphSccs_ = "#CallGraphSccs";
+  static constexpr auto NumFunctionsInActiveSetjmp_ = "#FunctionsInActiveSetjmp";
+  static constexpr auto NumCallGraphSccsCanCallExternal_ = "#CallGraphSccsCanCallExternal";
 
   static constexpr auto CallGraphTimer_ = "CallGraphTimer";
+  static constexpr auto SccsThatCanCallExternalTimer_ = "SccsThatCanCallExternalTimer";
   static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
   static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
   static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
@@ -88,16 +92,30 @@ public:
   }
 
   void
-  StartCallGraphStatistics()
+  startCallGraphStatistics()
   {
     AddTimer(CallGraphTimer_).start();
   }
 
   void
-  StopCallGraphStatistics(size_t numSccs)
+  stopCallGraphStatistics(size_t numSccs, size_t numFunctionsInActiveSetjmp)
   {
     GetTimer(CallGraphTimer_).stop();
     AddMeasurement(NumCallGraphSccs_, numSccs);
+    AddMeasurement(NumFunctionsInActiveSetjmp_, numFunctionsInActiveSetjmp);
+  }
+
+  void
+  startFindSccsThatCanCallExternalStatistics()
+  {
+    AddTimer(SccsThatCanCallExternalTimer_).start();
+  }
+
+  void
+  stopFindSccsThatCanCallExternalStatistics(size_t numSccsCanCallExternal)
+  {
+    GetTimer(SccsThatCanCallExternalTimer_).stop();
+    AddMeasurement(NumCallGraphSccsCanCallExternal_, numSccsCanCallExternal);
   }
 
   void
@@ -374,14 +392,14 @@ struct RegionAwareModRefSummarizer::Context
    *
    * External functions are not included in these sets, see \ref ExternalNodeSccIndex.
    *
-   * Assigned in \ref CreateCallGraph(). Remains constant after.
+   * Assigned in \ref createCallGraph(). Remains constant after.
    */
   std::vector<util::HashSet<const rvsdg::LambdaNode *>> SccFunctions;
 
   /**
    * The index of the SCC in the call graph that represent containing all external functions
    *
-   * Assigned in \ref CreateCallGraph(). Remains constant after.
+   * Assigned in \ref createCallGraph(). Remains constant after.
    */
   size_t ExternalNodeSccIndex = 0;
 
@@ -390,16 +408,45 @@ struct RegionAwareModRefSummarizer::Context
    * Since SCCs are ordered in reverse topological order, an SCC never targets higher indices.
    * If there is any possibility of recursion within an SCC, it also targets itself.
    *
-   * Assigned in \ref CreateCallGraph(). Remains constant after.
+   * Assigned in \ref createCallGraph(). Remains constant after.
    */
   std::vector<util::HashSet<size_t>> SccCallTargets;
 
   /**
    * A mapping from functions to the index of the SCC they belong to in the call graph
    *
-   * Assigned in \ref CreateCallGraph(). Remains constant after.
+   * Assigned in \ref createCallGraph(). Remains constant after.
    */
   std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex;
+
+  /**
+   * The set of functions that can be on the top of the stack within an active setjmp.
+   * In these functions, any call to an external function may trigger a longjmp,
+   * clearing the stack back to the setjmp point.
+   *
+   * Call stacks that go via external modules do not count.
+   * The setjmp call, and all intermediate calls, must occur in this module. Take for example:
+   *
+   *   /-[external] <-
+   *  v               \
+   * f() --> g() --> h() --> k()
+   *         \---> setjmp()
+   *
+   * Here, the functions g(), h() and k() should be marked as being in an active setjmp,
+   * but f() should not, as g() can only call f() via [external].
+   *
+   * Assigned in \ref createCallGraph(). Remains constant after.
+   */
+  util::HashSet<const rvsdg::LambdaNode *> FunctionsInActiveSetjmp;
+
+  /**
+   * This array is true iff it is possible for a function in the given SCC
+   * to call an externally defined function, either directly or indirectly.
+   * The array is indexed by SCC index.
+   *
+   * Assigned in \ref findSccsThatCanCallExternal(). Remains constant after.
+   */
+  std::vector<bool> SccCanCallExternal;
 
   /**
    * For each SCC, only allocas defined within the SCC, or within a predecessor of the SCC,
@@ -463,9 +510,15 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   Context_ = std::make_unique<Context>(pointsToGraph);
   auto statistics = Statistics::Create(rvsdgModule, pointsToGraph);
 
-  statistics->StartCallGraphStatistics();
-  CreateCallGraph(rvsdgModule);
-  statistics->StopCallGraphStatistics(Context_->SccFunctions.size());
+  statistics->startCallGraphStatistics();
+  createCallGraph(rvsdgModule);
+  statistics->stopCallGraphStatistics(
+      Context_->SccFunctions.size(),
+      Context_->FunctionsInActiveSetjmp.Size());
+
+  statistics->startFindSccsThatCanCallExternalStatistics();
+  const auto numSccsCanCallExternal = findSccsThatCanCallExternal();
+  statistics->stopFindSccsThatCanCallExternalStatistics(numSccsCanCallExternal);
 
   statistics->StartAllocasDeadInSccStatistics();
   FindAllocasDeadInSccs();
@@ -546,8 +599,30 @@ CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
   return result;
 }
 
+/**
+ * Helper function for checking if the given call is a call to the special setjmp function.
+ * @param callNode the node in question
+ * @return true if the call is a direct call to setjmp, false otherwise
+ */
+static bool
+isSetjmpCall(const rvsdg::SimpleNode & callNode)
+{
+  const auto classification = llvm::CallOperation::ClassifyCall(callNode);
+  if (!classification->IsExternalCall())
+    return false;
+
+  const auto & regionArgument = classification->GetImport();
+  if (const auto graphImport = dynamic_cast<const llvm::GraphImport *>(&regionArgument))
+  {
+    // In C and C++, setjmp is a macro to some underlying function. Clang uses _setjmp
+    return graphImport->Name() == "_setjmp";
+  }
+
+  return false;
+}
+
 void
-RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
+RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
@@ -569,10 +644,20 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   // Outgoing edges for each node in the call graph
   std::vector<util::HashSet<size_t>> callGraphSuccessors(numCallGraphNodes);
 
+  // Track the nodes in the call graph that contain direct calls to setjmp
+  util::HashSet<size_t> nodesCallingSetjmp;
+
   // Add outgoing edges from the given caller to any function the call may target
-  const auto HandleCall = [&](rvsdg::Node & callNode, size_t callerIndex) -> void
+  const auto handleCall = [&](const rvsdg::SimpleNode & callNode, size_t callerIndex) -> void
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
+    if (isSetjmpCall(callNode))
+    {
+      // This function is calling setjmp, so only add it to the set of functions on setjmp stacks
+      nodesCallingSetjmp.insert(callerIndex);
+      return;
+    }
+
     const auto targetPtr = callNode.input(0)->origin();
     const auto & targetPtrNode = pointsToGraph.GetRegisterNode(*targetPtr);
 
@@ -601,29 +686,33 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   };
 
   // Recursive function finding all call operations, adding edges to the call graph
-  const std::function<void(rvsdg::Region &, size_t)> HandleCalls = [&](rvsdg::Region & region,
-                                                                       size_t callerIndex) -> void
+  const std::function<void(const rvsdg::Region &, size_t)> handleCalls =
+      [&](const rvsdg::Region & region, size_t callerIndex) -> void
   {
     for (auto & node : region.Nodes())
     {
-      if (is<CallOperation>(&node))
+      if (const auto [callNode, callOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(node);
+          callOp)
       {
-        HandleCall(node, callerIndex);
+        handleCall(*callNode, callerIndex);
       }
-      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
-      {
-        for (size_t i = 0; i < structural->nsubregions(); i++)
-        {
-          HandleCalls(*structural->subregion(i), callerIndex);
-        }
-      }
+
+      rvsdg::MatchType(
+          node,
+          [&](const rvsdg::StructuralNode & structural)
+          {
+            for (auto & subregion : structural.Subregions())
+            {
+              handleCalls(subregion, callerIndex);
+            }
+          });
     }
   };
 
   // For all functions, visit all their calls and add outgoing edges in the call graph
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    HandleCalls(*lambdaNodes[i]->subregion(), i);
+    handleCalls(*lambdaNodes[i]->subregion(), i);
 
     // If the function has escaped, add an edge from the node representing all external functions
     const auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*lambdaNodes[i]);
@@ -635,6 +724,29 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
 
   // Finally add the fact that the external node may call itself
   callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
+
+  // Go through the call graph and mark all functions that can be called while a setjmp is active.
+  // Calls via external functions do not count, so we skip going through that node.
+  std::queue<size_t> onSetjmpStackQueue;
+  for (const auto function : nodesCallingSetjmp.Items())
+    onSetjmpStackQueue.push(function);
+  while (!onSetjmpStackQueue.empty())
+  {
+    const auto functionNodeIndex = onSetjmpStackQueue.front();
+    onSetjmpStackQueue.pop();
+
+    // Mark the LambdaNode* itself as possibly being on a setjmp stack
+    Context_->FunctionsInActiveSetjmp.insert(lambdaNodes[functionNodeIndex]);
+
+    // Go through all successors and mark them as on a setjmp stack if not already marked
+    for (const auto calleeNodeIndex : callGraphSuccessors[functionNodeIndex].Items())
+    {
+      if (calleeNodeIndex == externalNodeIndex)
+        continue;
+      if (nodesCallingSetjmp.insert(calleeNodeIndex))
+        onSetjmpStackQueue.push(calleeNodeIndex);
+    }
+  }
 
   // Used by the implementation of Tarjan's SCC algorithm
   const auto getSuccessors = [&](size_t nodeIndex)
@@ -672,6 +784,39 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
 
   // Also note which SCC contains all external functions
   Context_->ExternalNodeSccIndex = sccIndex[externalNodeIndex];
+}
+
+size_t
+RegionAwareModRefSummarizer::findSccsThatCanCallExternal()
+{
+  const auto numSccs = Context_->SccCallTargets.size();
+
+  // Initially, only the SCC containing external can call external
+  Context_->SccCanCallExternal.resize(numSccs);
+  Context_->SccCanCallExternal[Context_->ExternalNodeSccIndex] = true;
+  size_t numSccsCanCallExternal = 1;
+
+  // Traverse the SCCs in reverse topological order,
+  // and check if any of the successors can reach external
+  for (size_t sccIndex = 0; sccIndex < numSccs; sccIndex++)
+  {
+    if (Context_->SccCanCallExternal[sccIndex])
+      continue;
+
+    for (auto targetScc : Context_->SccCallTargets[sccIndex].Items())
+    {
+      // The target should already have been processed at this point
+      JLM_ASSERT(targetScc <= sccIndex);
+      if (Context_->SccCanCallExternal[targetScc])
+      {
+        numSccsCanCallExternal++;
+        Context_->SccCanCallExternal[sccIndex] = true;
+        break;
+      }
+    }
+  }
+
+  return numSccsCanCallExternal;
 }
 
 void
@@ -1152,6 +1297,9 @@ RegionAwareModRefSummarizer::AnnotateCall(
   const auto targetPtr = callNode.input(0)->origin();
   const auto & targetPtrNode = Context_->pointsToGraph.GetRegisterNode(*targetPtr);
 
+  // Is it possible for this call to, either directly or indirectly, call into external functions
+  bool canCallExternalFunction = false;
+
   // Go through all locations the called function pointer may target
   for (auto & callee : targetPtrNode.Targets())
   {
@@ -1160,12 +1308,16 @@ RegionAwareModRefSummarizer::AnnotateCall(
       const auto & lambdaNode = lambdaCallee->GetLambdaNode();
       const auto targetModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambdaNode);
       AddModRefSimpleConstraint(targetModRefSet, callModRef);
+
+      const auto targetScc = Context_->FunctionToSccIndex[&lambdaNode];
+      canCallExternalFunction |= Context_->SccCanCallExternal[targetScc];
     }
     else if (
         PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
         || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
     {
       AddModRefSimpleConstraint(Context_->ExternalModRefIndex, callModRef);
+      canCallExternalFunction = true;
     }
   }
 
@@ -1176,6 +1328,18 @@ RegionAwareModRefSummarizer::AnnotateCall(
     AddModRefSetBlocklist(
         callModRef,
         Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
+  }
+
+  // If we are currently within an active setjmp stack, and the call we are making might end up
+  // calling external functions (such as a longjmp), the function call might return to a
+  // completely different place on the call stack.
+  // We must therefore conservatively assume that this call is sequentialized with stores.
+  const bool possiblyActiveSetjmp = Context_->FunctionsInActiveSetjmp.Contains(&lambda);
+  if (canCallExternalFunction && possiblyActiveSetjmp)
+  {
+    // Get the Mod/Ref set for the calling function, propagate it to the Mod/Ref of the call
+    const auto lambdaModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambda);
+    AddModRefSimpleConstraint(lambdaModRefSet, callModRef);
   }
 
   return callModRef;
