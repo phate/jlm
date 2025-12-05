@@ -1389,7 +1389,7 @@ JLM_UNIT_TEST_REGISTER(
     TestEscapedMemory3)
 
 static void
-TestSetjmpHandling()
+testSetjmpHandling()
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -1405,18 +1405,24 @@ TestSetjmpHandling()
   //     opaque();
   // }
   //
+  // static void k() {
+  //     // This call does nothing
+  // }
+  //
   // static void g(int* p) {
   //     if (_setjmp(&buf))
   //         return;
   //     else {
   //         *p = 10;
   //         h();
+  //         k(); // Nothing should be routed into this call
   //     }
   // }
   //
   // int f() {
   //     int a;
   //     g(a);
+  //     h(); // This call to h should not contain a in its Mod/Ref set
   //     return a;
   // }
 
@@ -1470,7 +1476,9 @@ TestSetjmpHandling()
 
   rvsdg::SimpleNode * callOpaqueNode = nullptr;
   rvsdg::SimpleNode * callHNode = nullptr;
+  rvsdg::SimpleNode * callKNode = nullptr;
   rvsdg::SimpleNode * allocaNode = nullptr;
+  rvsdg::SimpleNode * callHFromFNode = nullptr;
 
   auto & hLambdaNode = *rvsdg::LambdaNode::Create(
       rootRegion,
@@ -1491,6 +1499,14 @@ TestSetjmpHandling()
     hLambdaNode.finalize({ ioState, memoryState });
   }
 
+  auto & kLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(unitFunctionType, "k", Linkage::internalLinkage));
+  {
+    const auto arguments = kLambdaNode.GetFunctionArguments();
+    kLambdaNode.finalize({ arguments.at(0), arguments.at(1) });
+  }
+
   auto & gLambdaNode = *rvsdg::LambdaNode::Create(
       rootRegion,
       LlvmLambdaOperation::Create(gFunctionType, "g", Linkage::internalLinkage));
@@ -1500,9 +1516,10 @@ TestSetjmpHandling()
     auto ioState = arguments.at(1);
     auto memoryState = arguments.at(2);
 
-    const auto hCtxVar = gLambdaNode.AddContextVar(*hLambdaNode.output());
     const auto setjmpCtxVar = gLambdaNode.AddContextVar(setjmpImport);
     const auto bufCtxVar = gLambdaNode.AddContextVar(bufGlobal.output());
+    const auto hCtxVar = gLambdaNode.AddContextVar(*hLambdaNode.output());
+    const auto kCtxVar = gLambdaNode.AddContextVar(*kLambdaNode.output());
 
     const auto setjmpCall = CallOperation::Create(
         setjmpCtxVar.inner,
@@ -1516,6 +1533,7 @@ TestSetjmpHandling()
     auto & gammaNode = rvsdg::GammaNode::Create(matchOutput, 2, { unitType, unitType });
     auto pEntryVar = gammaNode.AddEntryVar(p);
     auto hEntryVar = gammaNode.AddEntryVar(hCtxVar.inner);
+    auto kEntryVar = gammaNode.AddEntryVar(kCtxVar.inner);
     auto ioStateEntryVar = gammaNode.AddEntryVar(ioState);
     auto memoryStateEntryVar = gammaNode.AddEntryVar(memoryState);
     auto & elseRegion = *gammaNode.subregion(0);
@@ -1532,8 +1550,14 @@ TestSetjmpHandling()
         { ioStateEntryVar.branchArgument[0], storeOutputs[0] });
     callHNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*hCall[0]);
 
-    ioState = gammaNode.AddExitVar({ hCall[0], ioStateEntryVar.branchArgument[1] }).output;
-    memoryState = gammaNode.AddExitVar({ hCall[1], memoryStateEntryVar.branchArgument[1] }).output;
+    const auto kCall = CallOperation::Create(
+        kEntryVar.branchArgument[0],
+        unitFunctionType,
+        { hCall[0], hCall[1] });
+    callKNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*kCall[0]);
+
+    ioState = gammaNode.AddExitVar({ kCall[0], ioStateEntryVar.branchArgument[1] }).output;
+    memoryState = gammaNode.AddExitVar({ kCall[1], memoryStateEntryVar.branchArgument[1] }).output;
 
     gLambdaNode.finalize({ ioState, memoryState });
   }
@@ -1547,6 +1571,7 @@ TestSetjmpHandling()
     const auto memoryStateIn = arguments.at(1);
 
     const auto gCtxVar = fLambdaNode.AddContextVar(*gLambdaNode.output());
+    const auto hCtxVar = fLambdaNode.AddContextVar(*hLambdaNode.output());
 
     const auto constant1 =
         IntegerConstantOperation::Create(*fLambdaNode.subregion(), 32, 1).output(0);
@@ -1561,7 +1586,11 @@ TestSetjmpHandling()
         gFunctionType,
         { aAlloca[0], ioStateIn, memoryStateJoin.output(0) });
 
-    auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], { gCall[1] }, int32Type, 4);
+    const auto hCall =
+        CallOperation::Create(hCtxVar.inner, unitFunctionType, { gCall[0], gCall[1] });
+    callHFromFNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*hCall[0]);
+
+    auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], { hCall[1] }, int32Type, 4);
 
     fLambdaNode.finalize({ loadOutputs[0], gCall[0], loadOutputs[1] });
   }
@@ -1582,21 +1611,40 @@ TestSetjmpHandling()
   // Assert
   assert(callOpaqueNode);
   assert(callHNode);
+  assert(callKNode);
   assert(allocaNode);
+  assert(callHFromFNode);
 
   const auto & allocaPtgNode = ptg->GetAllocaNode(*allocaNode);
 
-  // The call to h() should contain a in its Mod/Ref set
+  // The call to h() within g() should contain a in its Mod/Ref set
   const auto callHModRef = modRefSummary->GetSimpleNodeModRef(*callHNode);
   assert(callHModRef.Contains(&allocaPtgNode));
+
+  // The call to k() should NOT contain a in its Mod/Ref set
+  const auto callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
+  assert(!callKModRef.Contains(&allocaPtgNode));
 
   // The call to opaque() within h() should NOT contain a in its Mod/Ref set
   const auto callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
   assert(!callOpaqueModRef.Contains(&allocaPtgNode));
+
+  // The call to h() within f() should NOT contain a in its Mod/Ref set
+  const auto callHFromFModRef = modRefSummary->GetSimpleNodeModRef(*callHFromFNode);
+  assert(!callHFromFModRef.Contains(&allocaPtgNode));
+
+  // Check the statistics to ensure that the right functions in the call graph were marked
+  auto & statistic = *collector.CollectedStatistics().begin();
+  // Only k() is not in the same SCC as <external>
+  assert(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
+  // Only the SCC containing <external> can call external, the SCC containing k() can not
+  assert(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccsCanCallExternal") == 1);
+  // g(), k() and h() are the only functions within an active setjmp
+  assert(statistic.GetMeasurementValue<uint64_t>("#FunctionsInActiveSetjmp") == 3);
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestSetjmpHandling",
-    TestSetjmpHandling)
+    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-testSetjmpHandling",
+    testSetjmpHandling)
 
 static void
 TestStatistics()

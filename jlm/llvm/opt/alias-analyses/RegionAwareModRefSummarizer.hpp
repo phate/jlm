@@ -107,7 +107,7 @@ private:
    * @param rvsdgModule the module for which a mod/ref summary is computed.
    */
   void
-  CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
+  createCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * For each SCC in the call graph, determines if the SCC either contains all external functions,
@@ -116,7 +116,7 @@ private:
    * @return the number of SCCs that can call external functions
    */
   size_t
-  FindSccsThatCanCallExternal();
+  findSccsThatCanCallExternal();
 
   /**
    * For each SCC in the call graph, determines which allocas can be known to not be live
