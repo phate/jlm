@@ -76,6 +76,8 @@ LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector 
 void
 LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
 {
+  util::HashSet<rvsdg::Output *> visitedOutputs;
+
   // We require a top-down traverser to ensure that lambda nodes are handled before call nodes
   for (const auto & node : rvsdg::TopDownTraverser(&region))
   {
@@ -95,7 +97,7 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         },
         [&](rvsdg::ThetaNode & thetaNode)
         {
-          separateRefenceChainsInTheta(thetaNode);
+          separateRefenceChainsInTheta(thetaNode, visitedOutputs);
         },
         [](rvsdg::DeltaNode &)
         {
@@ -109,7 +111,6 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
             {
               // Dead memory state outputs will never be reachable from structural node results.
               // Thus, we need to handle them here in order to separate all reference chains.
-              util::HashSet<rvsdg::Output *> visitedOutputs;
               separateReferenceChains(output, visitedOutputs);
             }
           }
@@ -156,22 +157,31 @@ LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
 }
 
 void
-LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
+LoadChainSeparation::separateRefenceChainsInTheta(
+    rvsdg::ThetaNode & thetaNode,
+    util::HashSet<rvsdg::Output *> & visitedOutputs)
 {
   // Handle innermost region first
   separateReferenceChainsInRegion(*thetaNode.subregion());
 
+  util::HashSet<rvsdg::Output *> visitedOutputsSubregion;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    if (is<MemoryStateType>(loopVar.output->Type()))
+    if (!is<MemoryStateType>(loopVar.output->Type()))
+      continue;
+
+    // Separate reference chains in theta subregion
+    auto hasModificationChainLink =
+        separateReferenceChains(*loopVar.post->origin(), visitedOutputsSubregion);
+    Context_->add(
+        *loopVar.output,
+        hasModificationChainLink ? ModRefChainLink::Type::Modification
+                                 : ModRefChainLink::Type::Reference);
+
+    // Handle dead theta outputs
+    if (loopVar.output->IsDead())
     {
-      util::HashSet<rvsdg::Output *> visitedOutputs;
-      auto hasModificationChainLink =
-          separateReferenceChains(*loopVar.post->origin(), visitedOutputs);
-      Context_->add(
-          *loopVar.output,
-          hasModificationChainLink ? ModRefChainLink::Type::Modification
-                                   : ModRefChainLink::Type::Reference);
+      separateReferenceChains(*loopVar.output, visitedOutputs);
     }
   }
 }
@@ -304,6 +314,7 @@ LoadChainSeparation::traceModRefChains(
           // operations in the gamma on all branches are and which memory state exit variable maps
           // to which memory state entry variable. We need some more machinery for it first before
           // we can do that.
+          currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
           for (auto [entryVarInput, _] : gammaNode.GetEntryVars())
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
@@ -313,17 +324,11 @@ LoadChainSeparation::traceModRefChains(
           }
           doneTracing = true;
         },
-        [&](const rvsdg::ThetaNode & thetaNode)
+        [&](const rvsdg::ThetaNode &)
         {
-          for (const auto loopVar : thetaNode.GetLoopVars())
-          {
-            if (is<MemoryStateType>(loopVar.output->Type()))
-            {
-              const auto modRefChainLinkType = Context_->getModRefChainLinkType(*loopVar.output);
-              currentModRefChain.add({ loopVar.output, modRefChainLinkType });
-              currentOutput = loopVar.input->origin();
-            }
-          }
+          const auto modRefChainLinkType = Context_->getModRefChainLinkType(*currentOutput);
+          currentModRefChain.add({ currentOutput, modRefChainLinkType });
+          currentOutput = mapMemoryStateOutputToInput(*currentOutput).origin();
         },
         [&](const rvsdg::SimpleNode & simpleNode)
         {
@@ -435,11 +440,7 @@ LoadChainSeparation::traceModRefChains(
         });
   } while (!doneTracing);
 
-  // We only care about chains that have at least two links
-  if (currentModRefChain.links.size() >= 2)
-  {
-    summary.add(std::move(currentModRefChain));
-  }
+  summary.add(std::move(currentModRefChain));
 }
 
 }

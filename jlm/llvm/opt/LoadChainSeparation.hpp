@@ -59,7 +59,9 @@ private:
   separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode);
 
   void
-  separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode);
+  separateRefenceChainsInTheta(
+      rvsdg::ThetaNode & thetaNode,
+      util::HashSet<rvsdg::Output *> & visitedOutputs);
 
   void
   separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode);
@@ -125,7 +127,12 @@ private:
     void
     add(ModRefChain modRefChain)
     {
-      modRefChains.push_back(std::move(modRefChain));
+      // We only care about chains that have at least two links
+      if (modRefChain.links.size() >= 2)
+      {
+        modRefChains.push_back(std::move(modRefChain));
+      }
+
       hasModificationChainLink |= modRefChain.hasModificationChainLink;
     }
 
