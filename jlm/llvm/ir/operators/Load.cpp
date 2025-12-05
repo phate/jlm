@@ -135,84 +135,6 @@ is_multiple_origin_reducible(const std::vector<rvsdg::Output *> & operands)
   return states.Size() != operands.size() - 1;
 }
 
-// s2 = store_op a v1 s1
-// v2 s3 = load_op a s2
-// ... = any_op v2
-// =>
-// s2 = store_op a v1 s1
-// ... = any_op v1
-static bool
-is_load_store_reducible(
-    const LoadNonVolatileOperation & loadOperation,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  // We do not need to check further if no state edge is provided to the load
-  if (operands.size() < 2)
-  {
-    return false;
-  }
-
-  // Check that the first state edge originates from a store
-  auto firstState = operands[1];
-  auto [storeNode, storeOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*firstState);
-  if (!storeOperation)
-  {
-    return false;
-  }
-
-  // Check that all state edges to the load originate from the same store
-  if (storeOperation->NumMemoryStates() != loadOperation.NumMemoryStates())
-  {
-    return false;
-  }
-  for (size_t n = 1; n < operands.size(); n++)
-  {
-    auto state = operands[n];
-    const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state);
-    if (node != storeNode)
-    {
-      return false;
-    }
-  }
-
-  // Check that the address to the load and store originate from the same value
-  auto loadAddress = operands[0];
-  auto storeAddress = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
-  if (loadAddress != storeAddress)
-  {
-    return false;
-  }
-
-  // Check that the loaded and stored value type are the same
-  //
-  // FIXME: This is too restrictive and can be improved upon by inserting truncation or narrowing
-  // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
-  // integer can be converted to a trunc operation.
-  auto loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = *StoreNonVolatileOperation::StoredValueInput(*storeNode).Type();
-  if (*loadedValueType != storedValueType)
-  {
-    return false;
-  }
-
-  JLM_ASSERT(loadOperation.GetAlignment() == storeOperation->GetAlignment());
-  return true;
-}
-
-static std::vector<rvsdg::Output *>
-perform_load_store_reduction(
-    const LoadNonVolatileOperation &,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[1]);
-
-  std::vector results(1, storeNode->input(1)->origin());
-  results.insert(results.end(), std::next(operands.begin()), operands.end());
-
-  return results;
-}
-
 static std::vector<rvsdg::Output *>
 perform_load_alloca_reduction(
     const LoadNonVolatileOperation & op,
@@ -322,10 +244,62 @@ LoadNonVolatileOperation::NormalizeLoadStore(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
-  if (is_load_store_reducible(operation, operands))
-    return perform_load_store_reduction(operation, operands);
+  // We do not need to check further if no state edge is provided to the load
+  if (operands.size() < 2)
+  {
+    return std::nullopt;
+  }
+  const auto loadAddressOperand = operands[0];
 
-  return std::nullopt;
+  // Check that the first state edge originates from a store
+  auto firstState = operands[1];
+  auto [storeNode, storeOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*firstState);
+  if (!storeOperation)
+  {
+    return std::nullopt;
+  }
+  const auto storeAddressOperand = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
+  const auto storeValueOperand = StoreNonVolatileOperation::StoredValueInput(*storeNode).origin();
+
+  if (loadAddressOperand != storeAddressOperand)
+  {
+    return std::nullopt;
+  }
+
+  // Check that all state edges to the load originate from the same store
+  if (storeOperation->NumMemoryStates() != operation.NumMemoryStates())
+  {
+    return std::nullopt;
+  }
+  for (size_t n = 1; n < operands.size(); n++)
+  {
+    auto state = operands[n];
+    const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state);
+    if (node != storeNode)
+    {
+      return std::nullopt;
+    }
+  }
+
+  // Check that the loaded and stored value type are the same
+  //
+  // FIXME: This is too restrictive and can be improved upon by inserting truncation or narrowing
+  // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
+  // integer can be converted to a trunc operation.
+  auto loadedValueType = operation.GetLoadedType();
+  auto & storedValueType = *storeValueOperand->Type();
+  if (*loadedValueType != storedValueType)
+  {
+    return std::nullopt;
+  }
+
+  JLM_ASSERT(operation.GetAlignment() == storeOperation->GetAlignment());
+
+  std::vector results(1, storeValueOperand);
+  results.insert(results.end(), std::next(operands.begin()), operands.end());
+
+  return results;
 }
 
 std::optional<std::vector<rvsdg::Output *>>

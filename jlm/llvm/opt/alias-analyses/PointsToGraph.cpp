@@ -81,7 +81,7 @@ PointsToGraph::addNodeForAlloca(const rvsdg::SimpleNode & allocaNode, bool exter
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
     const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
     if (elementCount.has_value() && *elementCount >= 0)
-      return *elementCount * GetTypeSize(*allocaOp->ValueType());
+      return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
     return std::nullopt;
   };
 
@@ -101,7 +101,7 @@ PointsToGraph::addNodeForDelta(const rvsdg::DeltaNode & deltaNode, bool external
     throw std::logic_error("Delta node already exists in the graph.");
 
   const auto isConstant = deltaNode.GetOperation().constant();
-  const auto memorySize = GetTypeSize(*deltaNode.GetOperation().Type());
+  const auto memorySize = GetTypeAllocSize(*deltaNode.GetOperation().Type());
 
   return it->second =
              addNode(NodeKind::DeltaNode, externallyAvailable, isConstant, memorySize, &deltaNode);
@@ -125,7 +125,7 @@ PointsToGraph::addNodeForImport(const rvsdg::GraphImport & import, bool external
   {
     if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
     {
-      auto size = GetTypeSize(*graphImport->ValueType());
+      auto size = GetTypeAllocSize(*graphImport->ValueType());
 
       // C code can contain declarations like this:
       //     extern char myArray[];
@@ -497,7 +497,7 @@ PointsToGraph::dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph 
       util::strfmt("Explicit edges: ", explicitEdges, ", total edges: ", totalEdges));
 
   std::vector<util::graph::Node *> nodes;
-  nodes.reserve(pointsToGraph.numNodes());
+  nodes.resize(pointsToGraph.numNodes());
 
   for (NodeIndex ptgNode = 0; ptgNode < pointsToGraph.numNodes(); ptgNode++)
   {

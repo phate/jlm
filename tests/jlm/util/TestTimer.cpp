@@ -41,6 +41,8 @@ TestStartStop()
   assert(t.ns() >= ns + 1000);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer-TestStartStop", TestStartStop)
+
 static void
 TestReset()
 {
@@ -64,11 +66,4 @@ TestReset()
   assert(!t.isRunning());
 }
 
-static void
-TestTimer()
-{
-  TestStartStop();
-  TestReset();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer", TestTimer)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer-TestReset", TestReset)

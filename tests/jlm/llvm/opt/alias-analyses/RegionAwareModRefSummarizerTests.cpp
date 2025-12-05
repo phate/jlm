@@ -4,11 +4,14 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/DotWriter.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -1367,6 +1370,264 @@ TestEscapedMemory3()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestEscapedMemory3",
     TestEscapedMemory3)
+
+static void
+testSetjmpHandling()
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  // Creates the RVSDG equivalent of the program
+  //
+  // void opaque();
+  // int _setjmp(jmp_buf*);
+  //
+  // jmp_buf buf;
+  //
+  // static void h() {
+  //     opaque();
+  // }
+  //
+  // static void k() {
+  //     // This call does nothing
+  // }
+  //
+  // static void g(int* p) {
+  //     if (_setjmp(&buf))
+  //         return;
+  //     else {
+  //         *p = 10;
+  //         h();
+  //         k(); // Nothing should be routed into this call
+  //     }
+  // }
+  //
+  // int f() {
+  //     int a;
+  //     g(a);
+  //     h(); // This call to h should not contain a in its Mod/Ref set
+  //     return a;
+  // }
+
+  // Arrange
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto & rootRegion = graph.GetRootRegion();
+
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto int32Type = rvsdg::BitType::Create(32);
+  // We don't care about the type of the jmp_buf, just use an array
+  const auto jmpBufType = ArrayType::Create(int32Type, 34);
+  const auto unitType = rvsdg::UnitType::Create();
+
+  const auto unitFunctionType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  const auto setjmpFunctionType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { int32Type, ioStateType, memoryStateType });
+
+  const auto gFunctionType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  const auto fFunctionType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { int32Type, ioStateType, memoryStateType });
+
+  auto & opaqueImport = GraphImport::Create(
+      graph,
+      unitFunctionType,
+      unitFunctionType,
+      "opaque",
+      Linkage::externalLinkage);
+
+  auto & setjmpImport = GraphImport::Create(
+      graph,
+      setjmpFunctionType,
+      setjmpFunctionType,
+      "_setjmp",
+      Linkage::externalLinkage);
+
+  auto & bufGlobal = *rvsdg::DeltaNode::Create(
+      &rootRegion,
+      DeltaOperation::Create(jmpBufType, "buf", Linkage::externalLinkage, "", false));
+  bufGlobal.finalize(UndefValueOperation::Create(*bufGlobal.subregion(), jmpBufType));
+
+  rvsdg::SimpleNode * callOpaqueNode = nullptr;
+  rvsdg::SimpleNode * callHNode = nullptr;
+  rvsdg::SimpleNode * callKNode = nullptr;
+  rvsdg::SimpleNode * allocaNode = nullptr;
+  rvsdg::SimpleNode * callHFromFNode = nullptr;
+
+  auto & hLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(unitFunctionType, "h", Linkage::internalLinkage));
+  {
+    const auto arguments = hLambdaNode.GetFunctionArguments();
+    auto ioState = arguments.at(0);
+    auto memoryState = arguments.at(1);
+
+    const auto opaqueCtxVar = hLambdaNode.AddContextVar(opaqueImport);
+
+    const auto call =
+        CallOperation::Create(opaqueCtxVar.inner, unitFunctionType, { ioState, memoryState });
+    callOpaqueNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*call[0]);
+    ioState = call[0];
+    memoryState = call[1];
+
+    hLambdaNode.finalize({ ioState, memoryState });
+  }
+
+  auto & kLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(unitFunctionType, "k", Linkage::internalLinkage));
+  {
+    const auto arguments = kLambdaNode.GetFunctionArguments();
+    kLambdaNode.finalize({ arguments.at(0), arguments.at(1) });
+  }
+
+  auto & gLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(gFunctionType, "g", Linkage::internalLinkage));
+  {
+    const auto arguments = gLambdaNode.GetFunctionArguments();
+    const auto p = arguments.at(0);
+    auto ioState = arguments.at(1);
+    auto memoryState = arguments.at(2);
+
+    const auto setjmpCtxVar = gLambdaNode.AddContextVar(setjmpImport);
+    const auto bufCtxVar = gLambdaNode.AddContextVar(bufGlobal.output());
+    const auto hCtxVar = gLambdaNode.AddContextVar(*hLambdaNode.output());
+    const auto kCtxVar = gLambdaNode.AddContextVar(*kLambdaNode.output());
+
+    const auto setjmpCall = CallOperation::Create(
+        setjmpCtxVar.inner,
+        setjmpFunctionType,
+        { bufCtxVar.inner, ioState, memoryState });
+    auto & setjmpResult = *setjmpCall[0];
+    ioState = setjmpCall[1];
+    memoryState = setjmpCall[2];
+
+    auto & matchOutput = *rvsdg::MatchOperation::Create(setjmpResult, { { 0, 0 } }, 1, 2);
+    auto & gammaNode = rvsdg::GammaNode::Create(matchOutput, 2, { unitType, unitType });
+    auto pEntryVar = gammaNode.AddEntryVar(p);
+    auto hEntryVar = gammaNode.AddEntryVar(hCtxVar.inner);
+    auto kEntryVar = gammaNode.AddEntryVar(kCtxVar.inner);
+    auto ioStateEntryVar = gammaNode.AddEntryVar(ioState);
+    auto memoryStateEntryVar = gammaNode.AddEntryVar(memoryState);
+    auto & elseRegion = *gammaNode.subregion(0);
+    const auto constant10 = IntegerConstantOperation::Create(elseRegion, 32, 10).output(0);
+    const auto storeOutputs = StoreNonVolatileOperation::Create(
+        pEntryVar.branchArgument[0],
+        constant10,
+        { memoryStateEntryVar.branchArgument[0] },
+        4);
+
+    const auto hCall = CallOperation::Create(
+        hEntryVar.branchArgument[0],
+        unitFunctionType,
+        { ioStateEntryVar.branchArgument[0], storeOutputs[0] });
+    callHNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*hCall[0]);
+
+    const auto kCall = CallOperation::Create(
+        kEntryVar.branchArgument[0],
+        unitFunctionType,
+        { hCall[0], hCall[1] });
+    callKNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*kCall[0]);
+
+    ioState = gammaNode.AddExitVar({ kCall[0], ioStateEntryVar.branchArgument[1] }).output;
+    memoryState = gammaNode.AddExitVar({ kCall[1], memoryStateEntryVar.branchArgument[1] }).output;
+
+    gLambdaNode.finalize({ ioState, memoryState });
+  }
+
+  auto & fLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(fFunctionType, "f", Linkage::externalLinkage));
+  {
+    const auto arguments = fLambdaNode.GetFunctionArguments();
+    const auto ioStateIn = arguments.at(0);
+    const auto memoryStateIn = arguments.at(1);
+
+    const auto gCtxVar = fLambdaNode.AddContextVar(*gLambdaNode.output());
+    const auto hCtxVar = fLambdaNode.AddContextVar(*hLambdaNode.output());
+
+    const auto constant1 =
+        IntegerConstantOperation::Create(*fLambdaNode.subregion(), 32, 1).output(0);
+    const auto aAlloca = AllocaOperation::create(int32Type, constant1, 4);
+    allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*aAlloca[0]);
+
+    auto & memoryStateJoin =
+        rvsdg::CreateOpNode<MemoryStateJoinOperation>({ memoryStateIn, aAlloca[1] }, 2);
+
+    const auto gCall = CallOperation::Create(
+        gCtxVar.inner,
+        gFunctionType,
+        { aAlloca[0], ioStateIn, memoryStateJoin.output(0) });
+
+    const auto hCall =
+        CallOperation::Create(hCtxVar.inner, unitFunctionType, { gCall[0], gCall[1] });
+    callHFromFNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*hCall[0]);
+
+    auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], { hCall[1] }, int32Type, 4);
+
+    fLambdaNode.finalize({ loadOutputs[0], gCall[0], loadOutputs[1] });
+  }
+
+  rvsdg::GraphExport::Create(*fLambdaNode.output(), "f");
+
+  util::graph::Writer gw;
+  LlvmDotWriter writer;
+  writer.WriteGraphs(gw, rootRegion, true);
+  // gw.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+
+  // Act
+  util::StatisticsCollectorSettings settings({ util::Statistics::Id::RegionAwareModRefSummarizer });
+  util::StatisticsCollector collector(settings);
+  const auto ptg = RunAndersen(rvsdgModule);
+  const auto modRefSummary = aa::RegionAwareModRefSummarizer::Create(rvsdgModule, *ptg, collector);
+
+  // Assert
+  assert(callOpaqueNode);
+  assert(callHNode);
+  assert(callKNode);
+  assert(allocaNode);
+  assert(callHFromFNode);
+
+  const auto allocaPtgNode = ptg->getNodeForAlloca(*allocaNode);
+
+  // The call to h() within g() should contain a in its Mod/Ref set
+  const auto callHModRef = modRefSummary->GetSimpleNodeModRef(*callHNode);
+  assert(callHModRef.Contains(allocaPtgNode));
+
+  // The call to k() should NOT contain a in its Mod/Ref set
+  const auto callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
+  assert(!callKModRef.Contains(allocaPtgNode));
+
+  // The call to opaque() within h() should NOT contain a in its Mod/Ref set
+  const auto callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
+  assert(!callOpaqueModRef.Contains(allocaPtgNode));
+
+  // The call to h() within f() should NOT contain a in its Mod/Ref set
+  const auto callHFromFModRef = modRefSummary->GetSimpleNodeModRef(*callHFromFNode);
+  assert(!callHFromFModRef.Contains(allocaPtgNode));
+
+  // Check the statistics to ensure that the right functions in the call graph were marked
+  auto & statistic = *collector.CollectedStatistics().begin();
+  // Only k() is not in the same SCC as <external>
+  assert(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
+  // Only the SCC containing <external> can call external, the SCC containing k() can not
+  assert(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccsCanCallExternal") == 1);
+  // g(), k() and h() are the only functions within an active setjmp
+  assert(statistic.GetMeasurementValue<uint64_t>("#FunctionsInActiveSetjmp") == 3);
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-testSetjmpHandling",
+    testSetjmpHandling)
 
 static void
 TestStatistics()
