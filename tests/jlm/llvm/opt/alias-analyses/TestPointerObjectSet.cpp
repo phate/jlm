@@ -86,7 +86,7 @@ TestCreatePointerObjects()
   const auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode(), true);
   const auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), true);
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
-  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
 
   assert(set.NumPointerObjects() == 7);
   assert(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register) == 2);
@@ -209,7 +209,7 @@ TestPointerObjectUnificationPointees()
   assert(set.HasPointeesEscaping(delta0));
 
   // Adding a new pointee adds it to all members
-  auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
   assert(set.AddToPointsToSet(delta0, import0));
   assert(set.GetPointsToSet(alloca0).Contains(import0));
 
@@ -293,7 +293,7 @@ TestClonePointerObjectSet()
   const auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode(), true);
   const auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), false);
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
-  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
 
   set.AddToPointsToSet(register0, alloca0);
   set.UnifyPointerObjects(delta0, import0);
@@ -762,7 +762,7 @@ TestDrawSubsetGraph()
 
   const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
 
-  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
 
   PointerObjectConstraintSet constraints(set);
   constraints.AddPointsToExternalConstraint(nonRoot);

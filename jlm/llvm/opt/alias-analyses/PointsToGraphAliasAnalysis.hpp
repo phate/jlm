@@ -40,8 +40,8 @@ private:
    * @return a pointer to the single valid target memory node, or nullptr if there are zero or
    * multiple valid targets
    */
-  [[nodiscard]] static const PointsToGraph::MemoryNode *
-  TryGetSingleTarget(const PointsToGraph::RegisterNode & node, size_t size);
+  [[nodiscard]] std::optional<PointsToGraph::NodeIndex>
+  TryGetSingleTarget(PointsToGraph::NodeIndex node, size_t size) const;
 
   /**
    * Determines if the given abstract memory location represent exactly one region in memory,
@@ -50,10 +50,10 @@ private:
    * @param node the MemoryNode for the abstract memory location in question
    * @return true if node represents a single location
    */
-  [[nodiscard]] static bool
-  IsRepresentingSingleMemoryLocation(const PointsToGraph::MemoryNode & node);
+  [[nodiscard]] bool
+  IsRepresentingSingleMemoryLocation(PointsToGraph::NodeIndex node) const;
 
-  const PointsToGraph & PointsToGraph_;
+  const PointsToGraph & pointsToGraph_;
 };
 
 } // namespace jlm::llvm::aa

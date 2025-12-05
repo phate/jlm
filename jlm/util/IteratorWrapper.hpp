@@ -15,7 +15,7 @@ namespace jlm::util
 
 /**
  * Functor for dereferencing iterators to (smart)pointers.
- * The iterator may for example be a vector<unique_ptr<T>>:: iterator.
+ * The iterator may for example be a std::vector<std::unique_ptr<T>>:: iterator.
  *
  * @tparam T the result type
  * @tparam BaseIterator the iterator type
@@ -33,7 +33,7 @@ struct PtrDereferenceFunc
 
 /**
  * Functor for dereferencing iterators to maps, where the values are (smart)pointers.
- * The iterator may for example be an unordered_map<int, unique_ptr<T>>:: iterator.
+ * The iterator may for example be an std::unordered_map<int, std::unique_ptr<T>>:: iterator.
  *
  * @tparam T the result type
  * @tparam BaseIterator the iterator type
@@ -46,6 +46,23 @@ struct MapValuePtrDereferenceFunc
   {
     JLM_ASSERT(it->second != nullptr);
     return *(it->second);
+  }
+};
+
+/**
+ * Functor for iterators to maps, yielding the value
+ * The iterator may for example be an std::unordered_map<int, int>::iterator.
+ *
+ * @tparam T the result type
+ * @tparam BaseIterator the iterator type
+ */
+template<typename T, typename BaseIterator>
+struct MapValueFunc
+{
+  [[nodiscard]] T &
+  operator()(const BaseIterator & it) const
+  {
+    return it->second;
   }
 };
 
@@ -131,6 +148,14 @@ using PtrIterator = IteratorWrapper<T, BaseIterator, PtrDereferenceFunc<T, BaseI
 template<typename T, typename BaseIterator>
 using MapValuePtrIterator =
     IteratorWrapper<T, BaseIterator, MapValuePtrDereferenceFunc<T, BaseIterator>>;
+
+/**
+ * Wrapper for iterators over values of maps.
+ * @tparam T the type of the map's value elements
+ * @tparam BaseIterator the type of the iterator being wrapped
+ */
+template<typename T, typename BaseIterator>
+using MapValueIterator = IteratorWrapper<T, BaseIterator, MapValueFunc<T, BaseIterator>>;
 
 }
 

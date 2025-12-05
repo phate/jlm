@@ -8,7 +8,7 @@
 namespace jlm::llvm::aa
 {
 PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(const PointsToGraph & pointsToGraph)
-    : PointsToGraph_(pointsToGraph)
+    : pointsToGraph_(pointsToGraph)
 {}
 
 PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() noexcept = default;
@@ -31,12 +31,13 @@ PointsToGraphAliasAnalysis::Query(
     return MustAlias;
 
   // Assume that all pointers actually exist in the PointsToGraph
-  auto & p1RegisterNode = PointsToGraph_.GetRegisterNode(p1);
-  auto & p2RegisterNode = PointsToGraph_.GetRegisterNode(p2);
+  const auto p1RegisterNode = pointsToGraph_.getNodeForRegister(p1);
+  const auto p2RegisterNode = pointsToGraph_.getNodeForRegister(p2);
 
   // Check if both pointers may target the external node, to avoid iterating over large sets
-  const auto & externalNode = PointsToGraph_.GetExternalMemoryNode();
-  if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
+  const bool p1TargetsExternal = pointsToGraph_.isTargetingAllExternallyAvailable(p1RegisterNode);
+  const bool p2TargetsExternal = pointsToGraph_.isTargetingAllExternallyAvailable(p2RegisterNode);
+  if (p1TargetsExternal && p2TargetsExternal)
     return MayAlias;
 
   // If both p1 and p2 have exactly one possible target, which is the same for both,
@@ -46,9 +47,9 @@ PointsToGraphAliasAnalysis::Query(
   {
     const auto p1SingleTarget = TryGetSingleTarget(p1RegisterNode, s1);
     const auto p2SingleTarget = TryGetSingleTarget(p2RegisterNode, s2);
-    if (p1SingleTarget && p1SingleTarget == p2SingleTarget
-        && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
-        && p1SingleTarget->tryGetSize() == s1)
+    if (p1SingleTarget.has_value() && p2SingleTarget.has_value()
+        && *p1SingleTarget == *p2SingleTarget && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
+        && pointsToGraph_.tryGetNodeSize(*p1SingleTarget) == s1)
     {
       return MustAlias;
     }
@@ -58,50 +59,72 @@ PointsToGraphAliasAnalysis::Query(
   // to represent both [p1, p1+s1) and [p2, p2+s2)
   const auto neededSize = std::max(s1, s2);
 
-  for (auto & target : p1RegisterNode.Targets())
+  // At least one of the nodes only has explicit targets
+  PointsToGraph::NodeIndex onlyExplicitTargetsNode = p1RegisterNode;
+  PointsToGraph::NodeIndex otherNode = p2RegisterNode;
+  if (p1TargetsExternal)
+  {
+    JLM_ASSERT(!p2TargetsExternal);
+    std::swap(onlyExplicitTargetsNode, otherNode);
+  }
+
+  for (const auto target : pointsToGraph_.getExplicitTargets(onlyExplicitTargetsNode).Items())
   {
     // Skip memory locations that are too small
-    const auto targetSize = target.tryGetSize();
+    const auto targetSize = pointsToGraph_.tryGetNodeSize(target);
+
     if (targetSize.has_value() && *targetSize < neededSize)
       continue;
 
-    if (p2RegisterNode.HasTarget(target))
+    if (pointsToGraph_.isTargeting(otherNode, target))
       return MayAlias;
   }
 
   return NoAlias;
 }
 
-const PointsToGraph::MemoryNode *
-PointsToGraphAliasAnalysis::TryGetSingleTarget(
-    const PointsToGraph::RegisterNode & node,
-    size_t size)
+std::optional<PointsToGraph::NodeIndex>
+PointsToGraphAliasAnalysis::TryGetSingleTarget(PointsToGraph::NodeIndex node, size_t size) const
 {
-  const PointsToGraph::MemoryNode * singleTarget = nullptr;
-  for (auto & target : node.Targets())
+  // Nodes that target everything external always have "infinite" targets
+  if (pointsToGraph_.isTargetingAllExternallyAvailable(node))
+    return std::nullopt;
+
+  std::optional<PointsToGraph::NodeIndex> singleTarget = std::nullopt;
+
+  for (const auto target : pointsToGraph_.getExplicitTargets(node).Items())
   {
     // Skip memory locations that are too small to hold size
-    const auto targetSize = target.tryGetSize();
+    const auto targetSize = pointsToGraph_.tryGetNodeSize(target);
     if (targetSize.has_value() && *targetSize < size)
       continue;
 
     // If we already have a "single target", there is more than one target
-    if (singleTarget)
-      return nullptr;
+    if (singleTarget.has_value())
+      return std::nullopt;
 
-    singleTarget = &target;
+    singleTarget = target;
   }
 
   return singleTarget;
 }
 
 bool
-PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(
-    const PointsToGraph::MemoryNode & node)
+PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(PointsToGraph::NodeIndex node) const
 {
-  return PointsToGraph::Node::Is<PointsToGraph::DeltaNode>(node)
-      || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(node)
-      || PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(node);
+  switch (pointsToGraph_.getNodeKind(node))
+  {
+  case PointsToGraph::NodeKind::AllocaNode:
+  case PointsToGraph::NodeKind::MallocNode:
+  case PointsToGraph::NodeKind::RegisterNode:
+    return false;
+  case PointsToGraph::NodeKind::DeltaNode:
+  case PointsToGraph::NodeKind::LambdaNode:
+  case PointsToGraph::NodeKind::ImportNode:
+    return true;
+  default:
+    throw std::logic_error("Unknown node kind");
+  }
 }
 
 }

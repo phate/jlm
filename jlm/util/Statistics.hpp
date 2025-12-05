@@ -222,15 +222,13 @@ protected:
     inline static const char * NumPointsToGraphMallocNodes = "#PointsToGraphMallocNodes";
     inline static const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
     inline static const char * NumPointsToGraphRegisterNodes = "#PointsToGraphRegisterNodes";
-    inline static const char * NumPointsToGraphEscapedNodes = "#PointsToGraphEscapedNodes";
-    inline static const char * NumPointsToGraphExternalMemorySources =
-        "#PointsToGraphExternalMemorySources";
-    inline static const char * NumPointsToGraphUnknownMemorySources =
-        "#PointsToGraphUnknownMemorySources";
+    inline static const char * NumPointsToGraphExternallyAvailableNodes =
+        "#PointsToGraphExternallyAvailableNodes";
+    inline static const char * NumPointsToGraphNodesTargetsAllExternallyAvailable =
+        "#PointsToGraphNodesTargetsAllExternallyAvailable";
 
+    inline static const char * NumPointsToGraphExplicitEdges = "#PointsToGraphExplicitEdges";
     inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
-    inline static const char * NumPointsToGraphPointsToRelations =
-        "#PointsToGraphPointsToRelations";
 
     inline static const char * NumLoopVariablesTotal = "#LoopVariablesTotal";
     inline static const char * NumTotalRecurrences = "#TotalRecurrences";
