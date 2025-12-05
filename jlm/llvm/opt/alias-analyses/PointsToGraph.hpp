@@ -284,7 +284,7 @@ public:
   }
 
   /**
-   * Checks whether a PointsToGraph DeltaNode has been created for the given RVSDG DeltaNode.
+   * Checks whether a PointsToGraph DeltaNode is mapped to the given \ref rvsdg::DeltaNode.
    * @param node the RVSDG delta node to look up.
    * @return true if a DeltaNode is mapped to this node, false otherwise.
    */
@@ -295,7 +295,7 @@ public:
   }
 
   /**
-   * Checks whether a PointsToGraph ImportNode has been created for the given RVSDG GraphImport.
+   * Checks whether a PointsToGraph ImportNode is mapped to the given \ref rvsdg::GraphImport.
    * @param argument the RVSDG import to look up.
    * @return true if an ImportNode is mapped to this import, false otherwise.
    */
@@ -306,7 +306,7 @@ public:
   }
 
   /**
-   * Checks whether a PointsToGraph LambdaNode has been created for the given RVSDG LambdaNode.
+   * Checks whether a PointsToGraph LambdaNode is mapped to the given \ref rvsdg::LambdaNode.
    * @param node the RVSDG lambda node to look up.
    * @return true if a LambdaNode is mapped to this node, false otherwise.
    */
@@ -317,10 +317,10 @@ public:
   }
 
   /**
-   * Checks whether a PointsToGraph MallocNode has been created for the given RVSDG SimpleNode.
-   * The SimpleNode must correspond to a MallocOperation.
+   * Checks whether a PointsToGraph MallocNode is mapped to the given \ref rvsdg::SimpleNode.
+   * The simple node must correspond to a \ref MallocOperation.
    * @param node the RVSDG node to look up.
-   * @return true if a MallocNode is mapped to this RVSDG node, false otherwise.
+   * @return true if a MallocNode is mapped to this node, false otherwise.
    */
   [[nodiscard]] bool
   hasNodeForMalloc(const rvsdg::SimpleNode & node) const
@@ -329,7 +329,7 @@ public:
   }
 
   /**
-   * Checks whether a PointsToGraph RegisterNode has been created for the given RVSDG Output.
+   * Checks whether a PointsToGraph RegisterNode has been created for the given \ref rvsdg::Output.
    * @param output the RVSDG output to look up.
    * @return true if a RegisterNode is mapped to this output, false otherwise.
    */
@@ -352,7 +352,7 @@ public:
   }
 
   /**
-   * Retrieves the index of the PointsToGraph node mapped to the given \ref DeltaNode.
+   * Retrieves the index of the PointsToGraph node mapped to the given \ref rvsdg::DeltaNode.
    * @param node the delta node being looked up.
    * @return the PointsToGraph node mapped to \p node, always of DeltaNode kind.
    * @throws std::out_of_range if the delta node is not mapped to a PointsToGraph node.
@@ -376,7 +376,7 @@ public:
   }
 
   /**
-   * Retrieves the index of the PointsToGraph node mapped to the given \ref LambdaNode.
+   * Retrieves the index of the PointsToGraph node mapped to the given \ref rvsdg::LambdaNode.
    * @param node the lambda node being looked up.
    * @return the PointsToGraph node mapped to \p node, always of LambdaNode kind.
    * @throws std::out_of_range if the lambda node is not mapped to a PointsToGraph node.
