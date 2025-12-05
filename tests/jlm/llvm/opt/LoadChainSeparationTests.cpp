@@ -23,7 +23,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
-#if 0
+
 static void
 LoadNonVolatile()
 {
@@ -550,7 +550,7 @@ GammaWithLoadsAndStores()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/LoadChainSeparationTests-GammaWithLoadsAndStores",
     GammaWithLoadsAndStores)
-#endif
+
 static void
 ThetaWithLoadsOnly()
 {
@@ -646,7 +646,7 @@ ThetaWithLoadsOnly()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/LoadChainSeparationTests-ThetaWithLoadsOnly",
     ThetaWithLoadsOnly)
-#if 0
+
 static void
 ExternalCall()
 {
@@ -868,4 +868,3 @@ DeadOutputs()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-DeadOutputs", DeadOutputs)
-#endif
