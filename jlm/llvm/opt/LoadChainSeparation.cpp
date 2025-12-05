@@ -50,7 +50,7 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create()
+  create()
   {
     return std::make_unique<Context>();
   }
@@ -68,7 +68,7 @@ LoadChainSeparation::LoadChainSeparation()
 void
 LoadChainSeparation::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  Context_ = Context::Create();
+  Context_ = Context::create();
 
   separateReferenceChainsInRegion(module.Rvsdg().GetRootRegion());
 }
