@@ -67,7 +67,7 @@ empty(const rvsdg::GammaNode * gamma)
  * @return True, if \p singleSuccessor is the only successor of \p node, otherwise false.
  */
 static bool
-hasSingleSuccessor(const rvsdg::Node & node, const rvsdg::Node & singleSuccessor)
+isSingleSuccessor(const rvsdg::Node & node, const rvsdg::Node & singleSuccessor)
 {
   for (auto & output : node.Outputs())
   {
@@ -115,7 +115,7 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 static void
 cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
-  JLM_ASSERT(hasSingleSuccessor(*node, *gamma));
+  JLM_ASSERT(isSingleSuccessor(*node, *gamma));
 
   /* remove entry variables and node */
   std::vector<rvsdg::GammaNode::EntryVar> entryvars;
@@ -141,7 +141,7 @@ pullin_top(rvsdg::GammaNode * gamma)
     const auto & ev = evs[index];
     auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ev.input->origin());
     auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gamma->predicate()->origin());
-    if (node && tmp != node && hasSingleSuccessor(*node, *gamma))
+    if (node && tmp != node && isSingleSuccessor(*node, *gamma))
     {
       pullin_node(gamma, node);
 
@@ -273,7 +273,7 @@ NodeSinking::sinkDependentNodesIntoGamma(rvsdg::GammaNode & gammaNode)
 static size_t
 is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
 {
-  JLM_ASSERT(hasSingleSuccessor(*node, *gamma));
+  JLM_ASSERT(isSingleSuccessor(*node, *gamma));
 
   /* collect all gamma inputs */
   std::unordered_set<const rvsdg::Input *> inputs;
@@ -340,7 +340,7 @@ pull(rvsdg::GammaNode * gamma)
   {
     const auto & ev = evs[index];
     auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ev.input->origin());
-    if (!node || prednode == node || !hasSingleSuccessor(*node, *gamma))
+    if (!node || prednode == node || !isSingleSuccessor(*node, *gamma))
     {
       index++;
       continue;
