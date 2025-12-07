@@ -382,7 +382,30 @@ LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
   if (!callEntryMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(callEntryMergeNode->ninputs() == lambdaEntrySplitOperation.nresults());
+  if (callEntryMergeOperation->narguments() != lambdaEntrySplitOperation.nresults())
+  {
+    // We only perform this reduction if the number of memory region IDs (and therefore the
+    // inputs/outputs) of the call entry merge operation as well as the lambda entry split operation
+    // are the same. The reason for this is that we might at the moment otherwise loose information,
+    // leading to incorrect RVSDGs. The problem arises from examples where the lambda entry/exit
+    // operations feature fewer memory region IDs than the call entry/exit operations. If we
+    // perform the lambda/call entry reduction here, then we would drop memory state edges (and
+    // potentially nodes) and would in the case of the equivalent call/lambda exit reduction not
+    // know where to route to.
+    //
+    // Example:
+    // s1 = StoreNonVolatileOperation ...
+    // s2 = CallEntryMemoryStateMerge[1, 2, 3] s1 x y
+    // x, y = LambdaEntryMemoryStateSplit[2, 3] s2
+    // ...
+    // s3 = LambdaExitMemoryStateMerge[2, 3] x, y
+    // z, x, y = CallExitMemoryStateSplit[1, 2, 3] s3
+    //
+    // In the above example, if we perform the call entry/exit normalization, then we would drop
+    // s1 (and potentially the store), and we would not have it available any longer when we would
+    // perform the lambda/call exit normalization.
+    return std::nullopt;
+  }
 
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : lambdaEntrySplitOperation.getMemoryNodeIds())
@@ -695,7 +718,14 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   if (!lambdaExitMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(lambdaExitMergeNode->ninputs() == callExitSplitOperation.nresults());
+  if (lambdaExitMergeNode->ninputs() != callExitSplitOperation.nresults())
+  {
+    // We only perform this transformation if the number of memory region IDs (and therefore
+    // inputs/outputs) are the same. See
+    // LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge() for a detailed
+    // explanation.
+    return std::nullopt;
+  }
 
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : callExitSplitOperation.getMemoryNodeIds())
