@@ -527,35 +527,55 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
   auto & i1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i1");
   auto & i2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i2");
 
-  auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
+  auto & callEntryMergeNode1 = CallEntryMemoryStateMergeOperation::CreateNode(
+      rvsdg.GetRootRegion(),
+      { &i0, &i1, &i2 },
+      { 1, 2, 3 });
+  auto & callEntryMergeNode2 = CallEntryMemoryStateMergeOperation::CreateNode(
       rvsdg.GetRootRegion(),
       { &i0, &i1, &i2 },
       { 1, 2, 3 });
 
-  auto & lambdaEntrySplitNode =
-      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), { 3, 2, 1 });
+  auto & lambdaEntrySplitNode1 =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode1.output(0), { 3, 2, 1 });
+  auto & lambdaEntrySplitNode2 =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode2.output(0), { 2, 1 });
 
-  auto & x0 = GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
-  auto & x1 = GraphExport::Create(*lambdaEntrySplitNode.output(1), "x1");
-  auto & x2 = GraphExport::Create(*lambdaEntrySplitNode.output(2), "x2");
+  auto & x0 = GraphExport::Create(*lambdaEntrySplitNode1.output(0), "x0");
+  auto & x1 = GraphExport::Create(*lambdaEntrySplitNode1.output(1), "x1");
+  auto & x2 = GraphExport::Create(*lambdaEntrySplitNode1.output(2), "x2");
+
+  auto & x3 = GraphExport::Create(*lambdaEntrySplitNode2.output(0), "x3");
+  auto & x4 = GraphExport::Create(*lambdaEntrySplitNode2.output(1), "x4");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto success = jlm::rvsdg::ReduceNode<LambdaEntryMemoryStateSplitOperation>(
+  const auto success1 = jlm::rvsdg::ReduceNode<LambdaEntryMemoryStateSplitOperation>(
       LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge,
-      lambdaEntrySplitNode);
+      lambdaEntrySplitNode1);
+  const auto success2 = jlm::rvsdg::ReduceNode<LambdaEntryMemoryStateSplitOperation>(
+      LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge,
+      lambdaEntrySplitNode2);
   rvsdg.PruneNodes();
 
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
   assert(rvsdg.GetRootRegion().numNodes() == 0);
 
-  assert(x0.origin() == &i2);
-  assert(x1.origin() == &i1);
-  assert(x2.origin() == &i0);
+  {
+    assert(success1);
+    assert(x0.origin() == &i2);
+    assert(x1.origin() == &i1);
+    assert(x2.origin() == &i0);
+  }
+
+  {
+    assert(success2);
+    assert(x3.origin() == &i1);
+    assert(x4.origin() == &i0);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER(

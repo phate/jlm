@@ -382,8 +382,6 @@ LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
   if (!callEntryMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(callEntryMergeNode->ninputs() == lambdaEntrySplitOperation.nresults());
-
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : lambdaEntrySplitOperation.getMemoryNodeIds())
   {
