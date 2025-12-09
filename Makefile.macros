@@ -118,3 +118,32 @@ ifndef ($$(BUILD_OUT_PREFIX),)
 $1: $$(BUILD_OUT_PREFIX)$1
 endif
 endef
+
+# Define a test (gtest) and its build rules.
+#
+# Usage :
+#   foo_SOURCES = a.cpp b.cpp ...
+#   foo_HEADERS = a.h b.h ...
+#   $(eval $(call common_test,foo))
+#
+# additional attributes supported (define before calling the macro):
+#   - foo_LIBS:
+#     extra libraries built in this project linked into the binary
+#     (just specify the name without extension)
+#   - foo_EXTRA_LDFLAGS:
+#     additional LDFLAGS to be passed to link the executable
+#     use this to pull in external libraries (not built in this project)
+define common_test
+SOURCES += $$($1_SOURCES)
+HEADERS += $$($1_HEADERS)
+
+$$(BUILD_OUT_PREFIX)$1: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.la, $$($1_SOURCES)) $$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS))
+$$(BUILD_OUT_PREFIX)$1: LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS)) $$($1_EXTRA_LDFLAGS)
+TESTS += $$(BUILD_OUT_PREFIX)$1
+GTESTS += $$(BUILD_OUT_PREFIX)$1
+
+# alias rule to allow issuing "make foo" instead of "make build/foo"
+ifndef ($$(BUILD_OUT_PREFIX),)
+$1: $$(BUILD_OUT_PREFIX)$1
+endif
+endef
