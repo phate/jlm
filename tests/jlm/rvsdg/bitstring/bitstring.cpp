@@ -4,15 +4,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
+
 #include <test-operation.hpp>
 
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
-types_bitstring_arithmetic_test_bitand()
+TEST(bitstring, arithmetic_test_bitand)
 {
   using namespace jlm::rvsdg;
 
@@ -40,16 +40,13 @@ types_bitstring_arithmetic_test_bitand()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitand_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, +1 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitand_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, +1 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitashr()
+TEST(bitstring, arithmetic_test_bitashr)
 {
   using namespace jlm::rvsdg;
 
@@ -88,25 +85,22 @@ types_bitstring_arithmetic_test_bitashr()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitashr_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 4 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
-      == BitConstantOperation({ 32, 0 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation()
-      == BitConstantOperation({ 32, -4 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex4.origin())->GetOperation()
-      == BitConstantOperation({ 32, -1 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitashr_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 4 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation(),
+      BitConstantOperation({ 32, 0 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation(),
+      BitConstantOperation({ 32, -4 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex4.origin())->GetOperation(),
+      BitConstantOperation({ 32, -1 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitdifference()
+TEST(bitstring, arithmetic_test_bitdifference)
 {
   using namespace jlm::rvsdg;
 
@@ -128,13 +122,10 @@ types_bitstring_arithmetic_test_bitdifference()
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsub_op(32));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsub_op(32));
 }
 
-static int
-types_bitstring_arithmetic_test_bitnegate()
+TEST(bitstring, arithmetic_test_bitnegate)
 {
   using namespace jlm::rvsdg;
 
@@ -162,19 +153,16 @@ types_bitstring_arithmetic_test_bitnegate()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitneg_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, -3 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
-      == BitConstantOperation({ 32, 3 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitneg_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, -3 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation(),
+      BitConstantOperation({ 32, 3 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitnot()
+TEST(bitstring, arithmetic_test_bitnot)
 {
   using namespace jlm::rvsdg;
 
@@ -202,19 +190,16 @@ types_bitstring_arithmetic_test_bitnot()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitnot_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, -4 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
-      == BitConstantOperation({ 32, 3 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitnot_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, -4 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation(),
+      BitConstantOperation({ 32, 3 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitor()
+TEST(bitstring, arithmetic_test_bitor)
 {
   using namespace jlm::rvsdg;
 
@@ -242,16 +227,13 @@ types_bitstring_arithmetic_test_bitor()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitor_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 7 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitor_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 7 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitproduct()
+TEST(bitstring, arithmetic_test_bitproduct)
 {
   using namespace jlm::rvsdg;
 
@@ -279,16 +261,13 @@ types_bitstring_arithmetic_test_bitproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitmul_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 15 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitmul_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 15 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitshiproduct()
+TEST(bitstring, arithmetic_test_bitshiproduct)
 {
   using namespace jlm::rvsdg;
 
@@ -310,13 +289,10 @@ types_bitstring_arithmetic_test_bitshiproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsmulh_op(32));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsmulh_op(32));
 }
 
-static int
-types_bitstring_arithmetic_test_bitshl()
+TEST(bitstring, arithmetic_test_bitshl)
 {
   using namespace jlm::rvsdg;
 
@@ -348,19 +324,16 @@ types_bitstring_arithmetic_test_bitshl()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitshl_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 64 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
-      == BitConstantOperation({ 32, 0 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitshl_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 64 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation(),
+      BitConstantOperation({ 32, 0 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitshr()
+TEST(bitstring, arithmetic_test_bitshr)
 {
   using namespace jlm::rvsdg;
 
@@ -392,19 +365,16 @@ types_bitstring_arithmetic_test_bitshr()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitshr_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 4 }));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation()
-      == BitConstantOperation({ 32, 0 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitshr_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 4 }));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex2.origin())->GetOperation(),
+      BitConstantOperation({ 32, 0 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitsmod()
+TEST(bitstring, arithmetic_test_bitsmod)
 {
   using namespace jlm::rvsdg;
 
@@ -432,16 +402,13 @@ types_bitstring_arithmetic_test_bitsmod()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsmod_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, -1 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsmod_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, -1 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitsquotient()
+TEST(bitstring, arithmetic_test_bitsquotient)
 {
   using namespace jlm::rvsdg;
 
@@ -469,16 +436,13 @@ types_bitstring_arithmetic_test_bitsquotient()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsdiv_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, -2 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsdiv_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, -2 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitsum()
+TEST(bitstring, arithmetic_test_bitsum)
 {
   using namespace jlm::rvsdg;
 
@@ -506,16 +470,13 @@ types_bitstring_arithmetic_test_bitsum()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitadd_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 8 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitadd_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 8 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bituhiproduct()
+TEST(bitstring, arithmetic_test_bituhiproduct)
 {
   using namespace jlm::rvsdg;
 
@@ -537,13 +498,10 @@ types_bitstring_arithmetic_test_bituhiproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitumulh_op(32));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitumulh_op(32));
 }
 
-static int
-types_bitstring_arithmetic_test_bitumod()
+TEST(bitstring, arithmetic_test_bitumod)
 {
   using namespace jlm::rvsdg;
 
@@ -571,16 +529,13 @@ types_bitstring_arithmetic_test_bitumod()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitumod_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 1 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitumod_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 1 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bituquotient()
+TEST(bitstring, arithmetic_test_bituquotient)
 {
   using namespace jlm::rvsdg;
 
@@ -608,16 +563,13 @@ types_bitstring_arithmetic_test_bituquotient()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitudiv_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 2 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitudiv_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 2 }));
 }
 
-static int
-types_bitstring_arithmetic_test_bitxor()
+TEST(bitstring, arithmetic_test_bitxor)
 {
   using namespace jlm::rvsdg;
 
@@ -645,12 +597,10 @@ types_bitstring_arithmetic_test_bitxor()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitxor_op(32));
-  assert(
-      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation()
-      == BitConstantOperation({ 32, 6 }));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitxor_op(32));
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*ex1.origin())->GetOperation(),
+      BitConstantOperation({ 32, 6 }));
 }
 
 static inline void
@@ -658,7 +608,9 @@ expect_static_true(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
-  assert(op && op->value().nbits() == 1 && op->value().str() == "1");
+  ASSERT_TRUE(op);
+  EXPECT_EQ(op->value().nbits(), 1);
+  EXPECT_EQ(op->value().str(), "1");
 }
 
 static inline void
@@ -666,11 +618,12 @@ expect_static_false(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
-  assert(op && op->value().nbits() == 1 && op->value().str() == "0");
+  ASSERT_TRUE(op);
+  EXPECT_EQ(op->value().nbits(), 1);
+  EXPECT_EQ(op->value().str(), "0");
 }
 
-static int
-types_bitstring_comparison_test_bitequal()
+TEST(bitstring, comparison_test_bitequal)
 {
   using namespace jlm::rvsdg;
 
@@ -704,16 +657,13 @@ types_bitstring_comparison_test_bitequal()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == biteq_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), biteq_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
-  assert(TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation() == biteq_op(32));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation(), biteq_op(32));
 }
 
-static int
-types_bitstring_comparison_test_bitnotequal()
+TEST(bitstring, comparison_test_bitnotequal)
 {
   using namespace jlm::rvsdg;
 
@@ -747,16 +697,13 @@ types_bitstring_comparison_test_bitnotequal()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitne_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitne_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
-  assert(TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation() == bitne_op(32));
-
-  return 0;
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex3.origin())->GetOperation(), bitne_op(32));
 }
 
-static int
-types_bitstring_comparison_test_bitsgreater()
+TEST(bitstring, comparison_test_bitsgreater)
 {
   using namespace jlm::rvsdg;
 
@@ -795,17 +742,14 @@ types_bitstring_comparison_test_bitsgreater()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsgt_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsgt_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_false(ex4.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitsgreatereq()
+TEST(bitstring, comparison_test_bitsgreatereq)
 {
   using namespace jlm::rvsdg;
 
@@ -846,18 +790,15 @@ types_bitstring_comparison_test_bitsgreatereq()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsge_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsge_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_true(ex3.origin());
   expect_static_true(ex4.origin());
   expect_static_true(ex5.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitsless()
+TEST(bitstring, comparison_test_bitsless)
 {
   using namespace jlm::rvsdg;
 
@@ -896,17 +837,14 @@ types_bitstring_comparison_test_bitsless()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitslt_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitslt_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_false(ex4.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitslesseq()
+TEST(bitstring, comparison_test_bitslesseq)
 {
   using namespace jlm::rvsdg;
 
@@ -948,18 +886,15 @@ types_bitstring_comparison_test_bitslesseq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitsle_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitsle_op(32));
   expect_static_true(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_true(ex4.origin());
   expect_static_true(ex5.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitugreater()
+TEST(bitstring, comparison_test_bitugreater)
 {
   using namespace jlm::rvsdg;
 
@@ -997,17 +932,14 @@ types_bitstring_comparison_test_bitugreater()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitugt_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitugt_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_false(ex4.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitugreatereq()
+TEST(bitstring, comparison_test_bitugreatereq)
 {
   using namespace jlm::rvsdg;
 
@@ -1048,18 +980,15 @@ types_bitstring_comparison_test_bitugreatereq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bituge_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bituge_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_true(ex3.origin());
   expect_static_true(ex4.origin());
   expect_static_true(ex5.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bituless()
+TEST(bitstring, bitstring_comparison_test_bituless)
 {
   using namespace jlm::rvsdg;
 
@@ -1098,17 +1027,14 @@ types_bitstring_comparison_test_bituless()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitult_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitult_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_false(ex4.origin());
-
-  return 0;
 }
 
-static int
-types_bitstring_comparison_test_bitulesseq()
+TEST(bitstring, bitstring_comparison_test_bitulesseq)
 {
   using namespace jlm::rvsdg;
 
@@ -1150,14 +1076,12 @@ types_bitstring_comparison_test_bitulesseq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation() == bitule_op(32));
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin())->GetOperation(), bitule_op(32));
   expect_static_true(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
   expect_static_true(ex4.origin());
   expect_static_true(ex5.origin());
-
-  return 0;
 }
 
 #define ZERO_64 \
@@ -1188,8 +1112,7 @@ types_bitstring_comparison_test_bitulesseq()
   "11111111"    \
   "11111111"
 
-static int
-types_bitstring_test_constant()
+TEST(bitstring, bitstring_test_constant)
 {
   using namespace jlm::rvsdg;
 
@@ -1220,41 +1143,38 @@ types_bitstring_test_constant()
   view(graph, stdout);
 
   // Act & Assert
-  assert(b1.GetOperation() == BitConstantOperation({ 8, 204 }));
-  assert(b1.GetOperation() == BitConstantOperation({ 8, -52 }));
+  EXPECT_EQ(b1.GetOperation(), BitConstantOperation({ 8, 204 }));
+  EXPECT_EQ(b1.GetOperation(), BitConstantOperation({ 8, -52 }));
 
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex1.origin()));
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex2.origin()));
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex3.origin()));
   ReduceNode<BitConstantOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*ex4.origin()));
 
-  assert(ex1.origin() == ex2.origin());
-  assert(ex1.origin() == ex3.origin());
+  EXPECT_EQ(ex1.origin(), ex2.origin());
+  EXPECT_EQ(ex1.origin(), ex3.origin());
 
   const auto node1 = TryGetOwnerNode<SimpleNode>(*ex1.origin());
-  assert(node1->GetOperation() == BitConstantOperation({ 8, 204 }));
-  assert(node1->GetOperation() == BitConstantOperation({ 8, -52 }));
+  EXPECT_EQ(node1->GetOperation(), BitConstantOperation({ 8, 204 }));
+  EXPECT_EQ(node1->GetOperation(), BitConstantOperation({ 8, -52 }));
 
   const auto node4 = TryGetOwnerNode<SimpleNode>(*ex4.origin());
-  assert(node4->GetOperation() == BitConstantOperation({ 9, 204 }));
-  assert(node4->GetOperation() == BitConstantOperation({ 9, 204 }));
+  EXPECT_EQ(node4->GetOperation(), BitConstantOperation({ 9, 204 }));
+  EXPECT_EQ(node4->GetOperation(), BitConstantOperation({ 9, 204 }));
 
   const auto & plus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), ONE_64 ZERO_64);
-  assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1 }));
-  assert(plus_one_128.GetOperation() == BitConstantOperation({ 128, 1 }));
+  EXPECT_EQ(plus_one_128.GetOperation(), BitConstantOperation({ 128, 1 }));
+  EXPECT_EQ(plus_one_128.GetOperation(), BitConstantOperation({ 128, 1 }));
 
   const auto & minus_one_128 =
       CreateOpNode<BitConstantOperation>(graph.GetRootRegion(), MONE_64 MONE_64);
-  assert(minus_one_128.GetOperation() == BitConstantOperation({ 128, -1 }));
+  EXPECT_EQ(minus_one_128.GetOperation(), BitConstantOperation({ 128, -1 }));
 
   view(&graph.GetRootRegion(), stdout);
-
-  return 0;
 }
 
-static int
-types_bitstring_test_normalize()
+TEST(bitstring, bitstring_test_normalize)
 {
   using namespace jlm::rvsdg;
 
@@ -1284,8 +1204,8 @@ types_bitstring_test_normalize()
 
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(node->GetOperation() == bitadd_op(32));
-  assert(node->ninputs() == 2);
+  EXPECT_EQ(node->GetOperation(), bitadd_op(32));
+  EXPECT_EQ(node->ninputs(), 2);
   auto op1 = node->input(0)->origin();
   auto op2 = node->input(1)->origin();
   if (!is<NodeOutput>(op1))
@@ -1295,12 +1215,10 @@ types_bitstring_test_normalize()
     op2 = tmp;
   }
   /* FIXME: the graph traversers are currently broken, that is why it won't normalize */
-  assert(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation() == BitConstantOperation({ 32, 3 + 4 }));
-  assert(op2 == imp);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*op1)->GetOperation(), BitConstantOperation({ 32, 3 + 4 }));
+  EXPECT_EQ(op2, imp);
 
   view(&graph.GetRootRegion(), stdout);
-
-  return 0;
 }
 
 static void
@@ -1308,11 +1226,10 @@ assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*bitstr);
   auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation &>(node->GetOperation());
-  assert(op.value() == jlm::rvsdg::BitValueRepresentation(std::string(bits, nbits).c_str()));
+  EXPECT_EQ(op.value(), jlm::rvsdg::BitValueRepresentation(std::string(bits, nbits).c_str()));
 }
 
-static void
-types_bitstring_test_reduction()
+TEST(bitstring, test_reduction)
 {
   using namespace jlm::rvsdg;
 
@@ -1367,8 +1284,7 @@ types_bitstring_test_reduction()
   assert_constant(exBitNeg2.origin(), 4, "1101");
 }
 
-static void
-SliceOfConcatReduction()
+TEST(bitstring, SliceOfConcatReduction)
 {
   using namespace jlm::rvsdg;
 
@@ -1398,26 +1314,23 @@ SliceOfConcatReduction()
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
   const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
-  assert(is<BitConcatOperation>(node->GetOperation()));
-  assert(node->ninputs() == 2);
-  assert(is<BitSliceOperation>(o0_node->GetOperation()));
-  assert(is<BitSliceOperation>(o1_node->GetOperation()));
+  EXPECT_TRUE(is<BitConcatOperation>(node->GetOperation()));
+  EXPECT_EQ(node->ninputs(), 2);
+  EXPECT_TRUE(is<BitSliceOperation>(o0_node->GetOperation()));
+  EXPECT_TRUE(is<BitSliceOperation>(o1_node->GetOperation()));
 
   auto attrs = dynamic_cast<const BitSliceOperation *>(&o0_node->GetOperation());
-  assert((attrs->low() == 8) && (attrs->high() == 16));
+  EXPECT_EQ(attrs->low(), 8);
+  EXPECT_EQ(attrs->high(), 16);
   attrs = dynamic_cast<const BitSliceOperation *>(&o1_node->GetOperation());
-  assert((attrs->low() == 0) && (attrs->high() == 8));
+  EXPECT_EQ(attrs->low(), 0);
+  EXPECT_EQ(attrs->high(), 8);
 
-  assert(o0_node->input(0)->origin() == x);
-  assert(o1_node->input(0)->origin() == y);
+  EXPECT_EQ(o0_node->input(0)->origin(), x);
+  EXPECT_EQ(o1_node->input(0)->origin(), y);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/bitstring/bitstring-SliceOfConcatReduction",
-    SliceOfConcatReduction);
-
-static void
-ConcatOfSliceReduction()
+TEST(bitstring, ConcatOfSliceReduction)
 {
   using namespace jlm::rvsdg;
 
@@ -1445,16 +1358,11 @@ ConcatOfSliceReduction()
 
   // Assert
   const auto sliceNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(sliceNode->GetOperation() == BitSliceOperation(bit16Type, 0, 16));
-  assert(sliceNode->input(0)->origin() == x);
+  EXPECT_EQ(sliceNode->GetOperation(), BitSliceOperation(bit16Type, 0, 16));
+  EXPECT_EQ(sliceNode->input(0)->origin(), x);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/bitstring/bitstring-ConcatOfSliceReduction",
-    ConcatOfSliceReduction);
-
-static void
-SliceOfConstant()
+TEST(bitstring, SliceOfConstant)
 {
   using namespace jlm::rvsdg;
 
@@ -1478,13 +1386,10 @@ SliceOfConstant()
   // Assert
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   auto & operation = dynamic_cast<const BitConstantOperation &>(node->GetOperation());
-  assert(operation.value() == BitValueRepresentation("1101"));
+  EXPECT_EQ(operation.value(), BitValueRepresentation("1101"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConstant", SliceOfConstant);
-
-static void
-SliceOfSlice()
+TEST(bitstring, SliceOfSlice)
 {
   using namespace jlm::rvsdg;
 
@@ -1509,13 +1414,11 @@ SliceOfSlice()
   // Assert
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   const auto operation = dynamic_cast<const BitSliceOperation *>(&node->GetOperation());
-  assert(operation->low() == 3 && operation->high() == 5);
+  EXPECT_EQ(operation->low(), 3);
+  EXPECT_EQ(operation->high(), 5);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfSlice", SliceOfSlice);
-
-static void
-SliceOfFullNode()
+TEST(bitstring, SliceOfFullNode)
 {
   using namespace jlm::rvsdg;
 
@@ -1537,13 +1440,10 @@ SliceOfFullNode()
   view(graph, stdout);
 
   // Assert
-  assert(ex.origin() == x);
+  EXPECT_EQ(ex.origin(), x);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfFullNode", SliceOfFullNode);
-
-static void
-SliceOfConcat()
+TEST(bitstring, SliceOfConcat)
 {
   using namespace jlm::rvsdg;
 
@@ -1574,14 +1474,12 @@ SliceOfConcat()
 
   // Assert
   const auto bitType = std::dynamic_pointer_cast<const BitType>(ex.origin()->Type());
-  assert(bitType && bitType->nbits() == 8);
-  assert(ex.origin() == x);
+  ASSERT_TRUE(bitType);
+  EXPECT_EQ(bitType->nbits(), 8);
+  EXPECT_EQ(ex.origin(), x);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConcat", SliceOfConcat);
-
-static void
-ConcatFlattening()
+TEST(bitstring, ConcatFlattening)
 {
   using namespace jlm::rvsdg;
 
@@ -1605,17 +1503,14 @@ ConcatFlattening()
 
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(is<BitConcatOperation>(node->GetOperation()));
-  assert(node->ninputs() == 3);
-  assert(node->input(0)->origin() == x);
-  assert(node->input(1)->origin() == y);
-  assert(node->input(2)->origin() == z);
+  EXPECT_TRUE(is<BitConcatOperation>(node->GetOperation()));
+  EXPECT_EQ(node->ninputs(), 3);
+  EXPECT_EQ(node->input(0)->origin(), x);
+  EXPECT_EQ(node->input(1)->origin(), y);
+  EXPECT_EQ(node->input(2)->origin(), z);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatFlattening", ConcatFlattening);
-
-static void
-ConcatWithSingleOperand()
+TEST(bitstring, ConcatWithSingleOperand)
 {
   using namespace jlm::rvsdg;
 
@@ -1638,15 +1533,10 @@ ConcatWithSingleOperand()
   view(graph, stdout);
 
   // Assert
-  assert(ex.origin() == x);
+  EXPECT_EQ(ex.origin(), x);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/bitstring/bitstring-ConcatWithSingleOperand",
-    ConcatWithSingleOperand);
-
-static void
-ConcatOfSlices()
+TEST(bitstring, ConcatOfSlices)
 {
   using namespace jlm::rvsdg;
 
@@ -1674,13 +1564,10 @@ ConcatOfSlices()
   view(graph, stdout);
 
   // Assert
-  assert(ex.origin() == x);
+  EXPECT_EQ(ex.origin(), x);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatWithOfSlices", ConcatOfSlices);
-
-static void
-ConcatOfConstants()
+TEST(bitstring, ConcatOfConstants)
 {
   using namespace jlm::rvsdg;
 
@@ -1702,13 +1589,10 @@ ConcatOfConstants()
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   auto operation = dynamic_cast<const BitConstantOperation &>(node->GetOperation());
-  assert(operation.value() == BitValueRepresentation("0011011111001000"));
+  EXPECT_EQ(operation.value(), BitValueRepresentation("0011011111001000"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatOfConstants", ConcatOfConstants);
-
-static void
-ConcatCne()
+TEST(bitstring, ConcatCne)
 {
   using namespace jlm::rvsdg;
 
@@ -1745,13 +1629,10 @@ ConcatCne()
   view(graph, stdout);
 
   // Assert
-  assert(ex1.origin() == ex2.origin());
+  EXPECT_EQ(ex1.origin(), ex2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatCne", ConcatCne);
-
-static void
-SliceCne()
+TEST(bitstring, SliceCne)
 {
   using namespace jlm::rvsdg;
 
@@ -1785,10 +1666,8 @@ SliceCne()
   view(graph, stdout);
 
   // Assert
-  assert(ex1.origin() == ex2.origin());
+  EXPECT_EQ(ex1.origin(), ex2.origin());
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceCne", SliceCne);
 
 static const char * bs[] = { "00000000", "11111111", "10000000", "01111111", "00001111",
                              "XXXX0011", "XD001100", "XXXXDDDD", "10XDDX01", "0DDDDDD1" };
@@ -2209,115 +2088,74 @@ static char uless[10][10] = { { '0', '1', '1', '1', '1', '1', '1', 'X', '1', '1'
                               { '0', '1', '0', '1', '1', '1', '0', 'X', 'X', 'X' },
                               { '0', '1', '0', 'D', 'D', 'X', '0', 'X', 'X', 'D' } };
 
-static int
-types_bitstring_test_value_representation()
+TEST(bitstring, test_value_representation)
 {
   using namespace jlm::rvsdg;
 
   for (size_t r = 0; r < 10; r++)
   {
-    assert(BitValueRepresentation(bs[r]).lnot() == bitstring_not[r]);
+    EXPECT_EQ(BitValueRepresentation(bs[r]).lnot(), bitstring_not[r]);
     for (size_t c = 0; c < 10; c++)
     {
-      assert(BitValueRepresentation(bs[r]).land(bs[c]) == bitstring_and[r][c]);
-      assert(BitValueRepresentation(bs[r]).lor(bs[c]) == bitstring_or[r][c]);
-      assert(BitValueRepresentation(bs[r]).lxor(bs[c]) == bitstring_xor[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).land(bs[c]), bitstring_and[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).lor(bs[c]), bitstring_or[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).lxor(bs[c]), bitstring_xor[r][c]);
 
-      assert(BitValueRepresentation(bs[r]).ult(bs[c]) == uless[r][c]);
-      assert(BitValueRepresentation(bs[r]).slt(bs[c]) == sless[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).ult(bs[c]), uless[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).slt(bs[c]), sless[r][c]);
 
-      assert(BitValueRepresentation(bs[r]).ule(bs[c]) == ulesseq[r][c]);
-      assert(BitValueRepresentation(bs[r]).sle(bs[c]) == slesseq[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).ule(bs[c]), ulesseq[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).sle(bs[c]), slesseq[r][c]);
 
-      assert(BitValueRepresentation(bs[r]).eq(bs[c]) == equal[r][c]);
-      assert(BitValueRepresentation(bs[r]).ne(bs[c]) == notequal[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).eq(bs[c]), equal[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).ne(bs[c]), notequal[r][c]);
 
-      assert(BitValueRepresentation(bs[r]).uge(bs[c]) == ugreatereq[r][c]);
-      assert(BitValueRepresentation(bs[r]).sge(bs[c]) == sgreatereq[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).uge(bs[c]), ugreatereq[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).sge(bs[c]), sgreatereq[r][c]);
 
-      assert(BitValueRepresentation(bs[r]).ugt(bs[c]) == ugreater[r][c]);
-      assert(BitValueRepresentation(bs[r]).sgt(bs[c]) == sgreater[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).ugt(bs[c]), ugreater[r][c]);
+      EXPECT_EQ(BitValueRepresentation(bs[r]).sgt(bs[c]), sgreater[r][c]);
     }
   }
 
-  assert(BitValueRepresentation("000110").to_uint() == 24);
-  assert(BitValueRepresentation("00011").to_int() == -8);
+  EXPECT_EQ(BitValueRepresentation("000110").to_uint(), 24);
+  EXPECT_EQ(BitValueRepresentation("00011").to_int(), -8);
 
   for (ssize_t r = -4; r < 5; r++)
   {
     BitValueRepresentation rbits(32, r);
 
-    assert(rbits.neg() == -r);
-    assert(rbits.shl(1) == r << 1);
-    assert(rbits.shl(32) == 0);
-    assert(rbits.ashr(1) == r >> 1);
-    assert(rbits.ashr(34) == (r < 0 ? -1 : 0));
+    EXPECT_EQ(rbits.neg(), -r);
+    EXPECT_EQ(rbits.shl(1), r << 1);
+    EXPECT_EQ(rbits.shl(32), 0);
+    EXPECT_EQ(rbits.ashr(1), r >> 1);
+    EXPECT_EQ(rbits.ashr(34), (r < 0 ? -1 : 0));
 
     if (r >= 0)
     {
-      assert(rbits.shr(1) == r >> 1);
-      assert(rbits.shr(34) == 0);
+      EXPECT_EQ(rbits.shr(1), r >> 1);
+      EXPECT_EQ(rbits.shr(34), 0);
     }
 
     for (ssize_t c = -4; c < 5; c++)
     {
       BitValueRepresentation cbits(32, c);
 
-      assert(rbits.add(cbits) == r + c);
-      assert(rbits.sub(cbits) == r - c);
-      assert(rbits.mul(cbits) == r * c);
+      EXPECT_EQ(rbits.add(cbits), r + c);
+      EXPECT_EQ(rbits.sub(cbits), r - c);
+      EXPECT_EQ(rbits.mul(cbits), r * c);
 
       if (r >= 0 && c > 0)
       {
-        assert(rbits.udiv(cbits) == r / c);
-        assert(rbits.umod(cbits) == r % c);
+        EXPECT_EQ(rbits.udiv(cbits), r / c);
+        EXPECT_EQ(rbits.umod(cbits), r % c);
       }
 
       if (c != 0)
       {
-        assert(rbits.sdiv(cbits) == r / c);
-        assert(rbits.smod(cbits) == r % c);
+        EXPECT_EQ(rbits.sdiv(cbits), r / c);
+        EXPECT_EQ(rbits.smod(cbits), r % c);
       }
     }
   }
-
-  return 0;
 }
-
-static void
-RunTests()
-{
-  types_bitstring_arithmetic_test_bitand();
-  types_bitstring_arithmetic_test_bitashr();
-  types_bitstring_arithmetic_test_bitdifference();
-  types_bitstring_arithmetic_test_bitnegate();
-  types_bitstring_arithmetic_test_bitnot();
-  types_bitstring_arithmetic_test_bitor();
-  types_bitstring_arithmetic_test_bitproduct();
-  types_bitstring_arithmetic_test_bitshiproduct();
-  types_bitstring_arithmetic_test_bitshl();
-  types_bitstring_arithmetic_test_bitshr();
-  types_bitstring_arithmetic_test_bitsmod();
-  types_bitstring_arithmetic_test_bitsquotient();
-  types_bitstring_arithmetic_test_bitsum();
-  types_bitstring_arithmetic_test_bituhiproduct();
-  types_bitstring_arithmetic_test_bitumod();
-  types_bitstring_arithmetic_test_bituquotient();
-  types_bitstring_arithmetic_test_bitxor();
-  types_bitstring_comparison_test_bitequal();
-  types_bitstring_comparison_test_bitnotequal();
-  types_bitstring_comparison_test_bitsgreater();
-  types_bitstring_comparison_test_bitsgreatereq();
-  types_bitstring_comparison_test_bitsless();
-  types_bitstring_comparison_test_bitslesseq();
-  types_bitstring_comparison_test_bitugreater();
-  types_bitstring_comparison_test_bitugreatereq();
-  types_bitstring_comparison_test_bituless();
-  types_bitstring_comparison_test_bitulesseq();
-  types_bitstring_test_constant();
-  types_bitstring_test_normalize();
-  types_bitstring_test_reduction();
-  types_bitstring_test_value_representation();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring", RunTests);
