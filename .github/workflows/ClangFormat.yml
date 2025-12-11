@@ -18,6 +18,7 @@ jobs:
         with:
           install-llvm: true # Needed to configure jlm
           install-clang-format: true
+          install-gtest: true # Required for unit tests
       - name: "Configure jlm with HLS and MLIR enabled"
         run: ./configure.sh --enable-mlir --enable-hls
       - name: "Check format"
