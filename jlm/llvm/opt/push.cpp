@@ -85,9 +85,15 @@ private:
 static bool
 has_side_effects(const rvsdg::Node * node)
 {
-  for (size_t n = 0; n < node->noutputs(); n++)
+  for (auto & input : node->Inputs())
   {
-    if (node->output(n)->Type()->Kind() == rvsdg::TypeKind::State)
+    if (input.Type()->Kind() == rvsdg::TypeKind::State)
+      return true;
+  }
+
+  for (auto & output : node->Outputs())
+  {
+    if (output.Type()->Kind() == rvsdg::TypeKind::State)
       return true;
   }
 
@@ -218,6 +224,8 @@ push(rvsdg::GammaNode * gamma)
         }
       }
     }
+
+    region->prune(false);
   }
 }
 
@@ -404,6 +412,8 @@ push(rvsdg::ThetaNode * theta)
     if (nnodes == theta->subregion()->numNodes())
       done = true;
   }
+
+  theta->subregion()->prune(false);
 }
 
 static void

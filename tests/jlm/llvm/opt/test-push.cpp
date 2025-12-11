@@ -11,6 +11,9 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
@@ -147,6 +150,66 @@ test_push_theta_bottom()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(1)->origin()));
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
+
+static void
+ioBarrier()
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto valueType = ValueType::Create();
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & controlImport = jlm::rvsdg::GraphImport::Create(rvsdg, controlType, "control");
+  auto & addressImport = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
+  auto & ioStateImport = jlm::rvsdg::GraphImport::Create(rvsdg, ioStateType, "ioState");
+
+  auto gammaNode = GammaNode::create(&controlImport, 2);
+
+  auto addressEntryVar = gammaNode->AddEntryVar(&addressImport);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(&ioStateImport);
+
+  auto & ioBarrierNode = IOBarrierOperation::createNode(
+      *addressEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0]);
+
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, valueType, 4);
+
+  auto undefValue = UndefValueOperation::Create(*gammaNode->subregion(1), valueType);
+
+  auto exitVar = gammaNode->AddExitVar({ loadNode.output(0), undefValue });
+
+  GraphExport::Create(*exitVar.output, "x");
+
+  view(rvsdg, stdout);
+
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect that only the undef value was hoisted
+
+  // gamma node and undef value
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
+
+  // IOBarrier and load
+  assert(gammaNode->subregion(0)->numNodes() == 2);
+  assert(gammaNode->subregion(1)->numNodes() == 0);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-ioBarrier", ioBarrier)
 
 static void
 verify()
