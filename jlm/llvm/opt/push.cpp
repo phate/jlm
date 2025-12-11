@@ -224,6 +224,8 @@ push(rvsdg::GammaNode * gamma)
         }
       }
     }
+
+    region->prune(false);
   }
 }
 
@@ -410,6 +412,8 @@ push(rvsdg::ThetaNode * theta)
     if (nnodes == theta->subregion()->numNodes())
       done = true;
   }
+
+  theta->subregion()->prune(false);
 }
 
 static void
