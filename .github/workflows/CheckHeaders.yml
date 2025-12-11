@@ -17,6 +17,7 @@ jobs:
         uses: ./.github/actions/InstallPackages
         with:
           install-llvm: true # Needed to configure jlm
+          install-gtest: true # Required for unit tests
       - name: "Configure jlm with HLS and MLIR enabled"
         run: ./configure.sh --enable-mlir --enable-hls
       - name: "Check headers"

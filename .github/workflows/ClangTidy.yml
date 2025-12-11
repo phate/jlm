@@ -18,6 +18,7 @@ jobs:
         uses: ./.github/actions/InstallPackages
         with:
           install-clang-tidy: true
+          install-gtest: true # Required for unit tests
 
       - name: "Install HLS dialect dependencies"
         uses: ./.github/actions/BuildCirct
