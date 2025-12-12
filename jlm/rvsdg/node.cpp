@@ -351,8 +351,8 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
   return copy(region, smap);
 }
 
-const Output &
-traceOutputIntraProcedurally(const Output & output)
+Output &
+traceOutputIntraProcedurally(Output & output)
 {
   // Handle gamma node outputs
   if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
@@ -411,9 +411,15 @@ traceOutputIntraProcedurally(const Output & output)
 }
 
 const Output &
-traceOutput(const Output & startingOutput)
+traceOutputIntraProcedurally(const Output & output)
 {
-  const auto & output = traceOutputIntraProcedurally(startingOutput);
+  return traceOutputIntraProcedurally(const_cast<Output &>(output));
+}
+
+Output &
+traceOutput(Output & startingOutput)
+{
+  auto & output = traceOutputIntraProcedurally(startingOutput);
 
   // Handle lambda context variables
   if (const auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
@@ -449,16 +455,17 @@ traceOutput(const Output & startingOutput)
       // Follow the context variable to outside the phi
       return traceOutput(*ctxVar->input->origin());
     }
-    if (const auto fixVar = std::get_if<rvsdg::PhiNode::FixVar>(&argument))
-    {
-      // Follow to the recursion variable's definition
-      return traceOutput(*fixVar->result->origin());
-    }
 
     throw std::logic_error("Unknown phi argument type");
   }
 
   return output;
+}
+
+const Output &
+traceOutput(const Output & startingOutput)
+{
+  return traceOutput(const_cast<Output &>(startingOutput));
 }
 
 Output &

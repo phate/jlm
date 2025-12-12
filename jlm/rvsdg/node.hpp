@@ -1151,6 +1151,9 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
  * @param output The \ref Output that needs to be traced.
  * @return The final value of the tracing.
  */
+Output &
+traceOutputIntraProcedurally(Output & output);
+
 const Output &
 traceOutputIntraProcedurally(const Output & output);
 
@@ -1161,11 +1164,16 @@ traceOutputIntraProcedurally(const Output & output);
  *
  * 1. From lambda context variables out of the lambda
  * 2. From delta context variables out of the delta
- * 3. Phi node recursion variables and context variables
+ * 3. From phi context variables out of the phi
+ *
+ * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
  * @return the final value of the tracing
  */
+Output &
+traceOutput(Output & output);
+
 const Output &
 traceOutput(const Output & output);
 

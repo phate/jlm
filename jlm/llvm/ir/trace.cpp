@@ -12,8 +12,8 @@
 namespace jlm::llvm
 {
 
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & startingOutput)
+rvsdg::Output &
+traceOutput(rvsdg::Output & startingOutput)
 {
   auto & output = rvsdg::traceOutput(startingOutput);
 
@@ -25,6 +25,12 @@ traceOutput(const rvsdg::Output & startingOutput)
   }
 
   return output;
+}
+
+const rvsdg::Output &
+traceOutput(const rvsdg::Output & startingOutput)
+{
+  return llvm::traceOutput(const_cast<rvsdg::Output &>(startingOutput));
 }
 
 std::optional<int64_t>

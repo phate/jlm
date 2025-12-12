@@ -21,6 +21,9 @@ namespace jlm::llvm
  * @param output the output to start tracing from
  * @return the maximally traced output
  */
+rvsdg::Output &
+traceOutput(rvsdg::Output & output);
+
 const rvsdg::Output &
 traceOutput(const rvsdg::Output & output);
 
