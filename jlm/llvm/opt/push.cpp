@@ -13,6 +13,7 @@
 #include <jlm/util/time.hpp>
 
 #include <deque>
+#include <jlm/rvsdg/MatchType.hpp>
 
 namespace jlm::llvm
 {
@@ -45,6 +46,59 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
+};
+
+class NodeHoisting::Context final
+{
+public:
+  explicit Context(rvsdg::LambdaNode & lambdaNode)
+      : LambdaSubregion_(lambdaNode.subregion())
+  {}
+
+  rvsdg::Region &
+  getLambdaSubregion() const noexcept
+  {
+    return *LambdaSubregion_;
+  }
+
+  void
+  addRegionDepth(const rvsdg::Region & region, const size_t depth) noexcept
+  {
+    JLM_ASSERT(RegionDepth_.find(&region) == RegionDepth_.end());
+    RegionDepth_[&region] = depth;
+  }
+
+  size_t
+  getRegionDeph(const rvsdg::Region & region) const noexcept
+  {
+    JLM_ASSERT(RegionDepth_.find(&region) != RegionDepth_.end());
+    return RegionDepth_.at(&region);
+  }
+
+  void
+  addTargetRegion(const rvsdg::Node & node, rvsdg::Region & region) noexcept
+  {
+    JLM_ASSERT(TargetRegion_.find(&node) == TargetRegion_.end());
+    TargetRegion_[&node] = &region;
+  }
+
+  rvsdg::Region &
+  getTargetRegion(const rvsdg::Node & node) const noexcept
+  {
+    JLM_ASSERT(TargetRegion_.find(&node) != TargetRegion_.end());
+    return *TargetRegion_.at(&node);
+  }
+
+  static std::unique_ptr<Context>
+  create(rvsdg::LambdaNode & lambdaNode)
+  {
+    return std::make_unique<Context>(lambdaNode);
+  }
+
+private:
+  rvsdg::Region * LambdaSubregion_;
+  std::unordered_map<const rvsdg::Region *, size_t> RegionDepth_{};
+  std::unordered_map<const rvsdg::Node *, rvsdg::Region *> TargetRegion_{};
 };
 
 class Worklist
@@ -449,10 +503,151 @@ push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCol
 
 NodeHoisting::~NodeHoisting() noexcept = default;
 
+bool
+NodeHoisting::isEligibleToHoist(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (input.Type()->Kind() == rvsdg::TypeKind::State)
+      return false;
+  }
+
+  for (auto & output : node.Outputs())
+  {
+    if (output.Type()->Kind() == rvsdg::TypeKind::State)
+      return false;
+  }
+
+  return true;
+}
+
+void
+NodeHoisting::computeRegionDepth(const rvsdg::Region & region)
+{
+  if (dynamic_cast<const rvsdg::LambdaNode *>(region.node()))
+  {
+    Context_->addRegionDepth(region, 0);
+  }
+
+  const auto parentRegion = region.node()->region();
+  const auto parentRegionDepth = Context_->getRegionDeph(*parentRegion);
+  Context_->addRegionDepth(region, parentRegionDepth + 1);
+}
+
+rvsdg::Region &
+NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
+{
+  if (auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+  }
+  else if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+  }
+  else if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  {
+    return Context_->getTargetRegion(*gammaNode);
+  }
+  else if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  {
+    return Context_->getTargetRegion(*thetaNode);
+  }
+  else if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    return Context_->getTargetRegion(*node);
+  }
+  else
+  {
+    throw std::logic_error("Unhandled output type!");
+  }
+}
+
+void
+NodeHoisting::computeTargetRegion(const rvsdg::Node & node)
+{
+  if (!isEligibleToHoist(node))
+  {
+    // Nodes that are not eligible to be hoisted must stay in their current region
+    Context_->addTargetRegion(node, *node.region());
+    return;
+  }
+
+  if (node.ninputs() == 0)
+  {
+    // Nodes without inputs can always be hoisted to the lambda region
+    Context_->addTargetRegion(node, Context_->getLambdaSubregion());
+    return;
+  }
+
+  std::vector<const rvsdg::Region *> targetRegions;
+  for (auto & input : node.Inputs())
+  {
+    auto & targetRegion = computeTargetRegion(*input.origin());
+    if (&targetRegion == node.region())
+    {
+      // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
+      // node
+      Context_->addTargetRegion(node, targetRegion);
+      return;
+    }
+
+    targetRegions.push_back(&targetRegion);
+  }
+}
+
+void
+NodeHoisting::markNodesInRegion(const rvsdg::Region & region)
+{
+  computeRegionDepth(region);
+
+  for (const auto node : rvsdg::TopDownConstTraverser(&region))
+  {
+    computeTargetRegion(*node);
+  }
+}
+
+void
+NodeHoisting::hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode)
+{
+  Context_ = Context::create(lambdaNode);
+
+  markNodesInRegion(*lambdaNode.subregion());
+
+  Context_.reset();
+}
+
+void
+NodeHoisting::hoistNodesInRootRegion(rvsdg::Region & region)
+{
+  for (auto & node : rvsdg::TopDownTraverser(&region))
+  {
+    rvsdg::MatchType(
+        *node,
+        [&](rvsdg::LambdaNode & lambdaNode)
+        {
+          hoistNodesInLambda(lambdaNode);
+        },
+        [&](rvsdg::PhiNode & phiNode)
+        {
+          hoistNodesInRootRegion(*phiNode.subregion());
+        },
+        [](rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done
+        },
+        [](rvsdg::SimpleNode &)
+        {
+          // Nothing needs to be done
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node->DebugString()));
+        });
+  }
+}
+
 void
 NodeHoisting::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   push(module, statisticsCollector);
 }
-
 }

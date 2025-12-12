@@ -22,6 +22,8 @@ namespace jlm::llvm
  */
 class NodeHoisting final : public rvsdg::Transformation
 {
+  class Context;
+
 public:
   class Statistics;
 
@@ -33,6 +35,30 @@ public:
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+
+private:
+  void
+  hoistNodesInRootRegion(rvsdg::Region & region);
+
+  void
+  hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode);
+
+  void
+  markNodesInRegion(const rvsdg::Region & region);
+
+  static bool
+  isEligibleToHoist(const rvsdg::Node & node);
+
+  void
+  computeRegionDepth(const rvsdg::Region & region);
+
+  void
+  computeTargetRegion(const rvsdg::Node & node);
+
+  rvsdg::Region &
+  computeTargetRegion(const rvsdg::Output & output) const;
+
+  std::unique_ptr<Context> Context_;
 };
 
 void
