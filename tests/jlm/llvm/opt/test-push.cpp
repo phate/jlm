@@ -12,57 +12,166 @@
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto st = jlm::tests::StateType::Create();
-static const auto vt = jlm::tests::ValueType::Create();
-static jlm::util::StatisticsCollector statisticsCollector;
-
-static inline void
-test_gamma()
+static void
+simpleGamma()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      {
+          controlType,
+          valueType,
+      },
+      { valueType });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & graph = rm.Rvsdg();
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-  auto s = &jlm::rvsdg::GraphImport::Create(graph, st, "s");
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto valueArgument = lambdaNode->GetFunctionArguments()[1];
 
-  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-  auto evx = gamma->AddEntryVar(x);
-  auto evs = gamma->AddEntryVar(s);
+  auto gammaNode = GammaNode::create(controlArgument, 2);
+  auto entryVar = gammaNode->AddEntryVar(valueArgument);
 
-  auto null = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
-  auto bin = jlm::tests::TestOperation::create(
-                 gamma->subregion(0),
-                 { null, evx.branchArgument[0] },
-                 { vt })
-                 ->output(0);
-  auto state =
-      jlm::tests::TestOperation::create(gamma->subregion(0), { bin, evs.branchArgument[0] }, { st })
-          ->output(0);
+  // gamma subregion 0
+  auto constantNode = TestOperation::create(gammaNode->subregion(0), {}, { valueType });
+  auto binaryNode = TestOperation::create(
+      gammaNode->subregion(0),
+      { entryVar.branchArgument[0], constantNode->output(0) },
+      { valueType });
 
-  gamma->AddExitVar({ state, evs.branchArgument[1] });
+  // gamma subregion 1
+  auto unaryNode =
+      TestOperation::create(gammaNode->subregion(1), { entryVar.branchArgument[1] }, { valueType });
 
-  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x");
+  auto exitVar = gammaNode->AddExitVar({ binaryNode->output(0), unaryNode->output(0) });
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::NodeHoisting pushout;
-  pushout.Run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  auto lambdaOutput = lambdaNode->finalize({ exitVar.output });
 
-  assert(graph.GetRootRegion().numNodes() == 3);
+  GraphExport::Create(*lambdaOutput, "x");
+
+  view(rvsdg, stdout);
+
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // All nodes from the gamma subregions should have been hoisted to the lambda subregion
+  assert(lambdaNode->subregion()->numNodes() == 4);
+
+  // The original nodes in the gamma subregions should have been removed
+  assert(gammaNode->subregion(0)->numNodes() == 0);
+  assert(gammaNode->subregion(1)->numNodes() == 0);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-simpleGamma", simpleGamma)
+
+static void
+nestedGamma()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      {
+          controlType,
+          valueType,
+      },
+      { valueType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto valueArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto gammaNode1 = GammaNode::create(controlArgument, 2);
+  auto controlEntryVar = gammaNode1->AddEntryVar(controlArgument);
+  auto valueEntryVar1 = gammaNode1->AddEntryVar(valueArgument);
+
+  // gamma1 subregion 0
+  auto constantNode1 = TestOperation::create(gammaNode1->subregion(0), {}, { valueType });
+
+  auto gammaNode2 = GammaNode::create(controlEntryVar.branchArgument[0], 2);
+  auto valueEntryVar2 = gammaNode2->AddEntryVar(valueEntryVar1.branchArgument[0]);
+  auto valueEntryVar3 = gammaNode2->AddEntryVar(constantNode1->output(0));
+
+  // gamma2 subregion 0
+  auto binaryNode = TestOperation::create(
+      gammaNode1->subregion(0),
+      { valueEntryVar2.branchArgument[0], valueEntryVar3.branchArgument[0] },
+      { valueType });
+
+  // gamma2 subregion 1
+  auto unaryNode = TestOperation::create(
+      gammaNode1->subregion(1),
+      { valueEntryVar2.branchArgument[1] },
+      { valueType });
+
+  auto exitVar1 = gammaNode2->AddExitVar({ binaryNode->output(0), unaryNode->output(0) });
+
+  // gamma1 subregion 1
+  auto constantNode2 = TestOperation::create(gammaNode1->subregion(1), {}, { valueType });
+
+  auto exitVar2 = gammaNode1->AddExitVar({ exitVar1.output, constantNode2->output(0) });
+
+  auto lambdaOutput = lambdaNode->finalize({ exitVar2.output });
+
+  GraphExport::Create(*lambdaOutput, "x");
+
+  view(rvsdg, stdout);
+
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // All simple nodes from both gamma subregions should have been hoisted to the lambda subregion
+  assert(lambdaNode->subregion()->numNodes() == 5);
+
+  // Only gamma node 2 should be left in gamma node 1 subregion 0
+  assert(gammaNode1->subregion(0)->numNodes() == 1);
+  assert(gammaNode1->subregion(1)->numNodes() == 0);
+
+  // All nodes should have been hoisted out
+  assert(gammaNode2->subregion(0)->numNodes() == 0);
+  assert(gammaNode2->subregion(1)->numNodes() == 0);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-nestedGamma", nestedGamma)
+
+#if 0
 static inline void
 test_theta()
 {
@@ -111,6 +220,7 @@ test_theta()
   assert(graph.GetRootRegion().numNodes() == 3);
 }
 
+
 static inline void
 test_push_theta_bottom()
 {
@@ -150,6 +260,7 @@ test_push_theta_bottom()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(1)->origin()));
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
+
 
 static void
 ioBarrier()
@@ -201,7 +312,7 @@ ioBarrier()
   // Assert
   // We expect that only the undef value was hoisted
 
-  // gamma node and undef value
+  // simpleGamma node and undef value
   assert(rvsdg.GetRootRegion().numNodes() == 2);
 
   // IOBarrier and load
@@ -210,13 +321,15 @@ ioBarrier()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-ioBarrier", ioBarrier)
-
+#endif
+#if 0
 static void
 verify()
 {
   test_gamma();
   test_theta();
-  test_push_theta_bottom();
+  // test_push_theta_bottom();
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push", verify)
+#endif

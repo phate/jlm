@@ -101,6 +101,7 @@ private:
   std::unordered_map<const rvsdg::Node *, rvsdg::Region *> TargetRegion_{};
 };
 
+#if 0
 class Worklist
 {
 public:
@@ -500,85 +501,98 @@ push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCol
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
+#endif
 
 NodeHoisting::~NodeHoisting() noexcept = default;
 
-bool
-NodeHoisting::isEligibleToHoist(const rvsdg::Node & node)
-{
-  for (auto & input : node.Inputs())
-  {
-    if (input.Type()->Kind() == rvsdg::TypeKind::State)
-      return false;
-  }
+NodeHoisting::NodeHoisting()
+    : Transformation("NodeHoisting")
+{}
 
-  for (auto & output : node.Outputs())
-  {
-    if (output.Type()->Kind() == rvsdg::TypeKind::State)
-      return false;
-  }
-
-  return true;
-}
-
-void
-NodeHoisting::computeRegionDepth(const rvsdg::Region & region)
+size_t
+NodeHoisting::computeRegionDepth(const rvsdg::Region & region) const
 {
   if (dynamic_cast<const rvsdg::LambdaNode *>(region.node()))
   {
-    Context_->addRegionDepth(region, 0);
+    return 0;
   }
 
   const auto parentRegion = region.node()->region();
-  const auto parentRegionDepth = Context_->getRegionDeph(*parentRegion);
-  Context_->addRegionDepth(region, parentRegionDepth + 1);
+  return Context_->getRegionDeph(*parentRegion) + 1;
 }
 
 rvsdg::Region &
 NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
 {
-  if (auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  if (is<IOStateType>(output.Type()))
   {
+    // We never hoist a node with an IOState.
+    return *output.region();
   }
-  else if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+
+  // Handle gamma region arguments
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      return computeTargetRegion(*entryVar->input->origin());
+    }
+
+    return *output.region();
   }
-  else if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+
+  // Handle lambda region arguments
+  if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  {
+    return *output.region();
+  }
+
+  // Handle theta region arguments
+  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    {
+      // FIXME: We need to handle memory state type edges here
+      return computeTargetRegion(*loopVar.input->origin());
+    }
+
+    return *output.region();
+  }
+
+  // Handle gamma outputs
+  if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
     return Context_->getTargetRegion(*gammaNode);
   }
-  else if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+
+  // Handle theta outputs
+  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
     return Context_->getTargetRegion(*thetaNode);
   }
-  else if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+
+  // Handle simple node outputs
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
     return Context_->getTargetRegion(*node);
   }
-  else
-  {
-    throw std::logic_error("Unhandled output type!");
-  }
+
+  throw std::logic_error("Unhandled output type!");
 }
 
-void
-NodeHoisting::computeTargetRegion(const rvsdg::Node & node)
+rvsdg::Region &
+NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 {
-  if (!isEligibleToHoist(node))
-  {
-    // Nodes that are not eligible to be hoisted must stay in their current region
-    Context_->addTargetRegion(node, *node.region());
-    return;
-  }
-
   if (node.ninputs() == 0)
   {
     // Nodes without inputs can always be hoisted to the lambda region
-    Context_->addTargetRegion(node, Context_->getLambdaSubregion());
-    return;
+    return Context_->getLambdaSubregion();
   }
 
-  std::vector<const rvsdg::Region *> targetRegions;
+  // Compute target regions for all the inputs of the node
+  std::vector<rvsdg::Region *> targetRegions;
   for (auto & input : node.Inputs())
   {
     auto & targetRegion = computeTargetRegion(*input.origin());
@@ -586,23 +600,138 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node)
     {
       // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
       // node
-      Context_->addTargetRegion(node, targetRegion);
-      return;
+      return *node.region();
     }
 
     targetRegions.push_back(&targetRegion);
   }
+
+  // Compute the uppermost target region in the region tree
+  return **std::min_element(
+      targetRegions.begin(),
+      targetRegions.end(),
+      [&](const rvsdg::Region * region1, const rvsdg::Region * region2)
+      {
+        return Context_->getRegionDeph(*region1) < Context_->getRegionDeph(*region2);
+      });
 }
 
 void
-NodeHoisting::markNodesInRegion(const rvsdg::Region & region)
+NodeHoisting::markNodes(const rvsdg::Region & region)
 {
-  computeRegionDepth(region);
+  const auto regionDepth = computeRegionDepth(region);
+  Context_->addRegionDepth(region, regionDepth);
 
   for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
-    computeTargetRegion(*node);
+    // Handle innermost regions
+    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
+    {
+      // FIXME: We currently do not allow structural nodes (gamma and theta nodes) to be hoisted
+      Context_->addTargetRegion(*node, *node->region());
+
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        markNodes(subregion);
+      }
+    }
+    else
+    {
+      rvsdg::Region & targetRegion = computeTargetRegion(*node);
+      Context_->addTargetRegion(*node, targetRegion);
+    }
   }
+}
+
+rvsdg::Output &
+NodeHoisting::getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region & targetRegion)
+{
+  if (output.region() == &targetRegion)
+    return output;
+
+  // Handle gamma subregion arguments
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      return getOperandFromTargetRegion(*entryVar->input->origin(), targetRegion);
+    }
+  }
+
+  // Handle theta subregion arguments
+  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    JLM_ASSERT(rvsdg::ThetaLoopVarIsInvariant(loopVar));
+    return getOperandFromTargetRegion(*loopVar.input->origin(), targetRegion);
+  }
+
+  throw std::logic_error("Unhandled output type!");
+}
+
+std::vector<rvsdg::Output *>
+NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node) const
+{
+  auto & targetRegion = Context_->getTargetRegion(node);
+
+  std::vector<rvsdg::Output *> operands;
+  for (auto & input : node.Inputs())
+  {
+    auto & operand = getOperandFromTargetRegion(*input.origin(), targetRegion);
+    operands.push_back(&operand);
+  }
+
+  return operands;
+}
+
+void
+NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node)
+{
+  auto & targetRegion = Context_->getTargetRegion(node);
+
+  const auto operands = getOperandsFromTargetRegion(node);
+  const auto copiedNode = node.copy(&targetRegion, operands);
+
+  auto itOrg = std::begin(node.Outputs());
+  const auto endOrg = std::end(node.Outputs());
+  auto itCpy = std::begin(copiedNode->Outputs());
+  const auto endCpy = std::end(copiedNode->Outputs());
+  JLM_ASSERT(std::distance(itOrg, endOrg) == std::distance(itCpy, endCpy));
+
+  for (; itOrg != endOrg; ++itOrg, ++itCpy)
+  {
+    auto & outputOrg = *itOrg;
+    auto & outputCpy = *itCpy;
+    auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
+    outputOrg.divert_users(&newOutputOrg);
+  }
+}
+
+void
+NodeHoisting::hoistNodes(rvsdg::Region & region)
+{
+  // FIXME: We a routing unnecessary values through gamma and theta nodes. We should cluster
+  // subgraphs that need to be hoisted to avoid unnecessary routing.
+  for (const auto node : rvsdg::TopDownTraverser(&region))
+  {
+    auto & targetRegion = Context_->getTargetRegion(*node);
+    if (&targetRegion != node->region())
+    {
+      copyNodeToTargetRegion(*node);
+    }
+
+    // Handle innermost regions
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        hoistNodes(subregion);
+      }
+    }
+  }
+
+  region.prune(false);
 }
 
 void
@@ -610,7 +739,8 @@ NodeHoisting::hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode)
 {
   Context_ = Context::create(lambdaNode);
 
-  markNodesInRegion(*lambdaNode.subregion());
+  markNodes(*lambdaNode.subregion());
+  hoistNodes(*lambdaNode.subregion());
 
   Context_.reset();
 }
@@ -620,7 +750,7 @@ NodeHoisting::hoistNodesInRootRegion(rvsdg::Region & region)
 {
   for (auto & node : rvsdg::TopDownTraverser(&region))
   {
-    rvsdg::MatchType(
+    rvsdg::MatchTypeWithDefault(
         *node,
         [&](rvsdg::LambdaNode & lambdaNode)
         {
@@ -646,8 +776,14 @@ NodeHoisting::hoistNodesInRootRegion(rvsdg::Region & region)
 }
 
 void
-NodeHoisting::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+NodeHoisting::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  push(module, statisticsCollector);
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
+
+  statistics->start(rvsdgModule.Rvsdg());
+  hoistNodesInRootRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 }

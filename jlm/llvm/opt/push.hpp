@@ -11,6 +11,7 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
+class LambdaNode;
 class ThetaNode;
 }
 
@@ -29,12 +30,10 @@ public:
 
   ~NodeHoisting() noexcept override;
 
-  NodeHoisting()
-      : Transformation("NodeHoisting")
-  {}
+  NodeHoisting();
 
   void
-  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void
@@ -44,23 +43,33 @@ private:
   hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode);
 
   void
-  markNodesInRegion(const rvsdg::Region & region);
-
-  static bool
-  isEligibleToHoist(const rvsdg::Node & node);
+  markNodes(const rvsdg::Region & region);
 
   void
-  computeRegionDepth(const rvsdg::Region & region);
+  hoistNodes(rvsdg::Region & region);
 
   void
-  computeTargetRegion(const rvsdg::Node & node);
+  copyNodeToTargetRegion(rvsdg::Node & node);
+
+  std::vector<rvsdg::Output *>
+  getOperandsFromTargetRegion(rvsdg::Node & node) const;
+
+  static rvsdg::Output &
+  getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region & targetRegion);
+
+  size_t
+  computeRegionDepth(const rvsdg::Region & region) const;
+
+  rvsdg::Region &
+  computeTargetRegion(const rvsdg::Node & node) const;
 
   rvsdg::Region &
   computeTargetRegion(const rvsdg::Output & output) const;
 
-  std::unique_ptr<Context> Context_;
+  std::unique_ptr<Context> Context_{};
 };
 
+#if 0
 void
 push_top(rvsdg::ThetaNode * theta);
 
@@ -72,6 +81,7 @@ push(rvsdg::ThetaNode * theta);
 
 void
 push(rvsdg::GammaNode * gamma);
+#endif
 
 }
 
