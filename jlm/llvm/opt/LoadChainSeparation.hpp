@@ -35,6 +35,8 @@ namespace jlm::llvm
  */
 class LoadChainSeparation final : public rvsdg::Transformation
 {
+  class Context;
+
   // FIXME: I really would like to rename this pass to ReferenceChainSeparation
 public:
   ~LoadChainSeparation() noexcept override;
@@ -50,16 +52,18 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  static void
+  void
   separateReferenceChainsInRegion(rvsdg::Region & region);
 
-  static void
+  void
   separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode);
 
-  static void
-  separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode);
+  void
+  separateRefenceChainsInTheta(
+      rvsdg::ThetaNode & thetaNode,
+      util::HashSet<rvsdg::Output *> & visitedOutputs);
 
-  static void
+  void
   separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode);
 
   /**
@@ -70,8 +74,9 @@ private:
    * MemoryStateType.
    * @param visitedOutputs The set of outputs that were already visited throughout the separation in
    * the region.
+   * @return True, if the separated mod/ref chains had a modifier link, otherwise False.
    */
-  static void
+  bool
   separateReferenceChains(
       rvsdg::Output & startOutput,
       util::HashSet<rvsdg::Output *> & visitedOutputs);
@@ -122,7 +127,12 @@ private:
     void
     add(ModRefChain modRefChain)
     {
-      modRefChains.push_back(std::move(modRefChain));
+      // We only care about chains that have at least two links
+      if (modRefChain.links.size() >= 2)
+      {
+        modRefChains.push_back(std::move(modRefChain));
+      }
+
       hasModificationChainLink |= modRefChain.hasModificationChainLink;
     }
 
@@ -139,7 +149,7 @@ private:
    * tracing.
    * @param summary The tracing summary.
    */
-  static void
+  void
   traceModRefChains(
       rvsdg::Output & startOutput,
       util::HashSet<rvsdg::Output *> & visitedOutputs,
@@ -165,6 +175,8 @@ private:
    */
   static rvsdg::Input &
   mapMemoryStateOutputToInput(const rvsdg::Output & output);
+
+  std::unique_ptr<Context> Context_{};
 };
 
 }
