@@ -554,7 +554,9 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   {
     if (output.Type()->Kind() == rvsdg::TypeKind::State)
     {
-      // We cannot move any stateful operation out of a gamma node.
+      // FIXME: This is a bit too conservative. For example, it avoids that load and store nodes are
+      // hoisted out of a gamma node, but we would only like to avoid store nodes being hoisted out.
+      // For load nodes, it is legal to hoist them out if they are not preceded by an IOBarrier.
       return *output.region();
     }
 
