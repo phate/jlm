@@ -610,6 +610,23 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 {
   if (node.ninputs() == 0)
   {
+
+    auto [constantNode, constantOp] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(node);
+    if (constantOp)
+    {
+      // FIXME: We currently need to leave control constants where they are even though there is
+      // no inherent constraint in the operation for hoisting them. The reason is that the control
+      // type is of kind state, which means that the LLVM back-end filters it out. However, if we
+      // would hoist this operation out, it could be that we would need to create select operations
+      // for it (which cannot be materialized in LLVM as it is of kind state), which in turn leads
+      // to problems with SSA phi node creation as a phi operand might be such a select operation.
+      //
+      // The fundamental problem is that we model control type with kind state, even though we need
+      // to materialize it in the back-end. We should change its kind to value.
+      return *node.region();
+    }
+
     // Nodes without inputs can always be hoisted to the lambda region
     return Context_->getLambdaSubregion();
   }
