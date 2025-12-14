@@ -295,7 +295,7 @@ invariantMemoryOperation()
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-invariantMemoryOperation", invariantMemoryOperation)
 
 static void
-ioState()
+statefulOperations()
 {
   // Arrange
   using namespace jlm::llvm;
@@ -303,13 +303,13 @@ ioState()
   using namespace jlm::tests;
 
   auto controlType = ControlType::Create(2);
-  auto ioStateType = IOStateType::Create();
   auto valueType = ValueType::Create();
+  auto stateType = StateType::Create();
   const auto functionType = FunctionType::Create(
       {
           controlType,
           valueType,
-          ioStateType,
+          stateType,
       },
       { valueType });
 
@@ -321,20 +321,20 @@ ioState()
       LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto controlArgument = lambdaNode->GetFunctionArguments()[0];
   auto valueArgument = lambdaNode->GetFunctionArguments()[1];
-  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+  auto stateArgument = lambdaNode->GetFunctionArguments()[2];
 
   auto gammaNode1 = GammaNode::create(controlArgument, 2);
   auto controlEntryVar = gammaNode1->AddEntryVar(controlArgument);
   auto valueEntryVar1 = gammaNode1->AddEntryVar(valueArgument);
-  auto ioStateEntryVar = gammaNode1->AddEntryVar(ioStateArgument);
+  auto stateEntryVar = gammaNode1->AddEntryVar(stateArgument);
 
-  auto ioStateNode = TestOperation::create(
+  auto stateNode = TestOperation::create(
       gammaNode1->subregion(0),
-      { valueEntryVar1.branchArgument[0], ioStateEntryVar.branchArgument[0] },
+      { valueEntryVar1.branchArgument[0], stateEntryVar.branchArgument[0] },
       { valueType });
 
   auto gammaNode2 = GammaNode::create(controlEntryVar.branchArgument[0], 2);
-  auto valueEntryVar2 = gammaNode2->AddEntryVar(ioStateNode->output(0));
+  auto valueEntryVar2 = gammaNode2->AddEntryVar(stateNode->output(0));
   auto valueEntryVar3 = gammaNode2->AddEntryVar(valueEntryVar1.branchArgument[0]);
 
   auto binaryNode = TestOperation::create(
@@ -359,13 +359,13 @@ ioState()
   view(rvsdg, stdout);
 
   // Assert
-  // We expect that the ioStateNode stays where it is and only the binaryNode is hoisted to the same
-  // region as the ioStateNode
+  // We expect that stateNode stays where it is and only the binaryNode is hoisted to the same
+  // region as stateNode
 
   // Gamma node and undef node
   assert(lambdaNode->subregion()->numNodes() == 1);
 
-  // ioStateNode, gammaNode2, and binaryNode
+  // stateNode, gammaNode2, and binaryNode
   assert(gammaNode1->subregion(0)->numNodes() == 3);
   assert(gammaNode1->subregion(1)->numNodes() == 0);
 
@@ -373,4 +373,4 @@ ioState()
   assert(gammaNode2->subregion(1)->numNodes() == 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-ioState", ioState)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-statefulOperations", statefulOperations)

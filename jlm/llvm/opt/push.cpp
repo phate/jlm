@@ -543,12 +543,6 @@ NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & lo
 rvsdg::Region &
 NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
 {
-  if (is<IOStateType>(output.Type()))
-  {
-    // We never hoist a node with an IOState.
-    return *output.region();
-  }
-
   // Handle lambda region arguments
   if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
   {
@@ -558,6 +552,12 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   // Handle gamma region arguments
   if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
+    if (output.Type()->Kind() == rvsdg::TypeKind::State)
+    {
+      // We cannot move any stateful operation out of a gamma node.
+      return *output.region();
+    }
+
     const auto roleVar = gammaNode->MapBranchArgument(output);
     if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
     {
