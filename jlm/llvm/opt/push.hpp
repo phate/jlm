@@ -20,7 +20,19 @@ namespace jlm::llvm
 {
 
 /**
- * \brief Node Hoisting Optimization
+ * \brief Node Hoisting Transformation
+ *
+ * This transformation hoists nodes out of gamma and theta nodes as far up the region tree as
+ * possible. It accomplishes this in two phases:
+ *
+ * 1. Mark phase: This phase annotates each node with its target region, i.e., the final region in
+ * the region tree where it is legally allowed to hoist a node. The algorithm inspects each node's
+ * predecessors and their target regions to compute a node's target region.
+ *
+ * 2. Hoist phase: This phase uses the information computed in the mark phase to hoist the nodes
+ * to their target region.
+ *
+ * These two phases are performed on every function in the module.
  */
 class NodeHoisting final : public rvsdg::Transformation
 {
