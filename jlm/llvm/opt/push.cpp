@@ -14,6 +14,7 @@
 
 #include <deque>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm
 {
@@ -521,12 +522,36 @@ NodeHoisting::computeRegionDepth(const rvsdg::Region & region) const
   return Context_->getRegionDeph(*parentRegion) + 1;
 }
 
+bool
+NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar)
+{
+  if (!is<MemoryStateType>(loopVar.output->Type()))
+    return false;
+
+  if (loopVar.pre->nusers() != 1)
+    return false;
+
+  const auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loopVar.pre->Users().begin());
+  const auto originNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loopVar.post->origin());
+
+  if (userNode != originNode)
+    return false;
+
+  return true;
+}
+
 rvsdg::Region &
 NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
 {
   if (is<IOStateType>(output.Type()))
   {
     // We never hoist a node with an IOState.
+    return *output.region();
+  }
+
+  // Handle lambda region arguments
+  if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  {
     return *output.region();
   }
 
@@ -542,19 +567,17 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
     return *output.region();
   }
 
-  // Handle lambda region arguments
-  if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
-  {
-    return *output.region();
-  }
-
   // Handle theta region arguments
   if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
     const auto loopVar = thetaNode->MapPreLoopVar(output);
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      // FIXME: We need to handle memory state type edges here
+      return computeTargetRegion(*loopVar.input->origin());
+    }
+
+    if (isInvariantMemoryStateLoopVar(loopVar))
+    {
       return computeTargetRegion(*loopVar.input->origin());
     }
 
@@ -624,22 +647,28 @@ NodeHoisting::markNodes(const rvsdg::Region & region)
 
   for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
-    // Handle innermost regions
-    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
-    {
-      // FIXME: We currently do not allow structural nodes (gamma and theta nodes) to be hoisted
-      Context_->addTargetRegion(*node, *node->region());
+    rvsdg::MatchTypeWithDefault(
+        *node,
+        [&](const rvsdg::StructuralNode & structuralNode)
+        {
+          // FIXME: We currently do not allow structural nodes (gamma and theta nodes) to be hoisted
+          Context_->addTargetRegion(structuralNode, *structuralNode.region());
 
-      for (auto & subregion : structuralNode->Subregions())
-      {
-        markNodes(subregion);
-      }
-    }
-    else
-    {
-      rvsdg::Region & targetRegion = computeTargetRegion(*node);
-      Context_->addTargetRegion(*node, targetRegion);
-    }
+          // Handle innermost regions
+          for (auto & subregion : structuralNode.Subregions())
+          {
+            markNodes(subregion);
+          }
+        },
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          rvsdg::Region & targetRegion = computeTargetRegion(simpleNode);
+          Context_->addTargetRegion(*node, targetRegion);
+        },
+        []()
+        {
+          throw std::logic_error("Unhandled node type!");
+        });
   }
 }
 
@@ -660,10 +689,10 @@ NodeHoisting::getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region &
   }
 
   // Handle theta subregion arguments
-  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
     const auto loopVar = thetaNode->MapPreLoopVar(output);
-    JLM_ASSERT(rvsdg::ThetaLoopVarIsInvariant(loopVar));
+    JLM_ASSERT(rvsdg::ThetaLoopVarIsInvariant(loopVar) || isInvariantMemoryStateLoopVar(loopVar));
     return getOperandFromTargetRegion(*loopVar.input->origin(), targetRegion);
   }
 
@@ -671,10 +700,8 @@ NodeHoisting::getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region &
 }
 
 std::vector<rvsdg::Output *>
-NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node) const
+NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion)
 {
-  auto & targetRegion = Context_->getTargetRegion(node);
-
   std::vector<rvsdg::Output *> operands;
   for (auto & input : node.Inputs())
   {
@@ -686,13 +713,16 @@ NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node) const
 }
 
 void
-NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node)
+NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
 {
   auto & targetRegion = Context_->getTargetRegion(node);
+  JLM_ASSERT(&targetRegion != node.region());
 
-  const auto operands = getOperandsFromTargetRegion(node);
+  const auto operands = getOperandsFromTargetRegion(node, targetRegion);
   const auto copiedNode = node.copy(&targetRegion, operands);
 
+  // FIXME: I really would like to have a zip function here, but C++ does not really seem to have
+  // anything better to offer
   auto itOrg = std::begin(node.Outputs());
   const auto endOrg = std::end(node.Outputs());
   auto itCpy = std::begin(copiedNode->Outputs());

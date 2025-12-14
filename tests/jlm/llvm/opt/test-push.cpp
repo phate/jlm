@@ -7,10 +7,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -18,7 +14,10 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -171,96 +170,130 @@ nestedGamma()
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-nestedGamma", nestedGamma)
 
-#if 0
-static inline void
-test_theta()
+static void
+simpleTheta()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto controlType = ControlType::Create(2);
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      {
+          controlType,
+          valueType,
+      },
+      { valueType });
 
-  jlm::tests::TestOperation nop({}, { vt });
-  jlm::tests::TestOperation bop({ vt, vt }, { vt });
-  jlm::tests::TestOperation sop({ vt, st }, { st });
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & graph = rm.Rvsdg();
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto valueArgument = lambdaNode->GetFunctionArguments()[1];
 
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-  auto s = &jlm::rvsdg::GraphImport::Create(graph, st, "s");
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
 
-  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto lv1 = thetaNode->AddLoopVar(controlArgument);
+  auto lv2 = thetaNode->AddLoopVar(valueArgument);
+  auto lv3 = thetaNode->AddLoopVar(valueArgument);
+  auto lv4 = thetaNode->AddLoopVar(valueArgument);
 
-  auto lv1 = theta->AddLoopVar(c);
-  auto lv2 = theta->AddLoopVar(x);
-  auto lv3 = theta->AddLoopVar(x);
-  auto lv4 = theta->AddLoopVar(s);
+  auto node1 = TestOperation::create(thetaNode->subregion(), {}, { valueType });
+  auto node2 =
+      TestOperation::create(thetaNode->subregion(), { node1->output(0), lv3.pre }, { valueType });
+  auto node3 =
+      TestOperation::create(thetaNode->subregion(), { lv2.pre, node2->output(0) }, { valueType });
+  auto node4 = TestOperation::create(thetaNode->subregion(), { lv3.pre, lv4.pre }, { valueType });
 
-  auto o1 = jlm::tests::TestOperation::create(theta->subregion(), {}, { vt })->output(0);
-  auto o2 =
-      jlm::tests::TestOperation::create(theta->subregion(), { o1, lv3.pre }, { vt })->output(0);
-  auto o3 =
-      jlm::tests::TestOperation::create(theta->subregion(), { lv2.pre, o2 }, { vt })->output(0);
-  auto o4 = jlm::tests::TestOperation::create(theta->subregion(), { lv3.pre, lv4.pre }, { st })
-                ->output(0);
+  lv2.post->divert_to(node3->output(0));
+  lv4.post->divert_to(node4->output(0));
 
-  lv2.post->divert_to(o3);
-  lv4.post->divert_to(o4);
+  thetaNode->set_predicate(lv1.pre);
 
-  theta->set_predicate(lv1.pre);
+  lambdaNode->finalize({ thetaNode->output(1) });
 
-  jlm::rvsdg::GraphExport::Create(*theta->output(0), "c");
+  view(rvsdg, stdout);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::NodeHoisting pushout;
-  pushout.Run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
 
-  assert(graph.GetRootRegion().numNodes() == 3);
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect node1 and node2 to be hoisted out of the theta subregion
+  assert(lambdaNode->subregion()->numNodes() == 3);
+  assert(thetaNode->subregion()->numNodes() == 2);
+
+  assert(lv2.post->origin() == node3->output(0));
+  assert(lv4.post->origin() == node4->output(0));
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-simpleTheta", simpleTheta)
 
-static inline void
-test_push_theta_bottom()
+static void
+invariantMemoryOperation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
-  auto mt = MemoryStateType::Create();
-  auto pt = PointerType::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      { controlType, pointerType, valueType, memoryStateType },
+      { memoryStateType });
 
-  jlm::rvsdg::Graph graph;
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "a");
-  auto v = &jlm::rvsdg::GraphImport::Create(graph, vt, "v");
-  auto s = &jlm::rvsdg::GraphImport::Create(graph, mt, "s");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto pointerArgument = lambdaNode->GetFunctionArguments()[1];
+  auto valueArgument = lambdaNode->GetFunctionArguments()[2];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
 
-  auto lvc = theta->AddLoopVar(c);
-  auto lva = theta->AddLoopVar(a);
-  auto lvv = theta->AddLoopVar(v);
-  auto lvs = theta->AddLoopVar(s);
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
 
-  auto s1 = StoreNonVolatileOperation::Create(lva.pre, lvv.pre, { lvs.pre }, 4)[0];
+  auto lvc = thetaNode->AddLoopVar(controlArgument);
+  auto lva = thetaNode->AddLoopVar(pointerArgument);
+  auto lvv = thetaNode->AddLoopVar(valueArgument);
+  auto lvs = thetaNode->AddLoopVar(memoryStateArgument);
 
-  lvs.post->divert_to(s1);
-  theta->set_predicate(lvc.pre);
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(*lva.pre, *lvv.pre, { lvs.pre }, 4);
 
-  auto & ex = jlm::rvsdg::GraphExport::Create(*lvs.output, "s");
+  lvs.post->divert_to(storeNode.output(0));
+  thetaNode->set_predicate(lvc.pre);
 
-  jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::push_bottom(theta);
-  jlm::rvsdg::view(graph, stdout);
+  lambdaNode->finalize({ lvs.output });
 
-  auto storenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
-  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
-  assert(storenode->input(0)->origin() == a);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(1)->origin()));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
+  view(rvsdg, stdout);
+
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect the store node hoisted out of the theta subregion
+  assert(lambdaNode->subregion()->numNodes() == 2);
+  assert(thetaNode->subregion()->numNodes() == 0);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-invariantMemoryOperation", invariantMemoryOperation)
 
 static void
 ioBarrier()
@@ -274,18 +307,28 @@ ioBarrier()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto valueType = ValueType::Create();
+  const auto functionType = FunctionType::Create(
+      {
+          controlType,
+          pointerType,
+          ioStateType,
+      },
+      { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & controlImport = jlm::rvsdg::GraphImport::Create(rvsdg, controlType, "control");
-  auto & addressImport = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
-  auto & ioStateImport = jlm::rvsdg::GraphImport::Create(rvsdg, ioStateType, "ioState");
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto pointerArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
 
-  auto gammaNode = GammaNode::create(&controlImport, 2);
+  auto gammaNode = GammaNode::create(controlArgument, 2);
 
-  auto addressEntryVar = gammaNode->AddEntryVar(&addressImport);
-  auto ioStateEntryVar = gammaNode->AddEntryVar(&ioStateImport);
+  auto addressEntryVar = gammaNode->AddEntryVar(pointerArgument);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
 
   auto & ioBarrierNode = IOBarrierOperation::createNode(
       *addressEntryVar.branchArgument[0],
@@ -298,7 +341,7 @@ ioBarrier()
 
   auto exitVar = gammaNode->AddExitVar({ loadNode.output(0), undefValue });
 
-  GraphExport::Create(*exitVar.output, "x");
+  lambdaNode->finalize({ exitVar.output });
 
   view(rvsdg, stdout);
 
@@ -312,24 +355,12 @@ ioBarrier()
   // Assert
   // We expect that only the undef value was hoisted
 
-  // simpleGamma node and undef value
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  // Gamma node and undef node
+  assert(lambdaNode->subregion()->numNodes() == 2);
 
-  // IOBarrier and load
+  // IOBarrier and load node
   assert(gammaNode->subregion(0)->numNodes() == 2);
   assert(gammaNode->subregion(1)->numNodes() == 0);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-ioBarrier", ioBarrier)
-#endif
-#if 0
-static void
-verify()
-{
-  test_gamma();
-  test_theta();
-  // test_push_theta_bottom();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push", verify)
-#endif
