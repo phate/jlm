@@ -81,7 +81,7 @@ private:
   static bool
   isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar);
 
-  std::unique_ptr<Context> Context_{};
+  std::unique_ptr<Context> context_{};
 };
 
 }

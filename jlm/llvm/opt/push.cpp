@@ -117,7 +117,7 @@ NodeHoisting::computeRegionDepth(const rvsdg::Region & region) const
   }
 
   const auto parentRegion = region.node()->region();
-  return Context_->getRegionDeph(*parentRegion) + 1;
+  return context_->getRegionDeph(*parentRegion) + 1;
 }
 
 bool
@@ -187,19 +187,19 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   // Handle gamma outputs
   if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    return Context_->getTargetRegion(*gammaNode);
+    return context_->getTargetRegion(*gammaNode);
   }
 
   // Handle theta outputs
   if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
-    return Context_->getTargetRegion(*thetaNode);
+    return context_->getTargetRegion(*thetaNode);
   }
 
   // Handle simple node outputs
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    return Context_->getTargetRegion(*node);
+    return context_->getTargetRegion(*node);
   }
 
   throw std::logic_error("Unhandled output type!");
@@ -228,7 +228,7 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     }
 
     // Nodes without inputs can always be hoisted to the lambda region
-    return Context_->getLambdaSubregion();
+    return context_->getLambdaSubregion();
   }
 
   // Compute target regions for all the inputs of the node
@@ -252,7 +252,7 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
       targetRegions.end(),
       [&](const rvsdg::Region * region1, const rvsdg::Region * region2)
       {
-        return Context_->getRegionDeph(*region1) < Context_->getRegionDeph(*region2);
+        return context_->getRegionDeph(*region1) < context_->getRegionDeph(*region2);
       });
 }
 
@@ -260,7 +260,7 @@ void
 NodeHoisting::markNodes(const rvsdg::Region & region)
 {
   const auto regionDepth = computeRegionDepth(region);
-  Context_->addRegionDepth(region, regionDepth);
+  context_->addRegionDepth(region, regionDepth);
 
   for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
@@ -269,7 +269,7 @@ NodeHoisting::markNodes(const rvsdg::Region & region)
         [&](const rvsdg::StructuralNode & structuralNode)
         {
           // FIXME: We currently do not allow structural nodes (gamma and theta nodes) to be hoisted
-          Context_->addTargetRegion(structuralNode, *structuralNode.region());
+          context_->addTargetRegion(structuralNode, *structuralNode.region());
 
           // Handle innermost regions
           for (auto & subregion : structuralNode.Subregions())
@@ -280,7 +280,7 @@ NodeHoisting::markNodes(const rvsdg::Region & region)
         [&](const rvsdg::SimpleNode & simpleNode)
         {
           rvsdg::Region & targetRegion = computeTargetRegion(simpleNode);
-          Context_->addTargetRegion(*node, targetRegion);
+          context_->addTargetRegion(*node, targetRegion);
         },
         []()
         {
@@ -332,7 +332,7 @@ NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & ta
 void
 NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
 {
-  auto & targetRegion = Context_->getTargetRegion(node);
+  auto & targetRegion = context_->getTargetRegion(node);
   JLM_ASSERT(&targetRegion != node.region());
 
   const auto operands = getOperandsFromTargetRegion(node, targetRegion);
@@ -362,7 +362,7 @@ NodeHoisting::hoistNodes(rvsdg::Region & region)
   // subgraphs that need to be hoisted to avoid unnecessary routing.
   for (const auto node : rvsdg::TopDownTraverser(&region))
   {
-    auto & targetRegion = Context_->getTargetRegion(*node);
+    auto & targetRegion = context_->getTargetRegion(*node);
     if (&targetRegion != node->region())
     {
       copyNodeToTargetRegion(*node);
@@ -384,12 +384,12 @@ NodeHoisting::hoistNodes(rvsdg::Region & region)
 void
 NodeHoisting::hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode)
 {
-  Context_ = Context::create(lambdaNode);
+  context_ = Context::create(lambdaNode);
 
   markNodes(*lambdaNode.subregion());
   hoistNodes(*lambdaNode.subregion());
 
-  Context_.reset();
+  context_.reset();
 }
 
 void
