@@ -13,7 +13,6 @@ namespace jlm::rvsdg
 {
 class GammaNode;
 class LambdaNode;
-class ThetaNode;
 }
 
 namespace jlm::llvm
