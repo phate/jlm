@@ -73,20 +73,6 @@ private:
   std::unique_ptr<Context> Context_{};
 };
 
-#if 0
-void
-push_top(rvsdg::ThetaNode * theta);
-
-void
-push_bottom(rvsdg::ThetaNode * theta);
-
-void
-push(rvsdg::ThetaNode * theta);
-
-void
-push(rvsdg::GammaNode * gamma);
-#endif
-
 }
 
 #endif
