@@ -629,8 +629,8 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     targetRegions.push_back(&targetRegion);
   }
 
-  // Compute the uppermost target region in the region tree
-  return **std::min_element(
+  // Compute the lowermost target region in the region tree
+  return **std::max_element(
       targetRegions.begin(),
       targetRegions.end(),
       [&](const rvsdg::Region * region1, const rvsdg::Region * region2)
