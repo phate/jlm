@@ -72,7 +72,6 @@ public:
   size_t
   getRegionDeph(const rvsdg::Region & region) const noexcept
   {
-    JLM_ASSERT(RegionDepth_.find(&region) != RegionDepth_.end());
     return RegionDepth_.at(&region);
   }
 
@@ -86,7 +85,6 @@ public:
   rvsdg::Region &
   getTargetRegion(const rvsdg::Node & node) const noexcept
   {
-    JLM_ASSERT(TargetRegion_.find(&node) != TargetRegion_.end());
     return *TargetRegion_.at(&node);
   }
 
