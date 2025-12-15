@@ -24,8 +24,11 @@ namespace jlm::llvm
 rvsdg::Output &
 traceOutput(rvsdg::Output & output);
 
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & output);
+inline const rvsdg::Output &
+traceOutput(const rvsdg::Output & output)
+{
+  return traceOutput(const_cast<rvsdg::Output &>(output));
+}
 
 /**
  * Attempts to find the constant integer value of a given \p output,

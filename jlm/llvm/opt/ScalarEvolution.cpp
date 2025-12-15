@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>

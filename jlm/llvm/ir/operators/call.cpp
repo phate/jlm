@@ -4,9 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/ir/trace.hpp>
-#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm
@@ -42,7 +40,9 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
   const auto origin = GetFunctionInput(callNode).origin();
-  return llvm::traceOutput(*origin);
+  auto o = &traceOutput(*origin);
+  std::cout << o << std::endl;
+  return *o;
 }
 
 std::unique_ptr<CallTypeClassifier>

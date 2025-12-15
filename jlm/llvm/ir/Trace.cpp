@@ -5,32 +5,43 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::llvm
 {
 
-rvsdg::Output &
-traceOutput(rvsdg::Output & startingOutput)
+class OutputTracer : public rvsdg::OutputTracer
 {
-  auto & output = rvsdg::traceOutput(startingOutput);
+public:
+  OutputTracer(bool isDeep, bool isInterProcedural)
+      : rvsdg::OutputTracer(isDeep, isInterProcedural)
+  {}
 
-  if (const auto [node, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(output);
-      node && ioBarrierOp)
+protected:
+  [[nodiscard]] rvsdg::Output &
+  traceStep(rvsdg::Output & output, bool mayLeaveRegion) override
   {
-    return llvm::traceOutput(*node->input(0)->origin());
+    auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
+
+    if (const auto [node, ioBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
+        node && ioBarrierOp)
+    {
+      return *node->input(0)->origin();
+    }
+
+    return trace1;
   }
+};
 
-  return output;
-}
-
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & startingOutput)
+rvsdg::Output &
+traceOutput(rvsdg::Output & output)
 {
-  return llvm::traceOutput(const_cast<rvsdg::Output &>(startingOutput));
+  OutputTracer tracer(true, true);
+  return tracer.trace(output);
 }
 
 std::optional<int64_t>

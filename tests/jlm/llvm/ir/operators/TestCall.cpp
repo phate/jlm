@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/DotWriter.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
@@ -12,6 +13,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 static void
 TestCopy()
@@ -364,6 +366,11 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   jlm::rvsdg::GraphExport::Create(*f, "f");
 
   jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
+
+  jlm::util::graph::Writer gw;
+  jlm::llvm::LlvmDotWriter writer;
+  writer.WriteGraphs(gw, graph->GetRootRegion(), false);
+  gw.outputAllGraphs(std::cout, jlm::util::graph::OutputFormat::Dot);
 
   // Act
   auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
