@@ -367,11 +367,6 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
-  jlm::util::graph::Writer gw;
-  jlm::llvm::LlvmDotWriter writer;
-  writer.WriteGraphs(gw, graph->GetRootRegion(), false);
-  gw.outputAllGraphs(std::cout, jlm::util::graph::OutputFormat::Dot);
-
   // Act
   auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 

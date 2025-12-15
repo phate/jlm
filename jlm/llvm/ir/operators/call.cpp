@@ -40,9 +40,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
   const auto origin = GetFunctionInput(callNode).origin();
-  auto o = &traceOutput(*origin);
-  std::cout << o << std::endl;
-  return *o;
+  return traceOutput(*origin);
 }
 
 std::unique_ptr<CallTypeClassifier>
