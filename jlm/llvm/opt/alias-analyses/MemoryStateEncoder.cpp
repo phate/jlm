@@ -643,10 +643,6 @@ MemoryStateEncoder::Encode(
 
   // Discard internal state to free up memory after we are done with the encoding
   Context_.reset();
-
-  // Remove all nodes that became dead throughout the encoding.
-  DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
 void
@@ -909,6 +905,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
   EncodeLambdaEntry(lambdaNode);
   EncodeRegion(*lambdaNode.subregion());
   EncodeLambdaExit(lambdaNode);
+  lambdaNode.subregion()->prune(false);
 }
 
 void
@@ -1005,7 +1002,10 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
   EncodeGammaExit(gammaNode);
 
   for (auto & subregion : gammaNode.Subregions())
+  {
     Context_->GetRegionalizedStateMap().PopRegion(subregion);
+    subregion.prune(false);
+  }
 }
 
 void
@@ -1062,6 +1062,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
   EncodeThetaExit(thetaNode, thetaStateOutputs);
 
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
+  thetaNode.subregion()->prune(false);
 }
 
 std::vector<rvsdg::Output *>

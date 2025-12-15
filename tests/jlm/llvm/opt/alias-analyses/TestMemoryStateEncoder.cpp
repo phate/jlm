@@ -888,7 +888,7 @@ ValidateThetaTestAndersenAgnostic(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 5);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -913,7 +913,7 @@ ValidateThetaTestAndersenRegionAware(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 5);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());

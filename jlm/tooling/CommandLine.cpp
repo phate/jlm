@@ -295,6 +295,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     {
       return std::vector({
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation,
