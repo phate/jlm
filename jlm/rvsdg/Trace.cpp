@@ -14,8 +14,8 @@ namespace jlm::rvsdg
 {
 OutputTracer::~OutputTracer() = default;
 
-OutputTracer::OutputTracer(bool isDeep, bool isInterprocedural)
-    : isDeep_(isDeep),
+OutputTracer::OutputTracer(bool traceInStructuralNodes, bool isInterprocedural)
+    : traceInStrucutalNodes_(traceInStructuralNodes),
       isInterprocedural_(isInterprocedural)
 {}
 
@@ -76,7 +76,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     auto tracedInner = branchResult->origin();
 
     // If deep tracing is enabled, make a greater effort to trace up to a region argument
-    if (isDeep_)
+    if (traceInStrucutalNodes_)
     {
       tracedInner = &trace(*tracedInner, false);
     }
@@ -111,7 +111,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   auto tracedInner = loopVar.post->origin();
 
   // If deep tracing is enabled, make a greater effort in tracing up to a region argument
-  if (isDeep_)
+  if (traceInStrucutalNodes_)
   {
     tracedInner = &trace(*tracedInner, false);
   }
@@ -178,7 +178,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   // Handle lambda context variables
   if (const auto lambda = rvsdg::TryGetRegionParentNode<LambdaNode>(output))
   {
-    // If the argument is a contex variable, continue normalizing
+    // If the argument is a contex variable, continue tracing
     if (const auto ctxVar = lambda->MapBinderContextVar(output))
       return *ctxVar->input->origin();
 
@@ -188,7 +188,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   // Handle delta context variables
   if (const auto delta = rvsdg::TryGetRegionParentNode<DeltaNode>(output))
   {
-    // If the argument is a contex variable, continue normalizing
+    // If the argument is a contex variable, continue tracing
     const auto ctxVar = delta->MapBinderContextVar(output);
     return *ctxVar.input->origin();
   }

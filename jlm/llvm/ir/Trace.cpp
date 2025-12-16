@@ -16,14 +16,19 @@ namespace jlm::llvm
 class OutputTracer : public rvsdg::OutputTracer
 {
 public:
-  OutputTracer(bool isDeep, bool isInterProcedural)
-      : rvsdg::OutputTracer(isDeep, isInterProcedural)
+  OutputTracer(bool traceInStructuralNodes, bool isInterProcedural)
+      : rvsdg::OutputTracer(traceInStructuralNodes, isInterProcedural)
   {}
 
 protected:
   [[nodiscard]] rvsdg::Output &
   traceStep(rvsdg::Output & output, bool mayLeaveRegion) override
   {
+    // FIXME: Needing to create a custom subclass of OutputTracer to make it handle a single LLVM
+    // specific operation is not great, as we now have multiple choices for traceOutput.
+    // It would be better to have a single tracing class that handles all operations,
+    // and somehow marking the IOBarrier with a "trait" that makes the output map to the input.
+
     auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
 
     if (const auto [node, ioBarrierOp] =

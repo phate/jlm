@@ -16,8 +16,8 @@ class ThetaNode;
 /**
  * Helper class for tracing through RVSDG graphs to find the origins of outputs.
  * Traces through simple nodes that do not affect the value,
- * and through structural nodes when the value is invariant.
- * Traces out of regions
+ * through structural nodes when the value is invariant,
+ * and out of structural nodes when the value is passed in.
  */
 class OutputTracer
 {
@@ -26,11 +26,12 @@ public:
 
   /**
    * Creates an OutputTracer with the given configuration
-   * @param isDeep if true, tracing goes into subregions, trying to trace through structural nodes.
-   *        Otherwise, outputs of structural nodes use a simple invariant check.
-   * @param isInterprocedural allow tracing out of loops
+   * @param traceInStructuralNodes if true, tracing can enter subregions of structural nodes
+   *        to check if the structural node's output is invariant.
+   *        Otherwise, only a simple invariant check is performed.
+   * @param isInterprocedural if true, tracing can go out of lambda nodes.
    */
-  OutputTracer(bool isDeep, bool isInterprocedural);
+  OutputTracer(bool traceInStructuralNodes, bool isInterprocedural);
 
   /**
    * Traces from the given \p output to find the source of the output's value.
@@ -43,6 +44,9 @@ public:
    * Attempts to trace the output of a gamma node through the node.
    * This is only possible if the output can be traced to a gamma entry variable in all subregions,
    * and these entry variables all share the same origin outside the gamma.
+   *
+   * @pre the \p output is an output of the given \p gammaNode
+   *
    * @param gammaNode the gamma node to trace through
    * @param output an output of the given gamma node
    * @return the origin of the output value on the input side of the gamma, or nullptr.
@@ -53,9 +57,12 @@ public:
   /**
    * Attempts to trace the output of a theta node through the node.
    * This is only possible if the output is invariant within the theta node.
-   * @param thetaNode the gamma node to trace through
-   * @param output an output of the given gamma node
-   * @return the origin of the output value on the input side of the gamma, or nullptr.
+   *
+   * @pre the \p output is an output of the given \p thetaNode
+   *
+   * @param thetaNode the theta node to trace through
+   * @param output an output of the given theta node
+   * @return the origin of the output value on the input side of the theta, or nullptr.
    */
   [[nodiscard]] Output *
   tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
@@ -81,7 +88,7 @@ protected:
 
   // When true, tracing enters subregions of structural nodes to check if the value is invariant.
   // When false, values are only considered invariant if they are directly connected to arguments.
-  bool isDeep_;
+  bool traceInStrucutalNodes_;
 
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments
