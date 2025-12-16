@@ -461,16 +461,11 @@ public:
       }
       else
       {
+        argument->index_ = numArguments;
         arguments_[numArguments++] = argument;
       }
     }
     arguments_.resize(numArguments);
-
-    // Readjust argument indices
-    for (size_t n = 0; n < narguments(); n++)
-    {
-      arguments_[n]->index_ = n;
-    }
   }
 
   inline size_t
