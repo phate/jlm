@@ -327,6 +327,10 @@ RemoveArgumentsWhere()
         return false;
       });
   assert(region.narguments() == 4);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+  assert(argument3->index() == 3);
 
   // Remove all remaining arguments
   region.RemoveArgumentsWhere(
