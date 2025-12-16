@@ -423,14 +423,53 @@ public:
   void
   RemoveArgumentsWhere(const F & match)
   {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
-    for (size_t n = narguments() - 1; n != static_cast<size_t>(-1); n--)
+    // Collect all arguments that should be removed
+    util::HashSet<RegionArgument *> removableArguments;
+    for (auto argument : arguments_)
     {
-      auto & argument = *this->argument(n);
-      if (argument.nusers() == 0 && match(argument))
+      if (argument->IsDead() && match(*argument))
+        removableArguments.insert(argument);
+    }
+
+    if (removableArguments.IsEmpty())
+    {
+      // Nothing needs to be removed
+      return;
+    }
+
+    if (removableArguments.Size() == narguments())
+    {
+      // All arguments need to be removed
+      // FIXME: I would love to have smart pointers such that I could just perform
+      // arguments_.clear()
+      for (const auto argument : arguments_)
       {
-        RemoveArgument(n);
+        delete argument;
       }
+      arguments_.resize(0);
+      return;
+    }
+
+    // Remove arguments
+    size_t numArguments = 0;
+    for (size_t n = 0; n < narguments(); n++)
+    {
+      auto argument = arguments_[n];
+      if (removableArguments.Contains(argument))
+      {
+        delete argument;
+      }
+      else
+      {
+        arguments_[numArguments++] = argument;
+      }
+    }
+    arguments_.resize(numArguments);
+
+    // Readjust argument indices
+    for (size_t n = 0; n < narguments(); n++)
+    {
+      arguments_[n]->index_ = n;
     }
   }
 

@@ -240,39 +240,99 @@ RemoveArgumentsWhere()
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
   auto valueType = ValueType::Create();
-  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument0 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument1 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument2 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument3 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument4 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument5 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument6 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument7 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument8 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument9 = &TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = TestOperation::Create(&region, { valueType }, { &argument1 }, { valueType });
+  auto node = TestOperation::Create(
+      &region,
+      { valueType, valueType, valueType },
+      { argument2, argument4, argument6 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 3);
-  assert(argument0.index() == 0);
-  assert(argument1.index() == 1);
-  assert(argument2.index() == 2);
+  assert(region.narguments() == 10);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+  assert(argument3->index() == 3);
+  assert(argument4->index() == 4);
+  assert(argument5->index() == 5);
+  assert(argument6->index() == 6);
+  assert(argument7->index() == 7);
+  assert(argument8->index() == 8);
+  assert(argument9->index() == 9);
 
+  // Match all arguments that have an even index
   region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument &)
+      [](const jlm::rvsdg::RegionArgument & argument)
       {
-        return true;
+        return argument.index() % 2 == 0;
       });
-  assert(region.narguments() == 1);
-  assert(argument1.index() == 0);
+  // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
+  // argument6 are not dead
+  assert(region.narguments() == 8);
+  assert(argument1->index() == 0);
+  assert(argument2->index() == 1);
+  assert(argument3->index() == 2);
+  assert(argument4->index() == 3);
+  assert(argument5->index() == 4);
+  assert(argument6->index() == 5);
+  assert(argument7->index() == 6);
+  assert(argument9->index() == 7);
 
+  // Reassign arguments to avoid mental gymnastics
+  argument0 = argument1;
+  argument1 = argument2;
+  argument2 = argument3;
+  argument3 = argument4;
+  argument4 = argument5;
+  argument5 = argument6;
+  argument6 = argument7;
+  argument7 = argument9;
+
+  // Remove all users from the arguments
   region.removeNode(node);
+
+  // Match all arguments that have an even index
+  region.RemoveArgumentsWhere(
+      [](const jlm::rvsdg::RegionArgument & argument)
+      {
+        return argument.index() % 2 == 0;
+      });
+  // We expect argument0, argument2, argument4, and argument6 to be removed
+  assert(region.narguments() == 4);
+  assert(argument1->index() == 0);
+  assert(argument3->index() == 1);
+  assert(argument5->index() == 2);
+  assert(argument7->index() == 3);
+
+  // Reassign arguments to avoid mental gymnastics
+  argument0 = argument1;
+  argument1 = argument3;
+  argument2 = argument5;
+  argument3 = argument7;
+
+  // Remove no argument
   region.RemoveArgumentsWhere(
       [](const jlm::rvsdg::RegionArgument &)
       {
         return false;
       });
-  assert(region.narguments() == 1);
-  assert(argument1.index() == 0);
+  assert(region.narguments() == 4);
 
+  // Remove all remaining arguments
   region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
+      [](const jlm::rvsdg::RegionArgument &)
       {
-        return argument.index() == 0;
+        return true;
       });
   assert(region.narguments() == 0);
 }
