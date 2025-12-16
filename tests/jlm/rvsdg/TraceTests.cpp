@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "../../../jlm/rvsdg/simple-node.hpp"
-#include "../../test-operation.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/view.hpp>
 
