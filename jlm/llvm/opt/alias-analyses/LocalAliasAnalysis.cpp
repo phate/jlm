@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>

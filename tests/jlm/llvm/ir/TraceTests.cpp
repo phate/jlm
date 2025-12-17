@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 
 #include <cassert>

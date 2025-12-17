@@ -395,7 +395,7 @@ public:
    *
    * \return The traced output.
    */
-  static rvsdg::Output *
+  static rvsdg::Output &
   TraceFunctionInput(const rvsdg::SimpleNode & callNode);
 
   /** \brief Classifies a call node.

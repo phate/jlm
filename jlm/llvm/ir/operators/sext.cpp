@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 
 namespace jlm::llvm
 {
@@ -97,7 +98,7 @@ SExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
+  auto & tracedOutput = llvm::traceOutput(*operand);
   if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOutput))
     return rvsdg::unop_reduction_constant;
 
@@ -118,7 +119,7 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*operand);
+    auto & tracedOutput = llvm::traceOutput(*operand);
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     JLM_ASSERT(constantNode && constantOperation);
