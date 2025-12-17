@@ -308,7 +308,7 @@ Node::removeInput(size_t index, bool notifyRegion)
   JLM_ASSERT(index < ninputs());
 
   if (notifyRegion)
-    region()->notifyInputDestory(input(index));
+    region()->notifyInputDestroy(input(index));
 
   // remove input
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -349,116 +349,6 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
     smap.insert(input(n)->origin(), operands[n]);
 
   return copy(region, smap);
-}
-
-const Output &
-traceOutputIntraProcedurally(const Output & output)
-{
-  // Handle gamma node outputs
-  if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
-  {
-    const auto exitVar = gammaNode->MapOutputExitVar(output);
-    if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
-    {
-      return traceOutputIntraProcedurally(*origin.value());
-    }
-
-    return output;
-  }
-
-  // Handle gamma node arguments
-  if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
-  {
-    const auto roleVar = gammaNode->MapBranchArgument(output);
-    if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
-    {
-      return traceOutputIntraProcedurally(*entryVar->input->origin());
-    }
-
-    if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
-    {
-      return traceOutputIntraProcedurally(*matchVar->input->origin());
-    }
-
-    return output;
-  }
-
-  // Handle theta node outputs
-  if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
-  {
-    const auto loopVar = thetaNode->MapOutputLoopVar(output);
-    if (ThetaLoopVarIsInvariant(loopVar))
-    {
-      return traceOutputIntraProcedurally(*loopVar.input->origin());
-    }
-
-    return output;
-  }
-
-  // Handle theta node arguments
-  if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
-  {
-    const auto loopVar = thetaNode->MapPreLoopVar(output);
-    if (ThetaLoopVarIsInvariant(loopVar))
-    {
-      return traceOutputIntraProcedurally(*loopVar.input->origin());
-    }
-
-    return output;
-  }
-
-  return output;
-}
-
-const Output &
-traceOutput(const Output & startingOutput)
-{
-  const auto & output = traceOutputIntraProcedurally(startingOutput);
-
-  // Handle lambda context variables
-  if (const auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
-  {
-    // If the argument is a contex variable, continue normalizing
-    if (const auto ctxVar = lambda->MapBinderContextVar(output))
-      return traceOutput(*ctxVar->input->origin());
-
-    return output;
-  }
-
-  // Handle delta context variables
-  if (const auto delta = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
-  {
-    // If the argument is a contex variable, continue normalizing
-    const auto ctxVar = delta->MapBinderContextVar(output);
-    return traceOutput(*ctxVar.input->origin());
-  }
-
-  // Handle phi outputs
-  if (const auto phiNode = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
-  {
-    const auto fixVar = phiNode->MapOutputFixVar(output);
-    return traceOutput(*fixVar.result->origin());
-  }
-
-  // Handle phi region arguments
-  if (const auto phiNode = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
-  {
-    const auto argument = phiNode->MapArgument(output);
-    if (const auto ctxVar = std::get_if<rvsdg::PhiNode::ContextVar>(&argument))
-    {
-      // Follow the context variable to outside the phi
-      return traceOutput(*ctxVar->input->origin());
-    }
-    if (const auto fixVar = std::get_if<rvsdg::PhiNode::FixVar>(&argument))
-    {
-      // Follow to the recursion variable's definition
-      return traceOutput(*fixVar->result->origin());
-    }
-
-    throw std::logic_error("Unknown phi argument type");
-  }
-
-  return output;
 }
 
 Output &

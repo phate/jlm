@@ -290,7 +290,7 @@ Region::RemoveResult(size_t index)
   JLM_ASSERT(index < results_.size());
   RegionResult * result = results_[index];
 
-  notifyInputDestory(result);
+  notifyInputDestroy(result);
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -465,7 +465,7 @@ Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origi
 }
 
 void
-Region::notifyInputDestory(Input * input)
+Region::notifyInputDestroy(Input * input)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {
