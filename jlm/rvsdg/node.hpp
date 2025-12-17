@@ -738,20 +738,74 @@ public:
    *
    * @tparam F A type that supports the function call operator: bool operator(const node_input&)
    * @param match Defines the condition for the inputs to remove.
+   * @param notifyRegion If true, the region is informed about the removal of an input.
+   * This should be false if the node has already notified the region about being removed,
+   * i.e., this function is being called from the node's destructor.
    */
   template<typename F>
   void
-  RemoveInputsWhere(const F & match)
+  RemoveInputsWhere(const F & match, const bool notifyRegion)
   {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-    for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+    // Collect all inputs that should be removed
+    size_t minRemovableIndex = 0;
+    util::HashSet<Input *> removableInputs;
+    for (auto & input : inputs_)
     {
-      auto & input = *Node::input(n);
-      if (match(input))
+      if (match(*input))
       {
-        removeInput(n, true);
+        removableInputs.insert(input.get());
+        minRemovableIndex = std::min(minRemovableIndex, input->index());
       }
     }
+
+    // Nothing needs to be removed
+    if (removableInputs.IsEmpty())
+    {
+      return;
+    }
+
+    // All inputs need to be removed
+    if (removableInputs.Size() == ninputs())
+    {
+      if (notifyRegion)
+      {
+        for (auto & input : inputs_)
+        {
+          region()->notifyInputDestory(*input);
+          input.reset();
+        }
+        inputs_.resize(0);
+      }
+      else
+      {
+        inputs_.clear();
+      }
+
+      region()->onTopNodeAdded(*this);
+      return;
+    }
+
+    // Remove inputs
+    // All inputs before minRemovableIndex are not removed and therefore stay the same. There is
+    // no need to iterate through them.
+    size_t numInputs = minRemovableIndex;
+    for (size_t n = minRemovableIndex; n < ninputs(); n++)
+    {
+      auto & input = inputs_[n];
+      if (removableInputs.Contains(input.get()))
+      {
+        if (notifyRegion)
+          region()->notifyInputDestory(*input);
+        input.reset();
+      }
+      else
+      {
+        input->index_ = numInputs;
+        JLM_ASSERT(inputs_[numInputs] == nullptr);
+        inputs_[numInputs++] = std::move(input);
+      }
+    }
+    inputs_.resize(numInputs);
   }
 
 protected:
