@@ -228,10 +228,10 @@ RemoveResultsWhere()
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResultsWhere)
 
 /**
- * Test Region::RemoveArgumentsWhere()
+ * Test Region::RemoveArguments()
  */
 static void
-RemoveArgumentsWhere()
+RemoveArguments()
 {
   using namespace jlm::tests;
 
@@ -270,14 +270,11 @@ RemoveArgumentsWhere()
   assert(argument8->index() == 8);
   assert(argument9->index() == 9);
 
-  // Match all arguments that have an even index
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
-      {
-        return argument.index() % 2 == 0;
-      });
+  // Remove all arguments that have an even index
+  size_t numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6, 8 });
   // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
   // argument6 are not dead
+  assert(numRemovedArguments == 2);
   assert(region.narguments() == 8);
   assert(argument1->index() == 0);
   assert(argument2->index() == 1);
@@ -301,13 +298,10 @@ RemoveArgumentsWhere()
   // Remove all users from the arguments
   region.removeNode(node);
 
-  // Match all arguments that have an even index
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
-      {
-        return argument.index() % 2 == 0;
-      });
+  // Remove all arguments that have an even index
+  numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6 });
   // We expect argument0, argument2, argument4, and argument6 to be removed
+  assert(numRemovedArguments == 4);
   assert(region.narguments() == 4);
   assert(argument1->index() == 0);
   assert(argument3->index() == 1);
@@ -321,27 +315,25 @@ RemoveArgumentsWhere()
   argument3 = argument7;
 
   // Remove no argument
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument &)
-      {
-        return false;
-      });
+  numRemovedArguments = region.RemoveArguments({});
+  assert(numRemovedArguments == 0);
   assert(region.narguments() == 4);
   assert(argument0->index() == 0);
   assert(argument1->index() == 1);
   assert(argument2->index() == 2);
   assert(argument3->index() == 3);
 
+  // Remove non-existent argument
+  numRemovedArguments = region.RemoveArguments({ 15 });
+  assert(numRemovedArguments == 0);
+
   // Remove all remaining arguments
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument &)
-      {
-        return true;
-      });
+  numRemovedArguments = region.RemoveArguments({ 0, 1, 2, 3 });
+  assert(numRemovedArguments == 4);
   assert(region.narguments() == 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArgumentsWhere", RemoveArgumentsWhere)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArguments", RemoveArguments)
 
 /**
  * Test Region::PruneArguments()
@@ -369,13 +361,15 @@ PruneArguments()
   // Act & Arrange
   assert(region.narguments() == 3);
 
-  region.PruneArguments();
+  size_t numRemovedArguments = region.PruneArguments();
+  assert(numRemovedArguments == 1);
   assert(region.narguments() == 2);
   assert(argument0.index() == 0);
   assert(argument2.index() == 1);
 
   region.removeNode(node);
-  region.PruneArguments();
+  numRemovedArguments = region.PruneArguments();
+  assert(numRemovedArguments == 2);
   assert(region.narguments() == 0);
 }
 

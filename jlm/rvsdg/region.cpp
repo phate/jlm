@@ -216,6 +216,58 @@ Region::RemoveArgument(size_t index)
   arguments_.pop_back();
 }
 
+size_t
+Region::RemoveArguments(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  // Remove arguments
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead() && indices.Contains(argument->index()))
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
+size_t
+Region::PruneArguments()
+{
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead())
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
 RegionResult &
 Region::addResult(std::unique_ptr<RegionResult> result)
 {

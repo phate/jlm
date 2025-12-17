@@ -414,65 +414,23 @@ public:
   RemoveArgument(size_t index);
 
   /**
-   * Removes all arguments that have no users and match the condition specified by \p match.
+   * Remove all arguments that have no users and an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const argument&)
-   * @param match Defines the condition for the arguments to remove.
+   * @param indices The indices of the arguments that should be removed.
+   * @return The number of arguments that were actually removed. This might be less than the number
+   * of indices as some arguments might not have been dead or a provided argument index does not
+   * belong to an actual argument.
    */
-  template<typename F>
-  void
-  RemoveArgumentsWhere(const F & match)
-  {
-    // Collect all arguments that should be removed
-    size_t minRemovableIndex = 0;
-    util::HashSet<RegionArgument *> removableArguments;
-    for (auto argument : arguments_)
-    {
-      if (argument->IsDead() && match(*argument))
-      {
-        removableArguments.insert(argument);
-        minRemovableIndex = std::min(minRemovableIndex, argument->index());
-      }
-    }
+  size_t
+  RemoveArguments(const util::HashSet<size_t> & indices);
 
-    if (removableArguments.IsEmpty())
-    {
-      // Nothing needs to be removed
-      return;
-    }
-
-    if (removableArguments.Size() == narguments())
-    {
-      // All arguments need to be removed
-      // FIXME: I would love to have smart pointers such that I could just perform
-      // arguments_.clear()
-      for (const auto argument : arguments_)
-      {
-        delete argument;
-      }
-      arguments_.resize(0);
-      return;
-    }
-
-    // Remove arguments
-    // All arguments before minRemovableIndex are not removed and therefore stay the same. There is
-    // no need to iterate through them.
-    size_t numArguments = minRemovableIndex;
-    for (size_t n = minRemovableIndex; n < narguments(); n++)
-    {
-      auto argument = arguments_[n];
-      if (removableArguments.Contains(argument))
-      {
-        delete argument;
-      }
-      else
-      {
-        argument->index_ = numArguments;
-        arguments_[numArguments++] = argument;
-      }
-    }
-    arguments_.resize(numArguments);
-  }
+  /**
+   * Remove all arguments that have no users.
+   *
+   * @return The number of arguments that were removed.
+   */
+  size_t
+  PruneArguments();
 
   inline size_t
   narguments() const noexcept
@@ -532,20 +490,6 @@ public:
         RemoveResult(n);
       }
     }
-  }
-
-  /**
-   * Remove all arguments that have no users.
-   */
-  void
-  PruneArguments()
-  {
-    auto match = [](const RegionArgument &)
-    {
-      return true;
-    };
-
-    RemoveArgumentsWhere(match);
   }
 
   inline size_t
