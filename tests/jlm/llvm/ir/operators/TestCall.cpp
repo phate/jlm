@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/DotWriter.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
@@ -12,6 +13,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 static void
 TestCopy()
