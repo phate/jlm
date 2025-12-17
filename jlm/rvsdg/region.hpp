@@ -414,25 +414,23 @@ public:
   RemoveArgument(size_t index);
 
   /**
-   * Removes all arguments that have no users and match the condition specified by \p match.
+   * Remove all arguments that have no users and an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const argument&)
-   * @param match Defines the condition for the arguments to remove.
+   * @param indices The indices of the arguments that should be removed.
+   * @return The number of arguments that were actually removed. This might be less than the number
+   * of indices as some arguments might not have been dead or a provided argument index does not
+   * belong to an actual argument.
    */
-  template<typename F>
-  void
-  RemoveArgumentsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
-    for (size_t n = narguments() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & argument = *this->argument(n);
-      if (argument.nusers() == 0 && match(argument))
-      {
-        RemoveArgument(n);
-      }
-    }
-  }
+  size_t
+  RemoveArguments(const util::HashSet<size_t> & indices);
+
+  /**
+   * Remove all arguments that have no users.
+   *
+   * @return The number of arguments that were removed.
+   */
+  size_t
+  PruneArguments();
 
   inline size_t
   narguments() const noexcept
@@ -492,20 +490,6 @@ public:
         RemoveResult(n);
       }
     }
-  }
-
-  /**
-   * Remove all arguments that have no users.
-   */
-  void
-  PruneArguments()
-  {
-    auto match = [](const RegionArgument &)
-    {
-      return true;
-    };
-
-    RemoveArgumentsWhere(match);
   }
 
   inline size_t
