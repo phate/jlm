@@ -679,7 +679,7 @@ private:
   notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
 
   void
-  notifyInputDestory(Input * input);
+  notifyInputDestroy(Input * input);
 
 public:
   /**
