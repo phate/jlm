@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::rvsdg
 {

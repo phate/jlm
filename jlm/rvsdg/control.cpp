@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/Hash.hpp>
 
 namespace jlm::rvsdg

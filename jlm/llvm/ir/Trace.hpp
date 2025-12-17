@@ -21,8 +21,14 @@ namespace jlm::llvm
  * @param output the output to start tracing from
  * @return the maximally traced output
  */
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & output);
+rvsdg::Output &
+traceOutput(rvsdg::Output & output);
+
+inline const rvsdg::Output &
+traceOutput(const rvsdg::Output & output)
+{
+  return traceOutput(const_cast<rvsdg::Output &>(output));
+}
 
 /**
  * Attempts to find the constant integer value of a given \p output,
