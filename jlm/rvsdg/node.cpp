@@ -308,7 +308,7 @@ Node::removeInput(size_t index, bool notifyRegion)
   JLM_ASSERT(index < ninputs());
 
   if (notifyRegion)
-    region()->notifyInputDestory(input(index));
+    region()->notifyInputDestroy(input(index));
 
   // remove input
   for (size_t n = index; n < ninputs() - 1; n++)
