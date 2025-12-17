@@ -326,6 +326,7 @@ RemoveArguments()
   // Remove non-existent argument
   numRemovedArguments = region.RemoveArguments({ 15 });
   assert(numRemovedArguments == 0);
+  assert(region.narguments() == 4);
 
   // Remove all remaining arguments
   numRemovedArguments = region.RemoveArguments({ 0, 1, 2, 3 });
