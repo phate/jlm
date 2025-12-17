@@ -424,11 +424,15 @@ public:
   RemoveArgumentsWhere(const F & match)
   {
     // Collect all arguments that should be removed
+    size_t minRemovableIndex = 0;
     util::HashSet<RegionArgument *> removableArguments;
     for (auto argument : arguments_)
     {
       if (argument->IsDead() && match(*argument))
+      {
         removableArguments.insert(argument);
+        minRemovableIndex = std::min(minRemovableIndex, argument->index());
+      }
     }
 
     if (removableArguments.IsEmpty())
@@ -451,8 +455,10 @@ public:
     }
 
     // Remove arguments
-    size_t numArguments = 0;
-    for (size_t n = 0; n < narguments(); n++)
+    // All arguments before minRemovableIndex are not removed and therefore stay the same. There is
+    // no need to iterate through them.
+    size_t numArguments = minRemovableIndex;
+    for (size_t n = minRemovableIndex; n < narguments(); n++)
     {
       auto argument = arguments_[n];
       if (removableArguments.Contains(argument))
