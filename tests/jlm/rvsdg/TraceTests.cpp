@@ -149,7 +149,7 @@ TestTraceNestedStructuralNodes()
   auto loopVar2 = thetaNode->AddLoopVar(&i2);
 
   // Create the gamma that sends loopVar0 and loopVar1 directly through
-  const auto & undefNode =
+  auto & undefNode =
       jlm::rvsdg::CreateOpNode<jlm::tests::NullaryOperation>(*thetaNode->subregion(), controlType);
   const auto gammaNode = GammaNode::create(undefNode.output(0), 2);
   auto entryVar0 = gammaNode->AddEntryVar(loopVar0.pre);
