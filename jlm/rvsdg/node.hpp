@@ -734,79 +734,18 @@ protected:
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
   /**
-   * Removes all inputs that match the condition specified by \p match.
+   * Removes all inputs that have an index in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_input&)
-   * @param match Defines the condition for the inputs to remove.
+   * @param indices The indices of the arguments that should be removed.
    * @param notifyRegion If true, the region is informed about the removal of an input.
    * This should be false if the node has already notified the region about being removed,
    * i.e., this function is being called from the node's destructor.
+   *
+   * @return The number of inputs that were removed. This might be less than the number of indices
+   * as some provided input indices might not belong to an actual input.
    */
-  template<typename F>
-  void
-  RemoveInputsWhere(const F & match, const bool notifyRegion)
-  {
-    // Collect all inputs that should be removed
-    size_t minRemovableIndex = 0;
-    util::HashSet<Input *> removableInputs;
-    for (auto & input : inputs_)
-    {
-      if (match(*input))
-      {
-        removableInputs.insert(input.get());
-        minRemovableIndex = std::min(minRemovableIndex, input->index());
-      }
-    }
-
-    // Nothing needs to be removed
-    if (removableInputs.IsEmpty())
-    {
-      return;
-    }
-
-    // All inputs need to be removed
-    if (removableInputs.Size() == ninputs())
-    {
-      if (notifyRegion)
-      {
-        for (auto & input : inputs_)
-        {
-          region()->notifyInputDestory(*input);
-          input.reset();
-        }
-        inputs_.resize(0);
-      }
-      else
-      {
-        inputs_.clear();
-      }
-
-      region()->onTopNodeAdded(*this);
-      return;
-    }
-
-    // Remove inputs
-    // All inputs before minRemovableIndex are not removed and therefore stay the same. There is
-    // no need to iterate through them.
-    size_t numInputs = minRemovableIndex;
-    for (size_t n = minRemovableIndex; n < ninputs(); n++)
-    {
-      auto & input = inputs_[n];
-      if (removableInputs.Contains(input.get()))
-      {
-        if (notifyRegion)
-          region()->notifyInputDestory(*input);
-        input.reset();
-      }
-      else
-      {
-        input->index_ = numInputs;
-        JLM_ASSERT(inputs_[numInputs] == nullptr);
-        inputs_[numInputs++] = std::move(input);
-      }
-    }
-    inputs_.resize(numInputs);
-  }
+  size_t
+  RemoveInputs(const util::HashSet<size_t> & indices, bool notifyRegion);
 
 protected:
   NodeOutput *

@@ -325,6 +325,43 @@ Node::removeInput(size_t index, bool notifyRegion)
   }
 }
 
+size_t
+Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegion)
+{
+  if (indices.IsEmpty())
+  {
+    return 0;
+  }
+
+  size_t numLiveInputs = 0;
+  size_t numRemovedInputs = 0;
+  for (size_t n = 0; n < ninputs(); n++)
+  {
+    auto & input = inputs_[n];
+    if (indices.Contains(input->index()))
+    {
+      if (notifyRegion)
+        region()->notifyInputDestroy(input.get());
+      input.reset();
+      numRemovedInputs++;
+    }
+    else
+    {
+      input->index_ = numLiveInputs;
+      inputs_[numLiveInputs++] = std::move(input);
+    }
+  }
+  inputs_.resize(numLiveInputs);
+
+  // If we no longer have any inputs we are now a top node
+  if (numLiveInputs == 0)
+  {
+    region()->onTopNodeAdded(*this);
+  }
+
+  return numRemovedInputs;
+}
+
 void
 Node::removeOutput(size_t index)
 {
