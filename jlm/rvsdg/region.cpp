@@ -301,6 +301,34 @@ Region::RemoveResult(size_t index)
   results_.pop_back();
 }
 
+size_t
+Region::RemoveResults(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  size_t numLiveResults = 0;
+  size_t numRemovedResults = 0;
+  for (size_t n = 0; n < nresults(); n++)
+  {
+    const auto result = results_[n];
+    if (indices.Contains(result->index()))
+    {
+      notifyInputDestroy(result);
+      delete result;
+      numRemovedResults++;
+    }
+    else
+    {
+      result->index_ = numLiveResults;
+      results_[numLiveResults++] = result;
+    }
+  }
+  results_.resize(numLiveResults);
+
+  return numRemovedResults;
+}
+
 void
 Region::removeNode(Node * node)
 {
