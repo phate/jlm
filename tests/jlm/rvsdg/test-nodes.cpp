@@ -95,74 +95,95 @@ test_node_copy()
   assert(graph.GetRootRegion().numNodes() == 2);
 }
 
-/**
- * Test Node::RemoveOutputsWhere()
- */
 static void
-TestRemoveOutputsWhere()
+RemoveOutputs()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
+  const auto valueType = ValueType::Create();
+
   Graph rvsdg;
+  auto node = TestOperation::create(
+      &rvsdg.GetRootRegion(),
+      {},
+      std::vector<std::shared_ptr<const Type>>{ valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType });
 
-  auto valueType = jlm::tests::ValueType::Create();
-  auto & node1 = CreateOpNode<jlm::tests::TestOperation>(
-      rvsdg.GetRootRegion(),
-      std::vector<std::shared_ptr<const Type>>(),
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType });
-  auto output0 = node1.output(0);
-  auto output2 = node1.output(2);
-
-  auto & node2 = CreateOpNode<jlm::tests::TestOperation>(
-      std::vector<Output *>({ output0, output2 }),
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType });
+  auto & x1 = GraphExport::Create(*node->output(1), "x1");
+  auto & x2 = GraphExport::Create(*node->output(2), "x2");
+  auto & x3 = GraphExport::Create(*node->output(3), "x3");
+  auto & x4 = GraphExport::Create(*node->output(4), "x4");
+  auto & x5 = GraphExport::Create(*node->output(5), "x5");
+  auto & x6 = GraphExport::Create(*node->output(6), "x6");
+  auto & x7 = GraphExport::Create(*node->output(7), "x7");
+  auto & x9 = GraphExport::Create(*node->output(9), "x9");
 
   // Act & Assert
-  node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return false;
-      });
-  assert(node2.noutputs() == 2);
+  // Remove all outputs that have an even index
+  size_t numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6, 8 });
+  // We expect only output0 and output8 to be removed, as output2, output4, and
+  // output6 are not dead
+  assert(numRemovedOutputs == 2);
+  assert(node->noutputs() == 8);
+  assert(x1.origin()->index() == 0);
+  assert(x2.origin()->index() == 1);
+  assert(x3.origin()->index() == 2);
+  assert(x4.origin()->index() == 3);
+  assert(x5.origin()->index() == 4);
+  assert(x6.origin()->index() == 5);
+  assert(x7.origin()->index() == 6);
+  assert(x9.origin()->index() == 7);
 
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node1.noutputs() == 2);
-  assert(node1.output(0) == output0);
-  assert(node1.output(0)->index() == 0);
-  assert(node1.output(1) == output2);
-  assert(node1.output(1)->index() == 1);
+  // Remove all users from outputs
+  rvsdg.GetRootRegion().RemoveResult(7);
+  rvsdg.GetRootRegion().RemoveResult(6);
+  rvsdg.GetRootRegion().RemoveResult(5);
+  rvsdg.GetRootRegion().RemoveResult(4);
+  rvsdg.GetRootRegion().RemoveResult(3);
+  rvsdg.GetRootRegion().RemoveResult(2);
+  rvsdg.GetRootRegion().RemoveResult(1);
+  rvsdg.GetRootRegion().RemoveResult(0);
 
-  node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node2.noutputs() == 0);
+  // Remove all outputs that have an even index
+  numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6 });
+  assert(numRemovedOutputs == 4);
+  assert(node->noutputs() == 4);
+  assert(node->output(0)->index() == 0);
+  assert(node->output(1)->index() == 1);
+  assert(node->output(2)->index() == 2);
+  assert(node->output(3)->index() == 3);
 
-  remove(&node2);
+  // Remove no output
+  numRemovedOutputs = node->RemoveOutputs({});
+  assert(numRemovedOutputs == 0);
+  assert(node->noutputs() == 4);
+  assert(node->output(0)->index() == 0);
+  assert(node->output(1)->index() == 1);
+  assert(node->output(2)->index() == 2);
+  assert(node->output(3)->index() == 3);
 
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output & output)
-      {
-        return output.index() == 0;
-      });
-  assert(node1.noutputs() == 1);
-  assert(node1.output(0) == output2);
-  assert(node1.output(0)->index() == 0);
+  // Remove non-existent output
+  numRemovedOutputs = node->RemoveOutputs({ 15 });
+  assert(numRemovedOutputs == 0);
+  assert(node->noutputs() == 4);
 
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node1.noutputs() == 0);
+  // Remove all remaining arguments
+  numRemovedOutputs = node->RemoveOutputs({ 0, 1, 2, 3 });
+  assert(numRemovedOutputs == 4);
+  assert(node->noutputs() == 0);
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-RemoveOutputs", RemoveOutputs)
 
 class RecordingObserver final : public jlm::rvsdg::RegionObserver
 {
@@ -288,7 +309,6 @@ static void
 test_nodes()
 {
   test_node_copy();
-  TestRemoveOutputsWhere();
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

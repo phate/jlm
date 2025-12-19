@@ -779,27 +779,18 @@ protected:
   // FIXME: I really would not like to be RemoveOutputsWhere() to be public
 public:
   /**
-   * Removes all outputs that have no users and match the condition specified by \p match.
+   * Removes all outputs that have no users and an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_output&)
-   * @param match Defines the condition for the outputs to remove.
+   * @param indices The indices of the outputs that should be removed.
+   *
+   * @return The number of outputs that were actually removed. This might be less than the number
+   * of indices as some outputs might not have been dead or a provided output index does not
+   * belong to an output argument.
    *
    * \see output#nusers()
    */
-  template<typename F>
-  void
-  RemoveOutputsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-    for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & output = *Node::output(n);
-      if (output.nusers() == 0 && match(output))
-      {
-        removeOutput(n);
-      }
-    }
-  }
+  size_t
+  RemoveOutputs(const util::HashSet<size_t> & indices);
 
   [[nodiscard]] Graph *
   graph() const noexcept;

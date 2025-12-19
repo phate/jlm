@@ -376,6 +376,33 @@ Node::removeOutput(size_t index)
   outputs_.pop_back();
 }
 
+size_t
+Node::RemoveOutputs(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  size_t numLiveOutputs = 0;
+  size_t numRemovedOutputs = 0;
+  for (size_t n = 0; n < noutputs(); n++)
+  {
+    auto & output = outputs_[n];
+    if (output->IsDead() && indices.Contains(output->index()))
+    {
+      output.reset();
+      numRemovedOutputs++;
+    }
+    else
+    {
+      output->index_ = numLiveOutputs;
+      outputs_[numLiveOutputs++] = std::move(output);
+    }
+  }
+  outputs_.resize(numLiveOutputs);
+
+  return numRemovedOutputs;
+}
+
 Node *
 Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
