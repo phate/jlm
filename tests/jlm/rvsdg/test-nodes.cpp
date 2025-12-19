@@ -164,50 +164,6 @@ TestRemoveOutputsWhere()
   assert(node1.noutputs() == 0);
 }
 
-class RecordingObserver final : public jlm::rvsdg::RegionObserver
-{
-public:
-  ~RecordingObserver() noexcept override = default;
-
-  explicit RecordingObserver(const jlm::rvsdg::Region & region)
-      : RegionObserver(region)
-  {}
-
-  void
-  onInputDestroy(jlm::rvsdg::Input * input) override
-  {
-    removedInputIndices_.push_back(input->index());
-  }
-
-  const std::vector<size_t> &
-  removedInputIndices() const noexcept
-  {
-    return removedInputIndices_;
-  }
-
-  void
-  onNodeCreate(jlm::rvsdg::Node * node) override
-  {}
-
-  void
-  onNodeDestroy(jlm::rvsdg::Node * node) override
-  {}
-
-  void
-  onInputCreate(jlm::rvsdg::Input * input) override
-  {}
-
-  void
-  onInputChange(
-      jlm::rvsdg::Input * input,
-      jlm::rvsdg::Output * old_origin,
-      jlm::rvsdg::Output * new_origin) override
-  {}
-
-private:
-  std::vector<size_t> removedInputIndices_{};
-};
-
 static void
 RemoveInputs()
 {
@@ -251,19 +207,19 @@ RemoveInputs()
   assert(i6->nusers() == 0);
   assert(i8->nusers() == 0);
   // We specified that the region is notified about the input removal
-  assert(observer.removedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no input
   numRemovedInputs = node->RemoveInputs({}, true);
   assert(numRemovedInputs == 0);
   assert(node->ninputs() == 5);
-  assert(observer.removedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
   numRemovedInputs = node->RemoveInputs({ 15 }, true);
   assert(numRemovedInputs == 0);
   assert(node->ninputs() == 5);
-  assert(observer.removedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining inputs
   numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 }, false);
@@ -275,7 +231,7 @@ RemoveInputs()
   assert(i7->nusers() == 0);
   assert(i9->nusers() == 0);
   // We specified that the region is not notified about the input removal
-  assert(observer.removedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Check that node is a top node
   assert(rvsdg.GetRootRegion().numTopNodes() == 1);

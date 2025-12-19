@@ -472,25 +472,15 @@ public:
   RemoveResult(size_t index);
 
   /**
-   * Remove all results that match the condition specified by \p match.
+   * Remove all results that have an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const RegionResult&)
-   * @param match Defines the condition for the results to remove.
+   * @param indices The indices of the results that should be removed.
+   *
+   * @return The number of results that were removed. This might be less than the number
+   * of indices as some provided result indices might not belong to an actual result.
    */
-  template<typename F>
-  void
-  RemoveResultsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveResult()
-    for (size_t n = nresults() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & result = *this->result(n);
-      if (match(result))
-      {
-        RemoveResult(n);
-      }
-    }
-  }
+  size_t
+  RemoveResults(const util::HashSet<size_t> & indices);
 
   inline size_t
   nresults() const noexcept
@@ -869,6 +859,86 @@ private:
   RegionObserver * next_;
 
   friend class Region;
+};
+
+/**
+ * A region observer that records the changes to a region. This is very useful for tests.
+ */
+class RecordingObserver final : public RegionObserver
+{
+public:
+  ~RecordingObserver() noexcept override = default;
+
+  explicit RecordingObserver(const Region & region)
+      : RegionObserver(region)
+  {}
+
+  void
+  onInputDestroy(Input * input) override
+  {
+    destroyedInputIndices_.push_back(input->index());
+  }
+
+  const std::vector<size_t> &
+  destroyedInputIndices() const noexcept
+  {
+    return destroyedInputIndices_;
+  }
+
+  void
+  onNodeCreate(Node * node) override
+  {
+    createNodes_.push_back(node->GetNodeId());
+  }
+
+  const std::vector<Node::Id> &
+  createdNodes() const noexcept
+  {
+    return createNodes_;
+  }
+
+  void
+  onNodeDestroy(Node * node) override
+  {
+    destroyedNodes_.push_back(node->GetNodeId());
+  }
+
+  const std::vector<Node::Id> &
+  destroyedNodes() const noexcept
+  {
+    return destroyedNodes_;
+  }
+
+  void
+  onInputCreate(Input * input) override
+  {
+    createdInputIndices_.push_back(input->index());
+  }
+
+  const std::vector<size_t> &
+  createdInputIndices() const noexcept
+  {
+    return createdInputIndices_;
+  }
+
+  void
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) override
+  {
+    changedInputIndices_.push_back(input->index());
+  }
+
+  const std::vector<size_t> &
+  changedInputIndices() const noexcept
+  {
+    return changedInputIndices_;
+  }
+
+private:
+  std::vector<Node::Id> createNodes_{};
+  std::vector<Node::Id> destroyedNodes_{};
+  std::vector<size_t> createdInputIndices_{};
+  std::vector<size_t> changedInputIndices_{};
+  std::vector<size_t> destroyedInputIndices_{};
 };
 
 /**
