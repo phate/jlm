@@ -15,8 +15,6 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-#include <oneapi/tbb/detail/_template_helpers.h>
-#include <usr/include/RVSDG/Ops.h.inc>
 
 namespace jlm::llvm
 {
