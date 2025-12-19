@@ -198,7 +198,8 @@ TestTraceNestedStructuralNodes()
   // Act & Assert 2
   {
     // Create an alternative tracer that does not perform deep tracing
-    OutputTracer shallowTracer(false, false);
+    OutputTracer shallowTracer;
+    shallowTracer.setTraceThroughStructuralNodes(false);
 
     const auto & tracedX0 = shallowTracer.trace(*x0.origin());
     const auto & tracedX1 = shallowTracer.trace(*x1.origin());

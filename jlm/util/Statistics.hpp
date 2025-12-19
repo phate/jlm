@@ -567,6 +567,30 @@ public:
   }
 
   /**
+   * Extracts the last collected statistic with the given statistics \p id,
+   * removing it from the collector and returning an owned pointer.
+   * @param id the id of the statistic to extract.
+   * @return an owned pointer to the extracted statistic instance.
+   * @throw std::out_of_range if no statistic instance with the given id is present.
+   */
+  [[nodiscard]] std::unique_ptr<Statistics>
+  releaseStatistic(Statistics::Id id)
+  {
+    auto it = CollectedStatistics_.end();
+    while (it != CollectedStatistics_.begin())
+    {
+      it--;
+      if (it->get()->GetId() == id)
+      {
+        auto result = std::move(*it);
+        CollectedStatistics_.erase(it);
+        return result;
+      }
+    }
+    throw std::out_of_range("No Statistics with the given id has been collected");
+  }
+
+  /**
    * \brief Print collected statistics to file.
    * If no statistics have been collected, this is a no-op.
    * @throws jlm::util::error if there are statistics to print, but no output directory in settings
