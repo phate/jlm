@@ -95,119 +95,176 @@ test_node_copy()
   assert(graph.GetRootRegion().numNodes() == 2);
 }
 
-/**
- * Test Node::RemoveOutputsWhere()
- */
 static void
-TestRemoveOutputsWhere()
+RemoveOutputs()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto valueType = ValueType::Create();
+
+  Graph rvsdg;
+  auto node = TestOperation::create(
+      &rvsdg.GetRootRegion(),
+      {},
+      std::vector<std::shared_ptr<const Type>>{ valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType,
+                                                valueType });
+
+  auto & x1 = GraphExport::Create(*node->output(1), "x1");
+  auto & x2 = GraphExport::Create(*node->output(2), "x2");
+  auto & x3 = GraphExport::Create(*node->output(3), "x3");
+  auto & x4 = GraphExport::Create(*node->output(4), "x4");
+  auto & x5 = GraphExport::Create(*node->output(5), "x5");
+  auto & x6 = GraphExport::Create(*node->output(6), "x6");
+  auto & x7 = GraphExport::Create(*node->output(7), "x7");
+  auto & x9 = GraphExport::Create(*node->output(9), "x9");
+
+  // Act & Assert
+  // Remove all outputs that have an even index
+  size_t numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6, 8 });
+  // We expect only output0 and output8 to be removed, as output2, output4, and
+  // output6 are not dead
+  assert(numRemovedOutputs == 2);
+  assert(node->noutputs() == 8);
+  assert(x1.origin()->index() == 0);
+  assert(x2.origin()->index() == 1);
+  assert(x3.origin()->index() == 2);
+  assert(x4.origin()->index() == 3);
+  assert(x5.origin()->index() == 4);
+  assert(x6.origin()->index() == 5);
+  assert(x7.origin()->index() == 6);
+  assert(x9.origin()->index() == 7);
+
+  // Remove all users from outputs
+  rvsdg.GetRootRegion().RemoveResult(7);
+  rvsdg.GetRootRegion().RemoveResult(6);
+  rvsdg.GetRootRegion().RemoveResult(5);
+  rvsdg.GetRootRegion().RemoveResult(4);
+  rvsdg.GetRootRegion().RemoveResult(3);
+  rvsdg.GetRootRegion().RemoveResult(2);
+  rvsdg.GetRootRegion().RemoveResult(1);
+  rvsdg.GetRootRegion().RemoveResult(0);
+
+  // Remove all outputs that have an even index
+  numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6 });
+  assert(numRemovedOutputs == 4);
+  assert(node->noutputs() == 4);
+  assert(node->output(0)->index() == 0);
+  assert(node->output(1)->index() == 1);
+  assert(node->output(2)->index() == 2);
+  assert(node->output(3)->index() == 3);
+
+  // Remove no output
+  numRemovedOutputs = node->RemoveOutputs({});
+  assert(numRemovedOutputs == 0);
+  assert(node->noutputs() == 4);
+  assert(node->output(0)->index() == 0);
+  assert(node->output(1)->index() == 1);
+  assert(node->output(2)->index() == 2);
+  assert(node->output(3)->index() == 3);
+
+  // Remove non-existent output
+  numRemovedOutputs = node->RemoveOutputs({ 15 });
+  assert(numRemovedOutputs == 0);
+  assert(node->noutputs() == 4);
+
+  // Remove all remaining outputs
+  numRemovedOutputs = node->RemoveOutputs({ 0, 1, 2, 3 });
+  assert(numRemovedOutputs == 4);
+  assert(node->noutputs() == 0);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-RemoveOutputs", RemoveOutputs)
+
+static void
+RemoveInputs()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
+  const RecordingObserver observer(rvsdg.GetRootRegion());
+  const auto valueType = ValueType::Create();
 
-  auto valueType = jlm::tests::ValueType::Create();
-  auto & node1 = CreateOpNode<jlm::tests::TestOperation>(
-      rvsdg.GetRootRegion(),
-      std::vector<std::shared_ptr<const Type>>(),
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType });
-  auto output0 = node1.output(0);
-  auto output2 = node1.output(2);
+  auto i0 = &GraphImport::Create(rvsdg, valueType, "i0");
+  auto i1 = &GraphImport::Create(rvsdg, valueType, "i1");
+  auto i2 = &GraphImport::Create(rvsdg, valueType, "i2");
+  auto i3 = &GraphImport::Create(rvsdg, valueType, "i3");
+  auto i4 = &GraphImport::Create(rvsdg, valueType, "i4");
+  auto i5 = &GraphImport::Create(rvsdg, valueType, "i5");
+  auto i6 = &GraphImport::Create(rvsdg, valueType, "i6");
+  auto i7 = &GraphImport::Create(rvsdg, valueType, "i7");
+  auto i8 = &GraphImport::Create(rvsdg, valueType, "i8");
+  auto i9 = &GraphImport::Create(rvsdg, valueType, "i9");
 
-  auto & node2 = CreateOpNode<jlm::tests::TestOperation>(
-      std::vector<Output *>({ output0, output2 }),
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType });
-
-  // Act & Assert
-  node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return false;
-      });
-  assert(node2.noutputs() == 2);
-
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node1.noutputs() == 2);
-  assert(node1.output(0) == output0);
-  assert(node1.output(0)->index() == 0);
-  assert(node1.output(1) == output2);
-  assert(node1.output(1)->index() == 1);
-
-  node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node2.noutputs() == 0);
-
-  remove(&node2);
-
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output & output)
-      {
-        return output.index() == 0;
-      });
-  assert(node1.noutputs() == 1);
-  assert(node1.output(0) == output2);
-  assert(node1.output(0)->index() == 0);
-
-  node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::Output &)
-      {
-        return true;
-      });
-  assert(node1.noutputs() == 0);
-}
-
-/**
- * Test Node::RemoveInputsWhere()
- */
-static void
-TestRemoveInputsWhere()
-{
-  using namespace jlm::rvsdg;
-
-  // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  auto valueType = jlm::tests::ValueType::Create();
-  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
-
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
-      { x, x, x },
-      std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType },
-      std::vector<std::shared_ptr<const Type>>{});
-  auto input0 = node.input(0);
-  auto input2 = node.input(2);
+  auto node =
+      TestOperation::create(&rvsdg.GetRootRegion(), { i0, i1, i2, i3, i4, i5, i6, i7, i8, i9 }, {});
 
   // Act & Assert
-  node.RemoveInputsWhere(
-      [](const jlm::rvsdg::Input & input)
-      {
-        return input.index() == 1;
-      });
-  assert(node.ninputs() == 2);
-  assert(node.input(0) == input0);
-  assert(node.input(1) == input2);
+  assert(rvsdg.GetRootRegion().numTopNodes() == 0);
 
-  node.RemoveInputsWhere(
-      [](const jlm::rvsdg::Input &)
-      {
-        return true;
-      });
-  assert(node.ninputs() == 0);
+  // Remove all inputs that have an even index
+  size_t numRemovedInputs = node->RemoveInputs({ 0, 2, 4, 6, 8 }, true);
+  assert(numRemovedInputs == 5);
+  assert(node->ninputs() == 5);
+  assert(node->input(0)->origin() == i1);
+  assert(node->input(1)->origin() == i3);
+  assert(node->input(2)->origin() == i5);
+  assert(node->input(3)->origin() == i7);
+  assert(node->input(4)->origin() == i9);
+  assert(i0->nusers() == 0);
+  assert(i2->nusers() == 0);
+  assert(i4->nusers() == 0);
+  assert(i6->nusers() == 0);
+  assert(i8->nusers() == 0);
+  // We specified that the region is notified about the input removal
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+
+  // Remove no input
+  numRemovedInputs = node->RemoveInputs({}, true);
+  assert(numRemovedInputs == 0);
+  assert(node->ninputs() == 5);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+
+  // Remove non-existent input
+  numRemovedInputs = node->RemoveInputs({ 15 }, true);
+  assert(numRemovedInputs == 0);
+  assert(node->ninputs() == 5);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+
+  // Remove remaining inputs
+  numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 }, false);
+  assert(numRemovedInputs == 5);
+  assert(node->ninputs() == 0);
+  assert(i1->nusers() == 0);
+  assert(i3->nusers() == 0);
+  assert(i5->nusers() == 0);
+  assert(i7->nusers() == 0);
+  assert(i9->nusers() == 0);
+  // We specified that the region is not notified about the input removal
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+
+  // Check that node is a top node
+  assert(rvsdg.GetRootRegion().numTopNodes() == 1);
+  assert(&*rvsdg.GetRootRegion().TopNodes().begin() == node);
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-RemoveInputs", RemoveInputs)
 
 static void
 test_nodes()
 {
   test_node_copy();
-  TestRemoveOutputsWhere();
-  TestRemoveInputsWhere();
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

@@ -734,25 +734,18 @@ protected:
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
   /**
-   * Removes all inputs that match the condition specified by \p match.
+   * Removes all inputs that have an index in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_input&)
-   * @param match Defines the condition for the inputs to remove.
+   * @param indices The indices of the arguments that should be removed.
+   * @param notifyRegion If true, the region is informed about the removal of an input.
+   * This should be false if the node has already notified the region about being removed,
+   * i.e., this function is being called from the node's destructor.
+   *
+   * @return The number of inputs that were removed. This might be less than the number of indices
+   * as some provided input indices might not belong to an actual input.
    */
-  template<typename F>
-  void
-  RemoveInputsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-    for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & input = *Node::input(n);
-      if (match(input))
-      {
-        removeInput(n, true);
-      }
-    }
-  }
+  size_t
+  RemoveInputs(const util::HashSet<size_t> & indices, bool notifyRegion);
 
 protected:
   NodeOutput *
@@ -786,27 +779,18 @@ protected:
   // FIXME: I really would not like to be RemoveOutputsWhere() to be public
 public:
   /**
-   * Removes all outputs that have no users and match the condition specified by \p match.
+   * Removes all outputs that have no users and an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_output&)
-   * @param match Defines the condition for the outputs to remove.
+   * @param indices The indices of the outputs that should be removed.
+   *
+   * @return The number of outputs that were actually removed. This might be less than the number
+   * of indices as some outputs might not have been dead or a provided output index does not
+   * belong to an output argument.
    *
    * \see output#nusers()
    */
-  template<typename F>
-  void
-  RemoveOutputsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-    for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & output = *Node::output(n);
-      if (output.nusers() == 0 && match(output))
-      {
-        removeOutput(n);
-      }
-    }
-  }
+  size_t
+  RemoveOutputs(const util::HashSet<size_t> & indices);
 
   [[nodiscard]] Graph *
   graph() const noexcept;

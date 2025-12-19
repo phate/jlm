@@ -308,7 +308,7 @@ Node::removeInput(size_t index, bool notifyRegion)
   JLM_ASSERT(index < ninputs());
 
   if (notifyRegion)
-    region()->notifyInputDestory(input(index));
+    region()->notifyInputDestroy(input(index));
 
   // remove input
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -325,6 +325,43 @@ Node::removeInput(size_t index, bool notifyRegion)
   }
 }
 
+size_t
+Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegion)
+{
+  if (indices.IsEmpty())
+  {
+    return 0;
+  }
+
+  size_t numLiveInputs = 0;
+  size_t numRemovedInputs = 0;
+  for (size_t n = 0; n < ninputs(); n++)
+  {
+    auto & input = inputs_[n];
+    if (indices.Contains(input->index()))
+    {
+      if (notifyRegion)
+        region()->notifyInputDestroy(input.get());
+      input.reset();
+      numRemovedInputs++;
+    }
+    else
+    {
+      input->index_ = numLiveInputs;
+      inputs_[numLiveInputs++] = std::move(input);
+    }
+  }
+  inputs_.resize(numLiveInputs);
+
+  // If we no longer have any inputs we are now a top node
+  if (numLiveInputs == 0)
+  {
+    region()->onTopNodeAdded(*this);
+  }
+
+  return numRemovedInputs;
+}
+
 void
 Node::removeOutput(size_t index)
 {
@@ -337,6 +374,33 @@ Node::removeOutput(size_t index)
     outputs_[n]->index_ = n;
   }
   outputs_.pop_back();
+}
+
+size_t
+Node::RemoveOutputs(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  size_t numLiveOutputs = 0;
+  size_t numRemovedOutputs = 0;
+  for (size_t n = 0; n < noutputs(); n++)
+  {
+    auto & output = outputs_[n];
+    if (output->IsDead() && indices.Contains(output->index()))
+    {
+      output.reset();
+      numRemovedOutputs++;
+    }
+    else
+    {
+      output->index_ = numLiveOutputs;
+      outputs_[numLiveOutputs++] = std::move(output);
+    }
+  }
+  outputs_.resize(numLiveOutputs);
+
+  return numRemovedOutputs;
 }
 
 Node *

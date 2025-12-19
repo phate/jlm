@@ -171,67 +171,91 @@ NumRegions_NonEmptyRvsdg()
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_NonEmptyRvsdg", NumRegions_NonEmptyRvsdg)
 
-/**
- * Test Region::RemoveResultsWhere()
- */
 static void
-RemoveResultsWhere()
+RemoveResults()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  const auto valueType = ValueType::Create();
 
-  jlm::rvsdg::Graph rvsdg;
+  Graph rvsdg;
+  auto & rootRegion = rvsdg.GetRootRegion();
+  const RecordingObserver observer(rootRegion);
 
-  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  auto subregion = structuralNode->subregion(0);
+  auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+  auto & i2 = GraphImport::Create(rvsdg, valueType, "i2");
+  auto & i3 = GraphImport::Create(rvsdg, valueType, "i3");
+  auto & i4 = GraphImport::Create(rvsdg, valueType, "i4");
+  auto & i5 = GraphImport::Create(rvsdg, valueType, "i5");
+  auto & i6 = GraphImport::Create(rvsdg, valueType, "i6");
+  auto & i7 = GraphImport::Create(rvsdg, valueType, "i7");
+  auto & i8 = GraphImport::Create(rvsdg, valueType, "i8");
+  auto & i9 = GraphImport::Create(rvsdg, valueType, "i9");
 
-  auto node = TestOperation::Create(subregion, {}, {}, { valueType });
-
-  const auto outputVar0 = structuralNode->addResults({ node->output(0) });
-  const auto outputVar1 = structuralNode->addResults({ node->output(0) });
-  const auto outputVar2 = structuralNode->addResults({ node->output(0) });
+  GraphExport::Create(i0, "x0");
+  GraphExport::Create(i1, "x1");
+  GraphExport::Create(i2, "x2");
+  GraphExport::Create(i3, "x3");
+  GraphExport::Create(i4, "x4");
+  GraphExport::Create(i5, "x5");
+  GraphExport::Create(i6, "x6");
+  GraphExport::Create(i7, "x7");
+  GraphExport::Create(i8, "x8");
+  GraphExport::Create(i9, "x9");
 
   // Act & Arrange
-  assert(subregion->nresults() == 3);
-  assert(outputVar0.result[0]->index() == 0);
-  assert(outputVar1.result[0]->index() == 1);
-  assert(outputVar2.result[0]->index() == 2);
+  assert(rvsdg.GetRootRegion().nresults() == 10);
 
-  subregion->RemoveResultsWhere(
-      [](const jlm::rvsdg::RegionResult & result)
-      {
-        return result.index() == 1;
-      });
-  assert(subregion->nresults() == 2);
-  assert(outputVar0.result[0]->index() == 0);
-  assert(outputVar2.result[0]->index() == 1);
+  // Remove all results that have an even index
+  size_t numRemovedResults = rootRegion.RemoveResults({ 0, 2, 4, 6, 8 });
+  assert(numRemovedResults == 5);
+  assert(rootRegion.nresults() == 5);
+  assert(rootRegion.result(0)->origin() == &i1);
+  assert(rootRegion.result(1)->origin() == &i3);
+  assert(rootRegion.result(2)->origin() == &i5);
+  assert(rootRegion.result(3)->origin() == &i7);
+  assert(rootRegion.result(4)->origin() == &i9);
+  assert(i0.nusers() == 0);
+  assert(i2.nusers() == 0);
+  assert(i4.nusers() == 0);
+  assert(i6.nusers() == 0);
+  assert(i8.nusers() == 0);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
-  subregion->RemoveResultsWhere(
-      [](const jlm::rvsdg::RegionResult &)
-      {
-        return false;
-      });
-  assert(subregion->nresults() == 2);
-  assert(outputVar0.result[0]->index() == 0);
-  assert(outputVar2.result[0]->index() == 1);
+  // Remove no result
+  numRemovedResults = rootRegion.RemoveResults({});
+  assert(numRemovedResults == 0);
+  assert(rootRegion.nresults() == 5);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
-  subregion->RemoveResultsWhere(
-      [](const jlm::rvsdg::RegionResult &)
-      {
-        return true;
-      });
-  assert(subregion->nresults() == 0);
+  // Remove non-existent input
+  numRemovedResults = rootRegion.RemoveResults({ 15 });
+  assert(numRemovedResults == 0);
+  assert(rootRegion.nresults() == 5);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+
+  // Remove remaining results
+  numRemovedResults = rootRegion.RemoveResults({ 0, 1, 2, 3, 4 });
+  assert(numRemovedResults == 5);
+  assert(rootRegion.nresults() == 0);
+  assert(i1.nusers() == 0);
+  assert(i3.nusers() == 0);
+  assert(i5.nusers() == 0);
+  assert(i7.nusers() == 0);
+  assert(i9.nusers() == 0);
+  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResultsWhere)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResults", RemoveResults)
 
 /**
- * Test Region::RemoveArgumentsWhere()
+ * Test Region::RemoveArguments()
  */
 static void
-RemoveArgumentsWhere()
+RemoveArguments()
 {
   using namespace jlm::tests;
 
@@ -240,44 +264,101 @@ RemoveArgumentsWhere()
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
   auto valueType = ValueType::Create();
-  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument0 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument1 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument2 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument3 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument4 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument5 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument6 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument7 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument8 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument9 = &TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = TestOperation::Create(&region, { valueType }, { &argument1 }, { valueType });
+  auto node = TestOperation::Create(
+      &region,
+      { valueType, valueType, valueType },
+      { argument2, argument4, argument6 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 3);
-  assert(argument0.index() == 0);
-  assert(argument1.index() == 1);
-  assert(argument2.index() == 2);
+  assert(region.narguments() == 10);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+  assert(argument3->index() == 3);
+  assert(argument4->index() == 4);
+  assert(argument5->index() == 5);
+  assert(argument6->index() == 6);
+  assert(argument7->index() == 7);
+  assert(argument8->index() == 8);
+  assert(argument9->index() == 9);
 
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument &)
-      {
-        return true;
-      });
-  assert(region.narguments() == 1);
-  assert(argument1.index() == 0);
+  // Remove all arguments that have an even index
+  size_t numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6, 8 });
+  // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
+  // argument6 are not dead
+  assert(numRemovedArguments == 2);
+  assert(region.narguments() == 8);
+  assert(argument1->index() == 0);
+  assert(argument2->index() == 1);
+  assert(argument3->index() == 2);
+  assert(argument4->index() == 3);
+  assert(argument5->index() == 4);
+  assert(argument6->index() == 5);
+  assert(argument7->index() == 6);
+  assert(argument9->index() == 7);
 
+  // Reassign arguments to avoid mental gymnastics
+  argument0 = argument1;
+  argument1 = argument2;
+  argument2 = argument3;
+  argument3 = argument4;
+  argument4 = argument5;
+  argument5 = argument6;
+  argument6 = argument7;
+  argument7 = argument9;
+
+  // Remove all users from the arguments
   region.removeNode(node);
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument &)
-      {
-        return false;
-      });
-  assert(region.narguments() == 1);
-  assert(argument1.index() == 0);
 
-  region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
-      {
-        return argument.index() == 0;
-      });
+  // Remove all arguments that have an even index
+  numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6 });
+  // We expect argument0, argument2, argument4, and argument6 to be removed
+  assert(numRemovedArguments == 4);
+  assert(region.narguments() == 4);
+  assert(argument1->index() == 0);
+  assert(argument3->index() == 1);
+  assert(argument5->index() == 2);
+  assert(argument7->index() == 3);
+
+  // Reassign arguments to avoid mental gymnastics
+  argument0 = argument1;
+  argument1 = argument3;
+  argument2 = argument5;
+  argument3 = argument7;
+
+  // Remove no argument
+  numRemovedArguments = region.RemoveArguments({});
+  assert(numRemovedArguments == 0);
+  assert(region.narguments() == 4);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+  assert(argument3->index() == 3);
+
+  // Remove non-existent argument
+  numRemovedArguments = region.RemoveArguments({ 15 });
+  assert(numRemovedArguments == 0);
+  assert(region.narguments() == 4);
+
+  // Remove all remaining arguments
+  numRemovedArguments = region.RemoveArguments({ 0, 1, 2, 3 });
+  assert(numRemovedArguments == 4);
   assert(region.narguments() == 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArgumentsWhere", RemoveArgumentsWhere)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArguments", RemoveArguments)
 
 /**
  * Test Region::PruneArguments()
@@ -305,13 +386,15 @@ PruneArguments()
   // Act & Arrange
   assert(region.narguments() == 3);
 
-  region.PruneArguments();
+  size_t numRemovedArguments = region.PruneArguments();
+  assert(numRemovedArguments == 1);
   assert(region.narguments() == 2);
   assert(argument0.index() == 0);
   assert(argument2.index() == 1);
 
   region.removeNode(node);
-  region.PruneArguments();
+  numRemovedArguments = region.PruneArguments();
+  assert(numRemovedArguments == 2);
   assert(region.narguments() == 0);
 }
 
@@ -458,11 +541,7 @@ BottomNodeTests()
   assert(rvsdg.GetRootRegion().BottomNodes().begin() == rvsdg.GetRootRegion().BottomNodes().end());
 
   // And it becomes dead again
-  rvsdg.GetRootRegion().RemoveResultsWhere(
-      [](const RegionResult &)
-      {
-        return true;
-      });
+  rvsdg.GetRootRegion().RemoveResults({ 0 });
   assert(structuralNode->IsDead());
   assert(rvsdg.GetRootRegion().numBottomNodes() == 1);
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
