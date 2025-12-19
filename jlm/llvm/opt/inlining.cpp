@@ -390,7 +390,8 @@ FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
   return true;
 }
 
-bool FunctionInlining::canBeInlined(const rvsdg::LambdaNode & callee)
+bool
+FunctionInlining::canBeInlined(const rvsdg::LambdaNode & callee)
 {
   return canBeInlined(*callee.subregion(), true);
 }
