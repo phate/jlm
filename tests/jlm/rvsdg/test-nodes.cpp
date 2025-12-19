@@ -177,7 +177,7 @@ RemoveOutputs()
   assert(numRemovedOutputs == 0);
   assert(node->noutputs() == 4);
 
-  // Remove all remaining arguments
+  // Remove all remaining outputs
   numRemovedOutputs = node->RemoveOutputs({ 0, 1, 2, 3 });
   assert(numRemovedOutputs == 4);
   assert(node->noutputs() == 0);
