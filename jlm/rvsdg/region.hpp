@@ -922,7 +922,7 @@ public:
   }
 
   void
-  onInputChange(Input * input, Output * old_origin, Output * new_origin) override
+  onInputChange(Input * input, Output *, Output *) override
   {
     changedInputIndices_.push_back(input->index());
   }
