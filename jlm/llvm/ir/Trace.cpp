@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "operators/IOBarrier.hpp"
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
