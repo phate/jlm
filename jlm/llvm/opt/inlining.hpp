@@ -8,6 +8,12 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class SimpleNode;
+class LambdaNode;
+}
+
 namespace jlm::llvm
 {
 
