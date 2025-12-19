@@ -90,65 +90,6 @@ FunctionInlining::FunctionInlining()
     : Transformation("FunctionInlining")
 {}
 
-bool
-FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
-{
-  for (auto & node : region.Nodes())
-  {
-    if (const auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
-    {
-      for (auto & subregion : structural->Subregions())
-      {
-        if (!canBeInlined(subregion, false))
-          return false;
-      }
-    }
-    else if (is<AllocaOperation>(&node))
-    {
-      // Having allocas that are not on the top level of the function disqualifies from inlining
-      if (!topLevelRegion)
-        return false;
-
-      // Having allocation sizes that are not compile time constants also disqualifies from inlining
-      auto countOutput = AllocaOperation::getCountInput(node).origin();
-      countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput);
-      auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOutput);
-
-      // The count must come from a node, and it must be nullary
-      if (!countNode || countNode->ninputs() != 0)
-        return false;
-    }
-    else if (const auto [simple, callOp] =
-                 rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(node);
-             simple && callOp)
-    {
-      const auto classification = CallOperation::ClassifyCall(*simple);
-      if (classification->isSetjmpCall())
-      {
-        // Calling setjmp affects local variables in
-        return false;
-      }
-      if (classification->isVaStartCall())
-      {
-        // Calling va_start requires parameters to be passed in as expected by the ABI
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-bool
-FunctionInlining::shouldInline(
-    [[maybe_unused]] rvsdg::SimpleNode & callNode,
-    [[maybe_unused]] rvsdg::LambdaNode & caller,
-    rvsdg::LambdaNode & callee)
-{
-  // For now the inlining heuristic is very simple: Inline functions that are called exactly once
-  return context_->functionsCalledOnce.Contains(&callee);
-}
-
 /**
  * A function body has access to the function's context variables,
  * so inlining requires these context variables to be routed into the call's region.
@@ -157,7 +98,7 @@ FunctionInlining::shouldInline(
  * @return an output inside the given \p region, for each context variable in \p callee
  */
 static std::vector<rvsdg::Output *>
-routeContextVariablesToRegion(rvsdg::Region & region, rvsdg::LambdaNode & callee)
+routeContextVariablesToRegion(rvsdg::Region & region, const rvsdg::LambdaNode & callee)
 {
   llvm::OutputTracer tracer;
   // We avoid entering phi nodes, as we can not route from a sibling region
@@ -283,9 +224,17 @@ tryRerouteMemoryStateMergeAndSplit(
   }
 }
 
+/**
+ * Finds alloca nodes from the callee that have been copied into the caller.
+ * Moves the alloca nodes to the top level of the caller, and routes their outputs to their users.
+ * This avoids having allocas inside theta nodes, which could otherwise cause the stack to grow.
+ * @param callee the function that has been inlined into the caller
+ * @param caller the function that now has a copy of callee copied inside it
+ * @param smap the substitution map used during copying
+ */
 static void
 hoistInlinedAllocas(
-    rvsdg::LambdaNode & callee,
+    const rvsdg::LambdaNode & callee,
     rvsdg::LambdaNode & caller,
     rvsdg::SubstitutionMap & smap)
 {
@@ -329,11 +278,9 @@ void
 FunctionInlining::inlineCall(
     rvsdg::SimpleNode & callNode,
     rvsdg::LambdaNode & caller,
-    rvsdg::LambdaNode & callee)
+    const rvsdg::LambdaNode & callee)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
-
-  context_->numInlinedCalls++;
 
   // Make note of the call's entry and exit memory state nodes, if they exist
   auto callEntryMemoryStateMerge = CallOperation::tryGetMemoryStateEntryMerge(callNode);
@@ -388,6 +335,77 @@ FunctionInlining::inlineCall(
 }
 
 void
+FunctionInlining::inlineCall(rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & callee)
+{
+  auto & caller = rvsdg::getSurroundingLambdaNode(callNode);
+  inlineCall(callNode, caller, callee);
+}
+
+bool
+FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
+{
+  for (auto & node : region.Nodes())
+  {
+    if (const auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structural->Subregions())
+      {
+        if (!canBeInlined(subregion, false))
+          return false;
+      }
+    }
+    else if (is<AllocaOperation>(&node))
+    {
+      // Having allocas that are not on the top level of the function disqualifies from inlining
+      if (!topLevelRegion)
+        return false;
+
+      // Having allocation sizes that are not compile time constants also disqualifies from inlining
+      auto countOutput = AllocaOperation::getCountInput(node).origin();
+      countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput);
+      auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOutput);
+
+      // The count must come from a node, and it must be nullary
+      if (!countNode || countNode->ninputs() != 0)
+        return false;
+    }
+    else if (const auto [simple, callOp] =
+                 rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(node);
+             simple && callOp)
+    {
+      const auto classification = CallOperation::ClassifyCall(*simple);
+      if (classification->isSetjmpCall())
+      {
+        // Calling setjmp affects local variables in
+        return false;
+      }
+      if (classification->isVaStartCall())
+      {
+        // Calling va_start requires parameters to be passed in as expected by the ABI
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool FunctionInlining::canBeInlined(const rvsdg::LambdaNode & callee)
+{
+  return canBeInlined(*callee.subregion(), true);
+}
+
+bool
+FunctionInlining::shouldInline(
+    [[maybe_unused]] rvsdg::SimpleNode & callNode,
+    [[maybe_unused]] rvsdg::LambdaNode & caller,
+    rvsdg::LambdaNode & callee)
+{
+  // For now the inlining heuristic is very simple: Inline functions that are called exactly once
+  return context_->functionsCalledOnce.Contains(&callee);
+}
+
+void
 FunctionInlining::considerCallForInlining(
     rvsdg::SimpleNode & callNode,
     rvsdg::LambdaNode & callerLambda)
@@ -414,6 +432,7 @@ FunctionInlining::considerCallForInlining(
   context_->numInlineableCalls++;
   if (shouldInline(callNode, callerLambda, *callee))
   {
+    context_->numInlinedCalls++;
     inlineCall(callNode, callerLambda, *callee);
   }
 }
@@ -447,10 +466,11 @@ FunctionInlining::visitLambda(rvsdg::LambdaNode & lambda)
 {
   context_->numFunctions++;
 
+  // Visits the lambda's body and performs inlining of calls when determined to be beneficial
   visitIntraProceduralRegion(*lambda.subregion(), lambda);
 
   // After doing inlining inside lambda, we check if the function is eligible for being inlined
-  if (canBeInlined(*lambda.subregion(), true))
+  if (canBeInlined(lambda))
     context_->inlineableFunctions.insert(&lambda);
 
   // Check if the function is only called once, and not exported from the module.
