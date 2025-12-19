@@ -177,8 +177,8 @@ inline_calls(rvsdg::Region * region)
       JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
       auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::FunctionInlining::inlineCall(
-          *dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
-          *dynamic_cast<rvsdg::LambdaNode *>(ln));
+          *dynamic_cast<rvsdg::SimpleNode *>(node),
+          *dynamic_cast<const rvsdg::LambdaNode *>(ln));
       // restart for this region
       inline_calls(region);
       return;
