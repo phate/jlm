@@ -60,7 +60,6 @@ jobs:
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-agnostic
 
   llvm-test-suite-andersen-region-aware:
-    if: contains(github.event.pull_request.title, '[AndersenRegionAware]')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
