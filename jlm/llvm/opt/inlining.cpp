@@ -227,7 +227,7 @@ tryRerouteMemoryStateMergeAndSplit(
 /**
  * Finds alloca nodes from the callee that have been copied into the caller.
  * Moves the alloca nodes to the top level of the caller, and routes their outputs to their users.
- * This avoids having allocas inside theta nodes, which could otherwise cause the stack to grow.
+ * This avoids having allocas inside theta nodes, which could otherwise cause the stack to overflow.
  * @param callee the function that has been inlined into the caller
  * @param caller the function that now has a copy of callee copied inside it
  * @param smap the substitution map used during copying
@@ -376,12 +376,14 @@ FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
       const auto classification = CallOperation::ClassifyCall(*simple);
       if (classification->isSetjmpCall())
       {
-        // Calling setjmp affects local variables in
+        // Calling setjmp weakens guarantees about local variables in the caller,
+        // but not local variables in the caller's caller. Inlining would mix them up.
         return false;
       }
       if (classification->isVaStartCall())
       {
-        // Calling va_start requires parameters to be passed in as expected by the ABI
+        // Calling va_start requires parameters to be passed in as expected by the ABI.
+        // This gets broken if we start inlining.
         return false;
       }
     }

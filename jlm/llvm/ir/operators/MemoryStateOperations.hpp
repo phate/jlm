@@ -621,10 +621,10 @@ public:
   tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
-   * Maps the output a \ref CallExitMemoryStateSplitOperation node to the respective \ref
+   * Maps the output of a \ref CallExitMemoryStateSplitOperation node to the respective \ref
    * MemoryNodeId.
    *
-   * @param output A output of \ref CallExitMemoryStateSplitOperation node.
+   * @param output an output of a \ref CallExitMemoryStateSplitOperation node.
    * @return The \ref MemoryNodeId.
    *
    * \pre The output is assumed to belong to a \ref CallExitMemoryStateSplitOperation node.
