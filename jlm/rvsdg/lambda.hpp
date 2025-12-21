@@ -295,21 +295,22 @@ template<typename F>
 size_t
 LambdaNode::RemoveLambdaInputsWhere(const F & match)
 {
-  size_t numRemovedInputs = 0;
-
-  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  util::HashSet<size_t> inputIndices;
+  util::HashSet<size_t> argumentIndices;
+  for (auto [input, argument] : GetContextVars())
   {
-    auto lambdaInput = input(n);
-    auto & argument = *MapInputContextVar(*lambdaInput).inner;
-
-    if (argument.IsDead() && match(*lambdaInput))
+    if (argument->IsDead() && match(*input))
     {
-      subregion()->RemoveArgument(argument.index());
-      removeInput(n, true);
-      numRemovedInputs++;
+      inputIndices.insert(input->index());
+      argumentIndices.insert(argument->index());
     }
   }
+
+  [[maybe_unused]] const auto numRemoveArguments = subregion()->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemoveArguments == argumentIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 
   return numRemovedInputs;
 }
