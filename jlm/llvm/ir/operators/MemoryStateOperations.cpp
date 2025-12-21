@@ -706,6 +706,16 @@ CallExitMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
   return node.output(index);
 }
 
+MemoryNodeId
+CallExitMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output & output)
+{
+  auto [_, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(output);
+  JLM_ASSERT(operation != nullptr);
+
+  return operation->memoryNodeIdToIndexMap_.LookupValue(output.index());
+}
+
 std::optional<std::vector<rvsdg::Output *>>
 CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
     const CallExitMemoryStateSplitOperation & callExitSplitOperation,
