@@ -314,7 +314,7 @@ public:
    * Removes the variables as exit variables from this gamma.
    */
   void
-  RemoveExitVars(const std::vector<ExitVar> & exitvars);
+  RemoveExitVars(const std::vector<ExitVar> & exitVars);
 
   /**
    * \brief Removes the given entry variables
@@ -326,7 +326,7 @@ public:
    * Removes the variables as entry variables from this gamma.
    */
   void
-  RemoveEntryVars(const std::vector<EntryVar> & entryvars);
+  RemoveEntryVars(const std::vector<EntryVar> & entryVars);
 
   /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and

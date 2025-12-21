@@ -60,33 +60,40 @@ ThetaNode::AddLoopVar(rvsdg::Output * origin)
 }
 
 void
-ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
+ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopVars)
 {
-  // Sort them by descending index to avoid renumbering issues.
-  std::sort(
-      loopvars.begin(),
-      loopvars.end(),
-      [](const LoopVar & x, const LoopVar & y)
-      {
-        return x.input->index() > y.input->index();
-      });
-
-  for (const auto & loopvar : loopvars)
+  util::HashSet<size_t> inputIndices;
+  util::HashSet<size_t> argumentIndices;
+  util::HashSet<size_t> resultIndices;
+  util::HashSet<size_t> outputIndices;
+  for (const auto & [input, pre, post, output] : loopVars)
   {
-    JLM_ASSERT(loopvar.output->IsDead());
+    JLM_ASSERT(output->IsDead());
 
     // If the pre argument has a user, it can only be the corresponding post result
-    JLM_ASSERT(loopvar.pre->nusers() <= 1);
-    if (loopvar.pre->nusers() == 1)
+    JLM_ASSERT(pre->nusers() <= 1);
+    if (pre->nusers() == 1)
     {
-      JLM_ASSERT(loopvar.post->origin() == loopvar.pre);
+      JLM_ASSERT(post->origin() == pre);
     }
 
-    subregion()->RemoveResult(loopvar.post->index());
-    subregion()->RemoveArgument(loopvar.pre->index());
-    removeOutput(loopvar.output->index());
-    removeInput(loopvar.input->index(), true);
+    inputIndices.insert(input->index());
+    argumentIndices.insert(pre->index());
+    resultIndices.insert(post->index());
+    outputIndices.insert(output->index());
   }
+
+  [[maybe_unused]] const auto numRemovedResults = subregion()->RemoveResults(resultIndices);
+  JLM_ASSERT(numRemovedResults == resultIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedArguments = subregion()->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemovedArguments == argumentIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedOutputs = RemoveOutputs(outputIndices);
+  JLM_ASSERT(numRemovedOutputs == outputIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 }
 
 ThetaNode *

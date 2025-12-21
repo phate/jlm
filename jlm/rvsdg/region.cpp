@@ -216,6 +216,58 @@ Region::RemoveArgument(size_t index)
   arguments_.pop_back();
 }
 
+size_t
+Region::RemoveArguments(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  // Remove arguments
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead() && indices.Contains(argument->index()))
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
+size_t
+Region::PruneArguments()
+{
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead())
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
 RegionResult &
 Region::addResult(std::unique_ptr<RegionResult> result)
 {
@@ -238,7 +290,7 @@ Region::RemoveResult(size_t index)
   JLM_ASSERT(index < results_.size());
   RegionResult * result = results_[index];
 
-  notifyInputDestory(result);
+  notifyInputDestroy(result);
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -247,6 +299,34 @@ Region::RemoveResult(size_t index)
     results_[n]->index_ = n;
   }
   results_.pop_back();
+}
+
+size_t
+Region::RemoveResults(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  size_t numLiveResults = 0;
+  size_t numRemovedResults = 0;
+  for (size_t n = 0; n < nresults(); n++)
+  {
+    const auto result = results_[n];
+    if (indices.Contains(result->index()))
+    {
+      notifyInputDestroy(result);
+      delete result;
+      numRemovedResults++;
+    }
+    else
+    {
+      result->index_ = numLiveResults;
+      results_[numLiveResults++] = result;
+    }
+  }
+  results_.resize(numLiveResults);
+
+  return numRemovedResults;
 }
 
 void
@@ -413,7 +493,7 @@ Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origi
 }
 
 void
-Region::notifyInputDestory(Input * input)
+Region::notifyInputDestroy(Input * input)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {

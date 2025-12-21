@@ -326,13 +326,16 @@ DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
   SweepRegion(rvsdg.GetRootRegion());
 
   // Remove dead imports
-  for (size_t n = rvsdg.GetRootRegion().narguments() - 1; n != static_cast<size_t>(-1); n--)
+  util::HashSet<size_t> indices;
+  for (const auto argument : rvsdg.GetRootRegion().Arguments())
   {
-    if (!Context_->IsAlive(*rvsdg.GetRootRegion().argument(n)))
+    if (!Context_->IsAlive(*argument))
     {
-      rvsdg.GetRootRegion().RemoveArgument(n);
+      indices.insert(argument->index());
     }
   }
+  [[maybe_unused]] const auto numRemovedArguments = rvsdg.GetRootRegion().RemoveArguments(indices);
+  JLM_ASSERT(numRemovedArguments == indices.Size());
 }
 
 void

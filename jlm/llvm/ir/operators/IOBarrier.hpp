@@ -73,6 +73,12 @@ public:
     const auto input = node.input(0);
     return *input;
   }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & value, rvsdg::Output & ioState)
+  {
+    return rvsdg::CreateOpNode<IOBarrierOperation>({ &value, &ioState }, value.Type());
+  }
 };
 
 }

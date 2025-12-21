@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
@@ -255,7 +256,7 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     return std::nullopt;
 
   auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedAddress = rvsdg::traceOutputIntraProcedurally(barredAddress);
+  const auto & tracedAddress = llvm::traceOutput(barredAddress);
   if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
     return std::nullopt;
 

@@ -6,7 +6,7 @@
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
