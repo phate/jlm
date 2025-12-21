@@ -25,13 +25,81 @@ public:
   virtual ~OutputTracer();
 
   /**
-   * Creates an OutputTracer with the given configuration
-   * @param traceInStructuralNodes if true, tracing can enter subregions of structural nodes
-   *        to check if the structural node's output is invariant.
-   *        Otherwise, only a simple invariant check is performed.
-   * @param isInterprocedural if true, tracing can go out of lambda nodes.
+   * Creates an OutputTracer with the default configuration
    */
-  OutputTracer(bool traceInStructuralNodes, bool isInterprocedural);
+  OutputTracer();
+
+  /**
+   * When tracing reaches the output of a structural node, how much effort should be made to
+   * check if the output is an invariant copy of one of the node's inputs.
+   * If true, tracing is performed inside the subregion(s) of the node.
+   * If false, only a simple invariant check is performed, which only detects invariance if
+   * the region result is directly connected to a region argument.
+   * @return true if tracing though the subregions of structural nodes is enabled.
+   */
+  [[nodiscard]] bool
+  isTracingThroughStructuralNodes() const noexcept
+  {
+    return traceThroughStrucutalNodes_;
+  }
+
+  /**
+   * Enables or disables tracing through the subregions of structural nodes.
+   * @see isTracingThroughStructuralNodes
+   * @param value the new value
+   */
+  void
+  setTraceThroughStructuralNodes(bool value) noexcept
+  {
+    traceThroughStrucutalNodes_ = value;
+  }
+
+  /**
+   * Controls if tracing is allowed to enter the subregion of a phi node from its outputs.
+   * If true, tracing can go further and reach lambda or delta nodes inside of phi nodes.
+   * It does, however, mean that the result of tracing can end up inside a region that is not
+   * an ancestor of the starting region in the region tree.
+   * @return true if tracing may enter phi nodes.
+   */
+  [[nodiscard]] bool
+  isEnteringPhiNodes() const noexcept
+  {
+    return enterPhiNodes_;
+  }
+
+  /**
+   * Enables or disables tracing into phi nodes from the outside.
+   * @see isEnteringPhiNodes()
+   * @param value the new value
+   */
+  void
+  setEnterPhiNodes(bool value) noexcept
+  {
+    enterPhiNodes_ = value;
+  }
+
+  /**
+   * Controls if tracing is allowed to leave functions.
+   * If true, outputs can be traced out of functions via context arguments.
+   * If false, tracing stops if it reaches lambda context arguments.
+   * @return true if interprocedural tracing is enabled.
+   */
+  [[nodiscard]] bool
+  isInterprocedural() const noexcept
+  {
+    return isInterprocedural_;
+  }
+
+  /**
+   * Enables or disables interprocedural tracing.
+   * @see isInterprocedural()
+   * @param value the new value
+   */
+  void
+  setInterprocedural(bool value) noexcept
+  {
+    isInterprocedural_ = value;
+  }
 
   /**
    * Traces from the given \p output to find the source of the output's value.
@@ -88,11 +156,15 @@ protected:
 
   // When true, tracing enters subregions of structural nodes to check if the value is invariant.
   // When false, values are only considered invariant if they are directly connected to arguments.
-  bool traceInStrucutalNodes_;
+  bool traceThroughStrucutalNodes_ = true;
+
+  // When true, tracing can go from the output of a Phi node into its subregion.
+  // When false, tracing will stop at the Phi output.
+  bool enterPhiNodes_ = true;
 
   // When true, tracing is allowed to continue outside of lambda nodes.
-  // When false, tracing will stop at the lambda's context arguments
-  bool isInterprocedural_;
+  // When false, tracing will stop at the lambda's context arguments.
+  bool isInterprocedural_ = true;
 };
 
 /**
@@ -125,8 +197,9 @@ traceOutputIntraProcedurally(const Output & output)
  * 1. From lambda context variables out of the lambda
  * 2. From delta context variables out of the delta
  * 3. From phi context variables out of the phi
+ * 4. From phi outputs into the phi subregion
  *
- * It will not trace through phi recursion variables.
+ * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
  * @return the final value of the tracing

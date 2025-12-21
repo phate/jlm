@@ -599,28 +599,6 @@ CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
   return result;
 }
 
-/**
- * Helper function for checking if the given call is a call to the special setjmp function.
- * @param callNode the node in question
- * @return true if the call is a direct call to setjmp, false otherwise
- */
-static bool
-isSetjmpCall(const rvsdg::SimpleNode & callNode)
-{
-  const auto classification = llvm::CallOperation::ClassifyCall(callNode);
-  if (!classification->IsExternalCall())
-    return false;
-
-  const auto & regionArgument = classification->GetImport();
-  if (const auto graphImport = dynamic_cast<const llvm::GraphImport *>(&regionArgument))
-  {
-    // In C and C++, setjmp is a macro to some underlying function. Clang uses _setjmp
-    return graphImport->Name() == "_setjmp";
-  }
-
-  return false;
-}
-
 void
 RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
@@ -650,8 +628,8 @@ RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   // Add outgoing edges from the given caller to any function the call may target
   const auto handleCall = [&](const rvsdg::SimpleNode & callNode, size_t callerIndex) -> void
   {
-    JLM_ASSERT(is<CallOperation>(&callNode));
-    if (isSetjmpCall(callNode))
+    const auto classification = CallOperation::ClassifyCall(callNode);
+    if (classification->isSetjmpCall())
     {
       // This function is calling setjmp, so only add it to the set of functions on setjmp stacks
       nodesCallingSetjmp.insert(callerIndex);

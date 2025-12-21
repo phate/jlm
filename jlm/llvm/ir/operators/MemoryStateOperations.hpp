@@ -621,6 +621,18 @@ public:
   tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
+   * Maps the output of a \ref CallExitMemoryStateSplitOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param output an output of a \ref CallExitMemoryStateSplitOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The output is assumed to belong to a \ref CallExitMemoryStateSplitOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapOutputToMemoryNodeId(const rvsdg::Output & output);
+
+  /**
    * Perform the following transformation:
    *
    * oN = LambdaExitMemoryStateMergeOperation o0 ... oK

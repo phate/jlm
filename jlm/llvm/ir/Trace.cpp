@@ -13,39 +13,32 @@
 namespace jlm::llvm
 {
 
-class OutputTracer : public rvsdg::OutputTracer
+llvm::OutputTracer::OutputTracer() = default;
+
+rvsdg::Output &
+OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 {
-public:
-  OutputTracer(bool traceInStructuralNodes, bool isInterProcedural)
-      : rvsdg::OutputTracer(traceInStructuralNodes, isInterProcedural)
-  {}
+  // FIXME: Needing to create a custom subclass of OutputTracer to make it handle a single LLVM
+  // specific operation is not great, as we now have multiple choices for traceOutput.
+  // It would be better to have a single tracing class that handles all operations,
+  // and somehow marking the IOBarrier with a "trait" that makes the output map to the input.
 
-protected:
-  [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, bool mayLeaveRegion) override
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
+
+  if (const auto [node, ioBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
+      node && ioBarrierOp)
   {
-    // FIXME: Needing to create a custom subclass of OutputTracer to make it handle a single LLVM
-    // specific operation is not great, as we now have multiple choices for traceOutput.
-    // It would be better to have a single tracing class that handles all operations,
-    // and somehow marking the IOBarrier with a "trait" that makes the output map to the input.
-
-    auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
-
-    if (const auto [node, ioBarrierOp] =
-            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
-        node && ioBarrierOp)
-    {
-      return *node->input(0)->origin();
-    }
-
-    return trace1;
+    return *IOBarrierOperation::BarredInput(*node).origin();
   }
-};
+
+  return trace1;
+}
 
 rvsdg::Output &
 traceOutput(rvsdg::Output & output)
 {
-  OutputTracer tracer(true, true);
+  OutputTracer tracer;
   return tracer.trace(output);
 }
 
