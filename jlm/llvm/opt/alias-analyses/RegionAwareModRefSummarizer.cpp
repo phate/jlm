@@ -941,6 +941,8 @@ RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
   {
     // If this function can be jumped into, store operations on memory in its Mod/Ref set must be
     // sequentialized with calls to external functions, in case the trigger jumps
+    // TODO: When we separate loads and stores, this edge should only propagate stores,
+    // and turn them into loads
     AddModRefSimpleConstraint(lambdaModRefSet, Context_->ExternalModRefIndex);
   }
 }
