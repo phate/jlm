@@ -873,6 +873,19 @@ is(const Node * node) noexcept
 }
 
 /**
+ * Attempts to get the operation of the given node, if the operation is of the given type.
+ * @tparam TOperation the type of the operation
+ * @param node the node
+ * @return the node's operation, or nullptr if the node has an operation of the wrong type.
+ */
+template<typename TOperation>
+[[nodiscard]] const TOperation *
+tryGetOperation(const Node & node) noexcept
+{
+  return dynamic_cast<const TOperation *>(&node.GetOperation());
+}
+
+/**
  * \brief Checks if this is an input to a node of specified type.
  *
  * \tparam NodeType

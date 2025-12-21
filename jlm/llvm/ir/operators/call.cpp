@@ -40,7 +40,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
   const auto origin = GetFunctionInput(callNode).origin();
-  return traceOutput(*origin);
+  return llvm::traceOutput(*origin);
 }
 
 std::unique_ptr<CallTypeClassifier>
@@ -71,6 +71,36 @@ CallOperation::ClassifyCall(const rvsdg::SimpleNode & callNode)
   }
 
   return CallTypeClassifier::CreateIndirectCallClassifier(output);
+}
+
+bool
+CallTypeClassifier::isSetjmpCall()
+{
+  if (!IsExternalCall())
+    return false;
+
+  if (const auto graphImport = dynamic_cast<const GraphImport *>(&GetImport()))
+  {
+    // In C and C++, setjmp is a macro to some underlying function. Clang uses _setjmp
+    return graphImport->Name() == "_setjmp";
+  }
+
+  return false;
+}
+
+bool
+CallTypeClassifier::isVaStartCall()
+{
+  if (!IsExternalCall())
+    return false;
+
+  if (const auto graphImport = dynamic_cast<const GraphImport *>(&GetImport()))
+  {
+    // LLVM intrinsics can contain extra suffixes like .p0, so check its prefix
+    return graphImport->Name().rfind("llvm.va_start", 0) == 0;
+  }
+
+  return false;
 }
 
 }
