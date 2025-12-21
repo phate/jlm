@@ -326,7 +326,7 @@ public:
    * Removes the variables as entry variables from this gamma.
    */
   void
-  RemoveEntryVars(const std::vector<EntryVar> & entryvars);
+  RemoveEntryVars(const std::vector<EntryVar> & entryVars);
 
   /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and

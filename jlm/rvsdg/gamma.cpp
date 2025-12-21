@@ -425,25 +425,22 @@ GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitvars)
 }
 
 void
-GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
+GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryVars)
 {
-  std::vector<std::size_t> indices;
-  for (const auto & entryvar : entryvars)
+  util::HashSet<size_t> indices;
+  for (const auto & [input, _] : entryVars)
   {
-    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*entryvar.input) == this);
-    indices.push_back(entryvar.input->index());
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*input) == this);
+    indices.insert(input->index());
   }
-  // Sort indices descending
-  std::sort(indices.rbegin(), indices.rend());
-  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
-  for (auto index : indices)
+
+  for (auto & subregion : Subregions())
   {
-    for (auto & subregion : Subregions())
-    {
-      subregion.RemoveArgument(index);
-    }
-    removeInput(index, true);
+    [[maybe_unused]] const auto numRemovedArguments = subregion.RemoveArguments(indices);
+    JLM_ASSERT(numRemovedArguments == indices.Size());
   }
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(indices, true);
+  JLM_ASSERT(numRemovedInputs == indices.Size());
 }
 
 GammaNode *
