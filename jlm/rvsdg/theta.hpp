@@ -120,7 +120,7 @@ public:
   /**
    * \brief Removes loop variables.
    *
-   * \param loopvars
+   * \param loopVars
    *   The loop variables to be removed.
    *
    * \pre
@@ -136,7 +136,7 @@ public:
    * invariant.
    */
   void
-  RemoveLoopVars(std::vector<LoopVar> loopvars);
+  RemoveLoopVars(std::vector<LoopVar> loopVars);
 
   ThetaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
