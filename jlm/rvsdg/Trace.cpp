@@ -14,10 +14,7 @@ namespace jlm::rvsdg
 {
 OutputTracer::~OutputTracer() = default;
 
-OutputTracer::OutputTracer(bool traceInStructuralNodes, bool isInterprocedural)
-    : traceInStrucutalNodes_(traceInStructuralNodes),
-      isInterprocedural_(isInterprocedural)
-{}
+OutputTracer::OutputTracer() = default;
 
 Output &
 OutputTracer::trace(Output & output)
@@ -76,7 +73,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     auto tracedInner = branchResult->origin();
 
     // If deep tracing is enabled, make a greater effort to trace up to a region argument
-    if (traceInStrucutalNodes_)
+    if (traceThroughStrucutalNodes_)
     {
       tracedInner = &trace(*tracedInner, false);
     }
@@ -111,7 +108,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   auto tracedInner = loopVar.post->origin();
 
   // If deep tracing is enabled, make a greater effort in tracing up to a region argument
-  if (traceInStrucutalNodes_)
+  if (traceThroughStrucutalNodes_)
   {
     tracedInner = &trace(*tracedInner, false);
   }
@@ -196,21 +193,27 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   // Handle phi outputs
   if (const auto phiNode = rvsdg::TryGetOwnerNode<PhiNode>(output))
   {
-    const auto fixVar = phiNode->MapOutputFixVar(output);
-    return *fixVar.result->origin();
+    if (enterPhiNodes_)
+    {
+      const auto fixVar = phiNode->MapOutputFixVar(output);
+      return *fixVar.result->origin();
+    }
+    return output;
   }
 
   // Handle phi region arguments
   if (const auto phiNode = rvsdg::TryGetRegionParentNode<PhiNode>(output))
   {
-    // Wo only trace through contex variables
-    // Going through recursion variables would hide the fact that recursion is happening
+    // Wo only trace through contex variables.
+    // Going through recursion variables would hide the fact that recursion is happening,
+    // and risks producing an output that is a successor of the output we started with in the DAG.
     const auto argument = phiNode->MapArgument(output);
     if (const auto ctxVar = std::get_if<PhiNode::ContextVar>(&argument))
     {
       // Follow the context variable to outside the phi
       return *ctxVar->input->origin();
     }
+    return output;
   }
 
   return output;
@@ -219,14 +222,15 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
 Output &
 traceOutputIntraProcedurally(Output & output)
 {
-  OutputTracer tracer(true, false);
+  OutputTracer tracer;
+  tracer.setInterprocedural(false);
   return tracer.trace(output);
 }
 
 Output &
 traceOutput(Output & output)
 {
-  OutputTracer tracer(true, true);
+  OutputTracer tracer;
   return tracer.trace(output);
 }
 

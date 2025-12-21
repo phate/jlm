@@ -65,6 +65,27 @@ public:
     return alignment_;
   }
 
+  static rvsdg::Input &
+  getCountInput(rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<AllocaOperation>(&node));
+    return *node.input(0);
+  }
+
+  static rvsdg::Output &
+  getPointerOutput(rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<AllocaOperation>(&node));
+    return *node.output(0);
+  }
+
+  static rvsdg::Output &
+  getMemoryStateOutput(rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<AllocaOperation>(&node));
+    return *node.output(1);
+  }
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(std::shared_ptr<const rvsdg::Type> allocatedType, const Variable * size, size_t alignment)
   {
