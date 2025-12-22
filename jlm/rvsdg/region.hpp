@@ -80,7 +80,7 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(Region & region, StructuralInput * input);
+  Copy(Region & region, StructuralInput * input) const;
 
   /**
    * \brief Creates region entry argument.

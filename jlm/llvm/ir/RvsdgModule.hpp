@@ -75,7 +75,7 @@ public:
   }
 
   GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override;
 
   static GraphImport &
   Create(

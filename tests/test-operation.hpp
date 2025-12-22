@@ -382,7 +382,7 @@ private:
 
 public:
   TestGraphArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override
   {
     return Create(region, input, Type());
   }
