@@ -626,14 +626,7 @@ ThetaWithLoadsOnly()
   view(rvsdg, stdout);
 
   // Assert
-  // We expect three join nodes to appear
-  {
-    auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-        *GetMemoryStateRegionResult(*lambdaNode).origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
-  }
-
+  // We expect a single join node in the theta subregion
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*memoryStateLoopVar.post->origin());
@@ -641,11 +634,12 @@ ThetaWithLoadsOnly()
     assert(joinNode->ninputs() == 2);
   }
 
+  // We expect a single join node in the lambda subregion
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
-        *memoryStateLoopVar.input->origin());
+        *GetMemoryStateRegionResult(*lambdaNode).origin());
     assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    assert(joinNode->ninputs() == 5);
   }
 }
 
