@@ -102,9 +102,9 @@ RegionResult::debug_string() const
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output)
+RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output) const
 {
-  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+  return Create(*origin.region(), origin, output, origin.Type());
 }
 
 RegionResult &
