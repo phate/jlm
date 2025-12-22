@@ -31,7 +31,7 @@ public:
   debug_string() const override;
 
   GraphImport &
-  Copy(Region & region, StructuralInput * input) override;
+  Copy(Region & region, StructuralInput * input) const override;
 
   static GraphImport &
   Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
