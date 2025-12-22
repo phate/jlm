@@ -53,9 +53,9 @@ RegionArgument::debug_string() const
 }
 
 RegionArgument &
-RegionArgument::Copy(Region & region, StructuralInput * input)
+RegionArgument::Copy(Region & region, StructuralInput * input) const
 {
-  return RegionArgument::Create(region, input, Type());
+  return Create(region, input, Type());
 }
 
 RegionArgument &
