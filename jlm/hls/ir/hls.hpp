@@ -667,7 +667,7 @@ public:
   }
 
   BackEdgeResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
+  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const override;
 
   static BackEdgeResult &
   create(jlm::rvsdg::Output * origin)
@@ -692,7 +692,7 @@ public:
   ~ExitResult() noexcept override;
 
   ExitResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
+  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.

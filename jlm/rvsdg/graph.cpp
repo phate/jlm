@@ -52,7 +52,7 @@ GraphExport::debug_string() const
 }
 
 GraphExport &
-GraphExport::Copy(Output & origin, StructuralOutput * output)
+GraphExport::Copy(Output & origin, StructuralOutput * output) const
 {
   JLM_ASSERT(output == nullptr);
   return Create(origin, Name());
