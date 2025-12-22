@@ -600,7 +600,7 @@ public:
   ~EntryArgument() noexcept override;
 
   EntryArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
@@ -635,7 +635,7 @@ public:
   }
 
   BackEdgeArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override;
 
   static BackEdgeArgument &
   create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
