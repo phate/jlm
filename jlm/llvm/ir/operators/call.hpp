@@ -165,6 +165,20 @@ public:
   }
 
   /**
+   * Calling setjmp has special semantics that affect the calling function.
+   * @return true if the call is a direct call to the imported setjmp function, otherwise false
+   */
+  [[nodiscard]] bool
+  isSetjmpCall();
+
+  /**
+   * Calling the va_start intrinsic has special semantics that affect the calling function.
+   * @return true if the call is a direct call to the va_start instrinsic, otherwise false
+   */
+  [[nodiscard]] bool
+  isVaStartCall();
+
+  /**
     \brief Classify callee as non-recursive.
 
     \param output
