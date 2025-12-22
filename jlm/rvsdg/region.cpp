@@ -53,9 +53,9 @@ RegionArgument::debug_string() const
 }
 
 RegionArgument &
-RegionArgument::Copy(Region & region, StructuralInput * input)
+RegionArgument::Copy(Region & region, StructuralInput * input) const
 {
-  return RegionArgument::Create(region, input, Type());
+  return Create(region, input, Type());
 }
 
 RegionArgument &
@@ -102,9 +102,9 @@ RegionResult::debug_string() const
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output)
+RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output) const
 {
-  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+  return Create(*origin.region(), origin, output, origin.Type());
 }
 
 RegionResult &

@@ -80,7 +80,7 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(Region & region, StructuralInput * input);
+  Copy(Region & region, StructuralInput * input) const;
 
   /**
    * \brief Creates region entry argument.
@@ -161,7 +161,7 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::Output & origin, StructuralOutput * output);
+  Copy(rvsdg::Output & origin, StructuralOutput * output) const;
 
   /**
    * \brief Create region exit result.

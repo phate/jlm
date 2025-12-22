@@ -97,20 +97,20 @@ BundleType::Kind() const noexcept
 EntryArgument::~EntryArgument() noexcept = default;
 
 EntryArgument &
-EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const
 {
-  return EntryArgument::Create(region, *input, Type());
+  return Create(region, *input, Type());
 }
 
 BackEdgeArgument &
-BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const
 {
   JLM_ASSERT(input == nullptr);
   return create(&region, Type());
 }
 
 BackEdgeResult &
-BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
+BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const
 {
   JLM_ASSERT(output == nullptr);
   return create(&origin);
@@ -125,7 +125,7 @@ ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
 }
 
 ExitResult &
-ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
+ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const
 {
   return Create(origin, *output);
 }

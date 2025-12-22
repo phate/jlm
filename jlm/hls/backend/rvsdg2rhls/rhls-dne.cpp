@@ -14,26 +14,32 @@ namespace jlm::hls
 {
 
 static bool
-remove_unused_loop_backedges(LoopNode * ln)
+remove_unused_loop_backedges(LoopNode * loopNode)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = sr->narguments() - 1; i >= 0; --i)
+  util::HashSet<size_t> resultIndices;
+  util::HashSet<size_t> argumentIndices;
+  const auto subregion = loopNode->subregion();
+  for (const auto argument : subregion->Arguments())
   {
-    auto arg = sr->argument(i);
-    if ((dynamic_cast<BackEdgeArgument *>(arg) && arg->nusers() == 1) || arg->IsDead())
+    if ((dynamic_cast<BackEdgeArgument *>(argument) && argument->nusers() == 1)
+        || argument->IsDead())
     {
-      auto & user = *arg->Users().begin();
-      if (auto result = dynamic_cast<BackEdgeResult *>(&user))
+      auto & user = *argument->Users().begin();
+      if (const auto result = dynamic_cast<BackEdgeResult *>(&user))
       {
-        sr->RemoveResult(result->index());
-        sr->RemoveArgument(arg->index());
-        any_changed = true;
+        resultIndices.insert(result->index());
+        argumentIndices.insert(argument->index());
       }
     }
   }
-  return any_changed;
+
+  [[maybe_unused]] const auto numRemovedResults = subregion->RemoveResults(resultIndices);
+  JLM_ASSERT(numRemovedResults == resultIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedArguments = subregion->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemovedArguments == argumentIndices.Size());
+
+  return numRemovedArguments != 0;
 }
 
 static bool
