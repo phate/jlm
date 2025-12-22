@@ -97,11 +97,11 @@ public:
   }
 
   void
-  stopCallGraphStatistics(size_t numSccs, size_t numFunctionCallingSetjmp)
+  stopCallGraphStatistics(size_t numSccs, size_t numFunctionsCallingSetjmp)
   {
     GetTimer(CallGraphTimer_).stop();
     AddMeasurement(NumCallGraphSccs_, numSccs);
-    AddMeasurement(NumFunctionsCallingSetjmp_, numFunctionCallingSetjmp);
+    AddMeasurement(NumFunctionsCallingSetjmp_, numFunctionsCallingSetjmp);
   }
 
   void
