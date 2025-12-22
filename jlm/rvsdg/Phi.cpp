@@ -167,20 +167,24 @@ PhiNode::RemoveContextVars(std::vector<ContextVar> vars)
 void
 PhiNode::RemoveFixVars(std::vector<FixVar> vars)
 {
-  std::sort(
-      vars.begin(),
-      vars.end(),
-      [](const FixVar & x, const FixVar & y)
-      {
-        return x.recref->index() > y.recref->index();
-      });
-
-  for (const auto & var : vars)
+  util::HashSet<size_t> resultIndices;
+  util::HashSet<size_t> argumentIndices;
+  util::HashSet<size_t> outputIndices;
+  for (const auto & [argument, result, output] : vars)
   {
-    subregion()->RemoveResult(var.result->index());
-    subregion()->RemoveArgument(var.recref->index());
-    removeOutput(var.output->index());
+    resultIndices.insert(result->index());
+    argumentIndices.insert(argument->index());
+    outputIndices.insert(output->index());
   }
+
+  [[maybe_unused]] const auto numRemovedResults = subregion()->RemoveResults(resultIndices);
+  JLM_ASSERT(numRemovedResults == resultIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedArguments = subregion()->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemovedArguments == argumentIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedOutputs = RemoveOutputs(outputIndices);
+  JLM_ASSERT(numRemovedOutputs == outputIndices.Size());
 }
 
 PhiNode *
