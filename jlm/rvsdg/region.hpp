@@ -161,7 +161,7 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::Output & origin, StructuralOutput * output);
+  Copy(rvsdg::Output & origin, StructuralOutput * output) const;
 
   /**
    * \brief Create region exit result.

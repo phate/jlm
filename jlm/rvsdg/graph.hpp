@@ -59,7 +59,7 @@ public:
   debug_string() const override;
 
   GraphExport &
-  Copy(Output & origin, StructuralOutput * output) override;
+  Copy(Output & origin, StructuralOutput * output) const override;
 
   static GraphExport &
   Create(Output & origin, std::string name);
