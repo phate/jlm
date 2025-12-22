@@ -149,21 +149,19 @@ PhiNode::MapArgument(const rvsdg::Output & argument) const noexcept
 void
 PhiNode::RemoveContextVars(std::vector<ContextVar> vars)
 {
-  std::sort(
-      vars.begin(),
-      vars.end(),
-      [](const ContextVar & x, const ContextVar & y)
-      {
-        return x.input->index() > y.input->index();
-      });
-
-  // Note that Removeinput already asserts that the inputs
-  // are unused, so no need to check that again here.
-  for (const auto & var : vars)
+  util::HashSet<size_t> inputIndices;
+  util::HashSet<size_t> argumentIndices;
+  for (const auto [input, argument] : vars)
   {
-    subregion()->RemoveArgument(var.inner->index());
-    removeInput(var.input->index(), true);
+    argumentIndices.insert(argument->index());
+    inputIndices.insert(input->index());
   }
+
+  [[maybe_unused]] const auto numRemovedArguments = subregion()->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemovedArguments == argumentIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 }
 
 void
