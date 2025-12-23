@@ -99,12 +99,11 @@ OutputFormatParsing()
   using namespace jlm::tooling;
 
   auto testOutputFormatParsing =
-      [](const char * outputFormatString,
-         jlm::tooling::JlmOptCommandLineOptions::OutputFormat outputFormat)
+      [](std::string_view outputFormatString, JlmOptCommandLineOptions::OutputFormat outputFormat)
   {
     // Arrange
     std::vector<std::string> commandLineArguments(
-        { "jlm-opt", "--output-format", outputFormatString, "foo.c" });
+        { "jlm-opt", "--output-format", std::string(outputFormatString), "foo.c" });
 
     // Act
     auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);

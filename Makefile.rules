@@ -125,6 +125,8 @@ VALGRINDTESTS=$(patsubst %, valgrind-%, $(TESTS))
 $(TESTS): % : %.la
 $(TESTS): LDFLAGS += -pthread
 
+$(GTESTS): LDFLAGS += $(GTEST_LDFLAGS)
+
 $(RUNTESTS): run-% : %
 	@echo -n "Running test $^ ... " ; \
 	if $^ >$^.log 2>&1 ; then \

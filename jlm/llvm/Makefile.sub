@@ -45,7 +45,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
-    jlm/llvm/ir/trace.cpp \
+    jlm/llvm/ir/Trace.cpp \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
@@ -60,7 +60,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
-    jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
     jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
@@ -101,7 +100,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
-    jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
@@ -139,7 +137,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/variable.hpp \
     jlm/llvm/ir/basic-block.hpp \
     jlm/llvm/ir/print.hpp \
-    jlm/llvm/ir/trace.hpp \
+    jlm/llvm/ir/Trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/operators.hpp \
@@ -209,15 +207,14 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphTests \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
-    tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
-    tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
     tests/jlm/llvm/opt/CommonNodeEliminationTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \

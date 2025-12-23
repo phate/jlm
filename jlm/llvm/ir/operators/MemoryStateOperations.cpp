@@ -182,6 +182,12 @@ MemoryStateJoinOperation::NormalizeDuplicateOperands(
   if (newOperands.size() == operands.size())
     return std::nullopt;
 
+  if (newOperands.size() == 1)
+  {
+    // There is no need to create a join node if there is only a single operand.
+    return newOperands;
+  }
+
   return { { CreateNode(newOperands).output(0) } };
 }
 
@@ -333,6 +339,27 @@ LambdaEntryMemoryStateSplitOperation::copy() const
   return std::make_unique<LambdaEntryMemoryStateSplitOperation>(*this);
 }
 
+rvsdg::Output *
+LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
+    const rvsdg::SimpleNode & node,
+    const MemoryNodeId memoryNodeId)
+{
+  const auto operation =
+      dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&node.GetOperation());
+  if (!operation)
+  {
+    return nullptr;
+  }
+
+  if (!operation->memoryNodeIdToIndexMap_.HasKey(memoryNodeId))
+  {
+    return nullptr;
+  }
+
+  const auto index = operation->memoryNodeIdToIndexMap_.LookupKey(memoryNodeId);
+  return node.output(index);
+}
+
 MemoryNodeId
 LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output & output)
 {
@@ -355,12 +382,35 @@ LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
   if (!callEntryMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(callEntryMergeNode->ninputs() == lambdaEntrySplitOperation.nresults());
+  if (callEntryMergeOperation->narguments() != lambdaEntrySplitOperation.nresults())
+  {
+    // We only perform this reduction if the number of memory region IDs (and therefore the
+    // inputs/outputs) of the call entry merge operation as well as the lambda entry split operation
+    // are the same. The reason for this is that we might at the moment otherwise loose information,
+    // leading to incorrect RVSDGs. The problem arises from examples where the lambda entry/exit
+    // operations feature fewer memory region IDs than the call entry/exit operations. If we
+    // perform the lambda/call entry reduction here, then we would drop memory state edges (and
+    // potentially nodes) and would in the case of the equivalent call/lambda exit reduction not
+    // know where to route to.
+    //
+    // Example:
+    // s1 = StoreNonVolatileOperation ...
+    // s2 = CallEntryMemoryStateMerge[1, 2, 3] s1 x y
+    // x, y = LambdaEntryMemoryStateSplit[2, 3] s2
+    // ...
+    // s3 = LambdaExitMemoryStateMerge[2, 3] x, y
+    // z, x, y = CallExitMemoryStateSplit[1, 2, 3] s3
+    //
+    // In the above example, if we perform the call entry/exit normalization, then we would drop
+    // s1 (and potentially the store), and we would not have it available any longer when we would
+    // perform the lambda/call exit normalization.
+    return std::nullopt;
+  }
 
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : lambdaEntrySplitOperation.getMemoryNodeIds())
   {
-    const auto input = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+    const auto input = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
         *callEntryMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);
@@ -403,7 +453,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -581,7 +631,7 @@ CallEntryMemoryStateMergeOperation::copy() const
 }
 
 rvsdg::Input *
-CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -635,7 +685,7 @@ CallExitMemoryStateSplitOperation::copy() const
 }
 
 rvsdg::Output *
-CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
+CallExitMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
     const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
@@ -656,6 +706,16 @@ CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
   return node.output(index);
 }
 
+MemoryNodeId
+CallExitMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output & output)
+{
+  auto [_, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(output);
+  JLM_ASSERT(operation != nullptr);
+
+  return operation->memoryNodeIdToIndexMap_.LookupValue(output.index());
+}
+
 std::optional<std::vector<rvsdg::Output *>>
 CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
     const CallExitMemoryStateSplitOperation & callExitSplitOperation,
@@ -668,12 +728,19 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   if (!lambdaExitMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(lambdaExitMergeNode->ninputs() == callExitSplitOperation.nresults());
+  if (lambdaExitMergeNode->ninputs() != callExitSplitOperation.nresults())
+  {
+    // We only perform this transformation if the number of memory region IDs (and therefore
+    // inputs/outputs) are the same. See
+    // LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge() for a detailed
+    // explanation.
+    return std::nullopt;
+  }
 
   std::vector<rvsdg::Output *> newOperands;
   for (const auto & memoryNodeId : callExitSplitOperation.getMemoryNodeIds())
   {
-    const auto input = LambdaExitMemoryStateMergeOperation::mapMemoryNodeIdToInput(
+    const auto input = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
         *lambdaExitMergeNode,
         memoryNodeId);
     JLM_ASSERT(input != nullptr);
@@ -681,6 +748,28 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   }
 
   return newOperands;
+}
+
+bool
+hasMemoryState(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (is<MemoryStateType>(input.Type()))
+    {
+      return true;
+    }
+  }
+
+  for (auto & output : node.Outputs())
+  {
+    if (is<MemoryStateType>(output.Type()))
+    {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }

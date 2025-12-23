@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_UNROLL_HPP
 #define JLM_LLVM_OPT_UNROLL_HPP
 
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
@@ -210,9 +211,9 @@ private:
   bool
   is_known(const rvsdg::Output * output) const noexcept
   {
-    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
+    auto & tracedOutput = llvm::traceOutput(*output);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation && constantOperation->value().is_known();
   }
 
@@ -222,9 +223,9 @@ private:
     if (!is_known(output))
       return nullptr;
 
-    auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(*output);
+    auto & tracedOutput = llvm::traceOutput(*output);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation == nullptr ? nullptr : &constantOperation->value();
   }
 

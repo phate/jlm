@@ -318,6 +318,17 @@ public:
   }
 
   /**
+   * Maps a memory node identifier to the respective output of a
+   * LambdaEntryMemoryStateSplitOperation node.
+   *
+   * @param node A LambdaEntryMemoryStateSplitOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Output *
+  tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  /**
    * Maps the output a \ref LambdaEntryMemoryStateSplitOperation node to the respective \ref
    * MemoryNodeId.
    *
@@ -409,7 +420,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Maps the input a \ref LambdaExitMemoryStateMergeOperation node to the respective \ref
@@ -536,7 +547,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  mapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   static rvsdg::SimpleNode &
   CreateNode(
@@ -607,7 +618,19 @@ public:
    * @return The respective output if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Output *
-  mapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+  tryMapMemoryNodeIdToOutput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  /**
+   * Maps the output of a \ref CallExitMemoryStateSplitOperation node to the respective \ref
+   * MemoryNodeId.
+   *
+   * @param output an output of a \ref CallExitMemoryStateSplitOperation node.
+   * @return The \ref MemoryNodeId.
+   *
+   * \pre The output is assumed to belong to a \ref CallExitMemoryStateSplitOperation node.
+   */
+  [[nodiscard]] static MemoryNodeId
+  mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
   /**
    * Perform the following transformation:
@@ -637,6 +660,15 @@ public:
 private:
   util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
 };
+
+/**
+ * Checks if the given node takes any inputs, or produces any outputs,
+ * that are of the memory state type.
+ * @param node the node in question
+ * @return true if any input or output is a memory state, otherwise false.
+ */
+[[nodiscard]] bool
+hasMemoryState(const rvsdg::Node & node);
 
 }
 

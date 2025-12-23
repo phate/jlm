@@ -675,9 +675,6 @@ public:
     return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 
-  inline void
-  recompute_depth() noexcept;
-
   /**
    * \brief Determines whether the node is dead.
    *
@@ -737,25 +734,18 @@ protected:
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
   /**
-   * Removes all inputs that match the condition specified by \p match.
+   * Removes all inputs that have an index in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_input&)
-   * @param match Defines the condition for the inputs to remove.
+   * @param indices The indices of the arguments that should be removed.
+   * @param notifyRegion If true, the region is informed about the removal of an input.
+   * This should be false if the node has already notified the region about being removed,
+   * i.e., this function is being called from the node's destructor.
+   *
+   * @return The number of inputs that were removed. This might be less than the number of indices
+   * as some provided input indices might not belong to an actual input.
    */
-  template<typename F>
-  void
-  RemoveInputsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-    for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & input = *Node::input(n);
-      if (match(input))
-      {
-        removeInput(n, true);
-      }
-    }
-  }
+  size_t
+  RemoveInputs(const util::HashSet<size_t> & indices, bool notifyRegion);
 
 protected:
   NodeOutput *
@@ -789,27 +779,18 @@ protected:
   // FIXME: I really would not like to be RemoveOutputsWhere() to be public
 public:
   /**
-   * Removes all outputs that have no users and match the condition specified by \p match.
+   * Removes all outputs that have no users and an index contained in \p indices.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const node_output&)
-   * @param match Defines the condition for the outputs to remove.
+   * @param indices The indices of the outputs that should be removed.
+   *
+   * @return The number of outputs that were actually removed. This might be less than the number
+   * of indices as some outputs might not have been dead or a provided output index does not
+   * belong to an output argument.
    *
    * \see output#nusers()
    */
-  template<typename F>
-  void
-  RemoveOutputsWhere(const F & match)
-  {
-    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-    for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
-    {
-      auto & output = *Node::output(n);
-      if (output.nusers() == 0 && match(output))
-      {
-        removeOutput(n);
-      }
-    }
-  }
+  size_t
+  RemoveOutputs(const util::HashSet<size_t> & indices);
 
   [[nodiscard]] Graph *
   graph() const noexcept;
@@ -842,12 +823,6 @@ public:
   virtual Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const = 0;
 
-  inline size_t
-  depth() const noexcept
-  {
-    return depth_;
-  }
-
 private:
   util::IntrusiveListAnchor<Node> region_node_list_anchor_{};
 
@@ -867,7 +842,6 @@ public:
 
 private:
   Id Id_;
-  size_t depth_;
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<NodeOutput>> outputs_;
@@ -896,6 +870,19 @@ is(const Node * node) noexcept
     return false;
 
   return is<OperationType>(node->GetOperation());
+}
+
+/**
+ * Attempts to get the operation of the given node, if the operation is of the given type.
+ * @tparam TOperation the type of the operation
+ * @param node the node
+ * @return the node's operation, or nullptr if the node has an operation of the wrong type.
+ */
+template<typename TOperation>
+[[nodiscard]] const TOperation *
+tryGetOperation(const Node & node) noexcept
+{
+  return dynamic_cast<const TOperation *>(&node.GetOperation());
 }
 
 /**
@@ -1145,39 +1132,6 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
   for (size_t n = 0; n < outputs.size(); n++)
     node->output(n)->divert_users(outputs[n]);
 }
-
-/**
- * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing:
- *
- * 1. Through gamma nodes if the exit variable is invariant
- * 2. Out of gamma nodes from entry variable arguments
- * 3. Through theta nodes if the loop variable is invariant
- * 4. Out of theta nodes from the arguments, if the loop variable is invariant
- *
- * Tracing stops when a lambda function argument or context argument is reached. If the function is
- * invoked with an output that is not from within a lambda node, then this output is simply
- * returned.
- *
- * @param output The \ref Output that needs to be traced.
- * @return The final value of the tracing.
- */
-const Output &
-traceOutputIntraProcedurally(const Output & output);
-
-/**
- * Traces \p output through the RVSDG.
- * The function is capable of tracing through everything \ref traceOutputIntraProcedurally is,
- * in addition to:
- *
- * 1. From lambda context variables out of the lambda
- * 2. From delta context variables out of the delta
- * 3. Phi node recursion variables and context variables
- *
- * @param output the output to trace.
- * @return the final value of the tracing
- */
-const Output &
-traceOutput(const Output & output);
 
 }
 

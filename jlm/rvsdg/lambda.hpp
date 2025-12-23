@@ -295,21 +295,22 @@ template<typename F>
 size_t
 LambdaNode::RemoveLambdaInputsWhere(const F & match)
 {
-  size_t numRemovedInputs = 0;
-
-  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  util::HashSet<size_t> inputIndices;
+  util::HashSet<size_t> argumentIndices;
+  for (auto [input, argument] : GetContextVars())
   {
-    auto lambdaInput = input(n);
-    auto & argument = *MapInputContextVar(*lambdaInput).inner;
-
-    if (argument.IsDead() && match(*lambdaInput))
+    if (argument->IsDead() && match(*input))
     {
-      subregion()->RemoveArgument(argument.index());
-      removeInput(n, true);
-      numRemovedInputs++;
+      inputIndices.insert(input->index());
+      argumentIndices.insert(argument->index());
     }
   }
+
+  [[maybe_unused]] const auto numRemoveArguments = subregion()->RemoveArguments(argumentIndices);
+  JLM_ASSERT(numRemoveArguments == argumentIndices.Size());
+
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 
   return numRemovedInputs;
 }
@@ -391,6 +392,19 @@ public:
 private:
   LambdaNode * Node_;
 };
+
+/**
+ * Traverses from the given \p node up the region hierarchy until a lambda node is found.
+ * If the \p node is itself a lambda node, it is returned.
+ * @param node the starting node
+ * @return the surrounding lambda node that contains \p node
+ * @throws std::logic_error if \p node is not within a lambda node
+ */
+[[nodiscard]] rvsdg::LambdaNode &
+getSurroundingLambdaNode(rvsdg::Node & node);
+
+[[nodiscard]] const rvsdg::LambdaNode &
+getSurroundingLambdaNode(const rvsdg::Node & node);
 
 }
 

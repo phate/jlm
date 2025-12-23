@@ -12,10 +12,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
@@ -402,7 +400,6 @@ std::shared_ptr<rvsdg::Transformation>
 JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
-  using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
 
@@ -412,10 +409,6 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
-  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
-  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
-    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_shared<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
@@ -430,6 +423,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::LoadChainSeparation>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
     return std::make_shared<llvm::LoopUnrolling>(4);
+  case JlmOptCommandLineOptions::OptimizationId::LoopUnswitching:
+    return std::make_shared<llvm::LoopUnswitching>();
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_shared<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
@@ -443,8 +438,6 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
     return std::make_shared<llvm::ScalarEvolution>();
-  case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_shared<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }

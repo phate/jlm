@@ -48,6 +48,7 @@ public:
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
+    LoopUnswitching,
     MemoryStateEncoder,
     PullNodes,
     PushNodes,
@@ -57,8 +58,6 @@ public:
     RvsdgDestruction,
     RvsdgOptimization,
     RvsdgTreePrinter,
-    SteensgaardAnalysis,
-    ThetaGammaInversion,
     ScalarEvolution,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -223,15 +222,20 @@ protected:
     inline static const char * NumPointsToGraphMallocNodes = "#PointsToGraphMallocNodes";
     inline static const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
     inline static const char * NumPointsToGraphRegisterNodes = "#PointsToGraphRegisterNodes";
-    inline static const char * NumPointsToGraphEscapedNodes = "#PointsToGraphEscapedNodes";
-    inline static const char * NumPointsToGraphExternalMemorySources =
-        "#PointsToGraphExternalMemorySources";
-    inline static const char * NumPointsToGraphUnknownMemorySources =
-        "#PointsToGraphUnknownMemorySources";
+    inline static const char * NumPointsToGraphExternallyAvailableNodes =
+        "#PointsToGraphExternallyAvailableNodes";
+    inline static const char * NumPointsToGraphNodesTargetsAllExternallyAvailable =
+        "#PointsToGraphNodesTargetsAllExternallyAvailable";
 
+    inline static const char * NumPointsToGraphExplicitEdges = "#PointsToGraphExplicitEdges";
     inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
-    inline static const char * NumPointsToGraphPointsToRelations =
-        "#PointsToGraphPointsToRelations";
+
+    inline static const char * NumLoopVariablesTotal = "#LoopVariablesTotal";
+    inline static const char * NumTotalRecurrences = "#TotalRecurrences";
+    inline static const char * NumConstantRecurrences = "#ConstantRecurrences";
+    inline static const char * NumFirstOrderRecurrences = "#FirstOrderRecurrences";
+    inline static const char * NumSecondOrderRecurrences = "#SecondOrderRecurrences";
+    inline static const char * NumThirdOrderRecurrences = "#ThirdOrderRecurrences";
 
     static inline const char * Timer = "Time";
   };
@@ -560,6 +564,30 @@ public:
   {
     if (IsDemanded(*statistics))
       CollectedStatistics_.emplace_back(std::move(statistics));
+  }
+
+  /**
+   * Extracts the last collected statistic with the given statistics \p id,
+   * removing it from the collector and returning an owned pointer.
+   * @param id the id of the statistic to extract.
+   * @return an owned pointer to the extracted statistic instance.
+   * @throw std::out_of_range if no statistic instance with the given id is present.
+   */
+  [[nodiscard]] std::unique_ptr<Statistics>
+  releaseStatistic(Statistics::Id id)
+  {
+    auto it = CollectedStatistics_.end();
+    while (it != CollectedStatistics_.begin())
+    {
+      it--;
+      if (it->get()->GetId() == id)
+      {
+        auto result = std::move(*it);
+        CollectedStatistics_.erase(it);
+        return result;
+      }
+    }
+    throw std::out_of_range("No Statistics with the given id has been collected");
   }
 
   /**

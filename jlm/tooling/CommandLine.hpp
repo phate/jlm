@@ -67,8 +67,6 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
-    AASteensgaardAgnostic,
-    AASteensgaardRegionAware,
     CommonNodeElimination,
     DeadNodeElimination,
     FunctionInlining,
@@ -76,13 +74,13 @@ public:
     InvariantValueRedirection,
     LoadChainSeparation,
     LoopUnrolling,
+    LoopUnswitching,
     NodePullIn,
     NodePushOut,
     NodeReduction,
     PredicateCorrelation,
     RvsdgTreePrinter,
     ScalarEvolution,
-    ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -158,21 +156,21 @@ public:
   }
 
   static OptimizationId
-  FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
+  FromCommandLineArgumentToOptimizationId(std::string_view commandLineArgument);
 
   static util::Statistics::Id
-  FromCommandLineArgumentToStatisticsId(const std::string & commandLineArgument);
+  FromCommandLineArgumentToStatisticsId(std::string_view commandLineArgument);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(OptimizationId optimizationId);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(util::Statistics::Id statisticsId);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(InputFormat inputFormat);
 
-  static const char *
+  static std::string_view
   ToCommandLineArgument(OutputFormat outputFormat);
 
   static std::unique_ptr<JlmOptCommandLineOptions>
@@ -207,33 +205,14 @@ private:
   llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
   bool DumpRvsdgDotGraphs_;
 
-  struct OptimizationCommandLineArgument
-  {
-    inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
-    inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
-    inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
-    inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
-    inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
-    inline static const char * FunctionInlining_ = "FunctionInlining";
-    inline static const char * IfConversion_ = "IfConversion";
-    inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";
-    inline static const char * NodePullIn_ = "NodePullIn";
-    inline static const char * NodePushOut_ = "NodePushOut";
-    inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
-    inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
-    inline static const char * LoopUnrolling_ = "LoopUnrolling";
-    inline static const char * NodeReduction_ = "NodeReduction";
-    inline static const char * PredicateCorrelation_ = "PredicateCorrelation";
-    inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
-    inline static const char * ScalarEvolution_ = "ScalarEvolution";
-  };
-
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
   GetStatisticsIdCommandLineArguments();
 
   static const std::unordered_map<OutputFormat, std::string_view> &
   GetOutputFormatCommandLineArguments();
+
+  static const util::BijectiveMap<OptimizationId, std::string_view> &
+  GetOptimizationIdCommandLineMap();
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions
@@ -276,10 +255,10 @@ public:
         OutputFile_("a.out")
   {}
 
-  static std::string
+  static std::string_view
   ToString(const OptimizationLevel & optimizationLevel);
 
-  static std::string
+  static std::string_view
   ToString(const LanguageStandard & languageStandard);
 
   void

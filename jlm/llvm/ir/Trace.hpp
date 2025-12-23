@@ -7,11 +7,22 @@
 #define JLM_LLVM_IR_TRACE_HPP
 
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 #include <optional>
 
 namespace jlm::llvm
 {
+
+class OutputTracer : public rvsdg::OutputTracer
+{
+public:
+  OutputTracer();
+
+protected:
+  [[nodiscard]] rvsdg::Output &
+  traceStep(rvsdg::Output & output, bool mayLeaveRegion) override;
+};
 
 /**
  * Traces the origin of the given \p output to find the origin of the value.
@@ -21,8 +32,14 @@ namespace jlm::llvm
  * @param output the output to start tracing from
  * @return the maximally traced output
  */
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & output);
+rvsdg::Output &
+traceOutput(rvsdg::Output & output);
+
+inline const rvsdg::Output &
+traceOutput(const rvsdg::Output & output)
+{
+  return llvm::traceOutput(const_cast<rvsdg::Output &>(output));
+}
 
 /**
  * Attempts to find the constant integer value of a given \p output,

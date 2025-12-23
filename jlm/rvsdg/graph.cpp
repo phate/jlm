@@ -25,7 +25,7 @@ GraphImport::debug_string() const
 }
 
 GraphImport &
-GraphImport::Copy(Region & region, StructuralInput *)
+GraphImport::Copy(Region & region, StructuralInput *) const
 {
   // FIXME: A import should never be created on a region, but only on a graph. This interface is
   // broken as it suggest to the user that it should be created on \p region.
@@ -52,7 +52,7 @@ GraphExport::debug_string() const
 }
 
 GraphExport &
-GraphExport::Copy(Output & origin, StructuralOutput * output)
+GraphExport::Copy(Output & origin, StructuralOutput * output) const
 {
   JLM_ASSERT(output == nullptr);
   return Create(origin, Name());

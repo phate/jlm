@@ -3,26 +3,24 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
-
-#include <jlm/rvsdg/view.hpp>
+#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <iostream>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunSteensgaard(const jlm::llvm::RvsdgModule & module)
+RunAndersen(const jlm::llvm::RvsdgModule & module)
 {
   using namespace jlm::llvm;
 
-  aa::Steensgaard stgd;
+  aa::Andersen andersen;
   jlm::util::StatisticsCollector statisticsCollector;
-  return stgd.Analyze(module, statisticsCollector);
+  return andersen.Analyze(module, statisticsCollector);
 }
 
 static void
@@ -35,18 +33,18 @@ TestStore1()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -70,18 +68,18 @@ TestStore2()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::StoreTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -105,18 +103,18 @@ TestLoad1()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::LoadTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -140,17 +138,17 @@ TestLoad2()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::LoadTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
 
   /*
    * Act
@@ -174,18 +172,18 @@ TestLoadFromUndef()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.Lambda()).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.Lambda()).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda()).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda()).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*pointsToGraph);
 
   /*
    * Act
@@ -213,53 +211,47 @@ TestCall1()
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_g).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_g).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_h).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_h).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
 
-      auto numCallFEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF()).Size();
-      auto numCallFExitNodes = modRefSummary.GetCallExitNodes(test.CallF()).Size();
+      auto numCallFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).Size();
+      assert(numCallFNodes == pointsToGraph.numMemoryNodes());
 
-      assert(numCallFEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFExitNodes == pointsToGraph.NumMemoryNodes());
-
-      auto numCallGEntryNodes = modRefSummary.GetCallEntryNodes(test.CallG()).Size();
-      auto numCallGExitNodes = modRefSummary.GetCallExitNodes(test.CallG()).Size();
-
-      assert(numCallGEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallGExitNodes == pointsToGraph.NumMemoryNodes());
+      auto numCallGNodes = modRefSummary.GetSimpleNodeModRef(test.CallG()).Size();
+      assert(numCallGNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::CallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -287,65 +279,53 @@ TestCall2()
      * Validate function create
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_create).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_create).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_create).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_create).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function destroy
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_destroy).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_destroy).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_destroy).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_destroy).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_test).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_test).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
 
-      auto numCallCreate1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallCreate1()).Size();
-      auto numCallCreate1ExitNodes = modRefSummary.GetCallExitNodes(test.CallCreate1()).Size();
+      auto numCallCreate1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate1()).Size();
+      assert(numCallCreate1Nodes == pointsToGraph.numMemoryNodes());
 
-      assert(numCallCreate1EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallCreate1ExitNodes == pointsToGraph.NumMemoryNodes());
+      auto numCallCreate2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate2()).Size();
+      assert(numCallCreate2Nodes == pointsToGraph.numMemoryNodes());
 
-      auto numCallCreate2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallCreate2()).Size();
-      auto numCallCreate2ExitNodes = modRefSummary.GetCallExitNodes(test.CallCreate2()).Size();
+      auto numCallDestroy1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy1()).Size();
+      assert(numCallDestroy1Nodes == pointsToGraph.numMemoryNodes());
 
-      assert(numCallCreate2EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallCreate2ExitNodes == pointsToGraph.NumMemoryNodes());
-
-      auto numCallDestroy1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallDestroy1()).Size();
-      auto numCallDestroy1ExitNodes = modRefSummary.GetCallExitNodes(test.CallDestroy1()).Size();
-
-      assert(numCallDestroy1EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallDestroy1ExitNodes == pointsToGraph.NumMemoryNodes());
-
-      auto numCallDestroy2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallDestroy2()).Size();
-      auto numCallDestroy2ExitNodes = modRefSummary.GetCallExitNodes(test.CallDestroy2()).Size();
-
-      assert(numCallDestroy2EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallDestroy2ExitNodes == pointsToGraph.NumMemoryNodes());
+      auto numCallDestroy2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy2()).Size();
+      assert(numCallDestroy2Nodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::CallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -373,70 +353,61 @@ TestIndirectCall()
      * Validate function four
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaFour()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaFour()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaFour()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function three
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaThree()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaThree()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaThree()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function indcall
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaIndcall()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaIndcall()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
 
-      auto numCallIndcallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallIndcall()).Size();
-      auto numCallIndcallExitNodes = modRefSummary.GetCallExitNodes(test.CallIndcall()).Size();
-
-      assert(numCallIndcallEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallIndcallExitNodes == pointsToGraph.NumMemoryNodes());
+      auto numCallIndcallNodes = modRefSummary.GetSimpleNodeModRef(test.CallIndcall()).Size();
+      assert(numCallIndcallNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaTest()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaTest()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
 
-      auto numCallThreeEntryNodes = modRefSummary.GetCallEntryNodes(test.CallThree()).Size();
-      auto numCallThreeExitNodes = modRefSummary.GetCallExitNodes(test.CallThree()).Size();
+      auto numCallThreeNodes = modRefSummary.GetSimpleNodeModRef(test.CallThree()).Size();
+      assert(numCallThreeNodes == pointsToGraph.numMemoryNodes());
 
-      assert(numCallThreeEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallThreeExitNodes == pointsToGraph.NumMemoryNodes());
-
-      auto numCallFourEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFour()).Size();
-      auto numCallFourExitNodes = modRefSummary.GetCallExitNodes(test.CallFour()).Size();
-
-      assert(numCallFourEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFourExitNodes == pointsToGraph.NumMemoryNodes());
+      auto numCallFourNodes = modRefSummary.GetSimpleNodeModRef(test.CallFour()).Size();
+      assert(numCallFourNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::IndirectCallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  //	std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -460,22 +431,22 @@ TestGamma()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
-    auto numGammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma).Size();
-    auto numGammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
+    auto numGammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma).Size();
+    auto numGammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-    assert(numGammaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numGammaExitNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+    assert(numGammaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numGammaExitNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::GammaTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -499,20 +470,20 @@ TestTheta()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
-    auto numThetaNodes = modRefSummary.GetThetaEntryExitNodes(*test.theta).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).Size();
+    auto numThetaNodes = modRefSummary.GetThetaModRef(*test.theta).Size();
 
-    assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-    assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-    assert(numThetaNodes == pointsToGraph.NumMemoryNodes());
+    assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+    assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+    assert(numThetaNodes == pointsToGraph.numMemoryNodes());
   };
 
   jlm::tests::ThetaTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  //	std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -540,34 +511,32 @@ TestDelta1()
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_g).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_g).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_h).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_h).Size();
-      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallG()).Size();
-      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallG()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h).Size();
+      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallG()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::DeltaTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -595,34 +564,32 @@ TestDelta2()
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f1).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f1).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f2).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f2).Size();
-      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF1()).Size();
-      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallF1()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2).Size();
+      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::DeltaTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -650,34 +617,32 @@ TestImports()
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f1).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f1).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f2).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f2).Size();
-      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF1()).Size();
-      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallF1()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2).Size();
+      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::ImportTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*ptg);
 
   /*
    * Act
@@ -705,46 +670,40 @@ TestPhi1()
      * Validate function fib
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_fib).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_fib).Size();
-      auto numGammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma).Size();
-      auto numGammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma).Size();
-      auto numCallFibm1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm1()).Size();
-      auto numCallFibm1ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm1()).Size();
-      auto numCallFibm2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm2()).Size();
-      auto numCallFibm2ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm2()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_fib).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_fib).Size();
+      auto numGammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma).Size();
+      auto numGammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma).Size();
+      auto numCallFibm1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm1()).Size();
+      auto numCallFibm2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm2()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numGammaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numGammaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibm1EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibm1ExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibm2EntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibm2ExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numGammaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numGammaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallFibm1Nodes == pointsToGraph.numMemoryNodes());
+      assert(numCallFibm2Nodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_test).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_test).Size();
-      auto numCallFibEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFib()).Size();
-      auto numCallFibExitNodes = modRefSummary.GetCallExitNodes(test.CallFib()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test).Size();
+      auto numCallFibNodes = modRefSummary.GetSimpleNodeModRef(test.CallFib()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFibExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallFibNodes == pointsToGraph.numMemoryNodes());
     }
   };
 
   jlm::tests::PhiTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -772,41 +731,34 @@ TestMemcpy()
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaF()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaF()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaF()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaF()).Size();
 
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
     }
 
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaG()).Size();
-      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaG()).Size();
-      auto numCallFEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF()).Size();
-      auto numCallFExitNodes = modRefSummary.GetCallExitNodes(test.CallF()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG()).Size();
+      auto numCallFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).Size();
+      auto numMemcpyNodes = modRefSummary.GetSimpleNodeModRef(test.Memcpy()).Size();
 
-      auto numMemcpyDestNodes =
-          modRefSummary.GetOutputNodes(*test.Memcpy().input(0)->origin()).Size();
-      auto numMemcpySrcNodes =
-          modRefSummary.GetOutputNodes(*test.Memcpy().input(1)->origin()).Size();
-
-      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFEntryNodes == pointsToGraph.NumMemoryNodes());
-      assert(numCallFExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numMemcpyDestNodes == 2);
-      assert(numMemcpySrcNodes == 2);
+      assert(numLambdaEntryNodes == pointsToGraph.numMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.numMemoryNodes());
+      assert(numCallFNodes == pointsToGraph.numMemoryNodes());
+      assert(numMemcpyNodes == 2);
     }
   };
 
   jlm::tests::MemcpyTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
-  auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  auto pointsToGraph = RunAndersen(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
 
   /*
    * Act
@@ -825,7 +777,7 @@ TestStatistics()
 {
   // Arrange
   jlm::tests::LoadTest1 test;
-  auto pointsToGraph = RunSteensgaard(test.module());
+  auto pointsToGraph = RunAndersen(test.module());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::AgnosticModRefSummarizer });

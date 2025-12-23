@@ -5,26 +5,41 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::llvm
 {
 
-const rvsdg::Output &
-traceOutput(const rvsdg::Output & startingOutput)
+llvm::OutputTracer::OutputTracer() = default;
+
+rvsdg::Output &
+OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 {
-  auto & output = rvsdg::traceOutput(startingOutput);
+  // FIXME: Needing to create a custom subclass of OutputTracer to make it handle a single LLVM
+  // specific operation is not great, as we now have multiple choices for traceOutput.
+  // It would be better to have a single tracing class that handles all operations,
+  // and somehow marking the IOBarrier with a "trait" that makes the output map to the input.
+
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
 
   if (const auto [node, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(output);
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
       node && ioBarrierOp)
   {
-    return llvm::traceOutput(*node->input(0)->origin());
+    return *IOBarrierOperation::BarredInput(*node).origin();
   }
 
-  return output;
+  return trace1;
+}
+
+rvsdg::Output &
+traceOutput(rvsdg::Output & output)
+{
+  OutputTracer tracer;
+  return tracer.trace(output);
 }
 
 std::optional<int64_t>
@@ -43,7 +58,7 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
   }
 
   if (const auto [_, constant] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(normalized);
       constant)
   {
     const auto & rep = constant->value();

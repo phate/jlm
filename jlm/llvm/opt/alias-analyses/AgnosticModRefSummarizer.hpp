@@ -13,6 +13,8 @@
 namespace jlm::llvm::aa
 {
 
+class AgnosticModRefSummary;
+
 /** \brief Agnostic mod/ref summarizer
  *
  * The key idea of the agnostic mod/ref summarizer is that \b all memory states are routed through
@@ -33,17 +35,12 @@ public:
 
   ~AgnosticModRefSummarizer() override;
 
-  AgnosticModRefSummarizer() = default;
+  AgnosticModRefSummarizer();
 
   AgnosticModRefSummarizer(const AgnosticModRefSummarizer &) = delete;
 
-  AgnosticModRefSummarizer(AgnosticModRefSummarizer &&) = delete;
-
   AgnosticModRefSummarizer &
   operator=(const AgnosticModRefSummarizer &) = delete;
-
-  AgnosticModRefSummarizer &
-  operator=(AgnosticModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(
@@ -76,6 +73,42 @@ public:
    */
   static std::unique_ptr<ModRefSummary>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
+
+private:
+  /**
+   * Creates a set containing all memory nodes in the given \p pointsToGraph
+   */
+  [[nodiscard]] static util::HashSet<PointsToGraph::NodeIndex>
+  GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
+
+  /**
+   * Helper for adding all memory nodes the given \p output may target to a Mod/Ref set
+   * @param output the pointer typed output
+   * @param modRefSet the set of memory nodes that should be expanded with \p output's targets
+   */
+  void
+  AddPointerTargetsToModRefSet(
+      const rvsdg::Output & output,
+      util::HashSet<PointsToGraph::NodeIndex> & modRefSet) const;
+
+  /**
+   * Recursively traverses the given \p region, creating Mod/Ref sets for simple nodes.
+   * @param region the region to traverse
+   */
+  void
+  AnnotateRegion(const rvsdg::Region & region);
+
+  /**
+   * Creates a Mod/Ref set for the given simple node if it belongs in the Mod/Ref set map.
+   * Only nodes that affect memory are given Mod/Ref sets.
+   * \ref llvm::CallOperation nodes are not included, as calls are assumed to touch everything.
+   * @param node the simple node
+   */
+  void
+  AnnotateSimpleNode(const rvsdg::SimpleNode & node);
+
+  // The ModRefSummary being created by this class
+  std::unique_ptr<AgnosticModRefSummary> ModRefSummary_;
 };
 
 /** \brief Agnostic mod/ref summarizer statistics
@@ -97,7 +130,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.numMemoryNodes());
   }
 
   [[nodiscard]] size_t

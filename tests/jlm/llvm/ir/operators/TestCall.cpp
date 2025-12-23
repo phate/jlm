@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/DotWriter.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
@@ -12,6 +13,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 static void
 TestCopy()
@@ -123,7 +125,7 @@ TestCallTypeClassifierIndirectCall()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+    auto one = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
 
     auto alloca = AllocaOperation::create(PointerType::Create(), one, 8);
 
@@ -202,7 +204,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       auto innerTheta = jlm::rvsdg::ThetaNode::create(outerTheta->subregion());
       auto itf = innerTheta->AddLoopVar(otf.pre);
 
-      auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
+      auto predicate = &jlm::rvsdg::ControlConstantOperation::createFalse(*innerTheta->subregion());
       auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
       auto ev = gamma->AddEntryVar(itf.pre);
       auto xv = gamma->AddExitVar(ev.branchArgument);
@@ -408,7 +410,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
     auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
-    auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
+    auto two = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 64, 2 });
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
     auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
 
@@ -420,7 +422,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gIMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
 
     /* gamma subregion 0 */
-    auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
+    auto one = &jlm::rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 1 });
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
     auto callfibm1Results = CallOperation::Create(
         fibev.branchArgument[0],
@@ -430,7 +432,7 @@ TestCallTypeClassifierRecursiveDirectCall()
           gIIoState.branchArgument[0],
           gIMemoryState.branchArgument[0] });
 
-    two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
+    two = &jlm::rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 2 });
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
     auto callfibm2Results = CallOperation::Create(
         fibev.branchArgument[0],

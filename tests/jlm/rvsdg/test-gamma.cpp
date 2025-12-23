@@ -62,7 +62,7 @@ test_predicate_reduction()
   auto v1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
   auto v2 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
 
-  auto pred = control_constant(&graph.GetRootRegion(), 3, 1);
+  auto pred = &ControlConstantOperation::create(graph.GetRootRegion(), 3, 1);
 
   auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->AddEntryVar(v0);
@@ -132,11 +132,11 @@ test_control_constant_reduction()
 
   auto gamma = GammaNode::create(c, 2);
 
-  auto t = control_true(gamma->subregion(0));
-  auto f = control_false(gamma->subregion(1));
+  auto t = &ControlConstantOperation::createTrue(*gamma->subregion(0));
+  auto f = &ControlConstantOperation::createFalse(*gamma->subregion(1));
 
-  auto n0 = control_constant(gamma->subregion(0), 3, 0);
-  auto n1 = control_constant(gamma->subregion(1), 3, 1);
+  auto n0 = &ControlConstantOperation::create(*gamma->subregion(0), 3, 0);
+  auto n1 = &ControlConstantOperation::create(*gamma->subregion(1), 3, 1);
 
   auto xv1 = gamma->AddExitVar({ t, f });
   auto xv2 = gamma->AddExitVar({ n0, n1 });
@@ -173,10 +173,10 @@ test_control_constant_reduction2()
 
   auto gamma = GammaNode::create(c, 4);
 
-  auto t1 = control_true(gamma->subregion(0));
-  auto t2 = control_true(gamma->subregion(1));
-  auto t3 = control_true(gamma->subregion(2));
-  auto f = control_false(gamma->subregion(3));
+  auto t1 = &ControlConstantOperation::createTrue(*gamma->subregion(0));
+  auto t2 = &ControlConstantOperation::createTrue(*gamma->subregion(1));
+  auto t3 = &ControlConstantOperation::createTrue(*gamma->subregion(2));
+  auto f = &ControlConstantOperation::createFalse(*gamma->subregion(3));
 
   auto xv = gamma->AddExitVar({ t1, t2, t3, f });
 

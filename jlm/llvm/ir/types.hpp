@@ -521,13 +521,26 @@ IsAggregateType(const jlm::rvsdg::Type & type)
 
 /**
  * Returns the size of the given type's representation, in bytes.
- * The size is always a multiple of the alignment, just like the C operator sizeof().
- * This means the size includes any padding at the end.
+ * More specifically, the size is the number of bytes affected when storing value of the given type
+ * to memory. Unlike C's sizeof() operator, the size is not rounded up to a multiple of alignment.
+ * @see GetTypeAllocSize() for the size rounded up to a multiple of alignment.
  * @param type the ValueType
  * @return the byte size of the type
  */
 [[nodiscard]] size_t
-GetTypeSize(const rvsdg::Type & type);
+GetTypeStoreSize(const rvsdg::Type & type);
+
+/**
+ * Returns the size of the given type's representation, in bytes.
+ * It corresponds to the sizeof() operator in C, so the size is a multiple of the type's alignment.
+ * This is the offset between consecutive elements in an array,
+ * and also the size of the stack allocation created by an alloca operation with the given type.
+ * @see GetTypeStoreSize() for the number of bytes that are actually overwritten when storing.
+ * @param type the ValueType
+ * @return the byte size of the type
+ */
+[[nodiscard]] size_t
+GetTypeAllocSize(const rvsdg::Type & type);
 
 /**
  * Returns the natural alignment of the given type, in bytes.

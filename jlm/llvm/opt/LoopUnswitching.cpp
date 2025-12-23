@@ -22,7 +22,7 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::FilePath & sourceFile)
-      : util::Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
+      : util::Statistics(Id::LoopUnswitching, sourceFile)
   {}
 
   void
@@ -123,15 +123,18 @@ LoopUnswitching::CollectPredicateNodes(
 {
   JLM_ASSERT(gammaNode.region()->node() == &thetaNode);
 
+  auto depthMap = rvsdg::computeDepthMap(*thetaNode.subregion());
+
   std::vector<std::vector<rvsdg::Node *>> nodes;
   for (auto & node : thetaNode.subregion()->Nodes())
   {
     if (&node == &gammaNode)
       continue;
 
-    if (node.depth() >= nodes.size())
-      nodes.resize(node.depth() + 1);
-    nodes[node.depth()].push_back(&node);
+    const auto depth = depthMap[&node];
+    if (depth >= nodes.size())
+      nodes.resize(depth + 1);
+    nodes[depth].push_back(&node);
   }
 
   return nodes;

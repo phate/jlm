@@ -38,7 +38,7 @@ public:
     RecursiveDirectCall,
 
     /**
-     * A call to an imported function, i.e., a function from outside of the module.
+     * A direct call to an imported function, i.e., a function from outside the current module.
      */
     ExternalCall,
 
@@ -165,6 +165,20 @@ public:
   }
 
   /**
+   * Calling setjmp has special semantics that affect the calling function.
+   * @return true if the call is a direct call to the imported setjmp function, otherwise false
+   */
+  [[nodiscard]] bool
+  isSetjmpCall();
+
+  /**
+   * Calling the va_start intrinsic has special semantics that affect the calling function.
+   * @return true if the call is a direct call to the va_start instrinsic, otherwise false
+   */
+  [[nodiscard]] bool
+  isVaStartCall();
+
+  /**
     \brief Classify callee as non-recursive.
 
     \param output
@@ -262,7 +276,7 @@ public:
    * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
    */
   [[nodiscard]] static size_t
-  NumArguments(const rvsdg::SimpleNode & node) noexcept
+  NumArguments(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     return node.ninputs() - 1;
@@ -274,7 +288,7 @@ public:
    * @return The input for the given index \p n.
    */
   [[nodiscard]] static rvsdg::Input *
-  Argument(const rvsdg::SimpleNode & node, const size_t n)
+  Argument(const rvsdg::Node & node, const size_t n)
   {
     JLM_ASSERT(is<CallOperation>(&node));
     JLM_ASSERT(n < CallOperation::NumArguments(node));
@@ -285,7 +299,7 @@ public:
    * @return The call node's function input.
    */
   [[nodiscard]] static rvsdg::Input &
-  GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
+  GetFunctionInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto functionInput = node.input(0);
@@ -309,7 +323,7 @@ public:
    * @return The call node's input/output state output.
    */
   [[nodiscard]] static rvsdg::Output &
-  GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
+  GetIOStateOutput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.output(node.noutputs() - 2);
@@ -321,7 +335,7 @@ public:
    * @return The call node's memory state input.
    */
   [[nodiscard]] static rvsdg::Input &
-  GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
+  GetMemoryStateInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto memoryState = node.input(node.ninputs() - 1);
@@ -333,7 +347,7 @@ public:
    * @return The call node's memory state output.
    */
   [[nodiscard]] static rvsdg::Output &
-  GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
+  GetMemoryStateOutput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto memoryState = node.output(node.noutputs() - 1);
@@ -352,7 +366,7 @@ public:
    * @see GetMemoryStateExitSplit()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
+  tryGetMemoryStateEntryMerge(const rvsdg::Node & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
     const auto node =
@@ -370,7 +384,7 @@ public:
    * @see GetMemoryStateEntryMerge()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
+  tryGetMemoryStateExitSplit(const rvsdg::Node & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
 
@@ -395,7 +409,7 @@ public:
    *
    * \return The traced output.
    */
-  static rvsdg::Output *
+  static rvsdg::Output &
   TraceFunctionInput(const rvsdg::SimpleNode & callNode);
 
   /** \brief Classifies a call node.

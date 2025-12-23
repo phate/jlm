@@ -4,12 +4,17 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/rvsdg/DotWriter.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/AnnotationMap.hpp>
+#include <jlm/util/file.hpp>
+#include <jlm/util/Program.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <fstream>
 
 namespace jlm::rvsdg
 {
@@ -48,9 +53,9 @@ RegionArgument::debug_string() const
 }
 
 RegionArgument &
-RegionArgument::Copy(Region & region, StructuralInput * input)
+RegionArgument::Copy(Region & region, StructuralInput * input) const
 {
-  return RegionArgument::Create(region, input, Type());
+  return Create(region, input, Type());
 }
 
 RegionArgument &
@@ -97,9 +102,9 @@ RegionResult::debug_string() const
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output)
+RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output) const
 {
-  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+  return Create(*origin.region(), origin, output, origin.Type());
 }
 
 RegionResult &
@@ -211,6 +216,58 @@ Region::RemoveArgument(size_t index)
   arguments_.pop_back();
 }
 
+size_t
+Region::RemoveArguments(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  // Remove arguments
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead() && indices.Contains(argument->index()))
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
+size_t
+Region::PruneArguments()
+{
+  size_t numLiveArguments = 0;
+  size_t numRemovedArguments = 0;
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    auto argument = arguments_[n];
+    if (argument->IsDead())
+    {
+      delete argument;
+      numRemovedArguments++;
+    }
+    else
+    {
+      argument->index_ = numLiveArguments;
+      arguments_[numLiveArguments++] = argument;
+    }
+  }
+  arguments_.resize(numLiveArguments);
+
+  return numRemovedArguments;
+}
+
 RegionResult &
 Region::addResult(std::unique_ptr<RegionResult> result)
 {
@@ -233,7 +290,7 @@ Region::RemoveResult(size_t index)
   JLM_ASSERT(index < results_.size());
   RegionResult * result = results_[index];
 
-  notifyInputDestory(result);
+  notifyInputDestroy(result);
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -242,6 +299,34 @@ Region::RemoveResult(size_t index)
     results_[n]->index_ = n;
   }
   results_.pop_back();
+}
+
+size_t
+Region::RemoveResults(const util::HashSet<size_t> & indices)
+{
+  if (indices.IsEmpty())
+    return 0;
+
+  size_t numLiveResults = 0;
+  size_t numRemovedResults = 0;
+  for (size_t n = 0; n < nresults(); n++)
+  {
+    const auto result = results_[n];
+    if (indices.Contains(result->index()))
+    {
+      notifyInputDestroy(result);
+      delete result;
+      numRemovedResults++;
+    }
+    else
+    {
+      result->index_ = numLiveResults;
+      results_[numLiveResults++] = result;
+    }
+  }
+  results_.resize(numLiveResults);
+
+  return numRemovedResults;
 }
 
 void
@@ -257,43 +342,30 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 {
   smap.insert(this, target);
 
-  // order nodes top-down
-  std::vector<std::vector<const Node *>> context(numNodes());
-  for (const auto & node : Nodes())
-  {
-    JLM_ASSERT(node.depth() < context.size());
-    context[node.depth()].push_back(&node);
-  }
-
   if (copy_arguments)
   {
-    for (size_t n = 0; n < narguments(); n++)
+    for (const auto oldArgument : Arguments())
     {
-      auto oldArgument = argument(n);
-      auto input = smap.lookup(oldArgument->input());
+      const auto input = smap.lookup(oldArgument->input());
       auto & newArgument = oldArgument->Copy(*target, input);
       smap.insert(oldArgument, &newArgument);
     }
   }
 
   // copy nodes
-  for (size_t n = 0; n < context.size(); n++)
+  for (const auto node : TopDownConstTraverser(this))
   {
-    for (const auto node : context[n])
-    {
-      JLM_ASSERT(target == smap.lookup(node->region()));
-      node->copy(target, smap);
-    }
+    JLM_ASSERT(target == smap.lookup(node->region()));
+    node->copy(target, smap);
   }
 
   if (copy_results)
   {
-    for (size_t n = 0; n < nresults(); n++)
+    for (const auto oldResult : Results())
     {
-      auto oldResult = result(n);
-      auto newOrigin = smap.lookup(oldResult->origin());
+      const auto newOrigin = smap.lookup(oldResult->origin());
       JLM_ASSERT(newOrigin != nullptr);
-      auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
+      const auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
       oldResult->Copy(*newOrigin, newOutput);
     }
   }
@@ -316,6 +388,22 @@ Region::prune(bool recursive)
         snode->subregion(n)->prune(recursive);
     }
   }
+}
+
+void
+Region::view() const
+{
+  DotWriter dotWriter;
+  util::graph::Writer graphWriter;
+  dotWriter.WriteGraph(graphWriter, *this);
+
+  const util::FilePath outputFilePath =
+      util::FilePath::createUniqueFileName(util::FilePath::TempDirectoryPath(), "region-", ".dot");
+
+  std::ofstream outputFile(outputFilePath.to_str());
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+
+  util::executeProgramAndWait(util::getDotViewer(), { outputFilePath.to_str() });
 }
 
 void
@@ -405,7 +493,7 @@ Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origi
 }
 
 void
-Region::notifyInputDestory(Input * input)
+Region::notifyInputDestroy(Input * input)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {

@@ -83,12 +83,12 @@ private:
 public:
   jlm::rvsdg::LambdaNode * lambda;
 
-  rvsdg::Node * size;
+  rvsdg::SimpleNode * size;
 
-  rvsdg::Node * alloca_a;
-  rvsdg::Node * alloca_b;
-  rvsdg::Node * alloca_c;
-  rvsdg::Node * alloca_d;
+  rvsdg::SimpleNode * alloca_a;
+  rvsdg::SimpleNode * alloca_b;
+  rvsdg::SimpleNode * alloca_c;
+  rvsdg::SimpleNode * alloca_d;
 };
 
 /** \brief StoreTest2 class
@@ -121,13 +121,13 @@ private:
 public:
   jlm::rvsdg::LambdaNode * lambda;
 
-  rvsdg::Node * size;
+  rvsdg::SimpleNode * size;
 
-  rvsdg::Node * alloca_a;
-  rvsdg::Node * alloca_b;
-  rvsdg::Node * alloca_x;
-  rvsdg::Node * alloca_y;
-  rvsdg::Node * alloca_p;
+  rvsdg::SimpleNode * alloca_a;
+  rvsdg::SimpleNode * alloca_b;
+  rvsdg::SimpleNode * alloca_x;
+  rvsdg::SimpleNode * alloca_y;
+  rvsdg::SimpleNode * alloca_p;
 };
 
 /** \brief LoadTest1 class
@@ -166,6 +166,7 @@ public:
  * \code{.c}
  *   void f()
  *   {
+ *     // Represented using allocas
  *     uint32_t a, b;
  *     uint32_t * x, * y;
  *     uint32_t ** p;
@@ -173,7 +174,11 @@ public:
  *     x = &a;
  *     y = &b;
  *     p = &x;
- *     y = *p;
+ *
+ *     // Represented as virtual registers
+ *     uint32_t * load_x = *p;
+ *     uint32_t load_a = *load_x;
+ *     y = load_a;
  *   }
  * \endcode
  *
@@ -191,14 +196,14 @@ public:
 
   rvsdg::Node * size;
 
-  rvsdg::Node * alloca_a;
-  rvsdg::Node * alloca_b;
-  rvsdg::Node * alloca_x;
-  rvsdg::Node * alloca_y;
-  rvsdg::Node * alloca_p;
+  rvsdg::SimpleNode * alloca_a;
+  rvsdg::SimpleNode * alloca_b;
+  rvsdg::SimpleNode * alloca_x;
+  rvsdg::SimpleNode * alloca_y;
+  rvsdg::SimpleNode * alloca_p;
 
-  rvsdg::Node * load_x;
-  rvsdg::Node * load_a;
+  rvsdg::SimpleNode * load_x;
+  rvsdg::SimpleNode * load_a;
 };
 
 /** \brief LoadFromUndefTest class
@@ -428,9 +433,9 @@ public:
   jlm::rvsdg::LambdaNode * lambda_g;
   jlm::rvsdg::LambdaNode * lambda_h;
 
-  rvsdg::Node * alloca_x;
-  rvsdg::Node * alloca_y;
-  rvsdg::Node * alloca_z;
+  rvsdg::SimpleNode * alloca_x;
+  rvsdg::SimpleNode * alloca_y;
+  rvsdg::SimpleNode * alloca_z;
 
 private:
   rvsdg::SimpleNode * CallF_;
@@ -499,8 +504,8 @@ public:
   jlm::rvsdg::LambdaNode * lambda_destroy;
   jlm::rvsdg::LambdaNode * lambda_test;
 
-  rvsdg::Node * malloc;
-  rvsdg::Node * free;
+  rvsdg::SimpleNode * malloc;
+  rvsdg::SimpleNode * free;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -837,7 +842,7 @@ public:
     return *CallG_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::RegionArgument &
+  [[nodiscard]] const jlm::rvsdg::GraphImport &
   ExternalGArgument() const noexcept
   {
     return *ExternalGArgument_;
@@ -851,7 +856,7 @@ private:
 
   rvsdg::SimpleNode * CallG_;
 
-  jlm::rvsdg::RegionArgument * ExternalGArgument_;
+  jlm::rvsdg::GraphImport * ExternalGArgument_;
 };
 
 /**
@@ -1321,8 +1326,8 @@ public:
   jlm::rvsdg::LambdaNode * lambda_f1;
   jlm::rvsdg::LambdaNode * lambda_f2;
 
-  jlm::rvsdg::RegionArgument * import_d1;
-  jlm::rvsdg::RegionArgument * import_d2;
+  jlm::rvsdg::GraphImport * import_d1;
+  jlm::rvsdg::GraphImport * import_d2;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1390,7 +1395,7 @@ public:
 
   jlm::rvsdg::PhiNode * phi;
 
-  rvsdg::Node * alloca;
+  rvsdg::SimpleNode * alloca;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1767,11 +1772,11 @@ public:
   rvsdg::SimpleNode * ExternalFunction1Call;
   rvsdg::SimpleNode * ExternalFunction2Call;
 
-  rvsdg::Node * ReturnAddressMalloc;
-  rvsdg::Node * CallExternalFunction1Malloc;
+  rvsdg::SimpleNode * ReturnAddressMalloc;
+  rvsdg::SimpleNode * CallExternalFunction1Malloc;
 
-  jlm::rvsdg::RegionArgument * ExternalFunction1Import;
-  jlm::rvsdg::RegionArgument * ExternalFunction2Import;
+  jlm::rvsdg::GraphImport * ExternalFunction1Import;
+  jlm::rvsdg::GraphImport * ExternalFunction2Import;
 
   rvsdg::SimpleNode * LoadNode;
 };
@@ -1804,7 +1809,7 @@ public:
 
   jlm::rvsdg::DeltaNode * DeltaGlobal;
 
-  jlm::rvsdg::RegionArgument * ImportExternalFunction;
+  jlm::rvsdg::GraphImport * ImportExternalFunction;
 
   rvsdg::SimpleNode * CallExternalFunction;
 
@@ -1830,7 +1835,7 @@ public:
  *  int
  *  g()
  *  {
- *    int localArray[5] = {0, 1, 2, 3 , 4};
+ *    int localArray[5] = {0, 1, 2, 3, 4};
  *    memcpy(globalArray, localArray, sizeof(int)*5);
  *    return f();
  *  }
@@ -1871,7 +1876,7 @@ public:
     return *CallF_;
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   Memcpy() const noexcept
   {
     return *Memcpy_;
@@ -1889,7 +1894,7 @@ private:
 
   rvsdg::SimpleNode * CallF_;
 
-  rvsdg::Node * Memcpy_;
+  rvsdg::SimpleNode * Memcpy_;
 };
 
 /**
@@ -2043,7 +2048,7 @@ private:
 class LinkedListTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetAlloca() const noexcept
   {
     return *Alloca_;
@@ -2069,7 +2074,7 @@ private:
 
   jlm::rvsdg::LambdaNode * LambdaNext_;
 
-  rvsdg::Node * Alloca_;
+  rvsdg::SimpleNode * Alloca_;
 };
 
 /** \brief RVSDG module with one of each memory node type.
@@ -2129,7 +2134,7 @@ public:
     return *Lambda_->output();
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetAllocaNode() const noexcept
   {
     JLM_ASSERT(Alloca_);
@@ -2143,7 +2148,7 @@ public:
     return *Alloca_->output(0);
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetMallocNode() const noexcept
   {
     JLM_ASSERT(Malloc_);
@@ -2167,9 +2172,9 @@ private:
 
   jlm::rvsdg::LambdaNode * Lambda_ = {};
 
-  rvsdg::Node * Alloca_ = {};
+  rvsdg::SimpleNode * Alloca_ = {};
 
-  rvsdg::Node * Malloc_ = {};
+  rvsdg::SimpleNode * Malloc_ = {};
 };
 
 /** \brief RVSDG module with an arbitrary amount of alloca nodes.
@@ -2201,7 +2206,7 @@ public:
     return NumAllocaNodes_;
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetAllocaNode(size_t index) const noexcept
   {
     JLM_ASSERT(index < AllocaNodes_.size());
@@ -2228,7 +2233,7 @@ private:
 
   size_t NumAllocaNodes_;
 
-  std::vector<const rvsdg::Node *> AllocaNodes_ = {};
+  std::vector<const rvsdg::SimpleNode *> AllocaNodes_ = {};
 
   jlm::rvsdg::LambdaNode * Function_{};
 };

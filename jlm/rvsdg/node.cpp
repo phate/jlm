@@ -76,9 +76,6 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   old_origin->remove_user(this);
   new_origin->add_user(this);
 
-  if (auto node = TryGetOwnerNode<Node>(*this))
-    node->recompute_depth();
-
   region()->notifyInputChange(this, old_origin, new_origin);
 }
 
@@ -258,7 +255,6 @@ NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
 
 Node::Node(Region * region)
     : Id_(region->generateNodeId()),
-      depth_(0),
       region_(region)
 {
   region->onBottomNodeAdded(*this);
@@ -294,19 +290,12 @@ Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
   // If we used to be a top node, we no longer are
   if (ninputs() == 0)
   {
-    JLM_ASSERT(depth() == 0);
     region()->onTopNodeRemoved(*this);
   }
 
   input->index_ = ninputs();
   inputs_.push_back(std::move(input));
   const auto inputPtr = inputs_.back().get();
-
-  const auto producer = rvsdg::TryGetOwnerNode<Node>(*inputPtr->origin());
-  const auto new_depth = producer ? producer->depth() + 1 : 0;
-  if (new_depth > depth())
-    recompute_depth();
-
   if (notifyRegion)
     region()->notifyInputCreate(inputPtr);
 
@@ -319,11 +308,9 @@ Node::removeInput(size_t index, bool notifyRegion)
   JLM_ASSERT(index < ninputs());
 
   if (notifyRegion)
-    region()->notifyInputDestory(input(index));
+    region()->notifyInputDestroy(input(index));
 
-  auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
-
-  /* remove input */
+  // remove input
   for (size_t n = index; n < ninputs() - 1; n++)
   {
     inputs_[n] = std::move(inputs_[n + 1]);
@@ -331,22 +318,48 @@ Node::removeInput(size_t index, bool notifyRegion)
   }
   inputs_.pop_back();
 
-  /* recompute depth */
-  if (producer)
-  {
-    auto pdepth = producer->depth();
-    JLM_ASSERT(pdepth < depth());
-    if (pdepth != depth() - 1)
-      return;
-  }
-  recompute_depth();
-
   // If we no longer have any inputs we are now a top node
   if (ninputs() == 0)
   {
-    JLM_ASSERT(depth() == 0);
     region()->onTopNodeAdded(*this);
   }
+}
+
+size_t
+Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegion)
+{
+  if (indices.IsEmpty())
+  {
+    return 0;
+  }
+
+  size_t numLiveInputs = 0;
+  size_t numRemovedInputs = 0;
+  for (size_t n = 0; n < ninputs(); n++)
+  {
+    auto & input = inputs_[n];
+    if (indices.Contains(input->index()))
+    {
+      if (notifyRegion)
+        region()->notifyInputDestroy(input.get());
+      input.reset();
+      numRemovedInputs++;
+    }
+    else
+    {
+      input->index_ = numLiveInputs;
+      inputs_[numLiveInputs++] = std::move(input);
+    }
+  }
+  inputs_.resize(numLiveInputs);
+
+  // If we no longer have any inputs we are now a top node
+  if (numLiveInputs == 0)
+  {
+    region()->onTopNodeAdded(*this);
+  }
+
+  return numRemovedInputs;
 }
 
 void
@@ -363,36 +376,31 @@ Node::removeOutput(size_t index)
   outputs_.pop_back();
 }
 
-void
-Node::recompute_depth() noexcept
+size_t
+Node::RemoveOutputs(const util::HashSet<size_t> & indices)
 {
-  /*
-    FIXME: This function is inefficient, as it can visit the
-    node's successors multiple times. Optimally, we would like
-    to visit the node's successors in top down order to ensure
-    that each node is only visited once.
-  */
-  size_t new_depth = 0;
-  for (size_t n = 0; n < ninputs(); n++)
-  {
-    auto producer = rvsdg::TryGetOwnerNode<Node>(*input(n)->origin());
-    new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
-  }
-  if (new_depth == depth())
-    return;
+  if (indices.IsEmpty())
+    return 0;
 
-  depth_ = new_depth;
-
+  size_t numLiveOutputs = 0;
+  size_t numRemovedOutputs = 0;
   for (size_t n = 0; n < noutputs(); n++)
   {
-    for (auto & user : output(n)->Users())
+    auto & output = outputs_[n];
+    if (output->IsDead() && indices.Contains(output->index()))
     {
-      if (auto node = TryGetOwnerNode<Node>(user))
-      {
-        node->recompute_depth();
-      }
+      output.reset();
+      numRemovedOutputs++;
+    }
+    else
+    {
+      output->index_ = numLiveOutputs;
+      outputs_[numLiveOutputs++] = std::move(output);
     }
   }
+  outputs_.resize(numLiveOutputs);
+
+  return numRemovedOutputs;
 }
 
 Node *
@@ -405,116 +413,6 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
     smap.insert(input(n)->origin(), operands[n]);
 
   return copy(region, smap);
-}
-
-const Output &
-traceOutputIntraProcedurally(const Output & output)
-{
-  // Handle gamma node outputs
-  if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
-  {
-    const auto exitVar = gammaNode->MapOutputExitVar(output);
-    if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
-    {
-      return traceOutputIntraProcedurally(*origin.value());
-    }
-
-    return output;
-  }
-
-  // Handle gamma node arguments
-  if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
-  {
-    const auto roleVar = gammaNode->MapBranchArgument(output);
-    if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
-    {
-      return traceOutputIntraProcedurally(*entryVar->input->origin());
-    }
-
-    if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
-    {
-      return traceOutputIntraProcedurally(*matchVar->input->origin());
-    }
-
-    return output;
-  }
-
-  // Handle theta node outputs
-  if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
-  {
-    const auto loopVar = thetaNode->MapOutputLoopVar(output);
-    if (ThetaLoopVarIsInvariant(loopVar))
-    {
-      return traceOutputIntraProcedurally(*loopVar.input->origin());
-    }
-
-    return output;
-  }
-
-  // Handle theta node arguments
-  if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
-  {
-    const auto loopVar = thetaNode->MapPreLoopVar(output);
-    if (ThetaLoopVarIsInvariant(loopVar))
-    {
-      return traceOutputIntraProcedurally(*loopVar.input->origin());
-    }
-
-    return output;
-  }
-
-  return output;
-}
-
-const Output &
-traceOutput(const Output & startingOutput)
-{
-  const auto & output = traceOutputIntraProcedurally(startingOutput);
-
-  // Handle lambda context variables
-  if (const auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
-  {
-    // If the argument is a contex variable, continue normalizing
-    if (const auto ctxVar = lambda->MapBinderContextVar(output))
-      return traceOutput(*ctxVar->input->origin());
-
-    return output;
-  }
-
-  // Handle delta context variables
-  if (const auto delta = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
-  {
-    // If the argument is a contex variable, continue normalizing
-    const auto ctxVar = delta->MapBinderContextVar(output);
-    return traceOutput(*ctxVar.input->origin());
-  }
-
-  // Handle phi outputs
-  if (const auto phiNode = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
-  {
-    const auto fixVar = phiNode->MapOutputFixVar(output);
-    return traceOutput(*fixVar.result->origin());
-  }
-
-  // Handle phi region arguments
-  if (const auto phiNode = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
-  {
-    const auto argument = phiNode->MapArgument(output);
-    if (const auto ctxVar = std::get_if<rvsdg::PhiNode::ContextVar>(&argument))
-    {
-      // Follow the context variable to outside the phi
-      return traceOutput(*ctxVar->input->origin());
-    }
-    if (const auto fixVar = std::get_if<rvsdg::PhiNode::FixVar>(&argument))
-    {
-      // Follow to the recursion variable's definition
-      return traceOutput(*fixVar->result->origin());
-    }
-
-    throw std::logic_error("Unknown phi argument type");
-  }
-
-  return output;
 }
 
 Output &

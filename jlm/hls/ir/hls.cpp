@@ -97,20 +97,20 @@ BundleType::Kind() const noexcept
 EntryArgument::~EntryArgument() noexcept = default;
 
 EntryArgument &
-EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const
 {
-  return EntryArgument::Create(region, *input, Type());
+  return Create(region, *input, Type());
 }
 
 BackEdgeArgument &
-BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const
 {
   JLM_ASSERT(input == nullptr);
   return create(&region, Type());
 }
 
 BackEdgeResult &
-BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
+BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const
 {
   JLM_ASSERT(output == nullptr);
   return create(&origin);
@@ -125,7 +125,7 @@ ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
 }
 
 ExitResult &
-ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
+ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) const
 {
   return Create(origin, *output);
 }
@@ -297,7 +297,7 @@ LoopNode::create(rvsdg::Region * parent, bool init)
   auto ln = new LoopNode(parent);
   if (init)
   {
-    auto predicate = jlm::rvsdg::control_false(ln->subregion());
+    auto predicate = &rvsdg::ControlConstantOperation::createFalse(*ln->subregion());
     auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready

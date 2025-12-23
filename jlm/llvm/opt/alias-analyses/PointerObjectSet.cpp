@@ -120,7 +120,7 @@ PointerObjectSet::CreateDummyRegisterPointerObject()
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool canPoint)
+PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::SimpleNode & allocaNode, bool canPoint)
 {
   JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
   return AllocaMap_[&allocaNode] =
@@ -128,7 +128,7 @@ PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool 
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint)
+PointerObjectSet::CreateMallocMemoryObject(const rvsdg::SimpleNode & mallocNode, bool canPoint)
 {
   JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
   return MallocMap_[&mallocNode] =
@@ -166,13 +166,11 @@ PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode)
+PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode, bool canPoint)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
 
-  // All import memory objects are marked as CanPoint() == false, as the analysis has no chance at
-  // tracking the points-to set of pointers located in separate modules
-  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject, false);
+  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject, canPoint);
   ImportMap_[&importNode] = importMemoryObject;
 
   // Memory objects defined in other modules are definitely not private to this module
@@ -186,13 +184,13 @@ PointerObjectSet::GetRegisterMap() const noexcept
   return RegisterMap_;
 }
 
-const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> &
 PointerObjectSet::GetAllocaMap() const noexcept
 {
   return AllocaMap_;
 }
 
-const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::SimpleNode *, PointerObjectIndex> &
 PointerObjectSet::GetMallocMap() const noexcept
 {
   return MallocMap_;

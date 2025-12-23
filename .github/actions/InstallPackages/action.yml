@@ -52,6 +52,11 @@ inputs:
     default: "false"
     required: false
 
+  install-gtest:
+    descrption: "Install gtest package. Default is 'false'."
+    default: "false"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -124,4 +129,9 @@ runs:
     - name: "Install verilator package"
       if: ${{inputs.install-verilator == 'true'}}
       run: sudo apt-get install verilator
+      shell: bash
+
+    - name: "Install gtest package"
+      if: ${{inputs.install-gtest == 'true'}}
+      run: sudo apt-get install libgtest-dev
       shell: bash

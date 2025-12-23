@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -186,28 +187,28 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 void
 InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode)
 {
-  const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
-  const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand);
-  if (!gammaNode)
+  auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
+  if (!correlationOpt.has_value())
   {
-    // The theta node predicate does not originate from a gamma node. Nothing can be done.
     return;
   }
+  auto & correlation = correlationOpt.value();
 
-  auto subregionRolesOpt = determineGammaSubregionRoles(*gammaNode, thetaPredicateOperand);
+  auto subregionRolesOpt = determineGammaSubregionRoles(*correlation);
   if (!subregionRolesOpt.has_value())
   {
     // We could not determine the roles of the gamma subregions. Nothing can be done.
     return;
   }
   auto roles = *subregionRolesOpt;
+  auto & gammaNode = correlation->gammaNode();
 
   auto divertLoopVar =
       [&gammaNode](rvsdg::ThetaNode::LoopVar & loopVar, rvsdg::Output & entryVarArgument)
   {
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(entryVarArgument))
     {
-      auto roleVar = gammaNode->MapBranchArgument(entryVarArgument);
+      auto roleVar = gammaNode.MapBranchArgument(entryVarArgument);
       if (auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
       {
         loopVar.post->divert_to(entryVar->input->origin());
@@ -225,13 +226,13 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
     }
 
     auto & loopVarPostOperand = *loopVar.post->origin();
-    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != gammaNode)
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(loopVarPostOperand) != &gammaNode)
     {
       // The post value of the loop variable does not originate from the gamma node. Nothing can
       // be done.
       continue;
     }
-    auto [branchResult, _] = gammaNode->MapOutputExitVar(loopVarPostOperand);
+    auto [branchResult, _] = gammaNode.MapOutputExitVar(loopVarPostOperand);
 
     if (loopVar.output->IsDead())
     {
@@ -246,56 +247,6 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
       divertLoopVar(loopVar, entryVarArgument);
     }
   }
-}
-
-std::optional<InvariantValueRedirection::GammaSubregionRoles>
-InvariantValueRedirection::determineGammaSubregionRoles(
-    rvsdg::GammaNode & gammaNode,
-    const rvsdg::Output & thetaPredicateOperand)
-{
-  JLM_ASSERT(rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand) == &gammaNode);
-
-  if (gammaNode.nsubregions() != 2)
-  {
-    return std::nullopt;
-  }
-
-  auto [branchResult, _] = gammaNode.MapOutputExitVar(thetaPredicateOperand);
-  auto [constantNodeA, constantOperationA] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
-          *branchResult[0]->origin());
-  if (constantOperationA == nullptr)
-  {
-    return std::nullopt;
-  }
-
-  auto [constantNodeB, constantOperationB] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ControlConstantOperation>(
-          *branchResult[1]->origin());
-  if (constantOperationB == nullptr)
-  {
-    return std::nullopt;
-  }
-
-  const size_t alternativeA = constantOperationA->value().alternative();
-  const size_t alternativeB = constantOperationB->value().alternative();
-  JLM_ASSERT(alternativeA == 0 || alternativeA == 1);
-  JLM_ASSERT(alternativeB == 0 || alternativeB == 1);
-  JLM_ASSERT(alternativeA != alternativeB);
-
-  GammaSubregionRoles roles;
-  if (alternativeA == 0)
-  {
-    roles.exitSubregion = constantNodeA->region();
-    roles.repetitionSubregion = constantNodeB->region();
-  }
-  else
-  {
-    roles.exitSubregion = constantNodeB->region();
-    roles.repetitionSubregion = constantNodeA->region();
-  }
-
-  return roles;
 }
 
 void
@@ -323,82 +274,75 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
   if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
-  const auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
-  const auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
-  const auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
-  const auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
-  const auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
-
-  const auto hasAllMemoryStateNodes = callExitSplit != nullptr && callEntryMerge != nullptr
-                                   && lambdaEntrySplit != nullptr && lambdaExitMerge != nullptr;
-
+  // First, handle all call outputs where the corresponding function result is invariant
   const auto results = lambdaNode.GetFunctionResults();
   JLM_ASSERT(callNode.noutputs() == results.size());
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     const auto callOutput = callNode.output(n);
-    const auto shouldHandleMemoryStateOperations =
-        (callOutput == memoryStateOutput) && hasAllMemoryStateNodes;
 
-    if (shouldHandleMemoryStateOperations)
+    auto & lambdaResult = *results[n];
+    auto origin = lambdaResult.origin();
+    if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin) == &lambdaNode)
     {
-      // All the inputs and outputs of the memory state nodes need to be aligned.
-      JLM_ASSERT(callExitSplit->noutputs() == lambdaExitMerge->ninputs());
-      JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
-      JLM_ASSERT(lambdaEntrySplit->noutputs() == callEntryMerge->ninputs());
-
-      for (auto & lambdaExitMergeInput : lambdaExitMerge->Inputs())
+      if (auto ctxvar = lambdaNode.MapBinderContextVar(*origin))
       {
-        auto & lambdaEntrySplitOutput = *lambdaExitMergeInput.origin();
-        const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(lambdaEntrySplitOutput);
-        if (node != lambdaEntrySplit)
-        {
-          // The state edge is not invariant. Let's move on to the next one.
-          continue;
-        }
-
-        const auto lambdaExitMemoryNodeId =
-            LambdaExitMemoryStateMergeOperation::mapInputToMemoryNodeId(lambdaExitMergeInput);
-        const auto callExitSplitOutput = CallExitMemoryStateSplitOperation::mapMemoryNodeIdToOutput(
-            *callExitSplit,
-            lambdaExitMemoryNodeId);
-
-        const auto lambdaEntryMemoryNodeId =
-            LambdaEntryMemoryStateSplitOperation::mapOutputToMemoryNodeId(lambdaEntrySplitOutput);
-        const auto callEntryMergeInput = CallEntryMemoryStateMergeOperation::mapMemoryNodeIdToInput(
-            *callEntryMerge,
-            lambdaEntryMemoryNodeId);
-
-        // We expect that the memory node IDs for a given state between a
-        // LambdaEntryMemoryStateMergeOperation node and a LambdaExitMemoryStateSplitOperation node
-        // are always the same, otherwise we have a bug in the memory state encoding.
-        JLM_ASSERT(lambdaExitMemoryNodeId == lambdaEntryMemoryNodeId);
-
-        if (callExitSplitOutput != nullptr && callEntryMergeInput != nullptr)
-        {
-          callExitSplitOutput->divert_users(callEntryMergeInput->origin());
-        }
+        // This is a bound context variable.
+        // FIXME: We would like to get this case working as well, but we need to route the origin
+        // of the respective lambda input to the subregion of the call node.
+      }
+      else
+      {
+        auto callOperand = CallOperation::Argument(callNode, origin->index())->origin();
+        callOutput->divert_users(callOperand);
       }
     }
-    else
+  }
+
+  // Next, handle lambda bodies that contain memory state split and merge nodes.
+  // Memory state edges can only be routed around the call if the corresponding memory node id
+  // is invariant between the LambdaEntrySplit and the LambdaExitMerge.
+  const auto callExitSplit = CallOperation::tryGetMemoryStateExitSplit(callNode);
+  const auto callEntryMerge = CallOperation::tryGetMemoryStateEntryMerge(callNode);
+  const auto lambdaEntrySplit = tryGetMemoryStateEntrySplit(lambdaNode);
+  const auto lambdaExitMerge = tryGetMemoryStateExitMerge(lambdaNode);
+
+  // Only continue if the call / lambda pair has all four memory state nodes
+  if (callExitSplit == nullptr || callEntryMerge == nullptr || lambdaEntrySplit == nullptr
+      || lambdaExitMerge == nullptr)
+    return;
+
+  const auto callExitSplitOp =
+      *util::assertedCast<const CallExitMemoryStateSplitOperation>(&callExitSplit->GetOperation());
+  for (const auto memoryNodeId : callExitSplitOp.getMemoryNodeIds())
+  {
+    const auto result = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+        *lambdaExitMerge,
+        memoryNodeId);
+    const auto argument = LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
+        *lambdaEntrySplit,
+        memoryNodeId);
+
+    // If the lambda does not route this memory state at all, it is effectively invariant
+    if (result != nullptr && argument != nullptr)
     {
-      auto & lambdaResult = *results[n];
-      auto origin = lambdaResult.origin();
-      if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin) == &lambdaNode)
-      {
-        if (auto ctxvar = lambdaNode.MapBinderContextVar(*origin))
-        {
-          // This is a bound context variable.
-          // FIXME: We would like to get this case working as well, but we need to route the origin
-          // of the respective lambda input to the subregion of the call node.
-        }
-        else
-        {
-          auto callOperand = CallOperation::Argument(callNode, origin->index())->origin();
-          callOutput->divert_users(callOperand);
-        }
-      }
+      // If the lambda body has an edge for this memory state, and it is not invariant, we must stop
+      if (result->origin() != argument)
+        continue;
     }
+
+    // If we get here, the memory state is invariant, and can be routed around the call
+    const auto output =
+        CallExitMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(*callExitSplit, memoryNodeId);
+    const auto input = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+        *callEntryMerge,
+        memoryNodeId);
+
+    JLM_ASSERT(output);
+    if (!input)
+      continue;
+
+    output->divert_users(input->origin());
   }
 }
 

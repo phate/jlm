@@ -21,6 +21,8 @@ class SimpleNode;
 namespace jlm::llvm
 {
 
+class ThetaGammaPredicateCorrelation;
+
 /** \brief Invariant Value Redirection Optimization
  *
  * Invariant Value Redirection (IVR) redirects invariant edges around gamma, theta, and call nodes.
@@ -109,26 +111,6 @@ private:
    */
   static void
   redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNode);
-
-  typedef struct
-  {
-    rvsdg::Region * repetitionSubregion;
-    rvsdg::Region * exitSubregion;
-  } GammaSubregionRoles;
-
-  /**
-   * Tries to assign the respective roles (exit or repetition) to the subregions of a gamma node
-   * that statically determines the predicate of a theta node.
-   *
-   * @param gammaNode The gamma node for which to determine the subregion roles.
-   * @param thetaPredicateOperand The operand of the theta node predicate. It must be an output of
-   * \p gammaNode.
-   * @return
-   */
-  static std::optional<GammaSubregionRoles>
-  determineGammaSubregionRoles(
-      rvsdg::GammaNode & gammaNode,
-      const rvsdg::Output & thetaPredicateOperand);
 
   static void
   RedirectCallOutputs(rvsdg::SimpleNode & callNode);

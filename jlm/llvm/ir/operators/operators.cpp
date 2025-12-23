@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 #include <llvm/ADT/SmallVector.h>
 
@@ -394,7 +395,7 @@ rvsdg::unop_reduction_path_t
 ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
   auto & tracedOperand = rvsdg::traceOutputIntraProcedurally(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::bitconstant_op>(tracedOperand))
+  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOperand))
     return rvsdg::unop_reduction_constant;
 
   return rvsdg::unop_reduction_none;
@@ -407,10 +408,10 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
   {
     auto & tracedOperand = rvsdg::traceOutputIntraProcedurally(*operand);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOperand);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOperand);
     JLM_ASSERT(constantOperation);
-    return create_bitconstant(
-        rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
+    return &rvsdg::BitConstantOperation::create(
+        *rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
         constantOperation->value().zext(ndstbits() - nsrcbits()));
   }
 

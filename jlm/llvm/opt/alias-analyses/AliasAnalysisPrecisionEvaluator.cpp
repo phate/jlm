@@ -6,7 +6,7 @@
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/ir/trace.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -280,7 +280,7 @@ AliasAnalysisPrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::Simp
     // At the time of writing, these are the only loads we know about
     JLM_ASSERT(is<LoadNonVolatileOperation>(*load) || is<LoadVolatileOperation>(*load));
 
-    const auto size = GetTypeSize(*load->GetLoadedType());
+    const auto size = GetTypeStoreSize(*load->GetLoadedType());
     CollectPointer(LoadOperation::AddressInput(node).origin(), size, AreLoadsConsideredClobbers());
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
@@ -288,7 +288,7 @@ AliasAnalysisPrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::Simp
     // At the time of writing, these are the only stores we know about
     JLM_ASSERT(is<StoreNonVolatileOperation>(*store) || is<StoreVolatileOperation>(*store));
 
-    const auto size = GetTypeSize(store->GetStoredType());
+    const auto size = GetTypeStoreSize(store->GetStoredType());
     CollectPointer(StoreOperation::AddressInput(node).origin(), size, true);
   }
 }

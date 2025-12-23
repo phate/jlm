@@ -9,11 +9,33 @@
 namespace jlm::rvsdg
 {
 
-// explicit instantiation
-template class DomainConstOperation<
-    BitType,
-    BitValueRepresentation,
-    BitValueRepresentationFormatValue,
-    BitValueRepresentationTypeOfValue>;
+BitConstantOperation::~BitConstantOperation() noexcept = default;
+
+BitConstantOperation::BitConstantOperation(BitValueRepresentation value)
+    : NullaryOperation(BitType::Create(value.nbits())),
+      value_(std::move(value))
+{}
+
+bool
+BitConstantOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const BitConstantOperation *>(&other);
+  return operation && operation->value_ == value_;
+}
+
+std::string
+BitConstantOperation::debug_string() const
+{
+  if (value_.is_known() && value_.nbits() <= 64)
+    return jlm::util::strfmt("BITS", value_.nbits(), "(", value_.to_uint(), ")");
+
+  return value_.str();
+}
+
+std::unique_ptr<Operation>
+BitConstantOperation::copy() const
+{
+  return std::make_unique<BitConstantOperation>(value_);
+}
 
 }

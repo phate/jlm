@@ -61,6 +61,7 @@ runs:
       with:
         install-llvm: true
         install-clang: true
+        install-gtest: true # Required for unit tests
         install-valgrind: true  # Required for make target valgrind-check
 
     - name: "Install HLS dialect dependencies"
