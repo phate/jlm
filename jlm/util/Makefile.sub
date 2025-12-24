@@ -26,17 +26,6 @@ libutil_HEADERS = \
     jlm/util/time.hpp \
     jlm/util/Worklist.hpp \
 
-libutil_TESTS += \
-    tests/jlm/util/TestWorklist \
-
-libutil_TEST_LIBS = \
-    libjlmtest \
-    libutil \
-
-# Not fully clear why this is required, but omitting this causes
-# linker errors.
-libutil_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
-
 $(eval $(call common_library,libutil))
 
 tests/jlm/util/AnnotationMapTests_SOURCES = tests/jlm/util/AnnotationMapTests.cpp
@@ -94,3 +83,7 @@ $(eval $(call common_test,tests/jlm/util/TestTarjanScc))
 tests/jlm/util/TestTimer_SOURCES = tests/jlm/util/TestTimer.cpp
 tests/jlm/util/TestTimer_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/util/TestTimer))
+
+tests/jlm/util/TestWorklist_SOURCES = tests/jlm/util/TestWorklist.cpp
+tests/jlm/util/TestWorklist_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/util/TestWorklist))
