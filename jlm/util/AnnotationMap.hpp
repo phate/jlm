@@ -79,13 +79,13 @@ public:
   }
 
   bool
-  operator==(Annotation & other) const noexcept
+  operator==(const Annotation & other) const noexcept
   {
     return Label_ == other.Label_ && Value_ == other.Value_;
   }
 
   bool
-  operator!=(Annotation & other) const noexcept
+  operator!=(const Annotation & other) const noexcept
   {
     return !(*this == other);
   }
