@@ -3,19 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
 
-#include <cassert>
 #include <memory>
 #include <unordered_set>
 #include <vector>
 
-static void
-TestPtrVector()
+TEST(IteratorWrapperTests, TestPtrVector)
 {
   int a = 10;
   int b = 20;
@@ -26,13 +23,13 @@ TestPtrVector()
 
   // Act 1 + Assert 1 - iterate manually using operator ++
   ItType it(ints.begin());
-  assert(*it == 10);
+  EXPECT_EQ(*it, 10);
   it++;
-  assert(*it == 20);
+  EXPECT_EQ(*it, 20);
   it++;
-  assert(it != ItType(ints.end()));
+  EXPECT_NE(it, ItType(ints.end()));
   it++;
-  assert(it == ItType(ints.end()));
+  EXPECT_EQ(it, ItType(ints.end()));
 
   // Act 2 - modify targets through range based for loop
   jlm::util::IteratorRange range(ItType(ints.begin()), ItType(ints.end()));
@@ -42,15 +39,12 @@ TestPtrVector()
   }
 
   // Assert 2
-  assert(a == 11);
-  assert(b == 21);
-  assert(c == 31);
+  EXPECT_EQ(a, 11);
+  EXPECT_EQ(b, 21);
+  EXPECT_EQ(c, 31);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrVector", TestPtrVector);
-
-static void
-TestPtrUnorderedSet()
+TEST(IteratorWrapperTests, TestPtrUnorderedSet)
 {
   int a = 10;
   int b = 20;
@@ -67,15 +61,12 @@ TestPtrUnorderedSet()
   }
 
   // Assert
-  assert(a == 11);
-  assert(b == 21);
-  assert(c == 31);
+  EXPECT_EQ(a, 11);
+  EXPECT_EQ(b, 21);
+  EXPECT_EQ(c, 31);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrUnorderedSet", TestPtrUnorderedSet);
-
-static void
-TestUniquePtrVector()
+TEST(IteratorWrapperTests, TestUniquePtrVector)
 {
   // Arrange
   std::vector<std::unique_ptr<int>> vector;
@@ -94,15 +85,12 @@ TestUniquePtrVector()
   }
 
   // Assert
-  assert(*vector[0] == 11);
-  assert(*vector[1] == 21);
-  assert(*vector[2] == 31);
+  EXPECT_EQ(*vector[0], 11);
+  EXPECT_EQ(*vector[1], 21);
+  EXPECT_EQ(*vector[2], 31);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestUniquePtrVector", TestUniquePtrVector);
-
-static void
-TestMapValuePtr()
+TEST(IteratorWrapperTests, TestMapValuePtr)
 {
   // Arrange
   std::unordered_map<size_t, std::unique_ptr<int>> map;
@@ -121,9 +109,7 @@ TestMapValuePtr()
   }
 
   // Assert
-  assert(*map[1] == 11);
-  assert(*map[2] == 21);
-  assert(*map[3] == 31);
+  EXPECT_EQ(*map[1], 11);
+  EXPECT_EQ(*map[2], 21);
+  EXPECT_EQ(*map[3], 31);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestMapValuePtr", TestMapValuePtr);
