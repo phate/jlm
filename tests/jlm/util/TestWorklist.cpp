@@ -3,105 +3,87 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
+#include <gtest/gtest.h>
 
-#include "tests/test-registry.hpp"
+#include <jlm/util/Worklist.hpp>
 
-#include "jlm/util/Worklist.hpp"
-
-#include <cassert>
-
-static void
-TestLifoWorklist()
+TEST(WorklistTests, TestLifoWorklist)
 {
   jlm::util::LifoWorklist<size_t> wl;
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_FALSE(wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
   wl.PushWorkItem(5);
 
-  assert(wl.HasMoreWorkItems());
+  EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  assert(item == 2);
+  EXPECT_EQ(item, 2);
 
   wl.PushWorkItem(7);
   item = wl.PopWorkItem();
-  assert(item == 7);
+  EXPECT_EQ(item, 7);
 
   item = wl.PopWorkItem();
-  assert(item == 5);
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_EQ(item, 5);
+  EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestWorklist-TestLifoWorklist",
-    TestLifoWorklist)
-
-static void
-TestFifoWorklist()
+TEST(WorklistTests, TestFifoWorklist)
 {
   jlm::util::FifoWorklist<size_t> wl;
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_FALSE(wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
   wl.PushWorkItem(5);
 
-  assert(wl.HasMoreWorkItems());
+  EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  assert(item == 5);
+  EXPECT_EQ(item, 5);
 
   wl.PushWorkItem(7);
 
   item = wl.PopWorkItem();
-  assert(item == 2);
+  EXPECT_EQ(item, 2);
 
   item = wl.PopWorkItem();
-  assert(item == 7);
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_EQ(item, 7);
+  EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestWorklist-TestFifoWorklist",
-    TestFifoWorklist)
-
-static void
-TestLrfWorklist()
+TEST(WorklistTests, TestLrfWorklist)
 {
   jlm::util::LrfWorklist<size_t> wl;
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_FALSE(wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
 
-  assert(wl.HasMoreWorkItems());
+  EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  assert(item == 5);
+  EXPECT_EQ(item, 5);
 
   wl.PushWorkItem(7);
   wl.PushWorkItem(5);
 
   item = wl.PopWorkItem();
-  assert(item == 7);
+  EXPECT_EQ(item, 7);
 
   wl.PushWorkItem(2);
   item = wl.PopWorkItem();
-  assert(item == 2);
+  EXPECT_EQ(item, 2);
 
   item = wl.PopWorkItem();
-  assert(item == 5);
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_EQ(item, 5);
+  EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestWorklist-TestLrfWorklist", TestLrfWorklist)
-
-static void
-TestTwoPhaseLrfWorklist()
+TEST(WorklistTests, TestTwoPhaseLrfWorklist)
 {
   jlm::util::TwoPhaseLrfWorklist<size_t> wl;
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_FALSE(wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
 
-  assert(wl.HasMoreWorkItems());
+  EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  assert(item == 5);
+  EXPECT_EQ(item, 5);
 
   // These items are both pushed to next
   wl.PushWorkItem(7);
@@ -109,40 +91,33 @@ TestTwoPhaseLrfWorklist()
 
   // Popping moves both items from next to current, and 7 has been fired least recently (never)
   item = wl.PopWorkItem();
-  assert(item == 7);
+  EXPECT_EQ(item, 7);
 
   // Pushing 2 goes to next
   wl.PushWorkItem(2);
   // We still pop 5, since 5 is on the current list, despite 2 being less recently fired
   item = wl.PopWorkItem();
-  assert(item == 5);
+  EXPECT_EQ(item, 5);
 
   item = wl.PopWorkItem();
-  assert(item == 2);
-  assert(!wl.HasMoreWorkItems());
+  EXPECT_EQ(item, 2);
+  EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestWorklist-TestTwoPhaseLrfWorklist",
-    TestTwoPhaseLrfWorklist)
-
-static void
-TestWorkset()
+TEST(WorklistTests, TestWorkset)
 {
   jlm::util::Workset<size_t> ws;
-  assert(!ws.HasMoreWorkItems());
-  assert(!ws.HasWorkItem(7));
+  EXPECT_FALSE(ws.HasMoreWorkItems());
+  EXPECT_FALSE(ws.HasWorkItem(7));
   ws.PushWorkItem(7);
-  assert(ws.HasMoreWorkItems());
-  assert(ws.HasWorkItem(7));
+  EXPECT_TRUE(ws.HasMoreWorkItems());
+  EXPECT_TRUE(ws.HasWorkItem(7));
   ws.PushWorkItem(5);
-  assert(ws.HasWorkItem(5));
-  assert(ws.HasWorkItem(7));
+  EXPECT_TRUE(ws.HasWorkItem(5));
+  EXPECT_TRUE(ws.HasWorkItem(7));
   ws.RemoveWorkItem(7);
-  assert(!ws.HasWorkItem(7));
-  assert(ws.HasWorkItem(5));
+  EXPECT_FALSE(ws.HasWorkItem(7));
+  EXPECT_TRUE(ws.HasWorkItem(5));
   ws.RemoveWorkItem(5);
-  assert(!ws.HasMoreWorkItems());
+  EXPECT_FALSE(ws.HasMoreWorkItems());
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestWorklist-TestWorkset", TestWorkset)

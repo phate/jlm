@@ -3,110 +3,107 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <cassert>
 #include <string>
 
-static void
-TestBijectiveMapConstructors()
+TEST(BijectiveMapTests, TestBijectiveMapConstructors)
 {
   using namespace jlm::util;
 
   const BijectiveMap<int, std::string> emptyBiMap;
-  assert(emptyBiMap.Size() == 0);
+  EXPECT_EQ(emptyBiMap.Size(), 0);
 
   // Construct from iterator range
   std::unordered_map<int, std::string> unordMap = { { 10, "Ten" }, { 20, "Twenty" } };
   BijectiveMap<int, std::string> rangeBiMap(unordMap.begin(), unordMap.end());
-  assert(rangeBiMap.Size() == 2);
+  EXPECT_EQ(rangeBiMap.Size(), 2);
 
   // Make the unordered map illegal
   unordMap[30] = "Twenty";
-  JLM_ASSERT_THROWS(BijectiveMap<int, std::string> biMap(unordMap.begin(), unordMap.end()));
+  EXPECT_THROW(
+      (BijectiveMap<int, std::string>{ unordMap.begin(), unordMap.end() }),
+      jlm::util::Error);
 
   // Construct from initializer list
   BijectiveMap<int, std::string> biMap = { { 10, "Ten" }, { 20, "Twenty" } };
   assert(biMap.Size() == 2);
 
   // Construct from illegal initalizer list
-  JLM_ASSERT_THROWS(BijectiveMap<int, std::string>{ { 10, "Ten" }, { 10, "Twenty" } });
+  EXPECT_THROW(
+      (BijectiveMap<int, std::string>{ { 10, "Ten" }, { 10, "Twenty" } }),
+      jlm::util::Error);
 
   // Copy ctor
   BijectiveMap biMap2(biMap);
-  assert(biMap2 == biMap);
+  EXPECT_EQ(biMap2, biMap);
 
   biMap2.Insert(30, "Thirty");
-  assert(biMap2.Size() == 3);
-  assert(biMap2 != biMap);
+  EXPECT_EQ(biMap2.Size(), 3);
+  EXPECT_NE(biMap2, biMap);
 
   // Move ctor
   BijectiveMap biMap3(std::move(biMap));
-  assert(biMap3.Size() == 2);
+  EXPECT_EQ(biMap3.Size(), 2);
   // All of biMap's content has been stolen
-  assert(biMap.Size() == 0);
+  EXPECT_EQ(biMap.Size(), 0);
 
   // copy assignment
   biMap2 = biMap3;
-  assert(biMap2.Size() == 2 && biMap2 == biMap3);
+  EXPECT_EQ(biMap2.Size(), 2);
+  EXPECT_EQ(biMap2, biMap3);
 
   // move assignment
   biMap = std::move(biMap3);
-  assert(biMap.Size() == 2 && biMap == biMap2);
-  assert(biMap3.Size() == 0);
+  EXPECT_EQ(biMap.Size(), 2);
+  EXPECT_EQ(biMap, biMap2);
+  EXPECT_EQ(biMap3.Size(), 0);
 
-  assert(biMap.LookupKey(10) == "Ten");
-  assert(biMap.LookupKey(20) == "Twenty");
-  assert(biMap.LookupValue("Ten") == 10);
-  assert(biMap.LookupValue("Twenty") == 20);
+  EXPECT_EQ(biMap.LookupKey(10), "Ten");
+  EXPECT_EQ(biMap.LookupKey(20), "Twenty");
+  EXPECT_EQ(biMap.LookupValue("Ten"), 10);
+  EXPECT_EQ(biMap.LookupValue("Twenty"), 20);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestBijectiveMap-TestBijectiveMapConstructors",
-    TestBijectiveMapConstructors)
-
-static void
-TestBijectiveMapClear()
+TEST(BijectiveMapTests, TestBijectiveMapClear)
 {
   using namespace jlm::util;
 
   BijectiveMap<int, int> squares;
   squares.Insert(5, 25);
   squares.Insert(6, 36);
-  assert(squares.Size() == 2);
+  EXPECT_EQ(squares.Size(), 2);
   squares.Clear();
-  assert(squares.Size() == 0);
+  EXPECT_EQ(squares.Size(), 0);
   squares.Insert(5, 25);
-  assert(squares.Size() == 1);
+  EXPECT_EQ(squares.Size(), 1);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapClear", TestBijectiveMapClear)
-
-static void
-TestBijectiveMapInsert()
+TEST(BijectiveMapTests, TestBijectiveMapInsert)
 {
   using namespace jlm::util;
 
   BijectiveMap<int, int> squares;
   bool inserted = squares.Insert(5, 25);
-  assert(inserted && squares.Size() == 1 && squares.HasKey(5) && squares.HasValue(25));
+  EXPECT_EQ(inserted && squares.Size(), 1);
+  EXPECT_TRUE(squares.HasKey(5));
+  EXPECT_TRUE(squares.HasValue(25));
   inserted = squares.Insert(5, 45);
-  assert(!inserted && squares.Size() == 1 && !squares.HasValue(45));
+  EXPECT_FALSE(inserted);
+  EXPECT_EQ(squares.Size(), 1);
+  EXPECT_FALSE(squares.HasValue(45));
 
-  JLM_ASSERT_THROWS(squares.InsertOrThrow(6, 25));
-  JLM_ASSERT_THROWS(squares.InsertOrThrow(5, 36));
+  EXPECT_THROW(squares.InsertOrThrow(6, 25), jlm::util::Error);
+  EXPECT_THROW(squares.InsertOrThrow(5, 36), jlm::util::Error);
 
   inserted = squares.Insert(6, 36);
-  assert(inserted && squares.Size() == 2);
+  EXPECT_TRUE(inserted);
+  EXPECT_EQ(squares.Size(), 2);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapInsert", TestBijectiveMapInsert)
-
-static void
-TestBijectiveMapInsertPairs()
+TEST(BijectiveMapTests, TestBijectiveMapInsertPairs)
 {
   using namespace jlm::util;
 
@@ -122,37 +119,30 @@ TestBijectiveMapInsertPairs()
   biMap2.Insert(10, "ten");
 
   const auto inserted = biMap.InsertPairs(biMap2.begin(), biMap2.end());
-  assert(inserted == 2);
-  assert(biMap.Size() == 5);
-  assert(!biMap.HasKey(100) && !biMap.HasValue("fire"));
-  assert(biMap.LookupKey(9) == "nine");
-  assert(biMap.LookupValue("ten") == 10);
+  EXPECT_EQ(inserted, 2);
+  EXPECT_EQ(biMap.Size(), 5);
+  EXPECT_FALSE(biMap.HasKey(100));
+  EXPECT_FALSE(biMap.HasValue("fire"));
+  EXPECT_EQ(biMap.LookupKey(9), "nine");
+  EXPECT_EQ(biMap.LookupValue("ten"), 10);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestBijectiveMap-TestBijectiveMapInsertPairs",
-    TestBijectiveMapInsertPairs)
-
-static void
-TestBijectiveMapLookup()
+TEST(BijectiveMapTests, TestBijectiveMapLookup)
 {
   using namespace jlm::util;
   BijectiveMap<int, std::string> biMap({ { 1, "one" } });
   biMap.Insert(2, "two");
 
-  assert(biMap.LookupKey(1) == "one");
-  assert(biMap.LookupKey(2) == "two");
-  assert(biMap.LookupValue("one") == 1);
-  assert(biMap.LookupValue("two") == 2);
+  EXPECT_EQ(biMap.LookupKey(1), "one");
+  EXPECT_EQ(biMap.LookupKey(2), "two");
+  EXPECT_EQ(biMap.LookupValue("one"), 1);
+  EXPECT_EQ(biMap.LookupValue("two"), 2);
 
-  JLM_ASSERT_THROWS((void)biMap.LookupKey(3));
-  JLM_ASSERT_THROWS((void)biMap.LookupValue("three"));
+  EXPECT_THROW((void)biMap.LookupKey(3), jlm::util::Error);
+  EXPECT_THROW((void)biMap.LookupValue("three"), jlm::util::Error);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapLookup", TestBijectiveMapLookup)
-
-static void
-TestBijectiveMapIterators()
+TEST(BijectiveMapTests, TestBijectiveMapIterators)
 {
   using namespace jlm::util;
   BijectiveMap<int, std::string> biMap({
@@ -169,27 +159,23 @@ TestBijectiveMapIterators()
     switch (key)
     {
     case 1:
-      assert(value == "one");
+      EXPECT_EQ(value, "one");
       break;
     case 2:
-      assert(value == "two");
+      EXPECT_EQ(value, "two");
       break;
     case 3:
-      assert(value == "three");
+      EXPECT_EQ(value, "three");
       break;
     default:
-      assert(false && "unreachable");
+      FAIL() << "unreachable";
     }
   }
-  assert(count == 3 && sum == 6);
+  EXPECT_EQ(count, 3);
+  EXPECT_EQ(sum, 6);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestBijectiveMap-TestBijectiveMapIterators",
-    TestBijectiveMapIterators)
-
-static void
-TestBijectiveMapErase()
+TEST(BijectiveMapTests, TestBijectiveMapErase)
 {
   using namespace jlm::util;
   BijectiveMap<int, std::string> biMap({
@@ -208,33 +194,33 @@ TestBijectiveMapErase()
   assert(fourth == biMap.end());
 
   const auto afterErased = biMap.Erase(second);
-  assert(afterErased == third);
-  assert(afterErased == std::next(first));
-  assert(biMap.Size() == 2);
+  EXPECT_EQ(afterErased, third);
+  EXPECT_EQ(afterErased, std::next(first));
+  EXPECT_EQ(biMap.Size(), 2);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapErase", TestBijectiveMapErase)
-
-static void
-TestBijectiveMapRemoves()
+TEST(BijectiveMapTests, TestBijectiveMapRemoves)
 {
   using namespace jlm::util;
   BijectiveMap<int, std::string> biMap({ { 1, "one" }, { 2, "two" }, { 3, "three" } });
   bool removed = biMap.RemoveKey(1);
-  assert(removed && !biMap.HasKey(1) && !biMap.HasValue("one") && biMap.Size() == 2);
+  EXPECT_TRUE(removed);
+  EXPECT_FALSE(biMap.HasKey(1));
+  EXPECT_FALSE(biMap.HasValue("one"));
+  EXPECT_EQ(biMap.Size(), 2);
   removed = biMap.RemoveValue("two");
-  assert(removed && !biMap.HasKey(2) && !biMap.HasValue("two") && biMap.Size() == 1);
+  EXPECT_TRUE(removed);
+  EXPECT_FALSE(biMap.HasKey(2));
+  EXPECT_FALSE(biMap.HasValue("two"));
+  EXPECT_EQ(biMap.Size(), 1);
 
   removed = biMap.RemoveKey(6);
-  assert(!removed);
+  EXPECT_FALSE(removed);
   removed = biMap.RemoveValue("five");
-  assert(!removed);
+  EXPECT_FALSE(removed);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap-TestBijectiveMapRemoves", TestBijectiveMapRemoves)
-
-static void
-TestBijectiveMapRemoveWhere()
+TEST(BijectiveMapTests, TestBijectiveMapRemoveWhere)
 {
   using namespace jlm::util;
   BijectiveMap<int, std::string> biMap({ { 1, "one" },
@@ -251,11 +237,12 @@ TestBijectiveMapRemoveWhere()
     return key < 4 || value == "eight";
   };
   auto removed = biMap.RemoveWhere(KVPredicate);
-  assert(removed == 4);
-  assert(!biMap.HasKey(8) && !biMap.HasValue("three"));
+  EXPECT_EQ(removed, 4);
+  EXPECT_FALSE(biMap.HasKey(8));
+  EXPECT_FALSE(biMap.HasValue("three"));
 
   removed = biMap.RemoveWhere(KVPredicate);
-  assert(removed == 0);
+  EXPECT_EQ(removed, 0);
 
   // Removes 5 and 7
   removed = biMap.RemoveKeysWhere(
@@ -263,8 +250,9 @@ TestBijectiveMapRemoveWhere()
       {
         return key % 2 == 1;
       });
-  assert(removed == 2);
-  assert(!biMap.HasKey(5) && !biMap.HasValue("seven"));
+  EXPECT_EQ(removed, 2);
+  EXPECT_FALSE(biMap.HasKey(5));
+  EXPECT_FALSE(biMap.HasValue("seven"));
 
   // Removes 5 and 7
   removed = biMap.RemoveValuesWhere(
@@ -272,11 +260,8 @@ TestBijectiveMapRemoveWhere()
       {
         return value.size() > 3;
       });
-  assert(removed == 1);
-  assert(!biMap.HasKey(4));
-  assert(biMap.Size() == 1 && biMap.HasValue("six"));
+  EXPECT_EQ(removed, 1);
+  EXPECT_TRUE(!biMap.HasKey(4));
+  EXPECT_EQ(biMap.Size(), 1);
+  EXPECT_TRUE(biMap.HasValue("six"));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestBijectiveMap-TestBijectiveMapRemoveWhere",
-    TestBijectiveMapRemoveWhere)
