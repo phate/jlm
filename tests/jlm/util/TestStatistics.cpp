@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/Statistics.hpp>
 
 #include <atomic>
 #include <fstream>
 #include <memory>
-#include <sstream>
 
 class MyTestStatistics final : public jlm::util::Statistics
 {
@@ -36,8 +35,7 @@ public:
   }
 };
 
-void
-TestStatisticsMeasurements()
+TEST(StatisticsTests, TestStatisticsMeasurements)
 {
   using namespace jlm::util;
 
@@ -52,43 +50,38 @@ TestStatisticsMeasurements()
   statistics.Stop(-400, "poor");
 
   // Assert
-  assert(statistics.GetId() == Statistics::Id::Aggregation);
-  assert(statistics.GetSourceFile() == path);
+  EXPECT_EQ(statistics.GetId(), Statistics::Id::Aggregation);
+  EXPECT_EQ(statistics.GetSourceFile(), path);
 
-  assert(statistics.HasMeasurement("count"));
-  assert(!statistics.HasMeasurement("height"));
-  assert(statistics.HasTimer("Timer"));
-  assert(!statistics.HasTimer("SpinLockTimer"));
+  EXPECT_TRUE(statistics.HasMeasurement("count"));
+  EXPECT_FALSE(statistics.HasMeasurement("height"));
+  EXPECT_TRUE(statistics.HasTimer("Timer"));
+  EXPECT_FALSE(statistics.HasTimer("SpinLockTimer"));
 
-  assert(statistics.GetMeasurementValue<uint64_t>("count") == 10);
-  assert(statistics.GetMeasurementValue<double>("weight") == 6.0);
-  assert(statistics.GetMeasurementValue<int64_t>("bankAccount") == -400);
-  assert(statistics.GetMeasurementValue<std::string>("state") == "poor");
-  assert(statistics.GetTimerElapsedNanoseconds("Timer") > 0);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("count"), 10);
+  EXPECT_EQ(statistics.GetMeasurementValue<double>("weight"), 6.0);
+  EXPECT_EQ(statistics.GetMeasurementValue<int64_t>("bankAccount"), -400);
+  EXPECT_EQ(statistics.GetMeasurementValue<std::string>("state"), "poor");
+  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("Timer"), 0);
 
   // Ensure order is preserved
   auto measurements = statistics.GetMeasurements();
   auto it = measurements.begin();
-  assert(it->first == "count");
+  EXPECT_EQ(it->first, "count");
   it++;
-  assert(it->first == "weight");
+  EXPECT_EQ(it->first, "weight");
   it++;
-  assert(it->first == "bankAccount");
+  EXPECT_EQ(it->first, "bankAccount");
   it++;
-  assert(it->first == "state");
+  EXPECT_EQ(it->first, "state");
   it++;
-  assert(it == measurements.end());
+  EXPECT_EQ(it, measurements.end());
 
   auto timers = statistics.GetTimers();
-  assert(timers.begin()->first == "Timer");
+  EXPECT_EQ(timers.begin()->first, "Timer");
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestStatistics-TestStatisticsMeasurements",
-    TestStatisticsMeasurements)
-
-void
-TestStatisticsCollection()
+TEST(StatisticsTests, TestStatisticsCollection)
 {
   using namespace jlm::util;
 
@@ -110,17 +103,14 @@ TestStatisticsCollection()
   auto numCollectedStatistics =
       std::distance(collector.CollectedStatistics().begin(), collector.CollectedStatistics().end());
 
-  assert(numCollectedStatistics == 1);
+  EXPECT_EQ(numCollectedStatistics, 1);
   for (auto & statistic : collector.CollectedStatistics())
   {
-    assert(statistic.GetId() == Statistics::Id::Aggregation);
+    EXPECT_EQ(statistic.GetId(), Statistics::Id::Aggregation);
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsCollection", TestStatisticsCollection)
-
-void
-TestStatisticsPrinting()
+TEST(StatisticsTests, TestStatisticsPrinting)
 {
   using namespace jlm::util;
 
@@ -129,7 +119,7 @@ TestStatisticsPrinting()
 
   // Remove the output dir if it was not properly cleaned up last time
   std::filesystem::remove(testOutputDir.to_str());
-  assert(!testOutputDir.Exists());
+  EXPECT_FALSE(testOutputDir.Exists());
 
   StatisticsCollectorSettings settings(
       { Statistics::Id::Aggregation },
@@ -150,25 +140,22 @@ TestStatisticsPrinting()
   collector.PrintStatistics();
 
   // Assert
-  assert(testOutputDir.IsDirectory());
+  EXPECT_TRUE(testOutputDir.IsDirectory());
 
   const auto outputFileName = "test-module-" + settings.GetUniqueString() + "-statistics.log";
   std::ifstream file(testOutputDir.Join(outputFileName).to_str());
   std::string name, fileName, measurement;
   file >> name >> fileName >> measurement;
 
-  assert(name == "Aggregation");
-  assert(fileName == path.to_str());
-  assert(measurement == "count:10");
+  EXPECT_EQ(name, "Aggregation");
+  EXPECT_EQ(fileName, path.to_str());
+  EXPECT_EQ(measurement, "count:10");
 
   // Cleanup
   std::filesystem::remove_all(testOutputDir.to_str());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsPrinting", TestStatisticsPrinting)
-
-void
-TestCreateOutputFile()
+TEST(StatisticsTests, TestCreateOutputFile)
 {
   using namespace jlm::util;
 
@@ -190,13 +177,11 @@ TestCreateOutputFile()
   const auto nice1 = collector.createOutputFile("nice.txt", true);
 
   // Assert
-  assert(statsFile.path() == "/tmp/test-module-ABC-stats.log");
+  EXPECT_EQ(statsFile.path(), "/tmp/test-module-ABC-stats.log");
 
-  assert(cool0.path() == "/tmp/test-module-ABC-cool-0");
-  assert(cool1.path() == "/tmp/test-module-ABC-cool-1");
+  EXPECT_EQ(cool0.path(), "/tmp/test-module-ABC-cool-0");
+  EXPECT_EQ(cool1.path(), "/tmp/test-module-ABC-cool-1");
 
-  assert(nice0.path() == "/tmp/test-module-ABC-nice-0.txt");
-  assert(nice1.path() == "/tmp/test-module-ABC-nice-1.txt");
+  EXPECT_EQ(nice0.path(), "/tmp/test-module-ABC-nice-0.txt");
+  EXPECT_EQ(nice1.path(), "/tmp/test-module-ABC-nice-1.txt");
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestCreateOutputFile", TestCreateOutputFile)
