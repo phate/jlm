@@ -27,7 +27,6 @@ libutil_HEADERS = \
     jlm/util/Worklist.hpp \
 
 libutil_TESTS += \
-    tests/jlm/util/test-intrusive-hash \
     tests/jlm/util/test-intrusive-list \
     tests/jlm/util/TestBijectiveMap \
     tests/jlm/util/TestFile \
@@ -64,3 +63,7 @@ $(eval $(call common_test,tests/jlm/util/ProgramTests))
 tests/jlm/util/test-disjointset_SOURCES = tests/jlm/util/test-disjointset.cpp
 tests/jlm/util/test-disjointset_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/util/test-disjointset))
+
+tests/jlm/util/test-intrusive-hash_SOURCES = tests/jlm/util/test-intrusive-hash.cpp
+tests/jlm/util/test-intrusive-hash_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/util/test-intrusive-hash))

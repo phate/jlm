@@ -3,11 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/util/intrusive-hash.hpp>
-
-#include <cassert>
 
 struct MyItem
 {
@@ -82,29 +80,28 @@ struct MyStringItem
 
 typedef jlm::util::IntrusiveHash<std::string, MyStringItem, MyStringItem::hash_accessor> my_strhash;
 
-static void
-test_int_hash()
+TEST(IntrusiveHashTests, test_int_hash)
 {
   my_hash m;
 
-  assert(m.find(42) == m.end());
+  EXPECT_EQ(m.find(42), m.end());
 
   MyItem i1 = { 42, 0 };
   m.insert(&i1);
-  assert(&*m.find(42) == &i1);
+  EXPECT_EQ(&*m.find(42), &i1);
 
   MyItem i2 = { 10, 0 };
   m.insert(&i2);
 
   m.erase(&i1);
-  assert(m.find(42) == m.end());
+  EXPECT_EQ(m.find(42), m.end());
   m.insert(&i1);
-  assert(&*m.find(42) == &i1);
+  EXPECT_EQ(&*m.find(42), &i1);
 
   int seen_i1 = 0, seen_i2 = 0;
   for (const MyItem & i : m)
   {
-    assert((&i == &i1) || (&i == &i2));
+    EXPECT_TRUE((&i == &i1) || (&i == &i2));
     if (&i == &i1)
     {
       ++seen_i1;
@@ -114,35 +111,32 @@ test_int_hash()
       ++seen_i2;
     }
   }
-  assert(seen_i1 == 1);
-  assert(seen_i2 == 1);
+  EXPECT_EQ(seen_i1, 1);
+  EXPECT_EQ(seen_i2, 1);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash-test_int_hash", test_int_hash)
-
-static void
-test_str_hash()
+TEST(IntrusiveHashTests, test_str_hash)
 {
   my_strhash m;
 
-  assert(m.find("42") == m.end());
+  EXPECT_EQ(m.find("42"), m.end());
 
   MyStringItem i1 = { "42", "0" };
   m.insert(&i1);
-  assert(&*m.find("42") == &i1);
+  EXPECT_EQ(&*m.find("42"), &i1);
 
   MyStringItem i2 = { "10", "0" };
   m.insert(&i2);
 
   m.erase(&i1);
-  assert(m.find("42") == m.end());
+  EXPECT_EQ(m.find("42"), m.end());
   m.insert(&i1);
-  assert(&*m.find("42") == &i1);
+  EXPECT_EQ(&*m.find("42"), &i1);
 
   int seen_i1 = 0, seen_i2 = 0;
   for (const MyStringItem & i : m)
   {
-    assert((&i == &i1) || (&i == &i2));
+    EXPECT_TRUE((&i == &i1) || (&i == &i2));
     if (&i == &i1)
     {
       ++seen_i1;
@@ -152,8 +146,6 @@ test_str_hash()
       ++seen_i2;
     }
   }
-  assert(seen_i1 == 1);
-  assert(seen_i2 == 1);
+  EXPECT_EQ(seen_i1, 1);
+  EXPECT_EQ(seen_i2, 1);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash-test_str_hash", test_str_hash)
