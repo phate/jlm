@@ -4,24 +4,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/file.hpp>
 
-#include <cassert>
 #include <vector>
 
-static void
-TestFilePathMethods()
+TEST(FileTests, TestFilePathMethods)
 {
   const jlm::util::FilePath f("/tmp/archive.tar.gz");
 
-  assert(f.to_str() == "/tmp/archive.tar.gz");
-  assert(f.name() == "archive.tar.gz");
-  assert(f.base() == "archive");
-  assert(f.suffix() == "gz");
-  assert(f.complete_suffix() == "tar.gz");
-  assert(f.Dirname() == "/tmp");
+  EXPECT_EQ(f.to_str(), "/tmp/archive.tar.gz");
+  EXPECT_EQ(f.name(), "archive.tar.gz");
+  EXPECT_EQ(f.base(), "archive");
+  EXPECT_EQ(f.suffix(), "gz");
+  EXPECT_EQ(f.complete_suffix(), "tar.gz");
+  EXPECT_EQ(f.Dirname(), "/tmp");
 
   std::vector<std::pair<std::string, std::string>> pathPairs = { { "/tmp/jlm/", "/tmp" },
                                                                  { "/tmp/jlm", "/tmp" },
@@ -37,49 +35,37 @@ TestFilePathMethods()
   for (const auto & [fullPath, path] : pathPairs)
   {
     const auto result = jlm::util::FilePath(fullPath).Dirname();
-    assert(result == path);
+    EXPECT_EQ(result, path);
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilePathMethods", TestFilePathMethods)
-
-static void
-TestCreateDirectory()
+TEST(FileTests, TestCreateDirectory)
 {
   const auto filePath = jlm::util::FilePath::TempDirectoryPath().Join("jlm-test-create-dir");
 
   // Remove the directory if it survived from a previous test
   if (filePath.Exists())
     std::filesystem::remove(filePath.to_str());
-  assert(!filePath.Exists());
+  EXPECT_FALSE(filePath.Exists());
 
   // Act
   filePath.CreateDirectory();
 
   // Assert that the directory now exists
-  assert(filePath.Exists() && filePath.IsDirectory());
+  EXPECT_TRUE(filePath.Exists() && filePath.IsDirectory());
 
   // Try creating a directory that already exists, should be no issue
   filePath.CreateDirectory();
 
   // Try creating a directory in a location that does not exist
-  try
-  {
-    jlm::util::FilePath noSuchParent("/non-existant/test-dir");
-    noSuchParent.CreateDirectory();
-    assert(false);
-  }
-  catch (...)
-  {}
+  jlm::util::FilePath noSuchParent("/non-existant/test-dir");
+  EXPECT_THROW(noSuchParent.CreateDirectory(), jlm::util::Error);
 
   // Cleanup
   std::filesystem::remove(filePath.to_str());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateDirectory", TestCreateDirectory)
-
-static void
-TestFilepathJoin()
+TEST(FileTests, TestFilepathJoin)
 {
   const jlm::util::FilePath path1("tmp");
   const jlm::util::FilePath path2("a/b/");
@@ -87,24 +73,21 @@ TestFilepathJoin()
   const jlm::util::FilePath path4(".");
   const jlm::util::FilePath emptyPath("");
 
-  assert(path1.Join(path2).to_str() == "tmp/a/b/");
-  assert(path2.Join(path1).to_str() == "a/b/tmp");
+  EXPECT_EQ(path1.Join(path2).to_str(), "tmp/a/b/");
+  EXPECT_EQ(path2.Join(path1).to_str(), "a/b/tmp");
 
-  assert(path1.Join(path3).to_str() == "/c/d");
-  assert(path3.Join(path1).to_str() == "/c/d/tmp");
+  EXPECT_EQ(path1.Join(path3).to_str(), "/c/d");
+  EXPECT_EQ(path3.Join(path1).to_str(), "/c/d/tmp");
 
-  assert(path4.Join(path1).to_str() == "tmp");
-  assert(path4.Join(path2).to_str() == "a/b/");
-  assert(path1.Join(path4).to_str() == "tmp/.");
-  assert(path2.Join(path4).to_str() == "a/b/.");
+  EXPECT_EQ(path4.Join(path1).to_str(), "tmp");
+  EXPECT_EQ(path4.Join(path2).to_str(), "a/b/");
+  EXPECT_EQ(path1.Join(path4).to_str(), "tmp/.");
+  EXPECT_EQ(path2.Join(path4).to_str(), "a/b/.");
 
-  assert(emptyPath.Join(path1).to_str() == "tmp");
+  EXPECT_EQ(emptyPath.Join(path1).to_str(), "tmp");
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilepathJoin", TestFilepathJoin)
-
-static void
-TestCreateUniqueFileName()
+TEST(FileTests, TestCreateUniqueFileName)
 {
   // Arrange
   auto randomString = jlm::util::CreateRandomAlphanumericString(6);
@@ -114,7 +97,5 @@ TestCreateUniqueFileName()
   auto filePath = jlm::util::FilePath::createUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
 
   // Assert
-  assert(filePath.Dirname() == tmpDirectory.to_str());
+  EXPECT_EQ(filePath.Dirname(), tmpDirectory.to_str());
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateUniqueFileName", TestCreateUniqueFileName)

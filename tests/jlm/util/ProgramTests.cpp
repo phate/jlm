@@ -3,22 +3,19 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/Program.hpp>
 
 #include <cassert>
 
-static void
-testExecuteProgramAndWait()
+TEST(ProgramTests, testExecuteProgramAndWait)
 {
   using namespace jlm::util;
 
   {
     const auto status =
         executeProgramAndWait("ls", { std::filesystem::temp_directory_path().string() });
-    assert(status == EXIT_SUCCESS);
+    EXPECT_EQ(status, EXIT_SUCCESS);
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/ProgramTests-testExecuteProgramAndWait", testExecuteProgramAndWait)

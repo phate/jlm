@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/GraphWriter.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <cassert>
 #include <sstream>
 
 static bool
@@ -17,8 +16,7 @@ StringContains(const std::string & haystack, const std::string & needle)
   return haystack.find(needle) != std::string::npos;
 }
 
-static void
-TestGraphElement()
+TEST(GraphWriterTests, TestGraphElement)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -27,22 +25,22 @@ TestGraphElement()
 
   // Test labels
   graph.SetLabel("Test");
-  assert(graph.GetLabel() == "Test");
-  assert(graph.HasLabel());
+  EXPECT_EQ(graph.GetLabel(), "Test");
+  EXPECT_TRUE(graph.HasLabel());
   graph.SetLabel("");
-  assert(!graph.HasLabel());
-  assert(graph.GetLabelOr("default") == std::string("default"));
+  EXPECT_FALSE(graph.HasLabel());
+  EXPECT_EQ(graph.GetLabelOr("default"), std::string("default"));
 
   // Test label appending
   graph.AppendToLabel("Text");
-  assert(graph.GetLabel() == "Text");
+  EXPECT_EQ(graph.GetLabel(), "Text");
   graph.AppendToLabel("Text2", "\n");
-  assert(graph.GetLabel() == "Text\nText2");
+  EXPECT_EQ(graph.GetLabel(), "Text\nText2");
 
   // Test assigning a program object to a graph element
   int myInt = 0;
   graph.SetProgramObject(myInt);
-  assert(graph.GetProgramObject() == reinterpret_cast<uintptr_t>(&myInt));
+  EXPECT_EQ(graph.GetProgramObject(), reinterpret_cast<uintptr_t>(&myInt));
 
   // Set attributes
   graph.SetAttribute("color", "\"dark\nbrown\"");
@@ -51,47 +49,44 @@ TestGraphElement()
   graph.SetAttributeObject("another graph", myInt);
 
   // Check getting attributes
-  assert(graph.HasAttribute("taste"));
-  assert(graph.GetAttributeString("taste") == "sweet");
-  assert(!graph.GetAttributeString("not-an-attribute"));
-  assert(graph.GetAttributeGraphElement("graph") == &graph);
-  assert(graph.GetAttributeObject("another graph") == reinterpret_cast<uintptr_t>(&myInt));
+  EXPECT_TRUE(graph.HasAttribute("taste"));
+  EXPECT_EQ(graph.GetAttributeString("taste"), "sweet");
+  EXPECT_FALSE(graph.GetAttributeString("not-an-attribute"));
+  EXPECT_EQ(graph.GetAttributeGraphElement("graph"), &graph);
+  EXPECT_EQ(graph.GetAttributeObject("another graph"), reinterpret_cast<uintptr_t>(&myInt));
   // Also check that one can get GraphElements based on the program object they represent
-  assert(graph.GetAttributeGraphElement("another graph") == &graph);
+  EXPECT_EQ(graph.GetAttributeGraphElement("another graph"), &graph);
 
   // Test removing attributes
-  assert(graph.RemoveAttribute("taste"));
-  assert(!graph.HasAttribute("taste"));
+  EXPECT_TRUE(graph.RemoveAttribute("taste"));
+  EXPECT_FALSE(graph.HasAttribute("taste"));
   // Removing the attribute again returns false
-  assert(!graph.RemoveAttribute("taste"));
+  EXPECT_FALSE(graph.RemoveAttribute("taste"));
 
   // Finalizing and getting a unique id
-  assert(!graph.IsFinalized());
+  EXPECT_FALSE(graph.IsFinalized());
   graph.Finalize();
-  assert(graph.IsFinalized());
-  assert(graph.GetUniqueIdSuffix() == 0);
-  assert(graph.GetFullId() == "graph0");
+  EXPECT_TRUE(graph.IsFinalized());
+  EXPECT_EQ(graph.GetUniqueIdSuffix(), 0);
+  EXPECT_EQ(graph.GetFullId(), "graph0");
 
   // Attribute printing
   std::ostringstream out;
   graph.OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   auto attributes = out.str();
-  assert(StringContains(attributes, "color=\"\\\"dark\\nbrown\\\"\""));
-  assert(StringContains(attributes, "graph=graph0"));
-  assert(StringContains(attributes, "\"another graph\"=graph0"));
+  EXPECT_TRUE(StringContains(attributes, "color=\"\\\"dark\\nbrown\\\"\""));
+  EXPECT_TRUE(StringContains(attributes, "graph=graph0"));
+  EXPECT_TRUE(StringContains(attributes, "\"another graph\"=graph0"));
 
   // Also test HTML attribute escaping
   out = std::ostringstream();
   graph.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
   attributes = out.str();
-  assert(StringContains(attributes, "color=\"&quot;dark\nbrown&quot;\""));
-  assert(StringContains(attributes, "another-graph=\"graph0\""));
+  EXPECT_TRUE(StringContains(attributes, "color=\"&quot;dark\nbrown&quot;\""));
+  EXPECT_TRUE(StringContains(attributes, "another-graph=\"graph0\""));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphElement", TestGraphElement)
-
-static void
-TestNode()
+TEST(GraphWriterTests, TestNode)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -99,32 +94,29 @@ TestNode()
   auto & graph = writer.CreateGraph();
 
   auto & node = graph.CreateNode();
-  assert(&node.GetNode() == &node);
-  assert(&node.GetGraph() == &graph);
+  EXPECT_EQ(&node.GetNode(), &node);
+  EXPECT_EQ(&node.GetGraph(), &graph);
 
   node.SetLabel("MyNode");
 
   node.SetShape(Node::Shape::Rectangle);
-  assert(node.HasAttribute("shape"));
+  EXPECT_TRUE(node.HasAttribute("shape"));
 
   node.Finalize();
 
   std::ostringstream out;
   node.Output(out, OutputFormat::ASCII, 0);
   auto string = out.str();
-  assert(StringContains(string, "MyNode"));
+  EXPECT_TRUE(StringContains(string, "MyNode"));
 
   std::ostringstream out2;
   node.Output(out2, OutputFormat::Dot, 0);
   auto string2 = out2.str();
-  assert(StringContains(string2, "label=MyNode"));
-  assert(StringContains(string2, "shape=rect"));
+  EXPECT_TRUE(StringContains(string2, "label=MyNode"));
+  EXPECT_TRUE(StringContains(string2, "shape=rect"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestNode", TestNode)
-
-static void
-TestASCIIEdges()
+TEST(GraphWriterTests, TestASCIIEdges)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -151,15 +143,12 @@ TestASCIIEdges()
   node2.Output(out, OutputFormat::ASCII, 0);
 
   auto string = out.str();
-  assert(StringContains(string, "node0:NODE0"));
-  assert(StringContains(string, "node1:NODE1<-node0"));
-  assert(StringContains(string, "NODE2<-[node0, node1]"));
+  EXPECT_TRUE(StringContains(string, "node0:NODE0"));
+  EXPECT_TRUE(StringContains(string, "node1:NODE1<-node0"));
+  EXPECT_TRUE(StringContains(string, "NODE2<-[node0, node1]"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestASCIIEdges", TestASCIIEdges)
-
-static void
-TestInOutNode()
+TEST(GraphWriterTests, TestInOutNode)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -167,8 +156,8 @@ TestInOutNode()
   auto & graph = writer.CreateGraph();
 
   auto & node = graph.CreateInOutNode(2, 3);
-  assert(node.NumInputPorts() == 2);
-  assert(node.NumOutputPorts() == 3);
+  EXPECT_EQ(node.NumInputPorts(), 2);
+  EXPECT_EQ(node.NumOutputPorts(), 3);
 
   node.SetLabel("My\nInOutNode");
 
@@ -176,8 +165,8 @@ TestInOutNode()
 
   // Also test subgraphs, and connecting argument nodes and result nodes to outside ports
   auto & subgraph = node.CreateSubgraph();
-  assert(node.NumSubgraphs() == 1);
-  assert(&node.GetSubgraph(0) == &subgraph);
+  EXPECT_EQ(node.NumSubgraphs(), 1);
+  EXPECT_EQ(&node.GetSubgraph(0), &subgraph);
   auto & argumentNode = subgraph.CreateArgumentNode();
   argumentNode.SetLabel("CTX");
   argumentNode.SetOutsideSource(node.GetInputPort(0));
@@ -188,29 +177,26 @@ TestInOutNode()
   subgraph.CreateDirectedEdge(argumentNode, resultNode);
 
   graph.Finalize();
-  assert(node.IsFinalized());
-  assert(subgraph.IsFinalized());
+  EXPECT_TRUE(node.IsFinalized());
+  EXPECT_TRUE(subgraph.IsFinalized());
 
   std::ostringstream out;
   node.Output(out, OutputFormat::ASCII, 0);
   auto string = out.str();
-  assert(StringContains(string, "out0, out1, out2 := \"My\\nInOutNode\" out2, []"));
+  EXPECT_TRUE(StringContains(string, "out0, out1, out2 := \"My\\nInOutNode\" out2, []"));
 
   // Check that the subgraph is also printed
-  assert(StringContains(string, "ARG arg0:CTX <= out2"));
-  assert(StringContains(string, "RES arg0:RETURN => out0"));
+  EXPECT_TRUE(StringContains(string, "ARG arg0:CTX <= out2"));
+  EXPECT_TRUE(StringContains(string, "RES arg0:RETURN => out0"));
 
   // Check that HTML labels with newlines turn into <BR/>
   std::ostringstream out2;
   node.Output(out2, OutputFormat::Dot, 0);
   auto string0 = out2.str();
-  assert(StringContains(string0, "My<BR/>InOutNode"));
+  EXPECT_TRUE(StringContains(string0, "My<BR/>InOutNode"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestInOutNode", TestInOutNode)
-
-static void
-TestEdge()
+TEST(GraphWriterTests, TestEdge)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -224,22 +210,22 @@ TestEdge()
   auto & edge0 = graph.CreateDirectedEdge(node0, node1);
   auto & edge1 = graph.CreateUndirectedEdge(node1, node2);
 
-  assert(&edge0.GetFrom() == &node0);
-  assert(&edge0.GetTo() == &node1);
-  assert(edge0.IsDirected());
-  assert(&edge1.GetFrom() == &node1);
-  assert(&edge1.GetTo() == &node2);
-  assert(!edge1.IsDirected());
+  EXPECT_EQ(&edge0.GetFrom(), &node0);
+  EXPECT_EQ(&edge0.GetTo(), &node1);
+  EXPECT_TRUE(edge0.IsDirected());
+  EXPECT_EQ(&edge1.GetFrom(), &node1);
+  EXPECT_EQ(&edge1.GetTo(), &node2);
+  EXPECT_TRUE(!edge1.IsDirected());
 
-  assert(&edge0.GetOtherEnd(node0) == &node1);
-  assert(&edge0.GetOtherEnd(node1) == &node0);
+  EXPECT_EQ(&edge0.GetOtherEnd(node0), &node1);
+  EXPECT_EQ(&edge0.GetOtherEnd(node1), &node0);
 
-  assert(graph.NumEdges() == 2);
-  assert(&graph.GetEdge(0) == &edge0);
+  EXPECT_EQ(graph.NumEdges(), 2);
+  EXPECT_EQ(&graph.GetEdge(0), &edge0);
 
-  assert(graph.GetEdgeBetween(node0, node1) == &edge0);
-  assert(graph.GetEdgeBetween(node1, node2) == &edge1);
-  assert(graph.GetEdgeBetween(node2, node0) == nullptr);
+  EXPECT_EQ(graph.GetEdgeBetween(node0, node1), &edge0);
+  EXPECT_EQ(graph.GetEdgeBetween(node1, node2), &edge1);
+  EXPECT_EQ(graph.GetEdgeBetween(node2, node0), nullptr);
 
   edge0.SetAttribute("color", Colors::Red);
 
@@ -254,28 +240,25 @@ TestEdge()
   edge0.OutputDot(out0, 0);
   auto string0 = out0.str();
 
-  assert(StringContains(string0, "node0 -> node1"));
-  assert(StringContains(string0, jlm::util::strfmt("color=\"", Colors::Red, "\"")));
+  EXPECT_TRUE(StringContains(string0, "node0 -> node1"));
+  EXPECT_TRUE(StringContains(string0, jlm::util::strfmt("color=\"", Colors::Red, "\"")));
 
   std::ostringstream out1;
   edge1.OutputDot(out1, 0);
   auto string1 = out1.str();
-  assert(StringContains(string1, "node1 -> node2"));
-  assert(StringContains(string1, jlm::util::strfmt("dir=none")));
+  EXPECT_TRUE(StringContains(string1, "node1 -> node2"));
+  EXPECT_TRUE(StringContains(string1, jlm::util::strfmt("dir=none")));
 
   std::ostringstream out2;
   edge2.OutputDot(out2, 0);
   auto string2 = out2.str();
-  assert(StringContains(string2, "dir=both"));
-  assert(StringContains(string2, "arrowhead=odot"));
-  assert(StringContains(string2, "arrowtail=normal"));
-  assert(StringContains(string2, "style=tapered"));
+  EXPECT_TRUE(StringContains(string2, "dir=both"));
+  EXPECT_TRUE(StringContains(string2, "arrowhead=odot"));
+  EXPECT_TRUE(StringContains(string2, "arrowtail=normal"));
+  EXPECT_TRUE(StringContains(string2, "style=tapered"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestEdge", TestEdge)
-
-static void
-TestGraphCreateNodes()
+TEST(GraphWriterTests, TestGraphCreateNodes)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -283,40 +266,37 @@ TestGraphCreateNodes()
   auto & graph = writer.CreateGraph();
 
   // Test node creation and count
-  assert(graph.NumNodes() == 0);
+  EXPECT_EQ(graph.NumNodes(), 0);
   auto & node = graph.CreateNode();
-  assert(graph.NumNodes() == 1);
-  assert(&graph.GetNode(0) == &node);
+  EXPECT_EQ(graph.NumNodes(), 1);
+  EXPECT_EQ(&graph.GetNode(0), &node);
 
   // Test InOutNode creation and count
   auto & inOutNode = graph.CreateInOutNode(1, 1);
-  assert(graph.NumNodes() == 2);
-  assert(&graph.GetNode(1) == &inOutNode);
+  EXPECT_EQ(graph.NumNodes(), 2);
+  EXPECT_EQ(&graph.GetNode(1), &inOutNode);
 
   // Test argument node creation and count
-  assert(graph.NumArgumentNodes() == 0);
+  EXPECT_EQ(graph.NumArgumentNodes(), 0);
   auto & argumentNode = graph.CreateArgumentNode();
-  assert(graph.NumArgumentNodes() == 1);
-  assert(&graph.GetArgumentNode(0) == &argumentNode);
+  EXPECT_EQ(graph.NumArgumentNodes(), 1);
+  EXPECT_EQ(&graph.GetArgumentNode(0), &argumentNode);
 
   // Test result node creation and count
-  assert(graph.NumResultNodes() == 0);
+  EXPECT_EQ(graph.NumResultNodes(), 0);
   auto & resultNode = graph.CreateResultNode();
-  assert(graph.NumResultNodes() == 1);
-  assert(&graph.GetResultNode(0) == &resultNode);
+  EXPECT_EQ(graph.NumResultNodes(), 1);
+  EXPECT_EQ(&graph.GetResultNode(0), &resultNode);
 
   // Test finalizing reaching every node
   graph.Finalize();
-  assert(node.IsFinalized());
-  assert(argumentNode.IsFinalized());
-  assert(resultNode.IsFinalized());
-  assert(inOutNode.IsFinalized());
+  EXPECT_TRUE(node.IsFinalized());
+  EXPECT_TRUE(argumentNode.IsFinalized());
+  EXPECT_TRUE(resultNode.IsFinalized());
+  EXPECT_TRUE(inOutNode.IsFinalized());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphCreateNodes", TestGraphCreateNodes)
-
-static void
-TestGraphAttributes()
+TEST(GraphWriterTests, TestGraphAttributes)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -324,13 +304,13 @@ TestGraphAttributes()
   auto & graph = writer.CreateGraph();
   graph.SetLabel("My Graph");
 
-  assert(&graph.GetWriter() == &writer);
+  EXPECT_EQ(&graph.GetWriter(), &writer);
   auto & node = graph.CreateNode();
 
   // Test associating a GraphElement with a pointer, and retrieving it
   int myInt = 6;
   node.SetProgramObject(myInt);
-  assert(&graph.GetFromProgramObject<Node>(myInt) == &node);
+  EXPECT_EQ(&graph.GetFromProgramObject<Node>(myInt), &node);
 
   // Set some attributes, to test that they appear in the final output
   graph.SetAttributeObject("friend", myInt);
@@ -343,17 +323,14 @@ TestGraphAttributes()
   graph.Output(out, OutputFormat::Dot, 0);
   auto string = out.str();
 
-  assert(StringContains(string, "label=\"My Graph\""));
+  EXPECT_TRUE(StringContains(string, "label=\"My Graph\""));
 
   // Nodes referred to in attributes
-  assert(StringContains(string, "friend=node0"));
-  assert(StringContains(string, "foe=graph0"));
+  EXPECT_TRUE(StringContains(string, "friend=node0"));
+  EXPECT_TRUE(StringContains(string, "foe=graph0"));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphAttributes", TestGraphAttributes)
-
-static void
-TestGraphWriterClass()
+TEST(GraphWriterTests, TestGraphWriterClass)
 {
   using namespace jlm::util;
   using namespace jlm::util::graph;
@@ -361,8 +338,8 @@ TestGraphWriterClass()
 
   auto & graph0 = writer.CreateGraph();
   auto & graph1 = writer.CreateGraph();
-  assert(writer.NumGraphs() == 2);
-  assert(&writer.GetGraph(0) == &graph0);
+  EXPECT_EQ(writer.NumGraphs(), 2);
+  EXPECT_EQ(&writer.GetGraph(0), &graph0);
 
   auto & node0 = graph0.CreateNode();
   auto & node1 = graph1.CreateNode();
@@ -370,7 +347,7 @@ TestGraphWriterClass()
   // Test retrieving a GraphElement from its associated program object pointer
   int myInt = 12;
   node1.SetProgramObject(myInt);
-  assert(writer.GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&myInt)) == &node1);
+  EXPECT_EQ(writer.GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&myInt)), &node1);
 
   // Refer to program objects mapped to elements in other graphs
   node0.SetAttributeObject("friend", myInt);
@@ -380,13 +357,11 @@ TestGraphWriterClass()
   writer.outputAllGraphs(out, OutputFormat::Dot);
   auto string = out.str();
 
-  assert(graph0.IsFinalized());
-  assert(graph1.IsFinalized());
+  EXPECT_TRUE(graph0.IsFinalized());
+  EXPECT_TRUE(graph1.IsFinalized());
 
-  assert(node0.GetFullId() == "node0");
-  assert(node1.GetFullId() == "node1");
+  EXPECT_EQ(node0.GetFullId(), "node0");
+  EXPECT_EQ(node1.GetFullId(), "node1");
 
-  assert(StringContains(string, "friend=node1"));
+  EXPECT_TRUE(StringContains(string, "friend=node1"));
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter-TestGraphWriterClass", TestGraphWriterClass)

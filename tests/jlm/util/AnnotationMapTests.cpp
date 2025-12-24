@@ -3,13 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/AnnotationMap.hpp>
 
-static void
-AnnotationKeyValueRetrieval()
+TEST(AnnotationMapTests, AnnotationKeyValueRetrieval)
 {
   using namespace jlm::util;
 
@@ -20,39 +18,28 @@ AnnotationKeyValueRetrieval()
   Annotation doubleAnnotation("double", 1.0);
 
   // Act & Assert
-  assert(stringAnnotation.Label() == "string");
-  assert(stringAnnotation.Value<std::string>() == "value");
-  assert(stringAnnotation.HasValueType<std::string>());
-  assert(!stringAnnotation.HasValueType<uint64_t>());
+  EXPECT_EQ(stringAnnotation.Label(), "string");
+  EXPECT_EQ(stringAnnotation.Value<std::string>(), "value");
+  EXPECT_TRUE(stringAnnotation.HasValueType<std::string>());
+  EXPECT_FALSE(stringAnnotation.HasValueType<uint64_t>());
 
-  assert(intAnnotation.Label() == "int");
-  assert(intAnnotation.Value<int64_t>() == -1);
-  assert(intAnnotation.HasValueType<int64_t>());
-  assert(!intAnnotation.HasValueType<uint64_t>());
+  EXPECT_EQ(intAnnotation.Label(), "int");
+  EXPECT_EQ(intAnnotation.Value<int64_t>(), -1);
+  EXPECT_TRUE(intAnnotation.HasValueType<int64_t>());
+  EXPECT_FALSE(intAnnotation.HasValueType<uint64_t>());
 
-  assert(uintAnnotation.Label() == "uint");
-  assert(uintAnnotation.Value<uint64_t>() == 1);
-  assert(uintAnnotation.HasValueType<uint64_t>());
+  EXPECT_EQ(uintAnnotation.Label(), "uint");
+  EXPECT_EQ(uintAnnotation.Value<uint64_t>(), 1);
+  EXPECT_TRUE(uintAnnotation.HasValueType<uint64_t>());
 
-  assert(doubleAnnotation.Label() == "double");
-  assert(doubleAnnotation.Value<double>() == 1.0);
-  assert(!doubleAnnotation.HasValueType<uint64_t>());
+  EXPECT_EQ(doubleAnnotation.Label(), "double");
+  EXPECT_EQ(doubleAnnotation.Value<double>(), 1.0);
+  EXPECT_FALSE(doubleAnnotation.HasValueType<uint64_t>());
 
-  try
-  {
-    (void)doubleAnnotation.Value<uint64_t>();
-    assert(false); // the line above should have thrown an exception
-  }
-  catch (...)
-  {}
+  EXPECT_THROW((void)doubleAnnotation.Value<uint64_t>(), std::bad_variant_access);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/AnnotationMapTests-AnnotationKeyValueRetrieval",
-    AnnotationKeyValueRetrieval)
-
-static void
-AnnotationEquality()
+TEST(AnnotationMapTests, AnnotationEquality)
 {
   using namespace jlm::util;
 
@@ -63,45 +50,42 @@ AnnotationEquality()
   Annotation doubleAnnotation("double", 1.0);
 
   // Act & Assert
-  assert(stringAnnotation != doubleAnnotation);
-  assert(stringAnnotation != intAnnotation);
-  assert(stringAnnotation != uintAnnotation);
+  EXPECT_NE(stringAnnotation, doubleAnnotation);
+  EXPECT_NE(stringAnnotation, intAnnotation);
+  EXPECT_NE(stringAnnotation, uintAnnotation);
 
   Annotation otherStringAnnotation("string", "value");
-  assert(stringAnnotation == otherStringAnnotation);
+  EXPECT_EQ(stringAnnotation, otherStringAnnotation);
 
   Annotation otherIntAnnotation("uint", (int64_t)1);
-  assert(uintAnnotation != otherIntAnnotation);
+  EXPECT_NE(uintAnnotation, otherIntAnnotation);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/AnnotationMapTests-AnnotationEquality", AnnotationEquality)
-
-static void
-AnnotationMap()
+TEST(AnnotationMapTests, AnnotationMap)
 {
   using namespace jlm::util;
 
   // Arrange
+  constexpr size_t key1 = 0;
+  constexpr size_t key2 = 1;
   Annotation annotation("foo", "bar");
 
   jlm::util::AnnotationMap map;
-  map.AddAnnotation((const void *)&AnnotationEquality, annotation);
+  map.AddAnnotation(&key1, annotation);
 
   // Act & Assert
-  assert(map.HasAnnotations((const void *)&AnnotationEquality));
-  assert(!map.HasAnnotations((const void *)&AnnotationKeyValueRetrieval));
+  EXPECT_TRUE(map.HasAnnotations(&key1));
+  EXPECT_FALSE(map.HasAnnotations(&key2));
 
-  auto annotations = map.GetAnnotations((const void *)&AnnotationEquality);
-  assert(annotations.size() == 1);
-  assert(annotations[0] == annotation);
+  auto annotations = map.GetAnnotations(&key1);
+  EXPECT_EQ(annotations.size(), 1);
+  EXPECT_EQ(annotations[0], annotation);
 
   for (auto & iteratedAnnotations : map.Annotations())
   {
     for (auto & iteratedAnnotation : iteratedAnnotations)
     {
-      assert(iteratedAnnotation == annotation);
+      EXPECT_EQ(iteratedAnnotation, annotation);
     }
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/AnnotationMapTests-AnnotationMap", AnnotationMap)

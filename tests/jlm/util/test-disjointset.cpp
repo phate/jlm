@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/disjointset.hpp>
 
@@ -25,8 +25,7 @@ print(const jlm::util::DisjointSet<int> & djset)
   std::cout << "\n";
 }
 
-static void
-test()
+TEST(DisjointSetTests, test)
 {
   using namespace jlm;
 
@@ -37,28 +36,34 @@ test()
   auto s1 = djset.find_or_insert(6);
   auto s2 = djset.find(6);
   print(djset);
-  assert(s1 == s2);
-  assert(djset.nvalues() == 6 && djset.nsets() == 6);
+  EXPECT_EQ(s1, s2);
+  EXPECT_EQ(djset.nvalues(), 6);
+  EXPECT_EQ(djset.nsets(), 6);
 
   auto root = djset.merge(1, 2);
   print(djset);
-  assert(root->is_root() && root->nmembers() == 2);
-  assert(djset.nvalues() == 6 && djset.nsets() == 5);
+  EXPECT_TRUE(root->is_root());
+  EXPECT_EQ(root->nmembers(), 2);
+  EXPECT_EQ(djset.nvalues(), 6);
+  EXPECT_EQ(djset.nsets(), 5);
 
   root = djset.merge(6, 5);
   print(djset);
-  assert(root->is_root() && root->nmembers() == 2);
-  assert(djset.nvalues() == 6 && djset.nsets() == 4);
+  EXPECT_TRUE(root->is_root());
+  EXPECT_EQ(root->nmembers(), 2);
+  EXPECT_EQ(djset.nvalues(), 6);
+  EXPECT_EQ(djset.nsets(), 4);
 
   root = djset.merge(1, 6);
   print(djset);
-  assert(root->is_root() && root->nmembers() == 4);
-  assert(djset.nvalues() == 6 && djset.nsets() == 3);
-  assert(djset.find(2) == djset.find(5));
+  EXPECT_TRUE(root->is_root());
+  EXPECT_EQ(root->nmembers(), 4);
+  EXPECT_EQ(djset.nvalues(), 6);
+  EXPECT_EQ(djset.nsets(), 3);
+  EXPECT_EQ(djset.find(2), djset.find(5));
 
   djset.clear();
   print(djset);
-  assert(djset.nvalues() == 0 && djset.nsets() == 0);
+  EXPECT_EQ(djset.nvalues(), 0);
+  EXPECT_EQ(djset.nsets(), 0);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/test-disjointset", test)
