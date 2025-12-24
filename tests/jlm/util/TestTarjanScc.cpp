@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/TarjanScc.hpp>
 
-#include <cassert>
 #include <iostream>
 #include <optional>
 #include <tuple>
@@ -38,18 +37,18 @@ ValidateTopologicalOrderAndSccIndices(
     const std::vector<size_t> & sccIndex,
     const std::vector<size_t> & reverseTopologicalOrder)
 {
-  assert(numNodes == sccIndex.size());
+  EXPECT_EQ(numNodes, sccIndex.size());
 
   // Check that all sccIndex are valid, and each SCC has at least one node
   std::vector<size_t> numNodesInScc(numSccs, 0);
   for (size_t i = 0; i < numNodes; i++)
   {
     auto node = unificationRoot(i);
-    assert(sccIndex[node] < numSccs);
+    EXPECT_LT(sccIndex[node], numSccs);
     numNodesInScc[sccIndex[node]]++;
   }
   for (size_t i = 0; i < numSccs; i++)
-    assert(numNodesInScc[i] > 0);
+    EXPECT_GT(numNodesInScc[i], 0);
 
   // Check that no edge in the graph points to an earlier SCC
   for (size_t i = 0; i < numNodes; i++)
@@ -63,7 +62,7 @@ ValidateTopologicalOrderAndSccIndices(
       next = unificationRoot(next);
 
       // successor SCCs must have lower scc index
-      assert(sccIndex[next] <= sccIndex[i]);
+      EXPECT_LE(sccIndex[next], sccIndex[i]);
     }
   }
 
@@ -71,25 +70,24 @@ ValidateTopologicalOrderAndSccIndices(
   jlm::util::HashSet<size_t> nodeInTopologicalOrder(
       reverseTopologicalOrder.begin(),
       reverseTopologicalOrder.end());
-  assert(nodeInTopologicalOrder.Size() == reverseTopologicalOrder.size());
+  EXPECT_EQ(nodeInTopologicalOrder.Size(), reverseTopologicalOrder.size());
 
   for (size_t i = 0; i < numNodes; i++)
   {
     if (unificationRoot(i) == i)
-      assert(nodeInTopologicalOrder.Contains(i));
+      EXPECT_TRUE(nodeInTopologicalOrder.Contains(i));
     else
-      assert(!nodeInTopologicalOrder.Contains(i));
+      EXPECT_TRUE(!nodeInTopologicalOrder.Contains(i));
   }
 
   // Check that the reverse topological order contains nodes with ascending sccIndex
   for (size_t i = 1; i < reverseTopologicalOrder.size(); i++)
   {
-    assert(sccIndex[reverseTopologicalOrder[i - 1]] <= sccIndex[reverseTopologicalOrder[i]]);
+    EXPECT_LE(sccIndex[reverseTopologicalOrder[i - 1]], sccIndex[reverseTopologicalOrder[i]]);
   }
 }
 
-static void
-TestDag()
+TEST(TarjanSccTests, TestDag)
 {
   // Create a DAG, where each node is its own SCC
   const size_t numNodes = 8;
@@ -124,14 +122,11 @@ TestDag()
       sccIndex,
       reverseTopologicalOrder);
 
-  assert(numSccs == numNodes);
+  EXPECT_EQ(numSccs, numNodes);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestDag", TestDag);
-
 // Test a graph with some cycles, ensuring they become SCCs
-static void
-TestCycles()
+TEST(TarjanSccTests, TestCycles)
 {
   const size_t numNodes = 7;
   std::vector<std::vector<size_t>> successors{
@@ -164,19 +159,17 @@ TestCycles()
       sccIndex,
       reverseTopologicalOrder);
 
-  assert(numSccs == 3);
+  EXPECT_EQ(numSccs, 3);
   // 5 has to be at the end
-  assert(sccIndex[5] == 0);
-  assert(reverseTopologicalOrder[0] == 5);
+  EXPECT_EQ(sccIndex[5], 0);
+  EXPECT_EQ(reverseTopologicalOrder[0], 5);
   // 6 has to be at the beginning
-  assert(sccIndex[6] == 2);
-  assert(reverseTopologicalOrder[numNodes - 1] == 6);
+  EXPECT_EQ(sccIndex[6], 2);
+  EXPECT_EQ(reverseTopologicalOrder[numNodes - 1], 6);
   // The rest belong to the middle SCC
   for (size_t i = 0; i < 5; i++)
-    assert(sccIndex[i] == 1);
+    EXPECT_EQ(sccIndex[i], 1);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestCycles", TestCycles);
 
 /**
  * Creates a chain of diamonds, possibly with an extra edge. Performs SCC on the graph.
@@ -201,7 +194,7 @@ JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestCycles", TestCycles);
 static std::tuple<size_t, size_t, std::vector<size_t>>
 CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraEdge)
 {
-  assert(knots >= 2);
+  EXPECT_GE(knots, 2);
   const size_t numNodes = 3 * knots - 2;
   std::vector<std::vector<size_t>> successors(numNodes);
 
@@ -223,7 +216,8 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
 
   if (extraEdge)
   {
-    assert(extraEdge->first < numNodes && extraEdge->second < numNodes);
+    EXPECT_LT(extraEdge->first, numNodes);
+    EXPECT_LT(extraEdge->second, numNodes);
     // Leave 5 nodes on the end, and 5 at the beginning, out of the big loop
     successors[perm[extraEdge->first]].push_back(perm[extraEdge->second]);
   }
@@ -257,30 +251,21 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
   return { numNodes, numSccs, std::move(unshuffledNodeIndex) };
 }
 
-static void
-TestSimpleDiamondChain()
+TEST(TarjanSccTests, TestSimpleDiamondChain)
 {
   auto [numNodes, numSccs, sccIndex] = CreateDiamondChain(100, std::nullopt);
-  assert(numNodes == numSccs);
+  EXPECT_EQ(numNodes, numSccs);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestSimpleDiamondChain", TestSimpleDiamondChain);
-
-static void
-TestDiamondChainWithForwardEdge()
+TEST(TarjanSccTests, TestDiamondChainWithForwardEdge)
 {
   // Forward edges do not create any cycles
   std::pair<size_t, size_t> forwardEdge{ 5, 200 };
   auto [numNodes, numSccs, sccIndex] = CreateDiamondChain(100, forwardEdge);
-  assert(numNodes == numSccs);
+  EXPECT_EQ(numNodes, numSccs);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestTarjanScc-TestDiamondChainWithForwardEdge",
-    TestDiamondChainWithForwardEdge);
-
-static void
-TestDiamondChainWithBackEdge()
+TEST(TarjanSccTests, TestDiamondChainWithBackEdge)
 {
   // Back edges create one big SCC, the rest are single node SCCs
   std::pair<size_t, size_t> backEdge{ 3 * 50, 3 * 3 };
@@ -288,30 +273,25 @@ TestDiamondChainWithBackEdge()
 
   std::cerr << "numSccs: " << numSccs << std::endl;
   std::cerr << "numNodes: " << numNodes << std::endl;
-  assert(numSccs == backEdge.second + numNodes - backEdge.first);
+  EXPECT_EQ(numSccs, backEdge.second + numNodes - backEdge.first);
 
   auto largeScc = sccIndex[backEdge.second];
 
   // All nodes before the back edge head have a higher SCC index
   for (size_t i = 0; i < backEdge.second; i++)
-    assert(sccIndex[i] > largeScc);
+    EXPECT_GT(sccIndex[i], largeScc);
 
   // All nodes after the back edge tail have a lower SCC index
   for (size_t i = backEdge.first + 1; i < numNodes; i++)
-    assert(sccIndex[i] < largeScc);
+    EXPECT_LT(sccIndex[i], largeScc);
 
   // All nodes between the back edge tail and head have same SCC index
   for (size_t i = backEdge.second; i <= backEdge.first; i++)
-    assert(sccIndex[i] == largeScc);
+    EXPECT_EQ(sccIndex[i], largeScc);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/util/TestTarjanScc-TestDiamondChainWithBackEdge",
-    TestDiamondChainWithBackEdge);
-
 // During SCC creation, the function should query a node for its successors at most twice
-static void
-TestVisitEachNodeTwice()
+TEST(TarjanSccTests, TestVisitEachNodeTwice)
 {
   const size_t numNodes = 5;
   std::vector<std::vector<size_t>> successors{
@@ -326,7 +306,7 @@ TestVisitEachNodeTwice()
   std::vector<size_t> successorsQueried(numNodes, 0);
   auto GetSuccessors = [&](size_t node)
   {
-    assert(node < numNodes);
+    EXPECT_LT(node, numNodes);
     successorsQueried[node]++;
     return successors[node];
   };
@@ -339,9 +319,9 @@ TestVisitEachNodeTwice()
       sccIndex,
       reverseTopologicalOrder);
 
-  assert(numSccs == 4);
+  EXPECT_EQ(numSccs, 4);
   for (size_t timesQueried : successorsQueried)
-    assert(timesQueried <= 2);
+    EXPECT_LE(timesQueried, 2);
 
   // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
   ValidateTopologicalOrderAndSccIndices(
@@ -353,10 +333,7 @@ TestVisitEachNodeTwice()
       reverseTopologicalOrder);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestVisitEachNodeTwice", TestVisitEachNodeTwice);
-
-static void
-TestUnifiedNodes()
+TEST(TarjanSccTests, TestUnifiedNodes)
 {
   // Each node with index >= 5 has a unification root equal to index - 5
   const size_t numNodes = 10;
@@ -378,7 +355,7 @@ TestUnifiedNodes()
 
   auto GetSuccessors = [&](size_t node)
   {
-    assert(node < 5);
+    EXPECT_LT(node, 5);
     return successors[node];
   };
 
@@ -391,7 +368,7 @@ TestUnifiedNodes()
       sccIndex,
       reverseTopologicalOrder);
 
-  assert(numSccs == 4);
+  EXPECT_EQ(numSccs, 4);
 
   // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
   ValidateTopologicalOrderAndSccIndices(
@@ -402,5 +379,3 @@ TestUnifiedNodes()
       sccIndex,
       reverseTopologicalOrder);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestUnifiedNodes", TestUnifiedNodes);
