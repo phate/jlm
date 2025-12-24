@@ -36,18 +36,7 @@ TEST(AnnotationMapTests, AnnotationKeyValueRetrieval)
   EXPECT_EQ(doubleAnnotation.Value<double>(), 1.0);
   EXPECT_FALSE(doubleAnnotation.HasValueType<uint64_t>());
 
-  EXPECT_THROW(
-      {
-        try
-        {
-          (void)doubleAnnotation.Value<uint64_t>();
-        }
-        catch (...)
-        {
-          throw;
-        }
-      },
-      std::bad_variant_access);
+  EXPECT_THROW((void)doubleAnnotation.Value<uint64_t>(), std::bad_variant_access);
 }
 
 TEST(AnnotationMapTests, AnnotationEquality)
