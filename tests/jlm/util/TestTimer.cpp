@@ -3,11 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/util/time.hpp>
 
-#include <cassert>
 #include <chrono>
 #include <thread>
 
@@ -19,51 +18,45 @@ sleepUs(int us)
   std::this_thread::sleep_for(std::chrono::duration<int, std::micro>(us));
 }
 
-static void
-TestStartStop()
+TEST(TimerTests, TestStartStop)
 {
   Timer t;
-  assert(t.ns() == 0);
-  assert(!t.isRunning());
+  EXPECT_EQ(t.ns(), 0);
+  EXPECT_FALSE(t.isRunning());
 
   t.start();
-  assert(t.isRunning());
+  EXPECT_TRUE(t.isRunning());
   sleepUs(10);
   t.stop();
-  assert(!t.isRunning());
+  EXPECT_FALSE(t.isRunning());
   auto ns = t.ns();
-  assert(ns >= 10000);
+  EXPECT_GE(ns, 10000);
 
   // Add more time
   t.start();
   sleepUs(1);
   t.stop();
-  assert(t.ns() >= ns + 1000);
+  EXPECT_GE(t.ns(), ns + 1000);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer-TestStartStop", TestStartStop)
-
-static void
-TestReset()
+TEST(TimerTests, TestReset)
 {
   Timer t;
-  assert(t.ns() == 0);
-  assert(!t.isRunning());
+  EXPECT_EQ(t.ns(), 0);
+  EXPECT_FALSE(t.isRunning());
 
   t.start();
   sleepUs(1);
   t.stop();
 
-  assert(t.ns() != 0);
+  EXPECT_NE(t.ns(), 0);
   t.reset();
-  assert(t.ns() == 0);
-  assert(!t.isRunning());
+  EXPECT_EQ(t.ns(), 0);
+  EXPECT_FALSE(t.isRunning());
 
   // Resetting while running
   t.start();
   t.reset();
-  assert(t.ns() == 0);
-  assert(!t.isRunning());
+  EXPECT_EQ(t.ns(), 0);
+  EXPECT_FALSE(t.isRunning());
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer-TestReset", TestReset)
