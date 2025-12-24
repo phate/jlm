@@ -27,7 +27,6 @@ libutil_HEADERS = \
     jlm/util/Worklist.hpp \
 
 libutil_TESTS += \
-    tests/jlm/util/TestMath \
     tests/jlm/util/TestStatistics \
     tests/jlm/util/TestTarjanScc \
     tests/jlm/util/TestTimer \
@@ -82,3 +81,7 @@ $(eval $(call common_test,tests/jlm/util/TestGraphWriter))
 tests/jlm/util/TestHashSet_SOURCES = tests/jlm/util/TestHashSet.cpp
 tests/jlm/util/TestHashSet_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/util/TestHashSet))
+
+tests/jlm/util/TestMath_SOURCES = tests/jlm/util/TestMath.cpp
+tests/jlm/util/TestMath_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/util/TestMath))
