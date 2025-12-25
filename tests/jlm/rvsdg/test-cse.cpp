@@ -5,8 +5,9 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
+
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -26,7 +27,7 @@ test_main()
         operands);
   };
 
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::createValueType();
 
   auto i = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i");
 

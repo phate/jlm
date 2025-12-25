@@ -5,8 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/AnnotationMap.hpp>
 
 #include <algorithm>
@@ -18,7 +18,7 @@ IteratorRanges()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   jlm::rvsdg::Graph graph;
 
@@ -89,7 +89,7 @@ Contains()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   jlm::rvsdg::Graph graph;
   auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
@@ -178,7 +178,7 @@ RemoveResults()
   using namespace jlm::tests;
 
   // Arrange
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
@@ -263,7 +263,7 @@ RemoveArguments()
   jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto argument0 = &TestGraphArgument::Create(region, nullptr, valueType);
   auto argument1 = &TestGraphArgument::Create(region, nullptr, valueType);
   auto argument2 = &TestGraphArgument::Create(region, nullptr, valueType);
@@ -372,7 +372,7 @@ PruneArguments()
   jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
   TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
@@ -521,7 +521,7 @@ BottomNodeTests()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::createValueType();
 
   // Arrange
   Graph rvsdg;
@@ -556,7 +556,7 @@ computeDepthMap()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto valueType = ValueType::Create();
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
 

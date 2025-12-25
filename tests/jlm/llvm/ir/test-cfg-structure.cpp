@@ -5,12 +5,11 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
-#include <jlm/llvm/ir/print.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 test_straightening()
@@ -18,7 +17,7 @@ test_straightening()
   using namespace jlm::llvm;
   using namespace jlm::tests;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);

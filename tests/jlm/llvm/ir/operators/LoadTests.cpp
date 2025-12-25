@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -15,6 +14,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -24,7 +24,7 @@ OperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
 
   LoadNonVolatileOperation operation1(valueType, 2, 4);
@@ -52,7 +52,7 @@ TestCopy()
 
   // Arrange
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
@@ -126,7 +126,7 @@ TestDuplicateStateReduction()
 
   // Arrange
   const auto memoryType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::rvsdg::TestType::createValueType();
   const auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
@@ -230,7 +230,7 @@ TestLoadStoreReduction_Success()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -326,7 +326,7 @@ IOBarrierAllocaAddressNormalization()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::rvsdg::TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
@@ -394,7 +394,7 @@ IOBarrierAllocaAddressNormalization_Gamma()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
@@ -463,7 +463,7 @@ LoadVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
 
   LoadVolatileOperation operation1(valueType, 2, 4);
@@ -491,7 +491,7 @@ OperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   PointerType pointerType;
 
   LoadVolatileOperation operation(valueType, 2, 4);
@@ -512,7 +512,7 @@ OperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -542,7 +542,7 @@ NodeCopy()
   auto pointerType = PointerType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::createValueType();
 
   jlm::rvsdg::Graph graph;
   auto & address1 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address1");

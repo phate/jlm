@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-types.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
@@ -13,6 +12,7 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -616,7 +616,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -682,7 +682,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -747,7 +747,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");

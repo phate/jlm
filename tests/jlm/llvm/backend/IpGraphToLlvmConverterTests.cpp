@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 #include <test-util.hpp>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
@@ -14,6 +13,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <llvm/IR/Attributes.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Intrinsics.h>
@@ -666,7 +666,7 @@ SelectWithState()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
   InterProceduralGraphModule m(jlm::util::FilePath(""), "", "");
