@@ -63,7 +63,7 @@ ThreeAddressCode::ThreeAddressCode(
 }
 
 ThreeAddressCode::ThreeAddressCode(
-std::unique_ptr<rvsdg::SimpleOperation> operation,
+    std::unique_ptr<rvsdg::SimpleOperation> operation,
     const std::vector<const Variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
@@ -78,7 +78,7 @@ std::unique_ptr<rvsdg::SimpleOperation> operation,
 }
 
 ThreeAddressCode::ThreeAddressCode(
-std::unique_ptr<rvsdg::SimpleOperation> operation,
+    std::unique_ptr<rvsdg::SimpleOperation> operation,
     const std::vector<const Variable *> & operands,
     std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
     : operands_(operands),

@@ -164,11 +164,10 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
 
     // convert node to tac
     auto op = node->GetOperation().copy();
-    tacs.push_back(
-        ThreeAddressCode::create(
-            std::unique_ptr<rvsdg::SimpleOperation>(
-                util::assertedCast<rvsdg::SimpleOperation>(op.release())),
-            operands));
+    tacs.push_back(ThreeAddressCode::create(
+        std::unique_ptr<rvsdg::SimpleOperation>(
+            util::assertedCast<rvsdg::SimpleOperation>(op.release())),
+        operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
@@ -244,11 +243,10 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
     operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
   auto operation = simpleNode.GetOperation().copy();
-  Context_->GetLastProcessedBasicBlock()->append_last(
-      ThreeAddressCode::create(
-          std::unique_ptr<rvsdg::SimpleOperation>(
-              util::assertedCast<rvsdg::SimpleOperation>(operation.release())),
-          operands));
+  Context_->GetLastProcessedBasicBlock()->append_last(ThreeAddressCode::create(
+      std::unique_ptr<rvsdg::SimpleOperation>(
+          util::assertedCast<rvsdg::SimpleOperation>(operation.release())),
+      operands));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
     Context_->InsertVariable(
@@ -466,11 +464,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     }
     else
     {
-      JLM_UNREACHABLE(
-          util::strfmt(
-              "Unhandled node type: ",
-              rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
-              .c_str());
+      JLM_UNREACHABLE(util::strfmt(
+                          "Unhandled node type: ",
+                          rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
+                          .c_str());
     }
   }
 
@@ -497,11 +494,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     }
     else
     {
-      JLM_UNREACHABLE(
-          util::strfmt(
-              "Unhandled node type: ",
-              rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
-              .c_str());
+      JLM_UNREACHABLE(util::strfmt(
+                          "Unhandled node type: ",
+                          rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
+                          .c_str());
     }
   }
 
