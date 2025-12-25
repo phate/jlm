@@ -46,8 +46,8 @@ std::size_t
 TestType::ComputeHash() const noexcept
 {
   const auto typeHash = typeid(TestType).hash_code();
-  const auto numAlternativesHash = std::hash<TypeKind>()(kind_);
-  return util::CombineHashes(typeHash, numAlternativesHash);
+  const auto kindHash = std::hash<TypeKind>()(kind_);
+  return util::CombineHashes(typeHash, kindHash);
 }
 
 TypeKind
