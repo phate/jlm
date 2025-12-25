@@ -5,13 +5,12 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/ssa.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 static inline void
 test_two_phis()
@@ -19,7 +18,7 @@ test_two_phis()
   using namespace jlm::llvm;
   using namespace jlm::tests;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);

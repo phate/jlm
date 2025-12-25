@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -12,6 +11,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
@@ -85,7 +85,7 @@ LoadVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   LoadVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
@@ -112,7 +112,7 @@ StoreVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   StoreVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 

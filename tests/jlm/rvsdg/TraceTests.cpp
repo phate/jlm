@@ -27,7 +27,7 @@ TestTraceOutputIntraProcedural_Gamma()
 
   // Assert
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, controlType, "i0");
@@ -86,7 +86,7 @@ TestTraceOutputIntraProcedural_Theta()
   using namespace jlm::tests;
 
   // Assert
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -135,7 +135,7 @@ TestTraceNestedStructuralNodes()
 
   // Assert
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");

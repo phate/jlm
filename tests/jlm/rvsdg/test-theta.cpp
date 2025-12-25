@@ -16,7 +16,7 @@ TestThetaCreation()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto t = TestType::Create(TypeKind::Value);
+  auto t = TestType::createValueType();
 
   auto imp1 = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "imp1");
   auto imp2 = &jlm::rvsdg::GraphImport::Create(graph, t, "imp2");
@@ -56,7 +56,7 @@ TestThetaLoopVarRemoval()
 
   // Arrange
   Graph rvsdg;
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   auto ctl = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");

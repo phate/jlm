@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+static const auto vt = jlm::rvsdg::TestType::createValueType();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static void
@@ -67,7 +67,7 @@ testPullInBottom()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   const auto controlType = ControlType::Create(2);
 
   Graph rvsdg;

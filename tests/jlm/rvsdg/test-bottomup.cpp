@@ -13,7 +13,7 @@ static void
 testInitialization()
 {
   jlm::rvsdg::Graph graph;
-  auto vtype = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto vtype = jlm::rvsdg::TestType::createValueType();
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, {});
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vtype });
 
@@ -38,7 +38,7 @@ static void
 testBasicTraversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto type = jlm::rvsdg::TestType::createValueType();
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(
       &graph.GetRootRegion(),
@@ -64,7 +64,7 @@ static void
 testOrderEnforcement()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto type = jlm::rvsdg::TestType::createValueType();
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::TestOperation::create(

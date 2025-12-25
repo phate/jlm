@@ -28,7 +28,7 @@ simpleGamma()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -94,7 +94,7 @@ nestedGamma()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -178,7 +178,7 @@ simpleTheta()
 
   // Arrange
   auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -247,7 +247,7 @@ invariantMemoryOperation()
   const auto memoryStateType = MemoryStateType::Create();
   const auto pointerType = PointerType::Create();
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, valueType, memoryStateType },
       { memoryStateType });
@@ -303,8 +303,8 @@ statefulOperations()
   using namespace jlm::tests;
 
   auto controlType = ControlType::Create(2);
-  auto valueType = TestType::Create(TypeKind::Value);
-  auto stateType = TestType::Create(TypeKind::State);
+  auto valueType = TestType::createValueType();
+  auto stateType = TestType::createStateType();
   const auto functionType = FunctionType::Create(
       {
           controlType,

@@ -5,12 +5,12 @@
  */
 
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -19,7 +19,7 @@ TestWithMatch()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::BitType::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -55,7 +55,7 @@ TestWithoutMatch()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   auto ft =
       jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 

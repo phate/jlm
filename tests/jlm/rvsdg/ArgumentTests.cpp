@@ -20,7 +20,7 @@ ArgumentNodeMismatch()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
@@ -55,8 +55,8 @@ ArgumentInputTypeMismatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
-  auto stateType = TestType::Create(TypeKind::State);
+  auto valueType = TestType::createValueType();
+  auto stateType = TestType::createStateType();
 
   jlm::rvsdg::Graph rvsdg;
   auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "import");

@@ -86,7 +86,7 @@ ReduceFlattenedBinaryReductionParallel()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const jlm::tests::TestBinaryOperation binaryOperation(
       valueType,
       valueType,
@@ -132,7 +132,7 @@ ReduceFlattenedBinaryReductionLinear()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const jlm::tests::TestBinaryOperation binaryOperation(
       valueType,
       valueType,
@@ -179,7 +179,7 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
@@ -223,7 +223,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
@@ -263,7 +263,7 @@ FlattenAssociativeBinaryOperation_Success()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
@@ -309,7 +309,7 @@ NormalizeBinaryOperation_NoNewOperands()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
@@ -345,7 +345,7 @@ NormalizeBinaryOperation_SingleOperand()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto s0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s0");

@@ -36,7 +36,10 @@ public:
   Kind() const noexcept override;
 
   static std::shared_ptr<const TestType>
-  Create(TypeKind kind);
+  createStateType();
+
+  static std::shared_ptr<const TestType>
+  createValueType();
 
 private:
   TypeKind kind_;

@@ -16,8 +16,8 @@ test_main()
 
   Graph graph;
 
-  auto type = jlm::rvsdg::TestType::Create(TypeKind::State);
-  auto value_type = TestType::Create(TypeKind::Value);
+  auto type = jlm::rvsdg::TestType::createStateType();
+  auto value_type = TestType::createValueType();
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
 

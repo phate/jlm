@@ -71,7 +71,7 @@ NormalizeUnaryOperation_Success()
 
   // Arrange
   Graph graph;
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   const auto nullaryNode =
       &CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
@@ -107,7 +107,7 @@ NormalizeUnaryOperation_Failure()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph graph;
   auto i0 = &GraphImport::Create(graph, valueType, "i0");

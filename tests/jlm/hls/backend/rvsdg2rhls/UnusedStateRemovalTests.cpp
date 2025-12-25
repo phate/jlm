@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -14,6 +13,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -23,7 +23,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -81,7 +81,7 @@ TestTheta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = FunctionType::Create(
       { ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
@@ -131,7 +131,7 @@ TestLambda()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
@@ -349,12 +349,14 @@ TestInvariantMemoryState()
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  assert(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
-      *lambdaSubregion,
-      true));
-  assert(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
-      *lambdaSubregion,
-      true));
+  assert(
+      jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
+          *lambdaSubregion,
+          true));
+  assert(
+      jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
+          *lambdaSubregion,
+          true));
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-InvariantMemoryState",

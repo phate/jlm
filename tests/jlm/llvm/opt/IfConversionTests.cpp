@@ -22,7 +22,7 @@ GammaWithoutMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
@@ -81,7 +81,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -161,7 +161,7 @@ EmptyGammaWithTwoSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -223,7 +223,7 @@ EmptyGammaWithThreeSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -277,7 +277,7 @@ PartialEmptyGamma()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });

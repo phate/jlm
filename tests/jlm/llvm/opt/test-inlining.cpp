@@ -78,7 +78,7 @@ testSimpleInlining()
   // Arrange
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto vt = TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vt, "i");
@@ -219,7 +219,7 @@ testInliningWithAlloca()
   // Arrange
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto vt = TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vt, "i");
@@ -325,7 +325,7 @@ testIndirectCall()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -405,7 +405,7 @@ testFunctionWithDisqualifyingAlloca()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 

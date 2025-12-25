@@ -5,13 +5,13 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -23,7 +23,7 @@ SinkInsertion()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");

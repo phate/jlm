@@ -36,7 +36,7 @@ LoadNonVolatile()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
@@ -136,7 +136,7 @@ LoadVolatile()
   const auto pointerType = PointerType::Create();
   const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
@@ -208,7 +208,7 @@ SingleLoad()
   const auto pointerType = PointerType::Create();
   const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
@@ -259,7 +259,7 @@ LoadAndStore()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
@@ -346,7 +346,7 @@ GammaWithOnlyLoads()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, ioStateType, memoryStateType },
@@ -456,7 +456,7 @@ GammaWithLoadsAndStores()
   const auto pointerType = PointerType::Create();
   const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, ioStateType, memoryStateType },
@@ -563,7 +563,7 @@ ThetaWithLoadsOnly()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, ioStateType, memoryStateType },
@@ -659,7 +659,7 @@ ExternalCall()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, ioStateType, memoryStateType },
@@ -815,7 +815,7 @@ DeadOutputs()
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto ioStateType = IOStateType::Create();
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto functionType = FunctionType::Create(
       { pointerType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });

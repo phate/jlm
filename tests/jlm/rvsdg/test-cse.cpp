@@ -27,7 +27,7 @@ test_main()
         operands);
   };
 
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   auto i = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i");
 

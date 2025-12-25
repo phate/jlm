@@ -20,7 +20,7 @@ ResultNodeMismatch()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
@@ -58,8 +58,8 @@ ResultInputTypeMismatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
-  auto stateType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::State);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
+  auto stateType = jlm::rvsdg::TestType::createStateType();
 
   jlm::rvsdg::Graph rvsdg;
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
@@ -78,7 +78,9 @@ ResultInputTypeMismatch()
   }
   catch (TypeError & error)
   {
-    assert(std::string(error.what()) == "Type error - expected : ValueType, received : StateType");
+    assert(
+        std::string(error.what())
+        == "Type error - expected : TestType[Value], received : TestType[State]");
     exceptionWasCaught = true;
   }
   assert(exceptionWasCaught);

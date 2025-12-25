@@ -6,24 +6,40 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/Hash.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>
 
 namespace jlm::rvsdg
 {
 
+static std::string
+ToString(const TypeKind kind)
+{
+  switch (kind)
+  {
+  case TypeKind::Value:
+    return "Value";
+  case TypeKind::State:
+    return "State";
+  default:
+    throw std::logic_error("Unhandled type kind!");
+  }
+}
+
 TestType::~TestType() noexcept = default;
 
 std::string
 TestType::debug_string() const
 {
-  return "TestType";
+  return util::strfmt("TestType[", ToString(kind_), "]");
 }
 
 bool
 TestType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const TestType *>(&other) != nullptr;
+  const auto testType = dynamic_cast<const TestType *>(&other);
+  return testType && kind_ == testType->kind_;
 }
 
 std::size_t
@@ -41,15 +57,17 @@ TestType::Kind() const noexcept
 }
 
 std::shared_ptr<const TestType>
-TestType::Create(const TypeKind kind)
+TestType::createStateType()
 {
-  static std::unordered_map<TypeKind, const TestType> instances(
-      { { TypeKind::Value, TestType(TypeKind::Value) },
-        { TypeKind::State, TestType(TypeKind::State) } });
-
-  const auto instance = instances.find(kind);
-  JLM_ASSERT(instance != instances.end());
-
-  return std::shared_ptr<const TestType>(std::shared_ptr<void>(), &instance->second);
+  static const TestType stateType(TypeKind::State);
+  return std::shared_ptr<const TestType>(std::shared_ptr<void>(), &stateType);
 }
+
+std::shared_ptr<const TestType>
+TestType::createValueType()
+{
+  static const TestType valueType(TypeKind::Value);
+  return std::shared_ptr<const TestType>(std::shared_ptr<void>(), &valueType);
+}
+
 }

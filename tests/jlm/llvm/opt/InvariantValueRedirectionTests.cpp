@@ -38,7 +38,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType },
@@ -90,7 +90,7 @@ TestTheta()
   using namespace jlm::llvm;
 
   auto ioStateType = IOStateType::Create();
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType },
@@ -145,7 +145,7 @@ TestCall()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
@@ -236,7 +236,7 @@ TestCallWithMemoryStateNodes()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
@@ -355,7 +355,7 @@ TestCallWithMissingMemoryStateNodes()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto int32Type = BitType::Create(32);
   auto functionType = FunctionType::Create(
       { valueType, ioStateType, memoryStateType },
@@ -502,7 +502,7 @@ testThetaGammaRedirection()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create({ valueType, valueType }, { valueType });
 

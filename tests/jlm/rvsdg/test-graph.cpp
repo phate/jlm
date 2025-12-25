@@ -28,7 +28,7 @@ test_recursive_prune()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto t = TestType::Create(TypeKind::Value);
+  auto t = TestType::createValueType();
 
   Graph graph;
   auto & imp = jlm::rvsdg::GraphImport::Create(graph, t, "i");
@@ -83,7 +83,7 @@ test_prune_replace()
 {
   using namespace jlm::rvsdg;
 
-  auto type = TestType::Create(TypeKind::Value);
+  auto type = TestType::createValueType();
 
   Graph graph;
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
@@ -112,7 +112,7 @@ Copy()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph graph;
   auto & argument = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");

@@ -19,7 +19,7 @@ TestDeltaCreation()
   using namespace jlm::rvsdg;
 
   // Arrange & Act
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto pointerType = PointerType::Create();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
@@ -70,7 +70,7 @@ TestRemoveDeltaInputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
@@ -134,7 +134,7 @@ TestPruneDeltaInputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");

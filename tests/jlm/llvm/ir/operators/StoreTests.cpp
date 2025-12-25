@@ -24,7 +24,7 @@ StoreNonVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
 
   StoreNonVolatileOperation operation1(valueType, 2, 4);
@@ -52,7 +52,7 @@ StoreVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
 
   StoreVolatileOperation operation1(valueType, 2, 4);
@@ -80,7 +80,7 @@ StoreVolatileOperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   PointerType pointerType;
 
   StoreVolatileOperation operation(valueType, 2, 4);
@@ -103,7 +103,7 @@ StoreVolatileOperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -133,7 +133,7 @@ StoreVolatileNodeCopy()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   jlm::rvsdg::Graph graph;
   auto & address1 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address1");
@@ -170,7 +170,7 @@ TestCopy()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -204,7 +204,7 @@ TestStoreMuxNormalization()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -254,7 +254,7 @@ TestDuplicateStateReduction()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -307,7 +307,7 @@ TestStoreAllocaReduction()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto mt = MemoryStateType::Create();
   auto bt = jlm::rvsdg::BitType::Create(32);
 
@@ -362,7 +362,7 @@ TestStoreStoreReduction()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::TestType::Create(TypeKind::Value);
+  auto vt = TestType::createValueType();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -404,7 +404,7 @@ IOBarrierAllocaAddressNormalization()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
@@ -473,7 +473,7 @@ IOBarrierAllocaAddressNormalization_Gamma()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
@@ -541,7 +541,7 @@ storeAllocaSingleUser()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto bit32Type = BitType::Create(32);
 
   Graph graph;
@@ -585,7 +585,7 @@ storeAllocaSingleUser_MultipleUsers()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
   const auto bit32Type = BitType::Create(32);
 
   Graph graph;

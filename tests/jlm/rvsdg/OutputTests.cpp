@@ -20,7 +20,7 @@ TestOutputIterator()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
@@ -85,7 +85,7 @@ RouteToRegion_Gamma()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -110,7 +110,7 @@ RouteToRegion_Theta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -134,7 +134,7 @@ RouteToRegion_Lambda()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   Graph rvsdg;
@@ -160,7 +160,7 @@ RouteToRegion_Phi()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -186,7 +186,7 @@ RouteToRegion_Delta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -213,7 +213,7 @@ RouteToRegion_Nesting()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   Graph rvsdg;
@@ -248,7 +248,7 @@ RouteToRegion_Failure()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
@@ -277,7 +277,7 @@ DivertUsersWhere()
   using namespace jlm::rvsdg;
 
   // Assert
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");

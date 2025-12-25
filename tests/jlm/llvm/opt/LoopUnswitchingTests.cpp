@@ -20,7 +20,7 @@ Test1()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  const auto valueType = jlm::rvsdg::TestType::createValueType();
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -90,7 +90,7 @@ Test2()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  const auto valueType = jlm::rvsdg::TestType::createValueType();
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();

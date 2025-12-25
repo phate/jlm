@@ -4,9 +4,9 @@
  */
 
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/attribute.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
@@ -16,7 +16,7 @@ TestEquality()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   EnumAttribute enumAttribute1(Attribute::kind::AllocAlign);
   EnumAttribute enumAttribute2(Attribute::kind::AlwaysInline);

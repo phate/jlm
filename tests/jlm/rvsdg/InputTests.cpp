@@ -14,7 +14,7 @@ TestInputIterator()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
@@ -78,7 +78,7 @@ TestInputConstIterator()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = TestType::Create(TypeKind::Value);
+  auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();

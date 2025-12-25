@@ -19,8 +19,8 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = TestType::Create(TypeKind::State);
-  auto vtype = TestType::Create(TypeKind::Value);
+  auto stype = TestType::createStateType();
+  auto vtype = TestType::createValueType();
 
   Graph graph;
   auto & s = jlm::rvsdg::GraphImport::Create(graph, stype, "");
@@ -102,7 +102,7 @@ RemoveOutputs()
   using namespace jlm::tests;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto node = TestOperation::create(
@@ -194,7 +194,7 @@ RemoveInputs()
   // Arrange
   Graph rvsdg;
   const RecordingObserver observer(rvsdg.GetRootRegion());
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   auto i0 = &GraphImport::Create(rvsdg, valueType, "i0");
   auto i1 = &GraphImport::Create(rvsdg, valueType, "i1");
@@ -275,7 +275,7 @@ NodeInputIteration()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
@@ -312,7 +312,7 @@ NodeOutputIteration()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::Create(TypeKind::Value);
+  const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");

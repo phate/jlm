@@ -16,7 +16,7 @@ operationEquality()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto bit32Type = jlm::rvsdg::BitType::Create(32);
   auto bit64Type = jlm::rvsdg::BitType::Create(64);
 
