@@ -5,7 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
+
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
@@ -16,7 +17,7 @@ TestOutputRemoval()
 
   // Arrange
   rvsdg::Graph rvsdg;
-  auto valueType = tests::ValueType::Create();
+  auto valueType = rvsdg::TestType::createValueType();
 
   auto structuralNode = tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   auto & output0 = structuralNode->addOutputOnly(valueType);

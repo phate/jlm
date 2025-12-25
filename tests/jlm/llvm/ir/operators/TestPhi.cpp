@@ -6,10 +6,10 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -19,7 +19,7 @@ TestPhiCreation()
 
   jlm::rvsdg::Graph graph;
 
-  auto vtype = jlm::tests::ValueType::Create();
+  auto vtype = jlm::rvsdg::TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto f0type = jlm::rvsdg::FunctionType::Create(

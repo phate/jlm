@@ -4,10 +4,10 @@
  */
 
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 TestDeadLoopNode()
@@ -15,7 +15,7 @@ TestDeadLoopNode()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
@@ -47,7 +47,7 @@ TestDeadLoopNodeOutput()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });

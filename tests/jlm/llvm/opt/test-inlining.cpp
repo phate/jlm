@@ -6,7 +6,6 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -16,6 +15,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -78,7 +78,7 @@ testSimpleInlining()
   // Arrange
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vt, "i");
@@ -219,7 +219,7 @@ testInliningWithAlloca()
   // Arrange
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vt, "i");
@@ -325,7 +325,7 @@ testIndirectCall()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -405,7 +405,7 @@ testFunctionWithDisqualifyingAlloca()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 

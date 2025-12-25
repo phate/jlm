@@ -5,13 +5,13 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -20,7 +20,7 @@ test()
   using namespace jlm::llvm;
   using namespace jlm::tests;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   auto d0 = DataNode::Create(im.ipgraph(), "d0", vt, Linkage::externalLinkage, "", false);

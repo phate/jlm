@@ -5,7 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
+
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 ToAscii()
@@ -14,7 +15,7 @@ ToAscii()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
 
   Variable v0(valueType, "v0");
   Variable v1(valueType, "v1");

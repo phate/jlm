@@ -5,11 +5,11 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -21,7 +21,7 @@ BufferWithLocalLoad()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -66,7 +66,7 @@ BufferWithLocalStore()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -111,7 +111,7 @@ BufferWithLoad()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -156,7 +156,7 @@ BufferWithStore()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -206,7 +206,7 @@ BufferWithForkAndLocalLoad()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -252,7 +252,7 @@ BufferWithBranchAndLocalLoad()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto controlType = ControlType::Create(2);
   auto memoryStateType = MemoryStateType::Create();
@@ -300,7 +300,7 @@ BufferWithOtherNode()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -347,7 +347,7 @@ BufferWithNonMemoryStateOperand()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -394,7 +394,7 @@ PassthroughBuffer()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 

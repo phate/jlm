@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
@@ -14,6 +13,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -26,7 +26,7 @@ GammaWithMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(1), valueType, valueType },
       { valueType });
@@ -75,7 +75,7 @@ GammaWithoutMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
@@ -123,7 +123,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -177,7 +177,7 @@ EmptyGammaWithTwoSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -238,7 +238,7 @@ EmptyGammaWithThreeSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -290,7 +290,7 @@ PartialEmptyGamma()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
@@ -342,7 +342,7 @@ RecursiveData()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::createValueType();
   auto pt = PointerType::Create();
 
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");

@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
-#include <tests/test-types.hpp>
 
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
@@ -17,7 +16,7 @@ TestIsOrContains()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto ioStateType = IOStateType::Create();
