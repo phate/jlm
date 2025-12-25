@@ -20,17 +20,17 @@
 namespace jlm::tests
 {
 
-class NullaryOperation final : public rvsdg::NullaryOperation
+class TestNullaryOperation final : public rvsdg::NullaryOperation
 {
 public:
-  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
-      : rvsdg::NullaryOperation(resultType)
+  explicit TestNullaryOperation(const std::shared_ptr<const rvsdg::Type> & resultType)
+      : NullaryOperation(resultType)
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    const auto nullaryOperation = dynamic_cast<const NullaryOperation *>(&other);
+    const auto nullaryOperation = dynamic_cast<const TestNullaryOperation *>(&other);
     return nullaryOperation && *result(0) == *nullaryOperation->result(0);
   }
 
@@ -43,7 +43,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<NullaryOperation>(this->result(0));
+    return std::make_unique<TestNullaryOperation>(this->result(0));
   }
 };
 

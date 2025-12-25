@@ -22,13 +22,13 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   const auto stateType = TestType::createStateType();
 
   auto & nullaryValueNode1 =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
   auto & nullaryValueNode2 =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
   auto & nullaryStateNode1 =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
   auto & nullaryStateNode2 =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
 
   auto & exNullaryValueNode1 = GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
   auto & exNullaryValueNode2 = GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
@@ -140,9 +140,9 @@ NormalizeSimpleOperationCne_Failure()
   auto s1 = &GraphImport::Create(graph, stateType, "s1");
 
   auto & nullaryValueNode =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
   auto & nullaryStateNode =
-      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
+      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
   auto & unaryValueNode =
       CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
   auto & unaryStateNode =
