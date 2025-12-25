@@ -25,7 +25,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<jlm::tests::NullaryOperation>(node))
+        jlm::rvsdg::is<jlm::tests::TestNullaryOperation>(node))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
@@ -74,7 +74,7 @@ NormalizeUnaryOperation_Success()
   const auto valueType = TestType::createValueType();
 
   const auto nullaryNode =
-      &CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
+      &CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
 
   const auto unaryNode =
       &CreateOpNode<::UnaryOperation>({ nullaryNode->output(0) }, valueType, valueType);
