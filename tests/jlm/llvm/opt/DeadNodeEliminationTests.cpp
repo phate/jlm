@@ -5,7 +5,6 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -16,6 +15,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -36,8 +36,14 @@ RootRegion()
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  jlm::rvsdg::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
+  jlm::rvsdg::GraphImport::Create(
+      graph,
+      jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value),
+      "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(
+      graph,
+      jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value),
+      "y");
 
   jlm::rvsdg::GraphExport::Create(*y, "z");
   jlm::rvsdg::view(graph, stdout);
@@ -58,7 +64,7 @@ Gamma1()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -106,7 +112,7 @@ Gamma2()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -141,7 +147,7 @@ Theta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -190,7 +196,7 @@ NestedTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -239,7 +245,7 @@ EvolvingTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -283,7 +289,7 @@ Lambda()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -327,7 +333,7 @@ Phi()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -453,7 +459,7 @@ Delta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();

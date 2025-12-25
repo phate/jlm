@@ -5,12 +5,12 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -22,7 +22,7 @@ GammaWithoutMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
@@ -81,7 +81,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -161,7 +161,7 @@ EmptyGammaWithTwoSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -223,7 +223,7 @@ EmptyGammaWithThreeSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
@@ -240,9 +240,10 @@ EmptyGammaWithThreeSubregions()
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
-  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
-                                             gammaInput1.branchArgument[1],
-                                             gammaInput2.branchArgument[2] });
+  auto gammaOutput = gammaNode->AddExitVar(
+      { gammaInput1.branchArgument[0],
+        gammaInput1.branchArgument[1],
+        gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
@@ -276,7 +277,7 @@ PartialEmptyGamma()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });

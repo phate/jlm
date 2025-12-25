@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 #include <TestRvsdgs.hpp>
 
 #include <jlm/rvsdg/control.hpp>
@@ -18,6 +17,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -38,7 +38,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType },
@@ -90,7 +90,7 @@ TestTheta()
   using namespace jlm::llvm;
 
   auto ioStateType = IOStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType },
@@ -145,7 +145,7 @@ TestCall()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
@@ -180,10 +180,11 @@ TestCall()
     auto gammaOutputMemoryState = gammaNode->AddExitVar(
         { gammaInputMemoryState.branchArgument[0], gammaInputMemoryState.branchArgument[1] });
 
-    lambdaOutputTest1 = lambdaNode->finalize({ gammaOutputX.output,
-                                               gammaOutputY.output,
-                                               gammaOutputIOState.output,
-                                               gammaOutputMemoryState.output });
+    lambdaOutputTest1 = lambdaNode->finalize(
+        { gammaOutputX.output,
+          gammaOutputY.output,
+          gammaOutputIOState.output,
+          gammaOutputMemoryState.output });
   }
 
   jlm::rvsdg::Output * lambdaOutputTest2 = nullptr;
@@ -235,7 +236,7 @@ TestCallWithMemoryStateNodes()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
@@ -316,9 +317,10 @@ TestCallWithMemoryStateNodes()
         outputs(&callExitSplitNode),
         { 1, 0 });
 
-    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
-                                               &CallOperation::GetIOStateOutput(callNode),
-                                               lambdaExitMergeNode.output(0) });
+    lambdaOutputTest2 = lambdaNode->finalize(
+        { callNode.output(0),
+          &CallOperation::GetIOStateOutput(callNode),
+          lambdaExitMergeNode.output(0) });
     jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
@@ -353,7 +355,7 @@ TestCallWithMissingMemoryStateNodes()
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
   auto int32Type = BitType::Create(32);
   auto functionType = FunctionType::Create(
       { valueType, ioStateType, memoryStateType },
@@ -423,9 +425,10 @@ TestCallWithMissingMemoryStateNodes()
         outputs(&callExitSplitNode),
         { 0 });
 
-    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
-                                               &CallOperation::GetIOStateOutput(callNode),
-                                               lambdaExitMergeNode.output(0) });
+    lambdaOutputTest2 = lambdaNode->finalize(
+        { callNode.output(0),
+          &CallOperation::GetIOStateOutput(callNode),
+          lambdaExitMergeNode.output(0) });
     GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
@@ -499,7 +502,7 @@ testThetaGammaRedirection()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto valueType = ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
   auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create({ valueType, valueType }, { valueType });
 

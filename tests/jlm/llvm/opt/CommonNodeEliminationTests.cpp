@@ -5,7 +5,6 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -15,6 +14,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -25,7 +25,7 @@ test_simple()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -67,7 +67,7 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -131,7 +131,7 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -182,7 +182,7 @@ test_theta2()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -224,7 +224,7 @@ test_theta3()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -281,7 +281,7 @@ test_theta4()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -332,7 +332,7 @@ test_theta5()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -380,7 +380,7 @@ MultipleThetas()
   using namespace jlm::tests;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -433,7 +433,7 @@ MultipleThetasPassthrough()
   using namespace jlm::tests;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::tests::TestType::Create(TypeKind::Value);
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -480,7 +480,7 @@ test_lambda()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -515,7 +515,7 @@ test_phi()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");

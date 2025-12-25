@@ -5,16 +5,16 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::ValueType::Create();
+static const auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static void
@@ -67,7 +67,7 @@ testPullInBottom()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
   const auto controlType = ControlType::Create(2);
 
   Graph rvsdg;

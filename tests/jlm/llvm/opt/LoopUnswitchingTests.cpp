@@ -5,13 +5,13 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -20,7 +20,7 @@ Test1()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -90,7 +90,7 @@ Test2()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();

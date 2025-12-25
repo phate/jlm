@@ -5,7 +5,6 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -13,6 +12,7 @@
 #include <jlm/util/Statistics.hpp>
 
 #include <fstream>
+#include <jlm/rvsdg/TestType.hpp>
 
 static std::string
 ReadFile(const jlm::util::FilePath & outputFilePath)
@@ -128,7 +128,7 @@ PrintNumLoadNodesAnnotation()
   // Arrange
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -184,7 +184,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();

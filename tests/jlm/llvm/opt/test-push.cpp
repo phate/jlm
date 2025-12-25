@@ -5,7 +5,6 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -15,6 +14,7 @@
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -28,7 +28,7 @@ simpleGamma()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -94,7 +94,7 @@ nestedGamma()
 
   // Arrange
   const auto controlType = ControlType::Create(2);
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -178,7 +178,7 @@ simpleTheta()
 
   // Arrange
   auto controlType = ControlType::Create(2);
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
   const auto functionType = FunctionType::Create(
       {
           controlType,
@@ -247,7 +247,7 @@ invariantMemoryOperation()
   const auto memoryStateType = MemoryStateType::Create();
   const auto pointerType = PointerType::Create();
   const auto controlType = ControlType::Create(2);
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
   const auto functionType = FunctionType::Create(
       { controlType, pointerType, valueType, memoryStateType },
       { memoryStateType });
@@ -303,8 +303,8 @@ statefulOperations()
   using namespace jlm::tests;
 
   auto controlType = ControlType::Create(2);
-  auto valueType = ValueType::Create();
-  auto stateType = StateType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
+  auto stateType = TestType::Create(TypeKind::State);
   const auto functionType = FunctionType::Create(
       {
           controlType,
