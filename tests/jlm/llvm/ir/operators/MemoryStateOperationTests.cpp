@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -323,11 +324,12 @@ MemoryStateMergeNormalizeNestedSplits()
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
-  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ splitNode0.output(0),
-                                                             splitNode0.output(1),
-                                                             splitNode1.output(0),
-                                                             splitNode1.output(1),
-                                                             &ix2 });
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode(
+      { splitNode0.output(0),
+        splitNode0.output(1),
+        splitNode1.output(0),
+        splitNode1.output(1),
+        &ix2 });
 
   auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
@@ -616,7 +618,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -682,7 +684,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -747,7 +749,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   // Arrange
   const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");

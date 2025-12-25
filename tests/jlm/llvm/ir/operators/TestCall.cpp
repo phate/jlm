@@ -6,11 +6,11 @@
 #include <jlm/llvm/DotWriter.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -21,7 +21,7 @@ TestCopy()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -60,7 +60,7 @@ TestCallNodeAccessors()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -104,7 +104,7 @@ TestCallTypeClassifierIndirectCall()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto fcttype1 = jlm::rvsdg::FunctionType::Create(
@@ -170,7 +170,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -215,7 +215,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       return otf;
     };
 
-    auto vt = jlm::tests::ValueType::Create();
+    auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
 
@@ -269,7 +269,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -332,7 +332,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])));
     };
 
-    auto vt = jlm::tests::ValueType::Create();
+    auto vt = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
 

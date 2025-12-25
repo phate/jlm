@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 operationEquality()
@@ -16,7 +16,7 @@ operationEquality()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto bit32Type = jlm::rvsdg::BitType::Create(32);
   auto bit64Type = jlm::rvsdg::BitType::Create(64);
 
