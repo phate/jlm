@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-types.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
