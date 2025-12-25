@@ -6,8 +6,8 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static bool
@@ -28,7 +28,7 @@ test_recursive_prune()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto t = jlm::tests::ValueType::Create();
+  auto t = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & imp = jlm::rvsdg::GraphImport::Create(graph, t, "i");
@@ -83,7 +83,7 @@ test_prune_replace()
 {
   using namespace jlm::rvsdg;
 
-  auto type = jlm::tests::ValueType::Create();
+  auto type = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
@@ -112,7 +112,7 @@ Copy()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & argument = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");

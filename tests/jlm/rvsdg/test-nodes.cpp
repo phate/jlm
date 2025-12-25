@@ -5,10 +5,10 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/HashSet.hpp>
@@ -19,8 +19,8 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = jlm::tests::StateType::Create();
-  auto vtype = jlm::tests::ValueType::Create();
+  auto stype = TestType::Create(TypeKind::State);
+  auto vtype = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & s = jlm::rvsdg::GraphImport::Create(graph, stype, "");
@@ -102,7 +102,7 @@ RemoveOutputs()
   using namespace jlm::tests;
 
   // Arrange
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph rvsdg;
   auto node = TestOperation::create(
@@ -194,7 +194,7 @@ RemoveInputs()
   // Arrange
   Graph rvsdg;
   const RecordingObserver observer(rvsdg.GetRootRegion());
-  const auto valueType = ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   auto i0 = &GraphImport::Create(rvsdg, valueType, "i0");
   auto i1 = &GraphImport::Create(rvsdg, valueType, "i1");
@@ -275,7 +275,7 @@ NodeInputIteration()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
@@ -312,7 +312,7 @@ NodeOutputIteration()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");

@@ -5,7 +5,8 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
+
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 TestInputIterator()
@@ -13,7 +14,7 @@ TestInputIterator()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
@@ -77,7 +78,7 @@ TestInputConstIterator()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();

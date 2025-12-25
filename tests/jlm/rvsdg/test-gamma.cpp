@@ -5,10 +5,10 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -93,7 +93,7 @@ test_invariant_reduction()
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   const auto predicate = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "");
   const auto value = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
@@ -201,7 +201,7 @@ TestRemoveGammaOutputsWhere()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::Create(TypeKind::Value);
   ControlType ct(2);
 
   auto predicate = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "");
@@ -259,7 +259,7 @@ TestPruneOutputs()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::Create(TypeKind::Value);
   ControlType ct(2);
 
   auto predicate = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "");
@@ -304,7 +304,7 @@ TestIsInvariant()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::ValueType::Create();
+  auto vt = TestType::Create(TypeKind::Value);
   ControlType ct(2);
 
   auto predicate = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "");

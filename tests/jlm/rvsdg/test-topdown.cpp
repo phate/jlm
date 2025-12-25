@@ -5,14 +5,14 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
 testInitialization()
 {
-  auto vtype = jlm::tests::ValueType::Create();
+  auto vtype = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   jlm::rvsdg::Graph graph;
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vtype, "i");
@@ -50,7 +50,7 @@ static void
 testBasicTraversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(
@@ -79,7 +79,7 @@ static void
 testOrderEnforcement()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
@@ -141,7 +141,7 @@ testInsertion()
    */
 
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(
@@ -200,7 +200,7 @@ testInsertingTopNode()
   // n2 should be visited, however.
 
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
@@ -253,7 +253,7 @@ testMutating()
   };
 
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
   auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, {});
@@ -281,7 +281,7 @@ testReplacement()
   // n3, n4 and n5 should be visited, however.
 
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });

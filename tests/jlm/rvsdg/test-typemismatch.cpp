@@ -6,7 +6,8 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
+
+#include <jlm/rvsdg/TestType.hpp>
 
 static void
 test_main()
@@ -15,8 +16,8 @@ test_main()
 
   Graph graph;
 
-  auto type = jlm::tests::StateType::Create();
-  auto value_type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(TypeKind::State);
+  auto value_type = TestType::Create(TypeKind::Value);
 
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
 

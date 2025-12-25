@@ -5,7 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
+
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
@@ -19,7 +20,7 @@ ArgumentNodeMismatch()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
@@ -49,12 +50,13 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ArgumentTests-ArgumentNodeMismatch", ArgumentN
 static void
 ArgumentInputTypeMismatch()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
-  auto stateType = StateType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
+  auto stateType = TestType::Create(TypeKind::State);
 
   jlm::rvsdg::Graph rvsdg;
   auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "import");

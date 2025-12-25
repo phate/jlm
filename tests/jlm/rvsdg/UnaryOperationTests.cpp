@@ -5,10 +5,9 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/nullary.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -72,7 +71,7 @@ NormalizeUnaryOperation_Success()
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   const auto nullaryNode =
       &CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
@@ -108,7 +107,7 @@ NormalizeUnaryOperation_Failure()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto i0 = &GraphImport::Create(graph, valueType, "i0");

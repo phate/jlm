@@ -5,8 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
 
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -16,7 +16,7 @@ TestThetaCreation()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto t = jlm::tests::ValueType::Create();
+  auto t = TestType::Create(TypeKind::Value);
 
   auto imp1 = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "imp1");
   auto imp2 = &jlm::rvsdg::GraphImport::Create(graph, t, "imp2");
@@ -56,7 +56,7 @@ TestThetaLoopVarRemoval()
 
   // Arrange
   Graph rvsdg;
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   auto ctl = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");

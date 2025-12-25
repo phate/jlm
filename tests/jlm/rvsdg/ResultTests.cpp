@@ -5,7 +5,8 @@
 
 #include <test-operation.hpp>
 #include <test-registry.hpp>
-#include <test-types.hpp>
+
+#include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
@@ -19,7 +20,7 @@ ResultNodeMismatch()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  auto valueType = TestType::Create(TypeKind::Value);
 
   Graph graph;
   auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
@@ -57,8 +58,8 @@ ResultInputTypeMismatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
-  auto stateType = StateType::Create();
+  auto valueType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
+  auto stateType = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::State);
 
   jlm::rvsdg::Graph rvsdg;
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);

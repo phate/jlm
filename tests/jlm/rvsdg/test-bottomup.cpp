@@ -5,15 +5,15 @@
 
 #include "test-operation.hpp"
 #include "test-registry.hpp"
-#include "test-types.hpp"
 
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
 testInitialization()
 {
   jlm::rvsdg::Graph graph;
-  auto vtype = jlm::tests::ValueType::Create();
+  auto vtype = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, {});
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vtype });
 
@@ -38,7 +38,7 @@ static void
 testBasicTraversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(
       &graph.GetRootRegion(),
@@ -64,7 +64,7 @@ static void
 testOrderEnforcement()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::ValueType::Create();
+  auto type = jlm::rvsdg::TestType::Create(jlm::rvsdg::TypeKind::Value);
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::TestOperation::create(
