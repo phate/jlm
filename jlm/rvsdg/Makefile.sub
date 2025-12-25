@@ -18,6 +18,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/Transformation.cpp \
     jlm/rvsdg/Trace.cpp \
     jlm/rvsdg/traverser.cpp \
+    jlm/rvsdg/TestType.cpp \
     jlm/rvsdg/type.cpp \
     jlm/rvsdg/unary.cpp \
     jlm/rvsdg/UnitType.cpp \
@@ -58,6 +59,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/unary.hpp \
     jlm/rvsdg/UnitType.hpp \
     jlm/rvsdg/simple-node.hpp \
+    jlm/rvsdg/TestType.hpp \
     jlm/rvsdg/type.hpp \
     jlm/rvsdg/binary.hpp \
     jlm/rvsdg/theta.hpp \
