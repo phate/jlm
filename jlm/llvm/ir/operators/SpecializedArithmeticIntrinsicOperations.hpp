@@ -50,8 +50,8 @@ public:
   static std::unique_ptr<ThreeAddressCode>
   CreateTac(const Variable & multiplier, const Variable & multiplicand, const Variable & summand)
   {
-    const FMulAddIntrinsicOperation operation(multiplier.Type());
-    return ThreeAddressCode::create(operation, { &multiplier, &multiplicand, &summand });
+    auto operation = std::make_unique<FMulAddIntrinsicOperation>(multiplier.Type());
+    return ThreeAddressCode::create(std::move(operation), { &multiplier, &multiplicand, &summand });
   }
 
 private:

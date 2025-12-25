@@ -16,9 +16,9 @@ static void
 test()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
-  jlm::tests::TestOperation op({}, { vt });
 
   // Arrange
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
@@ -28,7 +28,7 @@ test()
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
-  bb0->append_last(ThreeAddressCode::create(op, {}));
+  bb0->append_last(TestOperation::CreateTac({}, { vt }));
   bb1->append_last(
       SsaPhiOperation::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
 

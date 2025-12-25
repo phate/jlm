@@ -35,7 +35,11 @@ SetupControlFlowGraph(
   }
 
   auto basicBlock = BasicBlock::create(*cfg);
-  auto threeAddressCode = basicBlock->append_last(ThreeAddressCode::create(operation, operands));
+  auto threeAddressCode = basicBlock->append_last(
+      ThreeAddressCode::create(
+          std::unique_ptr<jlm::rvsdg::SimpleOperation>(
+              jlm::util::assertedCast<jlm::rvsdg::SimpleOperation>(operation.copy().release())),
+          operands));
 
   for (size_t n = 0; n < threeAddressCode->nresults(); n++)
   {

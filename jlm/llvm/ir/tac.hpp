@@ -57,16 +57,16 @@ public:
   ~ThreeAddressCode() noexcept = default;
 
   ThreeAddressCode(
-      const rvsdg::SimpleOperation & operation,
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
       const std::vector<const Variable *> & operands);
 
   ThreeAddressCode(
-      const rvsdg::SimpleOperation & operation,
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
       const std::vector<const Variable *> & operands,
       const std::vector<std::string> & names);
 
   ThreeAddressCode(
-      const rvsdg::SimpleOperation & operation,
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
       const std::vector<const Variable *> & operands,
       std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results);
 
@@ -83,7 +83,7 @@ public:
   inline const rvsdg::SimpleOperation &
   operation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(operation_.get());
+    return *util::assertedCast<rvsdg::SimpleOperation>(operation_.get());
   }
 
   inline size_t
@@ -132,27 +132,32 @@ public:
   ToAscii(const ThreeAddressCode & threeAddressCode);
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands)
+  create(
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
+      const std::vector<const Variable *> & operands)
   {
-    return std::make_unique<llvm::ThreeAddressCode>(operation, operands);
+    return std::make_unique<llvm::ThreeAddressCode>(std::move(operation), operands);
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
-      const rvsdg::SimpleOperation & operation,
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
       const std::vector<const Variable *> & operands,
       const std::vector<std::string> & names)
   {
-    return std::make_unique<llvm::ThreeAddressCode>(operation, operands, names);
+    return std::make_unique<llvm::ThreeAddressCode>(std::move(operation), operands, names);
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
-      const rvsdg::SimpleOperation & operation,
+      std::unique_ptr<rvsdg::SimpleOperation> operation,
       const std::vector<const Variable *> & operands,
       std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
   {
-    return std::make_unique<llvm::ThreeAddressCode>(operation, operands, std::move(results));
+    return std::make_unique<llvm::ThreeAddressCode>(
+        std::move(operation),
+        operands,
+        std::move(results));
   }
 
 private:
