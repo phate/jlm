@@ -29,61 +29,61 @@ libutil_HEADERS = \
 $(eval $(call common_library,libutil))
 
 tests/jlm/util/AnnotationMapTests_SOURCES = tests/jlm/util/AnnotationMapTests.cpp
-tests/jlm/util/AnnotationMapTests_LIBS = librvsdg libutil
+tests/jlm/util/AnnotationMapTests_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/AnnotationMapTests))
 
 tests/jlm/util/IteratorWrapperTests_SOURCES = tests/jlm/util/IteratorWrapperTests.cpp
-tests/jlm/util/IteratorWrapperTests_LIBS = librvsdg libutil
+tests/jlm/util/IteratorWrapperTests_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/IteratorWrapperTests))
 
 tests/jlm/util/ProgramTests_SOURCES = tests/jlm/util/ProgramTests.cpp
-tests/jlm/util/ProgramTests_LIBS = librvsdg libutil
+tests/jlm/util/ProgramTests_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/ProgramTests))
 
 tests/jlm/util/test-disjointset_SOURCES = tests/jlm/util/test-disjointset.cpp
-tests/jlm/util/test-disjointset_LIBS = librvsdg libutil
+tests/jlm/util/test-disjointset_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/test-disjointset))
 
 tests/jlm/util/test-intrusive-hash_SOURCES = tests/jlm/util/test-intrusive-hash.cpp
-tests/jlm/util/test-intrusive-hash_LIBS = librvsdg libutil
+tests/jlm/util/test-intrusive-hash_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/test-intrusive-hash))
 
 tests/jlm/util/test-intrusive-list_SOURCES = tests/jlm/util/test-intrusive-list.cpp
-tests/jlm/util/test-intrusive-list_LIBS = librvsdg libutil
+tests/jlm/util/test-intrusive-list_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/test-intrusive-list))
 
 tests/jlm/util/TestBijectiveMap_SOURCES = tests/jlm/util/TestBijectiveMap.cpp
-tests/jlm/util/TestBijectiveMap_LIBS = librvsdg libutil
+tests/jlm/util/TestBijectiveMap_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestBijectiveMap))
 
 tests/jlm/util/TestFile_SOURCES = tests/jlm/util/TestFile.cpp
-tests/jlm/util/TestFile_LIBS = librvsdg libutil
+tests/jlm/util/TestFile_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestFile))
 
 tests/jlm/util/TestGraphWriter_SOURCES = tests/jlm/util/TestGraphWriter.cpp
-tests/jlm/util/TestGraphWriter_LIBS = librvsdg libutil
+tests/jlm/util/TestGraphWriter_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestGraphWriter))
 
 tests/jlm/util/TestHashSet_SOURCES = tests/jlm/util/TestHashSet.cpp
-tests/jlm/util/TestHashSet_LIBS = librvsdg libutil
+tests/jlm/util/TestHashSet_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestHashSet))
 
 tests/jlm/util/TestMath_SOURCES = tests/jlm/util/TestMath.cpp
-tests/jlm/util/TestMath_LIBS = librvsdg libutil
+tests/jlm/util/TestMath_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestMath))
 
 tests/jlm/util/TestStatistics_SOURCES = tests/jlm/util/TestStatistics.cpp
-tests/jlm/util/TestStatistics_LIBS = librvsdg libutil
+tests/jlm/util/TestStatistics_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestStatistics))
 
 tests/jlm/util/TestTarjanScc_SOURCES = tests/jlm/util/TestTarjanScc.cpp
-tests/jlm/util/TestTarjanScc_LIBS = librvsdg libutil
+tests/jlm/util/TestTarjanScc_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestTarjanScc))
 
 tests/jlm/util/TestTimer_SOURCES = tests/jlm/util/TestTimer.cpp
-tests/jlm/util/TestTimer_LIBS = librvsdg libutil
+tests/jlm/util/TestTimer_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestTimer))
 
 tests/jlm/util/TestWorklist_SOURCES = tests/jlm/util/TestWorklist.cpp
-tests/jlm/util/TestWorklist_LIBS = librvsdg libutil
+tests/jlm/util/TestWorklist_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/TestWorklist))
