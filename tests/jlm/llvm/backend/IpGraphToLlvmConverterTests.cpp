@@ -40,12 +40,11 @@ LoadConversion()
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
-  auto loadTac = basicBlock->append_last(
-      LoadNonVolatileOperation::Create(
-          addressArgument,
-          memoryStateArgument,
-          jlm::rvsdg::BitType::Create(64),
-          alignment));
+  auto loadTac = basicBlock->append_last(LoadNonVolatileOperation::Create(
+      addressArgument,
+      memoryStateArgument,
+      jlm::rvsdg::BitType::Create(64),
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -103,13 +102,12 @@ LoadVolatileConversion()
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
-  auto loadTac = basicBlock->append_last(
-      LoadVolatileOperation::Create(
-          addressArgument,
-          ioStateArgument,
-          memoryStateArgument,
-          bit64Type,
-          alignment));
+  auto loadTac = basicBlock->append_last(LoadVolatileOperation::Create(
+      addressArgument,
+      ioStateArgument,
+      memoryStateArgument,
+      bit64Type,
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -171,12 +169,11 @@ MemCpyConversion()
       cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
-  auto memCpyTac = basicBlock->append_last(
-      MemCpyNonVolatileOperation::create(
-          destinationArgument,
-          sourceArgument,
-          lengthArgument,
-          { memoryStateArgument }));
+  auto memCpyTac = basicBlock->append_last(MemCpyNonVolatileOperation::create(
+      destinationArgument,
+      sourceArgument,
+      lengthArgument,
+      { memoryStateArgument }));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -239,13 +236,12 @@ MemCpyVolatileConversion()
       *cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
-  auto memCpyTac = basicBlock->append_last(
-      MemCpyVolatileOperation::CreateThreeAddressCode(
-          destinationArgument,
-          sourceArgument,
-          lengthArgument,
-          ioStateArgument,
-          { &memoryStateArgument }));
+  auto memCpyTac = basicBlock->append_last(MemCpyVolatileOperation::CreateThreeAddressCode(
+      destinationArgument,
+      sourceArgument,
+      lengthArgument,
+      ioStateArgument,
+      { &memoryStateArgument }));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -302,12 +298,11 @@ StoreConversion()
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
-  auto storeTac = basicBlock->append_last(
-      StoreNonVolatileOperation::Create(
-          addressArgument,
-          valueArgument,
-          memoryStateArgument,
-          alignment));
+  auto storeTac = basicBlock->append_last(StoreNonVolatileOperation::Create(
+      addressArgument,
+      valueArgument,
+      memoryStateArgument,
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -368,13 +363,12 @@ StoreVolatileConversion()
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
-  auto storeTac = basicBlock->append_last(
-      StoreVolatileOperation::Create(
-          addressArgument,
-          valueArgument,
-          ioStateArgument,
-          memoryStateArgument,
-          alignment));
+  auto storeTac = basicBlock->append_last(StoreVolatileOperation::Create(
+      addressArgument,
+      valueArgument,
+      ioStateArgument,
+      memoryStateArgument,
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -437,11 +431,10 @@ FMulAddConversion()
         cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
     auto basicBlock = BasicBlock::create(*cfg);
-    auto fMulAddTac = basicBlock->append_last(
-        FMulAddIntrinsicOperation::CreateTac(
-            multiplierArgument,
-            multiplicandArgument,
-            summandArgument));
+    auto fMulAddTac = basicBlock->append_last(FMulAddIntrinsicOperation::CreateTac(
+        multiplierArgument,
+        multiplicandArgument,
+        summandArgument));
 
     cfg->exit()->divert_inedges(basicBlock);
     basicBlock->add_outedge(cfg->exit());

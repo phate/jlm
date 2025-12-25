@@ -240,10 +240,9 @@ EmptyGammaWithThreeSubregions()
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
-  auto gammaOutput = gammaNode->AddExitVar(
-      { gammaInput1.branchArgument[0],
-        gammaInput1.branchArgument[1],
-        gammaInput2.branchArgument[2] });
+  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
+                                             gammaInput1.branchArgument[1],
+                                             gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
