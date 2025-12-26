@@ -17,10 +17,12 @@ testInitialization()
   jlm::rvsdg::Graph graph;
   auto i = &jlm::rvsdg::GraphImport::Create(graph, vtype, "i");
 
-  auto constant = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vtype });
-  auto unary = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { vtype });
-  auto binary =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i, unary->output(0) }, { vtype });
+  auto constant = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vtype });
+  auto unary = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { i }, { vtype });
+  auto binary = jlm::tests::TestOperation::createNode(
+      &graph.GetRootRegion(),
+      { i, unary->output(0) },
+      { vtype });
 
   jlm::rvsdg::GraphExport::Create(*constant->output(0), "c");
   jlm::rvsdg::GraphExport::Create(*unary->output(0), "u");
@@ -52,8 +54,8 @@ testBasicTraversal()
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 = jlm::tests::TestOperation::create(
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = jlm::tests::TestOperation::createNode(
       &graph.GetRootRegion(),
       { n1->output(0), n1->output(1) },
       { type });
@@ -81,9 +83,10 @@ testOrderEnforcement()
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::TestOperation::create(
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::TestOperation::createNode(
       &graph.GetRootRegion(),
       { n2->output(0), n1->output(1) },
       { type });
@@ -143,12 +146,13 @@ testInsertion()
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 = jlm::tests::TestOperation::create(
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = jlm::tests::TestOperation::createNode(
       &graph.GetRootRegion(),
       { n1->output(0), n1->output(1) },
       { type });
-  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
   auto & graphExport = jlm::rvsdg::GraphExport::Create(*n3->output(0), "dummy");
 
@@ -162,10 +166,10 @@ testInsertion()
     /* At this point, n1 has been visited, make the transformation */
 
     auto nX =
-        jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+        jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
     n3->input(0)->divert_to(n1->output(1));
     auto nY =
-        jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, { type });
+        jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n3->output(0) }, { type });
 
     n2->input(0)->divert_to(nX->output(0));
     n2->input(1)->divert_to(nY->output(0));
@@ -202,8 +206,9 @@ testInsertingTopNode()
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n2 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
   jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
@@ -212,7 +217,7 @@ testInsertingTopNode()
   auto node = trav.next();
   assert(node == n1);
 
-  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
+  auto nX = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
   n1->output(0)->divert_users(nX->output(0));
 
   node = trav.next();
@@ -254,9 +259,9 @@ testMutating()
 
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, {});
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n3 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, {});
 
   test(&graph, n1, n2, n3);
   test(&graph, n1, n2, n3);
@@ -283,11 +288,15 @@ testReplacement()
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
-  auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, { type });
-  auto n5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n2 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n4 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n3->output(0) }, { type });
+  auto n5 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
   jlm::rvsdg::GraphExport::Create(*n4->output(0), "dummy");
 
@@ -298,8 +307,10 @@ testReplacement()
 
   node = trav.next();
   assert(node == n2);
-  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto nY = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { nX->output(0) }, { type });
+  auto nX =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto nY =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { nX->output(0) }, { type });
   n3->output(0)->divert_users(nY->output(0));
   n5->input(0)->divert_to(nX->output(0));
 

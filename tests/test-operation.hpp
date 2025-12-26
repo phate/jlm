@@ -327,20 +327,20 @@ public:
   copy() const override;
 
   static rvsdg::SimpleNode *
-  create(
+  createNode(
       rvsdg::Region * region,
       const std::vector<rvsdg::Output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
     for (const auto & operand : operands)
-      operand_types.push_back(operand->Type());
+      operandTypes.push_back(operand->Type());
 
-    return Create(region, operand_types, operands, result_types);
+    return createNode(region, operandTypes, operands, resultTypes);
   }
 
   static rvsdg::SimpleNode *
-  Create(
+  createNode(
       rvsdg::Region * region,
       std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
       const std::vector<rvsdg::Output *> & operands,

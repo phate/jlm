@@ -33,12 +33,14 @@ testPullInTop()
   auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
-  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2 }, { vt })->output(0);
-  auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { c, n1 }, { ct })->output(0);
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto n2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto n3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2 }, { vt })->output(0);
+  auto n4 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { c, n1 }, { ct })->output(0);
   auto n5 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1, n3 }, { vt })->output(0);
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1, n3 }, { vt })->output(0);
 
   auto gamma = jlm::rvsdg::GammaNode::create(n4, 2);
 
@@ -80,8 +82,8 @@ testPullInBottom()
   gammaNode->AddExitVar(entryVar.branchArgument);
 
   auto node1 =
-      TestOperation::create(&rvsdg.GetRootRegion(), { gammaNode->output(0), x }, { valueType });
-  auto node2 = TestOperation::create(
+      TestOperation::createNode(&rvsdg.GetRootRegion(), { gammaNode->output(0), x }, { valueType });
+  auto node2 = TestOperation::createNode(
       &rvsdg.GetRootRegion(),
       { gammaNode->output(0), node1->output(0) },
       { valueType });
@@ -117,21 +119,21 @@ testPull()
 
   auto p = &jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");
 
-  auto croot = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt })->output(0);
+  auto croot = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vt })->output(0);
 
   /* outer gamma */
   auto gamma1 = jlm::rvsdg::GammaNode::create(p, 2);
   auto ev1 = gamma1->AddEntryVar(p);
   auto ev2 = gamma1->AddEntryVar(croot);
 
-  auto cg1 = jlm::tests::TestOperation::create(gamma1->subregion(0), {}, { vt })->output(0);
+  auto cg1 = jlm::tests::TestOperation::createNode(gamma1->subregion(0), {}, { vt })->output(0);
 
   /* inner gamma */
   auto gamma2 = jlm::rvsdg::GammaNode::create(ev1.branchArgument[1], 2);
   auto ev3 = gamma2->AddEntryVar(ev2.branchArgument[1]);
-  auto cg2 = jlm::tests::TestOperation::create(gamma2->subregion(0), {}, { vt })->output(0);
+  auto cg2 = jlm::tests::TestOperation::createNode(gamma2->subregion(0), {}, { vt })->output(0);
   auto un =
-      jlm::tests::TestOperation::create(gamma2->subregion(1), { ev3.branchArgument[1] }, { vt })
+      jlm::tests::TestOperation::createNode(gamma2->subregion(1), { ev3.branchArgument[1] }, { vt })
           ->output(0);
   auto g2xv = gamma2->AddExitVar({ cg2, un });
 

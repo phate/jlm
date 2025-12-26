@@ -275,7 +275,7 @@ LoadAndStore()
   auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[1];
   auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[2];
 
-  auto valueNode = TestOperation::create(lambdaNode->subregion(), {}, { valueType });
+  auto valueNode = TestOperation::createNode(lambdaNode->subregion(), {}, { valueType });
 
   auto & loadNode1 =
       LoadNonVolatileOperation::CreateNode(addressArgument, { &memoryStateArgument }, valueType, 4);
@@ -495,7 +495,7 @@ GammaWithLoadsAndStores()
       4);
 
   // subregion 1
-  auto value = TestOperation::create(gammaNode->subregion(1), {}, { valueType });
+  auto value = TestOperation::createNode(gammaNode->subregion(1), {}, { valueType });
   auto & storeNode = StoreNonVolatileOperation::CreateNode(
       *addressEntryVar.branchArgument[1],
       *value->output(0),
@@ -845,11 +845,12 @@ DeadOutputs()
 
   auto undefValue = UndefValueOperation::Create(*lambdaNode->subregion(), memoryStateType);
 
-  lambdaNode->finalize({
-      loadNode2.output(0),
-      &ioStateArgument,
-      undefValue,
-  });
+  lambdaNode->finalize(
+      {
+          loadNode2.output(0),
+          &ioStateArgument,
+          undefValue,
+      });
 
   view(rvsdg, stdout);
 

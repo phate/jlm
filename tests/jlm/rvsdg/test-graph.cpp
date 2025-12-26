@@ -33,14 +33,14 @@ test_recursive_prune()
   Graph graph;
   auto & imp = jlm::rvsdg::GraphImport::Create(graph, t, "i");
 
-  auto n1 = TestOperation::create(&graph.GetRootRegion(), { &imp }, { t });
-  auto n2 = TestOperation::create(&graph.GetRootRegion(), { &imp }, { t });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), { &imp }, { t });
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), { &imp }, { t });
 
   auto n3 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto input0 = n3->addInputWithArguments(imp);
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
-  auto n4 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
-  auto n5 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
+  auto n4 = TestOperation::createNode(n3->subregion(0), { &a1 }, { t });
+  auto n5 = TestOperation::createNode(n3->subregion(0), { &a1 }, { t });
   auto o1 = n3->addOutputWithResults({ n4->output(0) });
 
   auto n6 = TestStructuralNode::create(n3->subregion(0), 1);
@@ -86,14 +86,17 @@ test_prune_replace()
   auto type = TestType::createValueType();
 
   Graph graph;
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n2 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
   GraphExport::Create(*n2->output(0), "n2");
   GraphExport::Create(*n3->output(0), "n3");
 
-  auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n4 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
   n2->output(0)->divert_users(n4->output(0));
   assert(n2->output(0)->nusers() == 0);
@@ -116,7 +119,7 @@ Copy()
 
   Graph graph;
   auto & argument = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
-  auto node = TestOperation::create(&graph.GetRootRegion(), { &argument }, { valueType });
+  auto node = TestOperation::createNode(&graph.GetRootRegion(), { &argument }, { valueType });
   GraphExport::Create(*node->output(0), "export");
 
   // Act

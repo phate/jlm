@@ -240,9 +240,10 @@ EmptyGammaWithThreeSubregions()
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
-  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
-                                             gammaInput1.branchArgument[1],
-                                             gammaInput2.branchArgument[2] });
+  auto gammaOutput = gammaNode->AddExitVar(
+      { gammaInput1.branchArgument[0],
+        gammaInput1.branchArgument[1],
+        gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
@@ -290,7 +291,7 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output = TestOperation::create(
+  auto output = TestOperation::createNode(
                     gammaNode->subregion(1),
                     { gammaInput.branchArgument[1] },
                     { valueType })

@@ -42,12 +42,12 @@ GammaSubregionUsage()
   auto gammaNode = GammaNode::create(controlArgument, 3);
   auto entryVariable = gammaNode->AddEntryVar(constantNode.output(0));
 
-  auto testNode0 = TestOperation::create(
+  auto testNode0 = TestOperation::createNode(
       gammaNode->subregion(0),
       { entryVariable.branchArgument[0] },
       { bit32Type });
 
-  auto testNode1 = TestOperation::create(
+  auto testNode1 = TestOperation::createNode(
       gammaNode->subregion(1),
       { entryVariable.branchArgument[1] },
       { bit32Type });
@@ -120,7 +120,7 @@ NestedGammas()
   auto entryVarConstant = gammaNodeOuter->AddEntryVar(constantNode.output(0));
 
   // gammaNodeOuter subregion 0
-  auto testNode0 = TestOperation::create(
+  auto testNode0 = TestOperation::createNode(
       gammaNodeOuter->subregion(0),
       { entryVarConstant.branchArgument[0] },
       { bit32Type });
@@ -135,8 +135,10 @@ NestedGammas()
   auto exitVariableOuter =
       gammaNodeOuter->AddExitVar({ testNode0->output(0), exitVariableInner.output });
 
-  auto testNode1 =
-      TestOperation::create(lambdaNode->subregion(), { exitVariableOuter.output }, { bit32Type });
+  auto testNode1 = TestOperation::createNode(
+      lambdaNode->subregion(),
+      { exitVariableOuter.output },
+      { bit32Type });
 
   auto lambdaOutput = lambdaNode->finalize({ testNode1->output(0) });
 
@@ -212,15 +214,17 @@ Theta()
   auto loopVar1 = thetaNode->AddLoopVar(constantNode0.output(0));
   auto loopVar2 = thetaNode->AddLoopVar(constantNode2.output(0));
 
-  auto testNode0 = TestOperation::create(thetaNode->subregion(), { loopVar0.pre }, { bit32Type });
+  auto testNode0 =
+      TestOperation::createNode(thetaNode->subregion(), { loopVar0.pre }, { bit32Type });
   auto & constantNode1 = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1);
-  auto testNode2 = TestOperation::create(thetaNode->subregion(), { loopVar2.pre }, { bit32Type });
+  auto testNode2 =
+      TestOperation::createNode(thetaNode->subregion(), { loopVar2.pre }, { bit32Type });
 
   loopVar0.post->divert_to(testNode0->output(0));
   loopVar1.post->divert_to(constantNode1.output(0));
 
   auto testNode1 =
-      TestOperation::create(thetaNode->subregion(), { loopVar0.output }, { bit32Type });
+      TestOperation::createNode(thetaNode->subregion(), { loopVar0.output }, { bit32Type });
 
   auto lambdaOutput =
       lambdaNode->finalize({ testNode1->output(0), loopVar1.output, loopVar2.output });
