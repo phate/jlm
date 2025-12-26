@@ -39,14 +39,12 @@ test()
   d2->add_dependency(d1);
 
   tacsvector_t tvec1, tvec2;
-  tvec1.push_back(
-      ThreeAddressCode::create(
-          TestOperation::create({ pointerType, pointerType }, { vt }),
-          { v0, v2 }));
-  tvec2.push_back(
-      ThreeAddressCode::create(
-          TestOperation::create({ pointerType, pointerType }, { vt }),
-          { v0, v1 }));
+  tvec1.push_back(ThreeAddressCode::create(
+      TestOperation::create({ pointerType, pointerType }, { vt }),
+      { v0, v2 }));
+  tvec2.push_back(ThreeAddressCode::create(
+      TestOperation::create({ pointerType, pointerType }, { vt }),
+      { v0, v1 }));
 
   d1->set_initialization(std::make_unique<DataNodeInit>(std::move(tvec1)));
   d2->set_initialization(std::make_unique<DataNodeInit>(std::move(tvec2)));
