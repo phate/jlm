@@ -31,9 +31,9 @@ test_straightening()
   bb3->add_outedge(cfg.exit());
 
   auto arg = cfg.entry()->append_argument(Argument::create("arg", vt));
-  bb1->append_last(TestOperation::CreateTac({ arg }, { vt }));
-  bb2->append_last(TestOperation::CreateTac({ arg }, { vt }));
-  bb3->append_last(TestOperation::CreateTac({ arg }, { vt }));
+  bb1->append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { arg }));
+  bb2->append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { arg }));
+  bb3->append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { arg }));
 
   auto bb3_last = static_cast<const BasicBlock *>(bb3)->tacs().last();
   straighten(cfg);

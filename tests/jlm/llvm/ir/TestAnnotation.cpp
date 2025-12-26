@@ -27,10 +27,10 @@ TestBasicBlockAnnotation()
     auto v0 = module.create_variable(vt, "v0");
 
     ThreeAddressCodeList bb;
-    bb.append_last(TestOperation::CreateTac({ v0 }, { vt }));
+    bb.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v0 }));
     auto v1 = bb.last()->result(0);
 
-    bb.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    bb.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v2 = bb.last()->result(0);
 
     auto root = BasicBlockAggregationNode::create(std::move(bb));
@@ -70,10 +70,10 @@ TestLinearSubgraphAnnotation()
     auto vt = jlm::rvsdg::TestType::createValueType();
 
     ThreeAddressCodeList bb1, bb2;
-    bb1.append_last(TestOperation::CreateTac({ &argument }, { vt }));
+    bb1.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { &argument }));
     auto v1 = bb1.last()->result(0);
 
-    bb2.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    bb2.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v2 = bb2.last()->result(0);
 
     auto entryNode = EntryAggregationNode::create({ &argument });
@@ -158,15 +158,16 @@ TestBranchAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList splitTacList, bb1, bb2;
-    splitTacList.append_last(TestOperation::CreateTac({ argument }, { vt }));
+    splitTacList.append_last(
+        ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { argument }));
     auto v1 = splitTacList.last()->result(0);
 
-    bb2.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    bb2.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v2 = bb2.last()->result(0);
 
     bb1.append_last(AssignmentOperation::create(v2, v3));
     bb2.append_last(AssignmentOperation::create(v1, v3));
-    bb2.append_last(TestOperation::CreateTac({ v3 }, { vt }));
+    bb2.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v3 }));
     auto v4 = bb2.last()->result(0);
 
     auto basicBlockSplit = BasicBlockAggregationNode::create(std::move(splitTacList));
@@ -239,10 +240,10 @@ TestLoopAnnotation()
     auto v4 = module.create_variable(vt, "v4");
 
     ThreeAddressCodeList bb;
-    bb.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    bb.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v2 = bb.last()->result(0);
 
-    bb.append_last(TestOperation::CreateTac({ v2 }, { vt }));
+    bb.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v2 }));
     auto v3 = bb.last()->result(0);
 
     auto exitNode = ExitAggregationNode::create({ v3, v4 });
@@ -302,11 +303,11 @@ TestBranchInLoopAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList tl_cb1, tl_cb2;
-    tl_cb1.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    tl_cb1.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v2 = tl_cb1.last()->result(0);
 
     tl_cb1.append_last(AssignmentOperation::create(v1, v3));
-    tl_cb1.append_last(TestOperation::CreateTac({ v1 }, { vt }));
+    tl_cb1.append_last(ThreeAddressCode::create(TestOperation::create({ vt }, { vt }), { v1 }));
     auto v4 = tl_cb1.last()->result(0);
 
     tl_cb2.append_last(AssignmentOperation::create(v1, v3));
@@ -429,10 +430,10 @@ TestBranchPassByAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList tlsplit, tlb1, tlb2;
-    tlsplit.append_last(TestOperation::CreateTac({}, { vt }));
+    tlsplit.append_last(ThreeAddressCode::create(TestOperation::create({}, { vt }), {}));
     auto v1 = tlsplit.last()->result(0);
 
-    tlsplit.append_last(TestOperation::CreateTac({}, { vt }));
+    tlsplit.append_last(ThreeAddressCode::create(TestOperation::create({}, { vt }), {}));
     auto v2 = tlsplit.last()->result(0);
 
     tlb1.append_last(AssignmentOperation::create(v1, v2));
