@@ -21,8 +21,9 @@ test()
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
-  jlm::rvsdg::ControlConstantOperation op(jlm::rvsdg::ControlValueRepresentation(1, 2));
-  bb0->append_last(ThreeAddressCode::create(op, {}));
+  auto op = std::make_unique<jlm::rvsdg::ControlConstantOperation>(
+      jlm::rvsdg::ControlValueRepresentation(1, 2));
+  bb0->append_last(ThreeAddressCode::create(std::move(op), {}));
   bb0->append_last(BranchOperation::create(2, bb0->last()->result(0)));
 
   cfg.exit()->divert_inedges(bb0);

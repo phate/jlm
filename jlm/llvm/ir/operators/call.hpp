@@ -430,10 +430,10 @@ public:
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation op(std::move(functionType));
+    auto op = std::make_unique<CallOperation>(std::move(functionType));
     std::vector<const Variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return ThreeAddressCode::create(op, operands);
+    return ThreeAddressCode::create(std::move(op), operands);
   }
 
   static std::vector<rvsdg::Output *>

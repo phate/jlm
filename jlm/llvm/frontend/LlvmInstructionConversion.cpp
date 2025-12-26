@@ -53,8 +53,9 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, Context & ctx)
   const Variable * var = ConvertValueOrFunction(v, tacs, ctx);
   if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
   {
+    auto operation = std::make_unique<FunctionToPointerOperation>(fntype);
     std::unique_ptr<ThreeAddressCode> ptr_cast =
-        ThreeAddressCode::create(FunctionToPointerOperation(fntype), { var });
+        ThreeAddressCode::create(std::move(operation), { var });
     var = ptr_cast->result(0);
     tacs.push_back(std::move(ptr_cast));
   }
@@ -98,7 +99,8 @@ convert_int_constant(
   const auto constant = ::llvm::cast<const ::llvm::ConstantInt>(c);
 
   const auto v = convert_apint(constant->getValue());
-  tacs.push_back(ThreeAddressCode::create(IntegerConstantOperation(std::move(v)), {}));
+  tacs.push_back(
+      ThreeAddressCode::create(std::make_unique<IntegerConstantOperation>(std::move(v)), {}));
 
   return tacs.back()->result(0);
 }
@@ -423,8 +425,9 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::MatchOperation(nbits, { { 1, 1 } }, 0, 2);
-  tacs.push_back(ThreeAddressCode::create(op, { c }));
+  auto op =
+      std::unique_ptr<rvsdg::MatchOperation>(new rvsdg::MatchOperation(nbits, { { 1, 1 } }, 0, 2));
+  tacs.push_back(ThreeAddressCode::create(std::move(op), { c }));
   tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
   return nullptr;
@@ -450,8 +453,12 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::MatchOperation(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
-  tacs.push_back(ThreeAddressCode::create(op, { c }));
+  auto op = std::make_unique<rvsdg::MatchOperation>(
+      nbits,
+      mapping,
+      defaultEdge->index(),
+      bb->NumOutEdges());
+  tacs.push_back(ThreeAddressCode::create(std::move(op), { c }));
   tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
@@ -556,7 +563,7 @@ convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, Context & ctx
   }
   else
   {
-    tacs.push_back(ThreeAddressCode::create(*operation, { op1, op2 }));
+    tacs.push_back(ThreeAddressCode::create(std::move(operation), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -595,12 +602,14 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   JLM_ASSERT(map.find(i->getPredicate()) != map.end());
   auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-  FCmpOperation operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
+  auto operation = std::make_unique<FCmpOperation>(
+      map[i->getPredicate()],
+      typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
-    tacs.push_back(VectorBinaryOperation::create(operation, op1, op2, type));
+    tacs.push_back(VectorBinaryOperation::create(*operation, op1, op2, type));
   else
-    tacs.push_back(ThreeAddressCode::create(operation, { op1, op2 }));
+    tacs.push_back(ThreeAddressCode::create(std::move(operation), { op1, op2 }));
 
   return tacs.back()->result(0);
 }
@@ -608,8 +617,9 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 static const Variable *
 AddIOBarrier(tacsvector_t & tacs, const Variable * operand, const Context & ctx)
 {
-  const auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand->Type());
-  tacs.push_back(ThreeAddressCode::create(*ioBarrierOperation, { operand, ctx.iostate() }));
+  auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand->Type());
+  tacs.push_back(
+      ThreeAddressCode::create(std::move(ioBarrierOperation), { operand, ctx.iostate() }));
   return tacs.back()->result(0);
 }
 
@@ -907,8 +917,9 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   // to cast it into a function object.
   if (is<PointerType>(*callee->Type()))
   {
-    std::unique_ptr<ThreeAddressCode> callee_cast =
-        ThreeAddressCode::create(PointerToFunctionOperation(convertedFType), { callee });
+    std::unique_ptr<ThreeAddressCode> callee_cast = ThreeAddressCode::create(
+        std::make_unique<PointerToFunctionOperation>(convertedFType),
+        { callee });
     callee = callee_cast->result(0);
     tacs.push_back(std::move(callee_cast));
   }
@@ -921,10 +932,11 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     {
       // Since vararg passing is not modelled explicitly, simply hide the
       // argument mismtach via pointer casts.
-      std::unique_ptr<ThreeAddressCode> ptrCast =
-          ThreeAddressCode::create(FunctionToPointerOperation(fntype), { callee });
+      std::unique_ptr<ThreeAddressCode> ptrCast = ThreeAddressCode::create(
+          std::make_unique<FunctionToPointerOperation>(fntype),
+          { callee });
       std::unique_ptr<ThreeAddressCode> fnCast = ThreeAddressCode::create(
-          PointerToFunctionOperation(convertedFType),
+          std::make_unique<PointerToFunctionOperation>(convertedFType),
           { ptrCast->result(0) });
       callee = fnCast->result(0);
       tacs.push_back(std::move(ptrCast));
@@ -1077,7 +1089,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, Context
   }
   else
   {
-    tacs.push_back(ThreeAddressCode::create(*operation, { operand1, operand2 }));
+    tacs.push_back(ThreeAddressCode::create(std::move(operation), { operand1, operand2 }));
   }
 
   return tacs.back()->result(0);
@@ -1183,10 +1195,10 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
 }
 
 template<class OP>
-static std::unique_ptr<rvsdg::Operation>
+static std::unique_ptr<rvsdg::SimpleOperation>
 create_unop(std::shared_ptr<const rvsdg::Type> st, std::shared_ptr<const rvsdg::Type> dt)
 {
-  return std::unique_ptr<rvsdg::Operation>(new OP(std::move(st), std::move(dt)));
+  return std::unique_ptr<rvsdg::SimpleOperation>(new OP(std::move(st), std::move(dt)));
 }
 
 static const Variable *
@@ -1199,7 +1211,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
 
   static std::unordered_map<
       unsigned,
-      std::unique_ptr<rvsdg::Operation> (*)(
+      std::unique_ptr<rvsdg::SimpleOperation> (*)(
           std::shared_ptr<const rvsdg::Type>,
           std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<TruncOperation> },
@@ -1229,8 +1241,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
     tacs.push_back(
         VectorUnaryOperation::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
-    tacs.push_back(
-        ThreeAddressCode::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
+    tacs.push_back(ThreeAddressCode::create(std::move(unop), { op }));
 
   return tacs.back()->result(0);
 }

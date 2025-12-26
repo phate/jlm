@@ -122,8 +122,8 @@ public:
     if (operands.empty())
       throw util::Error("Insufficient number of operands.");
 
-    MemoryStateMergeOperation operation(operands.size());
-    return ThreeAddressCode::create(operation, operands);
+    auto operation = std::make_unique<MemoryStateMergeOperation>(operands.size());
+    return ThreeAddressCode::create(std::move(operation), operands);
   }
 };
 

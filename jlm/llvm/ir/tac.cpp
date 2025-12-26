@@ -51,42 +51,42 @@ check_results(
 }
 
 ThreeAddressCode::ThreeAddressCode(
-    const rvsdg::SimpleOperation & operation,
+    std::unique_ptr<rvsdg::SimpleOperation> operation,
     const std::vector<const Variable *> & operands)
     : operands_(operands),
-      operation_(operation.copy())
+      operation_(std::move(operation))
 {
-  check_operands(operation, operands);
+  check_operands(this->operation(), operands);
 
-  auto names = create_names(operation.nresults());
-  create_results(operation, names);
+  auto names = create_names(this->operation().nresults());
+  create_results(this->operation(), names);
 }
 
 ThreeAddressCode::ThreeAddressCode(
-    const rvsdg::SimpleOperation & operation,
+    std::unique_ptr<rvsdg::SimpleOperation> operation,
     const std::vector<const Variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
-      operation_(operation.copy())
+      operation_(std::move(operation))
 {
-  check_operands(operation, operands);
+  check_operands(this->operation(), operands);
 
-  if (names.size() != operation.nresults())
+  if (names.size() != this->operation().nresults())
     throw util::Error("Invalid number of result names.");
 
-  create_results(operation, names);
+  create_results(this->operation(), names);
 }
 
 ThreeAddressCode::ThreeAddressCode(
-    const rvsdg::SimpleOperation & operation,
+    std::unique_ptr<rvsdg::SimpleOperation> operation,
     const std::vector<const Variable *> & operands,
     std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
     : operands_(operands),
-      operation_(operation.copy()),
+      operation_(std::move(operation)),
       results_(std::move(results))
 {
-  check_operands(operation, operands);
-  check_results(operation, results_);
+  check_operands(this->operation(), operands);
+  check_results(this->operation(), results_);
 }
 
 void

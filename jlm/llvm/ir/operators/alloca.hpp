@@ -93,8 +93,8 @@ public:
     if (!bt)
       throw util::Error("expected bits type.");
 
-    AllocaOperation op(std::move(allocatedType), std::move(bt), alignment);
-    return ThreeAddressCode::create(op, { size });
+    auto op = std::make_unique<AllocaOperation>(std::move(allocatedType), std::move(bt), alignment);
+    return ThreeAddressCode::create(std::move(op), { size });
   }
 
   /**

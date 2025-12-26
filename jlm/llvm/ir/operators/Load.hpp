@@ -232,8 +232,8 @@ public:
       std::shared_ptr<const rvsdg::Type> loadedType,
       size_t alignment)
   {
-    LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return ThreeAddressCode::create(operation, { address, iOState, memoryState });
+    auto operation = std::make_unique<LoadVolatileOperation>(std::move(loadedType), 1, alignment);
+    return ThreeAddressCode::create(std::move(operation), { address, iOState, memoryState });
   }
 
   static rvsdg::SimpleNode &
@@ -432,8 +432,9 @@ public:
       std::shared_ptr<const rvsdg::Type> loadedType,
       size_t alignment)
   {
-    LoadNonVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return ThreeAddressCode::create(operation, { address, state });
+    auto operation =
+        std::make_unique<LoadNonVolatileOperation>(std::move(loadedType), 1, alignment);
+    return ThreeAddressCode::create(std::move(operation), { address, state });
   }
 
   static std::vector<rvsdg::Output *>

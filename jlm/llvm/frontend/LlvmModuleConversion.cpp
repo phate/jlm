@@ -334,8 +334,10 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 
         auto basicBlock = BasicBlock::create(cfg);
 
-        rvsdg::ControlConstantOperation op(rvsdg::ControlValueRepresentation(1, 2));
-        auto operand = basicBlock->append_last(ThreeAddressCode::create(op, {}))->result(0);
+        auto op = std::make_unique<rvsdg::ControlConstantOperation>(
+            rvsdg::ControlValueRepresentation(1, 2));
+        auto operand =
+            basicBlock->append_last(ThreeAddressCode::create(std::move(op), {}))->result(0);
         basicBlock->append_last(BranchOperation::create(2, operand));
 
         basicBlock->add_outedge(exitNode);
