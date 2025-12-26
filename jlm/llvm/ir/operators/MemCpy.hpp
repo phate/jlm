@@ -179,8 +179,9 @@ public:
     std::vector<const Variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
-    return ThreeAddressCode::create(operation, operands);
+    auto operation =
+        std::make_unique<MemCpyNonVolatileOperation>(length->Type(), memoryStates.size());
+    return ThreeAddressCode::create(std::move(operation), operands);
   }
 
   static rvsdg::SimpleNode &
@@ -277,8 +278,8 @@ public:
     std::vector<const Variable *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return ThreeAddressCode::create(operation, operands);
+    auto operation = std::make_unique<MemCpyVolatileOperation>(length.Type(), memoryStates.size());
+    return ThreeAddressCode::create(std::move(operation), operands);
   }
 
   static rvsdg::SimpleNode &

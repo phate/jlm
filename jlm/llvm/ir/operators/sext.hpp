@@ -82,8 +82,8 @@ public:
     if (!rt)
       throw util::Error("expected bits type.");
 
-    SExtOperation op(std::move(ot), std::move(rt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<SExtOperation>(std::move(ot), std::move(rt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 
   static rvsdg::Output *

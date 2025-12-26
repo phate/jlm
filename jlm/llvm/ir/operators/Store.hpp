@@ -282,8 +282,8 @@ public:
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
-    StoreNonVolatileOperation op(storedType, 1, alignment);
-    return ThreeAddressCode::create(op, { address, value, state });
+    auto op = std::make_unique<StoreNonVolatileOperation>(storedType, 1, alignment);
+    return ThreeAddressCode::create(std::move(op), { address, value, state });
   }
 
   static std::vector<rvsdg::Output *>
@@ -422,8 +422,8 @@ public:
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
-    StoreVolatileOperation op(storedType, 1, alignment);
-    return ThreeAddressCode::create(op, { address, value, ioState, memoryState });
+    auto op = std::make_unique<StoreVolatileOperation>(storedType, 1, alignment);
+    return ThreeAddressCode::create(std::move(op), { address, value, ioState, memoryState });
   }
 
   static rvsdg::SimpleNode &

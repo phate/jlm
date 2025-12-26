@@ -17,20 +17,20 @@ static void
 TestBasicBlockAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({ vt }, { vt });
 
     auto v0 = module.create_variable(vt, "v0");
 
     ThreeAddressCodeList bb;
-    bb.append_last(ThreeAddressCode::create(op, { v0 }));
+    bb.append_last(TestOperation::CreateTac({ v0 }, { vt }));
     auto v1 = bb.last()->result(0);
 
-    bb.append_last(ThreeAddressCode::create(op, { v1 }));
+    bb.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v2 = bb.last()->result(0);
 
     auto root = BasicBlockAggregationNode::create(std::move(bb));
@@ -59,6 +59,7 @@ static void
 TestLinearSubgraphAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::Argument & argument)
@@ -67,13 +68,12 @@ TestLinearSubgraphAnnotation()
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
      */
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({ vt }, { vt });
 
     ThreeAddressCodeList bb1, bb2;
-    bb1.append_last(ThreeAddressCode::create(op, { &argument }));
+    bb1.append_last(TestOperation::CreateTac({ &argument }, { vt }));
     auto v1 = bb1.last()->result(0);
 
-    bb2.append_last(ThreeAddressCode::create(op, { v1 }));
+    bb2.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v2 = bb2.last()->result(0);
 
     auto entryNode = EntryAggregationNode::create({ &argument });
@@ -144,6 +144,7 @@ static void
 TestBranchAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -152,21 +153,20 @@ TestBranchAnnotation()
      * Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
      */
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({ vt }, { vt });
 
     auto argument = module.create_variable(vt, "arg");
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList splitTacList, bb1, bb2;
-    splitTacList.append_last(ThreeAddressCode::create(op, { argument }));
+    splitTacList.append_last(TestOperation::CreateTac({ argument }, { vt }));
     auto v1 = splitTacList.last()->result(0);
 
-    bb2.append_last(ThreeAddressCode::create(op, { v1 }));
+    bb2.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v2 = bb2.last()->result(0);
 
     bb1.append_last(AssignmentOperation::create(v2, v3));
     bb2.append_last(AssignmentOperation::create(v1, v3));
-    bb2.append_last(ThreeAddressCode::create(op, { v3 }));
+    bb2.append_last(TestOperation::CreateTac({ v3 }, { vt }));
     auto v4 = bb2.last()->result(0);
 
     auto basicBlockSplit = BasicBlockAggregationNode::create(std::move(splitTacList));
@@ -228,21 +228,21 @@ static void
 TestLoopAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
     auto v4 = module.create_variable(vt, "v4");
 
     ThreeAddressCodeList bb;
-    bb.append_last(ThreeAddressCode::create(op, { v1 }));
+    bb.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v2 = bb.last()->result(0);
 
-    bb.append_last(ThreeAddressCode::create(op, { v2 }));
+    bb.append_last(TestOperation::CreateTac({ v2 }, { vt }));
     auto v3 = bb.last()->result(0);
 
     auto exitNode = ExitAggregationNode::create({ v3, v4 });
@@ -291,22 +291,22 @@ static void
 TestBranchInLoopAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList tl_cb1, tl_cb2;
-    tl_cb1.append_last(ThreeAddressCode::create(op, { v1 }));
+    tl_cb1.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v2 = tl_cb1.last()->result(0);
 
     tl_cb1.append_last(AssignmentOperation::create(v1, v3));
-    tl_cb1.append_last(ThreeAddressCode::create(op, { v1 }));
+    tl_cb1.append_last(TestOperation::CreateTac({ v1 }, { vt }));
     auto v4 = tl_cb1.last()->result(0);
 
     tl_cb2.append_last(AssignmentOperation::create(v1, v3));
@@ -419,20 +419,20 @@ static void
 TestBranchPassByAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::rvsdg::TestType::createValueType();
-    jlm::tests::TestOperation op({}, { vt });
 
     auto v3 = module.create_variable(vt, "v3");
 
     ThreeAddressCodeList tlsplit, tlb1, tlb2;
-    tlsplit.append_last(ThreeAddressCode::create(op, {}));
+    tlsplit.append_last(TestOperation::CreateTac({}, { vt }));
     auto v1 = tlsplit.last()->result(0);
 
-    tlsplit.append_last(ThreeAddressCode::create(op, {}));
+    tlsplit.append_last(TestOperation::CreateTac({}, { vt }));
     auto v2 = tlsplit.last()->result(0);
 
     tlb1.append_last(AssignmentOperation::create(v1, v2));

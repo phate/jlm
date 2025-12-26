@@ -365,8 +365,9 @@ public:
     for (const auto & operand : operands)
       operandTypes.push_back(operand->Type());
 
-    const TestOperation operation(std::move(operandTypes), std::move(resultTypes));
-    return llvm::ThreeAddressCode::create(operation, operands);
+    auto operation =
+        std::make_unique<TestOperation>(std::move(operandTypes), std::move(resultTypes));
+    return llvm::ThreeAddressCode::create(std::move(operation), operands);
   }
 };
 

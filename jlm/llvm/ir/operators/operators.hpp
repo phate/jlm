@@ -83,8 +83,8 @@ public:
       operands.push_back(argument.first);
     }
 
-    const SsaPhiOperation phi(std::move(basicBlocks), std::move(type));
-    return ThreeAddressCode::create(phi, operands);
+    auto phi = std::make_unique<SsaPhiOperation>(std::move(basicBlocks), std::move(type));
+    return ThreeAddressCode::create(std::move(phi), operands);
   }
 
 private:
@@ -119,7 +119,8 @@ public:
     if (rhs->type() != lhs->type())
       throw util::Error("LHS and RHS of assignment must have same type.");
 
-    return ThreeAddressCode::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
+    auto operation = std::make_unique<AssignmentOperation>(rhs->Type());
+    return ThreeAddressCode::create(std::move(operation), { lhs, rhs });
   }
 };
 
@@ -156,8 +157,8 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::Variable * p, const llvm::Variable * t, const llvm::Variable * f)
   {
-    const SelectOperation op(t->Type());
-    return ThreeAddressCode::create(op, { p, t, f });
+    auto op = std::make_unique<SelectOperation>(t->Type());
+    return ThreeAddressCode::create(std::move(op), { p, t, f });
   }
 };
 
@@ -221,8 +222,8 @@ private:
     auto fvt = static_cast<const T *>(&t->type());
     auto pt = T::Create(jlm::rvsdg::BitType::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
-    const VectorSelectOperation op(pt, vt);
-    return ThreeAddressCode::create(op, { p, t, f });
+    auto op = std::unique_ptr<VectorSelectOperation>(new VectorSelectOperation(pt, vt));
+    return ThreeAddressCode::create(std::move(op), { p, t, f });
   }
 };
 
@@ -284,8 +285,9 @@ public:
     if (!dt)
       throw util::Error("expected bitstring type.");
 
-    const FloatingPointToUnsignedIntegerOperation op(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op =
+        std::make_unique<FloatingPointToUnsignedIntegerOperation>(std::move(st), std::move(dt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -347,8 +349,8 @@ public:
     if (!dt)
       throw util::Error("expected bitstring type.");
 
-    FloatingPointToSignedIntegerOperation op(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<FloatingPointToSignedIntegerOperation>(std::move(st), std::move(dt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -383,8 +385,8 @@ public:
     if (!dt)
       throw util::Error("expected bitstring type.");
 
-    ControlToIntOperation op(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<ControlToIntOperation>(std::move(st), std::move(dt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -415,8 +417,8 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(size_t nalternatives, const Variable * operand)
   {
-    const BranchOperation op(rvsdg::ControlType::Create(nalternatives));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<BranchOperation>(rvsdg::ControlType::Create(nalternatives));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -451,8 +453,8 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const rvsdg::Type> type)
   {
-    ConstantPointerNullOperation operation(CheckAndExtractType(type));
-    return ThreeAddressCode::create(operation, {});
+    auto operation = std::make_unique<ConstantPointerNullOperation>(CheckAndExtractType(type));
+    return ThreeAddressCode::create(std::move(operation), {});
   }
 
   static jlm::rvsdg::Output *
@@ -531,8 +533,8 @@ public:
     if (!pt)
       throw util::Error("expected pointer type.");
 
-    IntegerToPointerOperation op(at, pt);
-    return ThreeAddressCode::create(op, { argument });
+    auto op = std::make_unique<IntegerToPointerOperation>(at, pt);
+    return ThreeAddressCode::create(std::move(op), { argument });
   }
 
   static jlm::rvsdg::Output *
@@ -608,8 +610,8 @@ public:
     if (!bt)
       throw util::Error("expected bitstring type.");
 
-    PtrToIntOperation op(std::move(pt), std::move(bt));
-    return ThreeAddressCode::create(op, { argument });
+    auto op = std::make_unique<PtrToIntOperation>(std::move(pt), std::move(bt));
+    return ThreeAddressCode::create(std::move(op), { argument });
   }
 };
 
@@ -658,8 +660,8 @@ public:
     if (vt->Kind() != rvsdg::TypeKind::Value)
       throw util::Error("expected value type.");
 
-    ConstantDataArray op(std::move(vt), elements.size());
-    return ThreeAddressCode::create(op, elements);
+    auto op = std::make_unique<ConstantDataArray>(std::move(vt), elements.size());
+    return ThreeAddressCode::create(std::move(op), elements);
   }
 
   static jlm::rvsdg::Output *
@@ -731,8 +733,8 @@ public:
     if (!pt)
       throw util::Error("expected pointer type.");
 
-    PtrCmpOperation op(std::move(pt), cmp);
-    return ThreeAddressCode::create(op, { op1, op2 });
+    auto op = std::make_unique<PtrCmpOperation>(std::move(pt), cmp);
+    return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
 private:
@@ -811,8 +813,9 @@ public:
     auto operandBitType = CheckAndExtractBitType(operand->Type());
     auto resultBitType = CheckAndExtractBitType(type);
 
-    const ZExtOperation operation(std::move(operandBitType), std::move(resultBitType));
-    return ThreeAddressCode::create(operation, { operand });
+    auto operation =
+        std::make_unique<ZExtOperation>(std::move(operandBitType), std::move(resultBitType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
   }
 
   static rvsdg::Output &
@@ -886,8 +889,8 @@ public:
     if (!ft)
       throw util::Error("expected floating point type.");
 
-    ConstantFP op(std::move(ft), constant);
-    return ThreeAddressCode::create(op, {});
+    auto op = std::make_unique<ConstantFP>(std::move(ft), constant);
+    return ThreeAddressCode::create(std::move(op), {});
   }
 
 private:
@@ -973,8 +976,8 @@ public:
     if (!ft)
       throw util::Error("expected floating point type.");
 
-    FCmpOperation op(cmp, std::move(ft));
-    return ThreeAddressCode::create(op, { op1, op2 });
+    auto op = std::make_unique<FCmpOperation>(cmp, std::move(ft));
+    return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
 private:
@@ -1026,15 +1029,15 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    UndefValueOperation operation(std::move(type));
-    return ThreeAddressCode::create(operation, {});
+    auto operation = std::make_unique<UndefValueOperation>(std::move(type));
+    return ThreeAddressCode::create(std::move(operation), {});
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
-    UndefValueOperation operation(std::move(type));
-    return ThreeAddressCode::create(operation, {}, { name });
+    auto operation = std::make_unique<UndefValueOperation>(std::move(type));
+    return ThreeAddressCode::create(std::move(operation), {}, { name });
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
@@ -1045,8 +1048,8 @@ public:
     std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results;
     results.push_back(std::move(result));
 
-    UndefValueOperation operation(type);
-    return ThreeAddressCode::create(operation, {}, std::move(results));
+    auto operation = std::make_unique<UndefValueOperation>(type);
+    return ThreeAddressCode::create(std::move(operation), {}, std::move(results));
   }
 };
 
@@ -1093,8 +1096,8 @@ public:
   {
     auto valueType = CheckAndConvertType(type);
 
-    PoisonValueOperation operation(std::move(valueType));
-    return ThreeAddressCode::create(operation, {});
+    auto operation = std::make_unique<PoisonValueOperation>(std::move(valueType));
+    return ThreeAddressCode::create(std::move(operation), {});
   }
 
   static jlm::rvsdg::Output *
@@ -1182,8 +1185,8 @@ public:
     if (!ft)
       throw util::Error("expected floating point type.");
 
-    FBinaryOperation op(fpop, ft);
-    return ThreeAddressCode::create(op, { op1, op2 });
+    auto op = std::make_unique<FBinaryOperation>(fpop, ft);
+    return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
 private:
@@ -1267,8 +1270,8 @@ public:
     if (!dt)
       throw util::Error("expected floating point type.");
 
-    const FPExtOperation op(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<FPExtOperation>(std::move(st), std::move(dt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -1314,8 +1317,8 @@ public:
     if (!type)
       throw util::Error("expected floating point type.");
 
-    const FNegOperation op(std::move(type));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<FNegOperation>(std::move(type));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -1398,8 +1401,8 @@ public:
     if (!dt)
       throw util::Error("expected floating point type.");
 
-    const FPTruncOperation op(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<FPTruncOperation>(std::move(st), std::move(dt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -1436,8 +1439,8 @@ public:
     for (const auto & argument : arguments)
       operands.push_back(argument->Type());
 
-    VariadicArgumentListOperation op(std::move(operands));
-    return ThreeAddressCode::create(op, arguments);
+    auto op = std::make_unique<VariadicArgumentListOperation>(std::move(operands));
+    return ThreeAddressCode::create(std::move(op), arguments);
   }
 
   static rvsdg::Output *
@@ -1500,8 +1503,8 @@ public:
   {
     auto pair = check_types(operand->Type(), type);
 
-    BitCastOperation op(pair.first, pair.second);
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<BitCastOperation>(pair.first, pair.second);
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 
   static jlm::rvsdg::Output *
@@ -1558,8 +1561,8 @@ public:
   {
     auto structType = CheckAndExtractStructType(type);
 
-    ConstantStruct op(std::move(structType));
-    return ThreeAddressCode::create(op, elements);
+    auto op = std::make_unique<ConstantStruct>(std::move(structType));
+    return ThreeAddressCode::create(std::move(op), elements);
   }
 
   static rvsdg::Output &
@@ -1665,8 +1668,8 @@ public:
     if (!rt)
       throw util::Error("expected bits type.");
 
-    const TruncOperation op(std::move(ot), std::move(rt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<TruncOperation>(std::move(ot), std::move(rt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 
   static jlm::rvsdg::Output *
@@ -1736,8 +1739,8 @@ public:
     if (!rt)
       throw util::Error("expected floating point type.");
 
-    const UIToFPOperation op(std::move(st), std::move(rt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<UIToFPOperation>(std::move(st), std::move(rt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -1793,8 +1796,8 @@ public:
     if (!rt)
       throw util::Error("expected floating point type.");
 
-    SIToFPOperation op(std::move(st), std::move(rt));
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<SIToFPOperation>(std::move(st), std::move(rt));
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 
@@ -1841,8 +1844,8 @@ public:
     if (vt->Kind() != rvsdg::TypeKind::Value)
       throw util::Error("expected value Type.\n");
 
-    ConstantArrayOperation op(vt, elements.size());
-    return ThreeAddressCode::create(op, elements);
+    auto op = std::make_unique<ConstantArrayOperation>(vt, elements.size());
+    return ThreeAddressCode::create(std::move(op), elements);
   }
 
   static rvsdg::Output *
@@ -1889,8 +1892,8 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    const ConstantAggregateZeroOperation op(std::move(type));
-    return ThreeAddressCode::create(op, {});
+    auto op = std::make_unique<ConstantAggregateZeroOperation>(std::move(type));
+    return ThreeAddressCode::create(std::move(op), {});
   }
 
   static jlm::rvsdg::Output *
@@ -1931,8 +1934,8 @@ public:
     if (!bt)
       throw util::Error("expected bit type.");
 
-    ExtractElementOperation op(vt, bt);
-    return ThreeAddressCode::create(op, { vector, index });
+    auto op = std::make_unique<ExtractElementOperation>(vt, bt);
+    return ThreeAddressCode::create(std::move(op), { vector, index });
   }
 };
 
@@ -1988,8 +1991,8 @@ private:
   CreateShuffleVectorTac(const Variable * v1, const Variable * v2, const std::vector<int> & mask)
   {
     auto vt = std::static_pointer_cast<const T>(v1->Type());
-    ShuffleVectorOperation op(vt, mask);
-    return ThreeAddressCode::create(op, { v1, v2 });
+    auto op = std::make_unique<ShuffleVectorOperation>(vt, mask);
+    return ThreeAddressCode::create(std::move(op), { v1, v2 });
   }
 
   std::vector<int> Mask_;
@@ -2022,8 +2025,8 @@ public:
     if (!vt)
       throw util::Error("expected vector type.");
 
-    ConstantVectorOperation op(vt);
-    return ThreeAddressCode::create(op, operands);
+    auto op = std::make_unique<ConstantVectorOperation>(vt);
+    return ThreeAddressCode::create(std::move(op), operands);
   }
 };
 
@@ -2070,8 +2073,8 @@ public:
     if (!bt)
       throw util::Error("expected bit type.");
 
-    InsertElementOperation op(vct, vt, bt);
-    return ThreeAddressCode::create(op, { vector, value, index });
+    auto op = std::make_unique<InsertElementOperation>(vct, vt, bt);
+    return ThreeAddressCode::create(std::move(op), { vector, value, index });
   }
 };
 
@@ -2156,8 +2159,8 @@ public:
     if (!vct1 || !vct2)
       throw util::Error("expected vector type.");
 
-    VectorUnaryOperation op(unop, vct1, vct2);
-    return ThreeAddressCode::create(op, { operand });
+    auto op = std::make_unique<VectorUnaryOperation>(unop, vct1, vct2);
+    return ThreeAddressCode::create(std::move(op), { operand });
   }
 
 private:
@@ -2251,8 +2254,8 @@ public:
     if (!vct1 || !vct2 || !vct3)
       throw util::Error("expected vector type.");
 
-    VectorBinaryOperation op(binop, vct1, vct2, vct3);
-    return ThreeAddressCode::create(op, { op1, op2 });
+    auto op = std::make_unique<VectorBinaryOperation>(binop, vct1, vct2, vct3);
+    return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
 private:
@@ -2301,8 +2304,9 @@ public:
     if (vt->Kind() != rvsdg::TypeKind::Value)
       throw util::Error("Expected value type.");
 
-    ConstantDataVectorOperation op(FixedVectorType::Create(vt, elements.size()));
-    return ThreeAddressCode::create(op, elements);
+    auto op = std::unique_ptr<ConstantDataVectorOperation>(
+        new ConstantDataVectorOperation(FixedVectorType::Create(vt, elements.size())));
+    return ThreeAddressCode::create(std::move(op), elements);
   }
 };
 
@@ -2353,8 +2357,8 @@ public:
   static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::Variable * aggregate, const std::vector<unsigned> & indices)
   {
-    ExtractValueOperation op(aggregate->Type(), indices);
-    return ThreeAddressCode::create(op, { aggregate });
+    auto op = std::make_unique<ExtractValueOperation>(aggregate->Type(), indices);
+    return ThreeAddressCode::create(std::move(op), { aggregate });
   }
 
 private:
@@ -2428,8 +2432,8 @@ public:
     if (!bt)
       throw util::Error("expected bits type.");
 
-    MallocOperation op(std::move(bt));
-    return ThreeAddressCode::create(op, { size });
+    auto op = std::make_unique<MallocOperation>(std::move(bt));
+    return ThreeAddressCode::create(std::move(op), { size });
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -2501,8 +2505,8 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
     operands.push_back(iOState);
 
-    FreeOperation operation(memoryStates.size());
-    return ThreeAddressCode::create(operation, operands);
+    auto operation = std::make_unique<FreeOperation>(memoryStates.size());
+    return ThreeAddressCode::create(std::move(operation), operands);
   }
 
   static std::vector<jlm::rvsdg::Output *>

@@ -490,7 +490,7 @@ IntegerConstant()
 
   auto cfg = ControlFlowGraph::create(im);
   auto bb = BasicBlock::create(*cfg);
-  bb->append_last(ThreeAddressCode::create(IntegerConstantOperation(vr), {}));
+  bb->append_last(ThreeAddressCode::create(std::make_unique<IntegerConstantOperation>(vr), {}));
   auto c = bb->last()->result(0);
 
   cfg->exit()->divert_inedges(bb);
