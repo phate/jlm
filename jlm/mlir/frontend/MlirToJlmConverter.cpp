@@ -1204,7 +1204,8 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
     // Create the struct if it has no name
-    if (!structType.isIdentified()) {
+    if (!structType.isIdentified())
+    {
       std::vector<std::shared_ptr<const rvsdg::Type>> types;
       for (auto element : structType.getBody())
       {
