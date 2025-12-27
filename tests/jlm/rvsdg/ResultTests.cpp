@@ -68,8 +68,8 @@ ResultInputTypeMismatch()
   bool exceptionWasCaught = false;
   try
   {
-    auto simpleNode0 = TestOperation::create(structuralNode->subregion(0), {}, { stateType });
-    auto simpleNode1 = TestOperation::create(structuralNode->subregion(1), {}, { valueType });
+    auto simpleNode0 = TestOperation::createNode(structuralNode->subregion(0), {}, { stateType });
+    auto simpleNode1 = TestOperation::createNode(structuralNode->subregion(1), {}, { valueType });
 
     // Type mismatch between simple node output and structural output
     structuralNode->addOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) });

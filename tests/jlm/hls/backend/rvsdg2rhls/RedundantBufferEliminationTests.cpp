@@ -308,7 +308,7 @@ BufferWithOtherNode()
 
   auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
-  auto node = jlm::tests::TestOperation::create(
+  auto node = jlm::tests::TestOperation::createNode(
       &rvsdg.GetRootRegion(),
       { &importValue },
       { memoryStateType });

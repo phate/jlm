@@ -34,15 +34,19 @@ test_simple()
   auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
-  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt })->output(0);
-  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt })->output(0);
+  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vt })->output(0);
+  auto n2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vt })->output(0);
 
-  auto u1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { z }, { vt })->output(0);
+  auto u1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { z }, { vt })->output(0);
 
-  auto b1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
-  auto b2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
-  auto b3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1, z }, { vt })->output(0);
-  auto b4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2, z }, { vt })->output(0);
+  auto b1 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
+  auto b2 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
+  auto b3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1, z }, { vt })->output(0);
+  auto b4 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2, z }, { vt })->output(0);
 
   jlm::rvsdg::GraphExport::Create(*n1, "n1");
   jlm::rvsdg::GraphExport::Create(*n2, "n2");
@@ -78,8 +82,8 @@ test_gamma()
   auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
-  auto u1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
-  auto u2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto u1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
@@ -89,9 +93,9 @@ test_gamma()
   auto ev4 = gamma->AddEntryVar(z);
   auto ev5 = gamma->AddEntryVar(z);
 
-  auto n1 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
-  auto n2 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
-  auto n3 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
+  auto n1 = jlm::tests::TestOperation::createNode(gamma->subregion(0), {}, { vt })->output(0);
+  auto n2 = jlm::tests::TestOperation::createNode(gamma->subregion(0), {}, { vt })->output(0);
+  auto n3 = jlm::tests::TestOperation::createNode(gamma->subregion(0), {}, { vt })->output(0);
 
   gamma->AddExitVar({ ev1.branchArgument[0], ev1.branchArgument[1] });
   gamma->AddExitVar({ ev2.branchArgument[0], ev2.branchArgument[1] });
@@ -148,9 +152,9 @@ test_theta()
   auto lv3 = theta->AddLoopVar(x);
   auto lv4 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt })->output(0);
-  auto u2 = jlm::tests::TestOperation::create(region, { lv3.pre }, { vt })->output(0);
-  auto b1 = jlm::tests::TestOperation::create(region, { lv3.pre, lv4.pre }, { vt })->output(0);
+  auto u1 = jlm::tests::TestOperation::createNode(region, { lv2.pre }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::createNode(region, { lv3.pre }, { vt })->output(0);
+  auto b1 = jlm::tests::TestOperation::createNode(region, { lv3.pre, lv4.pre }, { vt })->output(0);
 
   lv2.post->divert_to(u1);
   lv3.post->divert_to(u2);
@@ -198,9 +202,9 @@ test_theta2()
   auto lv2 = theta->AddLoopVar(x);
   auto lv3 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt })->output(0);
-  auto u2 = jlm::tests::TestOperation::create(region, { lv3.pre }, { vt })->output(0);
-  auto b1 = jlm::tests::TestOperation::create(region, { u2, u2 }, { vt })->output(0);
+  auto u1 = jlm::tests::TestOperation::createNode(region, { lv2.pre }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::createNode(region, { lv3.pre }, { vt })->output(0);
+  auto b1 = jlm::tests::TestOperation::createNode(region, { u2, u2 }, { vt })->output(0);
 
   lv2.post->divert_to(u1);
   lv3.post->divert_to(b1);
@@ -249,9 +253,9 @@ test_theta3()
   auto p4 = theta2->AddLoopVar(lv4.pre);
   theta2->set_predicate(p.pre);
 
-  auto u1 = jlm::tests::TestOperation::create(r1, { p2.output }, { vt });
-  auto b1 = jlm::tests::TestOperation::create(r1, { p3.output, p3.output }, { vt });
-  auto u2 = jlm::tests::TestOperation::create(r1, { p4.output }, { vt });
+  auto u1 = jlm::tests::TestOperation::createNode(r1, { p2.output }, { vt });
+  auto b1 = jlm::tests::TestOperation::createNode(r1, { p3.output, p3.output }, { vt });
+  auto u2 = jlm::tests::TestOperation::createNode(r1, { p4.output }, { vt });
 
   lv2.post->divert_to(u1->output(0));
   lv3.post->divert_to(b1->output(0));
@@ -302,8 +306,8 @@ test_theta4()
   auto lv6 = theta->AddLoopVar(x);
   auto lv7 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt });
-  auto b1 = jlm::tests::TestOperation::create(region, { lv3.pre, lv3.pre }, { vt });
+  auto u1 = jlm::tests::TestOperation::createNode(region, { lv2.pre }, { vt });
+  auto b1 = jlm::tests::TestOperation::createNode(region, { lv3.pre, lv3.pre }, { vt });
 
   lv2.post->divert_to(lv4.pre);
   lv3.post->divert_to(lv5.pre);
@@ -390,7 +394,8 @@ MultipleThetas()
   // Loop 1
   auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
   auto loopVariable1 = thetaNode1->AddLoopVar(&i0);
-  auto node1 = TestOperation::create(thetaNode1->subregion(), { loopVariable1.pre }, { valueType });
+  auto node1 =
+      TestOperation::createNode(thetaNode1->subregion(), { loopVariable1.pre }, { valueType });
   loopVariable1.post->divert_to(node1->output(0));
 
   // Loop 2
@@ -398,7 +403,8 @@ MultipleThetas()
   auto predicate = &ControlConstantOperation::create(*thetaNode2->subregion(), 2, 1);
   thetaNode2->set_predicate(predicate);
   auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
-  auto node2 = TestOperation::create(thetaNode1->subregion(), { loopVariable2.pre }, { valueType });
+  auto node2 =
+      TestOperation::createNode(thetaNode1->subregion(), { loopVariable2.pre }, { valueType });
   loopVariable2.post->divert_to(node2->output(0));
 
   // Loop 3
@@ -495,7 +501,8 @@ test_lambda()
   auto d1 = lambda->AddContextVar(*x).inner;
   auto d2 = lambda->AddContextVar(*x).inner;
 
-  auto b1 = jlm::tests::TestOperation::create(lambda->subregion(), { d1, d2 }, { vt })->output(0);
+  auto b1 =
+      jlm::tests::TestOperation::createNode(lambda->subregion(), { d1, d2 }, { vt })->output(0);
 
   auto output = lambda->finalize({ b1 });
 

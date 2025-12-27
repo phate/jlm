@@ -43,7 +43,7 @@ TestArgumentIterators()
         LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
     auto nullaryNode =
-        jlm::tests::TestOperation::create(lambda->subregion(), {}, { vt })->output(0);
+        jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
 
     lambda->finalize({ nullaryNode });
 
@@ -88,7 +88,8 @@ TestInvalidOperandRegion()
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg->GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
-  auto result = jlm::tests::TestOperation::create(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
+  auto result =
+      jlm::tests::TestOperation::createNode(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
 
   bool invalidRegionErrorCaught = false;
   try

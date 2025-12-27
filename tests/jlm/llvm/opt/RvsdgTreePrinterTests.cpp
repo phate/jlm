@@ -93,10 +93,10 @@ PrintNumRvsdgNodesAnnotation()
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
-  jlm::tests::TestOperation::create(structuralNode->subregion(0), {}, {});
-  jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
+  jlm::tests::TestOperation::createNode(structuralNode->subregion(0), {}, {});
+  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
 
-  jlm::tests::TestOperation::create(rootRegion, {}, {});
+  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes });
@@ -145,14 +145,14 @@ PrintNumLoadNodesAnnotation()
       { memoryStateInput.argument[0] },
       valueType,
       4);
-  jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
+  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
   LoadNonVolatileOperation::Create(
       addressInput.argument[2],
       { memoryStateInput.argument[2] },
       valueType,
       4);
 
-  jlm::tests::TestOperation::create(rootRegion, {}, {});
+  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes });

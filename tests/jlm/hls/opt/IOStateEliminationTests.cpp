@@ -94,17 +94,13 @@ testNesting()
 
   auto entryVar = gammaNode->AddEntryVar(ioStateArgument);
 
-  auto node1 = TestOperation::Create(
+  auto node1 = TestOperation::createNode(
       gammaNode->subregion(0),
-      { ioStateType },
       { entryVar.branchArgument[0] },
       { ioStateType });
 
-  auto node2 = TestOperation::Create(
-      gammaNode->subregion(0),
-      { ioStateType },
-      { node1->output(0) },
-      { ioStateType });
+  auto node2 =
+      TestOperation::createNode(gammaNode->subregion(0), { node1->output(0) }, { ioStateType });
 
   auto exitVar = gammaNode->AddExitVar({ node2->output(0), entryVar.branchArgument[1] });
 

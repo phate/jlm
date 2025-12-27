@@ -28,7 +28,7 @@ test()
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
-  bb0->append_last(TestOperation::CreateTac({}, { vt }));
+  bb0->append_last(ThreeAddressCode::create(TestOperation::create({}, { vt }), {}));
   bb1->append_last(
       SsaPhiOperation::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
 

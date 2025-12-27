@@ -29,10 +29,11 @@ IteratorRanges()
   auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
   auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
 
-  auto topNode0 = TestOperation::create(&subregion, {}, { valueType });
-  auto node0 = TestOperation::create(&subregion, { &argument0 }, { valueType });
-  auto node1 = TestOperation::create(&subregion, { &argument1 }, { valueType });
-  auto bottomNode0 = TestOperation::create(&subregion, { &argument0, &argument1 }, { valueType });
+  auto topNode0 = TestOperation::createNode(&subregion, {}, { valueType });
+  auto node0 = TestOperation::createNode(&subregion, { &argument0 }, { valueType });
+  auto node1 = TestOperation::createNode(&subregion, { &argument1 }, { valueType });
+  auto bottomNode0 =
+      TestOperation::createNode(&subregion, { &argument0, &argument1 }, { valueType });
 
   const auto outputVar0 = structuralNode->addResults({ topNode0->output(0) });
   const auto outputVar1 = structuralNode->addResults({ node0->output(0) });
@@ -275,11 +276,8 @@ RemoveArguments()
   auto argument8 = &TestGraphArgument::Create(region, nullptr, valueType);
   auto argument9 = &TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = TestOperation::Create(
-      &region,
-      { valueType, valueType, valueType },
-      { argument2, argument4, argument6 },
-      { valueType });
+  auto node =
+      TestOperation::createNode(&region, { argument2, argument4, argument6 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 10);
@@ -377,11 +375,7 @@ PruneArguments()
   TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = TestOperation::Create(
-      &region,
-      { valueType, valueType },
-      { &argument0, &argument2 },
-      { valueType });
+  auto node = TestOperation::createNode(&region, { &argument0, &argument2 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
@@ -563,11 +557,11 @@ computeDepthMap()
   auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
   auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
 
-  auto node0 = TestOperation::create(&rvsdg.GetRootRegion(), {}, { valueType });
+  auto node0 = TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { valueType });
   auto node1 =
-      TestOperation::create(&rvsdg.GetRootRegion(), { node0->output(0), &i0 }, { valueType });
-  auto node2 = TestOperation::create(&rvsdg.GetRootRegion(), { &i1 }, { valueType });
-  auto node3 = TestOperation::create(
+      TestOperation::createNode(&rvsdg.GetRootRegion(), { node0->output(0), &i0 }, { valueType });
+  auto node2 = TestOperation::createNode(&rvsdg.GetRootRegion(), { &i1 }, { valueType });
+  auto node3 = TestOperation::createNode(
       &rvsdg.GetRootRegion(),
       { node1->output(0), node2->output(0) },
       { valueType });

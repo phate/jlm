@@ -96,7 +96,7 @@ testSimpleInlining()
         LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
     lambda->AddContextVar(*i);
 
-    auto t = jlm::tests::TestOperation::create(
+    auto t = jlm::tests::TestOperation::createNode(
         lambda->subregion(),
         { lambda->GetFunctionArguments()[0] },
         { vt });

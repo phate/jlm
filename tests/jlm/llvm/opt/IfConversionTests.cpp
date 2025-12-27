@@ -290,7 +290,7 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output = TestOperation::create(
+  auto output = TestOperation::createNode(
                     gammaNode->subregion(1),
                     { gammaInput.branchArgument[1] },
                     { valueType })
