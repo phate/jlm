@@ -15,8 +15,6 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-#include <jlm/llvm/ir/tac.hpp>
-
 namespace jlm::tests
 {
 
@@ -326,21 +324,29 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static rvsdg::SimpleNode *
+  static std::unique_ptr<TestOperation>
   create(
-      rvsdg::Region * region,
-      const std::vector<rvsdg::Output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
+      std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
-    for (const auto & operand : operands)
-      operand_types.push_back(operand->Type());
-
-    return Create(region, operand_types, operands, result_types);
+    return std::make_unique<TestOperation>(std::move(operandTypes), std::move(resultTypes));
   }
 
   static rvsdg::SimpleNode *
-  Create(
+  createNode(
+      rvsdg::Region * region,
+      const std::vector<rvsdg::Output *> & operands,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    return createNode(region, operandTypes, operands, resultTypes);
+  }
+
+  static rvsdg::SimpleNode *
+  createNode(
       rvsdg::Region * region,
       std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
       const std::vector<rvsdg::Output *> & operands,
@@ -354,20 +360,6 @@ public:
                                   { operands },
                                   std::move(operandTypes),
                                   std::move(resultTypes));
-  }
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  CreateTac(
-      const std::vector<const llvm::Variable *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
-  {
-    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
-    for (const auto & operand : operands)
-      operandTypes.push_back(operand->Type());
-
-    auto operation =
-        std::make_unique<TestOperation>(std::move(operandTypes), std::move(resultTypes));
-    return llvm::ThreeAddressCode::create(std::move(operation), operands);
   }
 };
 

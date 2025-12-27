@@ -6,6 +6,7 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/llvm/ir/tac.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
@@ -20,12 +21,15 @@ ToAscii()
   Variable v0(valueType, "v0");
   Variable v1(valueType, "v1");
 
-  auto tac0 = TestOperation::CreateTac({}, {});
-  auto tac1 = TestOperation::CreateTac({ &v0 }, {});
-  auto tac2 = TestOperation::CreateTac({ &v0, &v1 }, {});
-  auto tac3 = TestOperation::CreateTac({}, { valueType });
-  auto tac4 = TestOperation::CreateTac({}, { valueType, valueType });
-  auto tac5 = TestOperation::CreateTac({ &v0, &v1 }, { valueType, valueType });
+  auto tac0 = ThreeAddressCode::create(TestOperation::create({}, {}), {});
+  auto tac1 = ThreeAddressCode::create(TestOperation::create({ valueType }, {}), { &v0 });
+  auto tac2 =
+      ThreeAddressCode::create(TestOperation::create({ valueType, valueType }, {}), { &v0, &v1 });
+  auto tac3 = ThreeAddressCode::create(TestOperation::create({}, { valueType }), {});
+  auto tac4 = ThreeAddressCode::create(TestOperation::create({}, { valueType, valueType }), {});
+  auto tac5 = ThreeAddressCode::create(
+      TestOperation::create({ valueType, valueType }, { valueType, valueType }),
+      { &v0, &v1 });
 
   // Act
   auto tac0String = ThreeAddressCode::ToAscii(*tac0);

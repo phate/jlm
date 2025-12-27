@@ -49,15 +49,17 @@ simpleGamma()
   auto entryVar = gammaNode->AddEntryVar(valueArgument);
 
   // gamma subregion 0
-  auto constantNode = TestOperation::create(gammaNode->subregion(0), {}, { valueType });
-  auto binaryNode = TestOperation::create(
+  auto constantNode = TestOperation::createNode(gammaNode->subregion(0), {}, { valueType });
+  auto binaryNode = TestOperation::createNode(
       gammaNode->subregion(0),
       { entryVar.branchArgument[0], constantNode->output(0) },
       { valueType });
 
   // gamma subregion 1
-  auto unaryNode =
-      TestOperation::create(gammaNode->subregion(1), { entryVar.branchArgument[1] }, { valueType });
+  auto unaryNode = TestOperation::createNode(
+      gammaNode->subregion(1),
+      { entryVar.branchArgument[1] },
+      { valueType });
 
   auto exitVar = gammaNode->AddExitVar({ binaryNode->output(0), unaryNode->output(0) });
 
@@ -116,20 +118,20 @@ nestedGamma()
   auto valueEntryVar1 = gammaNode1->AddEntryVar(valueArgument);
 
   // gamma1 subregion 0
-  auto constantNode1 = TestOperation::create(gammaNode1->subregion(0), {}, { valueType });
+  auto constantNode1 = TestOperation::createNode(gammaNode1->subregion(0), {}, { valueType });
 
   auto gammaNode2 = GammaNode::create(controlEntryVar.branchArgument[0], 2);
   auto valueEntryVar2 = gammaNode2->AddEntryVar(valueEntryVar1.branchArgument[0]);
   auto valueEntryVar3 = gammaNode2->AddEntryVar(constantNode1->output(0));
 
   // gamma2 subregion 0
-  auto binaryNode = TestOperation::create(
+  auto binaryNode = TestOperation::createNode(
       gammaNode1->subregion(0),
       { valueEntryVar2.branchArgument[0], valueEntryVar3.branchArgument[0] },
       { valueType });
 
   // gamma2 subregion 1
-  auto unaryNode = TestOperation::create(
+  auto unaryNode = TestOperation::createNode(
       gammaNode1->subregion(1),
       { valueEntryVar2.branchArgument[1] },
       { valueType });
@@ -137,7 +139,7 @@ nestedGamma()
   auto exitVar1 = gammaNode2->AddExitVar({ binaryNode->output(0), unaryNode->output(0) });
 
   // gamma1 subregion 1
-  auto constantNode2 = TestOperation::create(gammaNode1->subregion(1), {}, { valueType });
+  auto constantNode2 = TestOperation::createNode(gammaNode1->subregion(1), {}, { valueType });
 
   auto exitVar2 = gammaNode1->AddExitVar({ exitVar1.output, constantNode2->output(0) });
 
@@ -202,12 +204,17 @@ simpleTheta()
   auto lv3 = thetaNode->AddLoopVar(valueArgument);
   auto lv4 = thetaNode->AddLoopVar(valueArgument);
 
-  auto node1 = TestOperation::create(thetaNode->subregion(), {}, { valueType });
-  auto node2 =
-      TestOperation::create(thetaNode->subregion(), { node1->output(0), lv3.pre }, { valueType });
-  auto node3 =
-      TestOperation::create(thetaNode->subregion(), { lv2.pre, node2->output(0) }, { valueType });
-  auto node4 = TestOperation::create(thetaNode->subregion(), { lv3.pre, lv4.pre }, { valueType });
+  auto node1 = TestOperation::createNode(thetaNode->subregion(), {}, { valueType });
+  auto node2 = TestOperation::createNode(
+      thetaNode->subregion(),
+      { node1->output(0), lv3.pre },
+      { valueType });
+  auto node3 = TestOperation::createNode(
+      thetaNode->subregion(),
+      { lv2.pre, node2->output(0) },
+      { valueType });
+  auto node4 =
+      TestOperation::createNode(thetaNode->subregion(), { lv3.pre, lv4.pre }, { valueType });
 
   lv2.post->divert_to(node3->output(0));
   lv4.post->divert_to(node4->output(0));
@@ -328,7 +335,7 @@ statefulOperations()
   auto valueEntryVar1 = gammaNode1->AddEntryVar(valueArgument);
   auto stateEntryVar = gammaNode1->AddEntryVar(stateArgument);
 
-  auto stateNode = TestOperation::create(
+  auto stateNode = TestOperation::createNode(
       gammaNode1->subregion(0),
       { valueEntryVar1.branchArgument[0], stateEntryVar.branchArgument[0] },
       { valueType });
@@ -337,7 +344,7 @@ statefulOperations()
   auto valueEntryVar2 = gammaNode2->AddEntryVar(stateNode->output(0));
   auto valueEntryVar3 = gammaNode2->AddEntryVar(valueEntryVar1.branchArgument[0]);
 
-  auto binaryNode = TestOperation::create(
+  auto binaryNode = TestOperation::createNode(
       gammaNode2->subregion(0),
       { valueEntryVar2.branchArgument[0], valueEntryVar3.branchArgument[0] },
       { valueType });

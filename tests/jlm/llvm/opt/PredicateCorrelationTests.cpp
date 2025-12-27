@@ -35,7 +35,7 @@ setupControlConstantCorrelationTest(
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto dummy = TestOperation::create(thetaNode->subregion(), {}, { bitType32 })->output(0);
+  auto dummy = TestOperation::createNode(thetaNode->subregion(), {}, { bitType32 })->output(0);
   auto predicate = MatchOperation::Create(*dummy, { { 1, 1 } }, 0, 2);
 
   auto gammaNode = GammaNode::create(predicate, 2);
@@ -80,7 +80,8 @@ setupMatchConstantCorrelationTest(
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
+  auto predicate =
+      TestOperation::createNode(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode = GammaNode::create(predicate, 2);
 
   auto constant0 = &BitConstantOperation::create(
@@ -118,7 +119,7 @@ setupThetaGammaMatchCorrelationTest(jlm::rvsdg::Graph & rvsdg)
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto constantNode = TestOperation::create(thetaNode->subregion(), {}, { bitType32 });
+  auto constantNode = TestOperation::createNode(thetaNode->subregion(), {}, { bitType32 });
   auto & matchNode = MatchOperation::CreateNode(*constantNode->output(0), { { 1, 1 } }, 0, 2);
 
   auto gammaNode = GammaNode::create(matchNode.output(0), 2);
@@ -326,7 +327,8 @@ testThetaGammaCorrelationFixPoint()
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
   // Arrange first gamma node
-  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
+  auto predicate =
+      TestOperation::createNode(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode1 = GammaNode::create(predicate, 2);
 
   auto constant0 = &BitConstantOperation::create(*gammaNode1->subregion(0), { 64, 0 });
@@ -520,7 +522,7 @@ testGammaGammaMatchCorrelationDetection()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto constantNode = TestOperation::create(&rvsdg.GetRootRegion(), {}, { bitType32 });
+  auto constantNode = TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType32 });
   auto & matchNode = MatchOperation::CreateNode(*constantNode->output(0), { { 1, 1 } }, 0, 2);
 
   auto gammaNode1 = GammaNode::create(matchNode.output(0), 2);

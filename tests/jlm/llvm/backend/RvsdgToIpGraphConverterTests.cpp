@@ -304,7 +304,7 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output = TestOperation::create(
+  auto output = TestOperation::createNode(
                     gammaNode->subregion(1),
                     { gammaInput.branchArgument[1] },
                     { valueType })
@@ -364,7 +364,8 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
-        jlm::tests::TestOperation::create(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
+        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
+            ->output(0));
   }
 
   {
@@ -374,7 +375,8 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
-        jlm::tests::TestOperation::create(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
+        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
+            ->output(0));
   }
 
   r1.result->divert_to(delta1);
