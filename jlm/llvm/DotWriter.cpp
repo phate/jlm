@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 
@@ -24,7 +25,8 @@ LlvmDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (type.Kind() == rvsdg::TypeKind::State || rvsdg::is<rvsdg::BitType>(type)
       || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
-      || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type))
+      || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type)
+      || rvsdg::is<rvsdg::ControlType>(type))
   {
     // No need to provide any information beyond the debug string
   }

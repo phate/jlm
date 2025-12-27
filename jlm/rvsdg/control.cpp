@@ -43,7 +43,7 @@ ControlType::ComputeHash() const noexcept
 TypeKind
 ControlType::Kind() const noexcept
 {
-  return TypeKind::State;
+  return TypeKind::Value;
 }
 
 std::shared_ptr<const ControlType>
