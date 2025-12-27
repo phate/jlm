@@ -247,7 +247,7 @@ private:
   }
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
-  std::unordered_map<std::string, std::shared_ptr<const rvsdg::Type>> NamedStructs_;
+  std::unordered_map<std::string, std::shared_ptr<const llvm::StructType>> NamedStructs_;
 };
 
 } // namespace jlm::mlir
