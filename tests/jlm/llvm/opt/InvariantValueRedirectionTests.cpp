@@ -517,15 +517,16 @@ testThetaGammaRedirection()
   auto loopVar0 = thetaNode->AddLoopVar(functionArgument0);
   auto loopVar1 = thetaNode->AddLoopVar(functionArgument1);
 
-  auto dummyNodeTheta = TestOperation::create(thetaNode->subregion(), {}, { valueType });
+  auto dummyNodeTheta = TestOperation::createNode(thetaNode->subregion(), {}, { valueType });
 
-  auto predicate = TestOperation::create(thetaNode->subregion(), {}, { controlType })->output(0);
+  auto predicate =
+      TestOperation::createNode(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode = GammaNode::create(predicate, 2);
   auto entryVar0 = gammaNode->AddEntryVar(loopVar0.pre);
   auto entryVar1 = gammaNode->AddEntryVar(dummyNodeTheta->output(0));
 
-  auto dummyNodeGamma0 = TestOperation::create(gammaNode->subregion(0), {}, { valueType });
-  auto dummyNodeGamma1 = TestOperation::create(gammaNode->subregion(1), {}, { valueType });
+  auto dummyNodeGamma0 = TestOperation::createNode(gammaNode->subregion(0), {}, { valueType });
+  auto dummyNodeGamma1 = TestOperation::createNode(gammaNode->subregion(1), {}, { valueType });
 
   auto controlConstant0 =
       &ControlConstantOperation::create(*gammaNode->subregion(0), ControlValueRepresentation(0, 2));

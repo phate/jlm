@@ -39,7 +39,7 @@ TestTraceOutputIntraProcedural_Gamma()
   auto entryVar1Copy = gammaNode->AddEntryVar(&i1);
   auto entryVar2 = gammaNode->AddEntryVar(&i2);
 
-  auto node = TestOperation::create(
+  auto node = TestOperation::createNode(
       gammaNode->subregion(1),
       { entryVar2.branchArgument[1] },
       { valueType });
@@ -97,7 +97,7 @@ TestTraceOutputIntraProcedural_Theta()
   auto loopVar0 = thetaNode->AddLoopVar(&i0);
   auto loopVar1 = thetaNode->AddLoopVar(&i1);
 
-  auto node = TestOperation::create(thetaNode->subregion(), { loopVar1.pre }, { valueType });
+  auto node = TestOperation::createNode(thetaNode->subregion(), { loopVar1.pre }, { valueType });
   loopVar1.post->divert_to(node->output(0));
 
   auto & x0 = GraphExport::Create(*loopVar0.output, "x0");

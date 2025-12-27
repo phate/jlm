@@ -31,12 +31,14 @@ test_main()
 
   auto i = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i");
 
-  auto o1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
-  auto o2 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
-  auto o3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
-  auto o4 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
+  auto o1 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
+  auto o2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { i }, { valueType })
+                ->output(0);
+  auto o3 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
+  auto o4 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { i }, { valueType })
+                ->output(0);
 
   auto & e1 = GraphExport::Create(*o1, "o1");
   auto & e2 = GraphExport::Create(*o2, "o2");
@@ -52,18 +54,20 @@ test_main()
   assert(e1.origin() == e3.origin());
   assert(e2.origin() == e4.origin());
 
-  auto o5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
+  auto o5 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e5 = GraphExport::Create(*o5, "o5");
   ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e5.origin()));
   assert(e5.origin() == e1.origin());
 
-  auto o6 =
-      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
+  auto o6 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { i }, { valueType })
+                ->output(0);
   auto & e6 = GraphExport::Create(*o6, "o6");
   ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e6.origin()));
   assert(e6.origin() == e2.origin());
 
-  auto o7 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
+  auto o7 =
+      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e7 = GraphExport::Create(*o7, "o7");
   assert(e7.origin() != e1.origin());
 

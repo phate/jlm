@@ -35,7 +35,8 @@ TestDeltaCreation()
           true));
   auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 = &delta1->finalize(
-      jlm::tests::TestOperation::create(delta1->subregion(), { dep }, { valueType })->output(0));
+      jlm::tests::TestOperation::createNode(delta1->subregion(), { dep }, { valueType })
+          ->output(0));
 
   auto delta2 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -46,7 +47,7 @@ TestDeltaCreation()
           "",
           false));
   auto d2 = &delta2->finalize(
-      jlm::tests::TestOperation::create(delta2->subregion(), {}, { valueType })->output(0));
+      jlm::tests::TestOperation::createNode(delta2->subregion(), {}, { valueType })->output(0));
 
   GraphExport::Create(*d1, "");
   GraphExport::Create(*d2, "");

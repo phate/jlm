@@ -35,8 +35,8 @@ test_node_copy()
   auto & a1 = TestGraphArgument::Create(*n1->subregion(0), &i1, stype);
   auto & a2 = TestGraphArgument::Create(*n1->subregion(0), &i2, vtype);
 
-  auto n2 = TestOperation::create(n1->subregion(0), { &a1 }, { stype });
-  auto n3 = TestOperation::create(n1->subregion(0), { &a2 }, { vtype });
+  auto n2 = TestOperation::createNode(n1->subregion(0), { &a1 }, { stype });
+  auto n3 = TestOperation::createNode(n1->subregion(0), { &a2 }, { vtype });
 
   RegionResult::Create(*n1->subregion(0), *n2->output(0), &o1, stype);
   RegionResult::Create(*n1->subregion(0), *n3->output(0), &o2, vtype);
@@ -105,7 +105,7 @@ RemoveOutputs()
   const auto valueType = TestType::createValueType();
 
   Graph rvsdg;
-  auto node = TestOperation::create(
+  auto node = TestOperation::createNode(
       &rvsdg.GetRootRegion(),
       {},
       std::vector<std::shared_ptr<const Type>>{ valueType,
@@ -207,8 +207,10 @@ RemoveInputs()
   auto i8 = &GraphImport::Create(rvsdg, valueType, "i8");
   auto i9 = &GraphImport::Create(rvsdg, valueType, "i9");
 
-  auto node =
-      TestOperation::create(&rvsdg.GetRootRegion(), { i0, i1, i2, i3, i4, i5, i6, i7, i8, i9 }, {});
+  auto node = TestOperation::createNode(
+      &rvsdg.GetRootRegion(),
+      { i0, i1, i2, i3, i4, i5, i6, i7, i8, i9 },
+      {});
 
   // Act & Assert
   assert(rvsdg.GetRootRegion().numTopNodes() == 0);
@@ -351,7 +353,7 @@ zeroInputOutputIteration()
 
   // Arrange
   Graph rvsdg;
-  auto node = TestOperation::create(&rvsdg.GetRootRegion(), {}, {});
+  auto node = TestOperation::createNode(&rvsdg.GetRootRegion(), {}, {});
 
   // Act & Assert
   bool enteredLoopBody = false;
@@ -390,9 +392,9 @@ NodeId()
   Graph rvsdg1;
   HashSet<Node::Id> NodeIds;
 
-  auto node0 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
-  auto node1 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
-  auto node2 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+  auto node0 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
+  auto node1 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
+  auto node2 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
 
   NodeIds.insert(node0->GetNodeId());
   NodeIds.insert(node1->GetNodeId());
@@ -414,12 +416,12 @@ NodeId()
 
   // Adding a new node should give us the next identifier as no other nodes have been created in
   // between
-  auto node3 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+  auto node3 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
   assert(node3->GetNodeId() == 3);
 
   // Identifiers should be only unique for each region
   Graph rvsdg2;
-  auto node4 = TestOperation::create(&rvsdg2.GetRootRegion(), {}, {});
+  auto node4 = TestOperation::createNode(&rvsdg2.GetRootRegion(), {}, {});
   assert(node4->GetNodeId() == 0);
 }
 

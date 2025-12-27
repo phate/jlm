@@ -35,7 +35,7 @@ Test1()
   auto loopVarY = thetaNode->AddLoopVar(y);
   thetaNode->AddLoopVar(z);
 
-  auto a = jlm::tests::TestOperation::create(
+  auto a = jlm::tests::TestOperation::createNode(
                thetaNode->subregion(),
                { loopVarX.pre, loopVarY.pre },
                { jlm::rvsdg::BitType::Create(1) })
@@ -47,12 +47,12 @@ Test1()
   auto entryVarX = gamma->AddEntryVar(loopVarX.pre);
   auto entryVarY = gamma->AddEntryVar(loopVarY.pre);
 
-  auto b = jlm::tests::TestOperation::create(
+  auto b = jlm::tests::TestOperation::createNode(
                gamma->subregion(0),
                { entryVarX.branchArgument[0], entryVarY.branchArgument[0] },
                { valueType })
                ->output(0);
-  auto c = jlm::tests::TestOperation::create(
+  auto c = jlm::tests::TestOperation::createNode(
                gamma->subregion(1),
                { entryVarX.branchArgument[1], entryVarY.branchArgument[1] },
                { valueType })
@@ -101,13 +101,13 @@ Test2()
 
   auto loopVarX = thetaNode->AddLoopVar(x);
 
-  auto n1 = jlm::tests::TestOperation::create(
+  auto n1 = jlm::tests::TestOperation::createNode(
                 thetaNode->subregion(),
                 { loopVarX.pre },
                 { jlm::rvsdg::BitType::Create(1) })
                 ->output(0);
   auto n2 =
-      jlm::tests::TestOperation::create(thetaNode->subregion(), { loopVarX.pre }, { valueType })
+      jlm::tests::TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { valueType })
           ->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
