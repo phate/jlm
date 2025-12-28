@@ -846,12 +846,11 @@ DeadOutputs()
 
   auto undefValue = UndefValueOperation::Create(*lambdaNode->subregion(), memoryStateType);
 
-  lambdaNode->finalize(
-      {
-          loadNode2.output(0),
-          &ioStateArgument,
-          undefValue,
-      });
+  lambdaNode->finalize({
+      loadNode2.output(0),
+      &ioStateArgument,
+      undefValue,
+  });
 
   view(rvsdg, stdout);
 

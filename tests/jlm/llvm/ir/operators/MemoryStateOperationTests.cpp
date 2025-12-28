@@ -326,12 +326,11 @@ MemoryStateMergeNormalizeNestedSplits()
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
-  auto & mergeNode = MemoryStateMergeOperation::CreateNode(
-      { splitNode0.output(0),
-        splitNode0.output(1),
-        splitNode1.output(0),
-        splitNode1.output(1),
-        &ix2 });
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ splitNode0.output(0),
+                                                             splitNode0.output(1),
+                                                             splitNode1.output(0),
+                                                             splitNode1.output(1),
+                                                             &ix2 });
 
   auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
