@@ -20,80 +20,107 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = TestType::createStateType();
-  auto vtype = TestType::createValueType();
+  auto stateType = TestType::createStateType();
+  auto valueType = TestType::createValueType();
 
   Graph graph;
-  auto & s = jlm::rvsdg::GraphImport::Create(graph, stype, "");
-  auto & v = jlm::rvsdg::GraphImport::Create(graph, vtype, "");
+  auto & s = GraphImport::Create(graph, stateType, "");
+  auto & v = GraphImport::Create(graph, valueType, "");
 
-  auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
-  auto & i1 = n1->addInputOnly(s);
-  auto & i2 = n1->addInputOnly(v);
-  auto & o1 = n1->addOutputOnly(stype);
-  auto & o2 = n1->addOutputOnly(vtype);
+  auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto inputVar11 = structuralNode1->addInputWithArguments(s);
+  auto inputVar12 = structuralNode1->addInputWithArguments(s);
+  auto & output11 = structuralNode1->addOutputOnly(stateType);
+  auto & output12 = structuralNode1->addOutputOnly(valueType);
 
-  auto & a1 = TestGraphArgument::Create(*n1->subregion(0), &i1, stype);
-  auto & a2 = TestGraphArgument::Create(*n1->subregion(0), &i2, vtype);
+  auto simpleNode1 = TestOperation::createNode(
+      structuralNode1->subregion(0),
+      { inputVar11.argument[0] },
+      { stateType });
+  auto simpleNode2 = TestOperation::createNode(
+      structuralNode1->subregion(0),
+      { inputVar12.argument[0] },
+      { valueType });
 
-  auto n2 = TestOperation::createNode(n1->subregion(0), { &a1 }, { stype });
-  auto n3 = TestOperation::createNode(n1->subregion(0), { &a2 }, { vtype });
+  RegionResult::Create(
+      *structuralNode1->subregion(0),
+      *simpleNode1->output(0),
+      &output11,
+      stateType);
+  RegionResult::Create(
+      *structuralNode1->subregion(0),
+      *simpleNode2->output(0),
+      &output12,
+      valueType);
 
-  RegionResult::Create(*n1->subregion(0), *n2->output(0), &o1, stype);
-  RegionResult::Create(*n1->subregion(0), *n3->output(0), &o2, vtype);
+  view(&graph.GetRootRegion(), stdout);
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  // Act & Assert
+  // copy with arguments and results
+  {
+    auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+    auto & input21 = structuralNode2->addInputOnly(s);
+    auto & input22 = structuralNode2->addInputOnly(s);
+    auto & output21 = structuralNode2->addOutputOnly(stateType);
+    auto & output22 = structuralNode2->addOutputOnly(valueType);
 
-  /* copy first into second region with arguments and results */
-  SubstitutionMap smap;
-  smap.insert(&i1, &i1);
-  smap.insert(&i2, &i2);
-  smap.insert(&o1, &o1);
-  smap.insert(&o2, &o2);
-  n1->subregion(0)->copy(n1->subregion(1), smap, true, true);
+    SubstitutionMap smap;
+    smap.insert(inputVar11.input, &input21);
+    smap.insert(inputVar12.input, &input22);
+    smap.insert(&output11, &output21);
+    smap.insert(&output12, &output22);
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+    structuralNode1->subregion(0)->copy(structuralNode2->subregion(0), smap, true, true);
+    view(&graph.GetRootRegion(), stdout);
 
-  auto r2 = n1->subregion(1);
-  assert(r2->narguments() == 2);
-  assert(r2->argument(0)->input() == &i1);
-  assert(r2->argument(1)->input() == &i2);
+    auto subregion = structuralNode2->subregion(0);
+    assert(subregion->narguments() == 2);
+    assert(subregion->argument(0)->input() == &input21);
+    assert(subregion->argument(1)->input() == &input22);
 
-  assert(r2->nresults() == 2);
-  assert(r2->result(0)->output() == &o1);
-  assert(r2->result(1)->output() == &o2);
+    assert(subregion->nresults() == 2);
+    assert(subregion->result(0)->output() == &output21);
+    assert(subregion->result(1)->output() == &output22);
 
-  assert(r2->numNodes() == 2);
+    assert(subregion->numNodes() == 2);
+  }
 
-  /* copy second into third region only with arguments */
-  jlm::rvsdg::SubstitutionMap smap2;
-  auto & a3 = TestGraphArgument::Create(*n1->subregion(2), &i1, stype);
-  auto & a4 = TestGraphArgument::Create(*n1->subregion(2), &i2, vtype);
-  smap2.insert(r2->argument(0), &a3);
-  smap2.insert(r2->argument(1), &a4);
+  // copy without arguments
+  {
+    auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+    auto inputVar21 = structuralNode2->addArguments(stateType);
+    auto inputVar22 = structuralNode2->addArguments(stateType);
+    auto & output21 = structuralNode2->addOutputOnly(stateType);
+    auto & output22 = structuralNode2->addOutputOnly(valueType);
 
-  smap2.insert(&o1, &o1);
-  smap2.insert(&o2, &o2);
-  n1->subregion(1)->copy(n1->subregion(2), smap2, false, true);
+    SubstitutionMap smap2;
+    smap2.insert(structuralNode1->subregion(0)->argument(0), inputVar21.argument[0]);
+    smap2.insert(structuralNode1->subregion(0)->argument(1), inputVar22.argument[0]);
+    smap2.insert(&output11, &output21);
+    smap2.insert(&output12, &output22);
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+    structuralNode1->subregion(0)->copy(structuralNode2->subregion(0), smap2, false, true);
+    view(&graph.GetRootRegion(), stdout);
 
-  auto r3 = n1->subregion(2);
-  assert(r3->nresults() == 2);
-  assert(r3->result(0)->output() == &o1);
-  assert(r3->result(1)->output() == &o2);
+    auto subregion = structuralNode2->subregion(0);
+    assert(subregion->nresults() == 2);
+    assert(subregion->result(0)->output() == &output21);
+    assert(subregion->result(1)->output() == &output22);
 
-  assert(r3->numNodes() == 2);
+    assert(subregion->numNodes() == 2);
+  }
 
-  /* copy structural node */
-  jlm::rvsdg::SubstitutionMap smap3;
-  smap3.insert(&s, &s);
-  smap3.insert(&v, &v);
-  n1->copy(&graph.GetRootRegion(), smap3);
+  // copy structural node
+  {
+    SubstitutionMap smap3;
+    smap3.insert(&s, &s);
+    smap3.insert(&v, &v);
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+    structuralNode1->copy(&graph.GetRootRegion(), smap3);
+    view(&graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().numNodes() == 2);
+    assert(graph.GetRootRegion().numNodes() == 4);
+  }
 }
 
 static void
