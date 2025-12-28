@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/llvm/ir/basic-block.hpp>
@@ -17,7 +16,6 @@ static inline void
 test_two_phis()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();

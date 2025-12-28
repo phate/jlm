@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -64,7 +63,6 @@ testPullInBottom()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();

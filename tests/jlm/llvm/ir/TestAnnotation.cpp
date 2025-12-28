@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/aggregation.hpp>
@@ -19,7 +18,6 @@ TestBasicBlockAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -62,7 +60,6 @@ TestLinearSubgraphAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::Argument & argument)
@@ -148,7 +145,6 @@ TestBranchAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -234,7 +230,6 @@ TestLoopAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -298,7 +293,6 @@ TestBranchInLoopAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -427,7 +421,6 @@ TestBranchPassByAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)

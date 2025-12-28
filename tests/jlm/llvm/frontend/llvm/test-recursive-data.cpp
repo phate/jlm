@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
@@ -19,7 +18,6 @@ test()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();

@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -94,7 +94,7 @@ PrintNumRvsdgNodesAnnotation()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
+  auto structuralNode = TestStructuralNode::create(rootRegion, 2);
   TestOperation::createNode(structuralNode->subregion(0), {}, {});
   TestOperation::createNode(structuralNode->subregion(1), {}, {});
 
@@ -140,7 +140,7 @@ PrintNumLoadNodesAnnotation()
   auto & address = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "a");
   auto & memoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "m");
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
+  auto structuralNode = TestStructuralNode::create(rootRegion, 3);
   const auto addressInput = structuralNode->addInputWithArguments(address);
   const auto memoryStateInput = structuralNode->addInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
@@ -183,19 +183,20 @@ static void
 PrintNumMemoryStateInputsOutputsAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & y = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
   const auto inputVarX = structuralNode->addInputWithArguments(x);
   const auto inputVarY = structuralNode->addInputWithArguments(y);
 

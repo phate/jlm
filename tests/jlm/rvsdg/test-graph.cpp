@@ -4,9 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -27,7 +27,6 @@ static void
 test_recursive_prune()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto t = TestType::createValueType();
 
@@ -110,7 +109,6 @@ static void
 Copy()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/cfg-structure.hpp>
@@ -17,7 +16,6 @@ static void
 test()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();

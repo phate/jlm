@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
@@ -19,7 +19,6 @@ static void
 ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();
@@ -57,7 +56,6 @@ static void
 ResultInputTypeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
@@ -497,7 +496,6 @@ testThetaGammaRedirection()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
   auto controlType = ControlType::Create(2);

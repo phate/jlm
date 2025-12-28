@@ -1,20 +1,18 @@
 /*
- * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef TESTS_TEST_OPERATION_HPP
-#define TESTS_TEST_OPERATION_HPP
+#ifndef JLM_RVSDG_TESTNODES_HPP
+#define JLM_RVSDG_TESTNODES_HPP
 
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/type.hpp>
 
-namespace jlm::tests
+namespace jlm::rvsdg
 {
 
-class TestStructuralOperation final : public rvsdg::StructuralOperation
+class TestStructuralOperation final : public StructuralOperation
 {
 public:
   ~TestStructuralOperation() noexcept override;
@@ -26,14 +24,14 @@ public:
   copy() const override;
 };
 
-class TestStructuralNode final : public rvsdg::StructuralNode
+class TestStructuralNode final : public StructuralNode
 {
 public:
   ~TestStructuralNode() noexcept override;
 
 private:
-  TestStructuralNode(rvsdg::Region * parent, size_t nsubregions)
-      : StructuralNode(parent, nsubregions)
+  TestStructuralNode(Region * parent, size_t numSubregions)
+      : StructuralNode(parent, numSubregions)
   {}
 
 public:
@@ -42,8 +40,8 @@ public:
    */
   struct InputVar
   {
-    rvsdg::StructuralInput * input{};
-    std::vector<rvsdg::RegionArgument *> argument{};
+    StructuralInput * input{};
+    std::vector<RegionArgument *> argument{};
   };
 
   /**
@@ -51,8 +49,8 @@ public:
    */
   struct OutputVar
   {
-    rvsdg::StructuralOutput * output{};
-    std::vector<rvsdg::RegionResult *> result{};
+    StructuralOutput * output{};
+    std::vector<RegionResult *> result{};
   };
 
   /**
@@ -61,8 +59,8 @@ public:
    * @param origin Value to be routed in.
    * @return The created input variable.
    */
-  rvsdg::StructuralInput &
-  addInputOnly(rvsdg::Output & origin);
+  StructuralInput &
+  addInputOnly(Output & origin);
 
   /**
    * Add an input WITH subregion arguments to a \ref TestStructuralNode.
@@ -71,7 +69,7 @@ public:
    * @return Description of input variable.
    */
   InputVar
-  addInputWithArguments(rvsdg::Output & origin);
+  addInputWithArguments(Output & origin);
 
   /**
    * Removes the input with the given \p index,
@@ -88,7 +86,7 @@ public:
    * @return Description of input variable.
    */
   InputVar
-  addArguments(const std::shared_ptr<const rvsdg::Type> & type);
+  addArguments(const std::shared_ptr<const Type> & type);
 
   /**
    * Add an output WITHOUT subregion results to a \ref TestStructuralNode.
@@ -96,8 +94,8 @@ public:
    * @param type The output type
    * @return The created output variable.
    */
-  rvsdg::StructuralOutput &
-  addOutputOnly(std::shared_ptr<const rvsdg::Type> type);
+  StructuralOutput &
+  addOutputOnly(std::shared_ptr<const Type> type);
 
   /**
    * Add an output WITH subregion results to a \ref TestStructuralNode.
@@ -106,7 +104,7 @@ public:
    * @return Description of output variable.
    */
   OutputVar
-  addOutputWithResults(const std::vector<rvsdg::Output *> & origins);
+  addOutputWithResults(const std::vector<Output *> & origins);
 
   /**
    * Removes the output with the given \p index,
@@ -123,19 +121,19 @@ public:
    * @return Description of output variable.
    */
   OutputVar
-  addResults(const std::vector<rvsdg::Output *> & origins);
+  addResults(const std::vector<Output *> & origins);
 
   [[nodiscard]] const TestStructuralOperation &
   GetOperation() const noexcept override;
 
   static TestStructuralNode *
-  create(rvsdg::Region * parent, size_t nsubregions)
+  create(Region * parent, const size_t numSubregions)
   {
-    return new TestStructuralNode(parent, nsubregions);
+    return new TestStructuralNode(parent, numSubregions);
   }
 
   TestStructuralNode *
-  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
+  copy(Region * region, SubstitutionMap & smap) const override;
 };
 
 }

@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/AnnotationMap.hpp>
@@ -16,7 +16,6 @@
 static void
 IteratorRanges()
 {
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   // Arrange
@@ -90,7 +89,6 @@ static void
 Contains()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -125,10 +123,12 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
 static void
 IsRootRegion()
 {
+  using namespace jlm::rvsdg;
+
   // Arrange
   jlm::rvsdg::Graph graph;
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
   // Act & Assert
   assert(graph.GetRootRegion().IsRootRegion());
@@ -161,7 +161,6 @@ static void
 NumRegions_NonEmptyRvsdg()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const Graph graph;
@@ -179,7 +178,6 @@ static void
 RemoveResults()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
@@ -262,7 +260,6 @@ static void
 RemoveArguments()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -371,7 +368,6 @@ static void
 PruneArguments()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();
@@ -453,7 +449,6 @@ static void
 ToTree_RvsdgWithStructuralNodes()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -485,7 +480,6 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -524,7 +518,6 @@ static void
 BottomNodeTests()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
 
@@ -559,7 +552,6 @@ computeDepthMap()
 {
   // Arrange
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
 

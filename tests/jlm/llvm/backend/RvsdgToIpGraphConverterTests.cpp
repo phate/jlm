@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
@@ -23,7 +22,6 @@ GammaWithMatch()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -71,7 +69,6 @@ static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
   using namespace jlm::util;
 
@@ -119,7 +116,6 @@ static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
   using namespace jlm::util;
 
@@ -173,7 +169,6 @@ static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
   using namespace jlm::util;
 
@@ -234,7 +229,6 @@ static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
   using namespace jlm::util;
 
@@ -286,7 +280,6 @@ static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
   using namespace jlm::util;
 

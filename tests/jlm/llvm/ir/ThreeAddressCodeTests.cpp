@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/tac.hpp>
@@ -14,7 +13,6 @@ static void
 ToAscii()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   // Arrange

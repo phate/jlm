@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
@@ -31,7 +30,6 @@ LoadNonVolatile()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -131,7 +129,6 @@ LoadVolatile()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -203,7 +200,6 @@ SingleLoad()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -254,7 +250,6 @@ LoadAndStore()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -341,7 +336,6 @@ GammaWithOnlyLoads()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -451,7 +445,6 @@ GammaWithLoadsAndStores()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -558,7 +551,6 @@ ThetaWithLoadsOnly()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -654,7 +646,6 @@ ExternalCall()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto pointerType = PointerType::Create();
@@ -809,7 +800,6 @@ DeadOutputs()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   const auto bit32Type = BitType::Create(32);

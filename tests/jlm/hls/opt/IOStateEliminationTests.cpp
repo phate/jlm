@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/hls/opt/IOStateElimination.hpp>
@@ -70,7 +69,6 @@ testNesting()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto ioStateType = IOStateType::Create();

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -25,7 +24,6 @@ simpleGamma()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto controlType = ControlType::Create(2);
@@ -93,7 +91,6 @@ nestedGamma()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto controlType = ControlType::Create(2);
@@ -177,7 +174,6 @@ simpleTheta()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto controlType = ControlType::Create(2);
@@ -249,7 +245,6 @@ invariantMemoryOperation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto memoryStateType = MemoryStateType::Create();
@@ -308,7 +303,6 @@ statefulOperations()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto controlType = ControlType::Create(2);
   auto valueType = TestType::createValueType();

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/rvsdg/control.hpp>
@@ -384,7 +383,6 @@ MultipleThetas()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
@@ -439,7 +437,6 @@ MultipleThetasPassthrough()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -29,7 +28,6 @@ setupControlConstantCorrelationTest(
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
@@ -74,7 +72,6 @@ setupMatchConstantCorrelationTest(
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
@@ -113,7 +110,6 @@ setupThetaGammaMatchCorrelationTest(jlm::rvsdg::Graph & rvsdg)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
@@ -136,7 +132,6 @@ testControlConstantCorrelation()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -170,7 +165,6 @@ testMatchConstantCorrelationDetection()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   const std::vector<std::pair<uint64_t, uint64_t>> gammaSubregionAlternatives = { { 0, 1 },
                                                                                   { 1, 0 } };
@@ -213,7 +207,6 @@ testMatchConstantCorrelation_Success()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -246,7 +239,6 @@ testMatchConstantCorrelation_Failure()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -284,7 +276,6 @@ testThetaGammaMatchCorrelationDetection()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -317,7 +308,6 @@ testThetaGammaCorrelationFixPoint()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
@@ -371,7 +361,6 @@ testDetermineGammaSubregionRoles_ControlConstantCorrelation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   {
     // Arrange
@@ -428,7 +417,6 @@ testDetermineGammaSubregionRoles_MatchConstantCorrelation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   {
     // Arrange
@@ -485,8 +473,6 @@ testDetermineGammaSubregionRoles_MatchCorrelation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
-
   // Arrange
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -515,7 +501,6 @@ testGammaGammaMatchCorrelationDetection()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
