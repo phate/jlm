@@ -6,6 +6,8 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
@@ -54,6 +56,7 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ResultTests-ResultNodeMismatch", ResultNodeMis
 static void
 ResultInputTypeMismatch()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
   using namespace jlm::util;
 

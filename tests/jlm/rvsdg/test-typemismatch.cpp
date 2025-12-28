@@ -7,6 +7,8 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
@@ -19,16 +21,12 @@ test_main()
   auto type = jlm::rvsdg::TestType::createStateType();
   auto value_type = TestType::createValueType();
 
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
 
   bool error_handler_called = false;
   try
   {
-    jlm::tests::TestOperation::createNode(
-        &graph.GetRootRegion(),
-        { value_type },
-        { n1->output(0) },
-        {});
+    TestOperation::createNode(&graph.GetRootRegion(), { value_type }, { n1->output(0) }, {});
   }
   catch (jlm::util::TypeError & e)
   {

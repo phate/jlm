@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -282,7 +283,7 @@ NodeInputIteration()
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
@@ -319,7 +320,7 @@ NodeOutputIteration()
   Graph rvsdg;
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i },
       std::vector<std::shared_ptr<const Type>>{ valueType },
       std::vector<std::shared_ptr<const Type>>(5, valueType));

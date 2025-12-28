@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/DotWriter.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -166,8 +166,9 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 {
   // Arrange
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -186,7 +187,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt });
+    auto constant = TestOperation::createNode(lambda->subregion(), {}, { vt });
 
     auto lambdaOutput =
         lambda->finalize({ constant->output(0), iOStateArgument, memoryStateArgument });
@@ -264,9 +265,10 @@ static void
 TestCallTypeClassifierNonRecursiveDirectCallTheta()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -285,7 +287,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto c1 = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt });
+    auto c1 = TestOperation::createNode(lambda->subregion(), {}, { vt });
 
     return lambda->finalize({ c1->output(0), iOStateArgument, memoryStateArgument });
   };
@@ -347,7 +349,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto value = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
+    auto value = TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
 
     auto [loopValue, iOState, memoryState, callNode] = SetupOuterTheta(
         lambda->subregion(),

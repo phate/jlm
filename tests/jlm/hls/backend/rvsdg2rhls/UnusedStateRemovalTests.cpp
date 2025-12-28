@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -149,13 +150,13 @@ TestLambda()
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
   auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
-  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result1 = jlm::rvsdg::CreateOpNode<TestOperation>(
                      { argument1 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })
                      .output(0);
 
-  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result3 = jlm::rvsdg::CreateOpNode<TestOperation>(
                      { argument3 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })

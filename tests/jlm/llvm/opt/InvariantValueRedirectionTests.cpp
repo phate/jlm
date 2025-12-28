@@ -7,17 +7,17 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void

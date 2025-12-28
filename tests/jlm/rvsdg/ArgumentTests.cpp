@@ -6,6 +6,7 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>

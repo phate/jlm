@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -364,8 +365,7 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
-        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
-            ->output(0));
+        TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   {
@@ -375,8 +375,7 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
-        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
-            ->output(0));
+        TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   r1.result->divert_to(delta1);

@@ -8,12 +8,14 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
 operationEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -22,7 +24,7 @@ operationEquality()
 
   MemCpyNonVolatileOperation operation1(bit32Type, 1);
   MemCpyNonVolatileOperation operation2(bit64Type, 4);
-  jlm::tests::TestOperation operation3({ valueType }, { valueType });
+  TestOperation operation3({ valueType }, { valueType });
 
   // Act & Assert
   assert(operation1 == operation1);

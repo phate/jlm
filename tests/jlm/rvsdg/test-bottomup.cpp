@@ -6,16 +6,19 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
 testInitialization()
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto vtype = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, {});
-  auto n2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vtype });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, {});
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), {}, { vtype });
 
   jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
@@ -37,13 +40,13 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testInitialization", testInitial
 static void
 testBasicTraversal()
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 = jlm::tests::TestOperation::createNode(
-      &graph.GetRootRegion(),
-      { n1->output(0), n1->output(1) },
-      { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 =
+      TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0), n1->output(1) }, { type });
 
   jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
@@ -63,15 +66,14 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testBasicTraversal", testBasicTr
 static void
 testOrderEnforcement()
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 =
-      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::TestOperation::createNode(
-      &graph.GetRootRegion(),
-      { n2->output(0), n1->output(1) },
-      { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 =
+      TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0), n1->output(1) }, { type });
 
   {
     const jlm::rvsdg::Node * tmp = nullptr;

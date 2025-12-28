@@ -6,18 +6,19 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
 test()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   auto vt = jlm::rvsdg::TestType::createValueType();

@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -272,6 +273,7 @@ static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
   using namespace jlm::util;
 
@@ -281,7 +283,7 @@ PartialEmptyGamma()
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),

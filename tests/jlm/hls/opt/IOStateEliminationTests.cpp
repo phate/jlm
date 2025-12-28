@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void

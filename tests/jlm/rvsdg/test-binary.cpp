@@ -7,6 +7,7 @@
 #include "test-registry.hpp"
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -87,7 +88,7 @@ ReduceFlattenedBinaryReductionParallel()
 
   // Arrange
   const auto valueType = TestType::createValueType();
-  const jlm::tests::TestBinaryOperation binaryOperation(
+  const TestBinaryOperation binaryOperation(
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
@@ -113,13 +114,13 @@ ReduceFlattenedBinaryReductionParallel()
   assert(graph.GetRootRegion().numNodes() == 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node0));
+  assert(is<TestBinaryOperation>(node0));
 
   auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node1));
+  assert(is<TestBinaryOperation>(node1));
 
   auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node2));
+  assert(is<TestBinaryOperation>(node2));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -133,7 +134,7 @@ ReduceFlattenedBinaryReductionLinear()
 
   // Arrange
   const auto valueType = TestType::createValueType();
-  const jlm::tests::TestBinaryOperation binaryOperation(
+  const TestBinaryOperation binaryOperation(
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
@@ -160,13 +161,13 @@ ReduceFlattenedBinaryReductionLinear()
   assert(graph.GetRootRegion().numNodes() == 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node0));
+  assert(is<TestBinaryOperation>(node0));
 
   auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node1));
+  assert(is<TestBinaryOperation>(node1));
 
   auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node2));
+  assert(is<TestBinaryOperation>(node2));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -186,12 +187,12 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
-  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o2 = &CreateOpNode<TestBinaryOperation>(
       { o1->output(0), i2 },
       valueType,
       valueType,
@@ -203,8 +204,7 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -229,9 +229,9 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i1 }, valueType, valueType);
-  auto b2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ i0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ i1 }, valueType, valueType);
+  auto b2 = &CreateOpNode<TestBinaryOperation>(
       { u1->output(0), u2->output(0) },
       valueType,
       valueType,
@@ -243,8 +243,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -270,12 +269,12 @@ FlattenAssociativeBinaryOperation_Success()
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o2 = &CreateOpNode<TestBinaryOperation>(
       { o1->output(0), i2 },
       valueType,
       valueType,
@@ -287,8 +286,7 @@ FlattenAssociativeBinaryOperation_Success()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -315,7 +313,7 @@ NormalizeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
@@ -327,7 +325,7 @@ NormalizeBinaryOperation_NoNewOperands()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success = ReduceNode<jlm::tests::TestBinaryOperation>(NormalizeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(NormalizeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -351,8 +349,8 @@ NormalizeBinaryOperation_SingleOperand()
   auto s0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, valueType, valueType);
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ s0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ s1 }, valueType, valueType);
 
   auto o1 = &CreateOpNode<::BinaryOperation>(
       { u1->output(0), u2->output(0) },

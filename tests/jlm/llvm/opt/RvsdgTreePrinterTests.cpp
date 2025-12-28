@@ -9,10 +9,11 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <fstream>
-#include <jlm/rvsdg/TestType.hpp>
 
 static std::string
 ReadFile(const jlm::util::FilePath & outputFilePath)
@@ -86,17 +87,18 @@ static void
 PrintNumRvsdgNodesAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(0), {}, {});
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
+  TestOperation::createNode(structuralNode->subregion(0), {}, {});
+  TestOperation::createNode(structuralNode->subregion(1), {}, {});
 
-  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
+  TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes });
@@ -123,6 +125,7 @@ static void
 PrintNumLoadNodesAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
@@ -130,7 +133,7 @@ PrintNumLoadNodesAnnotation()
   const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto rootRegion = &rvsdg.GetRootRegion();
 
@@ -145,14 +148,14 @@ PrintNumLoadNodesAnnotation()
       { memoryStateInput.argument[0] },
       valueType,
       4);
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
+  TestOperation::createNode(structuralNode->subregion(1), {}, {});
   LoadNonVolatileOperation::Create(
       addressInput.argument[2],
       { memoryStateInput.argument[2] },
       valueType,
       4);
 
-  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
+  TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes });
