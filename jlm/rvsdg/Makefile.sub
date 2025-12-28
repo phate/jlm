@@ -14,6 +14,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/region.cpp \
     jlm/rvsdg/simple-node.cpp \
     jlm/rvsdg/structural-node.cpp \
+    jlm/rvsdg/TestNodes.cpp \
     jlm/rvsdg/TestOperations.cpp \
     jlm/rvsdg/theta.cpp \
     jlm/rvsdg/Transformation.cpp \
@@ -60,6 +61,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/unary.hpp \
     jlm/rvsdg/UnitType.hpp \
     jlm/rvsdg/simple-node.hpp \
+    jlm/rvsdg/TestNodes.hpp \
     jlm/rvsdg/TestOperations.hpp \
     jlm/rvsdg/TestType.hpp \
     jlm/rvsdg/type.hpp \

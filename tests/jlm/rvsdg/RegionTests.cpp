@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/AnnotationMap.hpp>
@@ -125,10 +125,12 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
 static void
 IsRootRegion()
 {
+  using namespace jlm::rvsdg;
+
   // Arrange
   jlm::rvsdg::Graph graph;
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
   // Act & Assert
   assert(graph.GetRootRegion().IsRootRegion());

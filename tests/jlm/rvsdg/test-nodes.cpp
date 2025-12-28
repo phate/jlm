@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -18,7 +18,6 @@ static void
 test_node_copy()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto stateType = TestType::createStateType();
   auto valueType = TestType::createValueType();

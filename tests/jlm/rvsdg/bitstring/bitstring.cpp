@@ -6,8 +6,6 @@
 
 #include <gtest/gtest.h>
 
-#include <test-operation.hpp>
-
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>

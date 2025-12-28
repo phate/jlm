@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -29,7 +29,7 @@ SplitConversion()
   auto & importX = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & importY = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "y");
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   const auto inputVar = structuralNode->addInputWithArguments(importX);
 
   auto & entrySplitNode =

@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
@@ -20,7 +20,7 @@ TestOutputRemoval()
   rvsdg::Graph rvsdg;
   auto valueType = rvsdg::TestType::createValueType();
 
-  auto structuralNode = tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralNode = rvsdg::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   auto & output0 = structuralNode->addOutputOnly(valueType);
   auto & output1 = structuralNode->addOutputOnly(valueType);
   auto & output2 = structuralNode->addOutputOnly(valueType);

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
 #include "test-registry.hpp"
 
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
@@ -11,6 +10,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -34,7 +34,7 @@ SinkInsertion()
       LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);
+  auto structuralNode = TestStructuralNode::create(lambdaNode->subregion(), 1);
   const auto inputVar0 = structuralNode->addInputWithArguments(*argument);
   const auto inputVar1 = structuralNode->addInputWithArguments(*argument);
 
