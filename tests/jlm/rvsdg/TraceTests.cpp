@@ -8,12 +8,13 @@
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <cassert>
-#include <jlm/rvsdg/TestType.hpp>
 
 /**
  * Tests tracing out of and through a single gamma node.
@@ -149,9 +150,8 @@ TestTraceNestedStructuralNodes()
   auto loopVar2 = thetaNode->AddLoopVar(&i2);
 
   // Create the gamma that sends loopVar0 and loopVar1 directly through
-  auto & undefNode = jlm::rvsdg::CreateOpNode<jlm::tests::TestNullaryOperation>(
-      *thetaNode->subregion(),
-      controlType);
+  auto & undefNode =
+      jlm::rvsdg::CreateOpNode<TestNullaryOperation>(*thetaNode->subregion(), controlType);
   const auto gammaNode = GammaNode::create(undefNode.output(0), 2);
   auto entryVar0 = gammaNode->AddEntryVar(loopVar0.pre);
   auto entryVar1 = gammaNode->AddEntryVar(loopVar1.pre);

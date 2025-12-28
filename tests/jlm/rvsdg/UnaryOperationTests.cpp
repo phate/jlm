@@ -7,6 +7,7 @@
 #include <test-registry.hpp>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -25,7 +26,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<jlm::tests::TestNullaryOperation>(node))
+        jlm::rvsdg::is<jlm::rvsdg::TestNullaryOperation>(node))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
@@ -73,8 +74,7 @@ NormalizeUnaryOperation_Success()
   Graph graph;
   const auto valueType = TestType::createValueType();
 
-  const auto nullaryNode =
-      &CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  const auto nullaryNode = &CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
 
   const auto unaryNode =
       &CreateOpNode<::UnaryOperation>({ nullaryNode->output(0) }, valueType, valueType);

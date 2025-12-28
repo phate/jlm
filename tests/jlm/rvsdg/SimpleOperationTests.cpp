@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -21,14 +22,10 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   const auto valueType = TestType::createValueType();
   const auto stateType = TestType::createStateType();
 
-  auto & nullaryValueNode1 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryValueNode2 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryStateNode1 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
-  auto & nullaryStateNode2 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & nullaryValueNode1 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryValueNode2 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryStateNode1 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & nullaryStateNode2 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
 
   auto & exNullaryValueNode1 = GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
   auto & exNullaryValueNode2 = GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
@@ -139,10 +136,8 @@ NormalizeSimpleOperationCne_Failure()
   auto v1 = &GraphImport::Create(graph, valueType, "v1");
   auto s1 = &GraphImport::Create(graph, stateType, "s1");
 
-  auto & nullaryValueNode =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryStateNode =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & nullaryValueNode = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryStateNode = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
   auto & unaryValueNode =
       CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
   auto & unaryStateNode =
