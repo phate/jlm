@@ -70,18 +70,6 @@ public:
   }
 };
 
-static inline bool
-is_unary_op(const rvsdg::Operation & op) noexcept
-{
-  return dynamic_cast<const TestUnaryOperation *>(&op);
-}
-
-static inline bool
-is_unary_node(const rvsdg::Node * node) noexcept
-{
-  return jlm::rvsdg::is<TestUnaryOperation>(node);
-}
-
 class TestBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
