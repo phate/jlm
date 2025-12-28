@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -21,6 +22,7 @@ static void
 StoreNonVolatileOperationEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -31,7 +33,7 @@ StoreNonVolatileOperationEquality()
   StoreNonVolatileOperation operation2(pointerType, 2, 4);
   StoreNonVolatileOperation operation3(valueType, 4, 4);
   StoreNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -49,6 +51,7 @@ static void
 StoreVolatileOperationEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -59,7 +62,7 @@ StoreVolatileOperationEquality()
   StoreVolatileOperation operation2(pointerType, 2, 4);
   StoreVolatileOperation operation3(valueType, 4, 4);
   StoreVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);

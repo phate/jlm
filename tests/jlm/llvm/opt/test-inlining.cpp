@@ -7,16 +7,16 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
-#include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 /**
@@ -96,7 +96,7 @@ testSimpleInlining()
         LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
     lambda->AddContextVar(*i);
 
-    auto t = jlm::tests::TestOperation::createNode(
+    auto t = TestOperation::createNode(
         lambda->subregion(),
         { lambda->GetFunctionArguments()[0] },
         { vt });
@@ -164,7 +164,7 @@ testSimpleInlining()
   // Assert
   // Check that the call has been replaced by the test operation inside f1
   assert(!Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
-  assert(Region::ContainsOperation<jlm::tests::TestOperation>(*gammaRegion0, true));
+  assert(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
 
   // Check that the statistics match what we expect. f2 is technically inlineable
   assert(statistics->GetMeasurementValue<uint64_t>("#Functions") == 2);

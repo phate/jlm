@@ -6,11 +6,11 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 TestDeltaCreation()
@@ -35,8 +35,7 @@ TestDeltaCreation()
           true));
   auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 = &delta1->finalize(
-      jlm::tests::TestOperation::createNode(delta1->subregion(), { dep }, { valueType })
-          ->output(0));
+      TestOperation::createNode(delta1->subregion(), { dep }, { valueType })->output(0));
 
   auto delta2 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -47,7 +46,7 @@ TestDeltaCreation()
           "",
           false));
   auto d2 = &delta2->finalize(
-      jlm::tests::TestOperation::createNode(delta2->subregion(), {}, { valueType })->output(0));
+      TestOperation::createNode(delta2->subregion(), {}, { valueType })->output(0));
 
   GraphExport::Create(*d1, "");
   GraphExport::Create(*d2, "");
@@ -83,7 +82,7 @@ TestRemoveDeltaInputsWhere()
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;
   deltaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result = jlm::rvsdg::CreateOpNode<TestOperation>(
                     { deltaNode->MapInputContextVar(*deltaInput1).inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -148,7 +147,7 @@ TestPruneDeltaInputs()
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;
   deltaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result = jlm::rvsdg::CreateOpNode<TestOperation>(
                     { deltaNode->MapInputContextVar(*deltaInput1).inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })

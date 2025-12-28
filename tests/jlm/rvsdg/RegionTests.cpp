@@ -17,6 +17,7 @@ static void
 IteratorRanges()
 {
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -260,6 +261,7 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResults", RemoveResults)
 static void
 RemoveArguments()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -366,6 +368,7 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArguments", RemoveArguments)
 static void
 PruneArguments()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange

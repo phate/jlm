@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -308,10 +309,8 @@ BufferWithOtherNode()
 
   auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
-  auto node = jlm::tests::TestOperation::createNode(
-      &rvsdg.GetRootRegion(),
-      { &importValue },
-      { memoryStateType });
+  auto node =
+      TestOperation::createNode(&rvsdg.GetRootRegion(), { &importValue }, { memoryStateType });
   auto bufferResults = BufferOperation::create(*node->output(0), 4, false);
 
   auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");

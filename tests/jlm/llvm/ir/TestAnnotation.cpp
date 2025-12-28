@@ -11,12 +11,14 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
 TestBasicBlockAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -59,6 +61,7 @@ static void
 TestLinearSubgraphAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -144,6 +147,7 @@ static void
 TestBranchAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -184,7 +188,7 @@ TestBranchAnnotation()
   };
 
   auto vt = jlm::rvsdg::TestType::createValueType();
-  jlm::tests::TestOperation op({ vt }, { vt });
+  TestOperation op({ vt }, { vt });
 
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
@@ -229,6 +233,7 @@ static void
 TestLoopAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -292,6 +297,7 @@ static void
 TestBranchInLoopAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
@@ -420,6 +426,7 @@ static void
 TestBranchPassByAnnotation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange

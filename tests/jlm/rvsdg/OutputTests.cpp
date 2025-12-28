@@ -11,6 +11,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -28,7 +29,7 @@ TestOutputIterator()
   auto i1 = &GraphImport::Create(rvsdg, valueType, "i");
   auto i2 = &GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       rootRegion,
       std::vector<std::shared_ptr<const Type>>(),
       std::vector<std::shared_ptr<const Type>>(5, valueType));

@@ -6,23 +6,24 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
 Test1()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -35,7 +36,7 @@ Test1()
   auto loopVarY = thetaNode->AddLoopVar(y);
   thetaNode->AddLoopVar(z);
 
-  auto a = jlm::tests::TestOperation::createNode(
+  auto a = TestOperation::createNode(
                thetaNode->subregion(),
                { loopVarX.pre, loopVarY.pre },
                { jlm::rvsdg::BitType::Create(1) })
@@ -47,12 +48,12 @@ Test1()
   auto entryVarX = gamma->AddEntryVar(loopVarX.pre);
   auto entryVarY = gamma->AddEntryVar(loopVarY.pre);
 
-  auto b = jlm::tests::TestOperation::createNode(
+  auto b = TestOperation::createNode(
                gamma->subregion(0),
                { entryVarX.branchArgument[0], entryVarY.branchArgument[0] },
                { valueType })
                ->output(0);
-  auto c = jlm::tests::TestOperation::createNode(
+  auto c = TestOperation::createNode(
                gamma->subregion(1),
                { entryVarX.branchArgument[1], entryVarY.branchArgument[1] },
                { valueType })
@@ -88,11 +89,12 @@ static void
 Test2()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -101,14 +103,13 @@ Test2()
 
   auto loopVarX = thetaNode->AddLoopVar(x);
 
-  auto n1 = jlm::tests::TestOperation::createNode(
+  auto n1 = TestOperation::createNode(
                 thetaNode->subregion(),
                 { loopVarX.pre },
                 { jlm::rvsdg::BitType::Create(1) })
                 ->output(0);
   auto n2 =
-      jlm::tests::TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { valueType })
-          ->output(0);
+      TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { valueType })->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);

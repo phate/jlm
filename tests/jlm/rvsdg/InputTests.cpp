@@ -6,6 +6,8 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
@@ -20,7 +22,7 @@ TestInputIterator()
   auto & rootRegion = rvsdg.GetRootRegion();
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
@@ -84,7 +86,7 @@ TestInputConstIterator()
   auto & rootRegion = rvsdg.GetRootRegion();
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });

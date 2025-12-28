@@ -9,15 +9,17 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static void
 TestArgumentIterators()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
@@ -42,8 +44,7 @@ TestArgumentIterators()
         rvsdgModule.Rvsdg().GetRootRegion(),
         LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
-    auto nullaryNode =
-        jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
+    auto nullaryNode = TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
 
     lambda->finalize({ nullaryNode });
 
@@ -78,18 +79,18 @@ static void
 TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg->GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
-  auto result =
-      jlm::tests::TestOperation::createNode(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
+  auto result = TestOperation::createNode(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
 
   bool invalidRegionErrorCaught = false;
   try
@@ -130,7 +131,7 @@ TestRemoveLambdaInputsWhere()
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result = jlm::rvsdg::CreateOpNode<TestOperation>(
                     { lambdaBinder1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -201,7 +202,7 @@ TestPruneLambdaInputs()
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
+  auto result = jlm::rvsdg::CreateOpNode<TestOperation>(
                     { lambdaInput1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })

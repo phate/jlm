@@ -14,6 +14,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -21,6 +22,7 @@ static void
 OperationEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -31,7 +33,7 @@ OperationEquality()
   LoadNonVolatileOperation operation2(pointerType, 2, 4);
   LoadNonVolatileOperation operation3(valueType, 4, 4);
   LoadNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);
@@ -460,6 +462,7 @@ static void
 LoadVolatileOperationEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -470,7 +473,7 @@ LoadVolatileOperationEquality()
   LoadVolatileOperation operation2(pointerType, 2, 4);
   LoadVolatileOperation operation3(valueType, 4, 4);
   LoadVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);

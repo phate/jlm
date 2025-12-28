@@ -80,4 +80,43 @@ TestBinaryOperation::copy() const
   return std::make_unique<TestBinaryOperation>(*this);
 }
 
+TestOperation::~TestOperation() noexcept = default;
+
+bool
+TestOperation::operator==(const Operation & other) const noexcept
+{
+  const auto testOperation = dynamic_cast<const TestOperation *>(&other);
+  if (!testOperation)
+    return false;
+
+  if (narguments() != testOperation->narguments() || nresults() != testOperation->nresults())
+    return false;
+
+  for (size_t n = 0; n < narguments(); n++)
+  {
+    if (argument(n) != testOperation->argument(n))
+      return false;
+  }
+
+  for (size_t n = 0; n < nresults(); n++)
+  {
+    if (result(n) != testOperation->result(n))
+      return false;
+  }
+
+  return true;
+}
+
+std::string
+TestOperation::debug_string() const
+{
+  return "TestOperation";
+}
+
+std::unique_ptr<Operation>
+TestOperation::copy() const
+{
+  return std::make_unique<TestOperation>(*this);
+}
+
 }

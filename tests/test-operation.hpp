@@ -8,10 +8,8 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/operation.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/type.hpp>
-#include <jlm/rvsdg/unary.hpp>
 
 namespace jlm::tests
 {
@@ -138,67 +136,6 @@ public:
 
   TestStructuralNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
-};
-
-class TestOperation final : public rvsdg::SimpleOperation
-{
-public:
-  ~TestOperation() noexcept override;
-
-  TestOperation(
-      std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
-      std::vector<std::shared_ptr<const rvsdg::Type>> results)
-      : SimpleOperation(std::move(arguments), std::move(results))
-  {}
-
-  TestOperation(const TestOperation &) = default;
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  static std::unique_ptr<TestOperation>
-  create(
-      std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
-      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
-  {
-    return std::make_unique<TestOperation>(std::move(operandTypes), std::move(resultTypes));
-  }
-
-  static rvsdg::SimpleNode *
-  createNode(
-      rvsdg::Region * region,
-      const std::vector<rvsdg::Output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
-  {
-    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
-    for (const auto & operand : operands)
-      operandTypes.push_back(operand->Type());
-
-    return createNode(region, operandTypes, operands, resultTypes);
-  }
-
-  static rvsdg::SimpleNode *
-  createNode(
-      rvsdg::Region * region,
-      std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
-      const std::vector<rvsdg::Output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
-  {
-    return operands.empty() ? &rvsdg::CreateOpNode<TestOperation>(
-                                  *region,
-                                  std::move(operandTypes),
-                                  std::move(resultTypes))
-                            : &rvsdg::CreateOpNode<TestOperation>(
-                                  { operands },
-                                  std::move(operandTypes),
-                                  std::move(resultTypes));
-  }
 };
 
 class TestGraphArgument final : public jlm::rvsdg::RegionArgument

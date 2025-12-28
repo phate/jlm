@@ -19,6 +19,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -845,11 +846,12 @@ DeadOutputs()
 
   auto undefValue = UndefValueOperation::Create(*lambdaNode->subregion(), memoryStateType);
 
-  lambdaNode->finalize({
-      loadNode2.output(0),
-      &ioStateArgument,
-      undefValue,
-  });
+  lambdaNode->finalize(
+      {
+          loadNode2.output(0),
+          &ioStateArgument,
+          undefValue,
+      });
 
   view(rvsdg, stdout);
 

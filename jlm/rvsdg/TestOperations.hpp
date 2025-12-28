@@ -157,6 +157,67 @@ private:
   enum BinaryOperation::flags flags_;
 };
 
+class TestOperation final : public SimpleOperation
+{
+public:
+  ~TestOperation() noexcept override;
+
+  TestOperation(
+      std::vector<std::shared_ptr<const Type>> operandTypes,
+      std::vector<std::shared_ptr<const Type>> resultTypes)
+      : SimpleOperation(std::move(operandTypes), std::move(resultTypes))
+  {}
+
+  TestOperation(const TestOperation &) = default;
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static std::unique_ptr<TestOperation>
+  create(
+      std::vector<std::shared_ptr<const Type>> operandTypes,
+      std::vector<std::shared_ptr<const Type>> resultTypes)
+  {
+    return std::make_unique<TestOperation>(std::move(operandTypes), std::move(resultTypes));
+  }
+
+  static SimpleNode *
+  createNode(
+      Region * region,
+      const std::vector<Output *> & operands,
+      std::vector<std::shared_ptr<const Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    return createNode(region, operandTypes, operands, std::move(resultTypes));
+  }
+
+  static SimpleNode *
+  createNode(
+      Region * region,
+      std::vector<std::shared_ptr<const Type>> operandTypes,
+      const std::vector<rvsdg::Output *> & operands,
+      std::vector<std::shared_ptr<const Type>> resultTypes)
+  {
+    return operands.empty() ? &rvsdg::CreateOpNode<TestOperation>(
+                                  *region,
+                                  std::move(operandTypes),
+                                  std::move(resultTypes))
+                            : &rvsdg::CreateOpNode<TestOperation>(
+                                  { operands },
+                                  std::move(operandTypes),
+                                  std::move(resultTypes));
+  }
+};
+
 }
 
 #endif

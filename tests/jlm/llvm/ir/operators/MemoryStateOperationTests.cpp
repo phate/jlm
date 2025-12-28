@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -19,12 +20,13 @@ static void
 MemoryStateSplitEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   MemoryStateSplitOperation operation1(2);
   MemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -172,12 +174,13 @@ static void
 MemoryStateMergeEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   MemoryStateMergeOperation operation1(2);
   MemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -323,11 +326,12 @@ MemoryStateMergeNormalizeNestedSplits()
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
-  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ splitNode0.output(0),
-                                                             splitNode0.output(1),
-                                                             splitNode1.output(0),
-                                                             splitNode1.output(1),
-                                                             &ix2 });
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode(
+      { splitNode0.output(0),
+        splitNode0.output(1),
+        splitNode1.output(0),
+        splitNode1.output(1),
+        &ix2 });
 
   auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
@@ -492,15 +496,14 @@ static void
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const LambdaEntryMemoryStateSplitOperation operation1({ 1, 2 });
   const LambdaEntryMemoryStateSplitOperation operation2({ 3, 4 });
   const LambdaEntryMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
-  const jlm::tests::TestOperation operation4(
-      { memoryStateType },
-      { memoryStateType, memoryStateType });
+  const TestOperation operation4({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -588,13 +591,14 @@ static void
 LambdaExitMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const LambdaExitMemoryStateMergeOperation operation1({ 1, 2 });
   const LambdaExitMemoryStateMergeOperation operation2({ 3, 4 });
   const LambdaExitMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
-  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -806,13 +810,14 @@ static void
 CallEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const CallEntryMemoryStateMergeOperation operation1({ 1, 2 });
   const CallEntryMemoryStateMergeOperation operation2({ 3, 4 });
   const CallEntryMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
-  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -829,15 +834,14 @@ static void
 CallExitMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const CallExitMemoryStateSplitOperation operation1({ 1, 2 });
   const CallExitMemoryStateSplitOperation operation2({ 3, 4 });
   const CallExitMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
-  const jlm::tests::TestOperation operation4(
-      { memoryStateType },
-      { memoryStateType, memoryStateType });
+  const TestOperation operation4({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);

@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -240,9 +241,10 @@ EmptyGammaWithThreeSubregions()
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
-  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
-                                             gammaInput1.branchArgument[1],
-                                             gammaInput2.branchArgument[2] });
+  auto gammaOutput = gammaNode->AddExitVar(
+      { gammaInput1.branchArgument[0],
+        gammaInput1.branchArgument[1],
+        gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
@@ -272,6 +274,7 @@ static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
   using namespace jlm::util;
 
@@ -281,7 +284,7 @@ PartialEmptyGamma()
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),

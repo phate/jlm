@@ -7,6 +7,7 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -86,17 +87,14 @@ test_prune_replace()
   auto type = TestType::createValueType();
 
   Graph graph;
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
-  auto n2 =
-      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 =
-      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type });
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 = TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
   GraphExport::Create(*n2->output(0), "n2");
   GraphExport::Create(*n3->output(0), "n3");
 
-  auto n4 =
-      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n4 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
   n2->output(0)->divert_users(n4->output(0));
   assert(n2->output(0)->nusers() == 0);

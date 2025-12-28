@@ -10,45 +10,6 @@
 namespace jlm::tests
 {
 
-TestOperation::~TestOperation() noexcept = default;
-
-bool
-TestOperation::operator==(const Operation & o) const noexcept
-{
-  auto other = dynamic_cast<const TestOperation *>(&o);
-  if (!other)
-    return false;
-
-  if (narguments() != other->narguments() || nresults() != other->nresults())
-    return false;
-
-  for (size_t n = 0; n < narguments(); n++)
-  {
-    if (argument(n) != other->argument(n))
-      return false;
-  }
-
-  for (size_t n = 0; n < nresults(); n++)
-  {
-    if (result(n) != other->result(n))
-      return false;
-  }
-
-  return true;
-}
-
-std::string
-TestOperation::debug_string() const
-{
-  return "TestOperation";
-}
-
-std::unique_ptr<rvsdg::Operation>
-TestOperation::copy() const
-{
-  return std::make_unique<TestOperation>(*this);
-}
-
 TestStructuralOperation::~TestStructuralOperation() noexcept = default;
 
 std::string

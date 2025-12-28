@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -255,9 +256,10 @@ EmptyGammaWithThreeSubregions()
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
-  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
-                                             gammaInput1.branchArgument[1],
-                                             gammaInput2.branchArgument[2] });
+  auto gammaOutput = gammaNode->AddExitVar(
+      { gammaInput1.branchArgument[0],
+        gammaInput1.branchArgument[1],
+        gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   GraphExport::Create(*lambdaOutput, "");
@@ -364,8 +366,7 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
-        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
-            ->output(0));
+        TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   {
@@ -375,8 +376,7 @@ RecursiveData()
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
-        jlm::tests::TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })
-            ->output(0));
+        TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   r1.result->divert_to(delta1);

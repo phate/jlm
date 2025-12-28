@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/ssa.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 static inline void
@@ -17,6 +18,7 @@ test_two_phis()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");

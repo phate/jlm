@@ -6,16 +6,16 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/DeadNodeElimination.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -226,7 +226,7 @@ test_unknown_boundaries()
   using namespace jlm::rvsdg;
 
   auto bt = jlm::rvsdg::BitType::Create(32);
-  jlm::tests::TestOperation op({ bt }, { bt });
+  TestOperation op({ bt }, { bt });
 
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
