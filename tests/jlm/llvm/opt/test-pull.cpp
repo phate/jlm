@@ -63,7 +63,6 @@ testPullInBottom()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();

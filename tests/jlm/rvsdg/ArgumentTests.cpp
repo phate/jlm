@@ -18,7 +18,6 @@ static void
 ArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();
@@ -52,7 +51,6 @@ static void
 ArgumentInputTypeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange

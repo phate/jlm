@@ -126,7 +126,6 @@ static void
 RemoveOutputs()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
@@ -216,7 +215,6 @@ static void
 RemoveInputs()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -376,7 +374,6 @@ static void
 zeroInputOutputIteration()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -412,7 +409,6 @@ static void
 NodeId()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange & Act & Assert

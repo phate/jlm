@@ -27,7 +27,6 @@ static void
 test_recursive_prune()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto t = TestType::createValueType();
 
@@ -110,7 +109,6 @@ static void
 Copy()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();

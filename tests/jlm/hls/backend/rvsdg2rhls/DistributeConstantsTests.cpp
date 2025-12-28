@@ -21,7 +21,6 @@ GammaSubregionUsage()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -98,7 +97,6 @@ NestedGammas()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -190,7 +188,6 @@ Theta()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -295,7 +292,6 @@ Lambda()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange

@@ -18,7 +18,6 @@ TestBasicBlockAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -61,7 +60,6 @@ TestLinearSubgraphAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::Argument & argument)
@@ -147,7 +145,6 @@ TestBranchAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -233,7 +230,6 @@ TestLoopAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -297,7 +293,6 @@ TestBranchInLoopAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
@@ -426,7 +421,6 @@ TestBranchPassByAnnotation()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)

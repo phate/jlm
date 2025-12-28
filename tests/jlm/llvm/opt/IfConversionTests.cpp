@@ -18,7 +18,6 @@ static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -77,7 +76,6 @@ static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -157,7 +155,6 @@ static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -219,7 +216,6 @@ static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -273,7 +269,6 @@ PartialEmptyGamma()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange

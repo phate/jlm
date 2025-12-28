@@ -13,7 +13,6 @@ static void
 ToAscii()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   // Arrange

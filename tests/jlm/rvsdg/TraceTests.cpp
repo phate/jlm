@@ -23,7 +23,6 @@ static void
 TestTraceOutputIntraProcedural_Gamma()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto controlType = ControlType::Create(2);
@@ -83,7 +82,6 @@ static void
 TestTraceOutputIntraProcedural_Theta()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto valueType = TestType::createValueType();
@@ -131,7 +129,6 @@ static void
 TestTraceNestedStructuralNodes()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto controlType = ControlType::Create(2);

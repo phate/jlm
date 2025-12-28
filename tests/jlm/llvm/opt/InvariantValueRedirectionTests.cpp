@@ -496,7 +496,6 @@ testThetaGammaRedirection()
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
   auto controlType = ControlType::Create(2);

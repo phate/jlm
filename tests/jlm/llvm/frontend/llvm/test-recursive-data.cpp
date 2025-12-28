@@ -18,7 +18,6 @@ test()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();

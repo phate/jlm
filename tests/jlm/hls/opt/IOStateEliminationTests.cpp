@@ -69,7 +69,6 @@ testNesting()
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto ioStateType = IOStateType::Create();

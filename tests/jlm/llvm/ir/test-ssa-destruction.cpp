@@ -16,7 +16,6 @@ static inline void
 test_two_phis()
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();

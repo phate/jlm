@@ -19,7 +19,6 @@ static void
 ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();
@@ -57,7 +56,6 @@ static void
 ResultInputTypeMismatch()
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange

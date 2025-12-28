@@ -383,7 +383,6 @@ MultipleThetas()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
@@ -438,7 +437,6 @@ MultipleThetasPassthrough()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
