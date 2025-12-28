@@ -6,7 +6,6 @@
 #ifndef TESTS_TEST_OPERATION_HPP
 #define TESTS_TEST_OPERATION_HPP
 
-#include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -16,72 +15,6 @@
 
 namespace jlm::tests
 {
-
-class TestBinaryOperation final : public rvsdg::BinaryOperation
-{
-public:
-  ~TestBinaryOperation() noexcept override;
-
-  TestBinaryOperation(
-      const std::shared_ptr<const rvsdg::Type> & srctype,
-      std::shared_ptr<const rvsdg::Type> dsttype,
-      const enum BinaryOperation::flags & flags) noexcept
-      : BinaryOperation({ srctype, srctype }, std::move(dsttype)),
-        flags_(flags)
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
-      const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand_pair(rvsdg::unop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
-      const override;
-
-  enum BinaryOperation::flags
-  flags() const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  static rvsdg::Node *
-  create(
-      const std::shared_ptr<const rvsdg::Type> & srctype,
-      std::shared_ptr<const rvsdg::Type> dsttype,
-      rvsdg::Output * op1,
-      rvsdg::Output * op2)
-  {
-    return &rvsdg::CreateOpNode<TestBinaryOperation>(
-        { op1, op2 },
-        srctype,
-        std::move(dsttype),
-        BinaryOperation::flags::none);
-  }
-
-  static inline rvsdg::Output *
-  create_normalized(
-      const std::shared_ptr<const rvsdg::Type> srctype,
-      std::shared_ptr<const rvsdg::Type> dsttype,
-      rvsdg::Output * op1,
-      rvsdg::Output * op2)
-  {
-    return rvsdg::CreateOpNode<TestBinaryOperation>(
-               { op1, op2 },
-               srctype,
-               std::move(dsttype),
-               flags::none)
-        .output(0);
-  }
-
-private:
-  enum BinaryOperation::flags flags_;
-};
 
 class TestStructuralOperation final : public rvsdg::StructuralOperation
 {

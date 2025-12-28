@@ -41,4 +41,43 @@ TestUnaryOperation::copy() const
   return std::make_unique<TestUnaryOperation>(*this);
 }
 
+TestBinaryOperation::~TestBinaryOperation() noexcept = default;
+
+bool
+TestBinaryOperation::operator==(const Operation & other) const noexcept
+{
+  auto op = dynamic_cast<const TestBinaryOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+binop_reduction_path_t
+TestBinaryOperation::can_reduce_operand_pair(const Output *, const Output *) const noexcept
+{
+  return binop_reduction_none;
+}
+
+Output *
+TestBinaryOperation::reduce_operand_pair(binop_reduction_path_t, Output *, Output *) const
+{
+  return nullptr;
+}
+
+enum BinaryOperation::flags
+TestBinaryOperation::flags() const noexcept
+{
+  return flags_;
+}
+
+std::string
+TestBinaryOperation::debug_string() const
+{
+  return "TestBinaryOperation";
+}
+
+std::unique_ptr<Operation>
+TestBinaryOperation::copy() const
+{
+  return std::make_unique<TestBinaryOperation>(*this);
+}
+
 }

@@ -6,6 +6,7 @@
 #ifndef JLM_RVSDG_TESTOPERATIONS_HPP
 #define JLM_RVSDG_TESTOPERATIONS_HPP
 
+#include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
@@ -90,6 +91,70 @@ public:
                std::move(resultType))
         .output(0);
   }
+};
+
+class TestBinaryOperation final : public BinaryOperation
+{
+public:
+  ~TestBinaryOperation() noexcept override;
+
+  TestBinaryOperation(
+      const std::shared_ptr<const Type> & operandType,
+      std::shared_ptr<const Type> resultType,
+      const enum BinaryOperation::flags & flags) noexcept
+      : BinaryOperation({ operandType, operandType }, std::move(resultType)),
+        flags_(flags)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  binop_reduction_path_t
+  can_reduce_operand_pair(const Output * op1, const Output * op2) const noexcept override;
+
+  Output *
+  reduce_operand_pair(unop_reduction_path_t path, Output * op1, Output * op2) const override;
+
+  enum BinaryOperation::flags
+  flags() const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static Node *
+  create(
+      const std::shared_ptr<const Type> & operandType,
+      std::shared_ptr<const Type> resultType,
+      Output * op1,
+      Output * op2)
+  {
+    return &rvsdg::CreateOpNode<TestBinaryOperation>(
+        { op1, op2 },
+        operandType,
+        std::move(resultType),
+        flags::none);
+  }
+
+  static Output *
+  create_normalized(
+      const std::shared_ptr<const Type> operandType,
+      std::shared_ptr<const Type> resultType,
+      Output * op1,
+      Output * op2)
+  {
+    return rvsdg::CreateOpNode<TestBinaryOperation>(
+               { op1, op2 },
+               operandType,
+               std::move(resultType),
+               flags::none)
+        .output(0);
+  }
+
+private:
+  enum BinaryOperation::flags flags_;
 };
 
 }
