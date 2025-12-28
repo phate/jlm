@@ -10,39 +10,6 @@
 namespace jlm::tests
 {
 
-TestUnaryOperation::~TestUnaryOperation() noexcept = default;
-
-bool
-TestUnaryOperation::operator==(const Operation & other) const noexcept
-{
-  auto op = dynamic_cast<const TestUnaryOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-rvsdg::unop_reduction_path_t
-TestUnaryOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-TestUnaryOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  return nullptr;
-}
-
-std::string
-TestUnaryOperation::debug_string() const
-{
-  return "TestUnaryOperation";
-}
-
-std::unique_ptr<rvsdg::Operation>
-TestUnaryOperation::copy() const
-{
-  return std::make_unique<TestUnaryOperation>(*this);
-}
-
 TestBinaryOperation::~TestBinaryOperation() noexcept = default;
 
 bool

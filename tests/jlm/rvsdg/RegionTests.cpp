@@ -6,6 +6,7 @@
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/AnnotationMap.hpp>
 
@@ -87,6 +88,7 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IteratorRanges", IteratorRanges)
 static void
 Contains()
 {
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange

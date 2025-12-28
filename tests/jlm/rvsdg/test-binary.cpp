@@ -7,6 +7,7 @@
 #include "test-registry.hpp"
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -229,8 +230,8 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i1 }, valueType, valueType);
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ i0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ i1 }, valueType, valueType);
   auto b2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
       { u1->output(0), u2->output(0) },
       valueType,
@@ -351,8 +352,8 @@ NormalizeBinaryOperation_SingleOperand()
   auto s0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, valueType, valueType);
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ s0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ s1 }, valueType, valueType);
 
   auto o1 = &CreateOpNode<::BinaryOperation>(
       { u1->output(0), u2->output(0) },

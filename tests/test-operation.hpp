@@ -17,59 +17,6 @@
 namespace jlm::tests
 {
 
-class TestUnaryOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~TestUnaryOperation() noexcept override;
-
-  TestUnaryOperation(
-      std::shared_ptr<const rvsdg::Type> srctype,
-      std::shared_ptr<const rvsdg::Type> dsttype) noexcept
-      : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  static rvsdg::Node *
-  create(
-      rvsdg::Region *,
-      std::shared_ptr<const rvsdg::Type> srctype,
-      rvsdg::Output * operand,
-      std::shared_ptr<const rvsdg::Type> dsttype)
-  {
-    return &rvsdg::CreateOpNode<TestUnaryOperation>(
-        { operand },
-        std::move(srctype),
-        std::move(dsttype));
-  }
-
-  static inline rvsdg::Output *
-  create_normalized(
-      std::shared_ptr<const rvsdg::Type> srctype,
-      rvsdg::Output * operand,
-      std::shared_ptr<const rvsdg::Type> dsttype)
-  {
-    return rvsdg::CreateOpNode<TestUnaryOperation>(
-               { operand },
-               std::move(srctype),
-               std::move(dsttype))
-        .output(0);
-  }
-};
-
 class TestBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
