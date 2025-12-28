@@ -35,7 +35,7 @@ ArgumentNodeMismatch()
   bool inputErrorHandlerCalled = false;
   try
   {
-    TestGraphArgument::Create(*structuralNode2->subregion(0), &structuralInput, valueType);
+    RegionArgument::Create(*structuralNode2->subregion(0), &structuralInput, valueType);
   }
   catch (jlm::util::Error &)
   {
@@ -69,7 +69,7 @@ ArgumentInputTypeMismatch()
   bool exceptionWasCaught = false;
   try
   {
-    TestGraphArgument::Create(*structuralNode->subregion(0), &structuralInput, stateType);
+    RegionArgument::Create(*structuralNode->subregion(0), &structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

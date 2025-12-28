@@ -138,35 +138,6 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class TestGraphArgument final : public jlm::rvsdg::RegionArgument
-{
-private:
-  TestGraphArgument(
-      rvsdg::Region & region,
-      rvsdg::StructuralInput * input,
-      std::shared_ptr<const jlm::rvsdg::Type> type)
-      : jlm::rvsdg::RegionArgument(&region, input, type)
-  {}
-
-public:
-  TestGraphArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override
-  {
-    return Create(region, input, Type());
-  }
-
-  static TestGraphArgument &
-  Create(
-      rvsdg::Region & region,
-      rvsdg::StructuralInput * input,
-      std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto graphArgument = new TestGraphArgument(region, input, std::move(type));
-    region.addArgument(std::unique_ptr<RegionArgument>(graphArgument));
-    return *graphArgument;
-  }
-};
-
 }
 
 #endif

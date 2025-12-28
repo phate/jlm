@@ -39,7 +39,7 @@ test_recursive_prune()
 
   auto n3 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto input0 = n3->addInputWithArguments(imp);
-  auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
+  auto & a1 = *n3->addArguments(t).argument[0];
   auto n4 = TestOperation::createNode(n3->subregion(0), { &a1 }, { t });
   auto n5 = TestOperation::createNode(n3->subregion(0), { &a1 }, { t });
   auto o1 = n3->addOutputWithResults({ n4->output(0) });

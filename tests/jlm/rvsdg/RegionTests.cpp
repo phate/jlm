@@ -28,8 +28,8 @@ IteratorRanges()
   auto & subregion = *structuralNode->subregion(0);
   auto & constSubregion = *static_cast<const jlm::rvsdg::Region *>(structuralNode->subregion(0));
 
-  auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
-  auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
+  auto & argument0 = *structuralNode->addArguments(valueType).argument[0];
+  auto & argument1 = *structuralNode->addArguments(valueType).argument[0];
 
   auto topNode0 = TestOperation::createNode(&subregion, {}, { valueType });
   auto node0 = TestOperation::createNode(&subregion, { &argument0 }, { valueType });
@@ -265,26 +265,28 @@ RemoveArguments()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
+  Graph rvsdg;
+  auto & rootRegion = rvsdg.GetRootRegion();
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  auto argument0 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument1 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument2 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument3 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument4 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument5 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument6 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument7 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument8 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument9 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument0 = &GraphImport::Create(rvsdg, valueType, "argument0");
+  auto argument1 = &GraphImport::Create(rvsdg, valueType, "argument1");
+  auto argument2 = &GraphImport::Create(rvsdg, valueType, "argument2");
+  auto argument3 = &GraphImport::Create(rvsdg, valueType, "argument3");
+  auto argument4 = &GraphImport::Create(rvsdg, valueType, "argument4");
+  auto argument5 = &GraphImport::Create(rvsdg, valueType, "argument5");
+  auto argument6 = &GraphImport::Create(rvsdg, valueType, "argument6");
+  auto argument7 = &GraphImport::Create(rvsdg, valueType, "argument7");
+  auto argument8 = &GraphImport::Create(rvsdg, valueType, "argument8");
+  auto argument9 = &GraphImport::Create(rvsdg, valueType, "argument9");
 
-  auto node =
-      TestOperation::createNode(&region, { argument2, argument4, argument6 }, { valueType });
+  auto node = TestOperation::createNode(
+      &rvsdg.GetRootRegion(),
+      { argument2, argument4, argument6 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 10);
+  assert(rootRegion.narguments() == 10);
   assert(argument0->index() == 0);
   assert(argument1->index() == 1);
   assert(argument2->index() == 2);
@@ -297,11 +299,11 @@ RemoveArguments()
   assert(argument9->index() == 9);
 
   // Remove all arguments that have an even index
-  size_t numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6, 8 });
+  size_t numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6, 8 });
   // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
   // argument6 are not dead
   assert(numRemovedArguments == 2);
-  assert(region.narguments() == 8);
+  assert(rootRegion.narguments() == 8);
   assert(argument1->index() == 0);
   assert(argument2->index() == 1);
   assert(argument3->index() == 2);
@@ -322,13 +324,13 @@ RemoveArguments()
   argument7 = argument9;
 
   // Remove all users from the arguments
-  region.removeNode(node);
+  rootRegion.removeNode(node);
 
   // Remove all arguments that have an even index
-  numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6 });
+  numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6 });
   // We expect argument0, argument2, argument4, and argument6 to be removed
   assert(numRemovedArguments == 4);
-  assert(region.narguments() == 4);
+  assert(rootRegion.narguments() == 4);
   assert(argument1->index() == 0);
   assert(argument3->index() == 1);
   assert(argument5->index() == 2);
@@ -341,23 +343,23 @@ RemoveArguments()
   argument3 = argument7;
 
   // Remove no argument
-  numRemovedArguments = region.RemoveArguments({});
+  numRemovedArguments = rootRegion.RemoveArguments({});
   assert(numRemovedArguments == 0);
-  assert(region.narguments() == 4);
+  assert(rootRegion.narguments() == 4);
   assert(argument0->index() == 0);
   assert(argument1->index() == 1);
   assert(argument2->index() == 2);
   assert(argument3->index() == 3);
 
   // Remove non-existent argument
-  numRemovedArguments = region.RemoveArguments({ 15 });
+  numRemovedArguments = rootRegion.RemoveArguments({ 15 });
   assert(numRemovedArguments == 0);
-  assert(region.narguments() == 4);
+  assert(rootRegion.narguments() == 4);
 
   // Remove all remaining arguments
-  numRemovedArguments = region.RemoveArguments({ 0, 1, 2, 3 });
+  numRemovedArguments = rootRegion.RemoveArguments({ 0, 1, 2, 3 });
   assert(numRemovedArguments == 4);
-  assert(region.narguments() == 0);
+  assert(rootRegion.narguments() == 0);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArguments", RemoveArguments)
@@ -372,29 +374,33 @@ PruneArguments()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
+  auto valueType = TestType::createValueType();
 
-  auto valueType = jlm::rvsdg::TestType::createValueType();
-  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
-  TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
+  Graph rvsdg;
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
 
-  auto node = TestOperation::createNode(&region, { &argument0, &argument2 }, { valueType });
+  auto & argument0 = *structuralNode->addArguments(valueType).argument[0];
+  structuralNode->addArguments(valueType);
+  auto & argument2 = *structuralNode->addArguments(valueType).argument[0];
+
+  auto node = TestOperation::createNode(
+      structuralNode->subregion(0),
+      { &argument0, &argument2 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 3);
+  assert(structuralNode->subregion(0)->narguments() == 3);
 
-  size_t numRemovedArguments = region.PruneArguments();
+  size_t numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
   assert(numRemovedArguments == 1);
-  assert(region.narguments() == 2);
+  assert(structuralNode->subregion(0)->narguments() == 2);
   assert(argument0.index() == 0);
   assert(argument2.index() == 1);
 
-  region.removeNode(node);
-  numRemovedArguments = region.PruneArguments();
+  structuralNode->subregion(0)->removeNode(node);
+  numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
   assert(numRemovedArguments == 2);
-  assert(region.narguments() == 0);
+  assert(structuralNode->subregion(0)->narguments() == 0);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-PruneArguments", PruneArguments)
