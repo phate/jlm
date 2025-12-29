@@ -81,7 +81,6 @@ librvsdg_HEADERS = \
 
 librvsdg_TESTS = \
     tests/jlm/rvsdg/OutputTests \
-    tests/jlm/rvsdg/MatchTypeTests \
     tests/jlm/rvsdg/RegionTests \
     tests/jlm/rvsdg/ResultTests \
     tests/jlm/rvsdg/SimpleOperationTests \
@@ -117,3 +116,7 @@ $(eval $(call common_test,tests/jlm/rvsdg/ArgumentTests))
 tests/jlm/rvsdg/InputTests_SOURCES = tests/jlm/rvsdg/InputTests.cpp
 tests/jlm/rvsdg/InputTests_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/InputTests))
+
+tests/jlm/rvsdg/MatchTypeTests_SOURCES = tests/jlm/rvsdg/MatchTypeTests.cpp
+tests/jlm/rvsdg/MatchTypeTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/MatchTypeTests))
