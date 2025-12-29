@@ -80,7 +80,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
-    tests/jlm/rvsdg/TraceTests \
     tests/jlm/rvsdg/TransformationSequenceTests \
     tests/jlm/rvsdg/UnaryOperationTests \
 
@@ -162,3 +161,7 @@ $(eval $(call common_test,tests/jlm/rvsdg/test-typemismatch))
 tests/jlm/rvsdg/TestStructuralNode_SOURCES = tests/jlm/rvsdg/TestStructuralNode.cpp
 tests/jlm/rvsdg/TestStructuralNode_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/TestStructuralNode))
+
+tests/jlm/rvsdg/TraceTests_SOURCES = tests/jlm/rvsdg/TraceTests.cpp
+tests/jlm/rvsdg/TraceTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/TraceTests))
