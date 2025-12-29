@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -80,8 +80,7 @@ private:
   enum jlm::rvsdg::BinaryOperation::flags Flags_;
 };
 
-static void
-ReduceFlattenedBinaryReductionParallel()
+TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionParallel)
 {
   using namespace jlm::rvsdg;
 
@@ -110,24 +109,19 @@ ReduceFlattenedBinaryReductionParallel()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<TestBinaryOperation>(node0));
+  EXPECT_TRUE(is<TestBinaryOperation>(node0));
 
   auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<TestBinaryOperation>(node1));
+  EXPECT_TRUE(is<TestBinaryOperation>(node1));
 
   auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
-  assert(is<TestBinaryOperation>(node2));
+  EXPECT_TRUE(is<TestBinaryOperation>(node2));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionParallel",
-    ReduceFlattenedBinaryReductionParallel)
-
-static void
-ReduceFlattenedBinaryReductionLinear()
+TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionLinear)
 {
   using namespace jlm::rvsdg;
 
@@ -157,24 +151,19 @@ ReduceFlattenedBinaryReductionLinear()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
 
   auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<TestBinaryOperation>(node0));
+  EXPECT_TRUE(is<TestBinaryOperation>(node0));
 
   auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<TestBinaryOperation>(node1));
+  EXPECT_TRUE(is<TestBinaryOperation>(node1));
 
   auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
-  assert(is<TestBinaryOperation>(node2));
+  EXPECT_TRUE(is<TestBinaryOperation>(node2));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionLinear",
-    ReduceFlattenedBinaryReductionLinear)
-
-static void
-FlattenAssociativeBinaryOperation_NotAssociativeBinary()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_NotAssociativeBinary)
 {
   using namespace jlm::rvsdg;
 
@@ -208,16 +197,11 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
-  assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
+  EXPECT_FALSE(success);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex.origin()), node);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NotAssociativeBinary",
-    FlattenAssociativeBinaryOperation_NotAssociativeBinary)
-
-static void
-FlattenAssociativeBinaryOperation_NoNewOperands()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_NoNewOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -247,16 +231,11 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
-  assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
+  EXPECT_FALSE(success);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex.origin()), node);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NoNewOperands",
-    FlattenAssociativeBinaryOperation_NoNewOperands)
-
-static void
-FlattenAssociativeBinaryOperation_Success()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_Success)
 {
   using namespace jlm::rvsdg;
 
@@ -290,18 +269,13 @@ FlattenAssociativeBinaryOperation_Success()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success);
+  EXPECT_TRUE(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(is<FlattenedBinaryOperation>(flattenedBinaryNode));
-  assert(flattenedBinaryNode->ninputs() == 3);
+  EXPECT_TRUE(is<FlattenedBinaryOperation>(flattenedBinaryNode));
+  EXPECT_EQ(flattenedBinaryNode->ninputs(), 3);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_Success",
-    FlattenAssociativeBinaryOperation_Success)
-
-static void
-NormalizeBinaryOperation_NoNewOperands()
+TEST(BinaryOperationTests, NormalizeBinaryOperation_NoNewOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -329,15 +303,10 @@ NormalizeBinaryOperation_NoNewOperands()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
+  EXPECT_FALSE(success);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-NormalizeBinaryOperation_NoNewOperands",
-    NormalizeBinaryOperation_NoNewOperands)
-
-static void
-NormalizeBinaryOperation_SingleOperand()
+TEST(BinaryOperationTests, NormalizeBinaryOperation_SingleOperand)
 {
   using namespace jlm::rvsdg;
 
@@ -368,10 +337,6 @@ NormalizeBinaryOperation_SingleOperand()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == true);
-  assert(ex.origin() == u2->output(0));
+  EXPECT_TRUE(success);
+  EXPECT_EQ(ex.origin(), u2->output(0));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-NormalizeBinaryOperation_SingleOperand",
-    NormalizeBinaryOperation_SingleOperand)
