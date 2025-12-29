@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -11,8 +11,7 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-NormalizeSimpleOperationCne_NodesWithoutOperands()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_NodesWithoutOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -60,17 +59,12 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   view(graph, stdout);
 
   // Assert
-  assert(exNullaryValueNode1.origin() == exNullaryValueNode2.origin());
-  assert(exNullaryStateNode1.origin() == exNullaryStateNode2.origin());
-  assert(exNullaryValueNode1.origin() != exNullaryStateNode2.origin());
+  EXPECT_EQ(exNullaryValueNode1.origin(), exNullaryValueNode2.origin());
+  EXPECT_EQ(exNullaryStateNode1.origin(), exNullaryStateNode2.origin());
+  EXPECT_NE(exNullaryValueNode1.origin(), exNullaryStateNode2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithoutOperands",
-    NormalizeSimpleOperationCne_NodesWithoutOperands)
-
-static void
-NormalizeSimpleOperationCne_NodesWithOperands()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_NodesWithOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -113,17 +107,12 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   view(graph, stdout);
 
   // Assert
-  assert(exValueNode1.origin() == exValueNode2.origin());
-  assert(exStateNode1.origin() == exStateNode2.origin());
-  assert(exValueNode1.origin() != exStateNode2.origin());
+  EXPECT_EQ(exValueNode1.origin(), exValueNode2.origin());
+  EXPECT_EQ(exStateNode1.origin(), exStateNode2.origin());
+  EXPECT_NE(exValueNode1.origin(), exStateNode2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithOperands",
-    NormalizeSimpleOperationCne_NodesWithOperands)
-
-static void
-NormalizeSimpleOperationCne_Failure()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_Failure)
 {
   using namespace jlm::rvsdg;
 
@@ -174,12 +163,8 @@ NormalizeSimpleOperationCne_Failure()
   view(graph, stdout);
 
   // Assert
-  assert(TryGetOwnerNode<Node>(*exNullaryValueNode.origin()) == &nullaryValueNode);
-  assert(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()) == &nullaryStateNode);
-  assert(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()) == &unaryValueNode);
-  assert(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()) == &unaryStateNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exNullaryValueNode.origin()), &nullaryValueNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()), &nullaryStateNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()), &unaryValueNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()), &unaryStateNode);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_Failure",
-    NormalizeSimpleOperationCne_Failure)

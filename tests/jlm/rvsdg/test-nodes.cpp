@@ -3,9 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
-#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -14,8 +13,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/HashSet.hpp>
 
-static void
-test_node_copy()
+TEST(NodeTests, test_node_copy)
 {
   using namespace jlm::rvsdg;
 
@@ -73,15 +71,15 @@ test_node_copy()
     view(&graph.GetRootRegion(), stdout);
 
     auto subregion = structuralNode2->subregion(0);
-    assert(subregion->narguments() == 2);
-    assert(subregion->argument(0)->input() == &input21);
-    assert(subregion->argument(1)->input() == &input22);
+    EXPECT_EQ(subregion->narguments(), 2);
+    EXPECT_EQ(subregion->argument(0)->input(), &input21);
+    EXPECT_EQ(subregion->argument(1)->input(), &input22);
 
-    assert(subregion->nresults() == 2);
-    assert(subregion->result(0)->output() == &output21);
-    assert(subregion->result(1)->output() == &output22);
+    EXPECT_EQ(subregion->nresults(), 2);
+    EXPECT_EQ(subregion->result(0)->output(), &output21);
+    EXPECT_EQ(subregion->result(1)->output(), &output22);
 
-    assert(subregion->numNodes() == 2);
+    EXPECT_EQ(subregion->numNodes(), 2);
   }
 
   // copy without arguments
@@ -102,11 +100,11 @@ test_node_copy()
     view(&graph.GetRootRegion(), stdout);
 
     auto subregion = structuralNode2->subregion(0);
-    assert(subregion->nresults() == 2);
-    assert(subregion->result(0)->output() == &output21);
-    assert(subregion->result(1)->output() == &output22);
+    EXPECT_EQ(subregion->nresults(), 2);
+    EXPECT_EQ(subregion->result(0)->output(), &output21);
+    EXPECT_EQ(subregion->result(1)->output(), &output22);
 
-    assert(subregion->numNodes() == 2);
+    EXPECT_EQ(subregion->numNodes(), 2);
   }
 
   // copy structural node
@@ -118,12 +116,11 @@ test_node_copy()
     structuralNode1->copy(&graph.GetRootRegion(), smap3);
     view(&graph.GetRootRegion(), stdout);
 
-    assert(graph.GetRootRegion().numNodes() == 4);
+    EXPECT_EQ(graph.GetRootRegion().numNodes(), 4);
   }
 }
 
-static void
-RemoveOutputs()
+TEST(NodeTests, RemoveOutputs)
 {
   using namespace jlm::rvsdg;
 
@@ -159,16 +156,16 @@ RemoveOutputs()
   size_t numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6, 8 });
   // We expect only output0 and output8 to be removed, as output2, output4, and
   // output6 are not dead
-  assert(numRemovedOutputs == 2);
-  assert(node->noutputs() == 8);
-  assert(x1.origin()->index() == 0);
-  assert(x2.origin()->index() == 1);
-  assert(x3.origin()->index() == 2);
-  assert(x4.origin()->index() == 3);
-  assert(x5.origin()->index() == 4);
-  assert(x6.origin()->index() == 5);
-  assert(x7.origin()->index() == 6);
-  assert(x9.origin()->index() == 7);
+  EXPECT_EQ(numRemovedOutputs, 2);
+  EXPECT_EQ(node->noutputs(), 8);
+  EXPECT_EQ(x1.origin()->index(), 0);
+  EXPECT_EQ(x2.origin()->index(), 1);
+  EXPECT_EQ(x3.origin()->index(), 2);
+  EXPECT_EQ(x4.origin()->index(), 3);
+  EXPECT_EQ(x5.origin()->index(), 4);
+  EXPECT_EQ(x6.origin()->index(), 5);
+  EXPECT_EQ(x7.origin()->index(), 6);
+  EXPECT_EQ(x9.origin()->index(), 7);
 
   // Remove all users from outputs
   rvsdg.GetRootRegion().RemoveResult(7);
@@ -182,37 +179,34 @@ RemoveOutputs()
 
   // Remove all outputs that have an even index
   numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6 });
-  assert(numRemovedOutputs == 4);
-  assert(node->noutputs() == 4);
-  assert(node->output(0)->index() == 0);
-  assert(node->output(1)->index() == 1);
-  assert(node->output(2)->index() == 2);
-  assert(node->output(3)->index() == 3);
+  EXPECT_EQ(numRemovedOutputs, 4);
+  EXPECT_EQ(node->noutputs(), 4);
+  EXPECT_EQ(node->output(0)->index(), 0);
+  EXPECT_EQ(node->output(1)->index(), 1);
+  EXPECT_EQ(node->output(2)->index(), 2);
+  EXPECT_EQ(node->output(3)->index(), 3);
 
   // Remove no output
   numRemovedOutputs = node->RemoveOutputs({});
-  assert(numRemovedOutputs == 0);
-  assert(node->noutputs() == 4);
-  assert(node->output(0)->index() == 0);
-  assert(node->output(1)->index() == 1);
-  assert(node->output(2)->index() == 2);
-  assert(node->output(3)->index() == 3);
+  EXPECT_EQ(numRemovedOutputs, 0);
+  EXPECT_EQ(node->noutputs(), 4);
+  EXPECT_EQ(node->output(0)->index(), 0);
+  EXPECT_EQ(node->output(1)->index(), 1);
+  EXPECT_EQ(node->output(2)->index(), 2);
+  EXPECT_EQ(node->output(3)->index(), 3);
 
   // Remove non-existent output
   numRemovedOutputs = node->RemoveOutputs({ 15 });
-  assert(numRemovedOutputs == 0);
-  assert(node->noutputs() == 4);
+  EXPECT_EQ(numRemovedOutputs, 0);
+  EXPECT_EQ(node->noutputs(), 4);
 
   // Remove all remaining outputs
   numRemovedOutputs = node->RemoveOutputs({ 0, 1, 2, 3 });
-  assert(numRemovedOutputs == 4);
-  assert(node->noutputs() == 0);
+  EXPECT_EQ(numRemovedOutputs, 4);
+  EXPECT_EQ(node->noutputs(), 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-RemoveOutputs", RemoveOutputs)
-
-static void
-RemoveInputs()
+TEST(NodeTests, RemoveInputs)
 {
   using namespace jlm::rvsdg;
 
@@ -238,66 +232,55 @@ RemoveInputs()
       {});
 
   // Act & Assert
-  assert(rvsdg.GetRootRegion().numTopNodes() == 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 0);
 
   // Remove all inputs that have an even index
   size_t numRemovedInputs = node->RemoveInputs({ 0, 2, 4, 6, 8 }, true);
-  assert(numRemovedInputs == 5);
-  assert(node->ninputs() == 5);
-  assert(node->input(0)->origin() == i1);
-  assert(node->input(1)->origin() == i3);
-  assert(node->input(2)->origin() == i5);
-  assert(node->input(3)->origin() == i7);
-  assert(node->input(4)->origin() == i9);
-  assert(i0->nusers() == 0);
-  assert(i2->nusers() == 0);
-  assert(i4->nusers() == 0);
-  assert(i6->nusers() == 0);
-  assert(i8->nusers() == 0);
+  EXPECT_EQ(numRemovedInputs, 5);
+  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(node->input(0)->origin(), i1);
+  EXPECT_EQ(node->input(1)->origin(), i3);
+  EXPECT_EQ(node->input(2)->origin(), i5);
+  EXPECT_EQ(node->input(3)->origin(), i7);
+  EXPECT_EQ(node->input(4)->origin(), i9);
+  EXPECT_EQ(i0->nusers(), 0);
+  EXPECT_EQ(i2->nusers(), 0);
+  EXPECT_EQ(i4->nusers(), 0);
+  EXPECT_EQ(i6->nusers(), 0);
+  EXPECT_EQ(i8->nusers(), 0);
   // We specified that the region is notified about the input removal
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no input
   numRemovedInputs = node->RemoveInputs({}, true);
-  assert(numRemovedInputs == 0);
-  assert(node->ninputs() == 5);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(numRemovedInputs, 0);
+  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
   numRemovedInputs = node->RemoveInputs({ 15 }, true);
-  assert(numRemovedInputs == 0);
-  assert(node->ninputs() == 5);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(numRemovedInputs, 0);
+  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining inputs
   numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 }, false);
-  assert(numRemovedInputs == 5);
-  assert(node->ninputs() == 0);
-  assert(i1->nusers() == 0);
-  assert(i3->nusers() == 0);
-  assert(i5->nusers() == 0);
-  assert(i7->nusers() == 0);
-  assert(i9->nusers() == 0);
+  EXPECT_EQ(numRemovedInputs, 5);
+  EXPECT_EQ(node->ninputs(), 0);
+  EXPECT_EQ(i1->nusers(), 0);
+  EXPECT_EQ(i3->nusers(), 0);
+  EXPECT_EQ(i5->nusers(), 0);
+  EXPECT_EQ(i7->nusers(), 0);
+  EXPECT_EQ(i9->nusers(), 0);
   // We specified that the region is not notified about the input removal
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Check that node is a top node
-  assert(rvsdg.GetRootRegion().numTopNodes() == 1);
-  assert(&*rvsdg.GetRootRegion().TopNodes().begin() == node);
+  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 1);
+  EXPECT_EQ(&*rvsdg.GetRootRegion().TopNodes().begin(), node);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-RemoveInputs", RemoveInputs)
-
-static void
-test_nodes()
-{
-  test_node_copy();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)
-
-static void
-NodeInputIteration()
+TEST(NodeTests, NodeInputIteration)
 {
   using namespace jlm::rvsdg;
 
@@ -318,23 +301,20 @@ NodeInputIteration()
   size_t n = 0;
   for (auto & input : node.Inputs())
   {
-    assert(&input == node.input(n++));
+    EXPECT_EQ(&input, node.input(n++));
   }
-  assert(n == node.ninputs());
+  EXPECT_EQ(n, node.ninputs());
 
   n = 0;
   const Node * constNode = &node;
   for (auto & input : constNode->Inputs())
   {
-    assert(&input == node.input(n++));
+    EXPECT_EQ(&input, node.input(n++));
   }
-  assert(n == node.ninputs());
+  EXPECT_EQ(n, node.ninputs());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputIteration", NodeInputIteration)
-
-static void
-NodeOutputIteration()
+TEST(NodeTests, NodeOutputIteration)
 {
   using namespace jlm::rvsdg;
 
@@ -355,23 +335,20 @@ NodeOutputIteration()
   size_t n = 0;
   for (auto & output : node.Outputs())
   {
-    assert(&output == node.output(n++));
+    EXPECT_EQ(&output, node.output(n++));
   }
-  assert(n == node.noutputs());
+  EXPECT_EQ(n, node.noutputs());
 
   n = 0;
   const Node * constNode = &node;
   for (auto & output : constNode->Outputs())
   {
-    assert(&output == constNode->output(n++));
+    EXPECT_EQ(&output, constNode->output(n++));
   }
-  assert(n == constNode->noutputs());
+  EXPECT_EQ(n, constNode->noutputs());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeOutputIteration", NodeOutputIteration)
-
-static void
-zeroInputOutputIteration()
+TEST(NodeTests, zeroInputOutputIteration)
 {
   using namespace jlm::rvsdg;
 
@@ -400,13 +377,10 @@ zeroInputOutputIteration()
     enteredLoopBody = true;
   }
 
-  assert(enteredLoopBody == false);
+  EXPECT_FALSE(enteredLoopBody);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-zeroInputOutputIteration", zeroInputOutputIteration)
-
-static void
-NodeId()
+TEST(NodeTests, NodeId)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
@@ -424,28 +398,26 @@ NodeId()
   NodeIds.insert(node2->GetNodeId());
 
   // We should have three unique identifiers in the set
-  assert(NodeIds.Size() == 3);
+  EXPECT_EQ(NodeIds.Size(), 3);
 
   // The identifiers should be consecutive as no other nodes where created in between those
   // three nodes
-  assert(node0->GetNodeId() == 0);
-  assert(node1->GetNodeId() == 1);
-  assert(node2->GetNodeId() == 2);
+  EXPECT_EQ(node0->GetNodeId(), 0);
+  EXPECT_EQ(node1->GetNodeId(), 1);
+  EXPECT_EQ(node2->GetNodeId(), 2);
 
   // Removing a node should not change the identifiers of the other nodes
   remove(node1);
-  assert(node0->GetNodeId() == 0);
-  assert(node2->GetNodeId() == 2);
+  EXPECT_EQ(node0->GetNodeId(), 0);
+  EXPECT_EQ(node2->GetNodeId(), 2);
 
   // Adding a new node should give us the next identifier as no other nodes have been created in
   // between
   auto node3 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
-  assert(node3->GetNodeId() == 3);
+  EXPECT_EQ(node3->GetNodeId(), 3);
 
   // Identifiers should be only unique for each region
   Graph rvsdg2;
   auto node4 = TestOperation::createNode(&rvsdg2.GetRootRegion(), {}, {});
-  assert(node4->GetNodeId() == 0);
+  EXPECT_EQ(node4->GetNodeId(), 0);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeId", NodeId)

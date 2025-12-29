@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -64,8 +64,7 @@ public:
   }
 };
 
-static void
-NormalizeUnaryOperation_Success()
+TEST(ArgumentTests, NormalizeUnaryOperation_Success)
 {
   using namespace jlm::rvsdg;
 
@@ -87,21 +86,16 @@ NormalizeUnaryOperation_Success()
   view(graph, stdout);
 
   // Assert
-  assert(success == true);
+  EXPECT_TRUE(success);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(node == nullaryNode);
+  EXPECT_EQ(node, nullaryNode);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Success",
-    NormalizeUnaryOperation_Success)
-
-static void
-NormalizeUnaryOperation_Failure()
+TEST(ArgumentTests, NormalizeUnaryOperation_Failure)
 {
   using namespace jlm::rvsdg;
 
@@ -122,15 +116,11 @@ NormalizeUnaryOperation_Failure()
   view(graph, stdout);
 
   // Assert
-  assert(success == false);
+  EXPECT_FALSE(success);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(node == unaryNode);
+  EXPECT_EQ(node, unaryNode);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Failure",
-    NormalizeUnaryOperation_Failure)

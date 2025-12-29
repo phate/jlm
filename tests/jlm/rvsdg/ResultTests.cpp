@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
@@ -15,8 +15,7 @@
 /**
  * Test check for adding result to output of wrong structural node.
  */
-static void
-ResultNodeMismatch()
+TEST(ResultTests, ResultNodeMismatch)
 {
   using namespace jlm::rvsdg;
 
@@ -31,29 +30,11 @@ ResultNodeMismatch()
 
   auto input = structuralNode1->addInputWithArguments(import);
 
-  // Act
-  bool outputErrorHandlerCalled = false;
-  try
-  {
-    // Region mismatch
-    structuralNode2->addOutputWithResults({ input.argument[0] });
-    // The line below should not be executed as the line above is expected to throw an exception.
-    assert(false);
-  }
-  catch (jlm::util::Error & error)
-  {
-    assert(std::string(error.what()) == "Invalid operand region.");
-    outputErrorHandlerCalled = true;
-  }
-
-  // Assert
-  assert(outputErrorHandlerCalled);
+  // Act & Assert
+  EXPECT_THROW(structuralNode2->addOutputWithResults({ input.argument[0] }), jlm::util::Error);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ResultTests-ResultNodeMismatch", ResultNodeMismatch)
-
-static void
-ResultInputTypeMismatch()
+TEST(ResultTests, ResultInputTypeMismatch)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
@@ -64,27 +45,11 @@ ResultInputTypeMismatch()
 
   jlm::rvsdg::Graph rvsdg;
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  auto simpleNode0 = TestOperation::createNode(structuralNode->subregion(0), {}, { stateType });
+  auto simpleNode1 = TestOperation::createNode(structuralNode->subregion(1), {}, { valueType });
 
   // Act & Assert
-  bool exceptionWasCaught = false;
-  try
-  {
-    auto simpleNode0 = TestOperation::createNode(structuralNode->subregion(0), {}, { stateType });
-    auto simpleNode1 = TestOperation::createNode(structuralNode->subregion(1), {}, { valueType });
-
-    // Type mismatch between simple node output and structural output
-    structuralNode->addOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) });
-    // The line below should not be executed as the line above is expected to throw an exception.
-    assert(false);
-  }
-  catch (TypeError & error)
-  {
-    assert(
-        std::string(error.what())
-        == "Type error - expected : TestType[Value], received : TestType[State]");
-    exceptionWasCaught = true;
-  }
-  assert(exceptionWasCaught);
+  EXPECT_THROW(
+      structuralNode->addOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) }),
+      TypeError);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ResultTests-ResultInputTypeMismatch", ResultInputTypeMismatch)

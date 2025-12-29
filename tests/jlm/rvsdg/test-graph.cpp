@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -23,8 +23,7 @@ region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::Node *
   return false;
 }
 
-static void
-test_recursive_prune()
+TEST(GraphTests, test_recursive_prune)
 {
   using namespace jlm::rvsdg;
 
@@ -52,18 +51,15 @@ test_recursive_prune()
   graph.PruneNodes();
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  assert(!region_contains_node(&graph.GetRootRegion(), n1));
-  assert(region_contains_node(&graph.GetRootRegion(), n2));
-  assert(region_contains_node(&graph.GetRootRegion(), n3));
-  assert(region_contains_node(n3->subregion(0), n4));
-  assert(!region_contains_node(n3->subregion(0), n5));
-  assert(!region_contains_node(n3->subregion(0), n6));
+  EXPECT_FALSE(region_contains_node(&graph.GetRootRegion(), n1));
+  EXPECT_TRUE(region_contains_node(&graph.GetRootRegion(), n2));
+  EXPECT_TRUE(region_contains_node(&graph.GetRootRegion(), n3));
+  EXPECT_TRUE(region_contains_node(n3->subregion(0), n4));
+  EXPECT_FALSE(region_contains_node(n3->subregion(0), n5));
+  EXPECT_FALSE(region_contains_node(n3->subregion(0), n6));
 }
 
-JLM_UNIT_TEST_REGISTER("rvsdg/test-graph_prune", test_recursive_prune)
-
-static void
-test_empty_graph_pruning()
+TEST(GraphTests, test_empty_graph_pruning)
 {
   jlm::rvsdg::Graph graph;
 
@@ -71,15 +67,12 @@ test_empty_graph_pruning()
 
   graph.PruneNodes();
 
-  assert(graph.GetRootRegion().numNodes() == 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 }
 
-JLM_UNIT_TEST_REGISTER("rvsdg/test-empty_graph_pruning", test_empty_graph_pruning)
-
-static void
-test_prune_replace()
+TEST(GraphTests, test_prune_replace)
 {
   using namespace jlm::rvsdg;
 
@@ -96,17 +89,14 @@ test_prune_replace()
   auto n4 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
   n2->output(0)->divert_users(n4->output(0));
-  assert(n2->output(0)->nusers() == 0);
+  EXPECT_EQ(n2->output(0)->nusers(), 0);
 
   graph.PruneNodes();
 
-  assert(!region_contains_node(&graph.GetRootRegion(), n2));
+  EXPECT_FALSE(region_contains_node(&graph.GetRootRegion(), n2));
 }
 
-JLM_UNIT_TEST_REGISTER("rvsdg/test-prune-replace", test_prune_replace)
-
-static void
-Copy()
+TEST(GraphTests, Copy)
 {
   using namespace jlm::rvsdg;
 
@@ -122,19 +112,17 @@ Copy()
   auto newGraph = graph.Copy();
 
   // Assert
-  assert(newGraph->GetRootRegion().narguments() == 1);
+  EXPECT_EQ(newGraph->GetRootRegion().narguments(), 1);
   auto copiedArgument = newGraph->GetRootRegion().argument(0);
-  assert(is<jlm::rvsdg::GraphImport>(copiedArgument));
+  EXPECT_TRUE(is<jlm::rvsdg::GraphImport>(copiedArgument));
 
-  assert(newGraph->GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(newGraph->GetRootRegion().numNodes(), 1);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();
-  assert(copiedNode->ninputs() == 1 && copiedNode->noutputs() == 1);
-  assert(copiedNode->input(0)->origin() == copiedArgument);
+  EXPECT_EQ(copiedNode->ninputs() == 1 && copiedNode->noutputs(), 1);
+  EXPECT_EQ(copiedNode->input(0)->origin(), copiedArgument);
 
-  assert(newGraph->GetRootRegion().nresults() == 1);
+  EXPECT_EQ(newGraph->GetRootRegion().nresults(), 1);
   auto copiedResult = newGraph->GetRootRegion().result(0);
-  assert(is<jlm::rvsdg::GraphExport>(*copiedResult));
-  assert(copiedResult->origin() == copiedNode->output(0));
+  EXPECT_TRUE(is<jlm::rvsdg::GraphExport>(*copiedResult));
+  EXPECT_EQ(copiedResult->origin(), copiedNode->output(0));
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-Copy", Copy)

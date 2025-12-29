@@ -79,35 +79,88 @@ librvsdg_HEADERS = \
     jlm/rvsdg/control.hpp \
     jlm/rvsdg/region.hpp \
 
-librvsdg_TESTS = \
-    tests/jlm/rvsdg/ArgumentTests \
-    tests/jlm/rvsdg/InputTests \
-    tests/jlm/rvsdg/OutputTests \
-    tests/jlm/rvsdg/MatchTypeTests \
-    tests/jlm/rvsdg/RegionTests \
-    tests/jlm/rvsdg/ResultTests \
-    tests/jlm/rvsdg/SimpleOperationTests \
-    tests/jlm/rvsdg/test-binary \
-    tests/jlm/rvsdg/test-bottomup \
-    tests/jlm/rvsdg/test-cse \
-    tests/jlm/rvsdg/test-gamma \
-    tests/jlm/rvsdg/test-graph \
-    tests/jlm/rvsdg/test-nodes \
-    tests/jlm/rvsdg/test-theta \
-    tests/jlm/rvsdg/test-topdown \
-    tests/jlm/rvsdg/test-typemismatch \
-    tests/jlm/rvsdg/TestStructuralNode \
-    tests/jlm/rvsdg/TraceTests \
-    tests/jlm/rvsdg/TransformationSequenceTests \
-    tests/jlm/rvsdg/UnaryOperationTests \
-
-librvsdg_TEST_LIBS = \
-    libjlmtest \
-    librvsdg \
-    libutil \
-
 $(eval $(call common_library,librvsdg))
 
 tests/jlm/rvsdg/bitstring/bitstring_SOURCES = tests/jlm/rvsdg/bitstring/bitstring.cpp
 tests/jlm/rvsdg/bitstring/bitstring_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/bitstring/bitstring))
+
+tests/jlm/rvsdg/ArgumentTests_SOURCES = tests/jlm/rvsdg/ArgumentTests.cpp
+tests/jlm/rvsdg/ArgumentTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/ArgumentTests))
+
+tests/jlm/rvsdg/InputTests_SOURCES = tests/jlm/rvsdg/InputTests.cpp
+tests/jlm/rvsdg/InputTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/InputTests))
+
+tests/jlm/rvsdg/MatchTypeTests_SOURCES = tests/jlm/rvsdg/MatchTypeTests.cpp
+tests/jlm/rvsdg/MatchTypeTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/MatchTypeTests))
+
+tests/jlm/rvsdg/OutputTests_SOURCES = tests/jlm/rvsdg/OutputTests.cpp
+tests/jlm/rvsdg/OutputTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/OutputTests))
+
+tests/jlm/rvsdg/RegionTests_SOURCES = tests/jlm/rvsdg/RegionTests.cpp
+tests/jlm/rvsdg/RegionTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/RegionTests))
+
+tests/jlm/rvsdg/ResultTests_SOURCES = tests/jlm/rvsdg/ResultTests.cpp
+tests/jlm/rvsdg/ResultTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/ResultTests))
+
+tests/jlm/rvsdg/SimpleOperationTests_SOURCES = tests/jlm/rvsdg/SimpleOperationTests.cpp
+tests/jlm/rvsdg/SimpleOperationTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/SimpleOperationTests))
+
+tests/jlm/rvsdg/test-binary_SOURCES = tests/jlm/rvsdg/test-binary.cpp
+tests/jlm/rvsdg/test-binary_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-binary))
+
+tests/jlm/rvsdg/test-bottomup_SOURCES = tests/jlm/rvsdg/test-bottomup.cpp
+tests/jlm/rvsdg/test-bottomup_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-bottomup))
+
+tests/jlm/rvsdg/test-cse_SOURCES = tests/jlm/rvsdg/test-cse.cpp
+tests/jlm/rvsdg/test-cse_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-cse))
+
+tests/jlm/rvsdg/test-gamma_SOURCES = tests/jlm/rvsdg/test-gamma.cpp
+tests/jlm/rvsdg/test-gamma_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-gamma))
+
+tests/jlm/rvsdg/test-graph_SOURCES = tests/jlm/rvsdg/test-graph.cpp
+tests/jlm/rvsdg/test-graph_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-graph))
+
+tests/jlm/rvsdg/test-nodes_SOURCES = tests/jlm/rvsdg/test-nodes.cpp
+tests/jlm/rvsdg/test-nodes_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-nodes))
+
+tests/jlm/rvsdg/test-theta_SOURCES = tests/jlm/rvsdg/test-theta.cpp
+tests/jlm/rvsdg/test-theta_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-theta))
+
+tests/jlm/rvsdg/test-topdown_SOURCES = tests/jlm/rvsdg/test-topdown.cpp
+tests/jlm/rvsdg/test-topdown_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-topdown))
+
+tests/jlm/rvsdg/test-typemismatch_SOURCES = tests/jlm/rvsdg/test-typemismatch.cpp
+tests/jlm/rvsdg/test-typemismatch_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-typemismatch))
+
+tests/jlm/rvsdg/TestStructuralNode_SOURCES = tests/jlm/rvsdg/TestStructuralNode.cpp
+tests/jlm/rvsdg/TestStructuralNode_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/TestStructuralNode))
+
+tests/jlm/rvsdg/TraceTests_SOURCES = tests/jlm/rvsdg/TraceTests.cpp
+tests/jlm/rvsdg/TraceTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/TraceTests))
+
+tests/jlm/rvsdg/TransformationSequenceTests_SOURCES = tests/jlm/rvsdg/TransformationSequenceTests.cpp
+tests/jlm/rvsdg/TransformationSequenceTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/TransformationSequenceTests))
+
+tests/jlm/rvsdg/UnaryOperationTests_SOURCES = tests/jlm/rvsdg/UnaryOperationTests.cpp
+tests/jlm/rvsdg/UnaryOperationTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/UnaryOperationTests))

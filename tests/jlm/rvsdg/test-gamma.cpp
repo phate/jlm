@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-test_gamma()
+TEST(GammaTests, test_gamma)
 {
   using namespace jlm::rvsdg;
 
@@ -32,24 +31,24 @@ test_gamma()
 
   GraphExport::Create(*gamma->output(0), "dummy");
 
-  assert(gamma && gamma->GetOperation() == GammaOperation(3));
+  EXPECT_NE(gamma, nullptr);
+  EXPECT_EQ(gamma->GetOperation(), GammaOperation(3));
 
   /* test gamma copy */
 
   auto gamma2 =
       static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
   view(&graph.GetRootRegion(), stdout);
-  assert(dynamic_cast<const GammaNode *>(gamma2));
+  EXPECT_NE(dynamic_cast<const GammaNode *>(gamma2), nullptr);
 
   /* test entry and exit variable iterators */
 
   auto gamma3 = GammaNode::create(v3, 2);
-  assert(gamma3->GetEntryVars().empty());
-  assert(gamma3->GetExitVars().empty());
+  EXPECT_TRUE(gamma3->GetEntryVars().empty());
+  EXPECT_TRUE(gamma3->GetExitVars().empty());
 }
 
-static void
-test_predicate_reduction()
+TEST(GammaTests, test_predicate_reduction)
 {
   using namespace jlm::rvsdg;
 
@@ -79,14 +78,13 @@ test_predicate_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(r.origin() == v1);
+  EXPECT_EQ(r.origin(), v1);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
 }
 
-static void
-test_invariant_reduction()
+TEST(GammaTests, test_invariant_reduction)
 {
   using namespace jlm::rvsdg;
 
@@ -110,15 +108,14 @@ test_invariant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
-  assert(ex.origin() == value);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(ex.origin(), value);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
 }
 
-static void
-test_control_constant_reduction()
+TEST(GammaTests, test_control_constant_reduction)
 {
   using namespace jlm::rvsdg;
 
@@ -152,14 +149,13 @@ test_control_constant_reduction()
 
   // Assert
   auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*ex1.origin());
-  assert(matchNode && matchOperation);
-  assert(matchOperation->default_alternative() == 0);
+  EXPECT_TRUE(matchNode && matchOperation);
+  EXPECT_EQ(matchOperation->default_alternative(), 0);
 
-  assert(TryGetOwnerNode<Node>(*ex2.origin()) == gamma);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*ex2.origin()), gamma);
 }
 
-static void
-test_control_constant_reduction2()
+TEST(GammaTests, test_control_constant_reduction2)
 {
   using namespace jlm::rvsdg;
 
@@ -190,11 +186,10 @@ test_control_constant_reduction2()
 
   // Assert
   auto match = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<MatchOperation>(match));
+  EXPECT_TRUE(is<MatchOperation>(match));
 }
 
-static void
-TestRemoveGammaOutputsWhere()
+TEST(GammaTests, TestRemoveGammaOutputsWhere)
 {
   using namespace jlm::rvsdg;
 
@@ -224,7 +219,7 @@ TestRemoveGammaOutputsWhere()
   GraphExport::Create(*gammaOutput2.output, "");
 
   // Act & Assert
-  assert(gammaNode->noutputs() == 4);
+  EXPECT_EQ(gammaNode->noutputs(), 4);
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
@@ -232,11 +227,11 @@ TestRemoveGammaOutputsWhere()
       {
         return output.index() == gammaOutput1.output->index();
       });
-  assert(gammaNode->noutputs() == 3);
-  assert(gammaNode->subregion(0)->nresults() == 3);
-  assert(gammaNode->subregion(1)->nresults() == 3);
-  assert(gammaOutput2.output->index() == 1);
-  assert(gammaOutput3.output->index() == 2);
+  EXPECT_EQ(gammaNode->noutputs(), 3);
+  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 3);
+  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 3);
+  EXPECT_EQ(gammaOutput2.output->index(), 1);
+  EXPECT_EQ(gammaOutput3.output->index(), 2);
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
@@ -244,15 +239,14 @@ TestRemoveGammaOutputsWhere()
       {
         return output.index() == gammaOutput2.output->index();
       });
-  assert(gammaNode->noutputs() == 3);
-  assert(gammaNode->subregion(0)->nresults() == 3);
-  assert(gammaNode->subregion(1)->nresults() == 3);
-  assert(gammaOutput2.output->index() == 1);
-  assert(gammaOutput3.output->index() == 2);
+  EXPECT_EQ(gammaNode->noutputs(), 3);
+  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 3);
+  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 3);
+  EXPECT_EQ(gammaOutput2.output->index(), 1);
+  EXPECT_EQ(gammaOutput3.output->index(), 2);
 }
 
-static void
-TestPruneOutputs()
+TEST(GammaTests, TestPruneOutputs)
 {
   using namespace jlm::rvsdg;
 
@@ -285,19 +279,18 @@ TestPruneOutputs()
   gammaNode->PruneOutputs();
 
   // Assert
-  assert(gammaNode->noutputs() == 2);
-  assert(gammaNode->subregion(0)->nresults() == 2);
-  assert(gammaNode->subregion(1)->nresults() == 2);
+  EXPECT_EQ(gammaNode->noutputs(), 2);
+  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 2);
+  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 2);
 
-  assert(gammaOutput0.output->index() == 0);
-  assert(gammaNode->GetExitVars()[0].output == gammaOutput0.output);
+  EXPECT_EQ(gammaOutput0.output->index(), 0);
+  EXPECT_EQ(gammaNode->GetExitVars()[0].output, gammaOutput0.output);
 
-  assert(gammaOutput2.output->index() == 1);
-  assert(gammaNode->GetExitVars()[1].output == gammaOutput2.output);
+  EXPECT_EQ(gammaOutput2.output->index(), 1);
+  EXPECT_EQ(gammaNode->GetExitVars()[1].output, gammaOutput2.output);
 }
 
-static void
-TestIsInvariant()
+TEST(GammaTests, TestIsInvariant)
 {
   using namespace jlm::rvsdg;
 
@@ -324,27 +317,13 @@ TestIsInvariant()
   // Act & Assert
   std::optional<jlm::rvsdg::Output *> invariantOrigin;
   invariantOrigin = jlm::rvsdg::GetGammaInvariantOrigin(*gammaNode, gammaOutput0);
-  assert(invariantOrigin && *invariantOrigin == v0);
+  EXPECT_NE(invariantOrigin, nullptr);
+  EXPECT_EQ(*invariantOrigin, v0);
 
   invariantOrigin = jlm::rvsdg::GetGammaInvariantOrigin(*gammaNode, gammaOutput1);
-  assert(invariantOrigin && *invariantOrigin == v1);
+  EXPECT_NE(invariantOrigin, nullptr);
+  EXPECT_EQ(*invariantOrigin, v1);
 
   invariantOrigin = jlm::rvsdg::GetGammaInvariantOrigin(*gammaNode, gammaOutput2);
-  assert(!invariantOrigin);
+  EXPECT_EQ(invariantOrigin, std::nullopt);
 }
-
-static void
-test_main()
-{
-  test_gamma();
-  TestRemoveGammaOutputsWhere();
-  TestPruneOutputs();
-  TestIsInvariant();
-
-  test_predicate_reduction();
-  test_invariant_reduction();
-  test_control_constant_reduction();
-  test_control_constant_reduction2();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-gamma", test_main)

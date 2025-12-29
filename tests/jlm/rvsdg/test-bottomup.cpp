@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-static void
-testInitialization()
+TEST(BottomUpTraverserTests, testInitialization)
 {
   using namespace jlm::rvsdg;
 
@@ -31,13 +30,11 @@ testInitialization()
       n2_visited = true;
   }
 
-  assert(n1_visited);
-  assert(n2_visited);
+  EXPECT_TRUE(n1_visited);
+  EXPECT_TRUE(n2_visited);
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testInitialization", testInitialization)
 
-static void
-testBasicTraversal()
+TEST(BottomUpTraverserTests, testBasicTraversal)
 {
   using namespace jlm::rvsdg;
 
@@ -53,17 +50,15 @@ testBasicTraversal()
     const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
     tmp = trav.next();
-    assert(tmp == n2);
+    EXPECT_EQ(tmp, n2);
     tmp = trav.next();
-    assert(tmp == n1);
+    EXPECT_EQ(tmp, n1);
     tmp = trav.next();
-    assert(tmp == 0);
+    EXPECT_EQ(tmp, nullptr);
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testBasicTraversal", testBasicTraversal)
 
-static void
-testOrderEnforcement()
+TEST(BottomUpTraverserTests, testOrderEnforcement)
 {
   using namespace jlm::rvsdg;
 
@@ -79,13 +74,12 @@ testOrderEnforcement()
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
-    assert(tmp == n3);
+    EXPECT_EQ(tmp, n3);
     tmp = trav.next();
-    assert(tmp == n2);
+    EXPECT_EQ(tmp, n2);
     tmp = trav.next();
-    assert(tmp == n1);
+    EXPECT_EQ(tmp, n1);
     tmp = trav.next();
-    assert(tmp == nullptr);
+    EXPECT_EQ(tmp, nullptr);
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testOrderEnforcement", testOrderEnforcement)
