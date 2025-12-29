@@ -80,7 +80,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
-    tests/jlm/rvsdg/ArgumentTests \
     tests/jlm/rvsdg/InputTests \
     tests/jlm/rvsdg/OutputTests \
     tests/jlm/rvsdg/MatchTypeTests \
@@ -111,3 +110,7 @@ $(eval $(call common_library,librvsdg))
 tests/jlm/rvsdg/bitstring/bitstring_SOURCES = tests/jlm/rvsdg/bitstring/bitstring.cpp
 tests/jlm/rvsdg/bitstring/bitstring_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/bitstring/bitstring))
+
+tests/jlm/rvsdg/ArgumentTests_SOURCES = tests/jlm/rvsdg/ArgumentTests.cpp
+tests/jlm/rvsdg/ArgumentTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/ArgumentTests))
