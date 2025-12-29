@@ -79,14 +79,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/control.hpp \
     jlm/rvsdg/region.hpp \
 
-librvsdg_TESTS = \
-    tests/jlm/rvsdg/UnaryOperationTests \
-
-librvsdg_TEST_LIBS = \
-    libjlmtest \
-    librvsdg \
-    libutil \
-
 $(eval $(call common_library,librvsdg))
 
 tests/jlm/rvsdg/bitstring/bitstring_SOURCES = tests/jlm/rvsdg/bitstring/bitstring.cpp
@@ -168,3 +160,7 @@ $(eval $(call common_test,tests/jlm/rvsdg/TraceTests))
 tests/jlm/rvsdg/TransformationSequenceTests_SOURCES = tests/jlm/rvsdg/TransformationSequenceTests.cpp
 tests/jlm/rvsdg/TransformationSequenceTests_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/TransformationSequenceTests))
+
+tests/jlm/rvsdg/UnaryOperationTests_SOURCES = tests/jlm/rvsdg/UnaryOperationTests.cpp
+tests/jlm/rvsdg/UnaryOperationTests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/UnaryOperationTests))
