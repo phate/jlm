@@ -139,7 +139,6 @@ HEADERS += $$($1_HEADERS)
 
 $$(BUILD_OUT_PREFIX)$1: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.la, $$($1_SOURCES)) $$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS))
 $$(BUILD_OUT_PREFIX)$1: LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS)) $$($1_EXTRA_LDFLAGS)
-TESTS += $$(BUILD_OUT_PREFIX)$1
 GTESTS += $$(BUILD_OUT_PREFIX)$1
 
 # alias rule to allow issuing "make foo" instead of "make build/foo"

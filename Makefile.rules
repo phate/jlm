@@ -1,4 +1,4 @@
-TEST_EXECUTABLES += $(TESTS)
+TEST_EXECUTABLES += $(TESTS) $(GTESTS)
 COVERAGE_EXECUTABLES += $(COVERAGE_TESTS)
 
 EXECUTABLES += $(TARGET_EXECUTABLES) $(TEST_EXECUTABLES) $(COVERAGE_EXECUTABLES)
@@ -119,8 +119,8 @@ check-headers: depend
 ################################################################################
 # Unit testing rules
 
-RUNTESTS=$(patsubst %, run-%, $(TESTS))
-VALGRINDTESTS=$(patsubst %, valgrind-%, $(TESTS))
+RUNTESTS=$(patsubst %, run-%, $(TESTS)) $(patsubst %, run-%, $(GTESTS))
+VALGRINDTESTS=$(patsubst %, valgrind-%, $(TESTS)) $(patsubst %, valgrind-%, $(GTESTS))
 
 $(TESTS): % : %.la
 $(TESTS): LDFLAGS += -pthread
