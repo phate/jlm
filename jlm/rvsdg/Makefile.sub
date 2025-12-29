@@ -80,7 +80,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
-    tests/jlm/rvsdg/test-theta \
     tests/jlm/rvsdg/test-topdown \
     tests/jlm/rvsdg/test-typemismatch \
     tests/jlm/rvsdg/TestStructuralNode \
@@ -150,3 +149,7 @@ $(eval $(call common_test,tests/jlm/rvsdg/test-graph))
 tests/jlm/rvsdg/test-nodes_SOURCES = tests/jlm/rvsdg/test-nodes.cpp
 tests/jlm/rvsdg/test-nodes_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/test-nodes))
+
+tests/jlm/rvsdg/test-theta_SOURCES = tests/jlm/rvsdg/test-theta.cpp
+tests/jlm/rvsdg/test-theta_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-theta))
