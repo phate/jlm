@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
@@ -47,8 +47,7 @@ protected:
   {}
 };
 
-static void
-RvsdgDumping()
+TEST(ArgumentTests, RvsdgDumping)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
@@ -71,8 +70,6 @@ RvsdgDumping()
       true);
 
   // Assert
-  assert(std::filesystem::exists("/tmp/000-Pristine.dot"));
-  assert(std::filesystem::exists("/tmp/001-AfterTestTransformation.dot"));
+  EXPECT_TRUE(std::filesystem::exists("/tmp/000-Pristine.dot"));
+  EXPECT_TRUE(std::filesystem::exists("/tmp/001-AfterTestTransformation.dot"));
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TransformationSequenceTests-RvsdgDumping", RvsdgDumping)
