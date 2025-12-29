@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-test_main()
+TEST(CseTests, test_main)
 {
   using namespace jlm::rvsdg;
 
@@ -47,25 +46,23 @@ test_main()
   ReduceNode<TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e3.origin()));
   ReduceNode<TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e4.origin()));
 
-  assert(e1.origin() == e3.origin());
-  assert(e2.origin() == e4.origin());
+  EXPECT_EQ(e1.origin(), e3.origin());
+  EXPECT_EQ(e2.origin(), e4.origin());
 
   auto o5 = TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e5 = GraphExport::Create(*o5, "o5");
   ReduceNode<TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e5.origin()));
-  assert(e5.origin() == e1.origin());
+  EXPECT_EQ(e5.origin(), e1.origin());
 
   auto o6 = TestOperation::createNode(&graph.GetRootRegion(), { i }, { valueType })->output(0);
   auto & e6 = GraphExport::Create(*o6, "o6");
   ReduceNode<TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e6.origin()));
-  assert(e6.origin() == e2.origin());
+  EXPECT_EQ(e6.origin(), e2.origin());
 
   auto o7 = TestOperation::createNode(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e7 = GraphExport::Create(*o7, "o7");
-  assert(e7.origin() != e1.origin());
+  EXPECT_NE(e7.origin(), e1.origin());
 
   ReduceNode<TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e7.origin()));
-  assert(e7.origin() == e1.origin());
+  EXPECT_EQ(e7.origin(), e1.origin());
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-cse", test_main)

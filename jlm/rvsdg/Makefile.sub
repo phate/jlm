@@ -80,7 +80,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
-    tests/jlm/rvsdg/test-cse \
     tests/jlm/rvsdg/test-gamma \
     tests/jlm/rvsdg/test-graph \
     tests/jlm/rvsdg/test-nodes \
@@ -138,3 +137,7 @@ $(eval $(call common_test,tests/jlm/rvsdg/test-binary))
 tests/jlm/rvsdg/test-bottomup_SOURCES = tests/jlm/rvsdg/test-bottomup.cpp
 tests/jlm/rvsdg/test-bottomup_LIBS = librvsdg libutil
 $(eval $(call common_test,tests/jlm/rvsdg/test-bottomup))
+
+tests/jlm/rvsdg/test-cse_SOURCES = tests/jlm/rvsdg/test-cse.cpp
+tests/jlm/rvsdg/test-cse_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/test-cse))
