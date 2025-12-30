@@ -174,12 +174,11 @@ private:
       Outputs_.Alloca3 = alloca3Outputs[0];
       Outputs_.Alloca4 = alloca4Outputs[0];
 
-      memoryState = MemoryStateMergeOperation::Create(
-          { memoryState,
-            alloca1Outputs[1],
-            alloca2Outputs[1],
-            alloca3Outputs[1],
-            alloca4Outputs[1] });
+      memoryState = MemoryStateMergeOperation::Create({ memoryState,
+                                                        alloca1Outputs[1],
+                                                        alloca2Outputs[1],
+                                                        alloca3Outputs[1],
+                                                        alloca4Outputs[1] });
 
       // Load: q = *p;
       const auto loadP =

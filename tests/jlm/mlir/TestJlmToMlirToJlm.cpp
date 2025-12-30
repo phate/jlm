@@ -241,9 +241,8 @@ TestLoad()
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
-      assert(
-          is<LoadNonVolatileOperation>(
-              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(is<LoadNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
       auto loadOperation =
           dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
@@ -338,9 +337,8 @@ TestStore()
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
-      assert(
-          is<StoreNonVolatileOperation>(
-              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(is<StoreNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
       auto convertedStoreOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());

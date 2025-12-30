@@ -181,11 +181,10 @@ TestCall()
     auto gammaOutputMemoryState = gammaNode->AddExitVar(
         { gammaInputMemoryState.branchArgument[0], gammaInputMemoryState.branchArgument[1] });
 
-    lambdaOutputTest1 = lambdaNode->finalize(
-        { gammaOutputX.output,
-          gammaOutputY.output,
-          gammaOutputIOState.output,
-          gammaOutputMemoryState.output });
+    lambdaOutputTest1 = lambdaNode->finalize({ gammaOutputX.output,
+                                               gammaOutputY.output,
+                                               gammaOutputIOState.output,
+                                               gammaOutputMemoryState.output });
   }
 
   jlm::rvsdg::Output * lambdaOutputTest2 = nullptr;
@@ -318,10 +317,9 @@ TestCallWithMemoryStateNodes()
         outputs(&callExitSplitNode),
         { 1, 0 });
 
-    lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0),
-          &CallOperation::GetIOStateOutput(callNode),
-          lambdaExitMergeNode.output(0) });
+    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
+                                               &CallOperation::GetIOStateOutput(callNode),
+                                               lambdaExitMergeNode.output(0) });
     jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
@@ -426,10 +424,9 @@ TestCallWithMissingMemoryStateNodes()
         outputs(&callExitSplitNode),
         { 0 });
 
-    lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0),
-          &CallOperation::GetIOStateOutput(callNode),
-          lambdaExitMergeNode.output(0) });
+    lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
+                                               &CallOperation::GetIOStateOutput(callNode),
+                                               lambdaExitMergeNode.output(0) });
     GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
