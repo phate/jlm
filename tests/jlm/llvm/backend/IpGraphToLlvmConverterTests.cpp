@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -13,7 +12,6 @@
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/TestType.hpp>
-#include <llvm/IR/Attributes.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/LLVMContext.h>
@@ -58,7 +56,7 @@ LoadConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -122,7 +120,7 @@ LoadVolatileConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -186,7 +184,7 @@ MemCpyConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -255,7 +253,7 @@ MemCpyVolatileConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -315,7 +313,7 @@ StoreConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -382,7 +380,7 @@ StoreVolatileConversion()
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -450,7 +448,7 @@ FMulAddConversion()
   // Act
   llvm::LLVMContext ctx;
   const auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Assert
   {
@@ -502,9 +500,9 @@ IntegerConstant()
   print(im, stdout);
 
   llvm::LLVMContext ctx;
-  auto lm = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
 
-  jlm::tests::print(*lm);
+  llvmModule->dump();
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -560,10 +558,10 @@ Malloc()
   print(*im, stdout);
 
   llvm::LLVMContext ctx;
-  auto lm = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*im, ctx);
-  jlm::tests::print(*lm);
+  auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*im, ctx);
+  llvmModule->dump();
 
-  verify(*lm);
+  verify(*llvmModule);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Malloc", Malloc)
@@ -621,10 +619,10 @@ Free()
   print(*ipgmod, stdout);
 
   llvm::LLVMContext ctx;
-  auto llvmmod = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipgmod, ctx);
-  jlm::tests::print(*llvmmod);
+  auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipgmod, ctx);
+  llvmModule->dump();
 
-  verify(*llvmmod);
+  verify(*llvmModule);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Free", Free)

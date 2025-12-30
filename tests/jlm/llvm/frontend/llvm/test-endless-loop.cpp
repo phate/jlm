@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/print.hpp>
@@ -40,7 +39,7 @@ test()
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);

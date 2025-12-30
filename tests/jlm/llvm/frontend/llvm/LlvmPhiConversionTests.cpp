@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -209,7 +208,7 @@ TestPhiOperandElision()
     bb5phi->addIncoming(xPlus2, bb4);
   }
 
-  jlm::tests::print(module);
+  module.dump();
 
   // Act
   auto ipgmod = jlm::llvm::ConvertLlvmModule(module);

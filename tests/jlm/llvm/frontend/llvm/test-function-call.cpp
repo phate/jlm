@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -61,10 +60,10 @@ test_function_call()
   };
 
   llvm::LLVMContext ctx;
-  auto llmod = setup(ctx);
-  jlm::tests::print(*llmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->dump();
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
@@ -119,10 +118,10 @@ test_malloc_call()
   };
 
   llvm::LLVMContext ctx;
-  auto llmod = setup(ctx);
-  jlm::tests::print(*llmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->dump();
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
@@ -176,10 +175,10 @@ test_free_call()
   };
 
   llvm::LLVMContext ctx;
-  auto llvmmod = setup(ctx);
-  jlm::tests::print(*llvmmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->dump();
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
