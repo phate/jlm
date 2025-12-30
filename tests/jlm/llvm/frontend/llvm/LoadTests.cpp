@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -41,7 +40,7 @@ LoadConversion()
   auto sum2 = builder.CreateAdd(sum1, loadedValue3);
   builder.CreateRet(sum2);
 
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);

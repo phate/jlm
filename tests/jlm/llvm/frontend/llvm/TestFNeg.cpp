@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -58,7 +57,7 @@ TestFNegScalar()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
@@ -92,7 +91,7 @@ TestFNegVector()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);

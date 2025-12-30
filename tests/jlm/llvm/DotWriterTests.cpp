@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/DotWriter.hpp>
