@@ -4,9 +4,21 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -63,7 +75,7 @@ Expect(
  *   }
  * \endcode
  */
-class LocalAliasAnalysisTest1 final : public jlm::tests::RvsdgTest
+class LocalAliasAnalysisTest1 final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -340,7 +352,7 @@ JLM_UNIT_TEST_REGISTER(
  *   }
  * \endcode
  */
-class LocalAliasAnalysisTest2 final : public jlm::tests::RvsdgTest
+class LocalAliasAnalysisTest2 final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {

@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -13,6 +12,7 @@
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 template<class Test, class Analysis, class TModRefSummarizer>
@@ -20,7 +20,7 @@ static void
 ValidateTest(std::function<void(const Test &)> validateEncoding)
 {
   static_assert(
-      std::is_base_of<jlm::tests::RvsdgTest, Test>::value,
+      std::is_base_of<jlm::llvm::RvsdgTest, Test>::value,
       "Test should be derived from RvsdgTest class.");
 
   static_assert(
@@ -66,7 +66,7 @@ is(const jlm::rvsdg::Node & node, size_t numInputs, size_t numOutputs)
 }
 
 static void
-ValidateStoreTest1AndersenAgnostic(const jlm::tests::StoreTest1 & test)
+ValidateStoreTest1AndersenAgnostic(const jlm::llvm::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -112,7 +112,7 @@ ValidateStoreTest1AndersenAgnostic(const jlm::tests::StoreTest1 & test)
 }
 
 static void
-ValidateStoreTest1AndersenRegionAware(const jlm::tests::StoreTest1 & test)
+ValidateStoreTest1AndersenRegionAware(const jlm::llvm::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -124,7 +124,7 @@ ValidateStoreTest1AndersenRegionAware(const jlm::tests::StoreTest1 & test)
 }
 
 static void
-ValidateStoreTest2AndersenAgnostic(const jlm::tests::StoreTest2 & test)
+ValidateStoreTest2AndersenAgnostic(const jlm::llvm::StoreTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -186,7 +186,7 @@ ValidateStoreTest2AndersenAgnostic(const jlm::tests::StoreTest2 & test)
 }
 
 static void
-ValidateStoreTest2AndersenRegionAware(const jlm::tests::StoreTest2 & test)
+ValidateStoreTest2AndersenRegionAware(const jlm::llvm::StoreTest2 & test)
 {
   using namespace jlm::llvm;
   assert(test.lambda->subregion()->numNodes() == 1);
@@ -197,7 +197,7 @@ ValidateStoreTest2AndersenRegionAware(const jlm::tests::StoreTest2 & test)
 }
 
 static void
-ValidateLoadTest1AndersenAgnostic(const jlm::tests::LoadTest1 & test)
+ValidateLoadTest1AndersenAgnostic(const jlm::llvm::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -226,7 +226,7 @@ ValidateLoadTest1AndersenAgnostic(const jlm::tests::LoadTest1 & test)
 }
 
 static void
-ValidateLoadTest1AndersenRegionAware(const jlm::tests::LoadTest1 & test)
+ValidateLoadTest1AndersenRegionAware(const jlm::llvm::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -255,7 +255,7 @@ ValidateLoadTest1AndersenRegionAware(const jlm::tests::LoadTest1 & test)
 }
 
 static void
-ValidateLoadTest2AndersenAgnostic(const jlm::tests::LoadTest2 & test)
+ValidateLoadTest2AndersenAgnostic(const jlm::llvm::LoadTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -323,7 +323,7 @@ ValidateLoadTest2AndersenAgnostic(const jlm::tests::LoadTest2 & test)
 }
 
 static void
-ValidateLoadTest2AndersenRegionAware(const jlm::tests::LoadTest2 & test)
+ValidateLoadTest2AndersenRegionAware(const jlm::llvm::LoadTest2 & test)
 {
   using namespace jlm::llvm;
   assert(test.lambda->subregion()->numNodes() == 1);
@@ -334,7 +334,7 @@ ValidateLoadTest2AndersenRegionAware(const jlm::tests::LoadTest2 & test)
 }
 
 static void
-ValidateLoadFromUndefAndersenAgnostic(const jlm::tests::LoadFromUndefTest & test)
+ValidateLoadFromUndefAndersenAgnostic(const jlm::llvm::LoadFromUndefTest & test)
 {
   using namespace jlm::llvm;
 
@@ -354,7 +354,7 @@ ValidateLoadFromUndefAndersenAgnostic(const jlm::tests::LoadFromUndefTest & test
 }
 
 static void
-ValidateLoadFromUndefAndersenRegionAware(const jlm::tests::LoadFromUndefTest & test)
+ValidateLoadFromUndefAndersenRegionAware(const jlm::llvm::LoadFromUndefTest & test)
 {
   using namespace jlm::llvm;
 
@@ -370,7 +370,7 @@ ValidateLoadFromUndefAndersenRegionAware(const jlm::tests::LoadFromUndefTest & t
 }
 
 static void
-ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
+ValidateCallTest1AndersenAgnostic(const jlm::llvm::CallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -443,7 +443,7 @@ ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
 }
 
 static void
-ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
+ValidateCallTest1AndersenRegionAware(const jlm::llvm::CallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -511,7 +511,7 @@ ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
 }
 
 static void
-ValidateCallTest2AndersenAgnostic(const jlm::tests::CallTest2 & test)
+ValidateCallTest2AndersenAgnostic(const jlm::llvm::CallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -548,7 +548,7 @@ ValidateCallTest2AndersenAgnostic(const jlm::tests::CallTest2 & test)
 }
 
 static void
-ValidateCallTest2AndersenRegionAware(const jlm::tests::CallTest2 & test)
+ValidateCallTest2AndersenRegionAware(const jlm::llvm::CallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -585,7 +585,7 @@ ValidateCallTest2AndersenRegionAware(const jlm::tests::CallTest2 & test)
 }
 
 static void
-ValidateIndirectCallTest1AndersenAgnostic(const jlm::tests::IndirectCallTest1 & test)
+ValidateIndirectCallTest1AndersenAgnostic(const jlm::llvm::IndirectCallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -647,7 +647,7 @@ ValidateIndirectCallTest1AndersenAgnostic(const jlm::tests::IndirectCallTest1 & 
 }
 
 static void
-ValidateIndirectCallTest1AndersenRegionAware(const jlm::tests::IndirectCallTest1 & test)
+ValidateIndirectCallTest1AndersenRegionAware(const jlm::llvm::IndirectCallTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -694,7 +694,7 @@ ValidateIndirectCallTest1AndersenRegionAware(const jlm::tests::IndirectCallTest1
 }
 
 static void
-ValidateIndirectCallTest2AndersenAgnostic(const jlm::tests::IndirectCallTest2 & test)
+ValidateIndirectCallTest2AndersenAgnostic(const jlm::llvm::IndirectCallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -747,7 +747,7 @@ ValidateIndirectCallTest2AndersenAgnostic(const jlm::tests::IndirectCallTest2 & 
 }
 
 static void
-ValidateIndirectCallTest2AndersenRegionAware(const jlm::tests::IndirectCallTest2 & test)
+ValidateIndirectCallTest2AndersenRegionAware(const jlm::llvm::IndirectCallTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -843,7 +843,7 @@ ValidateIndirectCallTest2AndersenRegionAware(const jlm::tests::IndirectCallTest2
 }
 
 static void
-ValidateGammaTestAndersenAgnostic(const jlm::tests::GammaTest & test)
+ValidateGammaTestAndersenAgnostic(const jlm::llvm::GammaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -863,7 +863,7 @@ ValidateGammaTestAndersenAgnostic(const jlm::tests::GammaTest & test)
 }
 
 static void
-ValidateGammaTestAndersenRegionAware(const jlm::tests::GammaTest & test)
+ValidateGammaTestAndersenRegionAware(const jlm::llvm::GammaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -884,7 +884,7 @@ ValidateGammaTestAndersenRegionAware(const jlm::tests::GammaTest & test)
 }
 
 static void
-ValidateThetaTestAndersenAgnostic(const jlm::tests::ThetaTest & test)
+ValidateThetaTestAndersenAgnostic(const jlm::llvm::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -909,7 +909,7 @@ ValidateThetaTestAndersenAgnostic(const jlm::tests::ThetaTest & test)
 }
 
 static void
-ValidateThetaTestAndersenRegionAware(const jlm::tests::ThetaTest & test)
+ValidateThetaTestAndersenRegionAware(const jlm::llvm::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
@@ -934,7 +934,7 @@ ValidateThetaTestAndersenRegionAware(const jlm::tests::ThetaTest & test)
 }
 
 static void
-ValidateDeltaTest1AndersenAgnostic(const jlm::tests::DeltaTest1 & test)
+ValidateDeltaTest1AndersenAgnostic(const jlm::llvm::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -960,7 +960,7 @@ ValidateDeltaTest1AndersenAgnostic(const jlm::tests::DeltaTest1 & test)
 }
 
 static void
-ValidateDeltaTest1AndersenRegionAware(const jlm::tests::DeltaTest1 & test)
+ValidateDeltaTest1AndersenRegionAware(const jlm::llvm::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -986,7 +986,7 @@ ValidateDeltaTest1AndersenRegionAware(const jlm::tests::DeltaTest1 & test)
 }
 
 static void
-ValidateDeltaTest2AndersenAgnostic(const jlm::tests::DeltaTest2 & test)
+ValidateDeltaTest2AndersenAgnostic(const jlm::llvm::DeltaTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -1019,7 +1019,7 @@ ValidateDeltaTest2AndersenAgnostic(const jlm::tests::DeltaTest2 & test)
 }
 
 static void
-ValidateDeltaTest2AndersenRegionAware(const jlm::tests::DeltaTest2 & test)
+ValidateDeltaTest2AndersenRegionAware(const jlm::llvm::DeltaTest2 & test)
 {
   using namespace jlm::llvm;
 
@@ -1081,7 +1081,7 @@ ValidateDeltaTest2AndersenRegionAware(const jlm::tests::DeltaTest2 & test)
 }
 
 static void
-ValidateDeltaTest3AndersenAgnostic(const jlm::tests::DeltaTest3 & test)
+ValidateDeltaTest3AndersenAgnostic(const jlm::llvm::DeltaTest3 & test)
 {
   using namespace jlm::llvm;
 
@@ -1127,7 +1127,7 @@ ValidateDeltaTest3AndersenAgnostic(const jlm::tests::DeltaTest3 & test)
 }
 
 static void
-ValidateDeltaTest3AndersenRegionAware(const jlm::tests::DeltaTest3 & test)
+ValidateDeltaTest3AndersenRegionAware(const jlm::llvm::DeltaTest3 & test)
 {
   using namespace jlm::llvm;
 
@@ -1173,7 +1173,7 @@ ValidateDeltaTest3AndersenRegionAware(const jlm::tests::DeltaTest3 & test)
 }
 
 static void
-ValidateImportTestAndersenAgnostic(const jlm::tests::ImportTest & test)
+ValidateImportTestAndersenAgnostic(const jlm::llvm::ImportTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1206,7 +1206,7 @@ ValidateImportTestAndersenAgnostic(const jlm::tests::ImportTest & test)
 }
 
 static void
-ValidateImportTestAndersenRegionAware(const jlm::tests::ImportTest & test)
+ValidateImportTestAndersenRegionAware(const jlm::llvm::ImportTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1268,7 +1268,7 @@ ValidateImportTestAndersenRegionAware(const jlm::tests::ImportTest & test)
 }
 
 static void
-ValidatePhiTestAndersenAgnostic(const jlm::tests::PhiTest1 & test)
+ValidatePhiTestAndersenAgnostic(const jlm::llvm::PhiTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -1301,7 +1301,7 @@ ValidatePhiTestAndersenAgnostic(const jlm::tests::PhiTest1 & test)
 }
 
 static void
-ValidatePhiTestAndersenRegionAware(const jlm::tests::PhiTest1 & test)
+ValidatePhiTestAndersenRegionAware(const jlm::llvm::PhiTest1 & test)
 {
   using namespace jlm::llvm;
 
@@ -1320,7 +1320,7 @@ ValidatePhiTestAndersenRegionAware(const jlm::tests::PhiTest1 & test)
 }
 
 static void
-ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
+ValidateMemcpyAndersenAgnostic(const jlm::llvm::MemcpyTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1380,7 +1380,7 @@ ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
 }
 
 static void
-ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
+ValidateMemcpyAndersenRegionAware(const jlm::llvm::MemcpyTest & test)
 {
   using namespace jlm::llvm;
 
@@ -1438,7 +1438,7 @@ ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
 }
 
 static void
-ValidateFreeNullTestAndersenAgnostic(const jlm::tests::FreeNullTest & test)
+ValidateFreeNullTestAndersenAgnostic(const jlm::llvm::FreeNullTest & test)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -1461,92 +1461,92 @@ TestMemoryStateEncoder()
 {
   using namespace jlm::llvm::aa;
 
-  ValidateTest<jlm::tests::StoreTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::StoreTest1, Andersen, AgnosticModRefSummarizer>(
       ValidateStoreTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::StoreTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::StoreTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidateStoreTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::StoreTest2, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::StoreTest2, Andersen, AgnosticModRefSummarizer>(
       ValidateStoreTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::StoreTest2, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::StoreTest2, Andersen, RegionAwareModRefSummarizer>(
       ValidateStoreTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadTest1, Andersen, AgnosticModRefSummarizer>(
       ValidateLoadTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::LoadTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidateLoadTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadTest2, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadTest2, Andersen, AgnosticModRefSummarizer>(
       ValidateLoadTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::LoadTest2, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadTest2, Andersen, RegionAwareModRefSummarizer>(
       ValidateLoadTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadFromUndefTest, Andersen, AgnosticModRefSummarizer>(
       ValidateLoadFromUndefAndersenAgnostic);
-  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::LoadFromUndefTest, Andersen, RegionAwareModRefSummarizer>(
       ValidateLoadFromUndefAndersenRegionAware);
 
-  ValidateTest<jlm::tests::CallTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::CallTest1, Andersen, AgnosticModRefSummarizer>(
       ValidateCallTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::CallTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::CallTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidateCallTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::CallTest2, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::CallTest2, Andersen, AgnosticModRefSummarizer>(
       ValidateCallTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::CallTest2, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::CallTest2, Andersen, RegionAwareModRefSummarizer>(
       ValidateCallTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::IndirectCallTest1, Andersen, AgnosticModRefSummarizer>(
       ValidateIndirectCallTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::IndirectCallTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidateIndirectCallTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::IndirectCallTest2, Andersen, AgnosticModRefSummarizer>(
       ValidateIndirectCallTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::IndirectCallTest2, Andersen, RegionAwareModRefSummarizer>(
       ValidateIndirectCallTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::GammaTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::GammaTest, Andersen, AgnosticModRefSummarizer>(
       ValidateGammaTestAndersenAgnostic);
-  ValidateTest<jlm::tests::GammaTest, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::GammaTest, Andersen, RegionAwareModRefSummarizer>(
       ValidateGammaTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::ThetaTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::ThetaTest, Andersen, AgnosticModRefSummarizer>(
       ValidateThetaTestAndersenAgnostic);
-  ValidateTest<jlm::tests::ThetaTest, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::ThetaTest, Andersen, RegionAwareModRefSummarizer>(
       ValidateThetaTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest1, Andersen, AgnosticModRefSummarizer>(
       ValidateDeltaTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidateDeltaTest1AndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest2, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest2, Andersen, AgnosticModRefSummarizer>(
       ValidateDeltaTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest2, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest2, Andersen, RegionAwareModRefSummarizer>(
       ValidateDeltaTest2AndersenRegionAware);
 
-  ValidateTest<jlm::tests::DeltaTest3, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest3, Andersen, AgnosticModRefSummarizer>(
       ValidateDeltaTest3AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest3, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::DeltaTest3, Andersen, RegionAwareModRefSummarizer>(
       ValidateDeltaTest3AndersenRegionAware);
 
-  ValidateTest<jlm::tests::ImportTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::ImportTest, Andersen, AgnosticModRefSummarizer>(
       ValidateImportTestAndersenAgnostic);
-  ValidateTest<jlm::tests::ImportTest, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::ImportTest, Andersen, RegionAwareModRefSummarizer>(
       ValidateImportTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::PhiTest1, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::PhiTest1, Andersen, AgnosticModRefSummarizer>(
       ValidatePhiTestAndersenAgnostic);
-  ValidateTest<jlm::tests::PhiTest1, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::PhiTest1, Andersen, RegionAwareModRefSummarizer>(
       ValidatePhiTestAndersenRegionAware);
 
-  ValidateTest<jlm::tests::MemcpyTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::MemcpyTest, Andersen, AgnosticModRefSummarizer>(
       ValidateMemcpyAndersenAgnostic);
-  ValidateTest<jlm::tests::MemcpyTest, Andersen, RegionAwareModRefSummarizer>(
+  ValidateTest<jlm::llvm::MemcpyTest, Andersen, RegionAwareModRefSummarizer>(
       ValidateMemcpyAndersenRegionAware);
 
-  ValidateTest<jlm::tests::FreeNullTest, Andersen, AgnosticModRefSummarizer>(
+  ValidateTest<jlm::llvm::FreeNullTest, Andersen, AgnosticModRefSummarizer>(
       ValidateFreeNullTestAndersenAgnostic);
 }
 

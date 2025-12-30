@@ -4,10 +4,11 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 #include <cassert>
 
@@ -19,7 +20,7 @@ TestWriteGraphs()
   using namespace jlm::util::graph;
 
   // Arrange
-  jlm::tests::GammaTest gammaTest;
+  GammaTest gammaTest;
 
   // Act
   Writer writer;
@@ -86,7 +87,7 @@ TestWriteGraph()
   using namespace jlm::util::graph;
 
   // Arrange
-  jlm::tests::GammaTest gammaTest;
+  GammaTest gammaTest;
 
   // Act
   Writer writer;
@@ -125,7 +126,7 @@ TestTypeGraph()
   using namespace jlm::util::graph;
 
   // Arrange
-  jlm::tests::GammaTest gammaTest;
+  GammaTest gammaTest;
   auto ptrType = PointerType::Create();
   auto bit32Type = jlm::rvsdg::BitType::Create(32);
   auto memType = MemoryStateType::Create();

@@ -4,10 +4,10 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -62,7 +62,7 @@ Expect(
  *   }
  * \endcode
  */
-class PtGAliasAnalysisTest final : public jlm::tests::RvsdgTest
+class PtGAliasAnalysisTest final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -343,7 +343,7 @@ JLM_UNIT_TEST_REGISTER(
  *   }
  * \endcode
  */
-class PtGAliasAnalysisTestOffsets final : public jlm::tests::RvsdgTest
+class PtGAliasAnalysisTestOffsets final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {

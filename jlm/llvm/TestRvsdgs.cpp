@@ -3,9 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
-namespace jlm::tests
+namespace jlm::llvm
 {
 
 std::unique_ptr<jlm::llvm::RvsdgModule>

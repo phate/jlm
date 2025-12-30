@@ -5,12 +5,13 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 
 static void
 TestLambda()

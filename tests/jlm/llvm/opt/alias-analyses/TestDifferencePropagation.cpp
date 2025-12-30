@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <TestRvsdgs.hpp>
-
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 
 #include <cassert>
 
@@ -19,7 +18,7 @@ TestTracksDifferences()
   using namespace jlm::llvm::aa;
 
   // Arrange
-  tests::NAllocaNodesTest rvsdg(4);
+  jlm::llvm::NAllocaNodesTest rvsdg(4);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;

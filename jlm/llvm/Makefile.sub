@@ -3,6 +3,7 @@
 
 libllvm_SOURCES = \
     jlm/llvm/DotWriter.cpp \
+    jlm/llvm/TestRvsdgs.cpp \
     \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
@@ -77,6 +78,7 @@ libllvm_SOURCES = \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
+    jlm/llvm/TestRvsdgs.hpp \
     \
     jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \

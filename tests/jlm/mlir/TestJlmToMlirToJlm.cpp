@@ -4,10 +4,14 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 

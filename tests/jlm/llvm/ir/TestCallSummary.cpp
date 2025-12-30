@@ -4,11 +4,13 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/CallSummary.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
@@ -205,8 +207,10 @@ TestCallSummaryComputationDirectCalls()
 static void
 TestCallSummaryComputationIndirectCalls()
 {
+  using namespace jlm::llvm;
+
   // Arrange
-  jlm::tests::IndirectCallTest1 test;
+  IndirectCallTest1 test;
   test.module();
 
   // Act
