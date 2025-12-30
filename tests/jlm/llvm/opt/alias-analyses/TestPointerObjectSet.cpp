@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 
 #include <cassert>
 
@@ -24,7 +23,7 @@ TestFlagFunctions()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -72,7 +71,7 @@ TestCreatePointerObjects()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -180,7 +179,7 @@ TestPointerObjectUnificationPointees()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -226,7 +225,7 @@ TestAddToPointsToSet()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(1);
+  jlm::llvm::NAllocaNodesTest rvsdg(1);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -249,7 +248,7 @@ TestMakePointsToSetSuperset()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(3);
+  jlm::llvm::NAllocaNodesTest rvsdg(3);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -283,7 +282,7 @@ static void
 TestClonePointerObjectSet()
 {
   using namespace jlm::llvm::aa;
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -332,7 +331,7 @@ TestSupersetConstraint()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(3);
+  jlm::llvm::NAllocaNodesTest rvsdg(3);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -390,7 +389,7 @@ TestStoreConstraintDirectly()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(3);
+  jlm::llvm::NAllocaNodesTest rvsdg(3);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -431,7 +430,7 @@ TestLoadConstraintDirectly()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(3);
+  jlm::llvm::NAllocaNodesTest rvsdg(3);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -466,7 +465,7 @@ TestEscapedFunctionConstraint()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::EscapingLocalFunctionTest rvsdg;
+  jlm::llvm::EscapingLocalFunctionTest rvsdg;
   rvsdg.InitializeTest();
 
   const auto & localFunction = rvsdg.GetLocalFunction();
@@ -508,7 +507,7 @@ TestStoredAsScalarFlag()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(3);
+  jlm::llvm::NAllocaNodesTest rvsdg(3);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -565,7 +564,7 @@ TestLoadedAsScalarFlag()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(5);
+  jlm::llvm::NAllocaNodesTest rvsdg(5);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -626,7 +625,7 @@ TestFunctionCallConstraint()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::CallTest1 rvsdg;
+  jlm::llvm::CallTest1 rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -663,7 +662,7 @@ TestAddPointsToExternalConstraint()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(2);
+  jlm::llvm::NAllocaNodesTest rvsdg(2);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -706,7 +705,7 @@ TestAddRegisterContentEscapedConstraint()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::NAllocaNodesTest rvsdg(2);
+  jlm::llvm::NAllocaNodesTest rvsdg(2);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -741,7 +740,7 @@ TestDrawSubsetGraph()
 {
   using namespace jlm::llvm::aa;
   using namespace jlm::util;
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   // Arrange
@@ -829,7 +828,7 @@ TestPointerObjectConstraintSetSolve(Args... args)
   using namespace jlm::llvm::aa;
 
   // Create a graph with 11 different registers, and 4 allocas.
-  jlm::tests::NAllocaNodesTest rvsdg(4);
+  jlm::llvm::NAllocaNodesTest rvsdg(4);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
@@ -960,7 +959,7 @@ static void
 TestClonePointerObjectConstraintSet()
 {
   using namespace jlm::llvm::aa;
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   PointerObjectSet set;

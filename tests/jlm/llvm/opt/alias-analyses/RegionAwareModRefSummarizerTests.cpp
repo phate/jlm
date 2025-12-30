@@ -4,13 +4,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-registry.hpp>
+
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
-
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -37,7 +37,7 @@ TestStore1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::StoreTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::StoreTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -57,7 +57,7 @@ TestStore1()
     assert(setsEqual(storeANodes, { allocaAMemoryNode }));
   };
 
-  jlm::tests::StoreTest1 test;
+  jlm::llvm::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -84,7 +84,7 @@ TestStore2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::StoreTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::StoreTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -107,7 +107,7 @@ TestStore2()
     assert(setsEqual(lambdaExitNodes, {}));
   };
 
-  jlm::tests::StoreTest2 test;
+  jlm::llvm::StoreTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -134,7 +134,7 @@ TestLoad1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::LoadTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::LoadTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -147,7 +147,7 @@ TestLoad1()
     assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -175,7 +175,7 @@ TestLoad2()
    * Arrange
    */
   auto ValidateProvider =
-      [](const jlm::tests::LoadTest2 & test, const jlm::llvm::aa::ModRefSummary & modRefSummary)
+      [](const jlm::llvm::LoadTest2 & test, const jlm::llvm::aa::ModRefSummary & modRefSummary)
   {
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
     assert(setsEqual(lambdaEntryNodes, {}));
@@ -184,7 +184,7 @@ TestLoad2()
     assert(setsEqual(lambdaExitNodes, {}));
   };
 
-  jlm::tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -211,7 +211,7 @@ TestLoadFromUndef()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::LoadFromUndefTest & test,
+  auto ValidateProvider = [](const jlm::llvm::LoadFromUndefTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph &)
   {
@@ -222,7 +222,7 @@ TestLoadFromUndef()
     assert(numLambdaExitNodes == 0);
   };
 
-  jlm::tests::LoadFromUndefTest test;
+  jlm::llvm::LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -249,7 +249,7 @@ TestCall1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::CallTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::CallTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -297,7 +297,7 @@ TestCall1()
     }
   };
 
-  jlm::tests::CallTest1 test;
+  jlm::llvm::CallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -324,7 +324,7 @@ TestCall2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::CallTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::CallTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -376,7 +376,7 @@ TestCall2()
     }
   };
 
-  jlm::tests::CallTest2 test;
+  jlm::llvm::CallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -403,7 +403,7 @@ TestIndirectCall()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::IndirectCallTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::IndirectCallTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              [[maybe_unused]] const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -461,7 +461,7 @@ TestIndirectCall()
     }
   };
 
-  jlm::tests::IndirectCallTest1 test;
+  jlm::llvm::IndirectCallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -488,7 +488,7 @@ TestIndirectCall2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::IndirectCallTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::IndirectCallTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -606,7 +606,7 @@ TestIndirectCall2()
     }
   };
 
-  jlm::tests::IndirectCallTest2 test;
+  jlm::llvm::IndirectCallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -633,7 +633,7 @@ TestGamma()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::GammaTest & test,
+  auto ValidateProvider = [](const jlm::llvm::GammaTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -652,7 +652,7 @@ TestGamma()
     assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::GammaTest test;
+  jlm::llvm::GammaTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -679,7 +679,7 @@ TestTheta()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::ThetaTest & test,
+  auto ValidateProvider = [](const jlm::llvm::ThetaTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -695,7 +695,7 @@ TestTheta()
     assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::ThetaTest test;
+  jlm::llvm::ThetaTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -722,7 +722,7 @@ TestDelta1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::DeltaTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::DeltaTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -754,7 +754,7 @@ TestDelta1()
     }
   };
 
-  jlm::tests::DeltaTest1 test;
+  jlm::llvm::DeltaTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -781,7 +781,7 @@ TestDelta2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::DeltaTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::DeltaTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -814,7 +814,7 @@ TestDelta2()
     }
   };
 
-  jlm::tests::DeltaTest2 test;
+  jlm::llvm::DeltaTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -841,7 +841,7 @@ TestImports()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::ImportTest & test,
+  auto ValidateProvider = [](const jlm::llvm::ImportTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -874,7 +874,7 @@ TestImports()
     }
   };
 
-  jlm::tests::ImportTest test;
+  jlm::llvm::ImportTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -901,7 +901,7 @@ TestPhi1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::PhiTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::PhiTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -939,7 +939,7 @@ TestPhi1()
     }
   };
 
-  jlm::tests::PhiTest1 test;
+  jlm::llvm::PhiTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -966,7 +966,7 @@ TestPhi2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::PhiTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::PhiTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1085,7 +1085,7 @@ TestPhi2()
     }
   };
 
-  jlm::tests::PhiTest2 test;
+  jlm::llvm::PhiTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1110,7 +1110,7 @@ static void
 TestPhiWithDelta()
 {
   // Assert
-  jlm::tests::PhiWithDeltaTest test;
+  jlm::llvm::PhiWithDeltaTest test;
   std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   // std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
@@ -1134,7 +1134,7 @@ TestMemcpy()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::MemcpyTest & test,
+  auto ValidateProvider = [](const jlm::llvm::MemcpyTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1167,7 +1167,7 @@ TestMemcpy()
     }
   };
 
-  jlm::tests::MemcpyTest test;
+  jlm::llvm::MemcpyTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1194,7 +1194,7 @@ TestEscapedMemory1()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1217,7 +1217,7 @@ TestEscapedMemory1()
     assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
   };
 
-  jlm::tests::EscapedMemoryTest1 test;
+  jlm::llvm::EscapedMemoryTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1244,7 +1244,7 @@ TestEscapedMemory2()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1304,7 +1304,7 @@ TestEscapedMemory2()
     }
   };
 
-  jlm::tests::EscapedMemoryTest2 test;
+  jlm::llvm::EscapedMemoryTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1331,7 +1331,7 @@ TestEscapedMemory3()
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest3 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest3 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1350,7 +1350,7 @@ TestEscapedMemory3()
     assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
   };
 
-  jlm::tests::EscapedMemoryTest3 test;
+  jlm::llvm::EscapedMemoryTest3 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1621,7 +1621,7 @@ TestStatistics()
   using namespace jlm;
 
   // Arrange
-  tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   auto pointsToGraph = RunAndersen(test.module());
 
   util::StatisticsCollectorSettings statisticsCollectorSettings(

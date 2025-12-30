@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <cassert>
@@ -74,7 +73,7 @@ EscapedIsExactly(
 static void
 TestStore1()
 {
-  jlm::tests::StoreTest1 test;
+  jlm::llvm::StoreTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   // std::unordered_map<const jlm::rvsdg::output*, std::string> outputMap;
@@ -118,7 +117,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore1", Te
 static void
 TestStore2()
 {
-  jlm::tests::StoreTest2 test;
+  jlm::llvm::StoreTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 5);
@@ -162,7 +161,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore2", Te
 static void
 TestLoad1()
 {
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -186,7 +185,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad1", Tes
 static void
 TestLoad2()
 {
-  jlm::tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 5);
@@ -218,7 +217,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad2", Tes
 static void
 TestLoadFromUndef()
 {
-  jlm::tests::LoadFromUndefTest test;
+  jlm::llvm::LoadFromUndefTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -237,7 +236,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestGetElementPtr()
 {
-  jlm::tests::GetElementPtrTest test;
+  jlm::llvm::GetElementPtrTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -262,7 +261,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestBitCast()
 {
-  jlm::tests::BitCastTest test;
+  jlm::llvm::BitCastTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -284,7 +283,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBitCast", T
 static void
 TestConstantPointerNull()
 {
-  jlm::tests::ConstantPointerNullTest test;
+  jlm::llvm::ConstantPointerNullTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -309,7 +308,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestBits2Ptr()
 {
-  jlm::tests::Bits2PtrTest test;
+  jlm::llvm::Bits2PtrTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 2);
@@ -331,7 +330,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBits2Ptr", 
 static void
 TestCall1()
 {
-  jlm::tests::CallTest1 test;
+  jlm::llvm::CallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 3);
@@ -387,7 +386,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall1", Tes
 static void
 TestCall2()
 {
-  jlm::tests::CallTest2 test;
+  jlm::llvm::CallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 3);
@@ -435,7 +434,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall2", Tes
 static void
 TestIndirectCall1()
 {
-  jlm::tests::IndirectCallTest1 test;
+  jlm::llvm::IndirectCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 4);
@@ -480,7 +479,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestIndirectCall2()
 {
-  jlm::tests::IndirectCallTest2 test;
+  jlm::llvm::IndirectCallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 3);
@@ -504,7 +503,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestExternalCall1()
 {
-  jlm::tests::ExternalCallTest1 test;
+  jlm::llvm::ExternalCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 2);
@@ -532,7 +531,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestGamma()
 {
-  jlm::tests::GammaTest test;
+  jlm::llvm::GammaTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -570,7 +569,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestGamma", Tes
 static void
 TestTheta()
 {
-  jlm::tests::ThetaTest test;
+  jlm::llvm::ThetaTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -600,7 +599,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestTheta", Tes
 static void
 TestDelta1()
 {
-  jlm::tests::DeltaTest1 test;
+  jlm::llvm::DeltaTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numDeltaNodes() == 1);
@@ -636,7 +635,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta1", Te
 static void
 TestDelta2()
 {
-  jlm::tests::DeltaTest2 test;
+  jlm::llvm::DeltaTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numDeltaNodes() == 2);
@@ -677,7 +676,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta2", Te
 static void
 TestImports()
 {
-  jlm::tests::ImportTest test;
+  jlm::llvm::ImportTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 2);
@@ -718,7 +717,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestImports", T
 static void
 TestPhi1()
 {
-  jlm::tests::PhiTest1 test;
+  jlm::llvm::PhiTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 1);
@@ -761,7 +760,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestPhi1", Test
 static void
 TestExternalMemory()
 {
-  jlm::tests::ExternalMemoryTest test;
+  jlm::llvm::ExternalMemoryTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numLambdaNodes() == 1);
@@ -783,7 +782,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestEscapedMemory1()
 {
-  jlm::tests::EscapedMemoryTest1 test;
+  jlm::llvm::EscapedMemoryTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numDeltaNodes() == 4);
@@ -820,7 +819,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestEscapedMemory2()
 {
-  jlm::tests::EscapedMemoryTest2 test;
+  jlm::llvm::EscapedMemoryTest2 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numImportNodes() == 2);
@@ -869,7 +868,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestEscapedMemory3()
 {
-  jlm::tests::EscapedMemoryTest3 test;
+  jlm::llvm::EscapedMemoryTest3 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numDeltaNodes() == 1);
@@ -898,7 +897,7 @@ JLM_UNIT_TEST_REGISTER(
 static void
 TestMemcpy()
 {
-  jlm::tests::MemcpyTest test;
+  jlm::llvm::MemcpyTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numDeltaNodes() == 2);
@@ -924,7 +923,7 @@ JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestMemcpy", Te
 static void
 TestLinkedList()
 {
-  jlm::tests::LinkedListTest test;
+  jlm::llvm::LinkedListTest test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->numAllocaNodes() == 1);
@@ -948,7 +947,7 @@ static void
 TestStatistics()
 {
   // Arrange
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::AndersenAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
@@ -1026,7 +1025,7 @@ TestConstructPointsToGraph()
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   // Arrange a very standard set of memory objects and registers

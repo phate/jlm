@@ -3,8 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <TestRvsdgs.hpp>
-
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>

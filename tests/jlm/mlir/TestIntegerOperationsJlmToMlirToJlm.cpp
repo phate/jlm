@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -13,10 +12,7 @@
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/rvsdg/FunctionType.hpp>
-#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 namespace
 {

@@ -4,11 +4,11 @@
  */
 
 #include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -113,7 +113,7 @@ static void
 TestNodeIterators()
 {
   // Arrange
-  jlm::tests::AllMemoryNodesTest test;
+  jlm::llvm::AllMemoryNodesTest test;
   auto pointsToGraph = TestAnalysis::CreateAndAnalyze(test.module());
 
   using NodeIndex = jlm::llvm::aa::PointsToGraph::NodeIndex;
@@ -204,7 +204,7 @@ TestIsSupergraphOf()
   assert(graph0->isSupergraphOf(*graph1));
   assert(graph1->isSupergraphOf(*graph0));
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   // Adding an alloca node to only graph0, makes graph1 NOT a subgraph
@@ -298,7 +298,7 @@ testMemoryNodeSize()
 
   {
     // Arrange
-    jlm::tests::DeltaTest3 test;
+    jlm::llvm::DeltaTest3 test;
     test.InitializeTest();
 
     auto ptg = aa::PointsToGraph::create();
@@ -314,7 +314,7 @@ testMemoryNodeSize()
 
   {
     // Arrange 2
-    jlm::tests::StoreTest1 test;
+    jlm::llvm::StoreTest1 test;
     test.InitializeTest();
 
     auto ptg = aa::PointsToGraph::create();
@@ -328,7 +328,7 @@ testMemoryNodeSize()
 
   {
     // Arrange 3
-    jlm::tests::AllMemoryNodesTest test;
+    jlm::llvm::AllMemoryNodesTest test;
     test.InitializeTest();
 
     auto ptg = aa::PointsToGraph::create();
@@ -358,7 +358,7 @@ testIsMemoryNodeConstant()
 
   {
     // Arrange
-    jlm::tests::AllMemoryNodesTest test;
+    jlm::llvm::AllMemoryNodesTest test;
     test.InitializeTest();
 
     auto ptg = aa::PointsToGraph::create();

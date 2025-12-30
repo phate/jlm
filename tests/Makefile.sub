@@ -3,12 +3,10 @@ JLC ?= $(BUILD_OUT_PREFIX)jlc
 libjlmtest_SOURCES = \
 	tests/test-registry.cpp \
 	tests/test-runner.cpp \
-	tests/TestRvsdgs.cpp \
 
 libjlmtest_HEADERS = \
 	tests/test-registry.hpp \
 	tests/test-util.hpp \
-	tests/TestRvsdgs.hpp \
 
 $(eval $(call common_library,libjlmtest))
 
