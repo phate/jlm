@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -41,7 +40,7 @@ TestFMulAdd()
     builder.CreateRet(returnValue);
   }
 
-  jlm::tests::print(llvmModule);
+  llvmModule.dump();
 
   // Act
   const auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);

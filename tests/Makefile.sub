@@ -6,7 +6,6 @@ libjlmtest_SOURCES = \
 
 libjlmtest_HEADERS = \
 	tests/test-registry.hpp \
-	tests/test-util.hpp \
 
 $(eval $(call common_library,libjlmtest))
 

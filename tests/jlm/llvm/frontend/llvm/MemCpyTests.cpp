@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
@@ -44,7 +43,7 @@ MemCpyConversion()
   builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, true);
   builder.CreateRetVoid();
 
-  jlm::tests::print(*llvmModule);
+  llvmModule->dump();
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);

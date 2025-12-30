@@ -4,7 +4,6 @@
  */
 
 #include <test-registry.hpp>
-#include <test-util.hpp>
 
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators.hpp>
