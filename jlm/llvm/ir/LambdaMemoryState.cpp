@@ -12,7 +12,6 @@ namespace jlm::llvm
 rvsdg::Output &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
-  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
   const auto argument = lambdaNode.GetFunctionArguments().back();
   JLM_ASSERT(is<MemoryStateType>(argument->Type()));
   return *argument;
@@ -21,7 +20,6 @@ GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 rvsdg::Input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
-  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
   const auto result = lambdaNode.GetFunctionResults().back();
   JLM_ASSERT(is<MemoryStateType>(result->Type()));
   return *result;
@@ -33,7 +31,7 @@ tryGetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept
   auto & result = GetMemoryStateRegionResult(lambdaNode);
 
   const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*result.origin());
-  return is<LambdaExitMemoryStateMergeOperation>(node) ? node : nullptr;
+  return node && is<LambdaExitMemoryStateMergeOperation>(node->GetOperation()) ? node : nullptr;
 }
 
 rvsdg::SimpleNode *
@@ -47,8 +45,7 @@ tryGetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
     return nullptr;
 
   const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(argument.SingleUser());
-  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
+  return node && is<LambdaEntryMemoryStateSplitOperation>(node->GetOperation()) ? node : nullptr;
 }
 
 }
