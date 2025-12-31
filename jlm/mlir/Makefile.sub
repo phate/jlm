@@ -11,20 +11,6 @@ libmlir_HEADERS = \
     jlm/mlir/frontend/MlirToJlmConverter.hpp \
     jlm/mlir/MLIRConverterCommon.hpp \
 
-libmlir_TESTS += \
-    tests/jlm/mlir/backend/TestJlmToMlirConverter \
-
-libmlir_TEST_LIBS += \
-    libmlir \
-    libllvm \
-    librvsdg \
-    libutil \
-    libjlmtest \
-
-libmlir_TEST_EXTRA_LDFLAGS = \
-    $(MLIR_LDFLAGS) \
-    $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
-
 $(eval $(call common_library,libmlir))
 
 tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm_SOURCES = tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm.cpp
@@ -41,3 +27,8 @@ tests/jlm/mlir/frontend/TestMlirToJlmConverter_SOURCES = tests/jlm/mlir/frontend
 tests/jlm/mlir/frontend/TestMlirToJlmConverter_LIBS = libmlir libllvm librvsdg libutil
 tests/jlm/mlir/frontend/TestMlirToJlmConverter_EXTRA_LDFLAGS = $(MLIR_LDFLAGS) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 $(eval $(call common_test,tests/jlm/mlir/frontend/TestMlirToJlmConverter))
+
+tests/jlm/mlir/backend/TestJlmToMlirConverter_SOURCES = tests/jlm/mlir/backend/TestJlmToMlirConverter.cpp
+tests/jlm/mlir/backend/TestJlmToMlirConverter_LIBS = libmlir libllvm librvsdg libutil
+tests/jlm/mlir/backend/TestJlmToMlirConverter_EXTRA_LDFLAGS = $(MLIR_LDFLAGS) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+$(eval $(call common_test,tests/jlm/mlir/backend/TestJlmToMlirConverter))
