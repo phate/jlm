@@ -15,6 +15,14 @@
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 
+template<typename NodeType>
+static NodeType *
+getUniqueNode(jlm::rvsdg::Region & region)
+{
+  EXPECT_EQ(region.numNodes(), 1);
+  return &static_cast<NodeType &>(*region.Nodes().begin());
+}
+
 TEST(JlmToMlirToJlmTests, TestUndef)
 {
   using namespace jlm::llvm;
@@ -53,14 +61,10 @@ TEST(JlmToMlirToJlmTests, TestUndef)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-
       // Get the undef op
-      auto convertedUndef =
-          dynamic_cast<const UndefValueOperation *>(&region->Nodes().begin()->GetOperation());
-
+      auto node = getUniqueNode<jlm::rvsdg::SimpleNode>(*region);
+      auto convertedUndef = dynamic_cast<const UndefValueOperation *>(&node->GetOperation());
       EXPECT_NE(convertedUndef, nullptr);
-
       auto outputType = convertedUndef->result(0);
       EXPECT_TRUE(jlm::rvsdg::is<const jlm::rvsdg::BitType>(outputType));
       EXPECT_EQ(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(outputType)->nbits(), 32);
@@ -134,28 +138,31 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
       bool foundAlloca = false;
       for (auto & node : region->Nodes())
       {
-        if (auto allocaOp = dynamic_cast<const AllocaOperation *>(&node.GetOperation()))
+        if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(allocaOp->alignment(), 4);
+          if (auto allocaOp = dynamic_cast<const AllocaOperation *>(&simplenode->GetOperation()))
+          {
+            EXPECT_EQ(allocaOp->alignment(), 4);
 
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->ValueType()));
-          auto valueBitType =
-              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->ValueType().get());
-          EXPECT_EQ(valueBitType->nbits(), 64);
+            assert(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->ValueType()));
+            auto valueBitType =
+                dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->ValueType().get());
+            EXPECT_EQ(valueBitType->nbits(), 64);
 
-          EXPECT_EQ(allocaOp->narguments(), 1);
+            EXPECT_EQ(allocaOp->narguments(), 1);
 
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->argument(0)));
-          auto inputBitType =
-              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 32);
+            assert(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->argument(0)));
+            auto inputBitType =
+                dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->argument(0).get());
+            EXPECT_EQ(inputBitType->nbits(), 32);
 
-          EXPECT_EQ(allocaOp->nresults(), 2);
+            EXPECT_EQ(allocaOp->nresults(), 2);
 
-          EXPECT_TRUE(jlm::rvsdg::is<PointerType>(allocaOp->result(0)));
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(allocaOp->result(1)));
+            EXPECT_TRUE(jlm::rvsdg::is<PointerType>(allocaOp->result(0)));
+            EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(allocaOp->result(1)));
 
-          foundAlloca = true;
+            foundAlloca = true;
+          }
         }
       }
       EXPECT_TRUE(foundAlloca);
@@ -230,15 +237,12 @@ TEST(JlmToMlirToJlmTests, TestLoad)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(is<LoadNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
+      auto convertedLoad = dynamic_cast<jlm::rvsdg::SimpleNode *>(
+          convertedLambda->subregion()->Nodes().begin().ptr());
+      EXPECT_TRUE(is<LoadNonVolatileOperation>(convertedLoad->GetOperation()));
       auto loadOperation =
           dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
 
@@ -324,15 +328,12 @@ TEST(JlmToMlirToJlmTests, TestStore)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(is<StoreNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
+
+      auto convertedStore = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+      EXPECT_TRUE(is<StoreNonVolatileOperation>(convertedStore->GetOperation()));
       auto convertedStoreOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
 
@@ -408,15 +409,12 @@ TEST(JlmToMlirToJlmTests, TestSext)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(is<SExtOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSext = dynamic_cast<const SExtOperation *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedSextNode = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+      EXPECT_TRUE(is<SExtOperation>(convertedSextNode->GetOperation()));
+      auto convertedSext = dynamic_cast<const SExtOperation *>(&convertedSextNode->GetOperation());
 
       EXPECT_EQ(convertedSext->ndstbits(), 64);
       EXPECT_EQ(convertedSext->nsrcbits(), 32);
@@ -479,14 +477,10 @@ TEST(JlmToMlirToJlmTests, TestSitofp)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(
-          is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
+      auto node = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+      EXPECT_TRUE(is<SIToFPOperation>(node->GetOperation()));
+      auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(&node->GetOperation());
 
       EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(*convertedSitofp->argument(0).get()));
       EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedSitofp->result(0).get()));
@@ -535,13 +529,10 @@ TEST(JlmToMlirToJlmTests, TestConstantFP)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedConst = dynamic_cast<const ConstantFP *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
+      auto node = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+      EXPECT_TRUE(is<ConstantFP>(node->GetOperation()));
+      auto convertedConst = dynamic_cast<const ConstantFP *>(&node->GetOperation());
 
       EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedConst->result(0).get()));
       EXPECT_TRUE(convertedConst->constant().isExactlyValue(2.0));
@@ -613,12 +604,8 @@ TEST(JlmToMlirToJlmTests, TestFpBinary)
       {
         using namespace jlm::llvm;
 
-        EXPECT_EQ(region->numNodes(), 1);
-        auto convertedLambda =
-            jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-        EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-
-        auto node = convertedLambda->subregion()->Nodes().begin().ptr();
+        auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
+        auto node = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
         auto convertedFpbin =
             jlm::util::assertedCast<const FBinaryOperation>(&node->GetOperation());
         EXPECT_EQ(convertedFpbin->fpop(), binOp);
@@ -672,21 +659,19 @@ TEST(JlmToMlirToJlmTests, TestFMulAddOp)
 
     // Assert
     auto region = &roundTripModule->Rvsdg().GetRootRegion();
-    EXPECT_EQ(region->numNodes(), 1);
-    auto convertedLambda =
-        jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+    auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
     EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
     const auto arguments = convertedLambda->GetFunctionArguments();
     const auto results = convertedLambda->GetFunctionResults();
     EXPECT_EQ(arguments.size(), 3);
     EXPECT_EQ(results.size(), 1);
 
-    auto & convertedNode = *convertedLambda->subregion()->Nodes().begin();
-    EXPECT_TRUE(is<jlm::llvm::FMulAddIntrinsicOperation>(&convertedNode));
-    EXPECT_EQ(convertedNode.input(0)->origin(), arguments[0]);
-    EXPECT_EQ(convertedNode.input(1)->origin(), arguments[1]);
-    EXPECT_EQ(convertedNode.input(2)->origin(), arguments[2]);
-    EXPECT_EQ(results[0]->origin(), convertedNode.output(0));
+    auto convertedNode = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+    EXPECT_TRUE(is<jlm::llvm::FMulAddIntrinsicOperation>(convertedNode->GetOperation()));
+    EXPECT_EQ(convertedNode->input(0)->origin(), arguments[0]);
+    EXPECT_EQ(convertedNode->input(1)->origin(), arguments[1]);
+    EXPECT_EQ(convertedNode->input(2)->origin(), arguments[2]);
+    EXPECT_EQ(results[0]->origin(), convertedNode->output(0));
   }
 }
 
@@ -761,14 +746,10 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
-      auto convertedLambda =
-          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-
-      auto op = convertedLambda->subregion()->Nodes().begin();
-      EXPECT_TRUE(is<GetElementPtrOperation>(op->GetOperation()));
-      auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(&op->GetOperation());
+      auto convertedLambda = getUniqueNode<jlm::rvsdg::LambdaNode>(*region);
+      auto node = getUniqueNode<jlm::rvsdg::SimpleNode>(*convertedLambda->subregion());
+      EXPECT_TRUE(is<GetElementPtrOperation>(node->GetOperation()));
+      auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(&node->GetOperation());
 
       EXPECT_TRUE(is<ArrayType>(convertedGep->GetPointeeType()));
       EXPECT_TRUE(is<PointerType>(convertedGep->result(0)));
@@ -866,7 +847,8 @@ TEST(JlmToMlirToJlmTests, TestDelta)
       {
         auto convertedDelta = jlm::util::assertedCast<jlm::rvsdg::DeltaNode>(&node);
         EXPECT_EQ(convertedDelta->subregion()->numNodes(), 1);
-        auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
+        auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(
+            &convertedDelta->GetOperation());
 
         if (convertedDelta->constant())
         {
@@ -881,7 +863,8 @@ TEST(JlmToMlirToJlmTests, TestDelta)
         EXPECT_EQ(dop->linkage(), Linkage::externalLinkage);
         EXPECT_EQ(dop->Section(), "section");
 
-        auto op = convertedDelta->subregion()->Nodes().begin();
+        auto op = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
+            &*convertedDelta->subregion()->Nodes().begin());
         EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(op->GetOperation()));
       }
     }
@@ -946,18 +929,22 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
       bool foundConstantDataArray = false;
       for (auto & node : region->Nodes())
       {
-        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          foundConstantDataArray = true;
-          EXPECT_EQ(constantDataArray->nresults(), 1);
-          EXPECT_EQ(constantDataArray->narguments(), 2);
-          auto resultType = constantDataArray->result(0);
-          auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
-          EXPECT_NE(arrayType, nullptr);
-          EXPECT_TRUE(is<jlm::rvsdg::BitType>(arrayType->element_type()));
-          EXPECT_EQ(arrayType->nelements(), 2);
-          EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(0)));
-          EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(1)));
+          if (auto constantDataArray =
+                  dynamic_cast<const ConstantDataArray *>(&simplenode->GetOperation()))
+          {
+            foundConstantDataArray = true;
+            EXPECT_EQ(constantDataArray->nresults(), 1);
+            EXPECT_EQ(constantDataArray->narguments(), 2);
+            auto resultType = constantDataArray->result(0);
+            auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+            EXPECT_NE(arrayType, nullptr);
+            EXPECT_TRUE(is<jlm::rvsdg::BitType>(arrayType->element_type()));
+            EXPECT_EQ(arrayType->nelements(), 2);
+            EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(0)));
+            EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(1)));
+          }
         }
       }
       EXPECT_TRUE(foundConstantDataArray);
@@ -1008,7 +995,8 @@ TEST(JlmToMlirToJlmTests, TestConstantAggregateZero)
       EXPECT_EQ(region->numNodes(), 1);
       auto const convertedConstantAggregateZero =
           jlm::util::assertedCast<const ConstantAggregateZeroOperation>(
-              &region->Nodes().begin().ptr()->GetOperation());
+              &jlm::util::assertedCast<const jlm::rvsdg::SimpleNode>(region->Nodes().begin().ptr())
+                   ->GetOperation());
       EXPECT_EQ(convertedConstantAggregateZero->nresults(), 1);
       EXPECT_EQ(convertedConstantAggregateZero->narguments(), 0);
       auto resultType = convertedConstantAggregateZero->result(0);
@@ -1072,17 +1060,20 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedVarArgOp =
-            dynamic_cast<const VariadicArgumentListOperation *>(&node.GetOperation());
-        if (convertedVarArgOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedVarArgOp->nresults(), 1);
-          EXPECT_EQ(convertedVarArgOp->narguments(), 2);
-          auto resultType = convertedVarArgOp->result(0);
-          EXPECT_TRUE(is<jlm::llvm::VariableArgumentType>(resultType));
-          EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(0)));
-          EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(1)));
-          foundVarArgOp = true;
+          auto convertedVarArgOp =
+              dynamic_cast<const VariadicArgumentListOperation *>(&simplenode->GetOperation());
+          if (convertedVarArgOp)
+          {
+            EXPECT_EQ(convertedVarArgOp->nresults(), 1);
+            EXPECT_EQ(convertedVarArgOp->narguments(), 2);
+            auto resultType = convertedVarArgOp->result(0);
+            EXPECT_TRUE(is<jlm::llvm::VariableArgumentType>(resultType));
+            EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(0)));
+            EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(1)));
+            foundVarArgOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundVarArgOp);
@@ -1146,18 +1137,21 @@ TEST(JlmToMlirToJlmTests, TestFNeg)
       bool foundFNegOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&node.GetOperation());
-        if (convertedFNegOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedFNegOp->nresults(), 1);
-          EXPECT_EQ(convertedFNegOp->narguments(), 1);
-          auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
-              convertedFNegOp->argument(0).get());
-          EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
-              convertedFNegOp->result(0).get());
-          EXPECT_EQ(outputFloatType->size(), jlm::llvm::fpsize::flt);
-          foundFNegOp = true;
+          auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&simplenode->GetOperation());
+          if (convertedFNegOp)
+          {
+            EXPECT_EQ(convertedFNegOp->nresults(), 1);
+            EXPECT_EQ(convertedFNegOp->narguments(), 1);
+            auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
+                convertedFNegOp->argument(0).get());
+            EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
+            auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
+                convertedFNegOp->result(0).get());
+            EXPECT_EQ(outputFloatType->size(), jlm::llvm::fpsize::flt);
+            foundFNegOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundFNegOp);
@@ -1222,18 +1216,21 @@ TEST(JlmToMlirToJlmTests, TestFPExt)
       bool foundFPExtOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&node.GetOperation());
-        if (convertedFPExtOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedFPExtOp->nresults(), 1);
-          EXPECT_EQ(convertedFPExtOp->narguments(), 1);
-          auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
-              convertedFPExtOp->argument(0).get());
-          EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
-              convertedFPExtOp->result(0).get());
-          EXPECT_EQ(outputFloatType->size(), jlm::llvm::fpsize::dbl);
-          foundFPExtOp = true;
+          auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&simplenode->GetOperation());
+          if (convertedFPExtOp)
+          {
+            EXPECT_EQ(convertedFPExtOp->nresults(), 1);
+            EXPECT_EQ(convertedFPExtOp->narguments(), 1);
+            auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
+                convertedFPExtOp->argument(0).get());
+            EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
+            auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
+                convertedFPExtOp->result(0).get());
+            EXPECT_EQ(outputFloatType->size(), jlm::llvm::fpsize::dbl);
+            foundFPExtOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundFPExtOp);
@@ -1295,18 +1292,21 @@ TEST(JlmToMlirToJlmTests, TestTrunc)
       bool foundTruncOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&node.GetOperation());
-        if (convertedTruncOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedTruncOp->nresults(), 1);
-          EXPECT_EQ(convertedTruncOp->narguments(), 1);
-          auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedTruncOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 64);
-          auto outputBitType =
-              jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedTruncOp->result(0).get());
-          EXPECT_EQ(outputBitType->nbits(), 32);
-          foundTruncOp = true;
+          auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&simplenode->GetOperation());
+          if (convertedTruncOp)
+          {
+            EXPECT_EQ(convertedTruncOp->nresults(), 1);
+            EXPECT_EQ(convertedTruncOp->narguments(), 1);
+            auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedTruncOp->argument(0).get());
+            EXPECT_EQ(inputBitType->nbits(), 64);
+            auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedTruncOp->result(0).get());
+            EXPECT_EQ(outputBitType->nbits(), 32);
+            foundTruncOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundTruncOp);
@@ -1383,12 +1383,13 @@ TEST(JlmToMlirToJlmTests, TestFree)
       EXPECT_EQ(region->numNodes(), 1);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(is<FreeOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedFree = dynamic_cast<const FreeOperation *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+          &jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
+               convertedLambda->subregion()->Nodes().begin().ptr())
+               ->GetOperation());
+      EXPECT_TRUE(convertedFree);
 
       EXPECT_EQ(convertedFree->narguments(), 3);
       EXPECT_EQ(convertedFree->nresults(), 2);
@@ -1638,29 +1639,33 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
       bool foundIOBarrier = false;
       for (auto & lambdaNode : lambdaOperation->subregion()->Nodes())
       {
-        auto ioBarrierOp = dynamic_cast<const IOBarrierOperation *>(&lambdaNode.GetOperation());
-        if (ioBarrierOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&lambdaNode))
         {
-          foundIOBarrier = true;
+          auto ioBarrierOp = dynamic_cast<const IOBarrierOperation *>(&simplenode->GetOperation());
+          if (ioBarrierOp)
+          {
+            foundIOBarrier = true;
 
-          // Check that it has correct number of inputs and outputs
-          EXPECT_EQ(ioBarrierOp->nresults(), 1);
-          EXPECT_EQ(ioBarrierOp->narguments(), 2);
+            // Check that it has correct number of inputs and outputs
+            EXPECT_EQ(ioBarrierOp->nresults(), 1);
+            EXPECT_EQ(ioBarrierOp->narguments(), 2);
 
-          // Check that the first input is the 32-bit value
-          auto valueType =
-              dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->argument(0).get());
-          EXPECT_NE(valueType, nullptr);
-          EXPECT_EQ(valueType->nbits(), 32);
+            // Check that the first input is the 32-bit value
+            auto valueType =
+                dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->argument(0).get());
+            EXPECT_NE(valueType, nullptr);
+            EXPECT_EQ(valueType->nbits(), 32);
 
-          // Check that the second input is an IO state
-          auto ioStateType = dynamic_cast<const IOStateType *>(ioBarrierOp->argument(1).get());
-          EXPECT_NE(ioStateType, nullptr);
+            // Check that the second input is an IO state
+            auto ioStateType = dynamic_cast<const IOStateType *>(ioBarrierOp->argument(1).get());
+            EXPECT_NE(ioStateType, nullptr);
 
-          // Check that the output type matches the input value type
-          auto outputType = dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->result(0).get());
-          EXPECT_NE(outputType, nullptr);
-          EXPECT_EQ(outputType->nbits(), 32);
+            // Check that the output type matches the input value type
+            auto outputType =
+                dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->result(0).get());
+            EXPECT_NE(outputType, nullptr);
+            EXPECT_EQ(outputType->nbits(), 32);
+          }
         }
       }
       EXPECT_TRUE(foundIOBarrier);
@@ -1721,18 +1726,22 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
       bool foundMallocOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedMallocOp = dynamic_cast<const MallocOperation *>(&node.GetOperation());
-        if (convertedMallocOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedMallocOp->nresults(), 3);
-          EXPECT_EQ(convertedMallocOp->narguments(), 2);
-          auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedMallocOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 64);
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::IOStateType>(convertedMallocOp->result(1)));
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(convertedMallocOp->result(2)));
-          foundMallocOp = true;
+          auto convertedMallocOp =
+              dynamic_cast<const MallocOperation *>(&simplenode->GetOperation());
+          if (convertedMallocOp)
+          {
+            EXPECT_EQ(convertedMallocOp->nresults(), 3);
+            EXPECT_EQ(convertedMallocOp->narguments(), 2);
+            auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedMallocOp->argument(0).get());
+            EXPECT_EQ(inputBitType->nbits(), 64);
+            EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));
+            EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::IOStateType>(convertedMallocOp->result(1)));
+            EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(convertedMallocOp->result(2)));
+            foundMallocOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundMallocOp);

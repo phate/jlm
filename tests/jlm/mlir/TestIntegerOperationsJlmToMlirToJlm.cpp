@@ -95,21 +95,24 @@ TestIntegerBinaryOperation()
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedBinaryOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
-        if (convertedBinaryOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedBinaryOp->nresults(), 1);
-          EXPECT_EQ(convertedBinaryOp->narguments(), 2);
-          auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedBinaryOp->argument(0).get());
-          EXPECT_EQ(inputBitType1->nbits(), nbits);
-          auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedBinaryOp->argument(1).get());
-          EXPECT_EQ(inputBitType2->nbits(), nbits);
-          auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedBinaryOp->result(0).get());
-          EXPECT_EQ(outputBitType->nbits(), nbits);
-          foundBinaryOp = true;
+          auto convertedBinaryOp = dynamic_cast<const JlmOperation *>(&simplenode->GetOperation());
+          if (convertedBinaryOp)
+          {
+            EXPECT_EQ(convertedBinaryOp->nresults(), 1);
+            EXPECT_EQ(convertedBinaryOp->narguments(), 2);
+            auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedBinaryOp->argument(0).get());
+            EXPECT_EQ(inputBitType1->nbits(), nbits);
+            auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedBinaryOp->argument(1).get());
+            EXPECT_EQ(inputBitType2->nbits(), nbits);
+            auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedBinaryOp->result(0).get());
+            EXPECT_EQ(outputBitType->nbits(), nbits);
+            foundBinaryOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundBinaryOp);
@@ -221,24 +224,27 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedCompOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
-        if (convertedCompOp)
+        if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
         {
-          EXPECT_EQ(convertedCompOp->nresults(), 1);
-          EXPECT_EQ(convertedCompOp->narguments(), 2);
-          auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedCompOp->argument(0).get());
-          EXPECT_EQ(inputBitType1->nbits(), nbits);
-          auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
-              convertedCompOp->argument(1).get());
-          EXPECT_EQ(inputBitType2->nbits(), nbits);
+          auto convertedCompOp = dynamic_cast<const JlmOperation *>(&simplenode->GetOperation());
+          if (convertedCompOp)
+          {
+            EXPECT_EQ(convertedCompOp->nresults(), 1);
+            EXPECT_EQ(convertedCompOp->narguments(), 2);
+            auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedCompOp->argument(0).get());
+            EXPECT_EQ(inputBitType1->nbits(), nbits);
+            auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedCompOp->argument(1).get());
+            EXPECT_EQ(inputBitType2->nbits(), nbits);
 
-          // Check the output type is bit1 (boolean)
-          auto outputBitType =
-              jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
-          EXPECT_EQ(outputBitType->nbits(), 1);
+            // Check the output type is bit1 (boolean)
+            auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
+                convertedCompOp->result(0).get());
+            EXPECT_EQ(outputBitType->nbits(), 1);
 
-          foundCompOp = true;
+            foundCompOp = true;
+          }
         }
       }
       EXPECT_TRUE(foundCompOp);
