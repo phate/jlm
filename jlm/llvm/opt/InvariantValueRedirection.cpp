@@ -263,7 +263,7 @@ InvariantValueRedirection::redirectThetaGammaOutputs(rvsdg::ThetaNode & thetaNod
 void
 InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   auto callType = callTypeClassifier->GetCallType();
