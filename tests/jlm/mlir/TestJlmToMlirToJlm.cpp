@@ -236,9 +236,8 @@ TEST(JlmToMlirToJlmTests, TestLoad)
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(
-          is<LoadNonVolatileOperation>(
-              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      EXPECT_TRUE(is<LoadNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
       auto loadOperation =
           dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
@@ -331,9 +330,8 @@ TEST(JlmToMlirToJlmTests, TestStore)
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(
-          is<StoreNonVolatileOperation>(
-              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      EXPECT_TRUE(is<StoreNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
       auto convertedStoreOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());

@@ -124,7 +124,7 @@ TestIntegerBinaryOperation()
     return TestIntegerBinaryOperation<                                   \
         jlm::llvm::Integer##JLM_OP##Operation,                           \
         ::mlir::MLIR_NS::MLIR_OP>();                                     \
-  }                                                                      \
+  }
 
 // Register tests for all the integer binary operations
 REGISTER_INT_BINARY_OP_TEST(Add, arith, AddIOp, Add)
@@ -255,7 +255,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
       #TEST_NAME                                                            \
     };                                                                      \
     return TestIntegerComparisonOperation(test);                            \
-  }                                                                         \
+  }
 
 // Register tests for all the integer comparison operations
 REGISTER_INT_COMP_OP_TEST(Eq, eq, Eq)

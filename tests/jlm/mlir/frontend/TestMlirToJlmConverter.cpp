@@ -116,9 +116,8 @@ TEST(MlirToJlmConverterTests, TestLambda)
       EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
-      EXPECT_TRUE(
-          is<jlm::llvm::IntegerConstantOperation>(
-              convertedLambda->subregion()->Nodes().begin().ptr()));
+      EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(
+          convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
 }
