@@ -15,7 +15,6 @@ libmlir_TESTS += \
     tests/jlm/mlir/backend/TestJlmToMlirConverter \
     tests/jlm/mlir/frontend/TestMlirToJlmConverter \
     tests/jlm/mlir/TestJlmToMlirToJlm \
-    tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
     libmlir \
@@ -29,3 +28,8 @@ libmlir_TEST_EXTRA_LDFLAGS = \
     $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
 
 $(eval $(call common_library,libmlir))
+
+tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm_SOURCES = tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm.cpp
+tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm_LIBS = libmlir libllvm librvsdg libutil
+tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm_EXTRA_LDFLAGS = $(MLIR_LDFLAGS) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+$(eval $(call common_test,tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm))
