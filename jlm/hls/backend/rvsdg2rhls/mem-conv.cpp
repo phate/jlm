@@ -378,13 +378,15 @@ CalculatePortWidth(const TracedPointerNodes & tracedPointerNodes)
   int max_width = 0;
   for (auto node : tracedPointerNodes.loadNodes)
   {
-    auto loadOp = util::assertedCast<const llvm::LoadNonVolatileOperation>(&node->GetOperation());
+    auto loadOp = util::assertedCast<const llvm::LoadNonVolatileOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(*node).GetOperation());
     auto sz = JlmSize(loadOp->GetLoadedType().get());
     max_width = sz > max_width ? sz : max_width;
   }
   for (auto node : tracedPointerNodes.storeNodes)
   {
-    auto storeOp = util::assertedCast<const llvm::StoreNonVolatileOperation>(&node->GetOperation());
+    auto storeOp = util::assertedCast<const llvm::StoreNonVolatileOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(*node).GetOperation());
     auto sz = JlmSize(&storeOp->GetStoredType());
     max_width = sz > max_width ? sz : max_width;
   }

@@ -153,35 +153,38 @@ inline_calls(rvsdg::Region * region)
         inline_calls(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<const llvm::CallOperation *>(&(node->GetOperation())))
+    else if (auto simplenode = dynamic_cast<rvsdg::SimpleNode *>(node))
     {
-      auto traced = jlm::hls::trace_call(node->input(0));
-      auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
-      if (!so)
+      if (dynamic_cast<const llvm::CallOperation *>(&(simplenode->GetOperation())))
       {
-        if (auto graphImport = dynamic_cast<const llvm::LlvmGraphImport *>(traced))
+        auto traced = jlm::hls::trace_call(node->input(0));
+        auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
+        if (!so)
         {
-          if (graphImport->Name().rfind("decouple_", 0) == 0)
+          if (auto graphImport = dynamic_cast<const llvm::LlvmGraphImport *>(traced))
           {
-            // can't inline pseudo functions used for decoupling
-            continue;
+            if (graphImport->Name().rfind("decouple_", 0) == 0)
+            {
+              // can't inline pseudo functions used for decoupling
+              continue;
+            }
+            if (graphImport->Name().rfind("hls_", 0) == 0)
+            {
+              // can't inline pseudo functions used for streaming
+              continue;
+            }
+            throw util::Error("can not inline external function " + graphImport->Name());
           }
-          if (graphImport->Name().rfind("hls_", 0) == 0)
-          {
-            // can't inline pseudo functions used for streaming
-            continue;
-          }
-          throw util::Error("can not inline external function " + graphImport->Name());
         }
+        JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(so->node()));
+        auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
+        llvm::FunctionInlining::inlineCall(
+            *dynamic_cast<rvsdg::SimpleNode *>(node),
+            *dynamic_cast<const rvsdg::LambdaNode *>(ln));
+        // restart for this region
+        inline_calls(region);
+        return;
       }
-      JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
-      auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
-      llvm::FunctionInlining::inlineCall(
-          *dynamic_cast<rvsdg::SimpleNode *>(node),
-          *dynamic_cast<const rvsdg::LambdaNode *>(ln));
-      // restart for this region
-      inline_calls(region);
-      return;
     }
   }
 }

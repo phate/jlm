@@ -97,29 +97,33 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   }
 
   std::string color = "black";
-  if (jlm::rvsdg::is<BufferOperation>(node))
+  if (auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(node))
   {
-    color = "blue";
-  }
-  else if (jlm::rvsdg::is<ForkOperation>(node))
-  {
-    color = "grey";
-  }
-  else if (jlm::rvsdg::is<SinkOperation>(node))
-  {
-    color = "grey";
-  }
-  else if (jlm::rvsdg::is<BranchOperation>(node))
-  {
-    color = "green";
-  }
-  else if (jlm::rvsdg::is<MuxOperation>(node))
-  {
-    color = "darkred";
-  }
-  else if (jlm::rvsdg::is<TriggerOperation>(node) || is_constant(node))
-  {
-    color = "orange";
+    const auto & op = simple_node->GetOperation();
+    if (jlm::rvsdg::is<BufferOperation>(op))
+    {
+      color = "blue";
+    }
+    else if (jlm::rvsdg::is<ForkOperation>(op))
+    {
+      color = "grey";
+    }
+    else if (jlm::rvsdg::is<SinkOperation>(op))
+    {
+      color = "grey";
+    }
+    else if (jlm::rvsdg::is<BranchOperation>(op))
+    {
+      color = "green";
+    }
+    else if (jlm::rvsdg::is<MuxOperation>(op))
+    {
+      color = "darkred";
+    }
+    else if (jlm::rvsdg::is<TriggerOperation>(op) || is_constant(node))
+    {
+      color = "orange";
+    }
   }
 
   // dot inspired by
@@ -243,11 +247,14 @@ DotHLS::loop_to_dot(LoopNode * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
-    auto lc = dynamic_cast<const LoopConstantBufferOperation *>(&node->GetOperation());
-    if ((mx && !mx->discarding && mx->loop) || lc)
+    if (auto simplenode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
-      dot << get_node_name(node) << " ";
+      auto mx = dynamic_cast<const MuxOperation *>(&simplenode->GetOperation());
+      auto lc = dynamic_cast<const LoopConstantBufferOperation *>(&simplenode->GetOperation());
+      if ((mx && !mx->discarding && mx->loop) || lc)
+      {
+        dot << get_node_name(node) << " ";
+      }
     }
   }
   dot << "}\n";
@@ -255,10 +262,13 @@ DotHLS::loop_to_dot(LoopNode * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto br = dynamic_cast<const BranchOperation *>(&node->GetOperation());
-    if (br && br->loop)
+    if (auto simplenode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
-      dot << get_node_name(node) << " ";
+      auto br = dynamic_cast<const BranchOperation *>(&simplenode->GetOperation());
+      if (br && br->loop)
+      {
+        dot << get_node_name(node) << " ";
+      }
     }
   }
   dot << "}\n";
@@ -267,9 +277,9 @@ DotHLS::loop_to_dot(LoopNode * ln)
   // do edges outside in order not to pull other nodes into the cluster
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+    if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
+      auto mx = dynamic_cast<const MuxOperation *>(&simplenode->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {

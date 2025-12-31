@@ -41,24 +41,27 @@ RedundantBufferElimination::HandleRegion(rvsdg::Region & region)
       }
       continue;
     }
+    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(&node))
+    {
 
-    auto bufferOperation = dynamic_cast<const BufferOperation *>(&node.GetOperation());
-    if (!bufferOperation)
-      continue;
+      auto bufferOperation = dynamic_cast<const BufferOperation *>(&simpleNode->GetOperation());
+      if (!bufferOperation)
+        continue;
 
-    if (!rvsdg::is<llvm::MemoryStateType>(node.input(0)->Type()))
-      continue;
+      if (!rvsdg::is<llvm::MemoryStateType>(node.input(0)->Type()))
+        continue;
 
-    if (bufferOperation->IsPassThrough())
-      continue;
+      if (bufferOperation->IsPassThrough())
+        continue;
 
-    if (!CanTraceToLoadOrStore(*node.input(0)->origin()))
-      continue;
+      if (!CanTraceToLoadOrStore(*node.input(0)->origin()))
+        continue;
 
-    // Replace the BufferOperation node with a passthrough BufferOperation node
-    auto result =
-        BufferOperation::create(*node.input(0)->origin(), bufferOperation->Capacity(), true)[0];
-    node.output(0)->divert_users(result);
+      // Replace the BufferOperation node with a passthrough BufferOperation node
+      auto result =
+          BufferOperation::create(*node.input(0)->origin(), bufferOperation->Capacity(), true)[0];
+      node.output(0)->divert_users(result);
+    }
   }
 
   // Prune dead nodes

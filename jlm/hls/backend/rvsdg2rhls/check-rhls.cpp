@@ -18,7 +18,8 @@ CheckAddrQueue(rvsdg::Node * node)
 {
   auto [addrQueueNode, addrQueueOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<AddressQueueOperation>(*node->output(0));
-  JLM_ASSERT(rvsdg::is<AddressQueueOperation>(node));
+  JLM_ASSERT(rvsdg::is<AddressQueueOperation>(
+      static_cast<const rvsdg::SimpleNode &>(*node).GetOperation()));
   // Ensure that there is no buffer between state_gate and addr_queue enq.
   // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
   JLM_ASSERT(
@@ -35,7 +36,7 @@ check_rhls(rvsdg::Region * sr)
 {
   for (auto & node : rvsdg::TopDownTraverser(sr))
   {
-    if (rvsdg::is<rvsdg::StructuralOperation>(node))
+    if (dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       if (auto ln = dynamic_cast<LoopNode *>(node))
       {
@@ -57,9 +58,12 @@ check_rhls(rvsdg::Region * sr)
         throw util::Error("Output has more than one user");
       }
     }
-    if (rvsdg::is<AddressQueueOperation>(node))
+    if (auto simplenode = dynamic_cast<rvsdg::SimpleNode *>(node))
     {
-      CheckAddrQueue(node);
+      if (rvsdg::is<AddressQueueOperation>(simplenode->GetOperation()))
+      {
+        CheckAddrQueue(node);
+      }
     }
   }
 }
