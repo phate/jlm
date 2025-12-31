@@ -69,7 +69,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   BarredInput(const rvsdg::SimpleNode & node) noexcept
   {
-    JLM_ASSERT(rvsdg::is<IOBarrierOperation>(&node));
+    JLM_ASSERT(rvsdg::is<IOBarrierOperation>(node.GetOperation()));
     const auto input = node.input(0);
     return *input;
   }

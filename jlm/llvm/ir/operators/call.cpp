@@ -38,7 +38,7 @@ CallOperation::copy() const
 rvsdg::Output &
 CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
   const auto origin = GetFunctionInput(callNode).origin();
   return llvm::traceOutput(*origin);
 }
@@ -46,7 +46,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 std::unique_ptr<CallTypeClassifier>
 CallOperation::ClassifyCall(const rvsdg::SimpleNode & callNode)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
   auto & output = TraceFunctionInput(callNode);
 
   if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(output))

@@ -74,7 +74,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<StoreOperation>(&node));
+    JLM_ASSERT(is<StoreOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     auto & input = *node.input(0);
     JLM_ASSERT(is<PointerType>(input.Type()));
     return input;
@@ -83,7 +83,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   StoredValueInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<StoreOperation>(&node));
+    JLM_ASSERT(is<StoreOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     auto & input = *node.input(1);
     JLM_ASSERT(input.Type()->Kind() == rvsdg::TypeKind::Value);
     return input;
@@ -397,7 +397,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   IOStateInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<StoreOperation>(&node));
+    JLM_ASSERT(is<StoreOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     auto & input = *node.input(2);
     JLM_ASSERT(is<IOStateType>(input.Type()));
     return input;
@@ -406,7 +406,7 @@ public:
   [[nodiscard]] static rvsdg::Output &
   IOStateOutput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<StoreOperation>(&node));
+    JLM_ASSERT(is<StoreOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     auto & output = *node.output(0);
     JLM_ASSERT(is<IOStateType>(output.Type()));
     return output;
