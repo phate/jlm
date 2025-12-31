@@ -248,17 +248,20 @@ TEST(MemoryQueueTests, TestAddrQueue)
     {
       for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {
-        if (is<StoreNonVolatileOperation>(node))
+        if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
         {
-          auto loadNode =
-              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node->input(1)->origin());
-          jlm::util::assertedCast<const jlm::llvm::LoadOperation>(&loadNode->GetOperation());
-          auto stateGate =
-              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
-          jlm::util::assertedCast<const StateGateOperation>(&stateGate->GetOperation());
-          auto addrQueue =
-              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
-          jlm::util::assertedCast<const AddressQueueOperation>(&addrQueue->GetOperation());
+          if (is<StoreNonVolatileOperation>(simplenode->GetOperation()))
+          {
+            auto loadNode =
+                jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node->input(1)->origin());
+            jlm::util::assertedCast<const jlm::llvm::LoadOperation>(&loadNode->GetOperation());
+            auto stateGate =
+                jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
+            jlm::util::assertedCast<const StateGateOperation>(&stateGate->GetOperation());
+            auto addrQueue =
+                jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
+            jlm::util::assertedCast<const AddressQueueOperation>(&addrQueue->GetOperation());
+          }
         }
       }
     }

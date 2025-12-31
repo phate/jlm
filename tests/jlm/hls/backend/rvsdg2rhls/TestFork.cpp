@@ -115,7 +115,6 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
   {
     EXPECT_EQ(rootRegion.numNodes(), 1);
     auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
-    EXPECT_TRUE(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     EXPECT_EQ(lambdaRegion->numNodes(), 1);
@@ -123,9 +122,7 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
     const rvsdg::NodeOutput * loopOutput =
         dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin());
     EXPECT_NE(loopOutput, nullptr);
-    auto loopNode = loopOutput->node();
-    EXPECT_TRUE(rvsdg::is<hls::LoopOperation>(loopNode));
-    auto loop = util::assertedCast<hls::LoopNode>(loopNode);
+    auto loop = util::assertedCast<hls::LoopNode>(loopOutput->node());
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());
