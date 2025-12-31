@@ -609,7 +609,7 @@ HandleCallingExternalFunction(
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   // Mark all the call's inputs as escaped, and all the outputs as pointing to external
   for (size_t n = 0; n < CallOperation::NumArguments(callNode); n++)
@@ -648,7 +648,7 @@ HandleCallingImportedFunction(
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   // FIXME: Add special handling of common library functions
   // Otherwise we don't know anything about the function
@@ -671,7 +671,7 @@ HandleLambdaCallParameters(
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < CallOperation::NumArguments(callNode) && n < lambdaArgs.size(); n++)
@@ -700,7 +700,7 @@ HandleLambdaCallReturnValues(
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   auto lambdaResults = lambdaNode.GetFunctionResults();
   for (size_t n = 0; n < callNode.noutputs() && n < lambdaResults.size(); n++)
@@ -736,7 +736,7 @@ HandleCallingLambdaFunction(
     PointerObjectIndex lambda,
     MakeSupersetFunctor & makeSuperset)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
   // LLVM allows calling functions even when the number of arguments don't match,
