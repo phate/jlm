@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -68,18 +68,18 @@ TestIntegerBinaryOperation()
             mlirBinaryOp.getOperand(0).getType().template dyn_cast<::mlir::IntegerType>();
         auto inputBitType2 =
             mlirBinaryOp.getOperand(1).getType().template dyn_cast<::mlir::IntegerType>();
-        assert(inputBitType1);
-        assert(inputBitType1.getWidth() == nbits);
-        assert(inputBitType2);
-        assert(inputBitType2.getWidth() == nbits);
+        EXPECT_NE(inputBitType1, nullptr);
+        EXPECT_EQ(inputBitType1.getWidth(), nbits);
+        EXPECT_NE(inputBitType2, nullptr);
+        EXPECT_EQ(inputBitType2.getWidth(), nbits);
         auto outputBitType =
             mlirBinaryOp.getResult().getType().template dyn_cast<::mlir::IntegerType>();
-        assert(outputBitType);
-        assert(outputBitType.getWidth() == nbits);
+        EXPECT_NE(outputBitType, nullptr);
+        EXPECT_EQ(outputBitType.getWidth(), nbits);
         opFound = true;
       }
     }
-    assert(opFound);
+    EXPECT_TRUE(opFound);
 
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -91,41 +91,40 @@ TestIntegerBinaryOperation()
     {
       using namespace jlm::llvm;
 
-      assert(region->numNodes() == 3);
+      EXPECT_EQ(region->numNodes(), 3);
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedBinaryOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
         if (convertedBinaryOp)
         {
-          assert(convertedBinaryOp->nresults() == 1);
-          assert(convertedBinaryOp->narguments() == 2);
+          EXPECT_EQ(convertedBinaryOp->nresults(), 1);
+          EXPECT_EQ(convertedBinaryOp->narguments(), 2);
           auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(0).get());
-          assert(inputBitType1->nbits() == nbits);
+          EXPECT_EQ(inputBitType1->nbits(), nbits);
           auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(1).get());
-          assert(inputBitType2->nbits() == nbits);
+          EXPECT_EQ(inputBitType2->nbits(), nbits);
           auto outputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->result(0).get());
-          assert(outputBitType->nbits() == nbits);
+          EXPECT_EQ(outputBitType->nbits(), nbits);
           foundBinaryOp = true;
         }
       }
-      assert(foundBinaryOp);
+      EXPECT_TRUE(foundBinaryOp);
     }
   }
 }
 
 // Macro to define and register a test for an integer binary operation
 #define REGISTER_INT_BINARY_OP_TEST(JLM_OP, MLIR_NS, MLIR_OP, TEST_NAME) \
-  static void Test##TEST_NAME()                                          \
+  TEST(IntegerOperationConversionTests, TEST_NAME)                       \
   {                                                                      \
     return TestIntegerBinaryOperation<                                   \
         jlm::llvm::Integer##JLM_OP##Operation,                           \
         ::mlir::MLIR_NS::MLIR_OP>();                                     \
-  }                                                                      \
-  JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlir" #TEST_NAME "OpGen", Test##TEST_NAME)
+  }
 
 // Register tests for all the integer binary operations
 REGISTER_INT_BINARY_OP_TEST(Add, arith, AddIOp, Add)
@@ -189,26 +188,24 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
       auto mlirCompOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&op);
       if (mlirCompOp)
       {
-        auto inputBitType1 =
-            mlirCompOp.getOperand(0).getType().template dyn_cast<::mlir::IntegerType>();
-        auto inputBitType2 =
-            mlirCompOp.getOperand(1).getType().template dyn_cast<::mlir::IntegerType>();
-        assert(inputBitType1);
-        assert(inputBitType1.getWidth() == nbits);
-        assert(inputBitType2);
-        assert(inputBitType2.getWidth() == nbits);
+        auto inputBitType1 = mlirCompOp.getOperand(0).getType().dyn_cast<::mlir::IntegerType>();
+        auto inputBitType2 = mlirCompOp.getOperand(1).getType().dyn_cast<::mlir::IntegerType>();
+        EXPECT_NE(inputBitType1, nullptr);
+        EXPECT_EQ(inputBitType1.getWidth(), nbits);
+        EXPECT_NE(inputBitType2, nullptr);
+        EXPECT_EQ(inputBitType2.getWidth(), nbits);
 
         // Check the output type is i1 (boolean)
-        auto outputType = mlirCompOp.getResult().getType().template dyn_cast<::mlir::IntegerType>();
-        assert(outputType);
-        assert(outputType.getWidth() == 1);
+        auto outputType = mlirCompOp.getResult().getType().dyn_cast<::mlir::IntegerType>();
+        EXPECT_NE(outputType, nullptr);
+        EXPECT_EQ(outputType.getWidth(), 1);
 
         // Verify the predicate is correct
-        assert(mlirCompOp.getPredicate() == test.predicate);
+        EXPECT_EQ(mlirCompOp.getPredicate(), test.predicate);
         opFound = true;
       }
     }
-    assert(opFound);
+    EXPECT_TRUE(opFound);
 
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -220,46 +217,45 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
     {
       using namespace jlm::llvm;
 
-      assert(region->numNodes() == 3);
+      EXPECT_EQ(region->numNodes(), 3);
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedCompOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
         if (convertedCompOp)
         {
-          assert(convertedCompOp->nresults() == 1);
-          assert(convertedCompOp->narguments() == 2);
+          EXPECT_EQ(convertedCompOp->nresults(), 1);
+          EXPECT_EQ(convertedCompOp->narguments(), 2);
           auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(0).get());
-          assert(inputBitType1->nbits() == nbits);
+          EXPECT_EQ(inputBitType1->nbits(), nbits);
           auto inputBitType2 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(1).get());
-          assert(inputBitType2->nbits() == nbits);
+          EXPECT_EQ(inputBitType2->nbits(), nbits);
 
           // Check the output type is bit1 (boolean)
           auto outputBitType =
               jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
-          assert(outputBitType->nbits() == 1);
+          EXPECT_EQ(outputBitType->nbits(), 1);
 
           foundCompOp = true;
         }
       }
-      assert(foundCompOp);
+      EXPECT_TRUE(foundCompOp);
     }
   }
 }
 
 // Macro to define and register a test for an integer comparison operation
 #define REGISTER_INT_COMP_OP_TEST(JLM_OP, PREDICATE, TEST_NAME)             \
-  static void TestCmp##TEST_NAME()                                          \
+  TEST(IntegerOperationConversionTests, TEST_NAME)                          \
   {                                                                         \
     IntegerComparisonOpTest<jlm::llvm::Integer##JLM_OP##Operation> test = { \
       ::mlir::arith::CmpIPredicate::PREDICATE,                              \
       #TEST_NAME                                                            \
     };                                                                      \
     return TestIntegerComparisonOperation(test);                            \
-  }                                                                         \
-  JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirCmp" #TEST_NAME "OpGen", TestCmp##TEST_NAME)
+  }
 
 // Register tests for all the integer comparison operations
 REGISTER_INT_COMP_OP_TEST(Eq, eq, Eq)
