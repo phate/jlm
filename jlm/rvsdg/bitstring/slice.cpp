@@ -30,19 +30,19 @@ BitSliceOperation::debug_string() const
 unop_reduction_path_t
 BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
-  auto node = TryGetOwnerNode<Node>(*arg);
+  auto node = TryGetOwnerNode<SimpleNode>(*arg);
   auto & arg_type = *std::dynamic_pointer_cast<const BitType>(arg->Type());
 
   if ((low() == 0) && (high() == arg_type.nbits()))
     return unop_reduction_idempotent;
 
-  if (is<BitSliceOperation>(node))
+  if (is<BitSliceOperation>(node->GetOperation()))
     return unop_reduction_narrow;
 
-  if (is<BitConstantOperation>(node))
+  if (is<BitConstantOperation>(node->GetOperation()))
     return unop_reduction_constant;
 
-  if (is<BitConcatOperation>(node))
+  if (is<BitConcatOperation>(node->GetOperation()))
     return unop_reduction_distribute;
 
   return unop_reduction_none;

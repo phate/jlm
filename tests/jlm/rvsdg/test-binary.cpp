@@ -28,8 +28,8 @@ public:
     auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand1);
     auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand2);
 
-    if (jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1)
-        && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2))
+    if (n1 && n2 && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1->GetOperation())
+        && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2->GetOperation()))
     {
       return 1;
     }
@@ -111,14 +111,14 @@ TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionParallel)
   // Assert
   EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
 
-  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node0));
+  auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
 
-  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node1));
+  auto node1 = TryGetOwnerNode<SimpleNode>(*node0->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node1->GetOperation()));
 
-  auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node2));
+  auto node2 = TryGetOwnerNode<SimpleNode>(*node0->input(1)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node2->GetOperation()));
 }
 
 TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionLinear)
@@ -153,14 +153,14 @@ TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionLinear)
   // Assert
   EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
 
-  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node0));
+  auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
 
-  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node1));
+  auto node1 = TryGetOwnerNode<SimpleNode>(*node0->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node1->GetOperation()));
 
-  auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
-  EXPECT_TRUE(is<TestBinaryOperation>(node2));
+  auto node2 = TryGetOwnerNode<SimpleNode>(*node1->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node2->GetOperation()));
 }
 
 TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_NotAssociativeBinary)
@@ -271,7 +271,7 @@ TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_Success)
   // Assert
   EXPECT_TRUE(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  EXPECT_TRUE(is<FlattenedBinaryOperation>(flattenedBinaryNode));
+  EXPECT_TRUE(is<FlattenedBinaryOperation>(flattenedBinaryNode->GetOperation()));
   EXPECT_EQ(flattenedBinaryNode->ninputs(), 3);
 }
 

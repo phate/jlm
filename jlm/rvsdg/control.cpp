@@ -132,8 +132,11 @@ unop_reduction_path_t
 MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto & tracedOutput = traceOutputIntraProcedurally(*arg);
-  if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOutput))
-    return unop_reduction_constant;
+  if (auto node = rvsdg::TryGetOwnerNode<SimpleNode>(tracedOutput))
+  {
+    if (dynamic_cast<const BitConstantOperation *>(&node->GetOperation()))
+      return unop_reduction_constant;
+  }
 
   return unop_reduction_none;
 }
