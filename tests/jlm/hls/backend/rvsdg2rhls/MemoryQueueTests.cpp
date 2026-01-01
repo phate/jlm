@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
@@ -15,8 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-TestSingleLoad()
+TEST(MemoryQueueTests, TestSingleLoad)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -77,20 +76,18 @@ TestSingleLoad()
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
+  EXPECT_FALSE(jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-SingleLoad", TestSingleLoad)
 
-static void
-TestLoadStore()
+TEST(MemoryQueueTests, TestLoadStore)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -160,20 +157,18 @@ TestLoadStore()
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
+  EXPECT_FALSE(jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-LoadStore", TestLoadStore)
 
-static void
-TestAddrQueue()
+TEST(MemoryQueueTests, TestAddrQueue)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -237,15 +232,15 @@ TestAddrQueue()
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
@@ -269,4 +264,3 @@ TestAddrQueue()
     }
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-AddrQueue", TestAddrQueue)
