@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -17,8 +17,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestGamma()
+TEST(UnusedStateRemovalTests, TestGamma)
 {
   using namespace jlm::llvm;
 
@@ -64,18 +63,17 @@ TestGamma()
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(gammaNode->ninputs() == 7);  // gammaInput1 was removed
-  assert(gammaNode->noutputs() == 4); // gammaOutput1 was removed
-  assert(gammaInput2.input->index() == 1);
-  assert(gammaOutput2.output->index() == 0);
+  EXPECT_EQ(gammaNode->ninputs(), 7);  // gammaInput1 was removed
+  EXPECT_EQ(gammaNode->noutputs(), 4); // gammaOutput1 was removed
+  EXPECT_EQ(gammaInput2.input->index(), 1);
+  EXPECT_EQ(gammaOutput2.output->index(), 0);
   // FIXME: The transformation is way too conservative here. The only input and output it removes
   // are gammaInput1 and gammaOutput1, respectively. However, it could also remove gammaOutput3,
   // gammaOutput4, and gammaOutput5 as they are all invariant. This in turn would also render some
   // more inputs dead.
 }
 
-static void
-TestTheta()
+TEST(UnusedStateRemovalTests, TestTheta)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -115,17 +113,16 @@ TestTheta()
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(thetaNode->ninputs() == 3);
-  assert(thetaNode->noutputs() == 3);
+  EXPECT_EQ(thetaNode->ninputs(), 3);
+  EXPECT_EQ(thetaNode->noutputs(), 3);
 
-  assert(TryGetOwnerNode<ThetaNode>(*exportP.origin()) == thetaNode);
-  assert(exportX.origin() == importX);
-  assert(TryGetOwnerNode<ThetaNode>(*exportY.origin()) == thetaNode);
-  assert(TryGetOwnerNode<ThetaNode>(*exportZ.origin()) == thetaNode);
+  EXPECT_EQ(TryGetOwnerNode<ThetaNode>(*exportP.origin()), thetaNode);
+  EXPECT_EQ(exportX.origin(), importX);
+  EXPECT_EQ(TryGetOwnerNode<ThetaNode>(*exportY.origin()), thetaNode);
+  EXPECT_EQ(TryGetOwnerNode<ThetaNode>(*exportZ.origin()), thetaNode);
 }
 
-static void
-TestLambda()
+TEST(UnusedStateRemovalTests, TestLambda)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -170,12 +167,12 @@ TestLambda()
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
   auto & newLambdaNode =
       dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
-  assert(newLambdaNode.ninputs() == 2);
-  assert(newLambdaNode.subregion()->narguments() == 3);
-  assert(newLambdaNode.subregion()->nresults() == 2);
+  EXPECT_EQ(newLambdaNode.ninputs(), 2);
+  EXPECT_EQ(newLambdaNode.subregion()->narguments(), 3);
+  EXPECT_EQ(newLambdaNode.subregion()->nresults(), 2);
   // FIXME For lambdas, the transformation has the following issues:
   // 1. It works only for lambda nodes in the root region. It throws an assert for all other lambdas
   // 2. It does not check whether the lambda is only exported. Removing passthrough values works
@@ -188,18 +185,7 @@ TestLambda()
   // There might be more issues.
 }
 
-static void
-TestUnusedStateRemoval()
-{
-  TestGamma();
-  TestTheta();
-  TestLambda();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests", TestUnusedStateRemoval)
-
-static void
-TestUsedMemoryState()
+TEST(UnusedStateRemovalTests, TestUsedMemoryState)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -238,15 +224,11 @@ TestUsedMemoryState()
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
-  assert(lambdaSubregion->nresults() == 1);
-  assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
+  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-UsedMemoryState",
-    TestUsedMemoryState)
 
-static void
-TestUnusedMemoryState()
+TEST(UnusedStateRemovalTests, TestUnusedMemoryState)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -285,16 +267,12 @@ TestUnusedMemoryState()
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(lambdaSubregion->narguments() == 2);
-  assert(lambdaSubregion->nresults() == 1);
-  assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
+  EXPECT_EQ(lambdaSubregion->narguments(), 2);
+  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-UnusedMemoryState",
-    TestUnusedMemoryState)
 
-static void
-TestInvariantMemoryState()
+TEST(UnusedStateRemovalTests, TestInvariantMemoryState)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -346,16 +324,13 @@ TestInvariantMemoryState()
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(lambdaSubregion->narguments() == 2);
-  assert(lambdaSubregion->nresults() == 1);
-  assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  assert(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
+  EXPECT_EQ(lambdaSubregion->narguments(), 2);
+  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
       *lambdaSubregion,
       true));
-  assert(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
       *lambdaSubregion,
       true));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-InvariantMemoryState",
-    TestInvariantMemoryState)

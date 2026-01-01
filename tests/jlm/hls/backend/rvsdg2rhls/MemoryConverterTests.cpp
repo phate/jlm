@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
@@ -15,8 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-TestTraceArgument()
+TEST(MemoryConverterTests, TestTraceArgument)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -59,20 +58,18 @@ TestTraceArgument()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Assert
-  assert(tracedPointerNodesVector.size() == 2);                  // 2 pointer arguments
-  assert(tracedPointerNodesVector[0].loadNodes.size() == 1);     // 1 load for the first pointer
-  assert(tracedPointerNodesVector[0].storeNodes.size() == 0);    // 0 store for the first pointer
-  assert(tracedPointerNodesVector[0].decoupleNodes.size() == 0); // 0 decouple for the first pointer
-  assert(tracedPointerNodesVector[1].loadNodes.size() == 0);     // 0 load for the first pointer
-  assert(tracedPointerNodesVector[1].storeNodes.size() == 1);    // 1 store for the second pointer
-  assert(tracedPointerNodesVector[1].decoupleNodes.size() == 0); // 0 load for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector.size(), 2);               // 2 pointer arguments
+  EXPECT_EQ(tracedPointerNodesVector[0].loadNodes.size(), 1);  // 1 load for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[0].storeNodes.size(), 0); // 0 store for the first pointer
+  EXPECT_EQ(
+      tracedPointerNodesVector[0].decoupleNodes.size(),
+      0);                                                      // 0 decouple for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].loadNodes.size(), 0);  // 0 load for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].storeNodes.size(), 1); // 1 store for the second pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].decoupleNodes.size(), 0); // 0 load for the first pointer
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-TraceArgument",
-    TestTraceArgument)
 
-static void
-TestLoad()
+TEST(MemoryConverterTests, TestLoad)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -111,47 +108,45 @@ TestLoad()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->numNodes() == 1);
+  EXPECT_EQ(region->numNodes(), 1);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->numNodes() == 3);
-  assert(lambdaRegion->narguments() == 3);
-  assert(lambdaRegion->nresults() == 3);
+  EXPECT_EQ(lambdaRegion->numNodes(), 3);
+  EXPECT_EQ(lambdaRegion->narguments(), 3);
+  EXPECT_EQ(lambdaRegion->nresults(), 3);
 
   // Memory state
-  assert(is<MemoryStateType>(lambdaRegion->result(1)->origin()->Type()));
+  EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(1)->origin()->Type()));
 
   // Load Address
   auto loadNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
-  assert(is<jlm::hls::LoadOperation>(loadNode));
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
 
   // Load Data
   loadNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  assert(is<jlm::hls::LoadOperation>(loadNode));
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
 
   // Request Node
   auto requestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  assert(is<MemoryRequestOperation>(requestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
 
   // Response Node
   auto responseNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
-  assert(is<MemoryResponseOperation>(responseNode));
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
 
   // Response source
   auto responseSource = responseNode->input(0)->origin();
   auto regionArgument = jlm::util::assertedCast<jlm::rvsdg::RegionArgument>(responseSource);
-  assert(regionArgument->index() == 2);
+  EXPECT_EQ(regionArgument->index(), 2);
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-Load", TestLoad)
 
-static void
-TestStore()
+TEST(MemoryConverterTests, TestStore)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -190,34 +185,32 @@ TestStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->numNodes() == 1);
+  EXPECT_EQ(region->numNodes(), 1);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->numNodes() == 4);
-  assert(lambdaRegion->narguments() == 4);
-  assert(lambdaRegion->nresults() == 2);
+  EXPECT_EQ(lambdaRegion->numNodes(), 4);
+  EXPECT_EQ(lambdaRegion->narguments(), 4);
+  EXPECT_EQ(lambdaRegion->nresults(), 2);
 
-  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
+  EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
-  assert(is<jlm::hls::StoreOperation>(storeNode));
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
   auto requestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  assert(is<MemoryRequestOperation>(requestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
 
   // Request source
   auto requestSource = requestNode->input(0)->origin();
   storeNode = jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(requestSource)->node();
-  assert(is<jlm::hls::StoreOperation>(storeNode));
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-Store", TestStore)
 
-static void
-TestLoadStore()
+TEST(MemoryConverterTests, TestLoadStore)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -261,39 +254,37 @@ TestLoadStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->numNodes() == 1);
+  EXPECT_EQ(region->numNodes(), 1);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->numNodes() == 7);
-  assert(lambdaRegion->narguments() == 5);
-  assert(lambdaRegion->nresults() == 3);
+  EXPECT_EQ(lambdaRegion->numNodes(), 7);
+  EXPECT_EQ(lambdaRegion->narguments(), 5);
+  EXPECT_EQ(lambdaRegion->nresults(), 3);
 
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
-  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
+  EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
-  assert(is<jlm::hls::StoreOperation>(storeNode));
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
   auto firstRequestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  assert(is<MemoryRequestOperation>(firstRequestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(firstRequestNode));
   auto secondRequestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  assert(is<MemoryRequestOperation>(secondRequestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(secondRequestNode));
   auto loadNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(storeNode->input(0)->origin())->node();
-  assert(is<jlm::hls::LoadOperation>(loadNode));
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
   auto responseNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
-  assert(is<MemoryResponseOperation>(responseNode));
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-LoadStore", TestLoadStore)
 
-static void
-TestThetaLoad()
+TEST(MemoryConverterTests, TestThetaLoad)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -352,25 +343,27 @@ TestThetaLoad()
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(4)->SingleUser();
   auto * entryMemoryStateSplitNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
-  assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -380,30 +373,30 @@ TestThetaLoad()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->numNodes() == 1);
+  EXPECT_EQ(region->numNodes(), 1);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryResponseOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryResponseOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  assert(is<MemoryRequestOperation>(requestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
 
   // HLS_LOOP Node
   auto loopOutput =
       jlm::util::assertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::assertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const LoopNode *>(loopNode));
+  EXPECT_NE(dynamic_cast<const LoopNode *>(loopNode), nullptr);
   // Loop Result
   auto & thetaResult = loopOutput->results;
-  assert(thetaResult.size() == 1);
+  EXPECT_EQ(thetaResult.size(), 1);
   // Load Node
   auto loadNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
-  assert(is<DecoupledLoadOperation>(loadNode));
+  EXPECT_TRUE(is<DecoupledLoadOperation>(loadNode));
   // Loop Argument
   auto thetaArgument =
       jlm::util::assertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
@@ -412,15 +405,13 @@ TestThetaLoad()
   // Response Node
   auto responseNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaInput->origin())->node();
-  assert(is<MemoryResponseOperation>(responseNode));
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
 
   // Lambda argument
-  assert(is<jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin()));
+  EXPECT_TRUE(is<jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin()));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-ThetaLoad", TestThetaLoad)
 
-static void
-TestThetaStore()
+TEST(MemoryConverterTests, TestThetaStore)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -480,24 +471,26 @@ TestThetaStore()
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(5)->SingleUser();
   auto * entryMemoryStateSplitNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
-  assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
-  assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -507,34 +500,33 @@ TestThetaStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->numNodes() == 1);
+  EXPECT_EQ(region->numNodes(), 1);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
       jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  assert(is<MemoryRequestOperation>(requestNode));
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
 
   // HLS_LOOP Node
   auto loopOutput =
       jlm::util::assertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::assertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const LoopNode *>(loopNode));
+  EXPECT_NE(dynamic_cast<const LoopNode *>(loopNode), nullptr);
   // Loop Result
   auto & thetaResult = loopOutput->results;
-  assert(thetaResult.size() == 1);
+  EXPECT_EQ(thetaResult.size(), 1);
   // Load Node
   auto storeNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
-  assert(is<jlm::hls::StoreOperation>(storeNode));
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
   // NDMux Node
   auto ndMuxNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(storeNode->input(2)->origin())->node();
-  assert(is<MuxOperation>(ndMuxNode));
+  EXPECT_TRUE(is<MuxOperation>(ndMuxNode));
   // Loop Argument
-  assert(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
+  EXPECT_TRUE(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
 }
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-ThetaStore", TestThetaStore)

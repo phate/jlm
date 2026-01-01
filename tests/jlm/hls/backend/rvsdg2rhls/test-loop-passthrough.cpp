@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
@@ -25,8 +25,7 @@ stringToFile(std::string output, std::string fileName)
   outputFile.close();
 }
 
-static void
-test()
+TEST(LoopPassThroughTests, test)
 {
   using namespace jlm;
 
@@ -60,7 +59,5 @@ test()
   stringToFile(dhls2.run(rm), "/tmp/jlm_hls_test_after.dot");
 
   // The whole loop gets eliminated, leading to a direct connection
-  assert(lambda->GetFunctionResults()[0]->origin() == lambda->GetFunctionArguments()[1]);
+  EXPECT_EQ(lambda->GetFunctionResults()[0]->origin(), lambda->GetFunctionArguments()[1]);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/test-loop-passthrough", test)
