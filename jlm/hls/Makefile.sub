@@ -90,7 +90,6 @@ libhls_HEADERS = \
     jlm/hls/HlsDotWriter.hpp \
 
 libhls_TESTS += \
-    tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
     tests/jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests \
@@ -116,3 +115,10 @@ libhls_TEST_LIBS += \
 libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 
 $(eval $(call common_library,libhls))
+
+tests/jlm/hls/run-libhls-tests_SOURCES = \
+    tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
+
+tests/jlm/hls/run-libhls-tests_LIBS = libhls libllvm librvsdg libutil
+tests/jlm/hls/run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+$(eval $(call common_test,tests/jlm/hls/run-libhls-tests))

@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-TestDeadLoopNode()
+TEST(DeadNodeEliminationTests, TestDeadLoopNode)
 {
   using namespace jlm::hls;
 
@@ -38,11 +37,10 @@ TestDeadLoopNode()
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  assert(lambdaNode->subregion()->numNodes() == 0);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 0);
 }
 
-static void
-TestDeadLoopNodeOutput()
+TEST(DeadNodeEliminationTests, TestDeadLoopNodeOutput)
 {
   using namespace jlm::hls;
 
@@ -80,20 +78,9 @@ TestDeadLoopNodeOutput()
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  assert(loopNode->noutputs() == 1);
-  assert(loopNode->ninputs() == 2); // I believe that it actually should only have one input.
+  EXPECT_EQ(loopNode->noutputs(), 1);
+  EXPECT_EQ(loopNode->ninputs(), 2); // I believe that it actually should only have one input.
   // FIXME: The DNE seems to already be broken for a simple dead edge through it. It removes the
   // output from the loop node, but then seems to fail to remove the corresponding input, arguments,
   // and results.
 }
-
-static void
-TestDeadNodeElimination()
-{
-  TestDeadLoopNode();
-  TestDeadLoopNodeOutput();
-}
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests",
-    TestDeadNodeElimination)
