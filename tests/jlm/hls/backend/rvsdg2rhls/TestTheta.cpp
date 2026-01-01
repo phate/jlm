@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -11,8 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestUnknownBoundaries()
+TEST(ThetaConversionTests, TestUnknownBoundaries)
 {
   using namespace jlm::llvm;
   using namespace jlm::hls;
@@ -51,23 +50,25 @@ TestUnknownBoundaries()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<PredicateBufferOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<MuxOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<PredicateBufferOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MuxOperation>(*lambdaRegion, true));
   // Check that two constant buffers are created for the loop invariant variables
-  assert(jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
-  assert(lambdaRegion->argument(0)->nusers() == 1);
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
+  EXPECT_EQ(lambdaRegion->argument(0)->nusers(), 1);
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {
-    assert(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
-        loopNode.subregion()->argument(3)->SingleUser()));
+    EXPECT_TRUE(
+        jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(3)->SingleUser()));
   }
   {
-    assert(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
-        loopNode.subregion()->argument(4)->SingleUser()));
+    EXPECT_TRUE(
+        jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(4)->SingleUser()));
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", TestUnknownBoundaries)
