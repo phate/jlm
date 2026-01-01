@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
@@ -11,8 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestDumpDot()
+TEST(ViewTests, TestDumpDot)
 {
   std::cout << std::endl << "### Test dump_dot ###" << std::endl << std::endl;
 
@@ -45,17 +44,14 @@ TestDumpDot()
   auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
-  assert(dotOutput.size() > 0);
-  assert(dotOutput.find("digraph G {") != std::string::npos);
-  assert(dotOutput.find("subgraph cluster_") != std::string::npos);
-  assert(dotOutput.find("tooltip=\"bit32\"") != std::string::npos);
-  assert(dotOutput.find("BITS32_0_") != std::string::npos);
+  EXPECT_GT(dotOutput.size(), 0);
+  EXPECT_NE(dotOutput.find("digraph G {"), std::string::npos);
+  EXPECT_NE(dotOutput.find("subgraph cluster_"), std::string::npos);
+  EXPECT_NE(dotOutput.find("tooltip=\"bit32\""), std::string::npos);
+  EXPECT_NE(dotOutput.find("BITS32_0_"), std::string::npos);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/util/TestView", TestDumpDot)
-
-static void
-TestDumpDotTheta()
+TEST(ViewTests, TestDumpDotTheta)
 {
   using namespace jlm;
   using namespace jlm::hls;
@@ -95,11 +91,9 @@ TestDumpDotTheta()
   auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
-  assert(dotOutput.size() > 0);
-  assert(dotOutput.find("digraph G {") != std::string::npos);
-  assert(dotOutput.find("subgraph cluster_") != std::string::npos);
-  assert(dotOutput.find("tooltip=\"bit32\"") != std::string::npos);
-  assert(dotOutput.find("tooltip=\"ctl(2)\"") != std::string::npos);
+  EXPECT_GT(dotOutput.size(), 0);
+  EXPECT_NE(dotOutput.find("digraph G {"), std::string::npos);
+  EXPECT_NE(dotOutput.find("subgraph cluster_"), std::string::npos);
+  EXPECT_NE(dotOutput.find("tooltip=\"bit32\""), std::string::npos);
+  EXPECT_NE(dotOutput.find("tooltip=\"ctl(2)\""), std::string::npos);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/util/TestViewTheta", TestDumpDotTheta)

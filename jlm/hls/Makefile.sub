@@ -89,18 +89,6 @@ libhls_HEADERS = \
     \
     jlm/hls/HlsDotWriter.hpp \
 
-libhls_TESTS += \
-    tests/jlm/hls/util/ViewTests \
-
-libhls_TEST_LIBS += \
-    libjlmtest \
-    libhls \
-    libllvm \
-    librvsdg \
-    libutil \
-
-libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
-
 $(eval $(call common_library,libhls))
 
 tests/jlm/hls/run-libhls-tests_SOURCES = \
@@ -118,6 +106,7 @@ tests/jlm/hls/run-libhls-tests_SOURCES = \
     tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests.cpp \
     tests/jlm/hls/opt/IOBarrierRemovalTests.cpp \
     tests/jlm/hls/opt/IOStateEliminationTests.cpp \
+    tests/jlm/hls/util/ViewTests.cpp \
 
 tests/jlm/hls/run-libhls-tests_LIBS = libhls libllvm librvsdg libutil
 tests/jlm/hls/run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
