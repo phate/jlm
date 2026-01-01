@@ -62,13 +62,11 @@ TEST(ThetaConversionTests, TestUnknownBoundaries)
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {
-    EXPECT_TRUE(
-        jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
-            loopNode.subregion()->argument(3)->SingleUser()));
+    EXPECT_TRUE(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+        loopNode.subregion()->argument(3)->SingleUser()));
   }
   {
-    EXPECT_TRUE(
-        jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
-            loopNode.subregion()->argument(4)->SingleUser()));
+    EXPECT_TRUE(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+        loopNode.subregion()->argument(4)->SingleUser()));
   }
 }

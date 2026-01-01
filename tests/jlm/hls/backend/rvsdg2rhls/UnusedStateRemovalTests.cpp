@@ -327,12 +327,10 @@ TEST(UnusedStateRemovalTests, TestInvariantMemoryState)
   EXPECT_EQ(lambdaSubregion->narguments(), 2);
   EXPECT_EQ(lambdaSubregion->nresults(), 1);
   EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
-          *lambdaSubregion,
-          true));
-  EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
-          *lambdaSubregion,
-          true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
+      *lambdaSubregion,
+      true));
+  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
+      *lambdaSubregion,
+      true));
 }
