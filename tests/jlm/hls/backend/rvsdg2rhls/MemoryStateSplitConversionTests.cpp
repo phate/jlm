@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -12,8 +12,7 @@
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-SplitConversion()
+TEST(MemoryStateSplitConversionTests, SplitConversion)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -56,23 +55,19 @@ SplitConversion()
   view(rvsdg, stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
-  assert(structuralNode->subregion(0)->numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1);
 
   // The memory state split conversion pass should have replaced the
   // LambdaEntryMemoryStateSplitOperation node with a ForkOperation node
   {
-    assert(outputVar0.output->nusers() == 1);
-    assert(IsOwnerNodeOperation<ForkOperation>(*inputVar.argument[0]->Users().begin()));
+    EXPECT_EQ(outputVar0.output->nusers(), 1);
+    EXPECT_TRUE(IsOwnerNodeOperation<ForkOperation>(*inputVar.argument[0]->Users().begin()));
   }
 
   // The memory state split conversion pass should have replaced the
   // MemoryStateSplitOperation node with a ForkOperation node
   {
-    assert(IsOwnerNodeOperation<ForkOperation>(*importY.Users().begin()));
+    EXPECT_TRUE(IsOwnerNodeOperation<ForkOperation>(*importY.Users().begin()));
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests-SplitConversion",
-    SplitConversion)

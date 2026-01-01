@@ -90,7 +90,6 @@ libhls_HEADERS = \
     jlm/hls/HlsDotWriter.hpp \
 
 libhls_TESTS += \
-    tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests \
     tests/jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests \
     tests/jlm/hls/backend/rvsdg2rhls/SinkInsertionTests \
     tests/jlm/hls/backend/rvsdg2rhls/TestFork \
@@ -118,6 +117,7 @@ tests/jlm/hls/run-libhls-tests_SOURCES = \
     tests/jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests.cpp \
 
 tests/jlm/hls/run-libhls-tests_LIBS = libhls libllvm librvsdg libutil
 tests/jlm/hls/run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
