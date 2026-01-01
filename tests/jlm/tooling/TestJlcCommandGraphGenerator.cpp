@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraphGenerator.hpp>
@@ -11,8 +11,7 @@
 
 #include <cassert>
 
-static void
-TestJlcCompiling()
+TEST(JlcCommandGraphGeneratorTests, TestJlcCompiling)
 {
   using namespace jlm::tooling;
   using namespace jlm::util;
@@ -32,18 +31,14 @@ TestJlcCompiling()
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
 
   // Assert
-  assert(commandGraph->NumNodes() == 5);
+  EXPECT_EQ(commandGraph->NumNodes(), 5);
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const LlcCommand *>(&commandNode.GetCommand());
-  assert(command && command->OutputFile() == "foo.o");
+  EXPECT_NE(command, nullptr);
+  EXPECT_EQ(command->OutputFile(), "foo.o");
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlcCommandGraphGenerator-TestJlcCompiling",
-    TestJlcCompiling);
-
-static void
-TestJlcLinking()
+TEST(JlcCommandGraphGeneratorTests, TestJlcLinking)
 {
   using namespace jlm::tooling;
   using namespace jlm::util;
@@ -58,16 +53,14 @@ TestJlcLinking()
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
 
   // Assert
-  assert(commandGraph->NumNodes() == 3);
+  EXPECT_EQ(commandGraph->NumNodes(), 3);
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const ClangCommand *>(&commandNode.GetCommand());
-  assert(command->InputFiles()[0] == "foo.o" && command->OutputFile() == "foobar");
+  EXPECT_EQ(command->InputFiles()[0], "foo.o");
+  EXPECT_EQ(command->OutputFile(), "foobar");
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandGraphGenerator-TestJlcLinking", TestJlcLinking);
-
-static void
-TestJlmOptOptimizations()
+TEST(JlcCommandGraphGeneratorTests, TestJlmOptOptimizations)
 {
   using namespace jlm::tooling;
   using namespace jlm::util;
@@ -91,17 +84,12 @@ TestJlmOptOptimizations()
   auto & jlmOptCommand = *dynamic_cast<const JlmOptCommand *>(&jlmOptCommandNode.GetCommand());
   auto & optimizations = jlmOptCommand.GetCommandLineOptions().GetOptimizationIds();
 
-  assert(optimizations.size() == 2);
-  assert(optimizations[0] == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
-  assert(optimizations[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
+  EXPECT_EQ(optimizations.size(), 2);
+  EXPECT_EQ(optimizations[0], JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  EXPECT_EQ(optimizations[1], JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlcCommandGraphGenerator-TestJlmOptOptimizations",
-    TestJlmOptOptimizations);
-
-static void
-TestJlmOptStatistics()
+TEST(JlcCommandGraphGeneratorTests, TestJlmOptStatistics)
 {
   using namespace jlm::util;
 
@@ -126,9 +114,5 @@ TestJlmOptStatistics()
   auto & statisticsCollectorSettings =
       jlmOptCommand.GetCommandLineOptions().GetStatisticsCollectorSettings();
 
-  assert(statisticsCollectorSettings.GetDemandedStatistics() == expectedStatistics);
+  EXPECT_EQ(statisticsCollectorSettings.GetDemandedStatistics(), expectedStatistics);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlcCommandGraphGenerator-TestJlmOptStatistics",
-    TestJlmOptStatistics);
