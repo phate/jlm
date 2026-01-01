@@ -18,15 +18,14 @@ TEST(JlcCommandGraphGeneratorTests, TestJlcCompiling)
 
   // Arrange
   JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back(
-      { FilePath("foo.c"),
-        FilePath("foo.d"),
-        FilePath("foo.o"),
-        "foo.o",
-        true,
-        true,
-        true,
-        false });
+  commandLineOptions.Compilations_.push_back({ FilePath("foo.c"),
+                                               FilePath("foo.d"),
+                                               FilePath("foo.o"),
+                                               "foo.o",
+                                               true,
+                                               true,
+                                               true,
+                                               false });
 
   // Act
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);

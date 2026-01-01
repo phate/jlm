@@ -126,11 +126,10 @@ TEST(JlcCommandLineParserTests, TestJlmOptPassStatistics)
   using namespace jlm::tooling;
 
   // Arrange
-  std::vector<std::string> commandLineArguments(
-      { "jlc",
-        "--JlmOptPassStatistics=print-aggregation-time",
-        "--JlmOptPassStatistics=print-andersen-analysis",
-        "foobar.c" });
+  std::vector<std::string> commandLineArguments({ "jlc",
+                                                  "--JlmOptPassStatistics=print-aggregation-time",
+                                                  "--JlmOptPassStatistics=print-andersen-analysis",
+                                                  "foobar.c" });
 
   jlm::util::HashSet expectedStatistics(
       { jlm::util::Statistics::Id::Aggregation, jlm::util::Statistics::Id::AndersenAnalysis });
