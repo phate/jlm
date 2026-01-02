@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -12,8 +12,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static void
-IOBarrierRemoval()
+TEST(IOBarrierRemovalTests, IOBarrierRemoval)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -51,7 +50,5 @@ IOBarrierRemoval()
   ioBarrierRemoval.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(!Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  EXPECT_FALSE(Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/opt/IOBarrierRemoval", IOBarrierRemoval)

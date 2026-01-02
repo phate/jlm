@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 #include <numeric>
@@ -441,10 +442,10 @@ LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
   // Is pointer the output of one of the nodes
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {
-    if (is<AllocaOperation>(node))
+    if (is<AllocaOperation>(node->GetOperation()))
       return true;
 
-    if (is<MallocOperation>(node))
+    if (is<MallocOperation>(node->GetOperation()))
       return true;
   }
 
@@ -693,32 +694,47 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
 
       if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
       {
-        // Pointers go straight through IO barriers and GEPs
-        if (is<IOBarrierOperation>(node) || is<GetElementPtrOperation>(node))
-        {
-          // The pointer input must be the node's first input
-          JLM_ASSERT(user.index() == 0);
-          Enqueue(*node->output(0));
+        bool do_continue = MatchTypeWithDefault(
+            node->GetOperation(),
+            [&](const IOBarrierOperation &)
+            {
+              // The pointer input must be the node's first input
+              JLM_ASSERT(user.index() == 0);
+              Enqueue(*node->output(0));
+              return true;
+            },
+            [&](const GetElementPtrOperation &)
+            {
+              // The pointer input must be the node's first input
+              JLM_ASSERT(user.index() == 0);
+              Enqueue(*node->output(0));
+              return true;
+            },
+            [&](const SelectOperation &)
+            {
+              // Select operations are fine, if the output is still fully traceable
+              Enqueue(*node->output(0));
+              return true;
+            },
+            [&](const LoadOperation &)
+            {
+              // Loads are always fine
+              return true;
+            },
+            [&](const StoreOperation &)
+            {
+              // Stores are only fine if the pointer itself is not being stored somewhere
+              if (&user == &StoreOperation::AddressInput(*node))
+                return true;
+              else
+                return false;
+            },
+            []()
+            {
+              return false;
+            });
+        if (do_continue)
           continue;
-        }
-
-        if (is<SelectOperation>(node))
-        {
-          // Select operations are fine, if the output is still fully traceable
-          Enqueue(*node->output(0));
-          continue;
-        }
-
-        // Loads are always fine
-        if (is<LoadOperation>(node))
-          continue;
-
-        // Stores are only fine if the pointer itself is not being stored somewhere
-        if (is<StoreOperation>(node))
-        {
-          if (&user == &StoreOperation::AddressInput(*node))
-            continue;
-        }
       }
 
       // We were unable to handle this user, so the original pointer escapes tracing

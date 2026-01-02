@@ -758,7 +758,7 @@ public:
       : Pointer_(pointer),
         CallNode_(callNode)
   {
-    JLM_ASSERT(is<CallOperation>(&callNode));
+    JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
   }
 
   /**

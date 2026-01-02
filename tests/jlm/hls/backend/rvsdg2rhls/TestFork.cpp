@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
@@ -11,8 +11,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-ForkInsertion()
+TEST(ForkInsertionTests, ForkInsertion)
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -56,28 +55,25 @@ ForkInsertion()
 
   // Assert
   {
-    assert(rootRegion.numNodes() == 1);
+    EXPECT_EQ(rootRegion.numNodes(), 1);
     auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
-    assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
+    EXPECT_NE(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda), nullptr);
 
     auto lambdaSubregion = lambda->subregion();
-    assert(lambdaSubregion->numNodes() == 1);
+    EXPECT_EQ(lambdaSubregion->numNodes(), 1);
     auto loop = util::assertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
-    assert(dynamic_cast<const hls::LoopNode *>(loop));
+    EXPECT_NE(dynamic_cast<const hls::LoopNode *>(loop), nullptr);
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());
-    assert(forkNode && forkOperation);
-    assert(forkNode->ninputs() == 1);
-    assert(forkNode->noutputs() == 4);
-    assert(forkOperation->IsConstant() == false);
+    EXPECT_TRUE(forkNode && forkOperation);
+    EXPECT_EQ(forkNode->ninputs(), 1);
+    EXPECT_EQ(forkNode->noutputs(), 4);
+    EXPECT_FALSE(forkOperation->IsConstant());
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestFork-ForkInsertion", ForkInsertion)
-
-static void
-ConstantForkInsertion()
+TEST(SinkInsertionTests, ConstantForkInsertion)
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -117,36 +113,33 @@ ConstantForkInsertion()
 
   // Assert
   {
-    assert(rootRegion.numNodes() == 1);
+    EXPECT_EQ(rootRegion.numNodes(), 1);
     auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
-    assert(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
+    EXPECT_TRUE(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
-    assert(lambdaRegion->numNodes() == 1);
+    EXPECT_EQ(lambdaRegion->numNodes(), 1);
 
-    const rvsdg::NodeOutput * loopOutput = nullptr;
-    assert(loopOutput = dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin()));
+    const rvsdg::NodeOutput * loopOutput =
+        dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin());
+    EXPECT_NE(loopOutput, nullptr);
     auto loopNode = loopOutput->node();
-    assert(rvsdg::is<hls::LoopOperation>(loopNode));
+    EXPECT_TRUE(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::assertedCast<hls::LoopNode>(loopNode);
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());
-    assert(forkNode && forkOperation);
-    assert(forkNode->ninputs() == 1);
-    assert(forkNode->noutputs() == 2);
-    assert(forkOperation->IsConstant() == false);
+    EXPECT_TRUE(forkNode && forkOperation);
+    EXPECT_EQ(forkNode->ninputs(), 1);
+    EXPECT_EQ(forkNode->noutputs(), 2);
+    EXPECT_FALSE(forkOperation->IsConstant());
 
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
     auto [cForkNode, cForkOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
-    assert(cForkNode->ninputs() == 1);
-    assert(cForkNode->noutputs() == 2);
-    assert(cForkOperation->IsConstant() == true);
+    EXPECT_EQ(cForkNode->ninputs(), 1);
+    EXPECT_EQ(cForkNode->noutputs(), 2);
+    EXPECT_TRUE(cForkOperation->IsConstant());
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/TestFork-ConstantForkInsertion",
-    ConstantForkInsertion)
