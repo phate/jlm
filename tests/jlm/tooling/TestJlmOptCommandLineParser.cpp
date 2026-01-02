@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/tooling/CommandLine.hpp>
 
@@ -24,8 +24,7 @@ ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
       cStrings.data());
 }
 
-static void
-TestOptimizationCommandLineArgumentConversion()
+TEST(JlmOptCommandLinerParserTests, TestOptimizationCommandLineArgumentConversion)
 {
   using namespace jlm::tooling;
 
@@ -40,12 +39,11 @@ TestOptimizationCommandLineArgumentConversion()
     auto receivedOptimizationId =
         JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(commandLineArgument);
 
-    assert(receivedOptimizationId == expectedOptimizationId);
+    EXPECT_EQ(receivedOptimizationId, expectedOptimizationId);
   }
 }
 
-static void
-TestStatisticsCommandLineArgumentConversion()
+TEST(JlmOptCommandLinerParserTests, TestStatisticsCommandLineArgumentConversion)
 {
   using namespace jlm::tooling;
   for (size_t n = static_cast<std::size_t>(jlm::util::Statistics::Id::FirstEnumValue) + 1;
@@ -58,12 +56,11 @@ TestStatisticsCommandLineArgumentConversion()
     auto receivedStatisticsId =
         JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(commandLineArgument);
 
-    assert(receivedStatisticsId == expectedStatisticsId);
+    EXPECT_EQ(receivedStatisticsId, expectedStatisticsId);
   }
 }
 
-static void
-TestOutputFormatToCommandLineArgument()
+TEST(JlmOptCommandLinerParserTests, TestOutputFormatToCommandLineArgument)
 {
   using namespace jlm::tooling;
 
@@ -80,21 +77,8 @@ TestOutputFormatToCommandLineArgument()
     JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
   }
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlmOptCommandLineParser-TestOutputFormatToCommandLineArgument",
-    TestOutputFormatToCommandLineArgument)
 
-static void
-Test()
-{
-  TestOptimizationCommandLineArgumentConversion();
-  TestStatisticsCommandLineArgumentConversion();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommandLineParser", Test)
-
-static void
-OutputFormatParsing()
+TEST(JlmOptCommandLinerParserTests, OutputFormatParsing)
 {
   using namespace jlm::tooling;
 
@@ -109,7 +93,7 @@ OutputFormatParsing()
     auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
     // Assert
-    assert(commandLineOptions.GetOutputFormat() == outputFormat);
+    EXPECT_EQ(commandLineOptions.GetOutputFormat(), outputFormat);
   };
 
   auto start = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::FirstEnumValue) + 1;
@@ -127,7 +111,3 @@ OutputFormatParsing()
     testOutputFormatParsing(outputFormatString, outputFormat);
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlmOptCommandLineParser-OutputFormatParsing",
-    OutputFormatParsing)

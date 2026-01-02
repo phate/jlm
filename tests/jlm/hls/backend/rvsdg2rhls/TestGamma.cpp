@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -13,8 +13,7 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestWithMatch()
+TEST(GammaConversionTests, TestWithMatch)
 {
   using namespace jlm::llvm;
 
@@ -46,11 +45,11 @@ TestWithMatch()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
 
-static void
-TestWithoutMatch()
+TEST(GammaConversionTests, TestWithoutMatch)
 {
   using namespace jlm::llvm;
 
@@ -84,14 +83,6 @@ TestWithoutMatch()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
-
-static void
-Test()
-{
-  TestWithMatch();
-  TestWithoutMatch();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestGamma", Test)

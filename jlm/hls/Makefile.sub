@@ -89,30 +89,25 @@ libhls_HEADERS = \
     \
     jlm/hls/HlsDotWriter.hpp \
 
-libhls_TESTS += \
-    tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
-    tests/jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests \
-    tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests \
-    tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests \
-    tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests \
-    tests/jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests \
-    tests/jlm/hls/backend/rvsdg2rhls/SinkInsertionTests \
-    tests/jlm/hls/backend/rvsdg2rhls/TestFork \
-    tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
-    tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
-    tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
-    tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
-    tests/jlm/hls/opt/IOBarrierRemovalTests \
-    tests/jlm/hls/opt/IOStateEliminationTests \
-    tests/jlm/hls/util/ViewTests \
-
-libhls_TEST_LIBS += \
-    libjlmtest \
-    libhls \
-    libllvm \
-    librvsdg \
-    libutil \
-
-libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
-
 $(eval $(call common_library,libhls))
+
+tests/jlm/hls/run-libhls-tests_SOURCES = \
+    tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/SinkInsertionTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/TestFork.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/TestGamma.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/TestTheta.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests.cpp \
+    tests/jlm/hls/opt/IOBarrierRemovalTests.cpp \
+    tests/jlm/hls/opt/IOStateEliminationTests.cpp \
+    tests/jlm/hls/util/ViewTests.cpp \
+
+tests/jlm/hls/run-libhls-tests_LIBS = libhls libllvm librvsdg libutil
+tests/jlm/hls/run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+$(eval $(call common_test,tests/jlm/hls/run-libhls-tests))

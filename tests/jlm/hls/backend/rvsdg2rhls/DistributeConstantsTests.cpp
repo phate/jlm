@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -15,8 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-GammaSubregionUsage()
+TEST(DistributeConstantsTests, GammaSubregionUsage)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -66,33 +65,29 @@ GammaSubregionUsage()
   view(rvsdg, stdout);
 
   // Assert
-  assert(lambdaNode->subregion()->numNodes() == 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
 
   {
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(0)->numNodes() == 2);
-    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
+    EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2);
+    EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
     // check subregion 1 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(1)->numNodes() == 2);
-    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode1->input(0)->origin()));
+    EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2);
+    EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode1->input(0)->origin()));
   }
 
   {
     // check subregion 2 - we expect the constantNode to be distributed into this subregion
-    assert(gammaNode->subregion(2)->numNodes() == 1);
-    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin()));
+    EXPECT_EQ(gammaNode->subregion(2)->numNodes(), 1);
+    EXPECT_TRUE(
+        IsOwnerNodeOperation<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin()));
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-GammaSubregionUsage",
-    GammaSubregionUsage)
-
-static void
-NestedGammas()
+TEST(DistributeConstantsTests, NestedGammas)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -150,40 +145,35 @@ NestedGammas()
   view(rvsdg, stdout);
 
   // Assert
-  assert(lambdaNode->subregion()->numNodes() == 3);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3);
 
   {
     // check gammaNodeOuter subregion 0
-    assert(gammaNodeOuter->subregion(0)->numNodes() == 2);
-    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
+    EXPECT_EQ(gammaNodeOuter->subregion(0)->numNodes(), 2);
+    EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
     // check gammaNodeOuter subregion 1
     // The constantNode was copied into this region (even though it does not have a user), so we
     // expect one more node than before the transformation.
-    assert(gammaNodeOuter->subregion(1)->numNodes() == 3);
+    EXPECT_EQ(gammaNodeOuter->subregion(1)->numNodes(), 3);
 
     {
       // check gammaNodeInner subregion 0
-      assert(gammaNodeInner->subregion(0)->numNodes() == 0);
+      EXPECT_EQ(gammaNodeInner->subregion(0)->numNodes(), 0);
     }
 
     {
       // check gammaNodeInner subregion 1
-      assert(gammaNodeInner->subregion(1)->numNodes() == 0);
+      EXPECT_EQ(gammaNodeInner->subregion(1)->numNodes(), 0);
     }
   }
 
-  assert(TryGetOwnerNode<GammaNode>(*testNode1->input(0)->origin()));
+  EXPECT_TRUE(TryGetOwnerNode<GammaNode>(*testNode1->input(0)->origin()));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-NestedGammas",
-    NestedGammas)
-
-static void
-Theta()
+TEST(DistributeConstantsTests, Theta)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -237,33 +227,33 @@ Theta()
 
   // Arrange
   // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion
-  assert(lambdaNode->subregion()->numNodes() == 5);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5);
 
   // We expect constantNode2 to be distributed from the lambda subregion to the theta subregion
-  assert(thetaNode->subregion()->numNodes() == 5);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 5);
 
   {
     // We expect no changes with loopVar0
     auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(0));
-    assert(lambdaNode->subregion()->result(0)->origin() == testNode1->output(0));
-    assert(loopVar.output == testNode1->input(0)->origin());
-    assert(loopVar.post->origin() == testNode0->output(0));
-    assert(testNode0->input(0)->origin() == loopVar.pre);
-    assert(loopVar.input->origin() == constantNode0.output(0));
+    EXPECT_EQ(lambdaNode->subregion()->result(0)->origin(), testNode1->output(0));
+    EXPECT_EQ(loopVar.output, testNode1->input(0)->origin());
+    EXPECT_EQ(loopVar.post->origin(), testNode0->output(0));
+    EXPECT_EQ(testNode0->input(0)->origin(), loopVar.pre);
+    EXPECT_EQ(loopVar.input->origin(), constantNode0.output(0));
   }
 
   {
     // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion,
     // rendering loopVar1 to be dead
     auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(1));
-    assert(loopVar.output->IsDead());
-    assert(loopVar.pre->IsDead());
+    EXPECT_TRUE(loopVar.output->IsDead());
+    EXPECT_TRUE(loopVar.pre->IsDead());
 
     auto [constantNode, constantOperation] =
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
             *lambdaNode->subregion()->result(1)->origin());
-    assert(constantNode && constantOperation);
-    assert(constantOperation->Representation() == 1);
+    EXPECT_TRUE(constantNode && constantOperation);
+    EXPECT_EQ(constantOperation->Representation(), 1);
   }
 
   {
@@ -271,23 +261,20 @@ Theta()
     auto [constantNode, constantOperation] =
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
             *lambdaNode->subregion()->result(2)->origin());
-    assert(constantNode && constantOperation);
-    assert(constantNode == &constantNode2);
+    EXPECT_TRUE(constantNode && constantOperation);
+    EXPECT_EQ(constantNode, &constantNode2);
   }
 
   {
     // We expect constantNode2 to be distributed t o the theta subregion for testNode2
     auto [constantNode, constantOperation] =
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode2->input(0)->origin());
-    assert(constantNode && constantOperation);
-    assert(constantOperation->Representation() == 2);
+    EXPECT_TRUE(constantNode && constantOperation);
+    EXPECT_EQ(constantOperation->Representation(), 2);
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-Theta", Theta)
-
-static void
-Lambda()
+TEST(DistributeConstantsTests, Lambda)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -320,7 +307,5 @@ Lambda()
 
   // Arrange
   // We expect no change at all in the graph
-  assert(lambdaNode->subregion()->numNodes() == 1);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-Lambda", Lambda)
