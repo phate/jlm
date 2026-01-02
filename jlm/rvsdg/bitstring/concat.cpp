@@ -63,8 +63,8 @@ BitConcatOperation::can_reduce_operand_pair(
   if (!node1 || !node2)
     return binop_reduction_none;
 
-  auto arg1_constant = is<BitConstantOperation>(node1);
-  auto arg2_constant = is<BitConstantOperation>(node2);
+  auto arg1_constant = is<BitConstantOperation>(node1->GetOperation());
+  auto arg2_constant = is<BitConstantOperation>(node2->GetOperation());
 
   if (arg1_constant && arg2_constant)
   {
@@ -161,7 +161,8 @@ FlattenBitConcatOperation(const BitConcatOperation &, const std::vector<rvsdg::O
       {
         // FIXME: switch to comparing operator, not just typeid, after
         // converting "concat" to not be a binary operator anymore
-        return is<BitConcatOperation>(TryGetOwnerNode<Node>(*arg));
+        auto sn = TryGetOwnerNode<SimpleNode>(*arg);
+        return sn && is<BitConcatOperation>(sn->GetOperation());
       });
 
   if (operands == newOperands)

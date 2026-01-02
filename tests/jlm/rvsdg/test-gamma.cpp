@@ -185,8 +185,8 @@ TEST(GammaTests, test_control_constant_reduction2)
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = TryGetOwnerNode<Node>(*ex.origin());
-  EXPECT_TRUE(is<MatchOperation>(match));
+  auto match = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<MatchOperation>(match->GetOperation()));
 }
 
 TEST(GammaTests, TestRemoveGammaOutputsWhere)

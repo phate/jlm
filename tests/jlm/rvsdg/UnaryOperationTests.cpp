@@ -25,7 +25,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<jlm::rvsdg::TestNullaryOperation>(node))
+        node && jlm::rvsdg::is<jlm::rvsdg::TestNullaryOperation>(node->GetOperation()))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
