@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -29,8 +29,7 @@ contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string
   return has_select;
 }
 
-static void
-test_scalar_select()
+TEST(SelectTests, test_scalar_select)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -61,11 +60,10 @@ test_scalar_select()
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
-  assert(contains<jlm::llvm::SelectOperation>(*ipgmod, "f"));
+  EXPECT_TRUE(contains<jlm::llvm::SelectOperation>(*ipgmod, "f"));
 }
 
-static void
-test_vector_select()
+TEST(SelectTests, test_vector_select)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -96,14 +94,5 @@ test_vector_select()
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
-  assert(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
+  EXPECT_TRUE(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
 }
-
-static void
-test()
-{
-  test_scalar_select();
-  test_vector_select();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-select", test)
