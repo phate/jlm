@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
@@ -23,11 +23,11 @@ Expect(
     jlm::llvm::aa::AliasAnalysis::AliasQueryResponse expected)
 {
   const auto actual = aa.Query(p1, s1, p2, s2);
-  assert(actual == expected);
+  EXPECT_EQ(actual, expected);
 
   // An alias analysis query should always be symmetrical, so check the opposite as well
   const auto mirror = aa.Query(p2, s2, p1, s1);
-  assert(mirror == expected);
+  EXPECT_EQ(mirror, expected);
 }
 
 /**
@@ -238,8 +238,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestPtGAliasAnalysis()
+TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysis)
 {
   using namespace jlm::llvm::aa;
 
@@ -322,10 +321,6 @@ TestPtGAliasAnalysis()
   // It can not point to alloca3, as it never escaped the module
   Expect(aa, *outputs.R, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests-TestPtGAliasAnalysis",
-    TestPtGAliasAnalysis);
 
 /**
  * This class sets up an RVSDG representing the following code:
@@ -427,8 +422,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestPtGAliasAnalysisOffsets()
+TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysisOffsets)
 {
   using namespace jlm::llvm::aa;
 
@@ -469,7 +463,3 @@ TestPtGAliasAnalysisOffsets()
   Expect(aa, *outputs.IntWithOffset, 4, *outputs.GlobalInt, 4, AliasAnalysis::MustAlias);
   Expect(aa, *outputs.LongWithOffset, 8, *outputs.GlobalLong, 8, AliasAnalysis::MustAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests-TestPtGAliasAnalysisOffsets",
-    TestPtGAliasAnalysisOffsets);
