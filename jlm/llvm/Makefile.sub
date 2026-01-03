@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
@@ -243,6 +242,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/DotWriterTests.cpp \
     \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests.cpp \
+    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
