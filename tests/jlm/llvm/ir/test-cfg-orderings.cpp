@@ -3,13 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-static void
-test()
+TEST(ControlFlowGraphOrderTests, test)
 {
   using namespace jlm::llvm;
 
@@ -32,11 +31,9 @@ test()
   // check orderings
   std::vector<ControlFlowGraphNode *> po1({ cfg.exit(), bb3, bb2, bb1, bb0, cfg.entry() });
   std::vector<ControlFlowGraphNode *> po2({ cfg.exit(), bb3, bb1, bb2, bb0, cfg.entry() });
-  assert(postorder(cfg) == po1 || postorder(cfg) == po2);
+  EXPECT_TRUE(postorder(cfg) == po1 || postorder(cfg) == po2);
 
   std::vector<ControlFlowGraphNode *> rpo1({ cfg.entry(), bb0, bb1, bb2, bb3, cfg.exit() });
   std::vector<ControlFlowGraphNode *> rpo2({ cfg.entry(), bb0, bb2, bb1, bb3, cfg.exit() });
-  assert(reverse_postorder(cfg) == rpo1 || reverse_postorder(cfg) == rpo2);
+  EXPECT_TRUE(reverse_postorder(cfg) == rpo1 || reverse_postorder(cfg) == rpo2);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-orderings", test)
