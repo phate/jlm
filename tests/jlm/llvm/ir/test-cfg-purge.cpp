@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static void
-test()
+TEST(ControLFlowGraphPurgeTests, test)
 {
   using namespace jlm::llvm;
 
@@ -35,7 +34,5 @@ test()
 
   purge(cfg);
 
-  assert(cfg.nnodes() == 2);
+  EXPECT_EQ(cfg.nnodes(), 2);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-purge", test)
