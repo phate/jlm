@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 
 #include <llvm/IR/Attributes.h>
 
-static void
-TestAttributeKindConversion()
+TEST(AttributeConversionTests, TestAttributeKindConversion)
 {
   typedef llvm::Attribute::AttrKind ak;
 
@@ -19,11 +18,3 @@ TestAttributeKindConversion()
     jlm::llvm::ConvertAttributeKind(static_cast<ak>(attributeKind));
   }
 }
-
-static void
-test()
-{
-  TestAttributeKindConversion();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/TestAttributeConversion", test)
