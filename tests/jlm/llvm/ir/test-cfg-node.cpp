@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static void
-test_divert_inedges()
+TEST(ControlFlowGraphNodeTests, test_divert_inedges)
 {
   using namespace jlm::llvm;
 
@@ -31,11 +30,3 @@ test_divert_inedges()
 
   bb0->divert_inedges(bb0);
 }
-
-static void
-test()
-{
-  test_divert_inedges();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-node", test)
