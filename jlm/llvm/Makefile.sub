@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/ir/operators/TestPhi \
     tests/jlm/llvm/ir/operators/test-sext \
     tests/jlm/llvm/ir/operators/StoreTests \
     tests/jlm/llvm/ir/AttributeSetTests \
@@ -245,6 +244,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/ir/operators/TestFree.cpp \
     tests/jlm/llvm/ir/operators/TestGetElementPtr.cpp \
     tests/jlm/llvm/ir/operators/TestLambda.cpp \
+    tests/jlm/llvm/ir/operators/TestPhi.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
