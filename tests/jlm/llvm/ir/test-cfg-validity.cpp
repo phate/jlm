@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
@@ -12,8 +12,7 @@
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-test_single_operand_phi()
+TEST(ControlFlowGraphValidityTests, test_single_operand_phi)
 {
   using namespace jlm::llvm;
 
@@ -33,13 +32,5 @@ test_single_operand_phi()
 
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
-  assert(is_valid(cfg));
+  EXPECT_TRUE(is_valid(cfg));
 }
-
-static void
-test()
-{
-  test_single_operand_phi();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-validity", test)
