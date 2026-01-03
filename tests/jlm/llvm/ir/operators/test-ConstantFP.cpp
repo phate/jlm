@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 
-static void
-test_equality()
+TEST(ConstantFPOperationTests, test_equality)
 {
   using namespace jlm::llvm;
 
@@ -16,14 +15,6 @@ test_equality()
   ConstantFP c2(fpsize::flt, llvm::APFloat(0.0));
   ConstantFP c3(fpsize::flt, llvm::APFloat(-0.0));
 
-  assert(c1 != c2);
-  assert(c2 != c3);
+  EXPECT_NE(c1, c2);
+  EXPECT_NE(c2, c3);
 }
-
-static void
-test()
-{
-  test_equality();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-ConstantFP", test)
