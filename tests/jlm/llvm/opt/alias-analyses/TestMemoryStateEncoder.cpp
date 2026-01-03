@@ -15,14 +15,10 @@
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-template<class Test, class Analysis, class TModRefSummarizer>
+template<class Analysis, class TModRefSummarizer>
 static void
-ValidateTest(std::function<void(const Test &)> validateEncoding)
+encodeStates(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
-  static_assert(
-      std::is_base_of<jlm::llvm::RvsdgTest, Test>::value,
-      "Test should be derived from RvsdgTest class.");
-
   static_assert(
       std::is_base_of_v<jlm::llvm::aa::PointsToAnalysis, Analysis>,
       "Analysis should be derived from PointsToAnalysis class.");
@@ -31,13 +27,6 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
       std::is_base_of_v<jlm::llvm::aa::ModRefSummarizer, TModRefSummarizer>,
       "TModRefSummarizer should be derived from ModRefSummarizer class.");
 
-  std::cout << "\n###\n";
-  std::cout << "### Performing Test " << typeid(Test).name() << " using ["
-            << typeid(Analysis).name() << ", " << typeid(TModRefSummarizer).name() << "]\n";
-  std::cout << "###\n";
-
-  Test test;
-  auto & rvsdgModule = test.module();
   jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
@@ -54,8 +43,6 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   std::cout << "run encoder\n";
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
   jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
-
-  validateEncoding(test);
 }
 
 template<class OP>
@@ -66,9 +53,12 @@ is(const jlm::rvsdg::Node & node, size_t numInputs, size_t numOutputs)
 }
 
 static void
-ValidateStoreTest1AndersenAgnostic(const jlm::llvm::StoreTest1 & test)
+storeTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 14);
 
@@ -111,10 +101,17 @@ ValidateStoreTest1AndersenAgnostic(const jlm::llvm::StoreTest1 & test)
   assert(storeB->input(1)->origin() == test.alloca_b->output(0));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-storeTest1AndersenAgnostic",
+    storeTest1AndersenAgnostic)
+
 static void
-ValidateStoreTest1AndersenRegionAware(const jlm::llvm::StoreTest1 & test)
+storeTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 1);
 
@@ -123,10 +120,17 @@ ValidateStoreTest1AndersenRegionAware(const jlm::llvm::StoreTest1 & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-storeTest1AndersenRegionAware",
+    storeTest1AndersenRegionAware)
+
 static void
-ValidateStoreTest2AndersenAgnostic(const jlm::llvm::StoreTest2 & test)
+storeTest2AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  StoreTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 17);
 
@@ -185,10 +189,18 @@ ValidateStoreTest2AndersenAgnostic(const jlm::llvm::StoreTest2 & test)
   assert(storeY->input(2)->origin() == storeX->output(0));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-storeTest2AndersenAgnostic",
+    storeTest2AndersenAgnostic)
+
 static void
-ValidateStoreTest2AndersenRegionAware(const jlm::llvm::StoreTest2 & test)
+storeTest2AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -196,10 +208,17 @@ ValidateStoreTest2AndersenRegionAware(const jlm::llvm::StoreTest2 & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-storeTest2AndersenRegionAware",
+    storeTest2AndersenRegionAware)
+
 static void
-ValidateLoadTest1AndersenAgnostic(const jlm::llvm::LoadTest1 & test)
+loadTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  LoadTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 4);
 
@@ -225,10 +244,17 @@ ValidateLoadTest1AndersenAgnostic(const jlm::llvm::LoadTest1 & test)
       == lambdaEntrySplit);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadTest1AndersenAgnostic",
+    loadTest1AndersenAgnostic)
+
 static void
-ValidateLoadTest1AndersenRegionAware(const jlm::llvm::LoadTest1 & test)
+loadTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  LoadTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 4);
 
@@ -254,10 +280,16 @@ ValidateLoadTest1AndersenRegionAware(const jlm::llvm::LoadTest1 & test)
       == lambdaEntrySplit);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadTest1AndersenRegionAware",
+    loadTest1AndersenRegionAware)
+
 static void
-ValidateLoadTest2AndersenAgnostic(const jlm::llvm::LoadTest2 & test)
+loadTest2AndersenAgnostic()
 {
   using namespace jlm::llvm;
+  LoadTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 19);
 
@@ -322,10 +354,18 @@ ValidateLoadTest2AndersenAgnostic(const jlm::llvm::LoadTest2 & test)
   assert(storeY->input(2)->origin() == storeB->output(0));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadTest2AndersenAgnostic",
+    loadTest2AndersenAgnostic)
+
 static void
-ValidateLoadTest2AndersenRegionAware(const jlm::llvm::LoadTest2 & test)
+loadTest2AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  LoadTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -333,11 +373,17 @@ ValidateLoadTest2AndersenRegionAware(const jlm::llvm::LoadTest2 & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadTest2AndersenRegionAware",
+    loadTest2AndersenRegionAware)
+
 static void
-ValidateLoadFromUndefAndersenAgnostic(const jlm::llvm::LoadFromUndefTest & test)
+loadFromUndefAndersenAgnostic()
 {
   using namespace jlm::llvm;
 
+  LoadFromUndefTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
   assert(test.Lambda().subregion()->numNodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -353,10 +399,17 @@ ValidateLoadFromUndefAndersenAgnostic(const jlm::llvm::LoadFromUndefTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadFromUndefAndersenAgnostic",
+    loadFromUndefAndersenAgnostic)
+
 static void
-ValidateLoadFromUndefAndersenRegionAware(const jlm::llvm::LoadFromUndefTest & test)
+loadFromUndefAndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  LoadFromUndefTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   assert(test.Lambda().subregion()->numNodes() == 3);
 
@@ -369,10 +422,17 @@ ValidateLoadFromUndefAndersenRegionAware(const jlm::llvm::LoadFromUndefTest & te
   assert(is<LoadNonVolatileOperation>(*load, 1, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-loadFromUndefAndersenRegionAware",
+    loadFromUndefAndersenRegionAware)
+
 static void
-ValidateCallTest1AndersenAgnostic(const jlm::llvm::CallTest1 & test)
+callTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  CallTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate f */
   {
@@ -442,10 +502,17 @@ ValidateCallTest1AndersenAgnostic(const jlm::llvm::CallTest1 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-callTest1AndersenAgnostic",
+    callTest1AndersenAgnostic)
+
 static void
-ValidateCallTest1AndersenRegionAware(const jlm::llvm::CallTest1 & test)
+callTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  CallTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* validate f */
   {
@@ -510,10 +577,16 @@ ValidateCallTest1AndersenRegionAware(const jlm::llvm::CallTest1 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-callTest1AndersenRegionAware",
+    callTest1AndersenRegionAware)
+
 static void
-ValidateCallTest2AndersenAgnostic(const jlm::llvm::CallTest2 & test)
+callTest2AndersenAgnostic()
 {
   using namespace jlm::llvm;
+  CallTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate create function */
   {
@@ -547,10 +620,17 @@ ValidateCallTest2AndersenAgnostic(const jlm::llvm::CallTest2 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-callTest2AndersenAgnostic",
+    callTest2AndersenAgnostic)
+
 static void
-ValidateCallTest2AndersenRegionAware(const jlm::llvm::CallTest2 & test)
+callTest2AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  CallTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* validate create function */
   {
@@ -584,10 +664,17 @@ ValidateCallTest2AndersenRegionAware(const jlm::llvm::CallTest2 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-callTest2AndersenRegionAware",
+    callTest2AndersenRegionAware)
+
 static void
-ValidateIndirectCallTest1AndersenAgnostic(const jlm::llvm::IndirectCallTest1 & test)
+indirectCallTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  IndirectCallTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate indcall function */
   {
@@ -646,10 +733,17 @@ ValidateIndirectCallTest1AndersenAgnostic(const jlm::llvm::IndirectCallTest1 & t
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-indirectCallTest1AndersenAgnostic",
+    indirectCallTest1AndersenAgnostic)
+
 static void
-ValidateIndirectCallTest1AndersenRegionAware(const jlm::llvm::IndirectCallTest1 & test)
+indirectCallTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  IndirectCallTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* validate indcall function */
   {
@@ -693,10 +787,17 @@ ValidateIndirectCallTest1AndersenRegionAware(const jlm::llvm::IndirectCallTest1 
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-indirectCallTest1AndersenRegionAware",
+    indirectCallTest1AndersenRegionAware)
+
 static void
-ValidateIndirectCallTest2AndersenAgnostic(const jlm::llvm::IndirectCallTest2 & test)
+indirectCallTest2AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  IndirectCallTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   // validate function three()
   {
@@ -746,10 +847,17 @@ ValidateIndirectCallTest2AndersenAgnostic(const jlm::llvm::IndirectCallTest2 & t
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-indirectCallTest2AndersenAgnostic",
+    indirectCallTest2AndersenAgnostic)
+
 static void
-ValidateIndirectCallTest2AndersenRegionAware(const jlm::llvm::IndirectCallTest2 & test)
+indirectCallTest2AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  IndirectCallTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   // validate function three()
   {
@@ -842,10 +950,17 @@ ValidateIndirectCallTest2AndersenRegionAware(const jlm::llvm::IndirectCallTest2 
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-indirectCallTest2AndersenRegionAware",
+    indirectCallTest2AndersenRegionAware)
+
 static void
-ValidateGammaTestAndersenAgnostic(const jlm::llvm::GammaTest & test)
+gammaTestAndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  GammaTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -862,10 +977,17 @@ ValidateGammaTestAndersenAgnostic(const jlm::llvm::GammaTest & test)
   assert(gamma == test.gamma);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-gammaTestAndersenAgnostic",
+    gammaTestAndersenAgnostic)
+
 static void
-ValidateGammaTestAndersenRegionAware(const jlm::llvm::GammaTest & test)
+gammaTestAndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  GammaTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -883,10 +1005,17 @@ ValidateGammaTestAndersenRegionAware(const jlm::llvm::GammaTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-gammaTestAndersenRegionAware",
+    gammaTestAndersenRegionAware)
+
 static void
-ValidateThetaTestAndersenAgnostic(const jlm::llvm::ThetaTest & test)
+thetaTestAndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  ThetaTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 4);
 
@@ -908,10 +1037,17 @@ ValidateThetaTestAndersenAgnostic(const jlm::llvm::ThetaTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-thetaTestAndersenAgnostic",
+    thetaTestAndersenAgnostic)
+
 static void
-ValidateThetaTestAndersenRegionAware(const jlm::llvm::ThetaTest & test)
+thetaTestAndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  ThetaTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   assert(test.lambda->subregion()->numNodes() == 4);
 
@@ -933,10 +1069,17 @@ ValidateThetaTestAndersenRegionAware(const jlm::llvm::ThetaTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-thetaTestAndersenRegionAware",
+    thetaTestAndersenRegionAware)
+
 static void
-ValidateDeltaTest1AndersenAgnostic(const jlm::llvm::DeltaTest1 & test)
+deltaTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  DeltaTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda_h->subregion()->numNodes() == 7);
 
@@ -959,10 +1102,17 @@ ValidateDeltaTest1AndersenAgnostic(const jlm::llvm::DeltaTest1 & test)
   assert(loadF->input(1)->origin()->index() == deltaStateIndex);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest1AndersenAgnostic",
+    deltaTest1AndersenAgnostic)
+
 static void
-ValidateDeltaTest1AndersenRegionAware(const jlm::llvm::DeltaTest1 & test)
+deltaTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  DeltaTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   assert(test.lambda_h->subregion()->numNodes() == 7);
 
@@ -985,10 +1135,17 @@ ValidateDeltaTest1AndersenRegionAware(const jlm::llvm::DeltaTest1 & test)
   assert(loadF->input(1)->origin()->index() == deltaStateIndex);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest1AndersenRegionAware",
+    deltaTest1AndersenRegionAware)
+
 static void
-ValidateDeltaTest2AndersenAgnostic(const jlm::llvm::DeltaTest2 & test)
+deltaTest2AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  DeltaTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda_f2->subregion()->numNodes() == 9);
 
@@ -1018,10 +1175,17 @@ ValidateDeltaTest2AndersenAgnostic(const jlm::llvm::DeltaTest2 & test)
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest2AndersenAgnostic",
+    deltaTest2AndersenAgnostic)
+
 static void
-ValidateDeltaTest2AndersenRegionAware(const jlm::llvm::DeltaTest2 & test)
+deltaTest2AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  DeltaTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* Validate f1() */
   {
@@ -1080,10 +1244,17 @@ ValidateDeltaTest2AndersenRegionAware(const jlm::llvm::DeltaTest2 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest2AndersenRegionAware",
+    deltaTest2AndersenRegionAware)
+
 static void
-ValidateDeltaTest3AndersenAgnostic(const jlm::llvm::DeltaTest3 & test)
+deltaTest3AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  DeltaTest3 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate f() */
   {
@@ -1126,10 +1297,17 @@ ValidateDeltaTest3AndersenAgnostic(const jlm::llvm::DeltaTest3 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest3AndersenAgnostic",
+    deltaTest3AndersenAgnostic)
+
 static void
-ValidateDeltaTest3AndersenRegionAware(const jlm::llvm::DeltaTest3 & test)
+deltaTest3AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  DeltaTest3 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* validate f() */
   {
@@ -1172,10 +1350,17 @@ ValidateDeltaTest3AndersenRegionAware(const jlm::llvm::DeltaTest3 & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-deltaTest3AndersenRegionAware",
+    deltaTest3AndersenRegionAware)
+
 static void
-ValidateImportTestAndersenAgnostic(const jlm::llvm::ImportTest & test)
+importTestAndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  ImportTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   assert(test.lambda_f2->subregion()->numNodes() == 9);
 
@@ -1205,10 +1390,17 @@ ValidateImportTestAndersenAgnostic(const jlm::llvm::ImportTest & test)
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-importTestAndersenAgnostic",
+    importTestAndersenAgnostic)
+
 static void
-ValidateImportTestAndersenRegionAware(const jlm::llvm::ImportTest & test)
+importTestAndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  ImportTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* Validate f1() */
   {
@@ -1267,10 +1459,17 @@ ValidateImportTestAndersenRegionAware(const jlm::llvm::ImportTest & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-importTestAndersenRegionAware",
+    importTestAndersenRegionAware)
+
 static void
-ValidatePhiTestAndersenAgnostic(const jlm::llvm::PhiTest1 & test)
+phiTest1AndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  PhiTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   auto [joinNode, joinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca->output(1)->SingleUser());
@@ -1300,10 +1499,17 @@ ValidatePhiTestAndersenAgnostic(const jlm::llvm::PhiTest1 & test)
   assert(load2->input(1)->origin()->index() == arrayStateIndex);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-phiTest1AndersenAgnostic",
+    phiTest1AndersenAgnostic)
+
 static void
-ValidatePhiTestAndersenRegionAware(const jlm::llvm::PhiTest1 & test)
+phiTest1AndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  PhiTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
@@ -1319,10 +1525,17 @@ ValidatePhiTestAndersenRegionAware(const jlm::llvm::PhiTest1 & test)
   assert(!op);
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-phiTest1AndersenRegionAware",
+    phiTest1AndersenRegionAware)
+
 static void
-ValidateMemcpyAndersenAgnostic(const jlm::llvm::MemcpyTest & test)
+memCpyTestAndersenAgnostic()
 {
   using namespace jlm::llvm;
+
+  MemcpyTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /*
    * Validate function f
@@ -1379,10 +1592,17 @@ ValidateMemcpyAndersenAgnostic(const jlm::llvm::MemcpyTest & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-memCpyTestAndersenAgnostic",
+    memCpyTestAndersenAgnostic)
+
 static void
-ValidateMemcpyAndersenRegionAware(const jlm::llvm::MemcpyTest & test)
+memCpyAndersenRegionAware()
 {
   using namespace jlm::llvm;
+
+  MemcpyTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /*
    * Validate function f
@@ -1437,11 +1657,18 @@ ValidateMemcpyAndersenRegionAware(const jlm::llvm::MemcpyTest & test)
   }
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-memCpyAndersenRegionAware",
+    memCpyAndersenRegionAware)
+
 static void
-ValidateFreeNullTestAndersenAgnostic(const jlm::llvm::FreeNullTest & test)
+freeNullTestAndersenAgnostic()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
+
+  FreeNullTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *GetMemoryStateRegionResult(test.LambdaMain()).origin());
@@ -1456,98 +1683,6 @@ ValidateFreeNullTestAndersenAgnostic(const jlm::llvm::FreeNullTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
-static void
-TestMemoryStateEncoder()
-{
-  using namespace jlm::llvm::aa;
-
-  ValidateTest<jlm::llvm::StoreTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateStoreTest1AndersenAgnostic);
-  ValidateTest<jlm::llvm::StoreTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateStoreTest1AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::StoreTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateStoreTest2AndersenAgnostic);
-  ValidateTest<jlm::llvm::StoreTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateStoreTest2AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::LoadTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadTest1AndersenAgnostic);
-  ValidateTest<jlm::llvm::LoadTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadTest1AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::LoadTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadTest2AndersenAgnostic);
-  ValidateTest<jlm::llvm::LoadTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadTest2AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::LoadFromUndefTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadFromUndefAndersenAgnostic);
-  ValidateTest<jlm::llvm::LoadFromUndefTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadFromUndefAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::CallTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateCallTest1AndersenAgnostic);
-  ValidateTest<jlm::llvm::CallTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateCallTest1AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::CallTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateCallTest2AndersenAgnostic);
-  ValidateTest<jlm::llvm::CallTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateCallTest2AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::IndirectCallTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest1AndersenAgnostic);
-  ValidateTest<jlm::llvm::IndirectCallTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest1AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::IndirectCallTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest2AndersenAgnostic);
-  ValidateTest<jlm::llvm::IndirectCallTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest2AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::GammaTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateGammaTestAndersenAgnostic);
-  ValidateTest<jlm::llvm::GammaTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateGammaTestAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::ThetaTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateThetaTestAndersenAgnostic);
-  ValidateTest<jlm::llvm::ThetaTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateThetaTestAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::DeltaTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest1AndersenAgnostic);
-  ValidateTest<jlm::llvm::DeltaTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest1AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::DeltaTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest2AndersenAgnostic);
-  ValidateTest<jlm::llvm::DeltaTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest2AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::DeltaTest3, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest3AndersenAgnostic);
-  ValidateTest<jlm::llvm::DeltaTest3, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest3AndersenRegionAware);
-
-  ValidateTest<jlm::llvm::ImportTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateImportTestAndersenAgnostic);
-  ValidateTest<jlm::llvm::ImportTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateImportTestAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::PhiTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidatePhiTestAndersenAgnostic);
-  ValidateTest<jlm::llvm::PhiTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidatePhiTestAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::MemcpyTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateMemcpyAndersenAgnostic);
-  ValidateTest<jlm::llvm::MemcpyTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateMemcpyAndersenRegionAware);
-
-  ValidateTest<jlm::llvm::FreeNullTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateFreeNullTestAndersenAgnostic);
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder", TestMemoryStateEncoder)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder-freeNullTestAndersenAgnostic",
+    freeNullTestAndersenAgnostic)
