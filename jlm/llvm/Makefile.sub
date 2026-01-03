@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
     tests/jlm/llvm/frontend/llvm/test-endless-loop \
     tests/jlm/llvm/frontend/llvm/test-export \
     tests/jlm/llvm/frontend/llvm/TestFNeg \
@@ -244,6 +243,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/frontend/llvm/MemCpyTests.cpp \
     tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests.cpp \
     tests/jlm/llvm/frontend/llvm/StoreTests.cpp \
+    tests/jlm/llvm/frontend/llvm/TestAttributeConversion.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
