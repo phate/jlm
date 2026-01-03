@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -11,8 +11,7 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestDeltaCreation()
+TEST(DeltaTests, TestDeltaCreation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -53,17 +52,16 @@ TestDeltaCreation()
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
-  assert(rvsdgModule.Rvsdg().GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdgModule.Rvsdg().GetRootRegion().numNodes(), 2);
 
-  assert(delta1->constant() == true);
-  assert(*delta1->Type() == *valueType);
+  EXPECT_TRUE(delta1->constant());
+  EXPECT_EQ(*delta1->Type(), *valueType);
 
-  assert(delta2->constant() == false);
-  assert(*delta2->Type() == *valueType);
+  EXPECT_FALSE(delta2->constant());
+  EXPECT_EQ(*delta2->Type(), *valueType);
 }
 
-static void
-TestRemoveDeltaInputsWhere()
+TEST(DeltaTests, TestRemoveDeltaInputsWhere)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -96,9 +94,9 @@ TestRemoveDeltaInputsWhere()
       {
         return input.index() == deltaInput1->index();
       });
-  assert(numRemovedInputs == 0);
-  assert(deltaNode->ninputs() == 3);
-  assert(deltaNode->GetContextVars().size() == 3);
+  EXPECT_EQ(numRemovedInputs, 0);
+  EXPECT_EQ(deltaNode->ninputs(), 3);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 3);
 
   // Remove deltaInput2
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
@@ -106,11 +104,11 @@ TestRemoveDeltaInputsWhere()
       {
         return input.index() == 2;
       });
-  assert(numRemovedInputs == 1);
-  assert(deltaNode->ninputs() == 2);
-  assert(deltaNode->GetContextVars().size() == 2);
-  assert(deltaNode->input(0) == deltaInput0);
-  assert(deltaNode->input(1) == deltaInput1);
+  EXPECT_EQ(numRemovedInputs, 1);
+  EXPECT_EQ(deltaNode->ninputs(), 2);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 2);
+  EXPECT_EQ(deltaNode->input(0), deltaInput0);
+  EXPECT_EQ(deltaNode->input(1), deltaInput1);
 
   // Remove deltaInput0
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
@@ -118,16 +116,15 @@ TestRemoveDeltaInputsWhere()
       {
         return input.index() == 0;
       });
-  assert(numRemovedInputs == 1);
-  assert(deltaNode->ninputs() == 1);
-  assert(deltaNode->GetContextVars().size() == 1);
-  assert(deltaNode->input(0) == deltaInput1);
-  assert(deltaInput1->index() == 0);
-  assert(deltaNode->MapInputContextVar(*deltaInput1).inner->index() == 0);
+  EXPECT_EQ(numRemovedInputs, 1);
+  EXPECT_EQ(deltaNode->ninputs(), 1);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(deltaNode->input(0), deltaInput1);
+  EXPECT_EQ(deltaInput1->index(), 0);
+  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0);
 }
 
-static void
-TestPruneDeltaInputs()
+TEST(DeltaTests, TestPruneDeltaInputs)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -158,21 +155,11 @@ TestPruneDeltaInputs()
   auto numRemovedInputs = deltaNode->PruneDeltaInputs();
 
   // Assert
-  assert(numRemovedInputs == 2);
-  assert(deltaNode->ninputs() == 1);
-  assert(deltaNode->GetContextVars().size() == 1);
-  assert(deltaNode->input(0) == deltaInput1);
-  assert(deltaNode->subregion()->argument(0) == deltaNode->MapInputContextVar(*deltaInput1).inner);
-  assert(deltaInput1->index() == 0);
-  assert(deltaNode->MapInputContextVar(*deltaInput1).inner->index() == 0);
+  EXPECT_EQ(numRemovedInputs, 2);
+  EXPECT_EQ(deltaNode->ninputs(), 1);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(deltaNode->input(0), deltaInput1);
+  EXPECT_EQ(deltaNode->subregion()->argument(0), deltaNode->MapInputContextVar(*deltaInput1).inner);
+  EXPECT_EQ(deltaInput1->index(), 0);
+  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0);
 }
-
-static void
-TestDelta()
-{
-  TestDeltaCreation();
-  TestRemoveDeltaInputsWhere();
-  TestPruneDeltaInputs();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-delta", TestDelta)
