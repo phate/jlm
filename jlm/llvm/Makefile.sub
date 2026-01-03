@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/ir/operators/test-delta \
     tests/jlm/llvm/ir/operators/TestFree \
     tests/jlm/llvm/ir/operators/TestGetElementPtr \
     tests/jlm/llvm/ir/operators/TestLambda \
@@ -245,6 +244,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \
     tests/jlm/llvm/ir/operators/TestCall.cpp \
     tests/jlm/llvm/ir/operators/test-ConstantFP.cpp \
+    tests/jlm/llvm/ir/operators/test-delta.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
