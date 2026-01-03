@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -17,8 +17,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-static void
-LoadConversion()
+TEST(IpGraphToLlvmConverterTests, LoadConversion)
 {
   using namespace jlm::llvm;
 
@@ -65,18 +64,13 @@ LoadConversion()
     auto & instruction = basicBlock.front();
 
     auto loadInstruction = ::llvm::dyn_cast<::llvm::LoadInst>(&instruction);
-    assert(loadInstruction != nullptr);
-    assert(loadInstruction->isVolatile() == false);
-    assert(loadInstruction->getAlign().value() == alignment);
+    EXPECT_NE(loadInstruction, nullptr);
+    EXPECT_FALSE(loadInstruction->isVolatile());
+    EXPECT_EQ(loadInstruction->getAlign().value(), alignment);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-LoadConversion",
-    LoadConversion)
-
-static void
-LoadVolatileConversion()
+TEST(IpGraphToLlvmConverterTests, LoadVolatileConversion)
 {
   using namespace jlm::llvm;
 
@@ -129,18 +123,13 @@ LoadVolatileConversion()
     auto & instruction = basicBlock.front();
 
     auto loadInstruction = ::llvm::dyn_cast<::llvm::LoadInst>(&instruction);
-    assert(loadInstruction != nullptr);
-    assert(loadInstruction->isVolatile() == true);
-    assert(loadInstruction->getAlign().value() == alignment);
+    EXPECT_NE(loadInstruction, nullptr);
+    EXPECT_TRUE(loadInstruction->isVolatile());
+    EXPECT_EQ(loadInstruction->getAlign().value(), alignment);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-LoadVolatileConversion",
-    LoadVolatileConversion)
-
-static void
-MemCpyConversion()
+TEST(IpGraphToLlvmConverterTests, MemCpyConversion)
 {
   using namespace jlm::llvm;
 
@@ -193,18 +182,13 @@ MemCpyConversion()
     auto & instruction = basicBlock.front();
 
     auto memCpyInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
-    assert(memCpyInstruction != nullptr);
-    assert(memCpyInstruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy);
-    assert(memCpyInstruction->isVolatile() == false);
+    EXPECT_NE(memCpyInstruction, nullptr);
+    EXPECT_EQ(memCpyInstruction->getIntrinsicID(), ::llvm::Intrinsic::memcpy);
+    EXPECT_FALSE(memCpyInstruction->isVolatile());
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-MemCpyConversion",
-    MemCpyConversion)
-
-static void
-MemCpyVolatileConversion()
+TEST(IpGraphToLlvmConverterTests, MemCpyVolatileConversion)
 {
   using namespace jlm::llvm;
 
@@ -262,18 +246,13 @@ MemCpyVolatileConversion()
     auto & instruction = basicBlock.front();
 
     auto memCpyInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
-    assert(memCpyInstruction != nullptr);
-    assert(memCpyInstruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy);
-    assert(memCpyInstruction->isVolatile() == true);
+    EXPECT_NE(memCpyInstruction, nullptr);
+    EXPECT_EQ(memCpyInstruction->getIntrinsicID(), ::llvm::Intrinsic::memcpy);
+    EXPECT_TRUE(memCpyInstruction->isVolatile());
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-MemCpyVolatileConversion",
-    MemCpyVolatileConversion)
-
-static void
-StoreConversion()
+TEST(IpGraphToLlvmConverterTests, StoreConversion)
 {
   using namespace jlm::llvm;
 
@@ -322,18 +301,13 @@ StoreConversion()
     auto & instruction = basicBlock.front();
 
     auto storeInstruction = ::llvm::dyn_cast<::llvm::StoreInst>(&instruction);
-    assert(storeInstruction != nullptr);
-    assert(storeInstruction->isVolatile() == false);
-    assert(storeInstruction->getAlign().value() == alignment);
+    EXPECT_NE(storeInstruction, nullptr);
+    EXPECT_FALSE(storeInstruction->isVolatile());
+    EXPECT_EQ(storeInstruction->getAlign().value(), alignment);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreConversion",
-    StoreConversion)
-
-static void
-StoreVolatileConversion()
+TEST(IpGraphToLlvmConverterTests, StoreVolatileConversion)
 {
   using namespace jlm::llvm;
 
@@ -389,18 +363,13 @@ StoreVolatileConversion()
     auto & instruction = basicBlock.front();
 
     auto storeInstruction = ::llvm::dyn_cast<::llvm::StoreInst>(&instruction);
-    assert(storeInstruction != nullptr);
-    assert(storeInstruction->isVolatile() == true);
-    assert(storeInstruction->getAlign().value() == alignment);
+    EXPECT_NE(storeInstruction, nullptr);
+    EXPECT_TRUE(storeInstruction->isVolatile());
+    EXPECT_EQ(storeInstruction->getAlign().value(), alignment);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreVolatileConversion",
-    StoreVolatileConversion)
-
-static void
-FMulAddConversion()
+TEST(IpGraphToLlvmConverterTests, FMulAddConversion)
 {
   using namespace jlm::llvm;
 
@@ -457,17 +426,12 @@ FMulAddConversion()
     auto & instruction = basicBlock.front();
 
     const auto fMulAddInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
-    assert(fMulAddInstruction != nullptr);
-    assert(fMulAddInstruction->getIntrinsicID() == ::llvm::Intrinsic::fmuladd);
+    EXPECT_NE(fMulAddInstruction, nullptr);
+    EXPECT_EQ(fMulAddInstruction->getIntrinsicID(), ::llvm::Intrinsic::fmuladd);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-FMulAddConversion",
-    FMulAddConversion)
-
-static void
-IntegerConstant()
+TEST(IpGraphToLlvmConverterTests, IntegerConstant)
 {
   const char * bs = "0100000000"
                     "0000000000"
@@ -505,12 +469,7 @@ IntegerConstant()
   llvmModule->dump();
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-IntegerConstant",
-    IntegerConstant)
-
-static void
-Malloc()
+TEST(IpGraphToLlvmConverterTests, Malloc)
 {
   auto setup = []()
   {
@@ -549,9 +508,9 @@ Malloc()
     auto f = m.getFunction("f");
     auto & bb = f->getEntryBlock();
 
-    assert(bb.sizeWithoutDebug() == 2);
-    assert(bb.getFirstNonPHI()->getOpcode() == llvm::Instruction::Call);
-    assert(bb.getTerminator()->getOpcode() == llvm::Instruction::Ret);
+    EXPECT_EQ(bb.sizeWithoutDebug(), 2);
+    EXPECT_EQ(bb.getFirstNonPHI()->getOpcode(), llvm::Instruction::Call);
+    EXPECT_EQ(bb.getTerminator()->getOpcode(), llvm::Instruction::Ret);
   };
 
   auto im = setup();
@@ -564,10 +523,7 @@ Malloc()
   verify(*llvmModule);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Malloc", Malloc)
-
-static void
-Free()
+TEST(IpGraphToLlvmConverterTests, Free)
 {
   auto setup = []()
   {
@@ -610,9 +566,9 @@ Free()
     auto f = module.getFunction("f");
     auto & bb = f->getEntryBlock();
 
-    assert(bb.sizeWithoutDebug() == 2);
-    assert(bb.getFirstNonPHI()->getOpcode() == Instruction::Call);
-    assert(bb.getTerminator()->getOpcode() == Instruction::Ret);
+    EXPECT_EQ(bb.sizeWithoutDebug(), 2);
+    EXPECT_EQ(bb.getFirstNonPHI()->getOpcode(), Instruction::Call);
+    EXPECT_EQ(bb.getTerminator()->getOpcode(), Instruction::Ret);
   };
 
   auto ipgmod = setup();
@@ -625,10 +581,7 @@ Free()
   verify(*llvmModule);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Free", Free)
-
-static void
-IgnoreMemoryState()
+TEST(IpGraphToLlvmConverterTests, IgnoreMemoryState)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::llvm;
@@ -654,12 +607,7 @@ IgnoreMemoryState()
   IpGraphToLlvmConverter::CreateAndConvertModule(m, ctx);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-IgnoreMemoryState",
-    IgnoreMemoryState)
-
-static void
-SelectWithState()
+TEST(IpGraphToLlvmConverterTests, SelectWithState)
 {
   using namespace jlm::llvm;
 
@@ -695,12 +643,7 @@ SelectWithState()
   IpGraphToLlvmConverter::CreateAndConvertModule(m, ctx);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-SelectWithState",
-    SelectWithState)
-
-static void
-TestAttributeKindConversion()
+TEST(IpGraphToLlvmConverterTests, TestAttributeKindConversion)
 {
   typedef jlm::llvm::Attribute::kind ak;
 
@@ -711,7 +654,3 @@ TestAttributeKindConversion()
     jlm::llvm::IpGraphToLlvmConverter::ConvertAttributeKind(static_cast<ak>(attributeKind));
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/backend/IpGraphToLlvmConverterTests-TestAttributeConversion",
-    TestAttributeKindConversion)
