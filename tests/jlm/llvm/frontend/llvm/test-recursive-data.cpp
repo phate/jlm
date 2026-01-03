@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -13,8 +13,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-test()
+TEST(RecursiveDataTests, test)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -53,5 +52,3 @@ test()
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-recursive-data", test)
