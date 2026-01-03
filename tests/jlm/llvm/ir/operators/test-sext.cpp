@@ -3,18 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 
-static void
-test_bitunary_reduction()
+TEST(SExtOperationTests, test_bitunary_reduction)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -41,11 +39,10 @@ test_bitunary_reduction()
   view(graph, stdout);
 
   // Assert
-  assert(is<bitnot_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
+  EXPECT_TRUE(is<bitnot_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
 }
 
-static void
-test_bitbinary_reduction()
+TEST(SExtOperationTests, test_bitbinary_reduction)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -73,11 +70,10 @@ test_bitbinary_reduction()
   view(graph, stdout);
 
   // Assert
-  assert(is<bitadd_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
+  EXPECT_TRUE(is<bitadd_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
 }
 
-static void
-test_inverse_reduction()
+TEST(SExtOperationTests, test_inverse_reduction)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -104,15 +100,5 @@ test_inverse_reduction()
   view(graph, stdout);
 
   // Assert
-  assert(ex.origin() == x);
+  EXPECT_EQ(ex.origin(), x);
 }
-
-static void
-test()
-{
-  test_bitunary_reduction();
-  test_bitbinary_reduction();
-  test_inverse_reduction();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-sext", test)
