@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 
-static void
-TestFreeConstructor()
+TEST(FreeOperationTests, TestFreeConstructor)
 {
   using namespace jlm::llvm;
 
@@ -17,16 +16,14 @@ TestFreeConstructor()
   FreeOperation free2(2);
 
   // Assert
-  assert(free0.narguments() == 2);
-  assert(free0.nresults() == 1);
+  EXPECT_EQ(free0.narguments(), 2);
+  EXPECT_EQ(free0.nresults(), 1);
 
-  assert(free2.narguments() == 4);
-  assert(free2.nresults() == 3);
+  EXPECT_EQ(free2.narguments(), 4);
+  EXPECT_EQ(free2.nresults(), 3);
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestFreeConstructor", TestFreeConstructor)
 
-static void
-TestEqualityOperator()
+TEST(FreeOperationTests, TestEqualityOperator)
 {
   using namespace jlm::llvm;
 
@@ -36,14 +33,12 @@ TestEqualityOperator()
   FreeOperation free2(1);
 
   // Act and Assert
-  assert(free0 != free1);
-  assert(free1 == free1);
-  assert(free1 != free2); // 2 different instances should not compare equal
+  EXPECT_NE(free0, free1);
+  EXPECT_EQ(free1, free1);
+  EXPECT_NE(free1, free2); // 2 different instances should not compare equal
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestEqualityOperator", TestEqualityOperator)
 
-static void
-TestThreeAddressCodeCreator()
+TEST(FreeOperationTests, TestThreeAddressCodeCreator)
 {
   using namespace jlm::llvm;
 
@@ -59,15 +54,11 @@ TestThreeAddressCodeCreator()
   auto free1 = FreeOperation::Create(address, { memoryState }, iOState);
 
   // Assert
-  assert(free0->nresults() == 1);
-  assert(free1->nresults() == 2);
+  EXPECT_EQ(free0->nresults(), 1);
+  EXPECT_EQ(free1->nresults(), 2);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/TestFree-TestThreeAddressCodeCreator",
-    TestThreeAddressCodeCreator)
 
-static void
-TestRvsdgCreator()
+TEST(FreeOperationTests, TestRvsdgCreator)
 {
   using namespace jlm::llvm;
 
@@ -85,8 +76,7 @@ TestRvsdgCreator()
   auto & freeNode0 = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*freeResults0[0]);
 
   // Assert
-  assert(freeResults0.size() == 1);
-  assert(freeResults1.size() == 2);
-  assert(FreeOperation::addressInput(freeNode0).origin() == address);
+  EXPECT_EQ(freeResults0.size(), 1);
+  EXPECT_EQ(freeResults1.size(), 2);
+  EXPECT_EQ(FreeOperation::addressInput(freeNode0).origin(), address);
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestRvsdgCreator", TestRvsdgCreator)
