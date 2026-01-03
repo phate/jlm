@@ -54,7 +54,7 @@ EntryAnnotationSet::DebugString() const noexcept
 }
 
 bool
-EntryAnnotationSet::operator==(const AnnotationSet & other)
+EntryAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherEntryDemandSet = dynamic_cast<const EntryAnnotationSet *>(&other);
   return otherEntryDemandSet && AnnotationSet::operator==(other)
@@ -79,7 +79,7 @@ ExitAnnotationSet::DebugString() const noexcept
 }
 
 bool
-ExitAnnotationSet::operator==(const AnnotationSet & other)
+ExitAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherExitDemandSet = dynamic_cast<const ExitAnnotationSet *>(&other);
   return otherExitDemandSet && AnnotationSet::operator==(other);
@@ -103,7 +103,7 @@ BasicBlockAnnotationSet::DebugString() const noexcept
 }
 
 bool
-BasicBlockAnnotationSet::operator==(const AnnotationSet & other)
+BasicBlockAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherBasicBlockDemandSet = dynamic_cast<const BasicBlockAnnotationSet *>(&other);
   return otherBasicBlockDemandSet && AnnotationSet::operator==(other);
@@ -127,7 +127,7 @@ LinearAnnotationSet::DebugString() const noexcept
 }
 
 bool
-LinearAnnotationSet::operator==(const AnnotationSet & other)
+LinearAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherLinearDemandSet = dynamic_cast<const LinearAnnotationSet *>(&other);
   return otherLinearDemandSet && AnnotationSet::operator==(other);
@@ -157,7 +157,7 @@ BranchAnnotationSet::DebugString() const noexcept
 }
 
 bool
-BranchAnnotationSet::operator==(const AnnotationSet & other)
+BranchAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherBranchDemandSet = dynamic_cast<const BranchAnnotationSet *>(&other);
   return otherBranchDemandSet && AnnotationSet::operator==(other)
@@ -186,7 +186,7 @@ LoopAnnotationSet::DebugString() const noexcept
 }
 
 bool
-LoopAnnotationSet::operator==(const AnnotationSet & other)
+LoopAnnotationSet::operator==(const AnnotationSet & other) const
 {
   auto otherLoopDemandSet = dynamic_cast<const LoopAnnotationSet *>(&other);
   return otherLoopDemandSet && AnnotationSet::operator==(other)
