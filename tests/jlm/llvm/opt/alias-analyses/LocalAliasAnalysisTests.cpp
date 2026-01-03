@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -34,11 +34,11 @@ Expect(
     jlm::llvm::aa::AliasAnalysis::AliasQueryResponse expected)
 {
   const auto actual = aa.Query(p1, s1, p2, s2);
-  assert(actual == expected);
+  EXPECT_EQ(actual, expected);
 
   // An alias analysis query should always be symmetrical, so check the opposite as well
   const auto mirror = aa.Query(p2, s2, p1, s1);
-  assert(mirror == expected);
+  EXPECT_EQ(mirror, expected);
 }
 
 /**
@@ -237,8 +237,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestLocalAliasAnalysis()
+TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysis)
 {
   using namespace jlm::llvm::aa;
 
@@ -317,10 +316,6 @@ TestLocalAliasAnalysis()
   // Arr1 is already 4 bytes into array, so BytePtrPlus2 can alias with it
   Expect(aa, *outputs.BytePtrPlus2, 2, *outputs.Arr1, 2, AliasAnalysis::MayAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysis",
-    TestLocalAliasAnalysis);
 
 /**
  * This class sets up an RVSDG representing the following code:
@@ -466,8 +461,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestLocalAliasAnalysisMultipleOrigins()
+TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysisMultipleOrigins)
 {
   using namespace jlm::llvm::aa;
 
@@ -532,7 +526,3 @@ TestLocalAliasAnalysisMultipleOrigins()
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::MustAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysisMultipleOrigins",
-    TestLocalAliasAnalysisMultipleOrigins);
