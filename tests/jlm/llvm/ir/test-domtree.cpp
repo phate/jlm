@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/domtree.hpp>
@@ -18,10 +18,10 @@ check(
     const jlm::llvm::ControlFlowGraphNode * node,
     const std::unordered_set<const jlm::llvm::ControlFlowGraphNode *> & children)
 {
-  assert(dnode->node() == node);
-  assert(dnode->nchildren() == N);
+  EXPECT_EQ(dnode->node(), node);
+  EXPECT_EQ(dnode->nchildren(), N);
   for (auto & child : *dnode)
-    assert(children.find(child->node()) != children.end());
+    EXPECT_NE(children.find(child->node()), children.end());
 }
 
 static const jlm::llvm::DominatorTreeNode *
@@ -33,11 +33,10 @@ get_child(const jlm::llvm::DominatorTreeNode * root, const jlm::llvm::ControlFlo
       return child.get();
   }
 
-  assert(0);
+  throw std::logic_error("Node does not exist in dominator tree");
 }
 
-static void
-test()
+TEST(DominatorTreeTests, test)
 {
   using namespace jlm::llvm;
 
@@ -79,5 +78,3 @@ test()
   auto dtexit = dtbb4->child(0);
   check<0>(dtexit, cfg.exit(), {});
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-domtree", test)
