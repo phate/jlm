@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/ir/test-cfg-structure \
     tests/jlm/llvm/ir/test-cfg-validity \
     tests/jlm/llvm/ir/test-domtree \
     tests/jlm/llvm/ir/test-ssa-destruction \
@@ -246,6 +245,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/ir/test-cfg-orderings.cpp \
     tests/jlm/llvm/ir/test-cfg-prune.cpp \
     tests/jlm/llvm/ir/test-cfg-purge.cpp \
+    tests/jlm/llvm/ir/test-cfg-structure.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
