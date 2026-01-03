@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static void
-test_remove_node()
+TEST(ControLFlowGraphTests, test_remove_node)
 {
   using namespace jlm::llvm;
 
@@ -25,16 +24,9 @@ test_remove_node()
 
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
-  /* verify inedge diversion */
-
+  // Act
   cfg.remove_node(bb0);
-  assert(cfg.nnodes() == 0);
-}
 
-static void
-test()
-{
-  test_remove_node();
+  // Assert
+  EXPECT_EQ(cfg.nnodes(), 0);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg", test)
