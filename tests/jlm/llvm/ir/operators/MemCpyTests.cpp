@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-operationEquality()
+TEST(MemCpyOperationTests, operationEquality)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -26,17 +25,12 @@ operationEquality()
   TestOperation operation3({ valueType }, { valueType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // length type differs
-  assert(operation1 != operation3); // number of memory states differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // length type differs
+  EXPECT_NE(operation1, operation3); // number of memory states differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-operationEquality",
-    operationEquality)
-
-static void
-accessors()
+TEST(MemCpyOperationTests, accessors)
 {
   using namespace jlm::llvm;
 
@@ -57,15 +51,12 @@ accessors()
       1);
 
   // Act & Assert
-  assert(MemCpyOperation::destinationInput(memCpy).origin() == &address1);
-  assert(MemCpyOperation::sourceInput(memCpy).origin() == &address2);
-  assert(MemCpyOperation::countInput(memCpy).origin() == constant100.output(0));
+  EXPECT_EQ(MemCpyOperation::destinationInput(memCpy).origin(), &address1);
+  EXPECT_EQ(MemCpyOperation::sourceInput(memCpy).origin(), &address2);
+  EXPECT_EQ(MemCpyOperation::countInput(memCpy).origin(), constant100.output(0));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/MemCpyNonVolatileTests-accessors", accessors)
-
-static void
-mapMemoryStateInputToOutput()
+TEST(MemCpyOperationTests, mapMemoryStateInputToOutput)
 {
   using namespace jlm::llvm;
 
@@ -98,27 +89,22 @@ mapMemoryStateInputToOutput()
       { &memState1, &memState2 });
 
   // Act & Assert
-  assert(
-      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyNonVolatile.input(3))
-      == memCpyNonVolatile.output(0));
-  assert(
-      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyNonVolatile.input(4))
-      == memCpyNonVolatile.output(1));
+  EXPECT_EQ(
+      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyNonVolatile.input(3)),
+      memCpyNonVolatile.output(0));
+  EXPECT_EQ(
+      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyNonVolatile.input(4)),
+      memCpyNonVolatile.output(1));
 
-  assert(
-      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyVolatile.input(4))
-      == memCpyVolatile.output(1));
-  assert(
-      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyVolatile.input(5))
-      == memCpyVolatile.output(2));
+  EXPECT_EQ(
+      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyVolatile.input(4)),
+      memCpyVolatile.output(1));
+  EXPECT_EQ(
+      &MemCpyOperation::mapMemoryStateInputToOutput(*memCpyVolatile.input(5)),
+      memCpyVolatile.output(2));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-mapMemoryStateInputToOutput",
-    mapMemoryStateInputToOutput)
-
-static void
-mapMemoryStateOutputToInput()
+TEST(MemCpyOperationTests, mapMemoryStateOutputToInput)
 {
   using namespace jlm::llvm;
 
@@ -151,21 +137,17 @@ mapMemoryStateOutputToInput()
       { &memState1, &memState2 });
 
   // Act & Assert
-  assert(
-      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyNonVolatile.output(0)).origin()
-      == &memState1);
-  assert(
-      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyNonVolatile.output(1)).origin()
-      == &memState2);
+  EXPECT_EQ(
+      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyNonVolatile.output(0)).origin(),
+      &memState1);
+  EXPECT_EQ(
+      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyNonVolatile.output(1)).origin(),
+      &memState2);
 
-  assert(
-      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyVolatile.output(1)).origin()
-      == &memState1);
-  assert(
-      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyVolatile.output(2)).origin()
-      == &memState2);
+  EXPECT_EQ(
+      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyVolatile.output(1)).origin(),
+      &memState1);
+  EXPECT_EQ(
+      MemCpyOperation::mapMemoryStateOutputToInput(*memCpyVolatile.output(2)).origin(),
+      &memState2);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-mapMemoryStateOutputToInput",
-    mapMemoryStateOutputToInput)

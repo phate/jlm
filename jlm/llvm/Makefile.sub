@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/ir/operators/MemCpyTests \
     tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
     tests/jlm/llvm/ir/operators/TestCall \
     tests/jlm/llvm/ir/operators/test-ConstantFP \
@@ -245,6 +244,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests.cpp \
     \
     tests/jlm/llvm/ir/operators/LoadTests.cpp \
+    tests/jlm/llvm/ir/operators/MemCpyTests.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
