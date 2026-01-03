@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -14,8 +14,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static void
-StoreConversion()
+TEST(StoreTests, StoreConversion)
 {
   using namespace llvm;
 
@@ -67,25 +66,23 @@ StoreConversion()
         auto ioStateAssignment = *std::next(it);
         auto memoryStateAssignment = *std::next(it, 2);
 
-        assert(is<AssignmentOperation>(ioStateAssignment->operation()));
-        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(ioStateAssignment->operation()));
+        EXPECT_TRUE(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
       else if (is<StoreNonVolatileOperation>(*it))
       {
         numStoreThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
     }
 
-    assert(numStoreThreeAddressCodes == 1);
-    assert(numStoreVolatileThreeAddressCodes == 2);
+    EXPECT_EQ(numStoreThreeAddressCodes, 1);
+    EXPECT_EQ(numStoreVolatileThreeAddressCodes, 2);
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/StoreTests-StoreConversion", StoreConversion)
