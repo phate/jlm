@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
@@ -247,6 +246,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphTests.cpp \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests.cpp \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
