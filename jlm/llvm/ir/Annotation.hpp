@@ -233,14 +233,14 @@ public:
   }
 
   virtual bool
-  operator==(const AnnotationSet & other)
+  operator==(const AnnotationSet & other) const
   {
     return ReadSet_ == other.ReadSet_ && AllWriteSet_ == other.AllWriteSet_
         && FullWriteSet_ == other.FullWriteSet_;
   }
 
   bool
-  operator!=(const AnnotationSet & other)
+  operator!=(const AnnotationSet & other) const
   {
     return !(*this == other);
   }
@@ -285,7 +285,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 
   VariableSet TopSet_;
 };
@@ -312,7 +312,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 };
 
 class BasicBlockAnnotationSet final : public AnnotationSet
@@ -337,7 +337,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 };
 
 class LinearAnnotationSet final : public AnnotationSet
@@ -362,7 +362,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 };
 
 class BranchAnnotationSet final : public AnnotationSet
@@ -398,7 +398,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 
   const VariableSet &
   InputVariables() const noexcept
@@ -460,7 +460,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const AnnotationSet & other) override;
+  operator==(const AnnotationSet & other) const override;
 
   const VariableSet &
   LoopVariables() const noexcept
