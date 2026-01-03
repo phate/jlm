@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/frontend/llvm/test-function-call \
     tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
     tests/jlm/llvm/frontend/llvm/test-recursive-data \
     tests/jlm/llvm/frontend/llvm/test-select \
@@ -244,6 +243,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/frontend/llvm/test-endless-loop.cpp \
     tests/jlm/llvm/frontend/llvm/test-export.cpp \
     tests/jlm/llvm/frontend/llvm/TestFNeg.cpp \
+    tests/jlm/llvm/frontend/llvm/test-function-call.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
