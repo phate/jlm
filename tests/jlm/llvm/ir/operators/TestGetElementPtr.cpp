@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 
-static void
-TestOperationEquality()
+TEST(GetElementPtrOperationTests, TestOperationEquality)
 {
   using namespace jlm::llvm;
 
@@ -29,13 +28,5 @@ TestOperationEquality()
       { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
       structType2);
 
-  assert(operation1 != operation2);
+  EXPECT_NE(operation1, operation2);
 }
-
-static void
-Test()
-{
-  TestOperationEquality();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestGetElementPtr", Test)
