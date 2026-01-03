@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TraceTests \
     tests/jlm/llvm/ir/TypeConverterTests \
@@ -246,6 +245,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/ir/test-ssa-destruction.cpp \
     tests/jlm/llvm/ir/TestTypes.cpp \
     tests/jlm/llvm/ir/TestAnnotation.cpp \
+    tests/jlm/llvm/ir/TestCallSummary.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
