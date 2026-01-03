@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
 
-static void
-TestEquality()
+TEST(AttributeSetTests, TestEquality)
 {
   using namespace jlm::llvm;
 
@@ -49,14 +48,12 @@ TestEquality()
   set3.InsertTypeAttribute(typeAttribute1);
 
   // Act & Assert
-  assert(set1 == set1);
-  assert(set1 != set2);
-  assert(set1 == set3);
+  EXPECT_EQ(set1, set1);
+  EXPECT_NE(set1, set2);
+  EXPECT_EQ(set1, set3);
 
-  assert(set2 == set2);
-  assert(set2 != set3);
+  EXPECT_EQ(set2, set2);
+  EXPECT_NE(set2, set3);
 
-  assert(set3 == set3);
+  EXPECT_EQ(set3, set3);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/AttributeSetTests-TestEquality", TestEquality);
