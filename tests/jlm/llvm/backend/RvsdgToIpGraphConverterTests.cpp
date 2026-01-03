@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
@@ -17,8 +17,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-GammaWithMatch()
+TEST(ViewTests, GammaWithMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -55,18 +54,13 @@ GammaWithMatch()
 
   // Assert
   auto & ipg = module->ipgraph();
-  assert(ipg.nnodes() == 1);
+  EXPECT_EQ(ipg.nnodes(), 1);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  assert(cfg->nnodes() == 4);
+  EXPECT_EQ(cfg->nnodes(), 4);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithMatch",
-    GammaWithMatch)
-
-static void
-GammaWithoutMatch()
+TEST(ViewTests, GammaWithoutMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -102,18 +96,13 @@ GammaWithoutMatch()
 
   // Assert
   auto & ipg = module->ipgraph();
-  assert(ipg.nnodes() == 1);
+  EXPECT_EQ(ipg.nnodes(), 1);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  assert(cfg->nnodes() == 4);
+  EXPECT_EQ(cfg->nnodes(), 4);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithoutMatch",
-    GammaWithoutMatch)
-
-static void
-EmptyGammaWithTwoSubregionsAndMatch()
+TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -155,18 +144,13 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  assert(ipGraph.nnodes() == 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
-  assert(is_closed(*controlFlowGraph));
+  EXPECT_TRUE(is_closed(*controlFlowGraph));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregionsAndMatch",
-    EmptyGammaWithTwoSubregionsAndMatch)
-
-static void
-EmptyGammaWithTwoSubregions()
+TEST(ViewTests, EmptyGammaWithTwoSubregions)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -215,18 +199,13 @@ EmptyGammaWithTwoSubregions()
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  assert(ipGraph.nnodes() == 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
-  assert(is_closed(*controlFlowGraph));
+  EXPECT_TRUE(is_closed(*controlFlowGraph));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregions",
-    EmptyGammaWithTwoSubregions)
-
-static void
-EmptyGammaWithThreeSubregions()
+TEST(ViewTests, EmptyGammaWithThreeSubregions)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -266,18 +245,13 @@ EmptyGammaWithThreeSubregions()
 
   // Assert
   auto & ipg = module->ipgraph();
-  assert(ipg.nnodes() == 1);
+  EXPECT_EQ(ipg.nnodes(), 1);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  assert(is_closed(*cfg));
+  EXPECT_TRUE(is_closed(*cfg));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithThreeSubregions",
-    EmptyGammaWithThreeSubregions)
-
-static void
-PartialEmptyGamma()
+TEST(ViewTests, PartialEmptyGamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -317,20 +291,15 @@ PartialEmptyGamma()
 
   // Assert
   auto & ipg = module->ipgraph();
-  assert(ipg.nnodes() == 1);
+  EXPECT_EQ(ipg.nnodes(), 1);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
-  assert(is_proper_structured(*cfg));
+  EXPECT_TRUE(is_proper_structured(*cfg));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-PartialEmptyGamma",
-    PartialEmptyGamma)
-
-static void
-RecursiveData()
+TEST(ViewTests, RecursiveData)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -386,9 +355,5 @@ RecursiveData()
 
   // Assert
   auto & ipg = module->ipgraph();
-  assert(ipg.nnodes() == 3);
+  EXPECT_EQ(ipg.nnodes(), 3);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-RecursiveData",
-    RecursiveData)
