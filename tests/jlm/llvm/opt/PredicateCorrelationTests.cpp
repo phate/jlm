@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
@@ -126,8 +126,7 @@ setupThetaGammaMatchCorrelationTest(jlm::rvsdg::Graph & rvsdg)
   return { *gammaNode, *thetaNode, matchNode };
 }
 
-static void
-testControlConstantCorrelation()
+TEST(PredicateCorrelationTests, testControlConstantCorrelation)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -151,16 +150,11 @@ testControlConstantCorrelation()
   view(rvsdg, stdout);
 
   // Assert
-  assert(thetaNode.subregion()->numNodes() == 2);
-  assert(thetaNode.predicate()->origin() == matchNode.output(0));
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 2);
+  EXPECT_EQ(thetaNode.predicate()->origin(), matchNode.output(0));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testControlConstantCorrelation",
-    testControlConstantCorrelation)
-
-static void
-testMatchConstantCorrelationDetection()
+TEST(PredicateCorrelationTests, testMatchConstantCorrelationDetection)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -182,27 +176,22 @@ testMatchConstantCorrelationDetection()
     const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
 
     // Assert
-    assert(correlationOpt.value() != nullptr);
-    assert(correlationOpt.value()->type() == CorrelationType::MatchConstantCorrelation);
-    assert(&correlationOpt.value()->thetaNode() == &thetaNode);
-    assert(&correlationOpt.value()->gammaNode() == &gammaNode);
+    EXPECT_NE(correlationOpt.value(), nullptr);
+    EXPECT_EQ(correlationOpt.value()->type(), CorrelationType::MatchConstantCorrelation);
+    EXPECT_EQ(&correlationOpt.value()->thetaNode(), &thetaNode);
+    EXPECT_EQ(&correlationOpt.value()->gammaNode(), &gammaNode);
 
     const auto correlationData =
         std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
             correlationOpt.value()->data());
-    assert(correlationData.matchNode == &matchNode);
-    assert(correlationData.alternatives.size() == 2);
-    assert(correlationData.alternatives[0] == alternatives.first);
-    assert(correlationData.alternatives[1] == alternatives.second);
+    EXPECT_EQ(correlationData.matchNode, &matchNode);
+    EXPECT_EQ(correlationData.alternatives.size(), 2);
+    EXPECT_EQ(correlationData.alternatives[0], alternatives.first);
+    EXPECT_EQ(correlationData.alternatives[1], alternatives.second);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelationDetection",
-    testMatchConstantCorrelationDetection)
-
-static void
-testMatchConstantCorrelation_Success()
+TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Success)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -225,16 +214,11 @@ testMatchConstantCorrelation_Success()
   view(rvsdg, stdout);
 
   // Assert
-  assert(thetaNode.subregion()->numNodes() == 1);
-  assert(thetaNode.predicate()->origin() == gammaPredicate);
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode.predicate()->origin(), gammaPredicate);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation_Success",
-    testMatchConstantCorrelation_Success)
-
-static void
-testMatchConstantCorrelation_Failure()
+TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Failure)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -263,15 +247,10 @@ testMatchConstantCorrelation_Failure()
   // the same control behavior as the match node that is currently connected to the theta node
   // predicate. It would be necessary to create a new match node for this instead of just reusing
   // the gamma node's control predicate.
-  assert(thetaNode.predicate()->origin() != gammaPredicate);
+  EXPECT_NE(thetaNode.predicate()->origin(), gammaPredicate);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testMatchConstantCorrelation_Failure",
-    testMatchConstantCorrelation_Failure)
-
-static void
-testThetaGammaMatchCorrelationDetection()
+TEST(PredicateCorrelationTests, testThetaGammaMatchCorrelationDetection)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -288,22 +267,17 @@ testThetaGammaMatchCorrelationDetection()
   const auto correlationOpt = computeThetaGammaPredicateCorrelation(thetaNode);
 
   // Assert
-  assert(correlationOpt.value() != nullptr);
-  assert(correlationOpt.value()->type() == CorrelationType::MatchCorrelation);
-  assert(&correlationOpt.value()->thetaNode() == &thetaNode);
-  assert(&correlationOpt.value()->gammaNode() == &gammaNode);
+  EXPECT_NE(correlationOpt.value(), nullptr);
+  EXPECT_EQ(correlationOpt.value()->type(), CorrelationType::MatchCorrelation);
+  EXPECT_EQ(&correlationOpt.value()->thetaNode(), &thetaNode);
+  EXPECT_EQ(&correlationOpt.value()->gammaNode(), &gammaNode);
 
   const auto correlationData = std::get<ThetaGammaPredicateCorrelation::MatchCorrelationData>(
       correlationOpt.value()->data());
-  assert(correlationData.matchNode == &matchNode);
+  EXPECT_EQ(correlationData.matchNode, &matchNode);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testThetaGammaMatchCorrelationDetection",
-    testThetaGammaMatchCorrelationDetection)
-
-static void
-testThetaGammaCorrelationFixPoint()
+TEST(PredicateCorrelationTests, testThetaGammaCorrelationFixPoint)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -348,16 +322,11 @@ testThetaGammaCorrelationFixPoint()
   view(rvsdg, stdout);
 
   // Assert
-  assert(thetaNode->subregion()->numNodes() == 1);
-  assert(thetaNode->predicate()->origin() == predicate);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode->predicate()->origin(), predicate);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testThetaGammaCorrelationFixPoint",
-    testThetaGammaCorrelationFixPoint)
-
-static void
-testDetermineGammaSubregionRoles_ControlConstantCorrelation()
+TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_ControlConstantCorrelation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -380,8 +349,8 @@ testDetermineGammaSubregionRoles_ControlConstantCorrelation()
     const auto gammaSubregionRoles = determineGammaSubregionRoles(*correlation);
 
     // Assert
-    assert(gammaSubregionRoles->exitSubregion == gammaNode.subregion(0));
-    assert(gammaSubregionRoles->repetitionSubregion == gammaNode.subregion(1));
+    EXPECT_EQ(gammaSubregionRoles->exitSubregion, gammaNode.subregion(0));
+    EXPECT_EQ(gammaSubregionRoles->repetitionSubregion, gammaNode.subregion(1));
   }
 
   {
@@ -402,18 +371,12 @@ testDetermineGammaSubregionRoles_ControlConstantCorrelation()
     const auto gammaSubregionRoles = determineGammaSubregionRoles(*correlation);
 
     // Assert
-    assert(gammaSubregionRoles->exitSubregion == gammaNode.subregion(1));
-    assert(gammaSubregionRoles->repetitionSubregion == gammaNode.subregion(0));
+    EXPECT_EQ(gammaSubregionRoles->exitSubregion, gammaNode.subregion(1));
+    EXPECT_EQ(gammaSubregionRoles->repetitionSubregion, gammaNode.subregion(0));
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/"
-    "PredicateCorrelationTests-testDetermineGammaSubregionRoles_ControlConstantCorrelation",
-    testDetermineGammaSubregionRoles_ControlConstantCorrelation)
-
-static void
-testDetermineGammaSubregionRoles_MatchConstantCorrelation()
+TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_MatchConstantCorrelation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -436,8 +399,8 @@ testDetermineGammaSubregionRoles_MatchConstantCorrelation()
     const auto gammaSubregionRoles = determineGammaSubregionRoles(*correlation);
 
     // Assert
-    assert(gammaSubregionRoles->exitSubregion == gammaNode.subregion(0));
-    assert(gammaSubregionRoles->repetitionSubregion == gammaNode.subregion(1));
+    EXPECT_EQ(gammaSubregionRoles->exitSubregion, gammaNode.subregion(0));
+    EXPECT_EQ(gammaSubregionRoles->repetitionSubregion, gammaNode.subregion(1));
   }
 
   {
@@ -458,18 +421,12 @@ testDetermineGammaSubregionRoles_MatchConstantCorrelation()
     const auto gammaSubregionRoles = determineGammaSubregionRoles(*correlation);
 
     // Assert
-    assert(gammaSubregionRoles->exitSubregion == gammaNode.subregion(1));
-    assert(gammaSubregionRoles->repetitionSubregion == gammaNode.subregion(0));
+    EXPECT_EQ(gammaSubregionRoles->exitSubregion, gammaNode.subregion(1));
+    EXPECT_EQ(gammaSubregionRoles->repetitionSubregion, gammaNode.subregion(0));
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/"
-    "PredicateCorrelationTests-testDetermineGammaSubregionRoles_MatchConstantCorrelation",
-    testDetermineGammaSubregionRoles_MatchConstantCorrelation)
-
-static void
-testDetermineGammaSubregionRoles_MatchCorrelation()
+TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_MatchCorrelation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -486,17 +443,11 @@ testDetermineGammaSubregionRoles_MatchCorrelation()
   const auto gammaSubregionRoles = determineGammaSubregionRoles(*correlation);
 
   // Assert
-  assert(gammaSubregionRoles->exitSubregion == gammaNode.subregion(0));
-  assert(gammaSubregionRoles->repetitionSubregion == gammaNode.subregion(1));
+  EXPECT_EQ(gammaSubregionRoles->exitSubregion, gammaNode.subregion(0));
+  EXPECT_EQ(gammaSubregionRoles->repetitionSubregion, gammaNode.subregion(1));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/"
-    "PredicateCorrelationTests-testDetermineGammaSubregionRoles_MatchCorrelation",
-    testDetermineGammaSubregionRoles_MatchCorrelation)
-
-static void
-testGammaGammaMatchCorrelationDetection()
+TEST(PredicateCorrelationTests, testGammaGammaMatchCorrelationDetection)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -521,16 +472,12 @@ testGammaGammaMatchCorrelationDetection()
   const auto correlationOpt = computeGammaGammaPredicateCorrelation(*gammaNode1);
 
   // Assert
-  assert(correlationOpt.value() != nullptr);
-  assert(correlationOpt.value()->type() == CorrelationType::MatchCorrelation);
-  assert(&correlationOpt.value()->gammaNode1() == gammaNode1);
-  assert(&correlationOpt.value()->gammaNode2() == gammaNode2);
+  EXPECT_NE(correlationOpt.value(), nullptr);
+  EXPECT_EQ(correlationOpt.value()->type(), CorrelationType::MatchCorrelation);
+  EXPECT_EQ(&correlationOpt.value()->gammaNode1(), gammaNode1);
+  EXPECT_EQ(&correlationOpt.value()->gammaNode2(), gammaNode2);
 
   const auto correlationData = std::get<GammaGammaPredicateCorrelation::MatchCorrelationData>(
       correlationOpt.value()->correlationData());
-  assert(correlationData.matchNode == &matchNode);
+  EXPECT_EQ(correlationData.matchNode, &matchNode);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/PredicateCorrelationTests-testGammaGammaMatchCorrelationDetection",
-    testGammaGammaMatchCorrelationDetection)

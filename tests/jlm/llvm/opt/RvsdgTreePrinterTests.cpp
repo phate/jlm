@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -48,8 +48,7 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
   return result;
 }
 
-static void
-PrintRvsdgTree()
+TEST(RvsdgTreePrinterTests, PrintRvsdgTree)
 {
   using namespace jlm::llvm;
   using namespace jlm::util;
@@ -78,13 +77,10 @@ PrintRvsdgTree()
                       "-LAMBDA[f]\n"
                       "--Region[0]\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/RvsdgTreePrinterTests-PrintRvsdgTree", PrintRvsdgTree)
-
-static void
-PrintNumRvsdgNodesAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumRvsdgNodesAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -114,15 +110,10 @@ PrintNumRvsdgNodesAnnotation()
                       "--Region[0] NumRvsdgNodes:1\n"
                       "--Region[1] NumRvsdgNodes:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumRvsdgNodesAnnotation",
-    PrintNumRvsdgNodesAnnotation)
-
-static void
-PrintNumLoadNodesAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumLoadNodesAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -172,15 +163,10 @@ PrintNumLoadNodesAnnotation()
                       "--Region[1] NumLoadNodes:0\n"
                       "--Region[2] NumLoadNodes:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumLoadNodesAnnotation",
-    PrintNumLoadNodesAnnotation)
-
-static void
-PrintNumMemoryStateInputsOutputsAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumMemoryStateInputsOutputsAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -223,9 +209,5 @@ PrintNumMemoryStateInputsOutputsAnnotation()
       "--Region[0] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
       "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumMemoryStateInputsOutputsAnnotation",
-    PrintNumMemoryStateInputsOutputsAnnotation)

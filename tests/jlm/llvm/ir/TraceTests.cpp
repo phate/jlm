@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -17,8 +17,7 @@
 
 #include <cassert>
 
-static void
-testTracingIOBarrier()
+TEST(TraceTests, testTracingIOBarrier)
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -51,14 +50,11 @@ testTracingIOBarrier()
   const auto ioBarrier2Output = ioBarrier2->output(0);
 
   // Assert
-  assert(&jlm::llvm::traceOutput(*ioBarrier1Output) == myInt);
-  assert(&jlm::llvm::traceOutput(*ioBarrier2Output) == myInt);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier1Output), myInt);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier2Output), myInt);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TraceTests-testTracingIOBarrier", testTracingIOBarrier)
-
-static void
-testGetConstantSignedInteger()
+TEST(TraceTests, testGetConstantSignedInteger)
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -124,20 +120,16 @@ testGetConstantSignedInteger()
   // Assert
 
   // The -37 can be found both inside and outside the lambda
-  assert(tryGetConstantSignedInteger(*bits64Output) == -37);
-  assert(tryGetConstantSignedInteger(*bits64CtxVar) == -37);
+  EXPECT_EQ(tryGetConstantSignedInteger(*bits64Output), -37);
+  EXPECT_EQ(tryGetConstantSignedInteger(*bits64CtxVar), -37);
 
   // The 20 can be found both before, inside and after the gamma
-  assert(tryGetConstantSignedInteger(*integerConstantNode.output(0)) == 20);
-  assert(tryGetConstantSignedInteger(*entryVar.branchArgument[0]) == 20);
-  assert(tryGetConstantSignedInteger(*entryVar.branchArgument[1]) == 20);
-  assert(tryGetConstantSignedInteger(*exitVarOutput) == 20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*integerConstantNode.output(0)), 20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[0]), 20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[1]), 20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*exitVarOutput), 20);
 
   // A match output is not a constant integer, neither is the lambda output
-  assert(tryGetConstantSignedInteger(*matchOutput) == std::nullopt);
-  assert(tryGetConstantSignedInteger(*lambdaOutput) == std::nullopt);
+  EXPECT_EQ(tryGetConstantSignedInteger(*matchOutput), std::nullopt);
+  EXPECT_EQ(tryGetConstantSignedInteger(*lambdaOutput), std::nullopt);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TraceTests-testGetConstantSignedInteger",
-    testGetConstantSignedInteger)

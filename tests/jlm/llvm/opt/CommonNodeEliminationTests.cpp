@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -20,8 +20,7 @@
 
 static jlm::util::StatisticsCollector statisticsCollector;
 
-static inline void
-test_simple()
+TEST(CommonNodeEliminationTests, test_simple)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -58,13 +57,12 @@ test_simple()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().result(0)->origin() == graph.GetRootRegion().result(1)->origin());
-  assert(graph.GetRootRegion().result(3)->origin() == graph.GetRootRegion().result(4)->origin());
-  assert(graph.GetRootRegion().result(5)->origin() == graph.GetRootRegion().result(6)->origin());
+  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), graph.GetRootRegion().result(1)->origin());
+  EXPECT_EQ(graph.GetRootRegion().result(3)->origin(), graph.GetRootRegion().result(4)->origin());
+  EXPECT_EQ(graph.GetRootRegion().result(5)->origin(), graph.GetRootRegion().result(6)->origin());
 }
 
-static inline void
-test_gamma()
+TEST(CommonNodeEliminationTests, test_gamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -114,22 +112,21 @@ test_gamma()
 
   auto subregion0 = gamma->subregion(0);
   auto subregion1 = gamma->subregion(1);
-  assert(gamma->input(1)->origin() == gamma->input(2)->origin());
-  assert(subregion0->result(0)->origin() == subregion0->result(1)->origin());
-  assert(subregion0->result(3)->origin() == subregion0->result(4)->origin());
-  assert(subregion0->result(3)->origin() == subregion0->result(5)->origin());
-  assert(subregion1->result(0)->origin() == subregion1->result(1)->origin());
-  assert(graph.GetRootRegion().result(0)->origin() == graph.GetRootRegion().result(1)->origin());
+  EXPECT_EQ(gamma->input(1)->origin(), gamma->input(2)->origin());
+  EXPECT_EQ(subregion0->result(0)->origin(), subregion0->result(1)->origin());
+  EXPECT_EQ(subregion0->result(3)->origin(), subregion0->result(4)->origin());
+  EXPECT_EQ(subregion0->result(3)->origin(), subregion0->result(5)->origin());
+  EXPECT_EQ(subregion1->result(0)->origin(), subregion1->result(1)->origin());
+  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), graph.GetRootRegion().result(1)->origin());
 
   auto argument0 =
       dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion0->result(6)->origin());
   auto argument1 =
       dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion1->result(6)->origin());
-  assert(argument0->input() == argument1->input());
+  EXPECT_EQ(argument0->input(), argument1->input());
 }
 
-static inline void
-test_theta()
+TEST(CommonNodeEliminationTests, test_theta)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -173,15 +170,14 @@ test_theta()
   auto un1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u1);
   auto un2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u2);
   auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
-  assert(un1->input(0)->origin() == un2->input(0)->origin());
-  assert(bn1->input(0)->origin() == un1->input(0)->origin());
-  assert(bn1->input(1)->origin() == region->argument(3));
-  assert(region->result(2)->origin() == region->result(3)->origin());
-  assert(graph.GetRootRegion().result(0)->origin() == graph.GetRootRegion().result(1)->origin());
+  EXPECT_EQ(un1->input(0)->origin(), un2->input(0)->origin());
+  EXPECT_EQ(bn1->input(0)->origin(), un1->input(0)->origin());
+  EXPECT_EQ(bn1->input(1)->origin(), region->argument(3));
+  EXPECT_EQ(region->result(2)->origin(), region->result(3)->origin());
+  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), graph.GetRootRegion().result(1)->origin());
 }
 
-static inline void
-test_theta2()
+TEST(CommonNodeEliminationTests, test_theta2)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -219,12 +215,12 @@ test_theta2()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(lv2.post->origin() == u1);
-  assert(lv2.pre->nusers() != 0 && lv3.pre->nusers() != 0);
+  EXPECT_EQ(lv2.post->origin(), u1);
+  EXPECT_NE(lv2.pre->nusers(), 0);
+  EXPECT_NE(lv3.pre->nusers(), 0);
 }
 
-static inline void
-test_theta3()
+TEST(CommonNodeEliminationTests, test_theta3)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -273,16 +269,15 @@ test_theta3()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(r1->result(2)->origin() == r1->result(4)->origin());
-  assert(u1->input(0)->origin() == u2->input(0)->origin());
-  assert(r2->result(2)->origin() == r2->result(4)->origin());
-  assert(theta2->input(1)->origin() == theta2->input(3)->origin());
-  assert(r1->result(3)->origin() != r1->result(4)->origin());
-  assert(r2->result(3)->origin() != r2->result(4)->origin());
+  EXPECT_EQ(r1->result(2)->origin(), r1->result(4)->origin());
+  EXPECT_EQ(u1->input(0)->origin(), u2->input(0)->origin());
+  EXPECT_EQ(r2->result(2)->origin(), r2->result(4)->origin());
+  EXPECT_EQ(theta2->input(1)->origin(), theta2->input(3)->origin());
+  EXPECT_NE(r1->result(3)->origin(), r1->result(4)->origin());
+  EXPECT_NE(r2->result(3)->origin(), r2->result(4)->origin());
 }
 
-static inline void
-test_theta4()
+TEST(CommonNodeEliminationTests, test_theta4)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -328,13 +323,13 @@ test_theta4()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(ex1.origin() != ex2.origin());
-  assert(lv2.pre->nusers() != 0 && lv3.pre->nusers() != 0);
-  assert(lv6.post->origin() == lv7.post->origin());
+  EXPECT_NE(ex1.origin(), ex2.origin());
+  EXPECT_NE(lv2.pre->nusers(), 0);
+  EXPECT_NE(lv3.pre->nusers(), 0);
+  EXPECT_EQ(lv6.post->origin(), lv7.post->origin());
 }
 
-static inline void
-test_theta5()
+TEST(CommonNodeEliminationTests, test_theta5)
 {
   using namespace jlm::llvm;
 
@@ -372,14 +367,13 @@ test_theta5()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(ex1.origin() == ex2.origin());
-  assert(ex3.origin() == ex4.origin());
-  assert(region->result(4)->origin() == region->result(5)->origin());
-  assert(region->result(2)->origin() == region->result(3)->origin());
+  EXPECT_EQ(ex1.origin(), ex2.origin());
+  EXPECT_EQ(ex3.origin(), ex4.origin());
+  EXPECT_EQ(region->result(4)->origin(), region->result(5)->origin());
+  EXPECT_EQ(region->result(2)->origin(), region->result(3)->origin());
 }
 
-static void
-MultipleThetas()
+TEST(CommonNodeEliminationTests, MultipleThetas)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -427,13 +421,10 @@ MultipleThetas()
   // Assert
   // The origins from x1 and x2 are ultimately from two different loops with different iteration
   // counts. They are NOT congruent.
-  assert(x1.origin() != x2.origin());
+  EXPECT_NE(x1.origin(), x2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetas", MultipleThetas)
-
-static void
-MultipleThetasPassthrough()
+TEST(CommonNodeEliminationTests, MultipleThetasPassthrough)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -476,13 +467,10 @@ MultipleThetasPassthrough()
   // The origins from x1 and x2 are ultimately from two different loops with different iteration
   // counts, BUT the values in these loops are only passthrough values. Thus, we would expect them
   // to be congruent.
-  assert(x1.origin() == x2.origin());
+  EXPECT_EQ(x1.origin(), x2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetasPassthrough", MultipleThetasPassthrough)
-
-static inline void
-test_lambda()
+TEST(CommonNodeEliminationTests, test_lambda)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -514,11 +502,10 @@ test_lambda()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
-  assert(bn1->input(0)->origin() == bn1->input(1)->origin());
+  EXPECT_EQ(bn1->input(0)->origin(), bn1->input(1)->origin());
 }
 
-static inline void
-test_phi()
+TEST(CommonNodeEliminationTests, test_phi)
 {
   using namespace jlm::llvm;
 
@@ -565,23 +552,7 @@ test_phi()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(
-      jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).input(0)->origin()
-      == jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
+  EXPECT_EQ(
+      jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).input(0)->origin(),
+      jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
-
-static void
-verify()
-{
-  test_simple();
-  test_gamma();
-  test_theta();
-  test_theta2();
-  test_theta3();
-  test_theta4();
-  test_theta5();
-  test_lambda();
-  test_phi();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne", verify)

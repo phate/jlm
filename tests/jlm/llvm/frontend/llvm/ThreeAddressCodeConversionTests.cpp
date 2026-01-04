@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -82,8 +82,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
   return ipgModule;
 }
 
-static void
-LoadVolatileConversion()
+TEST(ThreeAddressCodeConversionTests, LoadVolatileConversion)
 {
   using namespace jlm::llvm;
 
@@ -102,15 +101,10 @@ LoadVolatileConversion()
   auto lambda = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutput);
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  assert(is<LoadVolatileOperation>(loadVolatileNode));
+  EXPECT_TRUE(is<LoadVolatileOperation>(loadVolatileNode));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests-LoadVolatileConversion",
-    LoadVolatileConversion)
-
-static void
-StoreVolatileConversion()
+TEST(ThreeAddressCodeConversionTests, StoreVolatileConversion)
 {
   using namespace jlm::llvm;
 
@@ -129,9 +123,5 @@ StoreVolatileConversion()
   auto lambda = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutput);
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  assert(is<StoreVolatileOperation>(storeVolatileNode));
+  EXPECT_TRUE(is<StoreVolatileOperation>(storeVolatileNode));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests-StoreVolatileConversion",
-    StoreVolatileConversion)

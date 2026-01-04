@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
@@ -12,8 +12,7 @@
 #include <cassert>
 #include <vector>
 
-static void
-TestUnifiesCycles()
+TEST(LazyCycleDetectionTests, TestUnifiesCycles)
 {
   using namespace jlm;
   using namespace jlm::llvm::aa;
@@ -41,15 +40,15 @@ TestUnifiesCycles()
 
   auto GetSuccessors = [&](PointerObjectIndex i)
   {
-    assert(set.IsUnificationRoot(i));
+    EXPECT_TRUE(set.IsUnificationRoot(i));
     return successors[i].Items();
   };
 
   auto UnifyPointerObjects = [&](PointerObjectIndex a, PointerObjectIndex b)
   {
-    assert(set.IsUnificationRoot(a));
-    assert(set.IsUnificationRoot(b));
-    assert(a != b);
+    EXPECT_TRUE(set.IsUnificationRoot(a));
+    EXPECT_TRUE(set.IsUnificationRoot(b));
+    EXPECT_NE(a, b);
     auto newRoot = set.UnifyPointerObjects(a, b);
     auto notRoot = a + b - newRoot;
 
@@ -64,28 +63,28 @@ TestUnifiesCycles()
   lcd.OnPropagatedNothing(0, 1);
 
   // Assert that nothing happened
-  assert(lcd.NumCycleDetectionAttempts() == 1);
-  assert(lcd.NumCyclesDetected() == 0);
-  assert(lcd.NumCycleUnifications() == 0);
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 0);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 0);
 
   // Act 2 - Try the same edge again
   lcd.OnPropagatedNothing(0, 1);
 
   // Assert that the second attempt is ignored
-  assert(lcd.NumCycleDetectionAttempts() == 1);
-  assert(lcd.NumCyclesDetected() == 0);
-  assert(lcd.NumCycleUnifications() == 0);
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 0);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 0);
 
   // Act 3 - add the edge 3->1 that creates a cycle 3-1-2-3
   successors[3].insert(1);
   lcd.OnPropagatedNothing(3, 1);
 
   // Assert that the cycle was found and unified
-  assert(lcd.NumCycleDetectionAttempts() == 2);
-  assert(lcd.NumCyclesDetected() == 1);
-  assert(lcd.NumCycleUnifications() == 2);
-  assert(set.GetUnificationRoot(1) == set.GetUnificationRoot(2));
-  assert(set.GetUnificationRoot(1) == set.GetUnificationRoot(3));
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 2);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 1);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 2);
+  EXPECT_EQ(set.GetUnificationRoot(1), set.GetUnificationRoot(2));
+  EXPECT_EQ(set.GetUnificationRoot(1), set.GetUnificationRoot(3));
 
   // Act 4 - add the edge 4 -> 0, creating two cycles 4-0-5-4 and 4-0-(1/2/3)-4
   successors[4].insert(0);
@@ -93,14 +92,10 @@ TestUnifiesCycles()
 
   // Assert that both cycles were found.
   // They are only counted as one cycle, but everything should be unified now
-  assert(lcd.NumCyclesDetected() == 2);
-  assert(lcd.NumCycleUnifications() == set.NumPointerObjects() - 1);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 2);
+  EXPECT_EQ(lcd.NumCycleUnifications(), set.NumPointerObjects() - 1);
   for (PointerObjectIndex i = 1; i < set.NumPointerObjects(); i++)
   {
-    assert(set.GetUnificationRoot(0) == set.GetUnificationRoot(i));
+    EXPECT_EQ(set.GetUnificationRoot(0), set.GetUnificationRoot(i));
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestLazyCycleDetection-TestUnifiesCycles",
-    TestUnifiesCycles)

@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/aggregation.hpp>
 #include <jlm/llvm/ir/Annotation.hpp>
@@ -13,8 +13,7 @@
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-TestBasicBlockAnnotation()
+TEST(AnnotationTests, TestBasicBlockAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -50,13 +49,12 @@ TestBasicBlockAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot)
-      == BasicBlockAnnotationSet({ v0 }, { v1, v2 }, { v1, v2 }));
+  EXPECT_EQ(
+      demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot),
+      BasicBlockAnnotationSet({ v0 }, { v1, v2 }, { v1, v2 }));
 }
 
-static void
-TestLinearSubgraphAnnotation()
+TEST(AnnotationTests, TestLinearSubgraphAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -104,44 +102,43 @@ TestLinearSubgraphAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot)
-      == LinearAnnotationSet({}, { v1, &argument, v2 }, { v1, &argument, v2 }));
+  EXPECT_EQ(
+      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
+      LinearAnnotationSet({}, { v1, &argument, v2 }, { v1, &argument, v2 }));
   {
     auto linearNode1 = aggregationTreeRoot->child(0);
-    assert(
-        demandMap->Lookup<LinearAnnotationSet>(*linearNode1)
-        == LinearAnnotationSet({}, { v1, &argument }, { v1, &argument }));
+    EXPECT_EQ(
+        demandMap->Lookup<LinearAnnotationSet>(*linearNode1),
+        LinearAnnotationSet({}, { v1, &argument }, { v1, &argument }));
     {
       auto entryNode = linearNode1->child(0);
-      assert(
-          demandMap->Lookup<EntryAnnotationSet>(*entryNode)
-          == EntryAnnotationSet({}, { &argument }, { &argument }, {}));
+      EXPECT_EQ(
+          demandMap->Lookup<EntryAnnotationSet>(*entryNode),
+          EntryAnnotationSet({}, { &argument }, { &argument }, {}));
 
       auto basicBlockNode1 = linearNode1->child(1);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1)
-          == BasicBlockAnnotationSet({ &argument }, { v1 }, { v1 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1),
+          BasicBlockAnnotationSet({ &argument }, { v1 }, { v1 }));
     }
 
     auto linearNode2 = aggregationTreeRoot->child(1);
-    assert(
-        demandMap->Lookup<LinearAnnotationSet>(*linearNode2)
-        == LinearAnnotationSet({ v1 }, { v2 }, { v2 }));
+    EXPECT_EQ(
+        demandMap->Lookup<LinearAnnotationSet>(*linearNode2),
+        LinearAnnotationSet({ v1 }, { v2 }, { v2 }));
     {
       auto basicBlockNode2 = linearNode2->child(0);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2)
-          == BasicBlockAnnotationSet({ v1 }, { v2 }, { v2 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2),
+          BasicBlockAnnotationSet({ v1 }, { v2 }, { v2 }));
 
       auto exitNode = linearNode2->child(1);
-      assert(demandMap->Lookup<ExitAnnotationSet>(*exitNode) == ExitAnnotationSet({ v2 }, {}, {}));
+      EXPECT_EQ(demandMap->Lookup<ExitAnnotationSet>(*exitNode), ExitAnnotationSet({ v2 }, {}, {}));
     }
   }
 }
 
-static void
-TestBranchAnnotation()
+TEST(AnnotationTests, TestBranchAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -198,35 +195,34 @@ TestBranchAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot)
-      == LinearAnnotationSet({ argument, v2 }, { v1, v2, v3, v4 }, { v1, v3 }));
+  EXPECT_EQ(
+      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
+      LinearAnnotationSet({ argument, v2 }, { v1, v2, v3, v4 }, { v1, v3 }));
   {
     auto splitNode = aggregationTreeRoot->child(0);
-    assert(
-        demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode)
-        == BasicBlockAnnotationSet({ argument }, { v1 }, { v1 }));
+    EXPECT_EQ(
+        demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode),
+        BasicBlockAnnotationSet({ argument }, { v1 }, { v1 }));
 
     auto branchNode = aggregationTreeRoot->child(1);
-    assert(
-        demandMap->Lookup<BranchAnnotationSet>(*branchNode)
-        == BranchAnnotationSet({ v1, v2 }, { v2, v3, v4 }, { v3 }, { v1, v2 }, {}));
+    EXPECT_EQ(
+        demandMap->Lookup<BranchAnnotationSet>(*branchNode),
+        BranchAnnotationSet({ v1, v2 }, { v2, v3, v4 }, { v3 }, { v1, v2 }, {}));
     {
       auto basicBlockNode1 = branchNode->child(0);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1)
-          == BasicBlockAnnotationSet({ v2 }, { v3 }, { v3 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1),
+          BasicBlockAnnotationSet({ v2 }, { v3 }, { v3 }));
 
       auto basicBlockNode2 = branchNode->child(1);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2)
-          == BasicBlockAnnotationSet({ v1 }, { v2, v4, v3 }, { v2, v4, v3 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2),
+          BasicBlockAnnotationSet({ v1 }, { v2, v4, v3 }, { v2, v4, v3 }));
     }
   }
 }
 
-static void
-TestLoopAnnotation()
+TEST(AnnotationTests, TestLoopAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -267,29 +263,29 @@ TestLoopAnnotation()
   /*
    * Act
    */
-  assert(
-      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot)
-      == LinearAnnotationSet({ v1, v4 }, { v2, v3 }, { v2, v3 }));
+  EXPECT_EQ(
+      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
+      LinearAnnotationSet({ v1, v4 }, { v2, v3 }, { v2, v3 }));
   {
     auto loopNode = aggregationTreeRoot->child(0);
-    assert(
-        demandMap->Lookup<LoopAnnotationSet>(*loopNode)
-        == LoopAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }, { v1, v3, v4 }));
+    EXPECT_EQ(
+        demandMap->Lookup<LoopAnnotationSet>(*loopNode),
+        LoopAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }, { v1, v3, v4 }));
     {
       auto basicBlockNode = loopNode->child(0);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode)
-          == BasicBlockAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode),
+          BasicBlockAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }));
     }
 
     auto exitNode = aggregationTreeRoot->child(1);
-    assert(
-        demandMap->Lookup<ExitAnnotationSet>(*exitNode) == ExitAnnotationSet({ v3, v4 }, {}, {}));
+    EXPECT_EQ(
+        demandMap->Lookup<ExitAnnotationSet>(*exitNode),
+        ExitAnnotationSet({ v3, v4 }, {}, {}));
   }
 }
 
-static void
-TestBranchInLoopAnnotation()
+TEST(AnnotationTests, TestBranchInLoopAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -341,45 +337,40 @@ TestBranchInLoopAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot)
-      == LinearAnnotationSet({ v1, v2, v4 }, { v2, v3, v4 }, { v3 }));
+  EXPECT_EQ(
+      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
+      LinearAnnotationSet({ v1, v2, v4 }, { v2, v3, v4 }, { v3 }));
   {
     auto loopNode = aggregationTreeRoot->child(0);
-    assert(
-        demandMap->Lookup<LoopAnnotationSet>(*loopNode)
-        == LoopAnnotationSet({ v1, v4 }, { v2, v3, v4 }, { v3 }, { v1, v2, v3, v4 }));
+    EXPECT_EQ(
+        demandMap->Lookup<LoopAnnotationSet>(*loopNode),
+        LoopAnnotationSet({ v1, v4 }, { v2, v3, v4 }, { v3 }, { v1, v2, v3, v4 }));
     {
       auto branchNode = loopNode->child(0);
-      assert(
-          demandMap->Lookup<BranchAnnotationSet>(*branchNode)
-          == BranchAnnotationSet(
-              { v1, v4 },
-              { v2, v3, v4 },
-              { v3 },
-              { v1, v2, v4 },
-              { v2, v3, v4 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BranchAnnotationSet>(*branchNode),
+          BranchAnnotationSet({ v1, v4 }, { v2, v3, v4 }, { v3 }, { v1, v2, v4 }, { v2, v3, v4 }));
       {
         auto basicBlockNode1 = branchNode->child(0);
-        assert(
-            demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1)
-            == BasicBlockAnnotationSet({ v1 }, { v2, v3, v4 }, { v2, v3, v4 }));
+        EXPECT_EQ(
+            demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1),
+            BasicBlockAnnotationSet({ v1 }, { v2, v3, v4 }, { v2, v3, v4 }));
 
         auto basicBlockNode2 = branchNode->child(1);
-        assert(
-            demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2)
-            == BasicBlockAnnotationSet({ v1, v4 }, { v3 }, { v3 }));
+        EXPECT_EQ(
+            demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2),
+            BasicBlockAnnotationSet({ v1, v4 }, { v3 }, { v3 }));
       }
     }
 
     auto exitNode = aggregationTreeRoot->child(1);
-    assert(
-        demandMap->Lookup<ExitAnnotationSet>(*exitNode) == ExitAnnotationSet({ v2, v3 }, {}, {}));
+    EXPECT_EQ(
+        demandMap->Lookup<ExitAnnotationSet>(*exitNode),
+        ExitAnnotationSet({ v2, v3 }, {}, {}));
   }
 }
 
-static void
-TestAssignmentAnnotation()
+TEST(AnnotationTests, TestAssignmentAnnotation)
 {
   using namespace jlm::llvm;
 
@@ -411,13 +402,12 @@ TestAssignmentAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot)
-      == BasicBlockAnnotationSet({ v1 }, { v2 }, { v2 }));
+  EXPECT_EQ(
+      demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot),
+      BasicBlockAnnotationSet({ v1 }, { v2 }, { v2 }));
 }
 
-static void
-TestBranchPassByAnnotation()
+TEST(AnnotationTests, TestBranchPassByAnnotation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -472,53 +462,39 @@ TestBranchPassByAnnotation()
   /*
    * Assert
    */
-  assert(
-      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot)
-      == LinearAnnotationSet({}, { v1, v2, v3 }, { v1, v2, v3 }));
+  EXPECT_EQ(
+      demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
+      LinearAnnotationSet({}, { v1, v2, v3 }, { v1, v2, v3 }));
   {
     auto splitNode = aggregationTreeRoot->child(0);
-    assert(
-        demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode)
-        == BasicBlockAnnotationSet({}, { v1, v2 }, { v1, v2 }));
+    EXPECT_EQ(
+        demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode),
+        BasicBlockAnnotationSet({}, { v1, v2 }, { v1, v2 }));
 
     auto branchNode = aggregationTreeRoot->child(1);
-    assert(
-        demandMap->Lookup<BranchAnnotationSet>(*branchNode)
-        == BranchAnnotationSet({ v1 }, { v2, v3 }, { v3 }, { v1, v2 }, { v2, v3 }));
+    EXPECT_EQ(
+        demandMap->Lookup<BranchAnnotationSet>(*branchNode),
+        BranchAnnotationSet({ v1 }, { v2, v3 }, { v3 }, { v1, v2 }, { v2, v3 }));
     {
       auto basicBlockNode1 = branchNode->child(0);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1)
-          == BasicBlockAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode1),
+          BasicBlockAnnotationSet({ v1 }, { v2, v3 }, { v2, v3 }));
 
       auto basicBlockNode2 = branchNode->child(1);
-      assert(
-          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2)
-          == BasicBlockAnnotationSet({ v1 }, { v3 }, { v3 }));
+      EXPECT_EQ(
+          demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2),
+          BasicBlockAnnotationSet({ v1 }, { v3 }, { v3 }));
     }
 
     auto joinNode = aggregationTreeRoot->child(2);
-    assert(
-        demandMap->Lookup<BasicBlockAnnotationSet>(*joinNode)
-        == BasicBlockAnnotationSet({}, {}, {}));
+    EXPECT_EQ(
+        demandMap->Lookup<BasicBlockAnnotationSet>(*joinNode),
+        BasicBlockAnnotationSet({}, {}, {}));
 
     auto exitNode = aggregationTreeRoot->child(3);
-    assert(
-        demandMap->Lookup<ExitAnnotationSet>(*exitNode)
-        == ExitAnnotationSet({ v1, v2, v3 }, {}, {}));
+    EXPECT_EQ(
+        demandMap->Lookup<ExitAnnotationSet>(*exitNode),
+        ExitAnnotationSet({ v1, v2, v3 }, {}, {}));
   }
 }
-
-static void
-TestAnnotation()
-{
-  TestBasicBlockAnnotation();
-  TestLinearSubgraphAnnotation();
-  TestBranchAnnotation();
-  TestLoopAnnotation();
-  TestBranchInLoopAnnotation();
-  TestAssignmentAnnotation();
-  TestBranchPassByAnnotation();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestAnnotation", TestAnnotation)
