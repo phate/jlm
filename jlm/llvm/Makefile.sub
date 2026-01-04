@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/opt/CommonNodeEliminationTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
@@ -247,6 +246,9 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder.cpp \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet.cpp \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests.cpp \
+    \
+    tests/jlm/llvm/opt/CommonNodeEliminationTests.cpp \
+
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
