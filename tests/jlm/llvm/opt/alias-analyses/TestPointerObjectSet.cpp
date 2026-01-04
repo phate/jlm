@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
@@ -18,8 +18,7 @@ StringContains(std::string_view haystack, std::string_view needle)
 }
 
 // Test the flag functions on the PointerObject class
-static void
-TestFlagFunctions()
+TEST(PointerObjectSetTests, TestFlagFunctions)
 {
   using namespace jlm::llvm::aa;
 
@@ -29,45 +28,44 @@ TestFlagFunctions()
   PointerObjectSet set;
   auto registerPO = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
 
-  assert(set.CanPoint(registerPO));
-  assert(set.IsPointerObjectRegister(registerPO));
+  EXPECT_TRUE(set.CanPoint(registerPO));
+  EXPECT_TRUE(set.IsPointerObjectRegister(registerPO));
 
   // PointeesEscaping flag
-  assert(!set.HasPointeesEscaping(registerPO));
-  assert(set.MarkAsPointeesEscaping(registerPO));
-  assert(set.HasPointeesEscaping(registerPO));
+  EXPECT_FALSE(set.HasPointeesEscaping(registerPO));
+  EXPECT_TRUE(set.MarkAsPointeesEscaping(registerPO));
+  EXPECT_TRUE(set.HasPointeesEscaping(registerPO));
   // Trying to set the flag again returns false
-  assert(!set.MarkAsPointeesEscaping(registerPO));
-  assert(set.HasPointeesEscaping(registerPO));
+  EXPECT_FALSE(set.MarkAsPointeesEscaping(registerPO));
+  EXPECT_TRUE(set.HasPointeesEscaping(registerPO));
 
   // PointsToExternal flag. For registers, the two flags are completely independent.
-  assert(!set.IsPointingToExternal(registerPO));
-  assert(set.MarkAsPointingToExternal(registerPO));
-  assert(set.IsPointingToExternal(registerPO));
+  EXPECT_FALSE(set.IsPointingToExternal(registerPO));
+  EXPECT_TRUE(set.MarkAsPointingToExternal(registerPO));
+  EXPECT_TRUE(set.IsPointingToExternal(registerPO));
   // Trying to set the flag again returns false
-  assert(!set.MarkAsPointingToExternal(registerPO));
-  assert(set.IsPointingToExternal(registerPO));
+  EXPECT_FALSE(set.MarkAsPointingToExternal(registerPO));
+  EXPECT_TRUE(set.IsPointingToExternal(registerPO));
 
   // Create a new PointerObject to start with empty flags
   auto allocaPO = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(), true);
-  assert(!set.IsPointerObjectRegister(allocaPO));
+  EXPECT_FALSE(set.IsPointerObjectRegister(allocaPO));
 
   // Escaping means another module can write a pointer to you.
   // This implies another module might override it with pointers to external.
   // It also implies any pointees should also escape
-  assert(!set.IsPointingToExternal(allocaPO));
-  assert(!set.HasPointeesEscaping(allocaPO));
-  assert(set.MarkAsEscaped(allocaPO));
-  assert(set.IsPointingToExternal(allocaPO));
-  assert(set.HasPointeesEscaping(allocaPO));
+  EXPECT_FALSE(set.IsPointingToExternal(allocaPO));
+  EXPECT_FALSE(set.HasPointeesEscaping(allocaPO));
+  EXPECT_TRUE(set.MarkAsEscaped(allocaPO));
+  EXPECT_TRUE(set.IsPointingToExternal(allocaPO));
+  EXPECT_TRUE(set.HasPointeesEscaping(allocaPO));
   // Already marked with these flags, trying to set them again makes no difference
-  assert(!set.MarkAsPointingToExternal(allocaPO));
-  assert(!set.MarkAsPointeesEscaping(allocaPO));
+  EXPECT_FALSE(set.MarkAsPointingToExternal(allocaPO));
+  EXPECT_FALSE(set.MarkAsPointeesEscaping(allocaPO));
 }
 
 // Test creating pointer objects for each type of memory node
-static void
-TestCreatePointerObjects()
+TEST(PointerObjectSetTests, TestCreatePointerObjects)
 {
   using namespace jlm::llvm::aa;
 
@@ -87,95 +85,93 @@ TestCreatePointerObjects()
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
   const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
 
-  assert(set.NumPointerObjects() == 7);
-  assert(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register) == 2);
+  EXPECT_EQ(set.NumPointerObjects(), 7);
+  EXPECT_EQ(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register), 2);
 
-  assert(set.GetPointerObjectKind(register0) == PointerObjectKind::Register);
-  assert(set.GetPointerObjectKind(dummy0) == PointerObjectKind::Register);
-  assert(set.GetPointerObjectKind(alloca0) == PointerObjectKind::AllocaMemoryObject);
-  assert(set.GetPointerObjectKind(malloc0) == PointerObjectKind::MallocMemoryObject);
-  assert(set.GetPointerObjectKind(delta0) == PointerObjectKind::GlobalMemoryObject);
-  assert(set.GetPointerObjectKind(lambda0) == PointerObjectKind::FunctionMemoryObject);
-  assert(set.GetPointerObjectKind(import0) == PointerObjectKind::ImportMemoryObject);
+  EXPECT_EQ(set.GetPointerObjectKind(register0), PointerObjectKind::Register);
+  EXPECT_EQ(set.GetPointerObjectKind(dummy0), PointerObjectKind::Register);
+  EXPECT_EQ(set.GetPointerObjectKind(alloca0), PointerObjectKind::AllocaMemoryObject);
+  EXPECT_EQ(set.GetPointerObjectKind(malloc0), PointerObjectKind::MallocMemoryObject);
+  EXPECT_EQ(set.GetPointerObjectKind(delta0), PointerObjectKind::GlobalMemoryObject);
+  EXPECT_EQ(set.GetPointerObjectKind(lambda0), PointerObjectKind::FunctionMemoryObject);
+  EXPECT_EQ(set.GetPointerObjectKind(import0), PointerObjectKind::ImportMemoryObject);
 
   // Most pointer objects don't start out as escaped
-  assert(!set.HasEscaped(dummy0));
-  assert(!set.HasEscaped(alloca0));
-  assert(!set.HasEscaped(malloc0));
-  assert(!set.HasEscaped(delta0));
-  assert(!set.HasEscaped(lambda0));
+  EXPECT_FALSE(set.HasEscaped(dummy0));
+  EXPECT_FALSE(set.HasEscaped(alloca0));
+  EXPECT_FALSE(set.HasEscaped(malloc0));
+  EXPECT_FALSE(set.HasEscaped(delta0));
+  EXPECT_FALSE(set.HasEscaped(lambda0));
   // ...but imported objects are always escaped
-  assert(set.HasEscaped(import0));
+  EXPECT_TRUE(set.HasEscaped(import0));
   // ...which also means it points to external, and has its pointees escaping
-  assert(set.IsPointingToExternal(import0) && set.HasPointeesEscaping(import0));
+  EXPECT_TRUE(set.IsPointingToExternal(import0) && set.HasPointeesEscaping(import0));
 
   // Some kinds of PointerObjects have CanPoint() configurable is the constructor
-  assert(!set.CanPoint(alloca0));
-  assert(set.CanPoint(malloc0));
-  assert(set.CanPoint(delta0));
+  EXPECT_FALSE(set.CanPoint(alloca0));
+  EXPECT_TRUE(set.CanPoint(malloc0));
+  EXPECT_TRUE(set.CanPoint(delta0));
   // ...while others have implied values of CanPoint()
-  assert(set.CanPoint(register0));
-  assert(!set.CanPoint(lambda0));
-  assert(!set.CanPoint(import0));
+  EXPECT_TRUE(set.CanPoint(register0));
+  EXPECT_FALSE(set.CanPoint(lambda0));
+  EXPECT_FALSE(set.CanPoint(import0));
 
   // CanPoint() == false implies pointing to external and having all pointees escaping
-  assert(set.IsPointingToExternal(alloca0) && set.HasPointeesEscaping(alloca0));
+  EXPECT_TRUE(set.IsPointingToExternal(alloca0) && set.HasPointeesEscaping(alloca0));
 
   // Registers have helper function for looking up existing PointerObjects
-  assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
-  assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
-  assert(set.TryGetRegisterPointerObject(rvsdg.GetDeltaOutput()).value() == register0);
+  EXPECT_EQ(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()), register0);
+  EXPECT_EQ(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()), register0);
+  EXPECT_EQ(set.TryGetRegisterPointerObject(rvsdg.GetDeltaOutput()).value(), register0);
 
   // Functions have the same, but also in the other direction
-  assert(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()) == lambda0);
-  assert(&set.GetLambdaNodeFromFunctionMemoryObject(lambda0) == &rvsdg.GetLambdaNode());
+  EXPECT_EQ(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()), lambda0);
+  EXPECT_EQ(&set.GetLambdaNodeFromFunctionMemoryObject(lambda0), &rvsdg.GetLambdaNode());
 
   // The maps can also be accessed directly
-  assert(set.GetRegisterMap().at(&rvsdg.GetAllocaOutput()) == register0);
-  assert(set.GetRegisterMap().at(&rvsdg.GetDeltaOutput()) == register0);
-  assert(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()) == alloca0);
-  assert(set.GetMallocMap().at(&rvsdg.GetMallocNode()) == malloc0);
-  assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
-  assert(set.GetFunctionMap().LookupKey(&rvsdg.GetLambdaNode()) == lambda0);
-  assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
+  EXPECT_EQ(set.GetRegisterMap().at(&rvsdg.GetAllocaOutput()), register0);
+  EXPECT_EQ(set.GetRegisterMap().at(&rvsdg.GetDeltaOutput()), register0);
+  EXPECT_EQ(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()), alloca0);
+  EXPECT_EQ(set.GetMallocMap().at(&rvsdg.GetMallocNode()), malloc0);
+  EXPECT_EQ(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()), delta0);
+  EXPECT_EQ(set.GetFunctionMap().LookupKey(&rvsdg.GetLambdaNode()), lambda0);
+  EXPECT_EQ(set.GetImportMap().at(&rvsdg.GetImportOutput()), import0);
 }
 
-static void
-TestPointerObjectUnification()
+TEST(PointerObjectSetTests, TestPointerObjectUnification)
 {
   using namespace jlm::llvm::aa;
 
   PointerObjectSet set;
   auto dummy0 = set.CreateDummyRegisterPointerObject();
   auto dummy1 = set.CreateDummyRegisterPointerObject();
-  assert(set.IsUnificationRoot(dummy0));
+  EXPECT_TRUE(set.IsUnificationRoot(dummy0));
 
   auto root = set.UnifyPointerObjects(dummy0, dummy1);
-  assert(set.GetUnificationRoot(dummy0) == root);
-  assert(set.GetUnificationRoot(dummy1) == root);
+  EXPECT_EQ(set.GetUnificationRoot(dummy0), root);
+  EXPECT_EQ(set.GetUnificationRoot(dummy1), root);
 
   // Exactly one of the PointerObjects is the GetRootRegion
-  assert((root == dummy0) != (root == dummy1));
-  assert(set.IsUnificationRoot(root));
+  EXPECT_NE((root == dummy0), (root == dummy1));
+  EXPECT_TRUE(set.IsUnificationRoot(root));
 
   // Trying to unify again gives the same GetRootRegion
-  assert(set.UnifyPointerObjects(dummy0, dummy1) == root);
+  EXPECT_EQ(set.UnifyPointerObjects(dummy0, dummy1), root);
 
   auto notRoot = dummy0 + dummy1 - root;
-  assert(!set.IsUnificationRoot(notRoot));
+  EXPECT_FALSE(set.IsUnificationRoot(notRoot));
 
   auto dummy2 = set.CreateDummyRegisterPointerObject();
   auto dummy3 = set.CreateDummyRegisterPointerObject();
   set.UnifyPointerObjects(dummy0, dummy2);
   auto newRoot = set.UnifyPointerObjects(dummy1, dummy3);
-  assert(set.GetUnificationRoot(dummy0) == newRoot);
-  assert(set.GetUnificationRoot(dummy1) == newRoot);
-  assert(set.GetUnificationRoot(dummy2) == newRoot);
-  assert(set.GetUnificationRoot(dummy3) == newRoot);
+  EXPECT_EQ(set.GetUnificationRoot(dummy0), newRoot);
+  EXPECT_EQ(set.GetUnificationRoot(dummy1), newRoot);
+  EXPECT_EQ(set.GetUnificationRoot(dummy2), newRoot);
+  EXPECT_EQ(set.GetUnificationRoot(dummy3), newRoot);
 }
 
-static void
-TestPointerObjectUnificationPointees()
+TEST(PointerObjectSetTests, TestPointerObjectUnificationPointees)
 {
   using namespace jlm::llvm::aa;
 
@@ -188,40 +184,39 @@ TestPointerObjectUnificationPointees()
   auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), true);
 
   set.AddToPointsToSet(alloca0, lambda0);
-  assert(set.GetPointsToSet(alloca0).Size() == 1);
-  assert(set.GetPointsToSet(delta0).Size() == 0);
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(delta0).Size(), 0);
 
   set.UnifyPointerObjects(delta0, alloca0);
 
   // Now both should share points-to sets
-  assert(set.GetPointsToSet(alloca0).Contains(lambda0));
-  assert(set.GetPointsToSet(delta0).Contains(lambda0));
+  EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(lambda0));
+  EXPECT_TRUE(set.GetPointsToSet(delta0).Contains(lambda0));
 
   // Marking one as pointing to external marks all as pointing to external
-  assert(set.MarkAsPointingToExternal(alloca0));
-  assert(set.IsPointingToExternal(alloca0));
-  assert(set.IsPointingToExternal(delta0));
+  EXPECT_TRUE(set.MarkAsPointingToExternal(alloca0));
+  EXPECT_TRUE(set.IsPointingToExternal(alloca0));
+  EXPECT_TRUE(set.IsPointingToExternal(delta0));
 
   // Marking one as pointees escaping marks all as pointees escaping
-  assert(set.MarkAsPointeesEscaping(delta0));
-  assert(set.HasPointeesEscaping(alloca0));
-  assert(set.HasPointeesEscaping(delta0));
+  EXPECT_TRUE(set.MarkAsPointeesEscaping(delta0));
+  EXPECT_TRUE(set.HasPointeesEscaping(alloca0));
+  EXPECT_TRUE(set.HasPointeesEscaping(delta0));
 
   // Adding a new pointee adds it to all members
   auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
-  assert(set.AddToPointsToSet(delta0, import0));
-  assert(set.GetPointsToSet(alloca0).Contains(import0));
+  EXPECT_TRUE(set.AddToPointsToSet(delta0, import0));
+  EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(import0));
 
   // Escaping is not shared within the unification
-  assert(set.MarkAsEscaped(delta0));
-  assert(set.HasEscaped(delta0));
-  assert(!set.HasEscaped(alloca0));
+  EXPECT_TRUE(set.MarkAsEscaped(delta0));
+  EXPECT_TRUE(set.HasEscaped(delta0));
+  EXPECT_FALSE(set.HasEscaped(alloca0));
 }
 
 // Test the PointerObjectSet method for adding pointer objects to another pointer object's
 // points-to-set
-static void
-TestAddToPointsToSet()
+TEST(PointerObjectSetTests, TestAddToPointsToSet)
 {
   using namespace jlm::llvm::aa;
 
@@ -232,19 +227,18 @@ TestAddToPointsToSet()
   const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0), false);
   const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
 
-  assert(set.GetPointsToSet(reg0).Size() == 0);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 0);
 
-  assert(set.AddToPointsToSet(reg0, alloca0));
-  assert(set.GetPointsToSet(reg0).Size() == 1);
-  assert(set.GetPointsToSet(reg0).Contains(alloca0));
+  EXPECT_TRUE(set.AddToPointsToSet(reg0, alloca0));
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1);
+  EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca0));
 
   // Trying to add it again returns false
-  assert(!set.AddToPointsToSet(reg0, alloca0));
+  EXPECT_FALSE(set.AddToPointsToSet(reg0, alloca0));
 }
 
 // Test the PointerObjectSet method for making one points-to-set a superset of another
-static void
-TestMakePointsToSetSuperset()
+TEST(PointerObjectSetTests, TestMakePointsToSetSuperset)
 {
   using namespace jlm::llvm::aa;
 
@@ -261,25 +255,24 @@ TestMakePointsToSetSuperset()
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
 
-  assert(set.GetPointsToSet(reg0).Size() == 1);
-  assert(set.GetPointsToSet(reg0).Contains(alloca0));
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1);
+  EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca0));
 
-  assert(set.MakePointsToSetSuperset(reg0, reg1));
-  assert(set.GetPointsToSet(reg1).Size() == 1);
-  assert(set.GetPointsToSet(reg0).Size() == 2);
-  assert(set.GetPointsToSet(reg0).Contains(alloca1));
+  EXPECT_TRUE(set.MakePointsToSetSuperset(reg0, reg1));
+  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 2);
+  EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca1));
 
   // Calling it again without changing reg1 makes no difference, returns false
-  assert(!set.MakePointsToSetSuperset(reg0, reg1));
+  EXPECT_FALSE(set.MakePointsToSetSuperset(reg0, reg1));
 
   // Add an additional member to P(reg1)
   set.AddToPointsToSet(reg1, alloca2);
-  assert(set.MakePointsToSetSuperset(reg0, reg1));
-  assert(set.GetPointsToSet(reg0).Contains(alloca2));
+  EXPECT_TRUE(set.MakePointsToSetSuperset(reg0, reg1));
+  EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca2));
 }
 
-static void
-TestClonePointerObjectSet()
+TEST(PointerObjectSetTests, TestClonePointerObjectSet)
 {
   using namespace jlm::llvm::aa;
   jlm::llvm::AllMemoryNodesTest rvsdg;
@@ -300,34 +293,33 @@ TestClonePointerObjectSet()
   auto clonedSet = set.Clone();
 
   // All mappings are identical, since PointerObjects are referenced by index
-  assert(clonedSet->NumPointerObjects() == set.NumPointerObjects());
-  assert(clonedSet->GetRegisterMap() == set.GetRegisterMap());
-  assert(clonedSet->GetAllocaMap() == set.GetAllocaMap());
-  assert(clonedSet->GetMallocMap() == set.GetMallocMap());
-  assert(clonedSet->GetGlobalMap() == set.GetGlobalMap());
-  assert(clonedSet->GetFunctionMap() == set.GetFunctionMap());
-  assert(clonedSet->GetImportMap() == set.GetImportMap());
+  EXPECT_EQ(clonedSet->NumPointerObjects(), set.NumPointerObjects());
+  EXPECT_EQ(clonedSet->GetRegisterMap(), set.GetRegisterMap());
+  EXPECT_EQ(clonedSet->GetAllocaMap(), set.GetAllocaMap());
+  EXPECT_EQ(clonedSet->GetMallocMap(), set.GetMallocMap());
+  EXPECT_EQ(clonedSet->GetGlobalMap(), set.GetGlobalMap());
+  EXPECT_EQ(clonedSet->GetFunctionMap(), set.GetFunctionMap());
+  EXPECT_EQ(clonedSet->GetImportMap(), set.GetImportMap());
 
   // In the cloned set, each points-to set should be identical
-  assert(clonedSet->GetPointsToSet(register0) == set.GetPointsToSet(register0));
+  EXPECT_EQ(clonedSet->GetPointsToSet(register0), set.GetPointsToSet(register0));
 
   // Unifications are maintained
-  assert(clonedSet->GetUnificationRoot(delta0) == clonedSet->GetUnificationRoot(import0));
+  EXPECT_EQ(clonedSet->GetUnificationRoot(delta0), clonedSet->GetUnificationRoot(import0));
 
   // Additional changes only affect the set they are applied to
   set.AddToPointsToSet(register0, lambda0);
-  assert(!clonedSet->GetPointsToSet(register0).Contains(lambda0));
+  EXPECT_FALSE(clonedSet->GetPointsToSet(register0).Contains(lambda0));
 
   clonedSet->UnifyPointerObjects(delta0, dummy0);
-  assert(set.GetUnificationRoot(delta0) != set.GetUnificationRoot(dummy0));
+  EXPECT_NE(set.GetUnificationRoot(delta0), set.GetUnificationRoot(dummy0));
 
   set.MarkAsPointingToExternal(malloc0);
-  assert(!clonedSet->IsPointingToExternal(malloc0));
+  EXPECT_FALSE(clonedSet->IsPointingToExternal(malloc0));
 }
 
 // Test the SupersetConstraint's Apply function
-static void
-TestSupersetConstraint()
+TEST(PointerObjectSetTests, TestSupersetConstraint)
 {
   using namespace jlm::llvm::aa;
 
@@ -348,44 +340,43 @@ TestSupersetConstraint()
 
   // Make alloca0 point to everything reg1 points to
   SupersetConstraint c1(alloca0, reg1);
-  assert(c1.ApplyDirectly(set));
+  EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
   // For now this only makes alloca0 point to alloca1
-  assert(set.GetPointsToSet(alloca0).Size() == 1);
-  assert(set.GetPointsToSet(alloca0).Contains(alloca1));
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
+  EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Make reg1 point to everything reg2 points to
   SupersetConstraint c2(reg1, reg2);
-  assert(c2.ApplyDirectly(set));
+  EXPECT_TRUE(c2.ApplyDirectly(set));
   while (c2.ApplyDirectly(set))
     ;
   // This makes alloca2 a member of P(reg1)
-  assert(set.GetPointsToSet(reg1).Contains(alloca2));
+  EXPECT_TRUE(set.GetPointsToSet(reg1).Contains(alloca2));
 
   // Apply c1 again
-  assert(c1.ApplyDirectly(set));
+  EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
   // Now alloca0 should also point to alloca2
-  assert(set.GetPointsToSet(alloca0).Size() == 2);
-  assert(set.GetPointsToSet(alloca0).Contains(alloca2));
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 2);
+  EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca2));
 
   // Make reg2 point to external, and propagate through constraints
   set.MarkAsPointingToExternal(reg2);
-  assert(c2.ApplyDirectly(set));
+  EXPECT_TRUE(c2.ApplyDirectly(set));
   while (c2.ApplyDirectly(set))
     ;
-  assert(c1.ApplyDirectly(set));
+  EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
   // Now both reg1 and alloca0 may point to external
-  assert(set.IsPointingToExternal(reg1));
-  assert(set.IsPointingToExternal(alloca0));
+  EXPECT_TRUE(set.IsPointingToExternal(reg1));
+  EXPECT_TRUE(set.IsPointingToExternal(alloca0));
 }
 
-static void
-TestStoreConstraintDirectly()
+TEST(PointerObjectSetTests, TestStoreConstraintDirectly)
 {
   using namespace jlm::llvm::aa;
 
@@ -406,27 +397,26 @@ TestStoreConstraintDirectly()
 
   // Add *alloca0 = reg2, which will do nothing, since alloca0 can't be pointing to anything yet
   StoreConstraint c1(alloca0, reg2);
-  assert(!c1.ApplyDirectly(set));
+  EXPECT_FALSE(c1.ApplyDirectly(set));
 
   // This means *reg0 = reg1, and as we know, reg0 points to alloca0
   // This should make alloca0 point to anything reg1 points to, aka alloca1
   StoreConstraint c2(reg0, reg1);
-  assert(c2.ApplyDirectly(set));
+  EXPECT_TRUE(c2.ApplyDirectly(set));
   while (c2.ApplyDirectly(set))
     ;
-  assert(set.GetPointsToSet(alloca0).Size() == 1);
-  assert(set.GetPointsToSet(alloca0).Contains(alloca1));
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
+  EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Do c1 again, now that alloca0 points to alloca1
-  assert(c1.ApplyDirectly(set));
+  EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
-  assert(set.GetPointsToSet(alloca1).Size() == 1);
-  assert(set.GetPointsToSet(alloca1).Contains(alloca2));
+  EXPECT_EQ(set.GetPointsToSet(alloca1).Size(), 1);
+  EXPECT_TRUE(set.GetPointsToSet(alloca1).Contains(alloca2));
 }
 
-static void
-TestLoadConstraintDirectly()
+TEST(PointerObjectSetTests, TestLoadConstraintDirectly)
 {
   using namespace jlm::llvm::aa;
 
@@ -448,20 +438,19 @@ TestLoadConstraintDirectly()
   // Makes reg1 = *reg0, where reg0 currently just points to alloca0
   // Since alloca0 currently has no pointees, this does nothing
   LoadConstraint c1(reg1, reg0);
-  assert(!c1.ApplyDirectly(set));
+  EXPECT_FALSE(c1.ApplyDirectly(set));
 
   // Make alloca0 point to something: alloca2
   set.AddToPointsToSet(alloca0, alloca2);
   // The constraint now makes a difference
-  assert(c1.ApplyDirectly(set));
+  EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
-  assert(set.GetPointsToSet(reg1).Size() == 2);
-  assert(set.GetPointsToSet(reg1).Contains(alloca2));
+  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 2);
+  EXPECT_TRUE(set.GetPointsToSet(reg1).Contains(alloca2));
 }
 
-static void
-TestEscapedFunctionConstraint()
+TEST(PointerObjectSetTests, TestEscapedFunctionConstraint)
 {
   using namespace jlm::llvm::aa;
 
@@ -485,25 +474,24 @@ TestEscapedFunctionConstraint()
   bool result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
 
   // Nothing has happened yet, since the exported function is yet to be marked as escaped
-  assert(!result);
-  assert(!set.HasEscaped(localFunctionRegisterPO));
-  assert(!set.HasEscaped(exportedFunctionPO));
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(set.HasEscaped(localFunctionRegisterPO));
+  EXPECT_FALSE(set.HasEscaped(exportedFunctionPO));
 
   set.MarkAsEscaped(exportedFunctionPO);
 
   // Use both EscapedFunctionConstraint and EscapeFlagConstraint to propagate flags
   result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
-  assert(result);
+  EXPECT_TRUE(result);
 
   // Now the return value is marked as all pointees escaping, so make that happen
   result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
   // Now the local function has been marked as escaped as well, since it is the return value
-  assert(result);
-  assert(set.HasEscaped(localFunctionPO));
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(set.HasEscaped(localFunctionPO));
 }
 
-static void
-TestStoredAsScalarFlag()
+TEST(PointerObjectSetTests, TestStoredAsScalarFlag)
 {
   using namespace jlm::llvm::aa;
 
@@ -521,46 +509,45 @@ TestStoredAsScalarFlag()
   set.AddToPointsToSet(p0, p2);
 
   bool result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(!result);
+  EXPECT_FALSE(result);
 
   set.MarkAsStoringAsScalar(p0);
   result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(result);
+  EXPECT_TRUE(result);
 
   // p0 should only have the single stored as scalar flag
-  assert(!set.HasEscaped(p0));
-  assert(!set.HasPointeesEscaping(p0));
-  assert(!set.IsPointingToExternal(p0));
-  assert(!set.IsLoadedAsScalar(p0));
-  assert(set.IsStoredAsScalar(p0));
+  EXPECT_FALSE(set.HasEscaped(p0));
+  EXPECT_FALSE(set.HasPointeesEscaping(p0));
+  EXPECT_FALSE(set.IsPointingToExternal(p0));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p0));
+  EXPECT_TRUE(set.IsStoredAsScalar(p0));
 
   // p1 and p2 should both point to external, but not any other flags
-  assert(!set.HasEscaped(p1));
-  assert(!set.HasPointeesEscaping(p1));
-  assert(set.IsPointingToExternal(p1));
-  assert(!set.IsLoadedAsScalar(p1));
-  assert(!set.IsStoredAsScalar(p1));
+  EXPECT_FALSE(set.HasEscaped(p1));
+  EXPECT_FALSE(set.HasPointeesEscaping(p1));
+  EXPECT_TRUE(set.IsPointingToExternal(p1));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p1));
+  EXPECT_FALSE(set.IsStoredAsScalar(p1));
 
-  assert(!set.HasEscaped(p2));
-  assert(!set.HasPointeesEscaping(p2));
-  assert(set.IsPointingToExternal(p2));
-  assert(!set.IsLoadedAsScalar(p2));
-  assert(!set.IsStoredAsScalar(p2));
+  EXPECT_FALSE(set.HasEscaped(p2));
+  EXPECT_FALSE(set.HasPointeesEscaping(p2));
+  EXPECT_TRUE(set.IsPointingToExternal(p2));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p2));
+  EXPECT_FALSE(set.IsStoredAsScalar(p2));
 
   // p11 should have no flags
-  assert(!set.HasEscaped(p11));
-  assert(!set.HasPointeesEscaping(p11));
-  assert(!set.IsPointingToExternal(p11));
-  assert(!set.IsLoadedAsScalar(p11));
-  assert(!set.IsStoredAsScalar(p11));
+  EXPECT_FALSE(set.HasEscaped(p11));
+  EXPECT_FALSE(set.HasPointeesEscaping(p11));
+  EXPECT_FALSE(set.IsPointingToExternal(p11));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p11));
+  EXPECT_FALSE(set.IsStoredAsScalar(p11));
 
   // Applying again does nothing
   result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(!result);
+  EXPECT_FALSE(result);
 }
 
-static void
-TestLoadedAsScalarFlag()
+TEST(PointerObjectSetTests, TestLoadedAsScalarFlag)
 {
   using namespace jlm::llvm::aa;
 
@@ -582,46 +569,45 @@ TestLoadedAsScalarFlag()
   set.AddToPointsToSet(p2, p21);
 
   bool result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(!result);
+  EXPECT_FALSE(result);
 
   set.MarkAsLoadingAsScalar(p0);
   result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(result);
+  EXPECT_TRUE(result);
 
   // p0 should only have the single loaded as scalar flag
-  assert(!set.HasEscaped(p0));
-  assert(!set.HasPointeesEscaping(p0));
-  assert(!set.IsPointingToExternal(p0));
-  assert(!set.IsStoredAsScalar(p0));
-  assert(set.IsLoadedAsScalar(p0));
+  EXPECT_FALSE(set.HasEscaped(p0));
+  EXPECT_FALSE(set.HasPointeesEscaping(p0));
+  EXPECT_FALSE(set.IsPointingToExternal(p0));
+  EXPECT_FALSE(set.IsStoredAsScalar(p0));
+  EXPECT_TRUE(set.IsLoadedAsScalar(p0));
 
   // p1 should only have the pointees escape flag
-  assert(!set.HasEscaped(p1));
-  assert(set.HasPointeesEscaping(p1));
-  assert(!set.IsPointingToExternal(p1));
-  assert(!set.IsStoredAsScalar(p1));
-  assert(!set.IsLoadedAsScalar(p1));
+  EXPECT_FALSE(set.HasEscaped(p1));
+  EXPECT_TRUE(set.HasPointeesEscaping(p1));
+  EXPECT_FALSE(set.IsPointingToExternal(p1));
+  EXPECT_FALSE(set.IsStoredAsScalar(p1));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p1));
 
   // p11, p12, p21 should have escaped, but not be flagged using the store or load flags
-  assert(set.HasEscaped(p11));
-  assert(!set.IsLoadedAsScalar(p11));
-  assert(!set.IsStoredAsScalar(p11));
+  EXPECT_TRUE(set.HasEscaped(p11));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p11));
+  EXPECT_FALSE(set.IsStoredAsScalar(p11));
 
-  assert(set.HasEscaped(p12));
-  assert(!set.IsLoadedAsScalar(p12));
-  assert(!set.IsStoredAsScalar(p12));
+  EXPECT_TRUE(set.HasEscaped(p12));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p12));
+  EXPECT_FALSE(set.IsStoredAsScalar(p12));
 
-  assert(set.HasEscaped(p21));
-  assert(!set.IsLoadedAsScalar(p21));
-  assert(!set.IsStoredAsScalar(p21));
+  EXPECT_TRUE(set.HasEscaped(p21));
+  EXPECT_FALSE(set.IsLoadedAsScalar(p21));
+  EXPECT_FALSE(set.IsStoredAsScalar(p21));
 
   // Applying again does nothing
   result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
-  assert(!result);
+  EXPECT_FALSE(result);
 }
 
-static void
-TestFunctionCallConstraint()
+TEST(PointerObjectSetTests, TestFunctionCallConstraint)
 {
   using namespace jlm::llvm::aa;
 
@@ -646,19 +632,18 @@ TestFunctionCallConstraint()
   set.AddToPointsToSet(allocaYRegister, allocaY);
 
   FunctionCallConstraint c(lambdaFRegister, rvsdg.CallF());
-  assert(c.ApplyDirectly(set));
+  EXPECT_TRUE(c.ApplyDirectly(set));
   while (c.ApplyDirectly(set))
     ;
 
   // The arguments to f should now be pointing to exactly the corresponding allocas
-  assert(set.GetPointsToSet(lambdaFArgumentX).Contains(allocaX));
-  assert(set.GetPointsToSet(lambdaFArgumentY).Contains(allocaY));
-  assert(!set.GetPointsToSet(lambdaFArgumentX).Contains(allocaY));
-  assert(!set.GetPointsToSet(lambdaFArgumentY).Contains(allocaX));
+  EXPECT_TRUE(set.GetPointsToSet(lambdaFArgumentX).Contains(allocaX));
+  EXPECT_TRUE(set.GetPointsToSet(lambdaFArgumentY).Contains(allocaY));
+  EXPECT_FALSE(set.GetPointsToSet(lambdaFArgumentX).Contains(allocaY));
+  EXPECT_FALSE(set.GetPointsToSet(lambdaFArgumentY).Contains(allocaX));
 }
 
-static void
-TestAddPointsToExternalConstraint()
+TEST(PointerObjectSetTests, TestAddPointsToExternalConstraint)
 {
   using namespace jlm::llvm::aa;
 
@@ -679,15 +664,15 @@ TestAddPointsToExternalConstraint()
   constraints.SolveNaively();
 
   // Make sure only reg0 points to external, and nothing has escaped
-  assert(set.IsPointingToExternal(reg0));
-  assert(!set.IsPointingToExternal(reg1));
-  assert(!set.IsPointingToExternal(alloca0));
-  assert(!set.IsPointingToExternal(alloca1));
+  EXPECT_TRUE(set.IsPointingToExternal(reg0));
+  EXPECT_FALSE(set.IsPointingToExternal(reg1));
+  EXPECT_FALSE(set.IsPointingToExternal(alloca0));
+  EXPECT_FALSE(set.IsPointingToExternal(alloca1));
 
-  assert(!set.HasEscaped(reg0));
-  assert(!set.HasEscaped(reg1));
-  assert(!set.HasEscaped(alloca0));
-  assert(!set.HasEscaped(alloca1));
+  EXPECT_FALSE(set.HasEscaped(reg0));
+  EXPECT_FALSE(set.HasEscaped(reg1));
+  EXPECT_FALSE(set.HasEscaped(alloca0));
+  EXPECT_FALSE(set.HasEscaped(alloca1));
 
   // Add a *reg0 = reg1 store
   constraints.AddConstraint(StoreConstraint(reg0, reg1));
@@ -695,13 +680,12 @@ TestAddPointsToExternalConstraint()
 
   // Now alloca1 is marked as escaped, due to being written to a pointer that might point to
   // external
-  assert(set.HasEscaped(alloca1));
+  EXPECT_TRUE(set.HasEscaped(alloca1));
   // The other alloca has not escaped
-  assert(!set.HasEscaped(alloca0));
+  EXPECT_FALSE(set.HasEscaped(alloca0));
 }
 
-static void
-TestAddRegisterContentEscapedConstraint()
+TEST(PointerObjectSetTests, TestAddRegisterContentEscapedConstraint)
 {
   using namespace jlm::llvm::aa;
 
@@ -723,20 +707,19 @@ TestAddRegisterContentEscapedConstraint()
   constraints.SolveNaively();
 
   // Make sure only alloca0 has escaped
-  assert(set.HasEscaped(alloca0));
-  assert(!set.HasEscaped(alloca1));
+  EXPECT_TRUE(set.HasEscaped(alloca0));
+  EXPECT_FALSE(set.HasEscaped(alloca1));
 
   // Add a alloca0 = reg1 store
   constraints.AddConstraint(StoreConstraint(reg0, reg1));
   constraints.SolveNaively();
 
   // Now both are marked as escaped
-  assert(set.HasEscaped(alloca0));
-  assert(set.HasEscaped(alloca1));
+  EXPECT_TRUE(set.HasEscaped(alloca0));
+  EXPECT_TRUE(set.HasEscaped(alloca1));
 }
 
-static void
-TestDrawSubsetGraph()
+TEST(PointerObjectSetTests, TestDrawSubsetGraph)
 {
   using namespace jlm::llvm::aa;
   using namespace jlm::util;
@@ -775,49 +758,49 @@ TestDrawSubsetGraph()
   auto & graph = constraints.DrawSubsetGraph(writer);
 
   // Assert
-  assert(graph.NumNodes() == set.NumPointerObjects());
+  EXPECT_EQ(graph.NumNodes(), set.NumPointerObjects());
 
   // Check that the unified node that is not the GetRootRegion, contains the index of the
   // GetRootRegion
-  assert(StringContains(graph.GetNode(nonRoot).GetLabel(), "#" + std::to_string(root)));
+  EXPECT_TRUE(StringContains(graph.GetNode(nonRoot).GetLabel(), "#" + std::to_string(root)));
 
   // Check that the unification GetRootRegion's label indicates pointing to external
-  assert(StringContains(graph.GetNode(root).GetLabel(), "{+}"));
+  EXPECT_TRUE(StringContains(graph.GetNode(root).GetLabel(), "{+}"));
 
   // Check that allocaReg0 points to alloca0
-  assert(StringContains(graph.GetNode(allocaReg0).GetLabel(), strfmt("{", alloca0, "}")));
+  EXPECT_TRUE(StringContains(graph.GetNode(allocaReg0).GetLabel(), strfmt("{", alloca0, "}")));
 
   // Check that a regular edge connects allocaReg0 to the importNode
   auto * supersetEdge = graph.GetEdgeBetween(graph.GetNode(allocaReg0), graph.GetNode(import0));
-  assert(supersetEdge);
-  assert(supersetEdge->IsDirected());
-  assert(supersetEdge->GetAttributeString("style").value_or("solid") == "solid");
+  EXPECT_TRUE(supersetEdge);
+  EXPECT_TRUE(supersetEdge->IsDirected());
+  EXPECT_EQ(supersetEdge->GetAttributeString("style").value_or("solid"), "solid");
 
   // Check that a store edge connects storeValue to storePointer
   auto * storeEdge = graph.GetEdgeBetween(graph.GetNode(storeValue), graph.GetNode(storePointer));
-  assert(storeEdge);
-  assert(storeEdge->IsDirected());
-  assert(storeEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
-  assert(StringContains(storeEdge->GetAttributeString("arrowhead").value(), "dot"));
+  EXPECT_TRUE(storeEdge);
+  EXPECT_TRUE(storeEdge->IsDirected());
+  EXPECT_TRUE(storeEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
+  EXPECT_TRUE(StringContains(storeEdge->GetAttributeString("arrowhead").value(), "dot"));
 
   // Check that a load edge connects loadPointer to loadValue
   auto * loadEdge = graph.GetEdgeBetween(graph.GetNode(loadPointer), graph.GetNode(loadValue));
-  assert(loadEdge);
-  assert(loadEdge->IsDirected());
-  assert(loadEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
-  assert(StringContains(loadEdge->GetAttributeString("arrowtail").value(), "dot"));
+  EXPECT_TRUE(loadEdge);
+  EXPECT_TRUE(loadEdge->IsDirected());
+  EXPECT_TRUE(loadEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
+  EXPECT_TRUE(StringContains(loadEdge->GetAttributeString("arrowtail").value(), "dot"));
 
   // Check that the function contains the word "function0"
   auto & functionNode = graph.GetNode(function0);
-  assert(StringContains(functionNode.GetLabel(), "function0"));
+  EXPECT_TRUE(StringContains(functionNode.GetLabel(), "function0"));
   // Since functions don't track pointees, they should have CantPoint
-  assert(StringContains(functionNode.GetLabel(), "CantPoint"));
+  EXPECT_TRUE(StringContains(functionNode.GetLabel(), "CantPoint"));
   // They should also both point to external, and escape all pointees
-  assert(StringContains(functionNode.GetLabel(), "{+}e"));
+  EXPECT_TRUE(StringContains(functionNode.GetLabel(), "{+}e"));
 
   // Check that the import PointerObject has a fill color, since it has escaped
   auto & importNode = graph.GetNode(import0);
-  assert(importNode.HasAttribute("fillcolor"));
+  EXPECT_TRUE(importNode.HasAttribute("fillcolor"));
 }
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
@@ -904,59 +887,89 @@ TestPointerObjectConstraintSetSolve(Args... args)
   }
 
   // alloca1 should point to alloca2, etc
-  assert(set.GetPointsToSet(alloca1).Size() <= 1);
-  assert(set.IsPointingTo(alloca1, alloca2));
-  assert(set.GetPointsToSet(alloca2).Size() <= 1);
-  assert(set.IsPointingTo(alloca2, alloca3));
-  assert(set.GetPointsToSet(alloca3).Size() <= 1);
-  assert(set.IsPointingTo(alloca3, alloca4));
+  EXPECT_LE(set.GetPointsToSet(alloca1).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(alloca1, alloca2));
+  EXPECT_LE(set.GetPointsToSet(alloca2).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(alloca2, alloca3));
+  EXPECT_LE(set.GetPointsToSet(alloca3).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(alloca3, alloca4));
 
   // %5 is a load of alloca1, and should only be a pointer to alloca2
-  assert(set.GetPointsToSet(reg[5]).Size() <= 1);
-  assert(set.IsPointingTo(reg[5], alloca2));
+  EXPECT_LE(set.GetPointsToSet(reg[5]).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(reg[5], alloca2));
 
   // %6 is a load of alloca3, and should only be a pointer to alloca4
-  assert(set.GetPointsToSet(reg[6]).Size() <= 1);
-  assert(set.IsPointingTo(reg[6], alloca4));
+  EXPECT_LE(set.GetPointsToSet(reg[6]).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(reg[6], alloca4));
 
   // %7 can point to either alloca2 or alloca4
-  assert(set.GetPointsToSet(reg[7]).Size() <= 2);
-  assert(set.IsPointingTo(reg[7], alloca2));
-  assert(set.IsPointingTo(reg[7], alloca4));
+  EXPECT_LE(set.GetPointsToSet(reg[7]).Size(), 2);
+  EXPECT_TRUE(set.IsPointingTo(reg[7], alloca2));
+  EXPECT_TRUE(set.IsPointingTo(reg[7], alloca4));
 
   // %8 should point to external, since it points to the superset of %0 and %1
-  assert(set.IsPointingToExternal(reg[8]));
+  EXPECT_TRUE(set.IsPointingToExternal(reg[8]));
   // %8 may also point to alloca4
-  assert(set.GetPointsToSet(reg[8]).Size() <= 1);
-  assert(set.IsPointingTo(reg[8], alloca4));
+  EXPECT_LE(set.GetPointsToSet(reg[8]).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(reg[8], alloca4));
 
   // %9 may point to v3
-  assert(set.IsPointingTo(reg[9], alloca3));
+  EXPECT_TRUE(set.IsPointingTo(reg[9], alloca3));
 
   // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
-  assert(set.GetPointsToSet(alloca4).Size() <= 1);
-  assert(set.IsPointingTo(alloca4, alloca3));
+  EXPECT_LE(set.GetPointsToSet(alloca4).Size(), 1);
+  EXPECT_TRUE(set.IsPointingTo(alloca4, alloca3));
 
   // Also due to the same store, alloca3 might have escaped
-  assert(set.HasEscaped(alloca3));
+  EXPECT_TRUE(set.HasEscaped(alloca3));
   // Due to alloca3 pointing to alloca4, it too should have been marked as escaped
-  assert(set.HasEscaped(alloca4));
+  EXPECT_TRUE(set.HasEscaped(alloca4));
   // Check that the other two allocas haven't escaped
-  assert(!set.HasEscaped(alloca1));
-  assert(!set.HasEscaped(alloca2));
+  EXPECT_FALSE(set.HasEscaped(alloca1));
+  EXPECT_FALSE(set.HasEscaped(alloca2));
 
   // Make sure only the escaped allocas are marked as pointing to external
-  assert(!set.IsPointingToExternal(alloca1));
-  assert(!set.IsPointingToExternal(alloca2));
-  assert(set.IsPointingToExternal(alloca3));
-  assert(set.IsPointingToExternal(alloca4));
+  EXPECT_FALSE(set.IsPointingToExternal(alloca1));
+  EXPECT_FALSE(set.IsPointingToExternal(alloca2));
+  EXPECT_TRUE(set.IsPointingToExternal(alloca3));
+  EXPECT_TRUE(set.IsPointingToExternal(alloca4));
 
   // %10 should also point to external, since it might have been loaded from external
-  assert(set.IsPointingToExternal(reg[10]));
+  EXPECT_TRUE(set.IsPointingToExternal(reg[10]));
 }
 
-static void
-TestClonePointerObjectConstraintSet()
+TEST(PointerObjectSetTests, TestPointerObjectConstraintSetSolveNaive)
+{
+  using Configuration = jlm::llvm::aa::Andersen::Configuration;
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::Naive>();
+}
+
+TEST(PointerObjectSetTests, TestPointerObjectConstraintSetSolveWorklist)
+{
+  using Configuration = jlm::llvm::aa::Andersen::Configuration;
+
+  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
+  for (const auto & config : allConfigs)
+  {
+    // Ignore all configs that enable features that do not affect SolveUsingWorklist()
+    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
+      continue;
+    if (config.IsOfflineVariableSubstitutionEnabled())
+      continue;
+    if (config.IsOfflineConstraintNormalizationEnabled())
+      continue;
+
+    TestPointerObjectConstraintSetSolve<Configuration::Solver::Worklist>(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPointeesEnabled());
+  }
+}
+
+TEST(PointerObjectSetTests, TestClonePointerObjectConstraintSet)
 {
   using namespace jlm::llvm::aa;
   jlm::llvm::AllMemoryNodesTest rvsdg;
@@ -978,64 +991,14 @@ TestClonePointerObjectConstraintSet()
 
   // Modifying the copy doesn't affect the original
   constraintsClone->AddConstraint(LoadConstraint(register0, alloca0));
-  assert(constraintsClone->GetConstraints().size() == 2);
-  assert(constraints.GetConstraints().size() == 1);
+  EXPECT_EQ(constraintsClone->GetConstraints().size(), 2);
+  EXPECT_EQ(constraints.GetConstraints().size(), 1);
 
   // Solving only affects the PointerObjectSet belonging to that constraint set
   constraints.SolveNaively();
-  assert(set.GetPointsToSet(dummy0).Contains(alloca0));
-  assert(setClone->GetPointsToSet(dummy0).IsEmpty());
+  EXPECT_TRUE(set.GetPointsToSet(dummy0).Contains(alloca0));
+  EXPECT_TRUE(setClone->GetPointsToSet(dummy0).IsEmpty());
 
   constraintsClone->SolveNaively();
-  assert(setClone->GetPointsToSet(dummy0).Contains(alloca0));
+  EXPECT_TRUE(setClone->GetPointsToSet(dummy0).Contains(alloca0));
 }
-
-static void
-TestPointerObjectSet()
-{
-  TestFlagFunctions();
-  TestCreatePointerObjects();
-  TestPointerObjectUnification();
-  TestPointerObjectUnificationPointees();
-  TestAddToPointsToSet();
-  TestMakePointsToSetSuperset();
-  TestClonePointerObjectSet();
-  TestSupersetConstraint();
-  TestStoreConstraintDirectly();
-  TestLoadConstraintDirectly();
-  TestEscapedFunctionConstraint();
-  TestStoredAsScalarFlag();
-  TestLoadedAsScalarFlag();
-  TestFunctionCallConstraint();
-  TestAddPointsToExternalConstraint();
-  TestAddRegisterContentEscapedConstraint();
-  TestDrawSubsetGraph();
-
-  using Configuration = jlm::llvm::aa::Andersen::Configuration;
-
-  TestPointerObjectConstraintSetSolve<Configuration::Solver::Naive>();
-
-  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
-  for (const auto & config : allConfigs)
-  {
-    // Ignore all configs that enable features that do not affect SolveUsingWorklist()
-    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
-      continue;
-    if (config.IsOfflineVariableSubstitutionEnabled())
-      continue;
-    if (config.IsOfflineConstraintNormalizationEnabled())
-      continue;
-
-    TestPointerObjectConstraintSetSolve<Configuration::Solver::Worklist>(
-        config.GetWorklistSoliverPolicy(),
-        config.IsOnlineCycleDetectionEnabled(),
-        config.IsHybridCycleDetectionEnabled(),
-        config.IsLazyCycleDetectionEnabled(),
-        config.IsDifferencePropagationEnabled(),
-        config.IsPreferImplicitPointeesEnabled());
-  }
-
-  TestClonePointerObjectConstraintSet();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)
