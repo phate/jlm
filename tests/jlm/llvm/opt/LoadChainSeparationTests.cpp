@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -24,8 +24,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-LoadNonVolatile()
+TEST(LoadChainSeparationTests, LoadNonVolatile)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -93,38 +92,35 @@ LoadNonVolatile()
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(0)->origin());
-    assert(joinNode && joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinNode && joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
 
-    assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()) == &loadNode2);
-    assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode1);
+    EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode2);
+    EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode1);
 
-    assert(loadNode1.input(1)->origin() == lambdaEntrySplitNode.output(0));
-    assert(loadNode1.input(2)->origin() == lambdaEntrySplitNode.output(1));
+    EXPECT_EQ(loadNode1.input(1)->origin(), lambdaEntrySplitNode.output(0));
+    EXPECT_EQ(loadNode1.input(2)->origin(), lambdaEntrySplitNode.output(1));
 
-    assert(loadNode2.input(1)->origin() == lambdaEntrySplitNode.output(0));
-    assert(loadNode2.input(2)->origin() == lambdaEntrySplitNode.output(1));
+    EXPECT_EQ(loadNode2.input(1)->origin(), lambdaEntrySplitNode.output(0));
+    EXPECT_EQ(loadNode2.input(2)->origin(), lambdaEntrySplitNode.output(1));
   }
 
   // Check transformation for the chain of memory state 2
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(1)->origin());
-    assert(joinNode && joinOperation);
-    assert(joinNode->ninputs() == 3);
+    EXPECT_TRUE(joinNode && joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 3);
 
-    assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()) == &loadNode3);
-    assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode2);
-    assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(2)->origin()) == &loadNode1);
+    EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode3);
+    EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode2);
+    EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(2)->origin()), &loadNode1);
 
-    assert(loadNode3.input(1)->origin() == lambdaEntrySplitNode.output(1));
+    EXPECT_EQ(loadNode3.input(1)->origin(), lambdaEntrySplitNode.output(1));
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-LoadNonVolatile", LoadNonVolatile)
-
-static void
-LoadVolatile()
+TEST(LoadChainSeparationTests, LoadVolatile)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -182,20 +178,17 @@ LoadVolatile()
 
   auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       *GetMemoryStateRegionResult(*lambdaNode).origin());
-  assert(joinNode && joinOperation);
-  assert(joinNode->ninputs() == 2);
+  EXPECT_TRUE(joinNode && joinOperation);
+  EXPECT_EQ(joinNode->ninputs(), 2);
 
-  assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()) == &loadNode2);
-  assert(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()) == &loadNode1);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode2);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode1);
 
-  assert(loadNode1.input(2)->origin() == &memoryStateArgument);
-  assert(loadNode2.input(2)->origin() == &memoryStateArgument);
+  EXPECT_EQ(loadNode1.input(2)->origin(), &memoryStateArgument);
+  EXPECT_EQ(loadNode2.input(2)->origin(), &memoryStateArgument);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-LoadVolatile", LoadVolatile)
-
-static void
-SingleLoad()
+TEST(LoadChainSeparationTests, SingleLoad)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -237,15 +230,13 @@ SingleLoad()
 
   // Assert
   // We expect nothing to happen as there is no chain of load nodes
-  assert(
-      TryGetOwnerNode<SimpleNode>(*GetMemoryStateRegionResult(*lambdaNode).origin()) == &loadNode);
-  assert(LoadOperation::MemoryStateInputs(loadNode).begin()->origin() == &memoryStateArgument);
+  EXPECT_EQ(
+      TryGetOwnerNode<SimpleNode>(*GetMemoryStateRegionResult(*lambdaNode).origin()),
+      &loadNode);
+  EXPECT_EQ(LoadOperation::MemoryStateInputs(loadNode).begin()->origin(), &memoryStateArgument);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-SingleLoad", SingleLoad)
-
-static void
-LoadAndStore()
+TEST(LoadChainSeparationTests, LoadAndStore)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -316,22 +307,19 @@ LoadAndStore()
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode2.input(2)->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode1.input(2)->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-LoadAndStore", LoadAndStore)
-
-static void
-GammaWithOnlyLoads()
+TEST(LoadChainSeparationTests, GammaWithOnlyLoads)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -416,31 +404,26 @@ GammaWithOnlyLoads()
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetExitVars()[0].branchResult[0]->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetEntryVars()[1].input->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/LoadChainSeparationTests-GammaWithOnlyLoads",
-    GammaWithOnlyLoads)
-
-static void
-GammaWithLoadsAndStores()
+TEST(LoadChainSeparationTests, GammaWithLoadsAndStores)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -529,24 +512,19 @@ GammaWithLoadsAndStores()
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetExitVars()[0].branchResult[0]->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/LoadChainSeparationTests-GammaWithLoadsAndStores",
-    GammaWithLoadsAndStores)
-
-static void
-ThetaWithLoadsOnly()
+TEST(LoadChainSeparationTests, ThetaWithLoadsOnly)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -623,25 +601,20 @@ ThetaWithLoadsOnly()
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*memoryStateLoopVar.post->origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 2);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 2);
   }
 
   // We expect a single join node in the lambda subregion
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
-    assert(joinOperation);
-    assert(joinNode->ninputs() == 5);
+    EXPECT_TRUE(joinOperation);
+    EXPECT_EQ(joinNode->ninputs(), 5);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/LoadChainSeparationTests-ThetaWithLoadsOnly",
-    ThetaWithLoadsOnly)
-
-static void
-ExternalCall()
+TEST(LoadChainSeparationTests, ExternalCall)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -746,56 +719,53 @@ ExternalCall()
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(0)->origin());
-    assert(joinOperation);
+    EXPECT_TRUE(joinOperation);
 
-    assert(joinNode->input(0)->origin() == loadNode6.output(1));
-    assert(loadNode6.input(1)->origin() == callExitSplitNode.output(0));
+    EXPECT_EQ(joinNode->input(0)->origin(), loadNode6.output(1));
+    EXPECT_EQ(loadNode6.input(1)->origin(), callExitSplitNode.output(0));
 
-    assert(joinNode->input(1)->origin() == loadNode5.output(1));
-    assert(loadNode5.input(1)->origin() == callExitSplitNode.output(0));
+    EXPECT_EQ(joinNode->input(1)->origin(), loadNode5.output(1));
+    EXPECT_EQ(loadNode5.input(1)->origin(), callExitSplitNode.output(0));
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(1)->origin());
-    assert(joinOperation);
+    EXPECT_TRUE(joinOperation);
 
-    assert(joinNode->input(0)->origin() == loadNode8.output(1));
-    assert(loadNode8.input(1)->origin() == callExitSplitNode.output(1));
+    EXPECT_EQ(joinNode->input(0)->origin(), loadNode8.output(1));
+    EXPECT_EQ(loadNode8.input(1)->origin(), callExitSplitNode.output(1));
 
-    assert(joinNode->input(1)->origin() == loadNode7.output(1));
-    assert(loadNode7.input(1)->origin() == callExitSplitNode.output(1));
+    EXPECT_EQ(joinNode->input(1)->origin(), loadNode7.output(1));
+    EXPECT_EQ(loadNode7.input(1)->origin(), callExitSplitNode.output(1));
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *callEntryMergeNode.input(0)->origin());
-    assert(joinOperation);
+    EXPECT_TRUE(joinOperation);
 
-    assert(joinNode->input(0)->origin() == loadNode2.output(1));
-    assert(loadNode2.input(1)->origin() == lambdaEntrySplitNode.output(0));
+    EXPECT_EQ(joinNode->input(0)->origin(), loadNode2.output(1));
+    EXPECT_EQ(loadNode2.input(1)->origin(), lambdaEntrySplitNode.output(0));
 
-    assert(joinNode->input(1)->origin() == loadNode1.output(1));
-    assert(loadNode1.input(1)->origin() == lambdaEntrySplitNode.output(0));
+    EXPECT_EQ(joinNode->input(1)->origin(), loadNode1.output(1));
+    EXPECT_EQ(loadNode1.input(1)->origin(), lambdaEntrySplitNode.output(0));
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *callEntryMergeNode.input(1)->origin());
-    assert(joinOperation);
+    EXPECT_TRUE(joinOperation);
 
-    assert(joinNode->input(0)->origin() == loadNode4.output(1));
-    assert(loadNode4.input(1)->origin() == lambdaEntrySplitNode.output(1));
+    EXPECT_EQ(joinNode->input(0)->origin(), loadNode4.output(1));
+    EXPECT_EQ(loadNode4.input(1)->origin(), lambdaEntrySplitNode.output(1));
 
-    assert(joinNode->input(1)->origin() == loadNode3.output(1));
-    assert(loadNode3.input(1)->origin() == lambdaEntrySplitNode.output(1));
+    EXPECT_EQ(joinNode->input(1)->origin(), loadNode3.output(1));
+    EXPECT_EQ(loadNode3.input(1)->origin(), lambdaEntrySplitNode.output(1));
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-ExternalCall", ExternalCall)
-
-static void
-DeadOutputs()
+TEST(LoadChainSeparationTests, DeadOutputs)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -852,10 +822,8 @@ DeadOutputs()
   view(rvsdg, stdout);
 
   // Assert
-  assert(loadNode1.output(1)->IsDead());
-  assert(loadNode1.input(1)->origin() == storeNode.output(0));
-  assert(loadNode2.output(1)->IsDead());
-  assert(loadNode2.input(1)->origin() == storeNode.output(0));
+  EXPECT_TRUE(loadNode1.output(1)->IsDead());
+  EXPECT_EQ(loadNode1.input(1)->origin(), storeNode.output(0));
+  EXPECT_TRUE(loadNode2.output(1)->IsDead());
+  EXPECT_EQ(loadNode2.input(1)->origin(), storeNode.output(0));
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoadChainSeparationTests-DeadOutputs", DeadOutputs)
