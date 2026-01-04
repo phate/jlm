@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -19,8 +19,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-simpleGamma()
+TEST(NodeHoistingTests, simpleGamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -77,17 +76,14 @@ simpleGamma()
 
   // Assert
   // All nodes from the gamma subregions should have been hoisted to the lambda subregion
-  assert(lambdaNode->subregion()->numNodes() == 4);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4);
 
   // The original nodes in the gamma subregions should have been removed
-  assert(gammaNode->subregion(0)->numNodes() == 0);
-  assert(gammaNode->subregion(1)->numNodes() == 0);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 0);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-simpleGamma", simpleGamma)
-
-static void
-nestedGamma()
+TEST(NodeHoistingTests, nestedGamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -156,21 +152,18 @@ nestedGamma()
 
   // Assert
   // All simple nodes from both gamma subregions should have been hoisted to the lambda subregion
-  assert(lambdaNode->subregion()->numNodes() == 5);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5);
 
   // Only gamma node 2 should be left in gamma node 1 subregion 0
-  assert(gammaNode1->subregion(0)->numNodes() == 1);
-  assert(gammaNode1->subregion(1)->numNodes() == 0);
+  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 1);
+  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0);
 
   // All nodes should have been hoisted out
-  assert(gammaNode2->subregion(0)->numNodes() == 0);
-  assert(gammaNode2->subregion(1)->numNodes() == 0);
+  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0);
+  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-nestedGamma", nestedGamma)
-
-static void
-simpleTheta()
+TEST(NodeHoistingTests, simpleTheta)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -231,17 +224,14 @@ simpleTheta()
 
   // Assert
   // We expect node1 and node2 to be hoisted out of the theta subregion
-  assert(lambdaNode->subregion()->numNodes() == 3);
-  assert(thetaNode->subregion()->numNodes() == 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 2);
 
-  assert(lv2.post->origin() == node3->output(0));
-  assert(lv4.post->origin() == node4->output(0));
+  EXPECT_EQ(lv2.post->origin(), node3->output(0));
+  EXPECT_EQ(lv4.post->origin(), node4->output(0));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-simpleTheta", simpleTheta)
-
-static void
-invariantMemoryOperation()
+TEST(NodeHoistingTests, invariantMemoryOperation)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -291,14 +281,11 @@ invariantMemoryOperation()
 
   // Assert
   // We expect the store node hoisted out of the theta subregion
-  assert(lambdaNode->subregion()->numNodes() == 2);
-  assert(thetaNode->subregion()->numNodes() == 0);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 0);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-invariantMemoryOperation", invariantMemoryOperation)
-
-static void
-statefulOperations()
+TEST(NodeHoistingTests, statefulOperations)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -365,14 +352,12 @@ statefulOperations()
   // region as stateNode
 
   // Gamma node and undef node
-  assert(lambdaNode->subregion()->numNodes() == 1);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1);
 
   // stateNode, gammaNode2, and binaryNode
-  assert(gammaNode1->subregion(0)->numNodes() == 3);
-  assert(gammaNode1->subregion(1)->numNodes() == 0);
+  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 3);
+  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0);
 
-  assert(gammaNode2->subregion(0)->numNodes() == 0);
-  assert(gammaNode2->subregion(1)->numNodes() == 0);
+  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0);
+  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push-statefulOperations", statefulOperations)
