@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
@@ -13,8 +13,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-Test1()
+TEST(LoopUnswitchingTests, Test1)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -77,15 +76,12 @@ Test1()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()));
+  EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()), nullptr);
+  EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()), nullptr);
+  EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()), nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test1", Test1)
-
-static void
-Test2()
+TEST(LoopUnswitchingTests, Test2)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -136,7 +132,5 @@ Test2()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
+  EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()), nullptr);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test2", Test2)
