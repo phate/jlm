@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/pull.hpp>
@@ -16,8 +16,7 @@
 static const auto vt = jlm::rvsdg::TestType::createValueType();
 static jlm::util::StatisticsCollector statisticsCollector;
 
-static void
-testPullInTop()
+TEST(NodeSinkingTests, testPullInTop)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -52,14 +51,11 @@ testPullInTop()
   pullin_top(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(gamma->subregion(0)->numNodes() == 2);
-  assert(gamma->subregion(1)->numNodes() == 2);
+  EXPECT_EQ(gamma->subregion(0)->numNodes(), 2);
+  EXPECT_EQ(gamma->subregion(1)->numNodes(), 2);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInTop", testPullInTop)
-
-static void
-testPullInBottom()
+TEST(NodeSinkingTests, testPullInBottom)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -95,18 +91,15 @@ testPullInBottom()
   view(rvsdg, stdout);
 
   // Assert
-  assert(sunkNodes == 2);
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(sunkNodes, 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
 
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gammaNode);
-  assert(gammaNode->subregion(0)->numNodes() == 2);
-  assert(gammaNode->subregion(1)->numNodes() == 2);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()), gammaNode);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPullInBottom", testPullInBottom)
-
-static void
-testPull()
+TEST(NodeSinkingTests, testPull)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -143,7 +136,5 @@ testPull()
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull-testPull", testPull)
