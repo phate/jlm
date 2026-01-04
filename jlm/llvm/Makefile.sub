@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/opt/ScalarEvolutionTests \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
@@ -248,6 +247,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/NodeReductionTests.cpp \
     tests/jlm/llvm/opt/PredicateCorrelationTests.cpp \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
+    tests/jlm/llvm/opt/ScalarEvolutionTests.cpp \
 
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
