@@ -1,14 +1,5 @@
 JLC ?= $(BUILD_OUT_PREFIX)jlc
 
-libjlmtest_SOURCES = \
-	tests/test-registry.cpp \
-	tests/test-runner.cpp \
-
-libjlmtest_HEADERS = \
-	tests/test-registry.hpp \
-
-$(eval $(call common_library,libjlmtest))
-
 ################################################################################
 # Rules to compile test cases with jlc and run them
 
