@@ -160,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
     tests/jlm/llvm/opt/LoadChainSeparationTests \
     tests/jlm/llvm/opt/LoopUnswitchingTests \
@@ -248,6 +247,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     \
     tests/jlm/llvm/opt/CommonNodeEliminationTests.cpp \
     tests/jlm/llvm/opt/DeadNodeEliminationTests.cpp \
+    tests/jlm/llvm/opt/IfConversionTests.cpp \
 
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
