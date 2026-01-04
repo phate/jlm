@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -12,8 +12,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-MultipleReductionsPerRegion()
+TEST(NodeReductionTests, MultipleReductionsPerRegion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -57,20 +56,16 @@ MultipleReductionsPerRegion()
   // the add operation
   // 2. Constant folding on the add operation
   // The result is that a single constant node with value 8 is left in the graph.
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*sumExport.origin());
   auto constantOperation =
       dynamic_cast<const BitConstantOperation *>(&constantNode->GetOperation());
-  assert(constantOperation->value().to_uint() == 8);
+  EXPECT_EQ(constantOperation->value().to_uint(), 8);
 
   // We expect that the node reductions transformation iterated over the root region 2 times.
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
   auto & nodeReductionStatistics = dynamic_cast<const NodeReduction::Statistics &>(statistics);
   auto numIterations = nodeReductionStatistics.GetNumIterations(graph.GetRootRegion()).value();
-  assert(numIterations == 2);
+  EXPECT_EQ(numIterations, 2);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/NodeReductionTests-MultipleReductionsPerRegion",
-    MultipleReductionsPerRegion)
