@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -31,12 +31,11 @@ runInlining(jlm::llvm::RvsdgModule & rm)
   jlm::util::StatisticsCollector collector(settings);
   fctinline.Run(rm, collector);
 
-  assert(collector.NumCollectedStatistics() == 1);
+  EXPECT_EQ(collector.NumCollectedStatistics(), 1);
   return collector.releaseStatistic(jlm::util::Statistics::Id::FunctionInlining);
 }
 
-static void
-testSimpleInlining()
+TEST(FunctionInliningTests, testSimpleInlining)
 {
   /**
    * Creates an RVSDG that looks like:
@@ -162,20 +161,18 @@ testSimpleInlining()
 
   // Assert
   // Check that the call has been replaced by the test operation inside f1
-  assert(!Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
-  assert(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
+  EXPECT_FALSE(Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
 
   // Check that the statistics match what we expect. f2 is technically inlineable
-  assert(statistics->GetMeasurementValue<uint64_t>("#Functions") == 2);
-  assert(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions") == 2);
-  assert(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls") == 1);
-  assert(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls") == 1);
-  assert(statistics->GetMeasurementValue<uint64_t>("#CallsInlined") == 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 1);
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining-testSimpleInlining", testSimpleInlining)
 
-static void
-testInliningWithAlloca()
+TEST(FunctionInliningTests, testInliningWithAlloca)
 {
   /**
    * Creates an RVSDG that looks like:
@@ -301,18 +298,16 @@ testInliningWithAlloca()
 
   // Assert
   // Check that the call is gone
-  assert(!Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
   // A store should have taken its place in the gamma subregion
-  assert(Region::ContainsOperation<StoreNonVolatileOperation>(*gammaRegion0, true));
+  EXPECT_TRUE(Region::ContainsOperation<StoreNonVolatileOperation>(*gammaRegion0, true));
   // Check that the alloca operation is not inside the gamma subregion
-  assert(!Region::ContainsOperation<AllocaOperation>(*gammaRegion0, true));
+  EXPECT_FALSE(Region::ContainsOperation<AllocaOperation>(*gammaRegion0, true));
   // The alloca should have been moved to the top level of f2
-  assert(Region::ContainsOperation<AllocaOperation>(*f2Region, false));
+  EXPECT_TRUE(Region::ContainsOperation<AllocaOperation>(*f2Region, false));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining-testInliningWithAlloca", testInliningWithAlloca)
 
-static void
-testIndirectCall()
+TEST(FunctionInliningTests, testIndirectCall)
 {
   /**
    * Creates an RVSDG graph with two functions.
@@ -385,20 +380,18 @@ testIndirectCall()
 
   // Assert
   // No inlining happens in this test, but both f1 and f2 are technically possible to inline
-  assert(statistics->GetMeasurementValue<uint64_t>("#Functions") == 2);
-  assert(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions") == 2);
-  assert(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls") == 1);
-  assert(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls") == 0);
-  assert(statistics->GetMeasurementValue<uint64_t>("#CallsInlined") == 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 0);
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining-testIndirectCall", testIndirectCall)
 
 /**
  * Creates an RVSDG graph with a single function f1.
  * The function contains an alloca inside a theta, which disqualifies it from being inlined
  */
-static void
-testFunctionWithDisqualifyingAlloca()
+TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -434,10 +427,7 @@ testFunctionWithDisqualifyingAlloca()
   auto statistics = runInlining(rm);
 
   // Assert
-  assert(statistics->GetMeasurementValue<uint64_t>("#Functions") == 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1);
   // f1 should not be considered inlinable, due to the alloca
-  assert(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions") == 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/test-inlining-testFunctionWithDisqualifyingAlloca",
-    testFunctionWithDisqualifyingAlloca)
