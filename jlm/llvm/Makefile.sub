@@ -159,17 +159,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
-libllvm_TESTS += \
-    tests/jlm/llvm/opt/test-unroll \
-
-libllvm_TEST_LIBS = \
-    libjlmtest \
-    libllvm \
-    librvsdg \
-    libutil \
-
-libllvm_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
-
 $(eval $(call common_library,libllvm))
 
 tests/jlm/llvm/run-libllvm-tests_SOURCES = \
@@ -248,7 +237,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/test-inlining.cpp \
     tests/jlm/llvm/opt/test-pull.cpp \
     tests/jlm/llvm/opt/test-push.cpp \
-
+    tests/jlm/llvm/opt/test-unroll.cpp \
 
 tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
 tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
