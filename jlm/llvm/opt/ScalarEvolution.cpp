@@ -142,7 +142,6 @@ ScalarEvolution::Run(
   statistics->Start();
 
   Context_ = Context::Create();
-  InductionVariableMap_.clear();
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   AnalyzeRegion(rootRegion);
 
@@ -259,26 +258,25 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 }
 
 std::unordered_map<const rvsdg::Output *, int>
-ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV)
+ScalarEvolution::FindDependenciesForSCEV(const SCEV & scev)
 {
   std::unordered_map<const rvsdg::Output *, int> dependencies{};
-  if (dynamic_cast<const SCEVConstant *>(&currentSCEV)
-      || dynamic_cast<const SCEVUnknown *>(&currentSCEV))
+  if (dynamic_cast<const SCEVConstant *>(&scev) || dynamic_cast<const SCEVUnknown *>(&scev))
   {
     return dependencies;
   }
-  if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&currentSCEV))
+  if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&scev))
   {
     if (const auto dependency = placeholderSCEV->GetPrePointer())
       dependencies[dependency]++;
   }
-  if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&currentSCEV))
+  if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&scev))
   {
     // Recursively find dependencies on lhs and rhs
     std::unordered_map<const rvsdg::Output *, int> lhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetLeftOperand(), currentIV);
+        FindDependenciesForSCEV(*addSCEV->GetLeftOperand());
     std::unordered_map<const rvsdg::Output *, int> rhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetRightOperand(), currentIV);
+        FindDependenciesForSCEV(*addSCEV->GetRightOperand());
 
     // Merge lhsDependencies into dependencies
     for (const auto & [ptr, count] : lhsDependencies)
@@ -301,9 +299,10 @@ ScalarEvolution::CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const
     const auto post = loopVar.post;
     const auto scev = UniqueSCEVs_.at(post->origin())->Clone();
 
-    const auto pre = loopVar.pre;
     const std::unordered_map<const rvsdg::Output *, int> dependencies =
-        FindDependenciesForSCEV(*scev.get(), *pre);
+        FindDependenciesForSCEV(*scev.get());
+
+    const auto pre = loopVar.pre;
     graph[pre] = dependencies;
   }
 

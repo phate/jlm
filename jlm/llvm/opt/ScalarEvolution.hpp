@@ -392,7 +392,6 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
-  std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> UniqueSCEVs_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
       ChainRecurrenceMap_;
@@ -410,7 +409,7 @@ private:
   CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
   static std::unordered_map<const rvsdg::Output *, int>
-  FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV);
+  FindDependenciesForSCEV(const SCEV & scev);
 
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
