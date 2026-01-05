@@ -339,20 +339,6 @@ Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegio
   return numRemovedInputs;
 }
 
-void
-Node::removeOutput(size_t index)
-{
-  JLM_ASSERT(index < noutputs());
-  JLM_ASSERT(outputs_[index]->IsDead());
-
-  for (size_t n = index; n < noutputs() - 1; n++)
-  {
-    outputs_[n] = std::move(outputs_[n + 1]);
-    outputs_[n]->index_ = n;
-  }
-  outputs_.pop_back();
-}
-
 size_t
 Node::RemoveOutputs(const util::HashSet<size_t> & indices)
 {

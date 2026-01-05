@@ -202,7 +202,7 @@ LoopNode::removeLoopOutput(rvsdg::StructuralOutput * output)
   auto result = output->results.begin();
 
   subregion()->RemoveResults({ result->index() });
-  removeOutput(output->index());
+  RemoveOutputs({ output->index() });
 }
 
 void
