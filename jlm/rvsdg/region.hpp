@@ -396,24 +396,6 @@ public:
   insertArgument(size_t index, std::unique_ptr<RegionArgument> argument);
 
   /**
-   * Removes an argument from the region given an arguments' index.
-   *
-   * An argument can only be removed, if it has no users. The removal of an argument invalidates the
-   * region's existing argument iterators.
-   *
-   * @param index The arguments' index. It must be between [0, narguments()].
-   *
-   * \note The method must adjust the indices of the other arguments after the removal. The methods'
-   * runtime is therefore O(n), where n is the region's number of arguments.
-   *
-   * \see narguments()
-   * \see RegionArgument#index()
-   * \see RegionArgument::nusers()
-   */
-  void
-  RemoveArgument(size_t index);
-
-  /**
    * Remove all arguments that have no users and an index contained in \p indices.
    *
    * @param indices The indices of the arguments that should be removed.

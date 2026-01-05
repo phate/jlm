@@ -128,8 +128,8 @@ Region::~Region() noexcept
   JLM_ASSERT(numTopNodes() == 0);
   JLM_ASSERT(numBottomNodes() == 0);
 
-  while (arguments_.size())
-    RemoveArgument(arguments_.size() - 1);
+  PruneArguments();
+  JLM_ASSERT(narguments() == 0);
 
   // Disconnect observers
   while (observers_)
@@ -199,21 +199,6 @@ Region::insertArgument(size_t index, std::unique_ptr<RegionArgument> argument)
   arguments_[index]->index_ = index;
 
   return *arguments_[index];
-}
-
-void
-Region::RemoveArgument(size_t index)
-{
-  JLM_ASSERT(index < narguments());
-  RegionArgument * argument = arguments_[index];
-
-  delete argument;
-  for (size_t n = index; n < arguments_.size() - 1; n++)
-  {
-    arguments_[n] = arguments_[n + 1];
-    arguments_[n]->index_ = n;
-  }
-  arguments_.pop_back();
 }
 
 size_t
