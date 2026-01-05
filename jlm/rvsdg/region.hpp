@@ -438,22 +438,6 @@ public:
   addResult(std::unique_ptr<RegionResult> result);
 
   /**
-   * Removes a result from the region given a results' index.
-   *
-   * The removal of a result invalidates the region's existing result iterators.
-   *
-   * @param index The results' index. It must be between [0, nresults()).
-   *
-   * \note The method must adjust the indices of the other results after the removal. The methods'
-   * runtime is therefore O(n), where n is the region's number of results.
-   *
-   * \see nresults()
-   * \see RegionResult#index()
-   */
-  void
-  RemoveResult(size_t index);
-
-  /**
    * Remove all results that have an index contained in \p indices.
    *
    * @param indices The indices of the results that should be removed.

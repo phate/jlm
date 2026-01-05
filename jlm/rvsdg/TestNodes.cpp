@@ -152,7 +152,7 @@ TestStructuralNode::removeOutputAndResults(size_t index)
   auto out = output(index);
   for (auto & result : out->results)
   {
-    result.region()->RemoveResult(result.index());
+    result.region()->RemoveResults({ result.index() });
   }
 
   removeOutput(index);

@@ -112,7 +112,7 @@ remove_unused_loop_inputs(LoopNode * ln)
       JLM_ASSERT(*result->Type() == *arg->Type());
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
       {
-        sr->RemoveResult(result->index());
+        sr->RemoveResults({ result->index() });
         sr->RemoveArguments({ arg->index() });
       }
     }
@@ -263,7 +263,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   remove(branch_in_node);
   auto region = ndmux_node->region();
   remove(ndmux_node);
-  region->RemoveResult(backedge_arg->result()->index());
+  region->RemoveResults({ backedge_arg->result()->index() });
   region->RemoveArguments({ backedge_arg->index() });
   return true;
 }
