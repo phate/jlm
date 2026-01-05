@@ -182,8 +182,7 @@ TEST(TypeConverterTests, LlvmStructTypeConversion)
   const auto structType1Llvm = ::llvm::StructType::get(context, { i32Type, halfType }, false);
   const auto structType2Llvm =
       ::llvm::StructType::get(context, { i32Type, i32Type, i32Type }, true);
-  const auto structType3Llvm = ::llvm::StructType::get(context, { i32Type }, true);
-  structType3Llvm->setName("myStruct");
+  const auto structType3Llvm = ::llvm::StructType::create(context, { i32Type }, "myStruct", true);
 
   // Act
   const auto structType1Jlm =
