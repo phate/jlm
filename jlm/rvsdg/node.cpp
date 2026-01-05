@@ -302,29 +302,6 @@ Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
   return inputPtr;
 }
 
-void
-Node::removeInput(size_t index, bool notifyRegion)
-{
-  JLM_ASSERT(index < ninputs());
-
-  if (notifyRegion)
-    region()->notifyInputDestroy(input(index));
-
-  // remove input
-  for (size_t n = index; n < ninputs() - 1; n++)
-  {
-    inputs_[n] = std::move(inputs_[n + 1]);
-    inputs_[n]->index_ = n;
-  }
-  inputs_.pop_back();
-
-  // If we no longer have any inputs we are now a top node
-  if (ninputs() == 0)
-  {
-    region()->onTopNodeAdded(*this);
-  }
-}
-
 size_t
 Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegion)
 {

@@ -99,7 +99,7 @@ TestStructuralNode::removeInputAndArguments(size_t index)
     argument.region()->RemoveArgument(argument.index());
   }
 
-  removeInput(index, true);
+  RemoveInputs({ index }, true);
 }
 
 TestStructuralNode::InputVar
