@@ -213,7 +213,7 @@ LoopNode::removeLoopInput(rvsdg::StructuralInput * input)
   auto argument = input->arguments.begin();
   JLM_ASSERT(argument->IsDead());
 
-  subregion()->RemoveArgument(argument->index());
+  subregion()->RemoveArguments({ argument->index() });
   RemoveInputs({ input->index() }, true);
 }
 

@@ -113,7 +113,7 @@ remove_unused_loop_inputs(LoopNode * ln)
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
       {
         sr->RemoveResult(result->index());
-        sr->RemoveArgument(arg->index());
+        sr->RemoveArguments({ arg->index() });
       }
     }
     else
@@ -264,7 +264,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   auto region = ndmux_node->region();
   remove(ndmux_node);
   region->RemoveResult(backedge_arg->result()->index());
-  region->RemoveArgument(backedge_arg->index());
+  region->RemoveArguments({ backedge_arg->index() });
   return true;
 }
 

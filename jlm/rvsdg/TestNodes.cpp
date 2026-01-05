@@ -96,7 +96,7 @@ TestStructuralNode::removeInputAndArguments(size_t index)
   auto in = input(index);
   for (auto & argument : in->arguments)
   {
-    argument.region()->RemoveArgument(argument.index());
+    argument.region()->RemoveArguments({ argument.index() });
   }
 
   RemoveInputs({ index }, true);
