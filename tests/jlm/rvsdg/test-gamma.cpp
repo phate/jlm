@@ -189,63 +189,6 @@ TEST(GammaTests, test_control_constant_reduction2)
   EXPECT_TRUE(is<MatchOperation>(match->GetOperation()));
 }
 
-TEST(GammaTests, TestRemoveGammaOutputsWhere)
-{
-  using namespace jlm::rvsdg;
-
-  // Arrange
-  Graph rvsdg;
-  auto vt = TestType::createValueType();
-  ControlType ct(2);
-
-  auto predicate = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "");
-  auto v0 = &jlm::rvsdg::GraphImport::Create(rvsdg, vt, "");
-  auto v1 = &jlm::rvsdg::GraphImport::Create(rvsdg, vt, "");
-  auto v2 = &jlm::rvsdg::GraphImport::Create(rvsdg, vt, "");
-  auto v3 = &jlm::rvsdg::GraphImport::Create(rvsdg, vt, "");
-
-  auto gammaNode = GammaNode::create(predicate, 2);
-  auto gammaInput0 = gammaNode->AddEntryVar(v0);
-  auto gammaInput1 = gammaNode->AddEntryVar(v1);
-  auto gammaInput2 = gammaNode->AddEntryVar(v2);
-  auto gammaInput3 = gammaNode->AddEntryVar(v3);
-
-  auto gammaOutput0 = gammaNode->AddExitVar(gammaInput0.branchArgument);
-  auto gammaOutput1 = gammaNode->AddExitVar(gammaInput1.branchArgument);
-  auto gammaOutput2 = gammaNode->AddExitVar(gammaInput2.branchArgument);
-  auto gammaOutput3 = gammaNode->AddExitVar(gammaInput3.branchArgument);
-
-  GraphExport::Create(*gammaOutput0.output, "");
-  GraphExport::Create(*gammaOutput2.output, "");
-
-  // Act & Assert
-  EXPECT_EQ(gammaNode->noutputs(), 4);
-
-  // Remove gammaOutput1
-  gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::Output & output)
-      {
-        return output.index() == gammaOutput1.output->index();
-      });
-  EXPECT_EQ(gammaNode->noutputs(), 3);
-  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 3);
-  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 3);
-  EXPECT_EQ(gammaOutput2.output->index(), 1);
-  EXPECT_EQ(gammaOutput3.output->index(), 2);
-
-  // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
-  gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::Output & output)
-      {
-        return output.index() == gammaOutput2.output->index();
-      });
-  EXPECT_EQ(gammaNode->noutputs(), 3);
-  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 3);
-  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 3);
-  EXPECT_EQ(gammaOutput2.output->index(), 1);
-  EXPECT_EQ(gammaOutput3.output->index(), 2);
-}
-
 TEST(GammaTests, TestPruneOutputs)
 {
   using namespace jlm::rvsdg;
@@ -276,7 +219,7 @@ TEST(GammaTests, TestPruneOutputs)
   GraphExport::Create(*gammaOutput2.output, "");
 
   // Act
-  gammaNode->PruneOutputs();
+  gammaNode->PruneExitVars();
 
   // Assert
   EXPECT_EQ(gammaNode->noutputs(), 2);
