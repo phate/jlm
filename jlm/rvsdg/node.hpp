@@ -714,23 +714,6 @@ protected:
   NodeInput *
   addInput(std::unique_ptr<NodeInput> input, bool notifyRegion);
 
-  /**
-   * Removes an input from the node given the inputs' \p index.
-   *
-   * The removal of an input invalidates the node's existing input iterators,
-   * and changes the index of all following inputs.
-   *
-   * @param index The inputs' index. It must be between [0, ninputs()).
-   * @param notifyRegion If true, the region is informed about the removal.
-   * This should be false if the node has already notified the region about being removed,
-   * i.e., this function is being called from the node's destructor.
-   *
-   * \see ninputs()
-   * \see input#index()
-   */
-  void
-  removeInput(size_t index, bool notifyRegion);
-
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
   /**
