@@ -437,6 +437,9 @@ private:
   IsUnknown(const SCEVChainRecurrence & chrec);
 
   static bool
+  IsState(const rvsdg::Output & output);
+
+  static bool
   HasCycleThroughOthers(
       const rvsdg::Output & currentIV,
       const rvsdg::Output & originalIV,

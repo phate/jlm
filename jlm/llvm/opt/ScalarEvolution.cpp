@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -162,6 +163,13 @@ ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
   return false;
 }
 
+bool
+ScalarEvolution::IsState(const rvsdg::Output & output)
+{
+  const auto type = output.Type();
+  return rvsdg::is<MemoryStateType>(type) || rvsdg::is<IOStateType>(type);
+}
+
 void
 ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 {
@@ -178,14 +186,18 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         // Add number of loop vars in theta (for statistics)
         for (const auto loopVar : thetaNode->GetLoopVars())
         {
-          Context_.get()->AddLoopVar(*loopVar.pre);
+          if (!IsState(*loopVar.pre)) // Only add loop variables that are not states
+            Context_.get()->AddLoopVar(*loopVar.pre);
         }
 
         auto chrecMap = PerformSCEVAnalysis(*thetaNode);
         for (auto & [output, chrec] : chrecMap)
         {
-          if (!IsUnknown(*chrec))
+          if (!(IsUnknown(*chrec) || IsState(*output)))
+          {
+            // Only add chrecs that are not unknown for outputs that are not states
             Context_.get()->InsertChrec(*thetaNode, chrec);
+          }
         }
       }
     }
