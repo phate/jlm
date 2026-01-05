@@ -155,7 +155,7 @@ TestStructuralNode::removeOutputAndResults(size_t index)
     result.region()->RemoveResults({ result.index() });
   }
 
-  removeOutput(index);
+  RemoveOutputs({ index });
 }
 
 TestStructuralNode::OutputVar

@@ -714,7 +714,7 @@ protected:
   NodeInput *
   addInput(std::unique_ptr<NodeInput> input, bool notifyRegion);
 
-  // FIXME: I really would not like to be RemoveInputsWhere() to be public
+  // FIXME: I really would not like to be RemoveInputs() to be public
 public:
   /**
    * Removes all inputs that have an index in \p indices.
@@ -741,25 +741,7 @@ protected:
     return this->output(noutputs() - 1);
   }
 
-  /**
-   * Removes an output from the node given the outputs' index.
-   *
-   * An output can only be removed, if it has no users. The removal of an output invalidates the
-   * node's existing output iterators.
-   *
-   * @param index The outputs' index. It must be between [0, noutputs()).
-   *
-   * \note The method must adjust the indices of the other outputs after the removal. The methods'
-   * runtime is therefore O(n), where n is the node's number of outputs.
-   *
-   * \see noutputs()
-   * \see output#index()
-   * \see output#nusers()
-   */
-  void
-  removeOutput(size_t index);
-
-  // FIXME: I really would not like to be RemoveOutputsWhere() to be public
+  // FIXME: I really would not like to be RemoveOutputs() to be public
 public:
   /**
    * Removes all outputs that have no users and an index contained in \p indices.
