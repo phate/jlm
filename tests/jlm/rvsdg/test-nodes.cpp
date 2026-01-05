@@ -168,14 +168,7 @@ TEST(NodeTests, RemoveOutputs)
   EXPECT_EQ(x9.origin()->index(), 7);
 
   // Remove all users from outputs
-  rvsdg.GetRootRegion().RemoveResult(7);
-  rvsdg.GetRootRegion().RemoveResult(6);
-  rvsdg.GetRootRegion().RemoveResult(5);
-  rvsdg.GetRootRegion().RemoveResult(4);
-  rvsdg.GetRootRegion().RemoveResult(3);
-  rvsdg.GetRootRegion().RemoveResult(2);
-  rvsdg.GetRootRegion().RemoveResult(1);
-  rvsdg.GetRootRegion().RemoveResult(0);
+  rvsdg.GetRootRegion().RemoveResults({ 0, 1, 2, 3, 4, 5, 6, 7 });
 
   // Remove all outputs that have an even index
   numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6 });

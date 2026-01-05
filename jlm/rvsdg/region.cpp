@@ -120,8 +120,11 @@ RegionResult::Create(
 
 Region::~Region() noexcept
 {
-  while (results_.size())
-    RemoveResult(results_.size() - 1);
+  util::HashSet<size_t> indices;
+  for (size_t n = 0; n < nresults(); n++)
+    indices.insert(n);
+  RemoveResults(indices);
+  JLM_ASSERT(nresults() == 0);
 
   prune(false);
   JLM_ASSERT(numNodes() == 0);
@@ -267,23 +270,6 @@ Region::addResult(std::unique_ptr<RegionResult> result)
   notifyInputCreate(resultPtr);
 
   return *resultPtr;
-}
-
-void
-Region::RemoveResult(size_t index)
-{
-  JLM_ASSERT(index < results_.size());
-  RegionResult * result = results_[index];
-
-  notifyInputDestroy(result);
-
-  delete result;
-  for (size_t n = index; n < results_.size() - 1; n++)
-  {
-    results_[n] = results_[n + 1];
-    results_[n]->index_ = n;
-  }
-  results_.pop_back();
 }
 
 size_t

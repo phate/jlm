@@ -201,7 +201,7 @@ LoopNode::removeLoopOutput(rvsdg::StructuralOutput * output)
   JLM_ASSERT(output->results.size() == 1);
   auto result = output->results.begin();
 
-  subregion()->RemoveResult(result->index());
+  subregion()->RemoveResults({ result->index() });
   removeOutput(output->index());
 }
 
