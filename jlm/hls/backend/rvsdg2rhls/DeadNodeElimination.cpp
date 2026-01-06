@@ -61,8 +61,8 @@ RemoveUnusedInputs(LoopNode & loopNode)
 
       if (argument->nusers() == 0 || (argument->nusers() == 1 && result->origin() == argument))
       {
-        loopSubregion->RemoveResult(result->index());
-        loopSubregion->RemoveArgument(argument->index());
+        loopSubregion->RemoveResults({ result->index() });
+        loopSubregion->RemoveArguments({ argument->index() });
       }
     }
     else

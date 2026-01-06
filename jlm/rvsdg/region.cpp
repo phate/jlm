@@ -120,16 +120,19 @@ RegionResult::Create(
 
 Region::~Region() noexcept
 {
-  while (results_.size())
-    RemoveResult(results_.size() - 1);
+  util::HashSet<size_t> indices;
+  for (size_t n = 0; n < nresults(); n++)
+    indices.insert(n);
+  RemoveResults(indices);
+  JLM_ASSERT(nresults() == 0);
 
   prune(false);
   JLM_ASSERT(numNodes() == 0);
   JLM_ASSERT(numTopNodes() == 0);
   JLM_ASSERT(numBottomNodes() == 0);
 
-  while (arguments_.size())
-    RemoveArgument(arguments_.size() - 1);
+  PruneArguments();
+  JLM_ASSERT(narguments() == 0);
 
   // Disconnect observers
   while (observers_)
@@ -201,21 +204,6 @@ Region::insertArgument(size_t index, std::unique_ptr<RegionArgument> argument)
   return *arguments_[index];
 }
 
-void
-Region::RemoveArgument(size_t index)
-{
-  JLM_ASSERT(index < narguments());
-  RegionArgument * argument = arguments_[index];
-
-  delete argument;
-  for (size_t n = index; n < arguments_.size() - 1; n++)
-  {
-    arguments_[n] = arguments_[n + 1];
-    arguments_[n]->index_ = n;
-  }
-  arguments_.pop_back();
-}
-
 size_t
 Region::RemoveArguments(const util::HashSet<size_t> & indices)
 {
@@ -282,23 +270,6 @@ Region::addResult(std::unique_ptr<RegionResult> result)
   notifyInputCreate(resultPtr);
 
   return *resultPtr;
-}
-
-void
-Region::RemoveResult(size_t index)
-{
-  JLM_ASSERT(index < results_.size());
-  RegionResult * result = results_[index];
-
-  notifyInputDestroy(result);
-
-  delete result;
-  for (size_t n = index; n < results_.size() - 1; n++)
-  {
-    results_[n] = results_[n + 1];
-    results_[n]->index_ = n;
-  }
-  results_.pop_back();
 }
 
 size_t

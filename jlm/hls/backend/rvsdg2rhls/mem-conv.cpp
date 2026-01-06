@@ -763,7 +763,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   rvsdg::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
-  lambda->region()->RemoveResult((*lambda->output()->Users().begin()).index());
+  lambda->region()->RemoveResults({ (*lambda->output()->Users().begin()).index() });
   remove(lambda);
 
   // Remove imports for decouple_ function pointers

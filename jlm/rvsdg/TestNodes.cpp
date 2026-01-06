@@ -96,10 +96,10 @@ TestStructuralNode::removeInputAndArguments(size_t index)
   auto in = input(index);
   for (auto & argument : in->arguments)
   {
-    argument.region()->RemoveArgument(argument.index());
+    argument.region()->RemoveArguments({ argument.index() });
   }
 
-  removeInput(index, true);
+  RemoveInputs({ index }, true);
 }
 
 TestStructuralNode::InputVar
@@ -152,10 +152,10 @@ TestStructuralNode::removeOutputAndResults(size_t index)
   auto out = output(index);
   for (auto & result : out->results)
   {
-    result.region()->RemoveResult(result.index());
+    result.region()->RemoveResults({ result.index() });
   }
 
-  removeOutput(index);
+  RemoveOutputs({ index });
 }
 
 TestStructuralNode::OutputVar
