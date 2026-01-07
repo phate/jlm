@@ -172,7 +172,7 @@ fi
 mkdir -p build-"${TARGET}"
 rm -rf build ; ln -sf build-"${TARGET}" build
 
-GTEST_CPPFLAGS=$(pkg-config --cflags gtest_main)
+GTEST_CPPFLAGS=$(pkg-config --cflags gtest_main | sed 's/-I/-isystem /g')
 GTEST_LDFLAGS=$(pkg-config --libs gtest_main)
 
 (
