@@ -55,7 +55,7 @@ TEST(IpGraphToLlvmConverterTests, LoadConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -114,7 +114,7 @@ TEST(IpGraphToLlvmConverterTests, LoadVolatileConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -173,7 +173,7 @@ TEST(IpGraphToLlvmConverterTests, MemCpyConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -237,7 +237,7 @@ TEST(IpGraphToLlvmConverterTests, MemCpyVolatileConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -292,7 +292,7 @@ TEST(IpGraphToLlvmConverterTests, StoreConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -354,7 +354,7 @@ TEST(IpGraphToLlvmConverterTests, StoreVolatileConversion)
   // Act
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -417,7 +417,7 @@ TEST(IpGraphToLlvmConverterTests, FMulAddConversion)
   // Act
   llvm::LLVMContext ctx;
   const auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Assert
   {
@@ -466,7 +466,7 @@ TEST(IpGraphToLlvmConverterTests, IntegerConstant)
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
 
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 }
 
 TEST(IpGraphToLlvmConverterTests, Malloc)
@@ -518,7 +518,7 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
 
   llvm::LLVMContext ctx;
   auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*im, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   verify(*llvmModule);
 }
@@ -576,7 +576,7 @@ TEST(IpGraphToLlvmConverterTests, Free)
 
   llvm::LLVMContext ctx;
   auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipgmod, ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   verify(*llvmModule);
 }

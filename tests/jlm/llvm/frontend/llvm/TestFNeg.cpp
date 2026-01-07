@@ -56,7 +56,7 @@ TEST(FNegTests, TestFNegScalar)
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
@@ -89,7 +89,7 @@ TEST(FNegTests, TestFNegVector)
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);

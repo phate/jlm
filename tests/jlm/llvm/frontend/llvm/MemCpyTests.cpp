@@ -42,7 +42,7 @@ TEST(MemCpyTests, MemCpyConversion)
   builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, true);
   builder.CreateRetVoid();
 
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
