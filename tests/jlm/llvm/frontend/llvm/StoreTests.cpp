@@ -41,7 +41,7 @@ TEST(StoreTests, StoreConversion)
   builder.CreateStore(valueArgument, addressArgument, true);
   builder.CreateRetVoid();
 
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
