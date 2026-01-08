@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/Linkage.hpp>
 
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 
 namespace jlm::llvm
