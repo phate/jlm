@@ -102,7 +102,7 @@ TEST(LoadOperationTests, TestLoadAllocaReduction)
   // Assert
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 3);
+  EXPECT_EQ(node->ninputs(), 3u);
   EXPECT_EQ(node->input(1)->origin(), alloca1[1]);
   EXPECT_EQ(node->input(2)->origin(), mux);
 }
@@ -144,8 +144,8 @@ TEST(LoadOperationTests, TestDuplicateStateReduction)
   EXPECT_TRUE(success);
   const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exA.origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 4);  // 1 address + 3 states
-  EXPECT_EQ(node->noutputs(), 4); // 1 loaded value + 3 states
+  EXPECT_EQ(node->ninputs(), 4u);  // 1 address + 3 states
+  EXPECT_EQ(node->noutputs(), 4u); // 1 loaded value + 3 states
 
   EXPECT_EQ(exA.origin(), node->output(0));
   EXPECT_EQ(exS1.origin(), node->output(1));
@@ -194,12 +194,12 @@ TEST(LoadOperationTests, TestLoadStoreStateReduction)
   EXPECT_TRUE(success1);
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 2);
+  EXPECT_EQ(node->ninputs(), 2u);
 
   EXPECT_FALSE(success2);
   node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 2);
+  EXPECT_EQ(node->ninputs(), 2u);
 }
 
 TEST(LoadOperationTests, TestLoadStoreReduction_Success)
@@ -233,7 +233,7 @@ TEST(LoadOperationTests, TestLoadStoreReduction_Success)
 
   // Assert
   EXPECT_TRUE(success);
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
   EXPECT_EQ(x1.origin(), v);
   EXPECT_EQ(x2.origin(), s1);
 }
@@ -281,7 +281,7 @@ TEST(LoadOperationTests, LoadStoreReduction_DifferentValueOperandType)
   const auto expectedLoadNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exportedValue.origin());
   EXPECT_EQ(expectedLoadNode, &loadNode);
-  EXPECT_EQ(expectedLoadNode->ninputs(), 2);
+  EXPECT_EQ(expectedLoadNode->ninputs(), 2u);
 
   const auto expectedStoreNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*expectedLoadNode->input(1)->origin());
@@ -406,7 +406,7 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   EXPECT_TRUE(successLoadNode);
   // There should only be the load node left.
   // The IOBarrier node should have been pruned.
-  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1u);
   EXPECT_EQ(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
           ->input(0)

@@ -216,8 +216,8 @@ TEST(CommonNodeEliminationTests, test_theta2)
   //	jlm::rvsdg::view(graph, stdout);
 
   EXPECT_EQ(lv2.post->origin(), u1);
-  EXPECT_NE(lv2.pre->nusers(), 0);
-  EXPECT_NE(lv3.pre->nusers(), 0);
+  EXPECT_NE(lv2.pre->nusers(), 0u);
+  EXPECT_NE(lv3.pre->nusers(), 0u);
 }
 
 TEST(CommonNodeEliminationTests, test_theta3)
@@ -324,8 +324,8 @@ TEST(CommonNodeEliminationTests, test_theta4)
   //	jlm::rvsdg::view(graph, stdout);
 
   EXPECT_NE(ex1.origin(), ex2.origin());
-  EXPECT_NE(lv2.pre->nusers(), 0);
-  EXPECT_NE(lv3.pre->nusers(), 0);
+  EXPECT_NE(lv2.pre->nusers(), 0u);
+  EXPECT_NE(lv3.pre->nusers(), 0u);
   EXPECT_EQ(lv6.post->origin(), lv7.post->origin());
 }
 

@@ -36,5 +36,5 @@ TEST(ExportTests, test)
   // We should have no exports in the RVSDG. The data and function
   // node should be converted to RVSDG imports as they do not have
   // a body, i.e., either a CFG or a initialization.
-  EXPECT_EQ(rvsdgModule->Rvsdg().GetRootRegion().nresults(), 0);
+  EXPECT_EQ(rvsdgModule->Rvsdg().GetRootRegion().nresults(), 0u);
 }

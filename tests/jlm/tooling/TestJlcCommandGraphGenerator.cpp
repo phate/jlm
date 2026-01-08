@@ -31,7 +31,7 @@ TEST(JlcCommandGraphGeneratorTests, TestJlcCompiling)
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
 
   // Assert
-  EXPECT_EQ(commandGraph->NumNodes(), 5);
+  EXPECT_EQ(commandGraph->NumNodes(), 5u);
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const LlcCommand *>(&commandNode.GetCommand());
   EXPECT_NE(command, nullptr);
@@ -53,7 +53,7 @@ TEST(JlcCommandGraphGeneratorTests, TestJlcLinking)
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
 
   // Assert
-  EXPECT_EQ(commandGraph->NumNodes(), 3);
+  EXPECT_EQ(commandGraph->NumNodes(), 3u);
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const ClangCommand *>(&commandNode.GetCommand());
   EXPECT_EQ(command->InputFiles()[0], "foo.o");
@@ -84,7 +84,7 @@ TEST(JlcCommandGraphGeneratorTests, TestJlmOptOptimizations)
   auto & jlmOptCommand = *dynamic_cast<const JlmOptCommand *>(&jlmOptCommandNode.GetCommand());
   auto & optimizations = jlmOptCommand.GetCommandLineOptions().GetOptimizationIds();
 
-  EXPECT_EQ(optimizations.size(), 2);
+  EXPECT_EQ(optimizations.size(), 2u);
   EXPECT_EQ(optimizations[0], JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
   EXPECT_EQ(optimizations[1], JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }

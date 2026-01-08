@@ -71,15 +71,15 @@ TEST(NodeTests, test_node_copy)
     view(&graph.GetRootRegion(), stdout);
 
     auto subregion = structuralNode2->subregion(0);
-    EXPECT_EQ(subregion->narguments(), 2);
+    EXPECT_EQ(subregion->narguments(), 2u);
     EXPECT_EQ(subregion->argument(0)->input(), &input21);
     EXPECT_EQ(subregion->argument(1)->input(), &input22);
 
-    EXPECT_EQ(subregion->nresults(), 2);
+    EXPECT_EQ(subregion->nresults(), 2u);
     EXPECT_EQ(subregion->result(0)->output(), &output21);
     EXPECT_EQ(subregion->result(1)->output(), &output22);
 
-    EXPECT_EQ(subregion->numNodes(), 2);
+    EXPECT_EQ(subregion->numNodes(), 2u);
   }
 
   // copy without arguments
@@ -100,11 +100,11 @@ TEST(NodeTests, test_node_copy)
     view(&graph.GetRootRegion(), stdout);
 
     auto subregion = structuralNode2->subregion(0);
-    EXPECT_EQ(subregion->nresults(), 2);
+    EXPECT_EQ(subregion->nresults(), 2u);
     EXPECT_EQ(subregion->result(0)->output(), &output21);
     EXPECT_EQ(subregion->result(1)->output(), &output22);
 
-    EXPECT_EQ(subregion->numNodes(), 2);
+    EXPECT_EQ(subregion->numNodes(), 2u);
   }
 
   // copy structural node
@@ -116,7 +116,7 @@ TEST(NodeTests, test_node_copy)
     structuralNode1->copy(&graph.GetRootRegion(), smap3);
     view(&graph.GetRootRegion(), stdout);
 
-    EXPECT_EQ(graph.GetRootRegion().numNodes(), 4);
+    EXPECT_EQ(graph.GetRootRegion().numNodes(), 4u);
   }
 }
 
@@ -156,47 +156,47 @@ TEST(NodeTests, RemoveOutputs)
   size_t numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6, 8 });
   // We expect only output0 and output8 to be removed, as output2, output4, and
   // output6 are not dead
-  EXPECT_EQ(numRemovedOutputs, 2);
-  EXPECT_EQ(node->noutputs(), 8);
-  EXPECT_EQ(x1.origin()->index(), 0);
-  EXPECT_EQ(x2.origin()->index(), 1);
-  EXPECT_EQ(x3.origin()->index(), 2);
-  EXPECT_EQ(x4.origin()->index(), 3);
-  EXPECT_EQ(x5.origin()->index(), 4);
-  EXPECT_EQ(x6.origin()->index(), 5);
-  EXPECT_EQ(x7.origin()->index(), 6);
-  EXPECT_EQ(x9.origin()->index(), 7);
+  EXPECT_EQ(numRemovedOutputs, 2u);
+  EXPECT_EQ(node->noutputs(), 8u);
+  EXPECT_EQ(x1.origin()->index(), 0u);
+  EXPECT_EQ(x2.origin()->index(), 1u);
+  EXPECT_EQ(x3.origin()->index(), 2u);
+  EXPECT_EQ(x4.origin()->index(), 3u);
+  EXPECT_EQ(x5.origin()->index(), 4u);
+  EXPECT_EQ(x6.origin()->index(), 5u);
+  EXPECT_EQ(x7.origin()->index(), 6u);
+  EXPECT_EQ(x9.origin()->index(), 7u);
 
   // Remove all users from outputs
   rvsdg.GetRootRegion().RemoveResults({ 0, 1, 2, 3, 4, 5, 6, 7 });
 
   // Remove all outputs that have an even index
   numRemovedOutputs = node->RemoveOutputs({ 0, 2, 4, 6 });
-  EXPECT_EQ(numRemovedOutputs, 4);
-  EXPECT_EQ(node->noutputs(), 4);
-  EXPECT_EQ(node->output(0)->index(), 0);
-  EXPECT_EQ(node->output(1)->index(), 1);
-  EXPECT_EQ(node->output(2)->index(), 2);
-  EXPECT_EQ(node->output(3)->index(), 3);
+  EXPECT_EQ(numRemovedOutputs, 4u);
+  EXPECT_EQ(node->noutputs(), 4u);
+  EXPECT_EQ(node->output(0)->index(), 0u);
+  EXPECT_EQ(node->output(1)->index(), 1u);
+  EXPECT_EQ(node->output(2)->index(), 2u);
+  EXPECT_EQ(node->output(3)->index(), 3u);
 
   // Remove no output
   numRemovedOutputs = node->RemoveOutputs({});
-  EXPECT_EQ(numRemovedOutputs, 0);
-  EXPECT_EQ(node->noutputs(), 4);
-  EXPECT_EQ(node->output(0)->index(), 0);
-  EXPECT_EQ(node->output(1)->index(), 1);
-  EXPECT_EQ(node->output(2)->index(), 2);
-  EXPECT_EQ(node->output(3)->index(), 3);
+  EXPECT_EQ(numRemovedOutputs, 0u);
+  EXPECT_EQ(node->noutputs(), 4u);
+  EXPECT_EQ(node->output(0)->index(), 0u);
+  EXPECT_EQ(node->output(1)->index(), 1u);
+  EXPECT_EQ(node->output(2)->index(), 2u);
+  EXPECT_EQ(node->output(3)->index(), 3u);
 
   // Remove non-existent output
   numRemovedOutputs = node->RemoveOutputs({ 15 });
-  EXPECT_EQ(numRemovedOutputs, 0);
-  EXPECT_EQ(node->noutputs(), 4);
+  EXPECT_EQ(numRemovedOutputs, 0u);
+  EXPECT_EQ(node->noutputs(), 4u);
 
   // Remove all remaining outputs
   numRemovedOutputs = node->RemoveOutputs({ 0, 1, 2, 3 });
-  EXPECT_EQ(numRemovedOutputs, 4);
-  EXPECT_EQ(node->noutputs(), 0);
+  EXPECT_EQ(numRemovedOutputs, 4u);
+  EXPECT_EQ(node->noutputs(), 0u);
 }
 
 TEST(NodeTests, RemoveInputs)
@@ -225,53 +225,53 @@ TEST(NodeTests, RemoveInputs)
       {});
 
   // Act & Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 0u);
 
   // Remove all inputs that have an even index
   size_t numRemovedInputs = node->RemoveInputs({ 0, 2, 4, 6, 8 });
-  EXPECT_EQ(numRemovedInputs, 5);
-  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(numRemovedInputs, 5u);
+  EXPECT_EQ(node->ninputs(), 5u);
   EXPECT_EQ(node->input(0)->origin(), i1);
   EXPECT_EQ(node->input(1)->origin(), i3);
   EXPECT_EQ(node->input(2)->origin(), i5);
   EXPECT_EQ(node->input(3)->origin(), i7);
   EXPECT_EQ(node->input(4)->origin(), i9);
-  EXPECT_EQ(i0->nusers(), 0);
-  EXPECT_EQ(i2->nusers(), 0);
-  EXPECT_EQ(i4->nusers(), 0);
-  EXPECT_EQ(i6->nusers(), 0);
-  EXPECT_EQ(i8->nusers(), 0);
+  EXPECT_EQ(i0->nusers(), 0u);
+  EXPECT_EQ(i2->nusers(), 0u);
+  EXPECT_EQ(i4->nusers(), 0u);
+  EXPECT_EQ(i6->nusers(), 0u);
+  EXPECT_EQ(i8->nusers(), 0u);
   // We specified that the region is notified about the input removal
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no input
   numRemovedInputs = node->RemoveInputs({});
-  EXPECT_EQ(numRemovedInputs, 0);
-  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(numRemovedInputs, 0u);
+  EXPECT_EQ(node->ninputs(), 5u);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
   numRemovedInputs = node->RemoveInputs({ 15 });
-  EXPECT_EQ(numRemovedInputs, 0);
-  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(numRemovedInputs, 0u);
+  EXPECT_EQ(node->ninputs(), 5u);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining inputs
   numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 });
-  EXPECT_EQ(numRemovedInputs, 5);
-  EXPECT_EQ(node->ninputs(), 0);
-  EXPECT_EQ(i1->nusers(), 0);
-  EXPECT_EQ(i3->nusers(), 0);
-  EXPECT_EQ(i5->nusers(), 0);
-  EXPECT_EQ(i7->nusers(), 0);
-  EXPECT_EQ(i9->nusers(), 0);
+  EXPECT_EQ(numRemovedInputs, 5u);
+  EXPECT_EQ(node->ninputs(), 0u);
+  EXPECT_EQ(i1->nusers(), 0u);
+  EXPECT_EQ(i3->nusers(), 0u);
+  EXPECT_EQ(i5->nusers(), 0u);
+  EXPECT_EQ(i7->nusers(), 0u);
+  EXPECT_EQ(i9->nusers(), 0u);
   // We specified that the region is not notified about the input removal
   EXPECT_EQ(
       observer.destroyedInputIndices(),
       std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
 
   // Check that node is a top node
-  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 1u);
   EXPECT_EQ(&*rvsdg.GetRootRegion().TopNodes().begin(), node);
 }
 
@@ -393,26 +393,26 @@ TEST(NodeTests, NodeId)
   NodeIds.insert(node2->GetNodeId());
 
   // We should have three unique identifiers in the set
-  EXPECT_EQ(NodeIds.Size(), 3);
+  EXPECT_EQ(NodeIds.Size(), 3u);
 
   // The identifiers should be consecutive as no other nodes where created in between those
   // three nodes
-  EXPECT_EQ(node0->GetNodeId(), 0);
-  EXPECT_EQ(node1->GetNodeId(), 1);
-  EXPECT_EQ(node2->GetNodeId(), 2);
+  EXPECT_EQ(node0->GetNodeId(), 0u);
+  EXPECT_EQ(node1->GetNodeId(), 1u);
+  EXPECT_EQ(node2->GetNodeId(), 2u);
 
   // Removing a node should not change the identifiers of the other nodes
   remove(node1);
-  EXPECT_EQ(node0->GetNodeId(), 0);
-  EXPECT_EQ(node2->GetNodeId(), 2);
+  EXPECT_EQ(node0->GetNodeId(), 0u);
+  EXPECT_EQ(node2->GetNodeId(), 2u);
 
   // Adding a new node should give us the next identifier as no other nodes have been created in
   // between
   auto node3 = TestOperation::createNode(&rvsdg1.GetRootRegion(), {}, {});
-  EXPECT_EQ(node3->GetNodeId(), 3);
+  EXPECT_EQ(node3->GetNodeId(), 3u);
 
   // Identifiers should be only unique for each region
   Graph rvsdg2;
   auto node4 = TestOperation::createNode(&rvsdg2.GetRootRegion(), {}, {});
-  EXPECT_EQ(node4->GetNodeId(), 0);
+  EXPECT_EQ(node4->GetNodeId(), 0u);
 }

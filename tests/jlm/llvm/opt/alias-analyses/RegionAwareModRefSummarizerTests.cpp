@@ -201,8 +201,8 @@ TEST(RegionAwareModRefSummarizerTests, TestLoadFromUndef)
     auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda()).Size();
     auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda()).Size();
 
-    EXPECT_EQ(numLambdaEntryNodes, 0);
-    EXPECT_EQ(numLambdaExitNodes, 0);
+    EXPECT_EQ(numLambdaEntryNodes, 0u);
+    EXPECT_EQ(numLambdaExitNodes, 0u);
   };
 
   jlm::llvm::LoadFromUndefTest test;
@@ -1522,9 +1522,9 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();
   // Only k() is not in the same SCC as <external>
-  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2);
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
   // g(), k() and h() are the only functions within an active setjmp
-  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1);
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1u);
 }
 
 TEST(RegionAwareModRefSummarizerTests, TestStatistics)
@@ -1546,15 +1546,15 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
       statisticsCollector);
 
   // Assert
-  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1);
+  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes"), 18);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas"), 5);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes"), 18u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas"), 5u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
 
   EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
   EXPECT_TRUE(statistics.HasTimer("AllocasDeadInSccsTimer"));

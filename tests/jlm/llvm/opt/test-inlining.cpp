@@ -31,7 +31,7 @@ runInlining(jlm::llvm::RvsdgModule & rm)
   jlm::util::StatisticsCollector collector(settings);
   fctinline.Run(rm, collector);
 
-  EXPECT_EQ(collector.NumCollectedStatistics(), 1);
+  EXPECT_EQ(collector.NumCollectedStatistics(), 1u);
   return collector.releaseStatistic(jlm::util::Statistics::Id::FunctionInlining);
 }
 
@@ -165,11 +165,11 @@ TEST(FunctionInliningTests, testSimpleInlining)
   EXPECT_TRUE(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
 
   // Check that the statistics match what we expect. f2 is technically inlineable
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 1u);
 }
 
 TEST(FunctionInliningTests, testInliningWithAlloca)
@@ -380,11 +380,11 @@ TEST(FunctionInliningTests, testIndirectCall)
 
   // Assert
   // No inlining happens in this test, but both f1 and f2 are technically possible to inline
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 0);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 0u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 0u);
 }
 
 /**
@@ -427,7 +427,7 @@ TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
   auto statistics = runInlining(rm);
 
   // Assert
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1u);
   // f1 should not be considered inlinable, due to the alloca
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0u);
 }

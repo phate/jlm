@@ -70,40 +70,42 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   using namespace jlm::llvm;
 
   auto pointerType = PointerType::Create();
-  EXPECT_EQ(GetTypeStoreSize(*pointerType), 8);
-  EXPECT_EQ(GetTypeAllocSize(*pointerType), 8);
-  EXPECT_EQ(GetTypeAlignment(*pointerType), 8);
+  EXPECT_EQ(GetTypeStoreSize(*pointerType), 8u);
+  EXPECT_EQ(GetTypeAllocSize(*pointerType), 8u);
+  EXPECT_EQ(GetTypeAlignment(*pointerType), 8u);
 
   auto bits32 = jlm::rvsdg::BitType::Create(32);
   auto bits50 = jlm::rvsdg::BitType::Create(50);
-  EXPECT_EQ(GetTypeStoreSize(*bits32), 4);
-  EXPECT_EQ(GetTypeAllocSize(*bits32), 4);
-  EXPECT_EQ(GetTypeAlignment(*bits32), 4);
+  EXPECT_EQ(GetTypeStoreSize(*bits32), 4u);
+  EXPECT_EQ(GetTypeAllocSize(*bits32), 4u);
+  EXPECT_EQ(GetTypeAlignment(*bits32), 4u);
 
-  EXPECT_EQ(GetTypeStoreSize(*bits50), 7);
-  EXPECT_EQ(GetTypeAllocSize(*bits50), 8);
-  EXPECT_EQ(GetTypeAlignment(*bits50), 8);
+  EXPECT_EQ(GetTypeStoreSize(*bits50), 7u);
+  EXPECT_EQ(GetTypeAllocSize(*bits50), 8u);
+  EXPECT_EQ(GetTypeAlignment(*bits50), 8u);
 
   auto floatType = FloatingPointType::Create(fpsize::fp128);
-  EXPECT_EQ(GetTypeStoreSize(*floatType), 16);
-  EXPECT_EQ(GetTypeAllocSize(*floatType), 16);
-  EXPECT_EQ(GetTypeAlignment(*floatType), 16);
+  EXPECT_EQ(GetTypeStoreSize(*floatType), 16u);
+  EXPECT_EQ(GetTypeAllocSize(*floatType), 16u);
+  EXPECT_EQ(GetTypeAlignment(*floatType), 16u);
   floatType = FloatingPointType::Create(fpsize::half);
-  EXPECT_EQ(GetTypeStoreSize(*floatType), 2);
-  EXPECT_EQ(GetTypeAllocSize(*floatType), 2);
-  EXPECT_EQ(GetTypeAlignment(*floatType), 2);
+  EXPECT_EQ(GetTypeStoreSize(*floatType), 2u);
+  EXPECT_EQ(GetTypeAllocSize(*floatType), 2u);
+  EXPECT_EQ(GetTypeAlignment(*floatType), 2u);
 
   auto arrayType = ArrayType::Create(bits32, 5);
-  EXPECT_EQ(GetTypeStoreSize(*arrayType), 4 * 5);
-  EXPECT_EQ(GetTypeAllocSize(*arrayType), 4 * 5);
-  EXPECT_EQ(GetTypeAlignment(*arrayType), 4);
+  unsigned int expectedArrayStoreSize = 4 * 5;
+  unsigned int expectedArrayAllocAize = 4 * 5;
+  EXPECT_EQ(GetTypeStoreSize(*arrayType), expectedArrayStoreSize);
+  EXPECT_EQ(GetTypeAllocSize(*arrayType), expectedArrayAllocAize);
+  EXPECT_EQ(GetTypeAlignment(*arrayType), 4u);
 
   // Vectors are always aligned up, so a <3 x i32> is 12 bytes of data and 4 bytes of padding.
   // Vectors are also very aligned
   auto vectorType = FixedVectorType::Create(bits32, 3);
-  EXPECT_EQ(GetTypeStoreSize(*vectorType), 12);
-  EXPECT_EQ(GetTypeAllocSize(*vectorType), 16);
-  EXPECT_EQ(GetTypeAlignment(*vectorType), 16);
+  EXPECT_EQ(GetTypeStoreSize(*vectorType), 12u);
+  EXPECT_EQ(GetTypeAllocSize(*vectorType), 16u);
+  EXPECT_EQ(GetTypeAlignment(*vectorType), 16u);
 
   auto structDeclaration = StructType::Declaration::Create();
   structDeclaration->Append(bits32);
@@ -113,22 +115,22 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   structDeclaration->Append(bits32);
 
   auto structType = StructType::Create("myStruct", false, *structDeclaration);
-  EXPECT_EQ(structType->GetFieldOffset(0), 0);
-  EXPECT_EQ(structType->GetFieldOffset(1), 8); // Due to 4 bytes of padding after i32
-  EXPECT_EQ(structType->GetFieldOffset(2), 16);
-  EXPECT_EQ(structType->GetFieldOffset(3), 48); // 12 bytes of padding after array
-  EXPECT_EQ(structType->GetFieldOffset(4), 64);
-  EXPECT_EQ(GetTypeStoreSize(*structType), 80); // Struct ends with 12 bytes of padding
-  EXPECT_EQ(GetTypeAllocSize(*structType), 80);
-  EXPECT_EQ(GetTypeAlignment(*structType), 16);
+  EXPECT_EQ(structType->GetFieldOffset(0), 0u);
+  EXPECT_EQ(structType->GetFieldOffset(1), 8u); // Due to 4 bytes of padding after i32
+  EXPECT_EQ(structType->GetFieldOffset(2), 16u);
+  EXPECT_EQ(structType->GetFieldOffset(3), 48u); // 12 bytes of padding after array
+  EXPECT_EQ(structType->GetFieldOffset(4), 64u);
+  EXPECT_EQ(GetTypeStoreSize(*structType), 80u); // Struct ends with 12 bytes of padding
+  EXPECT_EQ(GetTypeAllocSize(*structType), 80u);
+  EXPECT_EQ(GetTypeAlignment(*structType), 16u);
 
   auto packedStructType = StructType::Create("myPackedStruct", true, *structDeclaration);
-  EXPECT_EQ(packedStructType->GetFieldOffset(0), 0);
-  EXPECT_EQ(packedStructType->GetFieldOffset(1), 4);
-  EXPECT_EQ(packedStructType->GetFieldOffset(2), 12);
-  EXPECT_EQ(packedStructType->GetFieldOffset(3), 32); // array is 20 bytes
-  EXPECT_EQ(packedStructType->GetFieldOffset(4), 48); // vector is 16 bytes
-  EXPECT_EQ(GetTypeStoreSize(*packedStructType), 52);
-  EXPECT_EQ(GetTypeAllocSize(*packedStructType), 52);
-  EXPECT_EQ(GetTypeAlignment(*packedStructType), 1);
+  EXPECT_EQ(packedStructType->GetFieldOffset(0), 0u);
+  EXPECT_EQ(packedStructType->GetFieldOffset(1), 4u);
+  EXPECT_EQ(packedStructType->GetFieldOffset(2), 12u);
+  EXPECT_EQ(packedStructType->GetFieldOffset(3), 32u); // array is 20 bytes
+  EXPECT_EQ(packedStructType->GetFieldOffset(4), 48u); // vector is 16 bytes
+  EXPECT_EQ(GetTypeStoreSize(*packedStructType), 52u);
+  EXPECT_EQ(GetTypeAllocSize(*packedStructType), 52u);
+  EXPECT_EQ(GetTypeAlignment(*packedStructType), 1u);
 }

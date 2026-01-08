@@ -81,7 +81,7 @@ TEST(GammaTests, test_predicate_reduction)
   EXPECT_EQ(r.origin(), v1);
 
   graph.PruneNodes();
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0u);
 }
 
 TEST(GammaTests, test_invariant_reduction)
@@ -112,7 +112,7 @@ TEST(GammaTests, test_invariant_reduction)
   EXPECT_EQ(ex.origin(), value);
 
   graph.PruneNodes();
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0u);
 }
 
 TEST(GammaTests, test_control_constant_reduction)
@@ -150,7 +150,7 @@ TEST(GammaTests, test_control_constant_reduction)
   // Assert
   auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*ex1.origin());
   EXPECT_TRUE(matchNode && matchOperation);
-  EXPECT_EQ(matchOperation->default_alternative(), 0);
+  EXPECT_EQ(matchOperation->default_alternative(), 0u);
 
   EXPECT_EQ(TryGetOwnerNode<Node>(*ex2.origin()), gamma);
 }
@@ -222,14 +222,14 @@ TEST(GammaTests, TestPruneOutputs)
   gammaNode->PruneExitVars();
 
   // Assert
-  EXPECT_EQ(gammaNode->noutputs(), 2);
-  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 2);
-  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 2);
+  EXPECT_EQ(gammaNode->noutputs(), 2u);
+  EXPECT_EQ(gammaNode->subregion(0)->nresults(), 2u);
+  EXPECT_EQ(gammaNode->subregion(1)->nresults(), 2u);
 
-  EXPECT_EQ(gammaOutput0.output->index(), 0);
+  EXPECT_EQ(gammaOutput0.output->index(), 0u);
   EXPECT_EQ(gammaNode->GetExitVars()[0].output, gammaOutput0.output);
 
-  EXPECT_EQ(gammaOutput2.output->index(), 1);
+  EXPECT_EQ(gammaOutput2.output->index(), 1u);
   EXPECT_EQ(gammaNode->GetExitVars()[1].output, gammaOutput2.output);
 }
 

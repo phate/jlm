@@ -45,7 +45,7 @@ TEST(DeadNodeEliminationTests, RootRegion)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Gamma1)
@@ -86,11 +86,11 @@ TEST(DeadNodeEliminationTests, Gamma1)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(gamma->noutputs(), 2);
-  EXPECT_EQ(gamma->subregion(1)->numNodes(), 0);
-  EXPECT_EQ(gamma->subregion(1)->narguments(), 3);
-  EXPECT_EQ(gamma->ninputs(), 3);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 2);
+  EXPECT_EQ(gamma->noutputs(), 2u);
+  EXPECT_EQ(gamma->subregion(1)->numNodes(), 0u);
+  EXPECT_EQ(gamma->subregion(1)->narguments(), 3u);
+  EXPECT_EQ(gamma->ninputs(), 3u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 2u);
 }
 
 TEST(DeadNodeEliminationTests, Gamma2)
@@ -123,7 +123,7 @@ TEST(DeadNodeEliminationTests, Gamma2)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Theta)
@@ -167,9 +167,9 @@ TEST(DeadNodeEliminationTests, Theta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(theta->noutputs(), 3);
-  EXPECT_EQ(theta->subregion()->numNodes(), 1);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 2);
+  EXPECT_EQ(theta->noutputs(), 3u);
+  EXPECT_EQ(theta->subregion()->numNodes(), 1u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 2u);
 }
 
 TEST(DeadNodeEliminationTests, NestedTheta)
@@ -215,7 +215,7 @@ TEST(DeadNodeEliminationTests, NestedTheta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(outerTheta->noutputs(), 3);
+  EXPECT_EQ(outerTheta->noutputs(), 3u);
 }
 
 TEST(DeadNodeEliminationTests, EvolvingTheta)
@@ -256,7 +256,7 @@ TEST(DeadNodeEliminationTests, EvolvingTheta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(theta->noutputs(), 5);
+  EXPECT_EQ(theta->noutputs(), 5u);
 }
 
 TEST(DeadNodeEliminationTests, Lambda)
@@ -296,8 +296,8 @@ TEST(DeadNodeEliminationTests, Lambda)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(lambda->subregion()->numNodes(), 0);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(lambda->subregion()->numNodes(), 0u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Phi)
@@ -406,20 +406,20 @@ TEST(DeadNodeEliminationTests, Phi)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(phiNode->noutputs(), 3); // f1, f2, and f4 are alive
+  EXPECT_EQ(phiNode->noutputs(), 3u); // f1, f2, and f4 are alive
   EXPECT_EQ(phiNode->output(0), rv1.output);
   EXPECT_EQ(phiNode->output(1), rv2.output);
   EXPECT_EQ(phiNode->output(2), rv4.output);
-  EXPECT_EQ(phiSubregion.nresults(), 3); // f1, f2, and f4 are alive
+  EXPECT_EQ(phiSubregion.nresults(), 3u); // f1, f2, and f4 are alive
   EXPECT_EQ(phiSubregion.result(0), rv1.result);
   EXPECT_EQ(phiSubregion.result(1), rv2.result);
   EXPECT_EQ(phiSubregion.result(2), rv4.result);
-  EXPECT_EQ(phiSubregion.narguments(), 4); // f1, f2, f4, and dx are alive
+  EXPECT_EQ(phiSubregion.narguments(), 4u); // f1, f2, f4, and dx are alive
   EXPECT_EQ(phiSubregion.argument(0), rv1.recref);
   EXPECT_EQ(phiSubregion.argument(1), rv2.recref);
   EXPECT_EQ(phiSubregion.argument(2), rv4.recref);
   EXPECT_EQ(phiSubregion.argument(3), dx.inner);
-  EXPECT_EQ(phiNode->ninputs(), 1); // dx is alive
+  EXPECT_EQ(phiNode->ninputs(), 1u); // dx is alive
   EXPECT_EQ(phiNode->input(0), dx.input);
 }
 
@@ -466,6 +466,6 @@ TEST(DeadNodeEliminationTests, Delta)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(deltaNode->subregion()->numNodes(), 1);
-  EXPECT_EQ(deltaNode->ninputs(), 1);
+  EXPECT_EQ(deltaNode->subregion()->numNodes(), 1u);
+  EXPECT_EQ(deltaNode->ninputs(), 1u);
 }

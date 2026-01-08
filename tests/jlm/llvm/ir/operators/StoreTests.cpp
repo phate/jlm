@@ -207,7 +207,7 @@ TEST(StoreOperationTests, TestStoreMuxNormalization)
   EXPECT_TRUE(success);
   auto muxNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   EXPECT_TRUE(is<MemoryStateMergeOperation>(muxNode));
-  EXPECT_EQ(muxNode->ninputs(), 3);
+  EXPECT_EQ(muxNode->ninputs(), 3u);
   auto n0 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(0)->origin());
   auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(1)->origin());
   auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(2)->origin());
@@ -255,8 +255,8 @@ TEST(StoreOperationTests, TestDuplicateStateReduction)
   EXPECT_TRUE(success);
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exS1.origin());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 5);
-  EXPECT_EQ(node->noutputs(), 3);
+  EXPECT_EQ(node->ninputs(), 5u);
+  EXPECT_EQ(node->noutputs(), 3u);
   EXPECT_EQ(exS1.origin(), node->output(0));
   EXPECT_EQ(exS2.origin(), node->output(1));
   EXPECT_EQ(exS3.origin(), node->output(0));
@@ -347,7 +347,7 @@ TEST(StoreOperationTests, TestStoreStoreReduction)
 
   // Assert
   EXPECT_TRUE(success);
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
   EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())->input(1)->origin(), v2);
 }
 
@@ -470,7 +470,7 @@ TEST(StoreOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   EXPECT_TRUE(successStoreNode);
   // There should only be the store node left.
   // The IOBarrier node should have been pruned.
-  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1u);
   EXPECT_EQ(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
           ->input(0)

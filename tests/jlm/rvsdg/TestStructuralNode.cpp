@@ -27,23 +27,23 @@ TEST(StructuralNodeTests, TestOutputRemoval)
   auto & output4 = structuralNode->addOutputOnly(valueType);
 
   // Act & Assert
-  EXPECT_EQ(structuralNode->noutputs(), 5);
-  EXPECT_EQ(output0.index(), 0);
-  EXPECT_EQ(output1.index(), 1);
-  EXPECT_EQ(output2.index(), 2);
-  EXPECT_EQ(output3.index(), 3);
-  EXPECT_EQ(output4.index(), 4);
+  EXPECT_EQ(structuralNode->noutputs(), 5u);
+  EXPECT_EQ(output0.index(), 0u);
+  EXPECT_EQ(output1.index(), 1u);
+  EXPECT_EQ(output2.index(), 2u);
+  EXPECT_EQ(output3.index(), 3u);
+  EXPECT_EQ(output4.index(), 4u);
 
   structuralNode->removeOutputAndResults(2);
-  EXPECT_EQ(structuralNode->noutputs(), 4);
-  EXPECT_EQ(output0.index(), 0);
-  EXPECT_EQ(output1.index(), 1);
-  EXPECT_EQ(output3.index(), 2);
-  EXPECT_EQ(output4.index(), 3);
+  EXPECT_EQ(structuralNode->noutputs(), 4u);
+  EXPECT_EQ(output0.index(), 0u);
+  EXPECT_EQ(output1.index(), 1u);
+  EXPECT_EQ(output3.index(), 2u);
+  EXPECT_EQ(output4.index(), 3u);
 
   structuralNode->removeOutputAndResults(3);
-  EXPECT_EQ(structuralNode->noutputs(), 3);
-  EXPECT_EQ(output0.index(), 0);
-  EXPECT_EQ(output1.index(), 1);
-  EXPECT_EQ(output3.index(), 2);
+  EXPECT_EQ(structuralNode->noutputs(), 3u);
+  EXPECT_EQ(output0.index(), 0u);
+  EXPECT_EQ(output1.index(), 1u);
+  EXPECT_EQ(output3.index(), 2u);
 }

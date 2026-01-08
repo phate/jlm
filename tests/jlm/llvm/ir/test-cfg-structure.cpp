@@ -37,12 +37,12 @@ TEST(ControlFlowGraphStructureTests, test_straightening)
   auto bb3_last = static_cast<const BasicBlock *>(bb3)->tacs().last();
   straighten(cfg);
 
-  EXPECT_EQ(cfg.nnodes(), 1);
+  EXPECT_EQ(cfg.nnodes(), 1u);
   auto node = cfg.entry()->OutEdge(0)->sink();
 
   EXPECT_TRUE(is<BasicBlock>(node));
   auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
-  EXPECT_EQ(tacs.ntacs(), 3);
+  EXPECT_EQ(tacs.ntacs(), 3u);
   EXPECT_EQ(tacs.last(), bb3_last);
 }
 

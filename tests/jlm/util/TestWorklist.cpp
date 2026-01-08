@@ -17,14 +17,14 @@ TEST(WorklistTests, TestLifoWorklist)
 
   EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  EXPECT_EQ(item, 2);
+  EXPECT_EQ(item, 2u);
 
   wl.PushWorkItem(7);
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 7);
+  EXPECT_EQ(item, 7u);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
   EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
@@ -38,15 +38,15 @@ TEST(WorklistTests, TestFifoWorklist)
 
   EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
 
   wl.PushWorkItem(7);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 2);
+  EXPECT_EQ(item, 2u);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 7);
+  EXPECT_EQ(item, 7u);
   EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
@@ -58,20 +58,20 @@ TEST(WorklistTests, TestLrfWorklist)
 
   EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
 
   wl.PushWorkItem(7);
   wl.PushWorkItem(5);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 7);
+  EXPECT_EQ(item, 7u);
 
   wl.PushWorkItem(2);
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 2);
+  EXPECT_EQ(item, 2u);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
   EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 
@@ -83,7 +83,7 @@ TEST(WorklistTests, TestTwoPhaseLrfWorklist)
 
   EXPECT_TRUE(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
 
   // These items are both pushed to next
   wl.PushWorkItem(7);
@@ -91,16 +91,16 @@ TEST(WorklistTests, TestTwoPhaseLrfWorklist)
 
   // Popping moves both items from next to current, and 7 has been fired least recently (never)
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 7);
+  EXPECT_EQ(item, 7u);
 
   // Pushing 2 goes to next
   wl.PushWorkItem(2);
   // We still pop 5, since 5 is on the current list, despite 2 being less recently fired
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 5);
+  EXPECT_EQ(item, 5u);
 
   item = wl.PopWorkItem();
-  EXPECT_EQ(item, 2);
+  EXPECT_EQ(item, 2u);
   EXPECT_FALSE(wl.HasMoreWorkItems());
 }
 

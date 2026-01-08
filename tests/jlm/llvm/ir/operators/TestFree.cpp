@@ -16,11 +16,11 @@ TEST(FreeOperationTests, TestFreeConstructor)
   FreeOperation free2(2);
 
   // Assert
-  EXPECT_EQ(free0.narguments(), 2);
-  EXPECT_EQ(free0.nresults(), 1);
+  EXPECT_EQ(free0.narguments(), 2u);
+  EXPECT_EQ(free0.nresults(), 1u);
 
-  EXPECT_EQ(free2.narguments(), 4);
-  EXPECT_EQ(free2.nresults(), 3);
+  EXPECT_EQ(free2.narguments(), 4u);
+  EXPECT_EQ(free2.nresults(), 3u);
 }
 
 TEST(FreeOperationTests, TestEqualityOperator)
@@ -54,8 +54,8 @@ TEST(FreeOperationTests, TestThreeAddressCodeCreator)
   auto free1 = FreeOperation::Create(address, { memoryState }, iOState);
 
   // Assert
-  EXPECT_EQ(free0->nresults(), 1);
-  EXPECT_EQ(free1->nresults(), 2);
+  EXPECT_EQ(free0->nresults(), 1u);
+  EXPECT_EQ(free1->nresults(), 2u);
 }
 
 TEST(FreeOperationTests, TestRvsdgCreator)
@@ -76,7 +76,7 @@ TEST(FreeOperationTests, TestRvsdgCreator)
   auto & freeNode0 = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*freeResults0[0]);
 
   // Assert
-  EXPECT_EQ(freeResults0.size(), 1);
-  EXPECT_EQ(freeResults1.size(), 2);
+  EXPECT_EQ(freeResults0.size(), 1u);
+  EXPECT_EQ(freeResults1.size(), 2u);
   EXPECT_EQ(FreeOperation::addressInput(freeNode0).origin(), address);
 }

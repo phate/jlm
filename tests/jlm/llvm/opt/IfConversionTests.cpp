@@ -240,7 +240,7 @@ TEST(IfConversionTests, EmptyGammaWithThreeSubregions)
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
   EXPECT_FALSE(gammaNode->IsDead());
 }
 
@@ -289,6 +289,6 @@ TEST(IfConversionTests, PartialEmptyGamma)
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
   EXPECT_FALSE(gammaNode->IsDead());
 }
