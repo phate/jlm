@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
@@ -1516,4 +1517,98 @@ TEST(MemoryStateEncoderTests, freeNullTestAndersenAgnostic)
   auto lambdaEntrySplit =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+}
+
+TEST(MemoryStateEncoderTests, LambdaMemoryStateArgumentMultipleUsers)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto bitType32 = BitType::Create(32);
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto pointerType = PointerType::Create();
+  auto functionTypeOne = FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { bitType32, ioStateType, memoryStateType });
+  auto functionTypeMain = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bitType32, ioStateType, memoryStateType });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  LambdaNode * lambdaOne = nullptr;
+  {
+    lambdaOne = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeOne, "one", Linkage::privateLinkage));
+    auto ioStateArgument = lambdaOne->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambdaOne->GetFunctionArguments()[1];
+
+    auto & one = IntegerConstantOperation::Create(*lambdaOne->subregion(), 32, 1);
+
+    lambdaOne->finalize({ one.output(0), ioStateArgument, memoryStateArgument });
+  }
+
+  LambdaNode * lambdaMain = nullptr;
+  {
+    lambdaMain = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeMain, "main", Linkage::externalLinkage));
+    auto pointerArgument = lambdaMain->GetFunctionArguments()[0];
+    auto ioStateArgument = lambdaMain->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambdaMain->GetFunctionArguments()[2];
+    auto ctxVarOne = lambdaMain->AddContextVar(*lambdaOne->output());
+
+    auto callResults = CallOperation::Create(
+        ctxVarOne.inner,
+        functionTypeOne,
+        { ioStateArgument, memoryStateArgument });
+
+    auto & loadNode = LoadNonVolatileOperation::CreateNode(
+        *pointerArgument,
+        { memoryStateArgument },
+        bitType32,
+        4);
+
+    auto & addNode = CreateOpNode<IntegerAddOperation>({ callResults[0], loadNode.output(0) }, 32);
+
+    lambdaMain->finalize({ addNode.output(0), callResults[1], loadNode.output(1) });
+  }
+
+  GraphExport::Create(*lambdaMain->output(), "main");
+
+  view(rvsdg, stdout);
+
+  // Act
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(rvsdgModule);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  {
+    auto lambdaExitMerge =
+        TryGetOwnerNode<SimpleNode>(*GetMemoryStateRegionResult(*lambdaMain).origin());
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+
+    auto loadNode = TryGetOwnerNode<SimpleNode>(*lambdaExitMerge->input(0)->origin());
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadNode, 2, 2));
+
+    auto lambdaEntrySplit = TryGetOwnerNode<SimpleNode>(*loadNode->input(1)->origin());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+
+    auto addNode = TryGetOwnerNode<SimpleNode>(*lambdaMain->GetFunctionResults()[0]->origin());
+    EXPECT_TRUE(is<IntegerAddOperation>(*addNode, 2, 1));
+
+    auto callNode = TryGetOwnerNode<SimpleNode>(*addNode->input(0)->origin());
+    EXPECT_TRUE(is<CallOperation>(*callNode, 3, 3));
+    EXPECT_TRUE(CallOperation::GetMemoryStateOutput(*callNode).IsDead());
+
+    auto callEntryMergeNode =
+        TryGetOwnerNode<SimpleNode>(*CallOperation::GetMemoryStateInput(*callNode).origin());
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMergeNode, 0, 1));
+  }
 }
