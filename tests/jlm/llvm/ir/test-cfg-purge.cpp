@@ -34,5 +34,5 @@ TEST(ControLFlowGraphPurgeTests, test)
 
   purge(cfg);
 
-  EXPECT_EQ(cfg.nnodes(), 2);
+  EXPECT_EQ(cfg.nnodes(), 2u);
 }

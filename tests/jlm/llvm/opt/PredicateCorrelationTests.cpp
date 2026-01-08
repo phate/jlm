@@ -150,7 +150,7 @@ TEST(PredicateCorrelationTests, testControlConstantCorrelation)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode.subregion()->numNodes(), 2);
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 2u);
   EXPECT_EQ(thetaNode.predicate()->origin(), matchNode.output(0));
 }
 
@@ -185,7 +185,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelationDetection)
         std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
             correlationOpt.value()->data());
     EXPECT_EQ(correlationData.matchNode, &matchNode);
-    EXPECT_EQ(correlationData.alternatives.size(), 2);
+    EXPECT_EQ(correlationData.alternatives.size(), 2u);
     EXPECT_EQ(correlationData.alternatives[0], alternatives.first);
     EXPECT_EQ(correlationData.alternatives[1], alternatives.second);
   }
@@ -214,7 +214,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Success)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode.subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 1u);
   EXPECT_EQ(thetaNode.predicate()->origin(), gammaPredicate);
 }
 
@@ -322,7 +322,7 @@ TEST(PredicateCorrelationTests, testThetaGammaCorrelationFixPoint)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 1u);
   EXPECT_EQ(thetaNode->predicate()->origin(), predicate);
 }
 

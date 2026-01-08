@@ -133,7 +133,7 @@ TEST(RegionTests, NumRegions_EmptyRvsdg)
   Graph graph;
 
   // Act & Assert
-  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), 1);
+  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), 1u);
 }
 
 TEST(RegionTests, NumRegions_NonEmptyRvsdg)
@@ -147,7 +147,8 @@ TEST(RegionTests, NumRegions_NonEmptyRvsdg)
   TestStructuralNode::create(structuralNode->subregion(3), 5);
 
   // Act & Assert
-  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), 1 + 4 + 2 + 5);
+  constexpr unsigned int numTotalSubRegions = 1 + 4 + 2 + 5;
+  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), numTotalSubRegions);
 }
 
 TEST(RegionTests, RemoveResults)
@@ -184,45 +185,45 @@ TEST(RegionTests, RemoveResults)
   GraphExport::Create(i9, "x9");
 
   // Act & Arrange
-  EXPECT_EQ(rvsdg.GetRootRegion().nresults(), 10);
+  EXPECT_EQ(rvsdg.GetRootRegion().nresults(), 10u);
 
   // Remove all results that have an even index
   size_t numRemovedResults = rootRegion.RemoveResults({ 0, 2, 4, 6, 8 });
-  EXPECT_EQ(numRemovedResults, 5);
-  EXPECT_EQ(rootRegion.nresults(), 5);
+  EXPECT_EQ(numRemovedResults, 5u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
   EXPECT_EQ(rootRegion.result(0)->origin(), &i1);
   EXPECT_EQ(rootRegion.result(1)->origin(), &i3);
   EXPECT_EQ(rootRegion.result(2)->origin(), &i5);
   EXPECT_EQ(rootRegion.result(3)->origin(), &i7);
   EXPECT_EQ(rootRegion.result(4)->origin(), &i9);
-  EXPECT_EQ(i0.nusers(), 0);
-  EXPECT_EQ(i2.nusers(), 0);
-  EXPECT_EQ(i4.nusers(), 0);
-  EXPECT_EQ(i6.nusers(), 0);
-  EXPECT_EQ(i8.nusers(), 0);
+  EXPECT_EQ(i0.nusers(), 0u);
+  EXPECT_EQ(i2.nusers(), 0u);
+  EXPECT_EQ(i4.nusers(), 0u);
+  EXPECT_EQ(i6.nusers(), 0u);
+  EXPECT_EQ(i8.nusers(), 0u);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no result
   numRemovedResults = rootRegion.RemoveResults({});
-  EXPECT_EQ(numRemovedResults, 0);
-  EXPECT_EQ(rootRegion.nresults(), 5);
+  EXPECT_EQ(numRemovedResults, 0u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
   numRemovedResults = rootRegion.RemoveResults({ 15 });
-  EXPECT_EQ(numRemovedResults, 0);
-  EXPECT_EQ(rootRegion.nresults(), 5);
+  EXPECT_EQ(numRemovedResults, 0u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining results
   numRemovedResults = rootRegion.RemoveResults({ 0, 1, 2, 3, 4 });
-  EXPECT_EQ(numRemovedResults, 5);
-  EXPECT_EQ(rootRegion.nresults(), 0);
-  EXPECT_EQ(i1.nusers(), 0);
-  EXPECT_EQ(i3.nusers(), 0);
-  EXPECT_EQ(i5.nusers(), 0);
-  EXPECT_EQ(i7.nusers(), 0);
-  EXPECT_EQ(i9.nusers(), 0);
+  EXPECT_EQ(numRemovedResults, 5u);
+  EXPECT_EQ(rootRegion.nresults(), 0u);
+  EXPECT_EQ(i1.nusers(), 0u);
+  EXPECT_EQ(i3.nusers(), 0u);
+  EXPECT_EQ(i5.nusers(), 0u);
+  EXPECT_EQ(i7.nusers(), 0u);
+  EXPECT_EQ(i9.nusers(), 0u);
   EXPECT_EQ(
       observer.destroyedInputIndices(),
       std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
@@ -254,32 +255,32 @@ TEST(RegionTests, RemoveArguments)
       { valueType });
 
   // Act & Arrange
-  EXPECT_EQ(rootRegion.narguments(), 10);
-  EXPECT_EQ(argument0->index(), 0);
-  EXPECT_EQ(argument1->index(), 1);
-  EXPECT_EQ(argument2->index(), 2);
-  EXPECT_EQ(argument3->index(), 3);
-  EXPECT_EQ(argument4->index(), 4);
-  EXPECT_EQ(argument5->index(), 5);
-  EXPECT_EQ(argument6->index(), 6);
-  EXPECT_EQ(argument7->index(), 7);
-  EXPECT_EQ(argument8->index(), 8);
-  EXPECT_EQ(argument9->index(), 9);
+  EXPECT_EQ(rootRegion.narguments(), 10u);
+  EXPECT_EQ(argument0->index(), 0u);
+  EXPECT_EQ(argument1->index(), 1u);
+  EXPECT_EQ(argument2->index(), 2u);
+  EXPECT_EQ(argument3->index(), 3u);
+  EXPECT_EQ(argument4->index(), 4u);
+  EXPECT_EQ(argument5->index(), 5u);
+  EXPECT_EQ(argument6->index(), 6u);
+  EXPECT_EQ(argument7->index(), 7u);
+  EXPECT_EQ(argument8->index(), 8u);
+  EXPECT_EQ(argument9->index(), 9u);
 
   // Remove all arguments that have an even index
   size_t numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6, 8 });
   // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
   // argument6 are not dead
-  EXPECT_EQ(numRemovedArguments, 2);
-  EXPECT_EQ(rootRegion.narguments(), 8);
-  EXPECT_EQ(argument1->index(), 0);
-  EXPECT_EQ(argument2->index(), 1);
-  EXPECT_EQ(argument3->index(), 2);
-  EXPECT_EQ(argument4->index(), 3);
-  EXPECT_EQ(argument5->index(), 4);
-  EXPECT_EQ(argument6->index(), 5);
-  EXPECT_EQ(argument7->index(), 6);
-  EXPECT_EQ(argument9->index(), 7);
+  EXPECT_EQ(numRemovedArguments, 2u);
+  EXPECT_EQ(rootRegion.narguments(), 8u);
+  EXPECT_EQ(argument1->index(), 0u);
+  EXPECT_EQ(argument2->index(), 1u);
+  EXPECT_EQ(argument3->index(), 2u);
+  EXPECT_EQ(argument4->index(), 3u);
+  EXPECT_EQ(argument5->index(), 4u);
+  EXPECT_EQ(argument6->index(), 5u);
+  EXPECT_EQ(argument7->index(), 6u);
+  EXPECT_EQ(argument9->index(), 7u);
 
   // Reassign arguments to avoid mental gymnastics
   argument0 = argument1;
@@ -297,12 +298,12 @@ TEST(RegionTests, RemoveArguments)
   // Remove all arguments that have an even index
   numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6 });
   // We expect argument0, argument2, argument4, and argument6 to be removed
-  EXPECT_EQ(numRemovedArguments, 4);
-  EXPECT_EQ(rootRegion.narguments(), 4);
-  EXPECT_EQ(argument1->index(), 0);
-  EXPECT_EQ(argument3->index(), 1);
-  EXPECT_EQ(argument5->index(), 2);
-  EXPECT_EQ(argument7->index(), 3);
+  EXPECT_EQ(numRemovedArguments, 4u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
+  EXPECT_EQ(argument1->index(), 0u);
+  EXPECT_EQ(argument3->index(), 1u);
+  EXPECT_EQ(argument5->index(), 2u);
+  EXPECT_EQ(argument7->index(), 3u);
 
   // Reassign arguments to avoid mental gymnastics
   argument0 = argument1;
@@ -312,22 +313,22 @@ TEST(RegionTests, RemoveArguments)
 
   // Remove no argument
   numRemovedArguments = rootRegion.RemoveArguments({});
-  EXPECT_EQ(numRemovedArguments, 0);
-  EXPECT_EQ(rootRegion.narguments(), 4);
-  EXPECT_EQ(argument0->index(), 0);
-  EXPECT_EQ(argument1->index(), 1);
-  EXPECT_EQ(argument2->index(), 2);
-  EXPECT_EQ(argument3->index(), 3);
+  EXPECT_EQ(numRemovedArguments, 0u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
+  EXPECT_EQ(argument0->index(), 0u);
+  EXPECT_EQ(argument1->index(), 1u);
+  EXPECT_EQ(argument2->index(), 2u);
+  EXPECT_EQ(argument3->index(), 3u);
 
   // Remove non-existent argument
   numRemovedArguments = rootRegion.RemoveArguments({ 15 });
-  EXPECT_EQ(numRemovedArguments, 0);
-  EXPECT_EQ(rootRegion.narguments(), 4);
+  EXPECT_EQ(numRemovedArguments, 0u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
 
   // Remove all remaining arguments
   numRemovedArguments = rootRegion.RemoveArguments({ 0, 1, 2, 3 });
-  EXPECT_EQ(numRemovedArguments, 4);
-  EXPECT_EQ(rootRegion.narguments(), 0);
+  EXPECT_EQ(numRemovedArguments, 4u);
+  EXPECT_EQ(rootRegion.narguments(), 0u);
 }
 
 TEST(RegionTests, PruneArguments)
@@ -350,18 +351,18 @@ TEST(RegionTests, PruneArguments)
       { valueType });
 
   // Act & Arrange
-  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 3);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 3u);
 
   size_t numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
-  EXPECT_EQ(numRemovedArguments, 1);
-  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 2);
-  EXPECT_EQ(argument0.index(), 0);
-  EXPECT_EQ(argument2.index(), 1);
+  EXPECT_EQ(numRemovedArguments, 1u);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 2u);
+  EXPECT_EQ(argument0.index(), 0u);
+  EXPECT_EQ(argument2.index(), 1u);
 
   structuralNode->subregion(0)->removeNode(node);
   numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
-  EXPECT_EQ(numRemovedArguments, 2);
-  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 0);
+  EXPECT_EQ(numRemovedArguments, 2u);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 0u);
 }
 
 TEST(RegionTests, ToTree_EmptyRvsdg)
@@ -472,20 +473,20 @@ TEST(RegionTests, BottomNodeTests)
   // A newly created node without any users should automatically be added to the bottom nodes
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   EXPECT_TRUE(structuralNode->IsDead());
-  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1u);
   EXPECT_EQ(&*(rvsdg.GetRootRegion().BottomNodes().begin()), structuralNode);
 
   // The node cedes to be dead
   auto & output = structuralNode->addOutputOnly(valueType);
   GraphExport::Create(output, "x");
   EXPECT_FALSE(structuralNode->IsDead());
-  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 0u);
   EXPECT_EQ(rvsdg.GetRootRegion().BottomNodes().begin(), rvsdg.GetRootRegion().BottomNodes().end());
 
   // And it becomes dead again
   rvsdg.GetRootRegion().RemoveResults({ 0 });
   EXPECT_TRUE(structuralNode->IsDead());
-  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1u);
   EXPECT_EQ(&*(rvsdg.GetRootRegion().BottomNodes().begin()), structuralNode);
 }
 
@@ -516,9 +517,9 @@ TEST(RegionTests, computeDepthMap)
   const auto depthMap = computeDepthMap(rvsdg.GetRootRegion());
 
   // Assert
-  EXPECT_EQ(depthMap.size(), 4);
-  EXPECT_EQ(depthMap.at(node0), 0);
-  EXPECT_EQ(depthMap.at(node1), 1);
-  EXPECT_EQ(depthMap.at(node2), 0);
-  EXPECT_EQ(depthMap.at(node3), 2);
+  EXPECT_EQ(depthMap.size(), 4u);
+  EXPECT_EQ(depthMap.at(node0), 0u);
+  EXPECT_EQ(depthMap.at(node1), 1u);
+  EXPECT_EQ(depthMap.at(node2), 0u);
+  EXPECT_EQ(depthMap.at(node3), 2u);
 }

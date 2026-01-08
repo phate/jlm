@@ -119,35 +119,35 @@ TEST(PointsToGraphTests, TestNodeIterators)
   using NodeKind = jlm::llvm::aa::PointsToGraph::NodeKind;
 
   // Act and Assert
-  EXPECT_EQ(pointsToGraph->numImportNodes(), 1);
+  EXPECT_EQ(pointsToGraph->numImportNodes(), 1u);
   for (auto importNode : pointsToGraph->importNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(importNode), NodeKind::ImportNode);
     EXPECT_EQ(&pointsToGraph->getImportForNode(importNode), &test.GetImportOutput());
   }
 
-  EXPECT_EQ(pointsToGraph->numLambdaNodes(), 1);
+  EXPECT_EQ(pointsToGraph->numLambdaNodes(), 1u);
   for (auto & lambdaNode : pointsToGraph->lambdaNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(lambdaNode), NodeKind::LambdaNode);
     EXPECT_EQ(&pointsToGraph->getLambdaForNode(lambdaNode), &test.GetLambdaNode());
   }
 
-  EXPECT_EQ(pointsToGraph->numDeltaNodes(), 1);
+  EXPECT_EQ(pointsToGraph->numDeltaNodes(), 1u);
   for (auto & deltaNode : pointsToGraph->deltaNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(deltaNode), NodeKind::DeltaNode);
     EXPECT_EQ(&pointsToGraph->getDeltaForNode(deltaNode), &test.GetDeltaNode());
   }
 
-  EXPECT_EQ(pointsToGraph->numAllocaNodes(), 1);
+  EXPECT_EQ(pointsToGraph->numAllocaNodes(), 1u);
   for (auto & allocaNode : pointsToGraph->allocaNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(allocaNode), NodeKind::AllocaNode);
     EXPECT_EQ(&pointsToGraph->getAllocaForNode(allocaNode), &test.GetAllocaNode());
   }
 
-  EXPECT_EQ(pointsToGraph->numMallocNodes(), 1);
+  EXPECT_EQ(pointsToGraph->numMallocNodes(), 1u);
   for (auto & mallocNode : pointsToGraph->mallocNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(mallocNode), NodeKind::MallocNode);
@@ -155,15 +155,15 @@ TEST(PointsToGraphTests, TestNodeIterators)
   }
 
   // Check that each register is seen
-  EXPECT_EQ(pointsToGraph->numRegisterNodes(), 5);
+  EXPECT_EQ(pointsToGraph->numRegisterNodes(), 5u);
   jlm::util::HashSet<NodeIndex> seenRegisterNodes;
   for (auto & registerNode : pointsToGraph->registerNodes())
   {
     EXPECT_EQ(pointsToGraph->getNodeKind(registerNode), NodeKind::RegisterNode);
-    EXPECT_EQ(pointsToGraph->getExplicitTargets(registerNode).Size(), 1);
+    EXPECT_EQ(pointsToGraph->getExplicitTargets(registerNode).Size(), 1u);
     seenRegisterNodes.insert(registerNode);
   }
-  EXPECT_EQ(seenRegisterNodes.Size(), 5);
+  EXPECT_EQ(seenRegisterNodes.Size(), 5u);
 
   const auto ptgImportRegister = pointsToGraph->getNodeForRegister(test.GetImportOutput());
   EXPECT_TRUE(seenRegisterNodes.Contains(ptgImportRegister));

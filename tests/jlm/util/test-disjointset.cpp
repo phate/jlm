@@ -37,33 +37,33 @@ TEST(DisjointSetTests, test)
   auto s2 = djset.find(6);
   print(djset);
   EXPECT_EQ(s1, s2);
-  EXPECT_EQ(djset.nvalues(), 6);
-  EXPECT_EQ(djset.nsets(), 6);
+  EXPECT_EQ(djset.nvalues(), 6u);
+  EXPECT_EQ(djset.nsets(), 6u);
 
   auto root = djset.merge(1, 2);
   print(djset);
   EXPECT_TRUE(root->is_root());
-  EXPECT_EQ(root->nmembers(), 2);
-  EXPECT_EQ(djset.nvalues(), 6);
-  EXPECT_EQ(djset.nsets(), 5);
+  EXPECT_EQ(root->nmembers(), 2u);
+  EXPECT_EQ(djset.nvalues(), 6u);
+  EXPECT_EQ(djset.nsets(), 5u);
 
   root = djset.merge(6, 5);
   print(djset);
   EXPECT_TRUE(root->is_root());
-  EXPECT_EQ(root->nmembers(), 2);
-  EXPECT_EQ(djset.nvalues(), 6);
-  EXPECT_EQ(djset.nsets(), 4);
+  EXPECT_EQ(root->nmembers(), 2u);
+  EXPECT_EQ(djset.nvalues(), 6u);
+  EXPECT_EQ(djset.nsets(), 4u);
 
   root = djset.merge(1, 6);
   print(djset);
   EXPECT_TRUE(root->is_root());
-  EXPECT_EQ(root->nmembers(), 4);
-  EXPECT_EQ(djset.nvalues(), 6);
-  EXPECT_EQ(djset.nsets(), 3);
+  EXPECT_EQ(root->nmembers(), 4u);
+  EXPECT_EQ(djset.nvalues(), 6u);
+  EXPECT_EQ(djset.nsets(), 3u);
   EXPECT_EQ(djset.find(2), djset.find(5));
 
   djset.clear();
   print(djset);
-  EXPECT_EQ(djset.nvalues(), 0);
-  EXPECT_EQ(djset.nsets(), 0);
+  EXPECT_EQ(djset.nvalues(), 0u);
+  EXPECT_EQ(djset.nsets(), 0u);
 }

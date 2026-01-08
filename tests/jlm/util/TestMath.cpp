@@ -46,15 +46,15 @@ TEST(MathTests, TestRoundUpToPowerOf2)
 {
   EXPECT_EQ(RoundUpToPowerOf2<int32_t>(-10), 1);
   EXPECT_EQ(RoundUpToPowerOf2<int32_t>(0), 1);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(0), 1);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(0), 1u);
   EXPECT_EQ(RoundUpToPowerOf2<int32_t>(1), 1);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(1), 1);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(2), 2);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(3), 4);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(1), 1u);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(2), 2u);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(3), 4u);
 
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(255), 256);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(256), 256);
-  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(257), 512);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(255), 256u);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(256), 256u);
+  EXPECT_EQ(RoundUpToPowerOf2<uint32_t>(257), 512u);
   EXPECT_EQ(RoundUpToPowerOf2<uint64_t>(0xFFFFFFFF), 0x100000000ul);
 }
 
@@ -72,7 +72,7 @@ TEST(MathTests, TestRoundUpToMultipleOf)
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(6, 5), 10);
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(123, 5), 125);
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(8567, 2000), 10'000);
-  EXPECT_EQ(RoundUpToMultipleOf<uint32_t>(8567, 2000), 10'000);
+  EXPECT_EQ(RoundUpToMultipleOf<uint32_t>(8567, 2000), 10'000u);
 
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(-1, 7), 0);
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(-6, 7), 0);
@@ -83,10 +83,10 @@ TEST(MathTests, TestRoundUpToMultipleOf)
   EXPECT_EQ(RoundUpToMultipleOf<int32_t>(-14'006, 7), -14'000);
 
   // Test different int sizes
-  EXPECT_EQ(RoundUpToMultipleOf<uint8_t>(13, 7), 14);
-  EXPECT_EQ(RoundUpToMultipleOf<uint16_t>(13, 7), 14);
-  EXPECT_EQ(RoundUpToMultipleOf<uint32_t>(13, 7), 14);
-  EXPECT_EQ(RoundUpToMultipleOf<uint64_t>(13, 7), 14);
+  EXPECT_EQ(RoundUpToMultipleOf<uint8_t>(13, 7), 14u);
+  EXPECT_EQ(RoundUpToMultipleOf<uint16_t>(13, 7), 14u);
+  EXPECT_EQ(RoundUpToMultipleOf<uint32_t>(13, 7), 14u);
+  EXPECT_EQ(RoundUpToMultipleOf<uint64_t>(13, 7), 14u);
 
   EXPECT_EQ(RoundUpToMultipleOf<int8_t>(-13, 7), -7);
   EXPECT_EQ(RoundUpToMultipleOf<int16_t>(-13, 7), -7);

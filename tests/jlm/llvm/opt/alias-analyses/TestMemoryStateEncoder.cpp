@@ -59,7 +59,7 @@ TEST(MemoryStateEncoderTests, storeTest1AndersenAgnostic)
   StoreTest1 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 14);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 14u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -107,7 +107,7 @@ TEST(MemoryStateEncoderTests, storeTest1AndersenRegionAware)
   StoreTest1 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -121,7 +121,7 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenAgnostic)
   StoreTest2 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 17);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 17u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -188,7 +188,7 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenRegionAware)
   StoreTest1 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -202,7 +202,7 @@ TEST(MemoryStateEncoderTests, loadTest1AndersenAgnostic)
   LoadTest1 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -233,7 +233,7 @@ TEST(MemoryStateEncoderTests, loadTest1AndersenRegionAware)
   LoadTest1 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -263,7 +263,7 @@ TEST(MemoryStateEncoderTests, loadTest2AndersenAgnostic)
   LoadTest2 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 19);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 19u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -336,7 +336,7 @@ TEST(MemoryStateEncoderTests, loadTest2AndersenRegionAware)
   LoadTest2 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -349,7 +349,7 @@ TEST(MemoryStateEncoderTests, loadFromUndefAndersenAgnostic)
 
   LoadFromUndefTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
-  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 4);
+  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
@@ -371,7 +371,7 @@ TEST(MemoryStateEncoderTests, loadFromUndefAndersenRegionAware)
   LoadFromUndefTest test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 3);
+  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 3u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
@@ -518,12 +518,12 @@ TEST(MemoryStateEncoderTests, callTest1AndersenRegionAware)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallF().input(4)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
     // There is no call exit split, as it has been removed by dead node elimination
-    EXPECT_EQ(test.CallF().output(2)->nusers(), 0);
+    EXPECT_EQ(test.CallF().output(2)->nusers(), 0u);
 
     callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
-    EXPECT_EQ(test.CallG().output(2)->nusers(), 0);
+    EXPECT_EQ(test.CallG().output(2)->nusers(), 0u);
   }
 }
 
@@ -535,7 +535,7 @@ TEST(MemoryStateEncoderTests, callTest2AndersenAgnostic)
 
   /* validate create function */
   {
-    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7);
+    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
     auto stateJoin =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
@@ -556,12 +556,12 @@ TEST(MemoryStateEncoderTests, callTest2AndersenAgnostic)
 
   /* validate destroy function */
   {
-    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4);
+    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4u);
   }
 
   /* validate test function */
   {
-    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16);
+    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16u);
   }
 }
 
@@ -574,7 +574,7 @@ TEST(MemoryStateEncoderTests, callTest2AndersenRegionAware)
 
   /* validate create function */
   {
-    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7);
+    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
     auto stateJoin =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
@@ -595,12 +595,12 @@ TEST(MemoryStateEncoderTests, callTest2AndersenRegionAware)
 
   /* validate destroy function */
   {
-    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4);
+    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4u);
   }
 
   /* validate test function */
   {
-    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16);
+    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16u);
   }
 }
 
@@ -613,7 +613,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenAgnostic)
 
   /* validate indcall function */
   {
-    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 6);
+    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 6u);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -636,7 +636,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenAgnostic)
 
   /* validate test function */
   {
-    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 9);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 9u);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -677,7 +677,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenRegionAware)
 
   /* validate indcall function */
   {
-    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 4);
+    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -693,7 +693,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenRegionAware)
 
   /* validate test function */
   {
-    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 6);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -726,7 +726,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
 
   // validate function three()
   {
-    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 3);
+    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 3u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
@@ -739,7 +739,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
 
   // validate function four()
   {
-    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 3);
+    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 3u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
@@ -752,7 +752,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
 
   // validate function i()
   {
-    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 6);
+    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -781,7 +781,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function three()
   {
-    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 2);
+    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 2u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
@@ -790,7 +790,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function four()
   {
-    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 2);
+    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 2u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
@@ -799,7 +799,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function i()
   {
-    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 4);
+    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -812,7 +812,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function x()
   {
-    EXPECT_EQ(test.GetLambdaX().subregion()->numNodes(), 7);
+    EXPECT_EQ(test.GetLambdaX().subregion()->numNodes(), 7u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaX().GetFunctionResults()[2]->origin());
@@ -825,7 +825,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function y()
   {
-    EXPECT_EQ(test.GetLambdaY().subregion()->numNodes(), 7);
+    EXPECT_EQ(test.GetLambdaY().subregion()->numNodes(), 7u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaY().GetFunctionResults()[2]->origin());
@@ -838,7 +838,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function test()
   {
-    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 14);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 14u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -859,14 +859,14 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function test2()
   {
-    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5);
+    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     // The entry memory state is unused
-    EXPECT_EQ(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers(), 0);
+    EXPECT_EQ(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers(), 0u);
   }
 }
 
@@ -922,7 +922,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
   ThetaTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -949,7 +949,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
   ThetaTest test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -976,7 +976,7 @@ TEST(MemoryStateEncoderTests, deltaTest1AndersenAgnostic)
   DeltaTest1 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7);
+  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
@@ -1004,7 +1004,7 @@ TEST(MemoryStateEncoderTests, deltaTest1AndersenRegionAware)
   DeltaTest1 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7);
+  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
@@ -1032,7 +1032,7 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenAgnostic)
   DeltaTest2 test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9);
+  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1069,7 +1069,7 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenRegionAware)
 
   /* Validate f1() */
   {
-    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4);
+    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
@@ -1086,7 +1086,7 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenRegionAware)
 
   /* Validate f2() */
   {
-    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9);
+    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1133,7 +1133,7 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenAgnostic)
 
   /* validate f() */
   {
-    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6);
+    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
@@ -1181,7 +1181,7 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
 
   /* validate f() */
   {
-    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6);
+    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
@@ -1227,7 +1227,7 @@ TEST(MemoryStateEncoderTests, importTestAndersenAgnostic)
   ImportTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9);
+  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1264,7 +1264,7 @@ TEST(MemoryStateEncoderTests, importTestAndersenRegionAware)
 
   /* Validate f1() */
   {
-    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4);
+    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
@@ -1281,7 +1281,7 @@ TEST(MemoryStateEncoderTests, importTestAndersenRegionAware)
 
   /* Validate f2() */
   {
-    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9);
+    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());

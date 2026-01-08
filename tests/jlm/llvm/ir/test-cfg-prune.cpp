@@ -43,5 +43,5 @@ TEST(ControlFlowGraphPruneTests, test)
   prune(cfg);
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
-  EXPECT_EQ(cfg.nnodes(), 1);
+  EXPECT_EQ(cfg.nnodes(), 1u);
 }

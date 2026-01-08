@@ -80,7 +80,7 @@ TEST(LoadTests, LoadConversion)
       }
     }
 
-    EXPECT_EQ(numLoadThreeAddressCodes, 1);
-    EXPECT_EQ(numLoadVolatileThreeAddressCodes, 2);
+    EXPECT_EQ(numLoadThreeAddressCodes, 1u);
+    EXPECT_EQ(numLoadVolatileThreeAddressCodes, 2u);
   }
 }

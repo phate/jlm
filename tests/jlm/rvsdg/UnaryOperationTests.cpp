@@ -89,7 +89,7 @@ TEST(ArgumentTests, NormalizeUnaryOperation_Success)
   EXPECT_TRUE(success);
 
   graph.PruneNodes();
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_EQ(node, nullaryNode);
@@ -119,7 +119,7 @@ TEST(ArgumentTests, NormalizeUnaryOperation_Failure)
   EXPECT_FALSE(success);
 
   graph.PruneNodes();
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_EQ(node, unaryNode);

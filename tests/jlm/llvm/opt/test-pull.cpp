@@ -51,8 +51,8 @@ TEST(NodeSinkingTests, testPullInTop)
   pullin_top(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  EXPECT_EQ(gamma->subregion(0)->numNodes(), 2);
-  EXPECT_EQ(gamma->subregion(1)->numNodes(), 2);
+  EXPECT_EQ(gamma->subregion(0)->numNodes(), 2u);
+  EXPECT_EQ(gamma->subregion(1)->numNodes(), 2u);
 }
 
 TEST(NodeSinkingTests, testPullInBottom)
@@ -91,12 +91,12 @@ TEST(NodeSinkingTests, testPullInBottom)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(sunkNodes, 2);
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(sunkNodes, 2u);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
 
   EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()), gammaNode);
-  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2);
-  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2u);
 }
 
 TEST(NodeSinkingTests, testPull)
@@ -136,5 +136,5 @@ TEST(NodeSinkingTests, testPull)
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 }

@@ -31,28 +31,28 @@ TEST(DotWriterTests, TestWriteGraphs)
   EXPECT_EQ(
       rootGraph.GetProgramObject(),
       reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
-  EXPECT_EQ(rootGraph.NumNodes(), 1);       // Only the lambda node for "f"
-  EXPECT_EQ(rootGraph.NumResultNodes(), 1); // Exporting the function "f"
+  EXPECT_EQ(rootGraph.NumNodes(), 1u);       // Only the lambda node for "f"
+  EXPECT_EQ(rootGraph.NumResultNodes(), 1u); // Exporting the function "f"
   auto & lambdaNode = *assertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
   EXPECT_EQ(lambdaNode.GetLabel(), gammaTest.lambda->DebugString());
-  EXPECT_EQ(lambdaNode.NumInputPorts(), 0);
-  EXPECT_EQ(lambdaNode.NumOutputPorts(), 1);
-  EXPECT_EQ(lambdaNode.NumSubgraphs(), 1);
+  EXPECT_EQ(lambdaNode.NumInputPorts(), 0u);
+  EXPECT_EQ(lambdaNode.NumOutputPorts(), 1u);
+  EXPECT_EQ(lambdaNode.NumSubgraphs(), 1u);
 
   auto & fctBody = lambdaNode.GetSubgraph(0);
-  EXPECT_EQ(fctBody.NumArgumentNodes(), 6);
-  EXPECT_EQ(fctBody.NumResultNodes(), 2);
+  EXPECT_EQ(fctBody.NumArgumentNodes(), 6u);
+  EXPECT_EQ(fctBody.NumResultNodes(), 2u);
 
   // Argument a1 leads to the gamma node
   auto & connections = fctBody.GetArgumentNode(1).GetConnections();
-  EXPECT_EQ(connections.size(), 1);
+  EXPECT_EQ(connections.size(), 1u);
   auto & gammaNode = *assertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
   EXPECT_EQ(gammaNode.GetLabel(), gammaTest.gamma->DebugString());
-  EXPECT_EQ(gammaNode.NumInputPorts(), 5);
-  EXPECT_EQ(gammaNode.NumOutputPorts(), 2);
-  EXPECT_EQ(gammaNode.NumSubgraphs(), 2);
+  EXPECT_EQ(gammaNode.NumInputPorts(), 5u);
+  EXPECT_EQ(gammaNode.NumOutputPorts(), 2u);
+  EXPECT_EQ(gammaNode.NumSubgraphs(), 2u);
 
   // The second argument of the first region of the gamma references the second gamma input
   auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(1);
@@ -65,12 +65,12 @@ TEST(DotWriterTests, TestWriteGraphs)
 
   // Check that the last argument is colored red to represent the memory state type
   auto & stateConnections = fctBody.GetArgumentNode(5).GetConnections();
-  EXPECT_EQ(stateConnections.size(), 1);
+  EXPECT_EQ(stateConnections.size(), 1u);
   EXPECT_EQ(stateConnections.front()->GetAttributeString("color"), "#FF0000");
 
   // Check that the output of the lambda leads to a graph export
   auto & lambdaConnections = lambdaNode.GetOutputPort(0).GetConnections();
-  EXPECT_EQ(lambdaConnections.size(), 1);
+  EXPECT_EQ(lambdaConnections.size(), 1u);
   auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
   EXPECT_EQ(graphExport.GetLabel(), "export[f]");
 }
@@ -94,19 +94,19 @@ TEST(DotWriterTests, TestWriteGraph)
   EXPECT_EQ(
       rootGraph.GetProgramObject(),
       reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
-  EXPECT_EQ(rootGraph.NumNodes(), 1);       // Only the lambda node for "f"
-  EXPECT_EQ(rootGraph.NumResultNodes(), 1); // Exporting the function "f"
+  EXPECT_EQ(rootGraph.NumNodes(), 1u);       // Only the lambda node for "f"
+  EXPECT_EQ(rootGraph.NumResultNodes(), 1u); // Exporting the function "f"
   auto & lambdaNode = *assertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
   EXPECT_EQ(lambdaNode.GetLabel(), gammaTest.lambda->DebugString());
-  EXPECT_EQ(lambdaNode.NumInputPorts(), 0);
-  EXPECT_EQ(lambdaNode.NumOutputPorts(), 1);
-  EXPECT_EQ(lambdaNode.NumSubgraphs(), 0);
+  EXPECT_EQ(lambdaNode.NumInputPorts(), 0u);
+  EXPECT_EQ(lambdaNode.NumOutputPorts(), 1u);
+  EXPECT_EQ(lambdaNode.NumSubgraphs(), 0u);
 
   // Check that the output of the lambda leads to a graph export
   auto & lambdaConnections = lambdaNode.GetOutputPort(0).GetConnections();
-  EXPECT_EQ(lambdaConnections.size(), 1);
+  EXPECT_EQ(lambdaConnections.size(), 1u);
   auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
   EXPECT_EQ(graphExport.GetLabel(), "export[f]");
 }
@@ -133,7 +133,7 @@ TEST(DotWriterTests, TestTypeGraph)
 
   // Assert
   auto & typeGraph = writer.GetGraph(0);
-  EXPECT_EQ(typeGraph.GetProgramObject(), 0);
+  EXPECT_EQ(typeGraph.GetProgramObject(), 0u);
 
   // Check that nodes exist for the given types
   [[maybe_unused]] auto & ptrNode = typeGraph.GetFromProgramObject<Node>(*ptrType);

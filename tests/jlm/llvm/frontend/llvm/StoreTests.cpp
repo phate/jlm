@@ -82,7 +82,7 @@ TEST(StoreTests, StoreConversion)
       }
     }
 
-    EXPECT_EQ(numStoreThreeAddressCodes, 1);
-    EXPECT_EQ(numStoreVolatileThreeAddressCodes, 2);
+    EXPECT_EQ(numStoreThreeAddressCodes, 1u);
+    EXPECT_EQ(numStoreVolatileThreeAddressCodes, 2u);
   }
 }
