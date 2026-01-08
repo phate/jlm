@@ -39,7 +39,7 @@ TEST(LoadTests, LoadConversion)
   auto sum2 = builder.CreateAdd(sum1, loadedValue3);
   builder.CreateRet(sum2);
 
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);

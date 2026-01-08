@@ -38,7 +38,7 @@ TEST(EndlessLoopTests, test)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);

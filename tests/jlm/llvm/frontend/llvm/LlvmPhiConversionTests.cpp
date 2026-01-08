@@ -202,7 +202,7 @@ TEST(LlvmPhiConversionTests, TestPhiOperandElision)
     bb5phi->addIncoming(xPlus2, bb4);
   }
 
-  module.dump();
+  module.print(llvm::errs(), nullptr);
 
   // Act
   auto ipgmod = jlm::llvm::ConvertLlvmModule(module);

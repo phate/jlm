@@ -39,7 +39,7 @@ TEST(ViewTests, TestFMulAdd)
     builder.CreateRet(returnValue);
   }
 
-  llvmModule.dump();
+  llvmModule.print(llvm::errs(), nullptr);
 
   // Act
   const auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
