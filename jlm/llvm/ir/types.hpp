@@ -176,6 +176,9 @@ public:
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.
+ * There are two different kinds of struct types: Literal structs and Identified structs.
+ * Literal struct types (e.g., { i32, i32 }) are uniqued structurally.
+ * Identified structs (e.g., foo or %42) may optionally have a name and are not uniqued.
  */
 class StructType final : public rvsdg::Type
 {
@@ -184,17 +187,20 @@ public:
 
   ~StructType() override;
 
-  StructType(bool isPacked, const Declaration & declaration)
+  StructType(const Declaration & declaration, bool isPacked, bool isLiteral)
       : rvsdg::Type(),
+        Declaration_(declaration),
         IsPacked_(isPacked),
-        Declaration_(declaration)
+        IsLiteral_(isLiteral)
   {}
 
-  StructType(std::string name, bool isPacked, const Declaration & declaration)
+  StructType(std::string name, const Declaration & declaration, bool isPacked)
       : rvsdg::Type(),
-        IsPacked_(isPacked),
         Name_(std::move(name)),
-        Declaration_(declaration)
+        Declaration_(declaration),
+        IsPacked_(isPacked),
+        IsLiteral_(false) // Named structs are never literal
+
   {}
 
   StructType(const StructType &) = default;
@@ -222,12 +228,14 @@ public:
   [[nodiscard]] bool
   HasName() const noexcept
   {
+    JLM_ASSERT(!(IsLiteral_ == true && Name_.empty() == false));
     return !Name_.empty();
   }
 
   [[nodiscard]] const std::string &
   GetName() const noexcept
   {
+    JLM_ASSERT(IsLiteral_ == false);
     return Name_;
   }
 
@@ -235,6 +243,12 @@ public:
   IsPacked() const noexcept
   {
     return IsPacked_;
+  }
+
+  [[nodiscard]] bool
+  IsLiteral() const noexcept
+  {
+    return IsLiteral_;
   }
 
   [[nodiscard]] const Declaration &
@@ -254,21 +268,22 @@ public:
   GetFieldOffset(size_t fieldIndex) const;
 
   static std::shared_ptr<const StructType>
-  Create(const std::string & name, bool isPacked, const Declaration & declaration)
+  Create(const std::string & name, const Declaration & declaration, bool isPacked)
   {
-    return std::make_shared<StructType>(name, isPacked, declaration);
+    return std::make_shared<StructType>(name, declaration, isPacked);
   }
 
   static std::shared_ptr<const StructType>
-  Create(bool isPacked, const Declaration & declaration)
+  Create(const Declaration & declaration, bool isPacked, bool isLiteral)
   {
-    return std::make_shared<StructType>(isPacked, declaration);
+    return std::make_shared<StructType>(declaration, isPacked, isLiteral);
   }
 
 private:
-  bool IsPacked_;
   std::string Name_;
   const Declaration & Declaration_;
+  bool IsPacked_;
+  bool IsLiteral_;
 };
 
 class StructType::Declaration final

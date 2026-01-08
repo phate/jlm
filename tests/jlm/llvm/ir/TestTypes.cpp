@@ -41,7 +41,7 @@ TEST(TypeTests, TestIsOrContains)
 
   // Struct types are aggregates that can contain other types
   auto declaration = StructType::Declaration::Create({ valueType, pointerType });
-  auto structType = StructType::Create(false, *declaration);
+  auto structType = StructType::Create(*declaration, false, false);
   EXPECT_TRUE(IsAggregateType(*structType));
   EXPECT_TRUE(IsOrContains<StructType>(*structType));
   EXPECT_TRUE(IsOrContains<PointerType>(*structType));
@@ -114,7 +114,7 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   structDeclaration->Append(vectorType); // The most aligned type, 16 byte alignment
   structDeclaration->Append(bits32);
 
-  auto structType = StructType::Create("myStruct", false, *structDeclaration);
+  auto structType = StructType::Create("myStruct", *structDeclaration, false);
   EXPECT_EQ(structType->GetFieldOffset(0), 0u);
   EXPECT_EQ(structType->GetFieldOffset(1), 8u); // Due to 4 bytes of padding after i32
   EXPECT_EQ(structType->GetFieldOffset(2), 16u);
@@ -124,7 +124,7 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   EXPECT_EQ(GetTypeAllocSize(*structType), 80u);
   EXPECT_EQ(GetTypeAlignment(*structType), 16u);
 
-  auto packedStructType = StructType::Create("myPackedStruct", true, *structDeclaration);
+  auto packedStructType = StructType::Create("myPackedStruct", *structDeclaration, true);
   EXPECT_EQ(packedStructType->GetFieldOffset(0), 0u);
   EXPECT_EQ(packedStructType->GetFieldOffset(1), 4u);
   EXPECT_EQ(packedStructType->GetFieldOffset(2), 12u);

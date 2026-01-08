@@ -145,16 +145,23 @@ TypeConverter::ConvertStructType(const StructType & type, ::llvm::LLVMContext & 
   if (StructTypeMap_.HasValue(&declaration))
     return StructTypeMap_.LookupValue(&declaration);
 
-  const auto llvmStructType = ::llvm::StructType::create(context);
-  StructTypeMap_.Insert(llvmStructType, &declaration);
-
   std::vector<::llvm::Type *> elements;
   for (size_t n = 0; n < declaration.NumElements(); n++)
     elements.push_back(ConvertJlmType(declaration.GetElement(n), context));
 
-  if (type.HasName())
-    llvmStructType->setName(type.GetName());
-  llvmStructType->setBody(elements, type.IsPacked());
+  ::llvm::StructType * llvmStructType = nullptr;
+  if (type.IsLiteral())
+  {
+    llvmStructType = ::llvm::StructType::get(context, elements, type.IsPacked());
+  }
+  else
+  {
+    llvmStructType = ::llvm::StructType::create(context);
+    if (type.HasName())
+      llvmStructType->setName(type.GetName());
+    llvmStructType->setBody(elements, type.IsPacked());
+  }
+  StructTypeMap_.Insert(llvmStructType, &declaration);
 
   return llvmStructType;
 }
@@ -248,8 +255,8 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
     auto & declaration = GetOrCreateStructDeclaration(*structType);
 
     return structType->hasName()
-             ? StructType::Create(structType->getName().str(), isPacked, declaration)
-             : StructType::Create(isPacked, declaration);
+             ? StructType::Create(structType->getName().str(), declaration, isPacked)
+             : StructType::Create(declaration, isPacked, structType->isLiteral());
   }
   case ::llvm::Type::ArrayTyID:
   {
