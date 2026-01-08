@@ -201,8 +201,8 @@ LoopNode::removeLoopOutput(rvsdg::StructuralOutput * output)
   JLM_ASSERT(output->results.size() == 1);
   auto result = output->results.begin();
 
-  subregion()->RemoveResult(result->index());
-  removeOutput(output->index());
+  subregion()->RemoveResults({ result->index() });
+  RemoveOutputs({ output->index() });
 }
 
 void
@@ -213,8 +213,8 @@ LoopNode::removeLoopInput(rvsdg::StructuralInput * input)
   auto argument = input->arguments.begin();
   JLM_ASSERT(argument->IsDead());
 
-  subregion()->RemoveArgument(argument->index());
-  removeInput(input->index(), true);
+  subregion()->RemoveArguments({ argument->index() });
+  RemoveInputs({ input->index() });
 }
 
 [[nodiscard]] const rvsdg::Operation &

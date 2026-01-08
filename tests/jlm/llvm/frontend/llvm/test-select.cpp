@@ -55,7 +55,7 @@ TEST(SelectTests, test_scalar_select)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
@@ -89,7 +89,7 @@ TEST(SelectTests, test_vector_select)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);

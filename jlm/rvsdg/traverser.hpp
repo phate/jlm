@@ -323,7 +323,7 @@ using BottomUpTraverser = detail::BottomUpTraverserGeneric<false>;
  *
  * @see BottomUpTraverserGeneric
  */
-using BottomUpConstTraverser = detail::BottomUpTraverserGeneric<false>;
+using BottomUpConstTraverser = detail::BottomUpTraverserGeneric<true>;
 
 }
 

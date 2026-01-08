@@ -60,7 +60,7 @@ TEST(FunctionCallTests, test_function_call)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
@@ -117,7 +117,7 @@ TEST(FunctionCallTests, test_malloc_call)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
@@ -173,7 +173,7 @@ TEST(FunctionCallTests, test_free_call)
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  llvmModule->dump();
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
