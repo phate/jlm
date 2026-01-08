@@ -303,7 +303,7 @@ Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
 }
 
 size_t
-Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegion)
+Node::RemoveInputs(const util::HashSet<size_t> & indices)
 {
   if (indices.IsEmpty())
   {
@@ -317,8 +317,7 @@ Node::RemoveInputs(const util::HashSet<size_t> & indices, const bool notifyRegio
     auto & input = inputs_[n];
     if (indices.Contains(input->index()))
     {
-      if (notifyRegion)
-        region()->notifyInputDestroy(input.get());
+      region()->notifyInputDestroy(input.get());
       input.reset();
       numRemovedInputs++;
     }

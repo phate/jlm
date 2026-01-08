@@ -719,16 +719,13 @@ public:
   /**
    * Removes all inputs that have an index in \p indices.
    *
-   * @param indices The indices of the arguments that should be removed.
-   * @param notifyRegion If true, the region is informed about the removal of an input.
-   * This should be false if the node has already notified the region about being removed,
-   * i.e., this function is being called from the node's destructor.
+   * @param indices The indices of the inputs that should be removed.
    *
    * @return The number of inputs that were removed. This might be less than the number of indices
    * as some provided input indices might not belong to an actual input.
    */
   size_t
-  RemoveInputs(const util::HashSet<size_t> & indices, bool notifyRegion);
+  RemoveInputs(const util::HashSet<size_t> & indices);
 
 protected:
   NodeOutput *

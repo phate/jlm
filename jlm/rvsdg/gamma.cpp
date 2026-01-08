@@ -431,7 +431,7 @@ GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryVars)
     [[maybe_unused]] const auto numRemovedArguments = subregion.RemoveArguments(indices);
     JLM_ASSERT(numRemovedArguments == indices.Size());
   }
-  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(indices, true);
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(indices);
   JLM_ASSERT(numRemovedInputs == indices.Size());
 }
 
