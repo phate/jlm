@@ -228,7 +228,7 @@ TEST(NodeTests, RemoveInputs)
   EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 0);
 
   // Remove all inputs that have an even index
-  size_t numRemovedInputs = node->RemoveInputs({ 0, 2, 4, 6, 8 }, true);
+  size_t numRemovedInputs = node->RemoveInputs({ 0, 2, 4, 6, 8 });
   EXPECT_EQ(numRemovedInputs, 5);
   EXPECT_EQ(node->ninputs(), 5);
   EXPECT_EQ(node->input(0)->origin(), i1);
@@ -245,19 +245,19 @@ TEST(NodeTests, RemoveInputs)
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no input
-  numRemovedInputs = node->RemoveInputs({}, true);
+  numRemovedInputs = node->RemoveInputs({});
   EXPECT_EQ(numRemovedInputs, 0);
   EXPECT_EQ(node->ninputs(), 5);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
-  numRemovedInputs = node->RemoveInputs({ 15 }, true);
+  numRemovedInputs = node->RemoveInputs({ 15 });
   EXPECT_EQ(numRemovedInputs, 0);
   EXPECT_EQ(node->ninputs(), 5);
   EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining inputs
-  numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 }, false);
+  numRemovedInputs = node->RemoveInputs({ 0, 1, 2, 3, 4 });
   EXPECT_EQ(numRemovedInputs, 5);
   EXPECT_EQ(node->ninputs(), 0);
   EXPECT_EQ(i1->nusers(), 0);
@@ -266,7 +266,9 @@ TEST(NodeTests, RemoveInputs)
   EXPECT_EQ(i7->nusers(), 0);
   EXPECT_EQ(i9->nusers(), 0);
   // We specified that the region is not notified about the input removal
-  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(
+      observer.destroyedInputIndices(),
+      std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
 
   // Check that node is a top node
   EXPECT_EQ(rvsdg.GetRootRegion().numTopNodes(), 1);

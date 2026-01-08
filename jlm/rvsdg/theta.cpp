@@ -92,7 +92,7 @@ ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopVars)
   [[maybe_unused]] const auto numRemovedOutputs = RemoveOutputs(outputIndices);
   JLM_ASSERT(numRemovedOutputs == outputIndices.Size());
 
-  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices);
   JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 }
 

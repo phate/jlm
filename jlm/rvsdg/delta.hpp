@@ -347,7 +347,7 @@ DeltaNode::RemoveDeltaInputsWhere(const F & match)
   [[maybe_unused]] const auto numRemoveArguments = subregion()->RemoveArguments(argumentIndices);
   JLM_ASSERT(numRemoveArguments == argumentIndices.Size());
 
-  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices, true);
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(inputIndices);
   JLM_ASSERT(numRemovedInputs == inputIndices.Size());
 
   return numRemovedInputs;
