@@ -750,7 +750,7 @@ convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, Context & c
 
   auto size = ConvertValue(i->getArgOperand(0), tacs, ctx);
 
-  tacs.push_back(MallocOperation::create(size));
+  tacs.push_back(MallocOperation::createTac(size));
   auto result = tacs.back()->result(0);
   auto mstate = tacs.back()->result(1);
 

@@ -487,7 +487,7 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
     auto size =
         cfg->entry()->append_argument(Argument::create("size", jlm::rvsdg::BitType::Create(64)));
 
-    bb->append_last(MallocOperation::create(size));
+    bb->append_last(MallocOperation::createTac(size));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));

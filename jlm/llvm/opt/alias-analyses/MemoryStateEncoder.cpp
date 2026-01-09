@@ -778,7 +778,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
   JLM_ASSERT(mallocMemoryNodes.Size() == 1);
   auto mallocMemoryNode = *mallocMemoryNodes.Items().begin();
 
-  auto & mallocNodeStateOutput = *mallocNode.output(1);
+  auto & mallocNodeStateOutput = MallocOperation::memoryStateOutput(mallocNode);
 
   // We use a static heap model. This means that multiple invocations of an malloc
   // at runtime can refer to the same abstract memory location. We therefore need to
