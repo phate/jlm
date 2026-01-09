@@ -1667,7 +1667,7 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
     }
   }
 }
-#if 0
+
 TEST(JlmToMlirToJlmTests, TestMalloc)
 {
   using namespace jlm::llvm;
@@ -1705,7 +1705,7 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
       auto mlirMallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&op);
       if (mlirMallocOp)
       {
-        auto inputBitType = mlirMallocOp.getOperand().getType().dyn_cast<mlir::IntegerType>();
+        auto inputBitType = mlirMallocOp.getOperand(0).getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(inputBitType, nullptr);
         EXPECT_EQ(inputBitType.getWidth(), 64);
         EXPECT_TRUE(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirMallocOp.getResult(0).getType()));
@@ -1746,4 +1746,3 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     }
   }
 }
-#endif
