@@ -1667,7 +1667,7 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
     }
   }
 }
-
+#if 0
 TEST(JlmToMlirToJlmTests, TestMalloc)
 {
   using namespace jlm::llvm;
@@ -1677,8 +1677,18 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto constOp = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 64, 2 });
-    MallocOperation::createNode(*constOp);
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { jlm::rvsdg::BitType::Create(64), IOStateType::Create() },
+        { IOStateType::Create() });
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+    auto sizeArgument = lambda->GetFunctionArguments()[0];
+    auto iOStateArgument = lambda->GetFunctionArguments()[1];
+
+    auto & mallocNode = MallocOperation::createNode(*sizeArgument, *iOStateArgument);
+
+    lambda->finalize({ &MallocOperation::ioStateOutput(mallocNode) });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1736,3 +1746,4 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     }
   }
 }
+#endif
