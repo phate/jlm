@@ -229,13 +229,11 @@ TEST(TypeConverterTests, LlvmStructTypeConversion)
   EXPECT_EQ(&structType1Jlm->GetDeclaration(), &structType5Jlm->GetDeclaration());
   EXPECT_NE(&structType2Jlm->GetDeclaration(), &structType3Jlm->GetDeclaration());
 
-  const auto declarations = typeConverter.ReleaseStructTypeDeclarations();
-  EXPECT_EQ(declarations.size(), 4u);
+  TypeConverter typeConverter2;
 
-  // We released all struct declarations. After that, translating the same type again should get
-  // us a new declarations.
+  // Using a different type converter, we get a different instance of StructType
   const auto structType6Jlm =
-      std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType1Llvm));
+      std::dynamic_pointer_cast<const StructType>(typeConverter2.ConvertLlvmType(*structType1Llvm));
 
   EXPECT_NE(&structType6Jlm->GetDeclaration(), &structType1Jlm->GetDeclaration());
 }
@@ -510,13 +508,14 @@ TEST(TypeConverterTests, JlmStructTypeConversion)
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
 
-  const auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
-  const auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });
-  const auto declaration3 = StructType::Declaration::Create({ bit32Type });
+  auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
+  auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });
+  auto declaration3 = StructType::Declaration::Create({ bit32Type });
 
-  const auto structType1Jlm = StructType::Create(*declaration1, false, false);
-  const auto structType2Jlm = StructType::Create(*declaration2, true, false);
-  const auto structType3Jlm = StructType::Create(std::string("myStruct"), *declaration3, true);
+  const auto structType1Jlm = StructType::CreateIdentified(std::move(declaration1), false);
+  const auto structType2Jlm = StructType::CreateIdentified(std::move(declaration2), false);
+  const auto structType3Jlm =
+      StructType::CreateIdentified(std::string("myStruct"), std::move(declaration3), true);
 
   // Act
   const auto structType1Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
@@ -530,6 +529,7 @@ TEST(TypeConverterTests, JlmStructTypeConversion)
   EXPECT_EQ(structType1Llvm->getStructNumElements(), 2u);
   EXPECT_EQ(structType1Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
   EXPECT_EQ(structType1Llvm->getStructElementType(1)->getTypeID(), llvm::Type::HalfTyID);
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType1Llvm)->isLiteral());
   EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType1Llvm)->isPacked());
 
   EXPECT_EQ(structType2Llvm->getTypeID(), llvm::Type::StructTyID);
@@ -537,23 +537,21 @@ TEST(TypeConverterTests, JlmStructTypeConversion)
   EXPECT_EQ(structType2Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
   EXPECT_EQ(structType2Llvm->getStructElementType(1)->getTypeID(), llvm::Type::IntegerTyID);
   EXPECT_EQ(structType2Llvm->getStructElementType(2)->getTypeID(), llvm::Type::IntegerTyID);
-  EXPECT_TRUE(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isPacked());
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isLiteral());
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isPacked());
 
   EXPECT_EQ(structType3Llvm->getTypeID(), llvm::Type::StructTyID);
   EXPECT_EQ(structType3Llvm->getStructNumElements(), 1u);
   EXPECT_EQ(structType3Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
   EXPECT_EQ(structType3Llvm->getStructName(), "myStruct");
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isLiteral());
   EXPECT_TRUE(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isPacked());
 
   EXPECT_EQ(structType4Llvm, structType1Llvm);
 
-  // The type converter created no jlm struct types. It is therefore not the owner of any
-  // declarations.
-  const auto declarations = typeConverter.ReleaseStructTypeDeclarations();
-  EXPECT_EQ(declarations.size(), 0u);
-
-  // Converting the same type again after the declaration release should give us a new Llvm type
-  const auto structType5Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
+  TypeConverter typeConverter2;
+  // Converting the same type with a new TypeConverter gives us a new Llvm type
+  const auto structType5Llvm = typeConverter2.ConvertJlmType(*structType1Jlm, context);
   EXPECT_NE(structType5Llvm, structType1Llvm);
 }
 

@@ -189,18 +189,19 @@ bool
 StructType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const StructType *>(&other);
-  return type && type->IsPacked_ == IsPacked_ && type->Name_ == Name_
-      && &type->Declaration_ == &Declaration_;
+  return type && type->isPacked_ == isPacked_ && type->isLiteral_ == isLiteral_
+      && type->name_ == name_ && &type->declaration_ == &declaration_;
 }
 
 std::size_t
 StructType::ComputeHash() const noexcept
 {
   auto typeHash = typeid(StructType).hash_code();
-  auto isPackedHash = std::hash<bool>()(IsPacked_);
-  auto nameHash = std::hash<std::string>()(Name_);
-  auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
-  return util::CombineHashes(typeHash, isPackedHash, nameHash, declarationHash);
+  auto isLiteralHash = std::hash<bool>()(isLiteral_);
+  auto isPackedHash = std::hash<bool>()(isPacked_);
+  auto nameHash = std::hash<std::string>()(name_);
+  auto declarationHash = std::hash<const StructType::Declaration *>()(declaration_.get());
+  return util::CombineHashes(typeHash, isLiteralHash, isPackedHash, nameHash, declarationHash);
 }
 
 rvsdg::TypeKind

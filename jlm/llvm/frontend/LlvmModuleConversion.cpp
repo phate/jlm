@@ -558,8 +558,6 @@ ConvertLlvmModule(::llvm::Module & m)
   declare_globals(m, ctx);
   convert_globals(m, ctx);
 
-  im->SetStructTypeDeclarations(ctx.GetTypeConverter().ReleaseStructTypeDeclarations());
-
   return im;
 }
 

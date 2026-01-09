@@ -1191,8 +1191,7 @@ ConvertInterProceduralGraphModule(
   auto rvsdgModule = RvsdgModule::Create(
       interProceduralGraphModule.source_filename(),
       interProceduralGraphModule.target_triple(),
-      interProceduralGraphModule.data_layout(),
-      std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
+      interProceduralGraphModule.data_layout());
   auto graph = &rvsdgModule->Rvsdg();
 
   RegionalizedVariableMap regionalizedVariableMap(

@@ -18,8 +18,8 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
   auto declaration2 =
       StructType::Declaration::Create({ arrayType, jlm::rvsdg::BitType::Create(32) });
 
-  auto structType1 = StructType::Create(*declaration1, false, false);
-  auto structType2 = StructType::Create("myStructType", *declaration2, false);
+  auto structType1 = StructType::CreateLiteral(std::move(declaration1), false);
+  auto structType2 = StructType::CreateIdentified("myStructType", std::move(declaration2), false);
 
   GetElementPtrOperation operation1(
       { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },

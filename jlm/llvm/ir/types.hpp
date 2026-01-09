@@ -187,23 +187,24 @@ public:
 
   ~StructType() override;
 
-  StructType(const Declaration & declaration, bool isPacked, bool isLiteral)
-      : rvsdg::Type(),
-        Declaration_(declaration),
-        IsPacked_(isPacked),
-        IsLiteral_(isLiteral)
-  {}
+private:
+  StructType(
+      std::string name,
+      std::unique_ptr<Declaration> declaration,
+      bool isPacked,
+      bool isLiteral)
+      : name_(std::move(name)),
+        declaration_(std::move(declaration)),
+        isPacked_(isPacked),
+        isLiteral_(isLiteral)
+  {
+    // Literal structs may not have names
+    if (isLiteral)
+      JLM_ASSERT(name.empty());
+  }
 
-  StructType(std::string name, const Declaration & declaration, bool isPacked)
-      : rvsdg::Type(),
-        Name_(std::move(name)),
-        Declaration_(declaration),
-        IsPacked_(isPacked),
-        IsLiteral_(false) // Named structs are never literal
-
-  {}
-
-  StructType(const StructType &) = default;
+public:
+  StructType(const StructType &) = delete;
 
   StructType(StructType &&) = delete;
 
@@ -225,36 +226,58 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
+  /**
+   * Checks if the struct is an identified struct that has a name.
+   * Will always return false for literal structs.
+   * @return true if the struct has a name, false otherwise.
+   */
   [[nodiscard]] bool
   HasName() const noexcept
   {
-    JLM_ASSERT(!(IsLiteral_ == true && Name_.empty() == false));
-    return !Name_.empty();
+    if (isLiteral_)
+      JLM_ASSERT(name_.empty());
+    return !name_.empty();
   }
 
+  /**
+   * Returns the name of the identified struct.
+   * If the struct has no name, an empty string is returned.
+   * Must not be called on literal structs.
+   * @pre the struct is an identified struct.
+   * @return the name of the struct, or an empty string.
+   */
   [[nodiscard]] const std::string &
   GetName() const noexcept
   {
-    JLM_ASSERT(IsLiteral_ == false);
-    return Name_;
+    JLM_ASSERT(!isLiteral_);
+    return name_;
   }
 
   [[nodiscard]] bool
   IsPacked() const noexcept
   {
-    return IsPacked_;
+    return isPacked_;
   }
 
+  /**
+   * Struct types can either be literal or identified.
+   * Literal structs are defined only through their fields, and can not have names.
+   * @return true if this struct type is literal, false if it is identified.
+   */
   [[nodiscard]] bool
   IsLiteral() const noexcept
   {
-    return IsLiteral_;
+    return isLiteral_;
   }
 
+  /**
+   * Gets the struct's declaration, which is the list of fields in the struct.
+   * @return the struct's declaration
+   */
   [[nodiscard]] const Declaration &
   GetDeclaration() const noexcept
   {
-    return Declaration_;
+    return *declaration_;
   }
 
   /**
@@ -267,23 +290,50 @@ public:
   [[nodiscard]] size_t
   GetFieldOffset(size_t fieldIndex) const;
 
+  /**
+   * Creates an identified struct, with a name. The name should be unique to this struct.
+   * @param name the name of the struct, or an empty string if the struct is unnamed.
+   * @param declaration the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
   static std::shared_ptr<const StructType>
-  Create(const std::string & name, const Declaration & declaration, bool isPacked)
+  CreateIdentified(std::string name, std::unique_ptr<Declaration> declaration, bool isPacked)
   {
-    return std::make_shared<StructType>(name, declaration, isPacked);
+    return std::shared_ptr<StructType>(
+        new StructType(std::move(name), std::move(declaration), isPacked, false));
   }
 
+  /**
+   * Creates an identified struct, without a name.
+   * @param declaration the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
   static std::shared_ptr<const StructType>
-  Create(const Declaration & declaration, bool isPacked, bool isLiteral)
+  CreateIdentified(std::unique_ptr<Declaration> declaration, bool isPacked)
   {
-    return std::make_shared<StructType>(declaration, isPacked, isLiteral);
+    return CreateIdentified("", std::move(declaration), isPacked);
+  }
+
+  /**
+   * Creates a literal struct, which is anonymous and only identified through its fields.
+   * @param declaration the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
+  static std::shared_ptr<const StructType>
+  CreateLiteral(std::unique_ptr<Declaration> declaration, bool isPacked)
+  {
+    // Literal structs don't have names, so always use the empty string
+    return std::shared_ptr<StructType>(new StructType("", std::move(declaration), isPacked, true));
   }
 
 private:
-  std::string Name_;
-  const Declaration & Declaration_;
-  bool IsPacked_;
-  bool IsLiteral_;
+  std::string name_;
+  std::unique_ptr<Declaration> declaration_;
+  bool isPacked_;
+  bool isLiteral_;
 };
 
 class StructType::Declaration final
@@ -326,6 +376,12 @@ public:
   Append(std::shared_ptr<const Type> type)
   {
     Types_.push_back(std::move(type));
+  }
+
+  std::unique_ptr<Declaration>
+  copy() const
+  {
+    return std::make_unique<Declaration>(*this);
   }
 
   static std::unique_ptr<Declaration>
