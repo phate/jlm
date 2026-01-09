@@ -477,7 +477,7 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
 
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
-    auto im = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
+    auto im = InterProceduralGraphModule::Create(jlm::util::FilePath(""), "", "");
 
     auto cfg = ControlFlowGraph::create(*im);
     auto bb = BasicBlock::create(*cfg);
@@ -533,7 +533,7 @@ TEST(IpGraphToLlvmConverterTests, Free)
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
 
-    auto ipgmod = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
+    auto ipgmod = InterProceduralGraphModule::Create(jlm::util::FilePath(""), "", "");
 
     auto ft = jlm::rvsdg::FunctionType::Create(
         { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },

@@ -222,14 +222,13 @@ CalculateIntraTypeGepOffset(
   }
   if (auto strct = dynamic_cast<const StructType *>(&type))
   {
-    if (*indexingValue < 0
-        || static_cast<size_t>(*indexingValue) >= strct->GetDeclaration().NumElements())
+    if (*indexingValue < 0 || static_cast<size_t>(*indexingValue) >= strct->numElements())
       throw std::logic_error("Struct type has fewer fields than requested by GEP");
 
-    const auto & fieldType = strct->GetDeclaration().GetElement(*indexingValue);
+    const auto & fieldType = strct->getElementType(*indexingValue);
     int64_t offset = strct->GetFieldOffset(*indexingValue);
 
-    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, fieldType);
+    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *fieldType);
     if (subOffset.has_value())
       return offset + *subOffset;
 

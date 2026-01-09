@@ -61,19 +61,10 @@ public:
   InterProceduralGraphModule(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
-      const std::string & data_layout,
-      std::vector<std::unique_ptr<StructType::Declaration>> declarations) noexcept
+      const std::string & data_layout) noexcept
       : data_layout_(data_layout),
         target_triple_(target_triple),
-        source_filename_(source_filename),
-        StructTypeDeclarations_(std::move(declarations))
-  {}
-
-  InterProceduralGraphModule(
-      const jlm::util::FilePath & source_filename,
-      const std::string & target_triple,
-      const std::string & data_layout) noexcept
-      : InterProceduralGraphModule(source_filename, target_triple, data_layout, {})
+        source_filename_(source_filename)
   {}
 
   InterProceduralGraph &
@@ -167,50 +158,13 @@ public:
     return data_layout_;
   }
 
-  /**
-   * Adds struct type declarations to the module. The module becomes the ownwer of the declarations.
-   *
-   * @param declarations The declarations added to the module
-   */
-  void
-  SetStructTypeDeclarations(std::vector<std::unique_ptr<StructType::Declaration>> && declarations)
-  {
-    StructTypeDeclarations_ = std::move(declarations);
-  }
-
-  /**
-   * Releases all struct type declarations from the module to the caller. The caller is the new
-   * owner of the declarations.
-   *
-   * @return A vector of declarations.
-   */
-  std::vector<std::unique_ptr<StructType::Declaration>> &&
-  ReleaseStructTypeDeclarations()
-  {
-    return std::move(StructTypeDeclarations_);
-  }
-
   static std::unique_ptr<InterProceduralGraphModule>
   Create(
       const jlm::util::FilePath & sourceFilename,
       const std::string & targetTriple,
-      const std::string & dataLayout,
-      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
+      const std::string & dataLayout)
   {
-    return std::make_unique<InterProceduralGraphModule>(
-        sourceFilename,
-        targetTriple,
-        dataLayout,
-        std::move(declarations));
-  }
-
-  static std::unique_ptr<InterProceduralGraphModule>
-  create(
-      const jlm::util::FilePath & source_filename,
-      const std::string & target_triple,
-      const std::string & data_layout)
-  {
-    return Create(source_filename, target_triple, data_layout, {});
+    return std::make_unique<InterProceduralGraphModule>(sourceFilename, targetTriple, dataLayout);
   }
 
 private:
@@ -221,7 +175,6 @@ private:
   std::unordered_set<const GlobalValue *> globals_;
   std::unordered_set<std::unique_ptr<llvm::Variable>> variables_;
   std::unordered_map<const InterProceduralGraphNode *, const llvm::Variable *> functions_;
-  std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 static inline size_t

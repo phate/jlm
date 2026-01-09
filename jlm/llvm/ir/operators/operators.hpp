@@ -1580,8 +1580,8 @@ private:
   create_srctypes(const StructType & type)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
-    for (size_t n = 0; n < type.GetDeclaration().NumElements(); n++)
-      types.push_back(type.GetDeclaration().GetElementType(n));
+    for (size_t n = 0; n < type.numElements(); n++)
+      types.push_back(type.getElementType(n));
 
     return types;
   }
@@ -2372,10 +2372,10 @@ private:
     {
       if (auto st = std::dynamic_pointer_cast<const StructType>(type))
       {
-        if (index >= st->GetDeclaration().NumElements())
+        if (index >= st->numElements())
           throw util::Error("extractvalue index out of bound.");
 
-        type = st->GetDeclaration().GetElementType(index);
+        type = st->getElementType(index);
       }
       else if (auto at = std::dynamic_pointer_cast<const ArrayType>(type))
       {

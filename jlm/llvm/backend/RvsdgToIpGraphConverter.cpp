@@ -613,8 +613,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   auto ipGraphModule = InterProceduralGraphModule::Create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
-      rvsdgModule.DataLayout(),
-      std::move(rvsdgModule.ReleaseStructTypeDeclarations()));
+      rvsdgModule.DataLayout());
 
   Context_ = Context::Create(*ipGraphModule);
   ConvertImports(rvsdgModule.Rvsdg());

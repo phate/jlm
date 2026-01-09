@@ -37,10 +37,9 @@ LlvmDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node
   }
   else if (auto structType = dynamic_cast<const StructType *>(&type))
   {
-    auto & structDeclaration = structType->GetDeclaration();
-    for (size_t n = 0; n < structDeclaration.NumElements(); n++)
+    for (size_t n = 0; n < structType->numElements(); n++)
     {
-      auto & elementTypeNode = GetOrCreateTypeGraphNode(structDeclaration.GetElement(n), typeGraph);
+      auto & elementTypeNode = GetOrCreateTypeGraphNode(*structType->getElementType(n), typeGraph);
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }

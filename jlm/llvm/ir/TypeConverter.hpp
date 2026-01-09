@@ -9,8 +9,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <vector>
-
 namespace llvm
 {
 class ArrayType;
@@ -81,25 +79,11 @@ public:
   std::shared_ptr<const rvsdg::Type>
   ConvertLlvmType(::llvm::Type & type);
 
-  /**
-   * Releases all struct type declarations from the type converter and clears the mapping between
-   * Jlm struct type declarations and Llvm struct types. The caller is the new owner of the
-   * declarations.
-   *
-   * @return A vector of declarations.
-   */
-  std::vector<std::unique_ptr<StructType::Declaration>> &&
-  ReleaseStructTypeDeclarations();
-
 private:
   static ::llvm::Type *
   ConvertFloatingPointType(const FloatingPointType & type, ::llvm::LLVMContext & context);
 
-  const StructType::Declaration &
-  GetOrCreateStructDeclaration(::llvm::StructType & structType);
-
-  std::vector<std::unique_ptr<StructType::Declaration>> Declarations_;
-  util::BijectiveMap<::llvm::StructType *, const StructType::Declaration *> StructTypeMap_;
+  util::BijectiveMap<::llvm::StructType *, std::shared_ptr<const StructType>> StructTypeMap_;
 };
 
 }

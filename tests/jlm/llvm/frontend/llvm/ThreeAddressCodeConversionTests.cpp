@@ -57,7 +57,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
-  auto ipgModule = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
+  auto ipgModule = InterProceduralGraphModule::Create(jlm::util::FilePath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operandTypes;
