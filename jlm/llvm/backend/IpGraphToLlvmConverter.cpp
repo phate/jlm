@@ -932,7 +932,7 @@ IpGraphToLlvmConverter::convert(
   auto & typeConverter = Context_->GetTypeConverter();
   auto & lm = Context_->llvm_module();
 
-  auto fcttype = typeConverter.ConvertFunctionType(op.fcttype(), lm.getContext());
+  auto fcttype = typeConverter.ConvertFunctionType(op.getFunctionType(), lm.getContext());
   auto function = lm.getOrInsertFunction("malloc", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, Context_->value(args[0]));
   return builder.CreateCall(function, operands);

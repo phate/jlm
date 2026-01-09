@@ -672,15 +672,14 @@ CallTest2::SetupRvsdg()
     auto four = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = MallocOperation::create(prod);
-    auto cast = BitCastOperation::create(alloc[0], pt32);
+    auto & mallocNode = MallocOperation::createNode(*prod);
+    auto cast = BitCastOperation::create(&MallocOperation::addressOutput(mallocNode), pt32);
     auto mx = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
+        std::vector({ &MallocOperation::memoryStateOutput(mallocNode), memoryStateArgument }));
 
     lambda->finalize({ cast, iOStateArgument, mx });
 
-    auto mallocNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*alloc[0]);
-    return std::make_tuple(lambda, mallocNode);
+    return std::make_tuple(lambda, &mallocNode);
   };
 
   auto SetupDestroy = [&]()
@@ -2945,17 +2944,16 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto mallocResults = MallocOperation::create(eight);
+    auto & mallocNode = MallocOperation::createNode(*eight);
     auto mergeResults = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
+        std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
-    auto lambdaOutput = lambda->finalize({ mallocResults[0], iOStateArgument, mergeResults });
+    auto lambdaOutput = lambda->finalize(
+        { &MallocOperation::addressOutput(mallocNode), iOStateArgument, mergeResults });
 
     GraphExport::Create(*lambdaOutput, "ReturnAddress");
 
-    return std::make_tuple(
-        lambdaOutput,
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocResults[0]));
+    return std::make_tuple(lambdaOutput, &mallocNode);
   };
 
   auto SetupCallExternalFunction1 = [&](jlm::rvsdg::RegionArgument * externalFunction1Argument)
@@ -2979,23 +2977,20 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto mallocResults = MallocOperation::create(eight);
+    auto & mallocNode = MallocOperation::createNode(*eight);
     auto mergeResult = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
+        std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
     auto & call = CallOperation::CreateNode(
         externalFunction1,
         externalFunction1Type,
-        { mallocResults[0], iOStateArgument, mergeResult });
+        { &MallocOperation::addressOutput(mallocNode), iOStateArgument, mergeResult });
 
     auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "CallExternalFunction1");
 
-    return std::make_tuple(
-        lambdaOutput,
-        &call,
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocResults[0]));
+    return std::make_tuple(lambdaOutput, &call, &mallocNode);
   };
 
   auto SetupCallExternalFunction2 = [&](jlm::rvsdg::RegionArgument * externalFunction2Argument)
@@ -3637,16 +3632,15 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 4 });
-  auto mallocOutputs = MallocOperation::create(mallocSize);
-  Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocOutputs[0]);
+  Malloc_ = &MallocOperation::createNode(*mallocSize);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
-      std::vector<jlm::rvsdg::Output *>{ afterAllocaMemoryState, mallocOutputs[1] });
+      std::vector{ afterAllocaMemoryState, &MallocOperation::memoryStateOutput(*Malloc_) });
 
   // Store the result of malloc into the alloca'd memory
   auto storeAllocaOutputs = StoreNonVolatileOperation::Create(
       allocaOutputs[0],
-      mallocOutputs[0],
+      &MallocOperation::addressOutput(*Malloc_),
       { afterMallocMemoryState },
       8);
 

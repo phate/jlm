@@ -171,7 +171,7 @@ PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool exter
   const auto tryGetMemorySize = [](const rvsdg::Node & mallocNode) -> std::optional<size_t>
   {
     // If the size parameter of the malloc node is a constant, that is our size
-    auto size = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+    auto size = tryGetConstantSignedInteger(*MallocOperation::sizeInput(mallocNode).origin());
 
     // Only return the size if it is a positive integer, to avoid unsigned underflow
     if (size.has_value() && *size >= 0)

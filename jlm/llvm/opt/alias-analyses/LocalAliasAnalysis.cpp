@@ -487,7 +487,8 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = tryGetConstantSignedInteger(*node->input(0)->origin());
+    const auto mallocSize =
+        tryGetConstantSignedInteger(*MallocOperation::sizeInput(*node).origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }

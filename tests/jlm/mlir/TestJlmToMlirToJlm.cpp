@@ -1678,7 +1678,7 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
 
   {
     auto constOp = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 64, 2 });
-    MallocOperation::create(constOp);
+    MallocOperation::createNode(*constOp);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

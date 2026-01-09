@@ -65,7 +65,7 @@ private:
         auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
         auto ptgMallocNode = pointsToGraph_->addNodeForMalloc(*simpleNode, true);
         auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
-        pointsToGraph_->mapRegisterToNode(*node.output(0), ptgRegisterNode);
+        pointsToGraph_->mapRegisterToNode(MallocOperation::addressOutput(node), ptgRegisterNode);
         pointsToGraph_->addTarget(ptgRegisterNode, ptgMallocNode);
       }
       else if (auto deltaNode = dynamic_cast<const jlm::rvsdg::DeltaNode *>(&node))
