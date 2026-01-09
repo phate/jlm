@@ -156,7 +156,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       The unroll factor is greater than or equal the number of iterations.
       The loop should be fully unrolled and the theta removed.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0u);
   }
 
   {
@@ -174,7 +174,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       The unroll factor is a multiple of the number of iterations.
       We should only find one (unrolled) theta.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -193,7 +193,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       and we have one remaining iteration. We should find only the
       unrolled theta and the body of the old theta as epilogue.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -212,7 +212,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       and we have four remaining iterations. We should find two thetas:
       one unrolled theta and one theta for the residual iterations.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 2);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 2u);
   }
 }
 
@@ -347,7 +347,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
   /*
     The outher theta should contain two inner thetas
   */
-  EXPECT_EQ(nthetas(otheta->subregion()), 2);
+  EXPECT_EQ(nthetas(otheta->subregion()), 2u);
   /*
     The outer theta should not be unrolled and since the
     original graph contains 7 nodes and the unroll factor
@@ -356,7 +356,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
     unroll algorithm would hoist code from the inner
     thetas.
   */
-  EXPECT_LE(otheta->subregion()->numNodes(), 20);
+  EXPECT_LE(otheta->subregion()->numNodes(), 20u);
   /*
     The inner theta should not be unrolled and since the
     original graph contains 5 nodes and the unroll factor
@@ -365,7 +365,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
     unroll algorithm would hoist code from the inner
     thetas.
   */
-  EXPECT_LE(inner_theta->subregion()->numNodes(), 15);
+  EXPECT_LE(inner_theta->subregion()->numNodes(), 15u);
   /*
     The innermost theta should be unrolled and since the
     original graph contains 3 nodes and the unroll factor
@@ -375,8 +375,8 @@ TEST(LoopUnrollingTests, test_nested_theta)
     thetas.
   */
   auto thetas = find_thetas(inner_theta->subregion());
-  EXPECT_EQ(thetas.size(), 1);
-  EXPECT_GE(thetas[0]->subregion()->numNodes(), 7);
+  EXPECT_EQ(thetas.size(), 1u);
+  EXPECT_GE(thetas[0]->subregion()->numNodes(), 7u);
   /*
     The second inner theta should be unrolled and since
     the original graph contains 3 nodes and the unroll
@@ -386,8 +386,8 @@ TEST(LoopUnrollingTests, test_nested_theta)
     innner thetas.
   */
   thetas = find_thetas(otheta->subregion());
-  EXPECT_EQ(thetas.size(), 2);
-  EXPECT_GE(thetas[1]->subregion()->numNodes(), 7);
+  EXPECT_EQ(thetas.size(), 2u);
+  EXPECT_GE(thetas[1]->subregion()->numNodes(), 7u);
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::unroll(otheta, 4);
   //	jlm::rvsdg::view(graph, stdout);
@@ -396,6 +396,6 @@ TEST(LoopUnrollingTests, test_nested_theta)
     now contain 8 thetas.
   */
   thetas = find_thetas(&graph.GetRootRegion());
-  EXPECT_EQ(thetas.size(), 3);
-  EXPECT_EQ(nthetas(thetas[0]->subregion()), 8);
+  EXPECT_EQ(thetas.size(), 3u);
+  EXPECT_EQ(nthetas(thetas[0]->subregion()), 8u);
 }

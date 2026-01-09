@@ -67,7 +67,7 @@ TEST(GraphWriterTests, TestGraphElement)
   EXPECT_FALSE(graph.IsFinalized());
   graph.Finalize();
   EXPECT_TRUE(graph.IsFinalized());
-  EXPECT_EQ(graph.GetUniqueIdSuffix(), 0);
+  EXPECT_EQ(graph.GetUniqueIdSuffix(), 0u);
   EXPECT_EQ(graph.GetFullId(), "graph0");
 
   // Attribute printing
@@ -156,8 +156,8 @@ TEST(GraphWriterTests, TestInOutNode)
   auto & graph = writer.CreateGraph();
 
   auto & node = graph.CreateInOutNode(2, 3);
-  EXPECT_EQ(node.NumInputPorts(), 2);
-  EXPECT_EQ(node.NumOutputPorts(), 3);
+  EXPECT_EQ(node.NumInputPorts(), 2u);
+  EXPECT_EQ(node.NumOutputPorts(), 3u);
 
   node.SetLabel("My\nInOutNode");
 
@@ -165,7 +165,7 @@ TEST(GraphWriterTests, TestInOutNode)
 
   // Also test subgraphs, and connecting argument nodes and result nodes to outside ports
   auto & subgraph = node.CreateSubgraph();
-  EXPECT_EQ(node.NumSubgraphs(), 1);
+  EXPECT_EQ(node.NumSubgraphs(), 1u);
   EXPECT_EQ(&node.GetSubgraph(0), &subgraph);
   auto & argumentNode = subgraph.CreateArgumentNode();
   argumentNode.SetLabel("CTX");
@@ -220,7 +220,7 @@ TEST(GraphWriterTests, TestEdge)
   EXPECT_EQ(&edge0.GetOtherEnd(node0), &node1);
   EXPECT_EQ(&edge0.GetOtherEnd(node1), &node0);
 
-  EXPECT_EQ(graph.NumEdges(), 2);
+  EXPECT_EQ(graph.NumEdges(), 2u);
   EXPECT_EQ(&graph.GetEdge(0), &edge0);
 
   EXPECT_EQ(graph.GetEdgeBetween(node0, node1), &edge0);
@@ -266,26 +266,26 @@ TEST(GraphWriterTests, TestGraphCreateNodes)
   auto & graph = writer.CreateGraph();
 
   // Test node creation and count
-  EXPECT_EQ(graph.NumNodes(), 0);
+  EXPECT_EQ(graph.NumNodes(), 0u);
   auto & node = graph.CreateNode();
-  EXPECT_EQ(graph.NumNodes(), 1);
+  EXPECT_EQ(graph.NumNodes(), 1u);
   EXPECT_EQ(&graph.GetNode(0), &node);
 
   // Test InOutNode creation and count
   auto & inOutNode = graph.CreateInOutNode(1, 1);
-  EXPECT_EQ(graph.NumNodes(), 2);
+  EXPECT_EQ(graph.NumNodes(), 2u);
   EXPECT_EQ(&graph.GetNode(1), &inOutNode);
 
   // Test argument node creation and count
-  EXPECT_EQ(graph.NumArgumentNodes(), 0);
+  EXPECT_EQ(graph.NumArgumentNodes(), 0u);
   auto & argumentNode = graph.CreateArgumentNode();
-  EXPECT_EQ(graph.NumArgumentNodes(), 1);
+  EXPECT_EQ(graph.NumArgumentNodes(), 1u);
   EXPECT_EQ(&graph.GetArgumentNode(0), &argumentNode);
 
   // Test result node creation and count
-  EXPECT_EQ(graph.NumResultNodes(), 0);
+  EXPECT_EQ(graph.NumResultNodes(), 0u);
   auto & resultNode = graph.CreateResultNode();
-  EXPECT_EQ(graph.NumResultNodes(), 1);
+  EXPECT_EQ(graph.NumResultNodes(), 1u);
   EXPECT_EQ(&graph.GetResultNode(0), &resultNode);
 
   // Test finalizing reaching every node
@@ -338,7 +338,7 @@ TEST(GraphWriterTests, TestGraphWriterClass)
 
   auto & graph0 = writer.CreateGraph();
   auto & graph1 = writer.CreateGraph();
-  EXPECT_EQ(writer.NumGraphs(), 2);
+  EXPECT_EQ(writer.NumGraphs(), 2u);
   EXPECT_EQ(&writer.GetGraph(0), &graph0);
 
   auto & node0 = graph0.CreateNode();

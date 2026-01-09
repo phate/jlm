@@ -58,11 +58,11 @@ TEST(StatisticsTests, TestStatisticsMeasurements)
   EXPECT_TRUE(statistics.HasTimer("Timer"));
   EXPECT_FALSE(statistics.HasTimer("SpinLockTimer"));
 
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("count"), 10);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("count"), 10u);
   EXPECT_EQ(statistics.GetMeasurementValue<double>("weight"), 6.0);
   EXPECT_EQ(statistics.GetMeasurementValue<int64_t>("bankAccount"), -400);
   EXPECT_EQ(statistics.GetMeasurementValue<std::string>("state"), "poor");
-  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("Timer"), 0);
+  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("Timer"), 0u);
 
   // Ensure order is preserved
   auto measurements = statistics.GetMeasurements();

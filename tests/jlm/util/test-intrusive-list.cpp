@@ -70,7 +70,7 @@ TEST(IntrusiveListTests, test_simple_list)
   my_list l2;
   l2.splice(l2.begin(), l);
   EXPECT_TRUE(l.empty());
-  EXPECT_EQ(l2.size(), 2);
+  EXPECT_EQ(l2.size(), 2u);
 }
 
 TEST(IntrusiveListTests, test_owner_list)
@@ -129,8 +129,8 @@ TEST(IntrusiveListTests, test_owner_list)
 
     my_owner_list l2;
     l2.splice(l2.begin(), l);
-    EXPECT_EQ(l.size(), 0);
-    EXPECT_EQ(l2.size(), 1);
+    EXPECT_EQ(l.size(), 0u);
+    EXPECT_EQ(l2.size(), 1u);
   }
   EXPECT_EQ(v3, 0);
 }

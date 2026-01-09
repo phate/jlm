@@ -778,7 +778,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
   JLM_ASSERT(mallocMemoryNodes.Size() == 1);
   auto mallocMemoryNode = *mallocMemoryNodes.Items().begin();
 
-  auto & mallocNodeStateOutput = *mallocNode.output(1);
+  auto & mallocNodeStateOutput = MallocOperation::memoryStateOutput(mallocNode);
 
   // We use a static heap model. This means that multiple invocations of an malloc
   // at runtime can refer to the same abstract memory location. We therefore need to
@@ -917,8 +917,6 @@ void
 MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
-  JLM_ASSERT(memoryStateArgument.nusers() == 1);
-  auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
   Context_->GetInterProceduralRegionCounter().CountEntity(
@@ -929,8 +927,9 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   stateMap.PushRegion(*lambdaNode.subregion());
-  const auto states = rvsdg::outputs(
-      &LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds));
+  auto & lambdaEntrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
+  const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
@@ -953,7 +952,12 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
     // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
     // should now consume a1.
     auto state = MemoryStateMergeOperation::Create(states);
-    memoryStateArgumentUser.divert_to(state);
+    memoryStateArgument.divertUsersWhere(
+        *state,
+        [&lambdaEntrySplitNode](const rvsdg::Input & user)
+        {
+          return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &lambdaEntrySplitNode;
+        });
   }
 }
 

@@ -83,7 +83,7 @@ TEST(MemCpyTests, MemCpyConversion)
       }
     }
 
-    EXPECT_EQ(numMemCpyThreeAddressCodes, 1);
-    EXPECT_EQ(numMemCpyVolatileThreeAddressCodes, 2);
+    EXPECT_EQ(numMemCpyThreeAddressCodes, 1u);
+    EXPECT_EQ(numMemCpyVolatileThreeAddressCodes, 2u);
   }
 }

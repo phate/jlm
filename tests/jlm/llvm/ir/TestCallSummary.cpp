@@ -183,20 +183,20 @@ TEST(CallSummaryTests, TestCallSummaryComputationDirectCalls)
 
   // Assert
   EXPECT_TRUE(lambdaXCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaXCallSummary.NumDirectCalls(), 2);
+  EXPECT_EQ(lambdaXCallSummary.NumDirectCalls(), 2u);
   EXPECT_FALSE(lambdaXCallSummary.IsDead());
   EXPECT_FALSE(lambdaXCallSummary.IsExported());
   EXPECT_FALSE(lambdaXCallSummary.IsOnlyExported());
 
   EXPECT_FALSE(lambdaYCallSummary.IsDead());
   EXPECT_FALSE(lambdaYCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaYCallSummary.NumDirectCalls(), 1);
+  EXPECT_EQ(lambdaYCallSummary.NumDirectCalls(), 1u);
   EXPECT_TRUE(lambdaYCallSummary.IsExported());
   EXPECT_FALSE(lambdaYCallSummary.IsOnlyExported());
 
   EXPECT_FALSE(lambdaZCallSummary.IsDead());
   EXPECT_FALSE(lambdaZCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaZCallSummary.NumDirectCalls(), 0);
+  EXPECT_EQ(lambdaZCallSummary.NumDirectCalls(), 0u);
   EXPECT_TRUE(lambdaZCallSummary.IsExported());
   EXPECT_TRUE(lambdaZCallSummary.IsOnlyExported());
 }
@@ -217,32 +217,32 @@ TEST(CallSummaryTests, TestCallSummaryComputationIndirectCalls)
 
   // Assert
   EXPECT_FALSE(lambdaThreeCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaThreeCallSummary.NumDirectCalls(), 0);
+  EXPECT_EQ(lambdaThreeCallSummary.NumDirectCalls(), 0u);
   EXPECT_FALSE(lambdaThreeCallSummary.IsDead());
   EXPECT_FALSE(lambdaThreeCallSummary.IsExported());
   EXPECT_FALSE(lambdaThreeCallSummary.IsOnlyExported());
-  EXPECT_EQ(lambdaThreeCallSummary.NumOtherUsers(), 1);
+  EXPECT_EQ(lambdaThreeCallSummary.NumOtherUsers(), 1u);
 
   EXPECT_FALSE(lambdaFourCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaFourCallSummary.NumDirectCalls(), 0);
+  EXPECT_EQ(lambdaFourCallSummary.NumDirectCalls(), 0u);
   EXPECT_FALSE(lambdaFourCallSummary.IsDead());
   EXPECT_FALSE(lambdaFourCallSummary.IsExported());
   EXPECT_FALSE(lambdaFourCallSummary.IsOnlyExported());
-  EXPECT_EQ(lambdaFourCallSummary.NumOtherUsers(), 1);
+  EXPECT_EQ(lambdaFourCallSummary.NumOtherUsers(), 1u);
 
   EXPECT_TRUE(lambdaIndcallCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaIndcallCallSummary.NumDirectCalls(), 2);
+  EXPECT_EQ(lambdaIndcallCallSummary.NumDirectCalls(), 2u);
   EXPECT_FALSE(lambdaIndcallCallSummary.IsDead());
   EXPECT_FALSE(lambdaIndcallCallSummary.IsExported());
   EXPECT_FALSE(lambdaIndcallCallSummary.IsOnlyExported());
-  EXPECT_EQ(lambdaIndcallCallSummary.NumOtherUsers(), 0);
+  EXPECT_EQ(lambdaIndcallCallSummary.NumOtherUsers(), 0u);
 
   EXPECT_FALSE(lambdaTestCallSummary.HasOnlyDirectCalls());
-  EXPECT_EQ(lambdaTestCallSummary.NumDirectCalls(), 0);
+  EXPECT_EQ(lambdaTestCallSummary.NumDirectCalls(), 0u);
   EXPECT_FALSE(lambdaTestCallSummary.IsDead());
   EXPECT_TRUE(lambdaTestCallSummary.IsExported());
   EXPECT_TRUE(lambdaTestCallSummary.IsOnlyExported());
-  EXPECT_EQ(lambdaTestCallSummary.NumOtherUsers(), 0);
+  EXPECT_EQ(lambdaTestCallSummary.NumOtherUsers(), 0u);
 }
 
 TEST(CallSummaryTests, TestCallSummaryComputationFunctionPointerInDelta)
@@ -273,7 +273,7 @@ TEST(CallSummaryTests, TestCallSummaryComputationFunctionPointerInDelta)
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
 
   // Assert
-  EXPECT_EQ(callSummary.NumOtherUsers(), 1);
+  EXPECT_EQ(callSummary.NumOtherUsers(), 1u);
   EXPECT_TRUE(callSummary.HasOnlyOtherUsages());
 }
 
@@ -309,6 +309,6 @@ TEST(CallSummaryTests, TestCallSummaryComputationLambdaResult)
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNodeG);
 
   // Assert
-  EXPECT_EQ(callSummary.NumOtherUsers(), 1);
+  EXPECT_EQ(callSummary.NumOtherUsers(), 1u);
   EXPECT_TRUE(callSummary.HasOnlyOtherUsages());
 }

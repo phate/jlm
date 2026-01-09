@@ -28,5 +28,5 @@ TEST(ControLFlowGraphTests, test_remove_node)
   cfg.remove_node(bb0);
 
   // Assert
-  EXPECT_EQ(cfg.nnodes(), 0);
+  EXPECT_EQ(cfg.nnodes(), 0u);
 }

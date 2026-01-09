@@ -54,10 +54,10 @@ TEST(ViewTests, GammaWithMatch)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  EXPECT_EQ(cfg->nnodes(), 4);
+  EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
 TEST(ViewTests, GammaWithoutMatch)
@@ -96,10 +96,10 @@ TEST(ViewTests, GammaWithoutMatch)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  EXPECT_EQ(cfg->nnodes(), 4);
+  EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
 TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
@@ -144,7 +144,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  EXPECT_EQ(ipGraph.nnodes(), 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1u);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   EXPECT_TRUE(is_closed(*controlFlowGraph));
@@ -199,7 +199,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregions)
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  EXPECT_EQ(ipGraph.nnodes(), 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1u);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   EXPECT_TRUE(is_closed(*controlFlowGraph));
@@ -245,7 +245,7 @@ TEST(ViewTests, EmptyGammaWithThreeSubregions)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   EXPECT_TRUE(is_closed(*cfg));
@@ -291,7 +291,7 @@ TEST(ViewTests, PartialEmptyGamma)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
@@ -355,5 +355,5 @@ TEST(ViewTests, RecursiveData)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 3);
+  EXPECT_EQ(ipg.nnodes(), 3u);
 }

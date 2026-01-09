@@ -30,7 +30,7 @@ TEST(LambdaTests, TestArgumentIterators)
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 
-    EXPECT_EQ(functionArguments.size(), 1);
+    EXPECT_EQ(functionArguments.size(), 1u);
     EXPECT_EQ(functionArguments[0], lambda->GetFunctionArguments()[0]);
   }
 
@@ -65,7 +65,7 @@ TEST(LambdaTests, TestArgumentIterators)
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 
-    EXPECT_EQ(functionArguments.size(), 3);
+    EXPECT_EQ(functionArguments.size(), 3u);
     EXPECT_EQ(functionArguments[0], lambda->GetFunctionArguments()[0]);
     EXPECT_EQ(functionArguments[1], lambda->GetFunctionArguments()[1]);
     EXPECT_EQ(functionArguments[2], lambda->GetFunctionArguments()[2]);
@@ -131,9 +131,9 @@ TEST(LambdaTests, TestRemoveLambdaInputsWhere)
       {
         return input.index() == lambdaBinder1.input->index();
       });
-  EXPECT_EQ(numRemovedInputs, 0);
-  EXPECT_EQ(lambdaNode->ninputs(), 3);
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 3);
+  EXPECT_EQ(numRemovedInputs, 0u);
+  EXPECT_EQ(lambdaNode->ninputs(), 3u);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 3u);
 
   // Remove lambdaInput2
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
@@ -141,9 +141,9 @@ TEST(LambdaTests, TestRemoveLambdaInputsWhere)
       {
         return input.index() == 2;
       });
-  EXPECT_EQ(numRemovedInputs, 1);
-  EXPECT_EQ(lambdaNode->ninputs(), 2);
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 2);
+  EXPECT_EQ(numRemovedInputs, 1u);
+  EXPECT_EQ(lambdaNode->ninputs(), 2u);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 2u);
   EXPECT_EQ(lambdaNode->input(0), lambdaBinder0.input);
   EXPECT_EQ(lambdaNode->input(1), lambdaBinder1.input);
 
@@ -153,12 +153,12 @@ TEST(LambdaTests, TestRemoveLambdaInputsWhere)
       {
         return input.index() == 0;
       });
-  EXPECT_EQ(numRemovedInputs, 1);
-  EXPECT_EQ(lambdaNode->ninputs(), 1);
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(numRemovedInputs, 1u);
+  EXPECT_EQ(lambdaNode->ninputs(), 1u);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(lambdaNode->input(0), lambdaBinder1.input);
-  EXPECT_EQ(lambdaBinder1.input->index(), 0);
-  EXPECT_EQ(lambdaBinder1.inner->index(), 0);
+  EXPECT_EQ(lambdaBinder1.input->index(), 0u);
+  EXPECT_EQ(lambdaBinder1.inner->index(), 0u);
 }
 
 /**
@@ -198,11 +198,11 @@ TEST(LambdaTests, TestPruneLambdaInputs)
   auto numRemovedInputs = lambdaNode->PruneLambdaInputs();
 
   // Assert
-  EXPECT_EQ(numRemovedInputs, 2);
-  EXPECT_EQ(lambdaNode->ninputs(), 1);
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(numRemovedInputs, 2u);
+  EXPECT_EQ(lambdaNode->ninputs(), 1u);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(lambdaNode->input(0), lambdaInput1.input);
   EXPECT_EQ(lambdaNode->GetContextVars()[0].inner, lambdaInput1.inner);
-  EXPECT_EQ(lambdaInput1.input->index(), 0);
-  EXPECT_EQ(lambdaInput1.inner->index(), 0);
+  EXPECT_EQ(lambdaInput1.input->index(), 0u);
+  EXPECT_EQ(lambdaInput1.inner->index(), 0u);
 }

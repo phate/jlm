@@ -29,7 +29,7 @@ TEST(AnnotationMapTests, AnnotationKeyValueRetrieval)
   EXPECT_FALSE(intAnnotation.HasValueType<uint64_t>());
 
   EXPECT_EQ(uintAnnotation.Label(), "uint");
-  EXPECT_EQ(uintAnnotation.Value<uint64_t>(), 1);
+  EXPECT_EQ(uintAnnotation.Value<uint64_t>(), 1u);
   EXPECT_TRUE(uintAnnotation.HasValueType<uint64_t>());
 
   EXPECT_EQ(doubleAnnotation.Label(), "double");
@@ -78,7 +78,7 @@ TEST(AnnotationMapTests, AnnotationMap)
   EXPECT_FALSE(map.HasAnnotations(&key2));
 
   auto annotations = map.GetAnnotations(&key1);
-  EXPECT_EQ(annotations.size(), 1);
+  EXPECT_EQ(annotations.size(), 1u);
   EXPECT_EQ(annotations[0], annotation);
 
   for (auto & iteratedAnnotations : map.Annotations())

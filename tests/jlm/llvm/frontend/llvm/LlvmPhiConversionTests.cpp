@@ -133,13 +133,13 @@ TEST(LlvmPhiConversionTests, TestPhiConversion)
       *jlm::util::assertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
 
   // Both phi nodes should have 3 operands, representing the loop entry, and the two "continue"s
-  EXPECT_EQ(phiX->noperands(), 3);
+  EXPECT_EQ(phiX->noperands(), 3u);
   // The phi node for x takes its value from the function arg in the first operand
   EXPECT_EQ(phiX->operand(0), popcount->cfg()->entry()->argument(0));
   // The last two predecessor basic blocks both use the same value for x
   EXPECT_EQ(phiX->operand(1), phiX->operand(2));
 
-  EXPECT_EQ(phiPopcnt->noperands(), 3);
+  EXPECT_EQ(phiPopcnt->noperands(), 3u);
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
@@ -228,12 +228,12 @@ TEST(LlvmPhiConversionTests, TestPhiOperandElision)
   }
 
   // There should be 3 basic blocks left (bb1, bb4, bb5)
-  EXPECT_EQ(numBasicBlocks, 3);
+  EXPECT_EQ(numBasicBlocks, 3u);
   // There should be exactly one phi three address code
-  EXPECT_EQ(phiTacs.size(), 1);
+  EXPECT_EQ(phiTacs.size(), 1u);
   auto phiTac = phiTacs[0];
   // The phi should have two operands
-  EXPECT_EQ(phiTac->noperands(), 2);
+  EXPECT_EQ(phiTac->noperands(), 2u);
   // The first phi operand should be a constant 0
   auto constant0variable =
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));

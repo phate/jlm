@@ -67,7 +67,7 @@ TEST(GraphTests, test_empty_graph_pruning)
 
   graph.PruneNodes();
 
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 0u);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 }
@@ -89,7 +89,7 @@ TEST(GraphTests, test_prune_replace)
   auto n4 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
   n2->output(0)->divert_users(n4->output(0));
-  EXPECT_EQ(n2->output(0)->nusers(), 0);
+  EXPECT_EQ(n2->output(0)->nusers(), 0u);
 
   graph.PruneNodes();
 
@@ -112,16 +112,16 @@ TEST(GraphTests, Copy)
   auto newGraph = graph.Copy();
 
   // Assert
-  EXPECT_EQ(newGraph->GetRootRegion().narguments(), 1);
+  EXPECT_EQ(newGraph->GetRootRegion().narguments(), 1u);
   auto copiedArgument = newGraph->GetRootRegion().argument(0);
   EXPECT_TRUE(is<jlm::rvsdg::GraphImport>(copiedArgument));
 
-  EXPECT_EQ(newGraph->GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(newGraph->GetRootRegion().numNodes(), 1u);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();
   EXPECT_EQ(copiedNode->ninputs() == 1 && copiedNode->noutputs(), 1);
   EXPECT_EQ(copiedNode->input(0)->origin(), copiedArgument);
 
-  EXPECT_EQ(newGraph->GetRootRegion().nresults(), 1);
+  EXPECT_EQ(newGraph->GetRootRegion().nresults(), 1u);
   auto copiedResult = newGraph->GetRootRegion().result(0);
   EXPECT_TRUE(is<jlm::rvsdg::GraphExport>(*copiedResult));
   EXPECT_EQ(copiedResult->origin(), copiedNode->output(0));

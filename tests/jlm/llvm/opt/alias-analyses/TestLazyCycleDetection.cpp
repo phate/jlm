@@ -63,26 +63,26 @@ TEST(LazyCycleDetectionTests, TestUnifiesCycles)
   lcd.OnPropagatedNothing(0, 1);
 
   // Assert that nothing happened
-  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1);
-  EXPECT_EQ(lcd.NumCyclesDetected(), 0);
-  EXPECT_EQ(lcd.NumCycleUnifications(), 0);
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1u);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 0u);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 0u);
 
   // Act 2 - Try the same edge again
   lcd.OnPropagatedNothing(0, 1);
 
   // Assert that the second attempt is ignored
-  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1);
-  EXPECT_EQ(lcd.NumCyclesDetected(), 0);
-  EXPECT_EQ(lcd.NumCycleUnifications(), 0);
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 1u);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 0u);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 0u);
 
   // Act 3 - add the edge 3->1 that creates a cycle 3-1-2-3
   successors[3].insert(1);
   lcd.OnPropagatedNothing(3, 1);
 
   // Assert that the cycle was found and unified
-  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 2);
-  EXPECT_EQ(lcd.NumCyclesDetected(), 1);
-  EXPECT_EQ(lcd.NumCycleUnifications(), 2);
+  EXPECT_EQ(lcd.NumCycleDetectionAttempts(), 2u);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 1u);
+  EXPECT_EQ(lcd.NumCycleUnifications(), 2u);
   EXPECT_EQ(set.GetUnificationRoot(1), set.GetUnificationRoot(2));
   EXPECT_EQ(set.GetUnificationRoot(1), set.GetUnificationRoot(3));
 
@@ -92,7 +92,7 @@ TEST(LazyCycleDetectionTests, TestUnifiesCycles)
 
   // Assert that both cycles were found.
   // They are only counted as one cycle, but everything should be unified now
-  EXPECT_EQ(lcd.NumCyclesDetected(), 2);
+  EXPECT_EQ(lcd.NumCyclesDetected(), 2u);
   EXPECT_EQ(lcd.NumCycleUnifications(), set.NumPointerObjects() - 1);
   for (PointerObjectIndex i = 1; i < set.NumPointerObjects(); i++)
   {
