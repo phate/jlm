@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/Linkage.hpp>
 
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -15,7 +16,7 @@ namespace jlm::llvm
 [[nodiscard]] std::string_view
 linkageToString(const Linkage linkage)
 {
-  static std::unordered_map<Linkage, std::string> strings = {
+  static std::unordered_map<Linkage, std::string_view> strings = {
     { Linkage::externalLinkage, "external_linkage" },
     { Linkage::availableExternallyLinkage, "available_externally_linkage" },
     { Linkage::linkOnceAnyLinkage, "link_once_any_linkage" },
