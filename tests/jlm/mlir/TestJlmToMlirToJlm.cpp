@@ -1677,18 +1677,9 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto functionType = jlm::rvsdg::FunctionType::Create(
-        { jlm::rvsdg::BitType::Create(64), IOStateType::Create() },
-        { IOStateType::Create() });
-    auto lambda = jlm::rvsdg::LambdaNode::Create(
-        graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
-    auto sizeArgument = lambda->GetFunctionArguments()[0];
-    auto iOStateArgument = lambda->GetFunctionArguments()[1];
-
-    auto & mallocNode = MallocOperation::createNode(*sizeArgument, *iOStateArgument);
-
-    lambda->finalize({ &MallocOperation::ioStateOutput(mallocNode) });
+    auto constOp = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 64, 2 });
+    auto undefIOState = UndefValueOperation::Create(graph->GetRootRegion(), IOStateType::Create());
+    MallocOperation::createNode(*constOp, *undefIOState);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1709,7 +1700,8 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
         EXPECT_NE(inputBitType, nullptr);
         EXPECT_EQ(inputBitType.getWidth(), 64);
         EXPECT_TRUE(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirMallocOp.getResult(0).getType()));
-        EXPECT_TRUE(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirMallocOp.getResult(1).getType()));
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirMallocOp.getResult(1).getType()));
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirMallocOp.getResult(2).getType()));
         foundMallocOp = true;
       }
     }
@@ -1725,20 +1717,21 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 3);
       bool foundMallocOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedMallocOp = dynamic_cast<const MallocOperation *>(&node.GetOperation());
         if (convertedMallocOp)
         {
-          EXPECT_EQ(convertedMallocOp->nresults(), 2);
-          EXPECT_EQ(convertedMallocOp->narguments(), 1);
+          EXPECT_EQ(convertedMallocOp->nresults(), 3);
+          EXPECT_EQ(convertedMallocOp->narguments(), 2);
           auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedMallocOp->argument(0).get());
           EXPECT_EQ(inputBitType->nbits(), 64);
           EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(convertedMallocOp->result(1)));
+          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::IOStateType>(convertedMallocOp->result(1)));
+          EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(convertedMallocOp->result(2)));
           foundMallocOp = true;
         }
       }
