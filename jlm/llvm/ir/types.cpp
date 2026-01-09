@@ -188,8 +188,18 @@ StructType::~StructType() noexcept = default;
 bool
 StructType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const StructType *>(&other);
-  return type && type->IsPacked_ == IsPacked_ && type->Name_ == Name_ && &type->types_ == &types_;
+  const auto type = dynamic_cast<const StructType *>(&other);
+  if (!type || type->IsPacked_ != IsPacked_ || type->Name_ != Name_
+      || type->numElements() != numElements())
+    return false;
+
+  for (size_t n = 0; n < numElements(); n++)
+  {
+    if (*types_[n] != *type->types_[n])
+      return false;
+  }
+
+  return true;
 }
 
 std::size_t
