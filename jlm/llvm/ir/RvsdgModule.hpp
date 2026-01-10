@@ -148,7 +148,7 @@ public:
 
   static std::unique_ptr<RvsdgModule>
   Create(
-      const jlm::util::FilePath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout)
   {

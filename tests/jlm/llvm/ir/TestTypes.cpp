@@ -40,8 +40,7 @@ TEST(TypeTests, TestIsOrContains)
   EXPECT_EQ(functionType->Kind(), jlm::rvsdg::TypeKind::Value);
 
   // Struct types are aggregates that can contain other types
-  auto declaration = StructType::Declaration::Create({ valueType, pointerType });
-  auto structType = StructType::CreateIdentified(std::move(declaration), false);
+  auto structType = StructType::CreateIdentified({ valueType, pointerType }, false);
   EXPECT_TRUE(IsAggregateType(*structType));
   EXPECT_TRUE(IsOrContains<StructType>(*structType));
   EXPECT_TRUE(IsOrContains<PointerType>(*structType));
@@ -107,14 +106,14 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   EXPECT_EQ(GetTypeAllocSize(*vectorType), 16u);
   EXPECT_EQ(GetTypeAlignment(*vectorType), 16u);
 
-  auto structDeclaration = StructType::Declaration::Create();
-  structDeclaration->Append(bits32);
-  structDeclaration->Append(pointerType);
-  structDeclaration->Append(arrayType);
-  structDeclaration->Append(vectorType); // The most aligned type, 16 byte alignment
-  structDeclaration->Append(bits32);
-
-  auto structType = StructType::CreateIdentified("myStruct", structDeclaration->copy(), false);
+  auto structType = StructType::CreateIdentified(
+      "myStruct",
+      { bits32,
+        pointerType,
+        arrayType,
+        vectorType, // The most aligned type, 16 byte alignment
+        bits32 },
+      false);
   EXPECT_EQ(structType->GetFieldOffset(0), 0u);
   EXPECT_EQ(structType->GetFieldOffset(1), 8u); // Due to 4 bytes of padding after i32
   EXPECT_EQ(structType->GetFieldOffset(2), 16u);
@@ -124,8 +123,14 @@ TEST(TypeTests, TestGetTypeSizeAndAlignment)
   EXPECT_EQ(GetTypeAllocSize(*structType), 80u);
   EXPECT_EQ(GetTypeAlignment(*structType), 16u);
 
-  auto packedStructType =
-      StructType::CreateIdentified("myPackedStruct", structDeclaration->copy(), true);
+  auto packedStructType = StructType::CreateIdentified(
+      "myPackedStruct",
+      { bits32,
+        pointerType,
+        arrayType,
+        vectorType, // The most aligned type, 16 byte alignment
+        bits32 },
+      true);
   EXPECT_EQ(packedStructType->GetFieldOffset(0), 0u);
   EXPECT_EQ(packedStructType->GetFieldOffset(1), 4u);
   EXPECT_EQ(packedStructType->GetFieldOffset(2), 12u);

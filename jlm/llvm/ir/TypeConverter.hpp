@@ -9,8 +9,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <vector>
-
 namespace llvm
 {
 class ArrayType;
@@ -85,10 +83,6 @@ private:
   static ::llvm::Type *
   ConvertFloatingPointType(const FloatingPointType & type, ::llvm::LLVMContext & context);
 
-  std::unique_ptr<StructType::Declaration>
-  CreateStructDeclaration(::llvm::StructType & structType);
-
-  // Mapping between LLVM's StructType and jlm's StructType
   util::BijectiveMap<::llvm::StructType *, std::shared_ptr<const StructType>> StructTypeMap_;
 };
 

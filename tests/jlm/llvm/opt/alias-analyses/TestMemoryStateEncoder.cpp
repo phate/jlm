@@ -538,8 +538,8 @@ TEST(MemoryStateEncoderTests, callTest2AndersenAgnostic)
   {
     EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
     EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =
@@ -577,8 +577,8 @@ TEST(MemoryStateEncoderTests, callTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
     EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =

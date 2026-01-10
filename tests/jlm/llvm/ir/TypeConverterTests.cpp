@@ -201,41 +201,33 @@ TEST(TypeConverterTests, LlvmStructTypeConversion)
 
   // Assert
   EXPECT_NE(structType1Jlm, nullptr);
-  EXPECT_EQ(structType1Jlm->GetDeclaration().NumElements(), 2u);
+  EXPECT_EQ(structType1Jlm->numElements(), 2u);
   EXPECT_FALSE(structType1Jlm->IsPacked());
   EXPECT_TRUE(structType1Jlm->IsLiteral());
   EXPECT_FALSE(structType1Jlm->HasName());
 
   EXPECT_NE(structType2Jlm, nullptr);
-  EXPECT_EQ(structType2Jlm->GetDeclaration().NumElements(), 3u);
+  EXPECT_EQ(structType2Jlm->numElements(), 3u);
   EXPECT_TRUE(structType2Jlm->IsPacked());
   EXPECT_TRUE(structType2Jlm->IsLiteral());
   EXPECT_FALSE(structType2Jlm->HasName());
 
   EXPECT_NE(structType3Jlm, nullptr);
-  EXPECT_EQ(structType3Jlm->GetDeclaration().NumElements(), 1u);
+  EXPECT_EQ(structType3Jlm->numElements(), 1u);
   EXPECT_TRUE(structType3Jlm->IsPacked());
   EXPECT_FALSE(structType3Jlm->IsLiteral());
   EXPECT_TRUE(structType3Jlm->HasName() && structType3Jlm->GetName() == "myStruct");
 
   EXPECT_NE(structType4Jlm, nullptr);
-  EXPECT_EQ(structType4Jlm->GetDeclaration().NumElements(), 1u);
+  EXPECT_EQ(structType4Jlm->numElements(), 1u);
   EXPECT_FALSE(structType4Jlm->IsPacked());
   EXPECT_FALSE(structType4Jlm->IsLiteral());
   EXPECT_FALSE(structType4Jlm->HasName());
 
-  EXPECT_NE(&structType1Jlm->GetDeclaration(), &structType2Jlm->GetDeclaration());
-  EXPECT_NE(&structType1Jlm->GetDeclaration(), &structType3Jlm->GetDeclaration());
-  EXPECT_EQ(&structType1Jlm->GetDeclaration(), &structType5Jlm->GetDeclaration());
-  EXPECT_NE(&structType2Jlm->GetDeclaration(), &structType3Jlm->GetDeclaration());
-
-  TypeConverter typeConverter2;
-
-  // Using a different type converter, we get a different instance of StructType
-  const auto structType6Jlm =
-      std::dynamic_pointer_cast<const StructType>(typeConverter2.ConvertLlvmType(*structType1Llvm));
-
-  EXPECT_NE(&structType6Jlm->GetDeclaration(), &structType1Jlm->GetDeclaration());
+  EXPECT_NE(structType1Jlm.get(), structType2Jlm.get());
+  EXPECT_NE(structType1Jlm.get(), structType3Jlm.get());
+  EXPECT_EQ(structType1Jlm.get(), structType5Jlm.get());
+  EXPECT_NE(structType2Jlm.get(), structType3Jlm.get());
 }
 
 TEST(TypeConverterTests, LlvmArrayTypeConversion)
@@ -508,14 +500,10 @@ TEST(TypeConverterTests, JlmStructTypeConversion)
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
 
-  auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
-  auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });
-  auto declaration3 = StructType::Declaration::Create({ bit32Type });
-
-  const auto structType1Jlm = StructType::CreateIdentified(std::move(declaration1), false);
-  const auto structType2Jlm = StructType::CreateIdentified(std::move(declaration2), false);
-  const auto structType3Jlm =
-      StructType::CreateIdentified(std::string("myStruct"), std::move(declaration3), true);
+  const auto structType1Jlm = StructType::CreateIdentified({ bit32Type, halfType }, false);
+  const auto structType2Jlm =
+      StructType::CreateIdentified({ bit32Type, bit32Type, bit32Type }, false);
+  const auto structType3Jlm = StructType::CreateIdentified("myStruct", { bit32Type }, true);
 
   // Act
   const auto structType1Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
@@ -548,11 +536,6 @@ TEST(TypeConverterTests, JlmStructTypeConversion)
   EXPECT_TRUE(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isPacked());
 
   EXPECT_EQ(structType4Llvm, structType1Llvm);
-
-  TypeConverter typeConverter2;
-  // Converting the same type with a new TypeConverter gives us a new Llvm type
-  const auto structType5Llvm = typeConverter2.ConvertJlmType(*structType1Jlm, context);
-  EXPECT_NE(structType5Llvm, structType1Llvm);
 }
 
 TEST(TypeConverterTests, JlmFixedVectorTypeConversion)
