@@ -610,7 +610,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
 
-  auto ipGraphModule = InterProceduralGraphModule::Create(
+  auto ipGraphModule = InterProceduralGraphModule::create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
       rvsdgModule.DataLayout());

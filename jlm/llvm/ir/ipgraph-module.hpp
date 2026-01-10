@@ -159,7 +159,7 @@ public:
   }
 
   static std::unique_ptr<InterProceduralGraphModule>
-  Create(
+  create(
       const jlm::util::FilePath & sourceFilename,
       const std::string & targetTriple,
       const std::string & dataLayout)

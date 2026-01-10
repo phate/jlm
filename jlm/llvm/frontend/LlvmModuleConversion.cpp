@@ -551,7 +551,7 @@ convert_globals(::llvm::Module & lm, Context & ctx)
 std::unique_ptr<InterProceduralGraphModule>
 ConvertLlvmModule(::llvm::Module & llvmModule)
 {
-  auto ipgModule = InterProceduralGraphModule::Create(
+  auto ipgModule = InterProceduralGraphModule::create(
       util::FilePath(llvmModule.getSourceFileName()),
       llvmModule.getTargetTriple(),
       llvmModule.getDataLayoutStr());
