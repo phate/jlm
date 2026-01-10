@@ -1203,36 +1203,32 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
-    // Create the struct if it has no name
-    if (!structType.isIdentified())
+    if (StructTypeMap_.HasKey(&structType))
     {
-      std::vector<std::shared_ptr<const rvsdg::Type>> types;
-      for (auto element : structType.getBody())
-      {
-        types.push_back(ConvertType(element));
-      }
-
-      return jlm::llvm::StructType::Create(
-          structType.isPacked(),
-          *jlm::llvm::StructType::Declaration::Create(types));
+      return StructTypeMap_.LookupKey(&structType);
     }
 
-    // Create the struct if it hasn't already been created
-    auto structName = structType.getName().str();
-    if (NamedStructs_.count(structName) == 0)
+    std::vector<std::shared_ptr<const rvsdg::Type>> types;
+    for (auto element : structType.getBody())
     {
-      std::vector<std::shared_ptr<const rvsdg::Type>> types;
-      for (auto element : structType.getBody())
-      {
-        types.push_back(ConvertType(element));
-      }
-      NamedStructs_[structName] = jlm::llvm::StructType::Create(
-          structName,
-          structType.isPacked(),
-          *jlm::llvm::StructType::Declaration::Create(types));
+      types.push_back(ConvertType(element));
     }
 
-    return NamedStructs_[structName];
+    std::shared_ptr<const llvm::StructType> jlmStructType;
+    if (structType.isIdentified())
+    {
+      jlmStructType = jlm::llvm::StructType::CreateIdentified(
+          structType.getName().str(),
+          types,
+          structType.isPacked());
+    }
+    else
+    {
+      jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
+    }
+
+    StructTypeMap_.Insert(&structType, jlmStructType);
+    return jlmStructType;
   }
   else
   {

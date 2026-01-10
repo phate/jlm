@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
@@ -247,7 +248,8 @@ private:
   }
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
-  std::unordered_map<std::string, std::shared_ptr<const llvm::StructType>> NamedStructs_;
+  util::BijectiveMap<::mlir::LLVM::LLVMStructType *, std::shared_ptr<const llvm::StructType>>
+      StructTypeMap_;
 };
 
 } // namespace jlm::mlir
