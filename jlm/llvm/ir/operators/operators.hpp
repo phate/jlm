@@ -2405,7 +2405,9 @@ public:
   ~MallocOperation() noexcept override;
 
   explicit MallocOperation(std::shared_ptr<const rvsdg::BitType> type)
-      : SimpleOperation({ std::move(type) }, { PointerType::Create(), MemoryStateType::Create() })
+      : SimpleOperation(
+            { std::move(type), IOStateType::Create() },
+            { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() })
   {}
 
   bool
@@ -2426,8 +2428,8 @@ public:
   rvsdg::FunctionType
   getFunctionType() const
   {
-    JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return rvsdg::FunctionType({ argument(0) }, { result(0), result(1) });
+    JLM_ASSERT(narguments() == 2 && nresults() == 3);
+    return rvsdg::FunctionType({ argument(0), argument(1) }, { result(0), result(1), result(2) });
   }
 
   static rvsdg::Input &
@@ -2437,6 +2439,15 @@ public:
     auto & size = *node.input(0);
     JLM_ASSERT(is<rvsdg::BitType>(size.Type()));
     return size;
+  }
+
+  static rvsdg::Input &
+  ioStateInput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & ioState = *node.input(1);
+    JLM_ASSERT(is<IOStateType>(ioState.Type()));
+    return ioState;
   }
 
   static rvsdg::Output &
@@ -2449,27 +2460,36 @@ public:
   }
 
   static rvsdg::Output &
+  ioStateOutput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & ioState = *node.output(1);
+    JLM_ASSERT(is<IOStateType>(ioState.Type()));
+    return ioState;
+  }
+
+  static rvsdg::Output &
   memoryStateOutput(const rvsdg::Node & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
-    auto & memoryState = *node.output(1);
+    auto & memoryState = *node.output(2);
     JLM_ASSERT(is<MemoryStateType>(memoryState.Type()));
     return memoryState;
   }
 
   static std::unique_ptr<ThreeAddressCode>
-  createTac(const Variable * size)
+  createTac(const Variable * size, const Variable * ioState)
   {
     auto bitType = checkAndExtractSizeType(size->Type());
     auto op = std::make_unique<MallocOperation>(std::move(bitType));
-    return ThreeAddressCode::create(std::move(op), { size });
+    return ThreeAddressCode::create(std::move(op), { size, ioState });
   }
 
   static rvsdg::SimpleNode &
-  createNode(rvsdg::Output & size)
+  createNode(rvsdg::Output & size, rvsdg::Output & ioState)
   {
     auto bitType = checkAndExtractSizeType(size.Type());
-    return rvsdg::CreateOpNode<MallocOperation>({ &size }, std::move(bitType));
+    return rvsdg::CreateOpNode<MallocOperation>({ &size, &ioState }, std::move(bitType));
   }
 
 private:

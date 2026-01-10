@@ -112,7 +112,7 @@ TEST(FunctionCallTests, test_malloc_call)
 
     auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
     EXPECT_TRUE(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
-    EXPECT_TRUE(is<MallocOperation>((*std::next(bb->rbegin(), 2))));
+    EXPECT_TRUE(is<MallocOperation>((*std::next(bb->rbegin(), 3))));
   };
 
   llvm::LLVMContext ctx;

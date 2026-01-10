@@ -746,18 +746,22 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
 static const Variable *
 convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
 {
-  auto memstate = ctx.memory_state();
+  auto globalMemoryState = ctx.memory_state();
+  auto globalIOState = ctx.iostate();
 
   auto size = ConvertValue(i->getArgOperand(0), tacs, ctx);
 
-  tacs.push_back(MallocOperation::createTac(size));
-  auto result = tacs.back()->result(0);
-  auto mstate = tacs.back()->result(1);
+  tacs.push_back(MallocOperation::createTac(size, globalIOState));
+  auto mallocAddress = tacs.back()->result(0);
+  auto mallocIOState = tacs.back()->result(1);
+  auto mallocMemoryState = tacs.back()->result(2);
 
-  tacs.push_back(MemoryStateMergeOperation::Create({ mstate, memstate }));
-  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(mallocIOState, globalIOState));
 
-  return result;
+  tacs.push_back(MemoryStateMergeOperation::Create({ mallocMemoryState, globalMemoryState }));
+  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), globalMemoryState));
+
+  return mallocAddress;
 }
 
 static const Variable *

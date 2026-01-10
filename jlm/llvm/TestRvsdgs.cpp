@@ -672,12 +672,12 @@ CallTest2::SetupRvsdg()
     auto four = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto & mallocNode = MallocOperation::createNode(*prod);
+    auto & mallocNode = MallocOperation::createNode(*prod, *iOStateArgument);
     auto cast = BitCastOperation::create(&MallocOperation::addressOutput(mallocNode), pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector({ &MallocOperation::memoryStateOutput(mallocNode), memoryStateArgument }));
 
-    lambda->finalize({ cast, iOStateArgument, mx });
+    lambda->finalize({ cast, &MallocOperation::ioStateOutput(mallocNode), mx });
 
     return std::make_tuple(lambda, &mallocNode);
   };
@@ -2945,12 +2945,13 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto & mallocNode = MallocOperation::createNode(*eight);
+    auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResults = MemoryStateMergeOperation::Create(
         std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
-    auto lambdaOutput = lambda->finalize(
-        { &MallocOperation::addressOutput(mallocNode), iOStateArgument, mergeResults });
+    auto lambdaOutput = lambda->finalize({ &MallocOperation::addressOutput(mallocNode),
+                                           &MallocOperation::ioStateOutput(mallocNode),
+                                           mergeResults });
 
     GraphExport::Create(*lambdaOutput, "ReturnAddress");
 
@@ -2978,14 +2979,16 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto & mallocNode = MallocOperation::createNode(*eight);
+    auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
     auto & call = CallOperation::CreateNode(
         externalFunction1,
         externalFunction1Type,
-        { &MallocOperation::addressOutput(mallocNode), iOStateArgument, mergeResult });
+        { &MallocOperation::addressOutput(mallocNode),
+          &MallocOperation::ioStateOutput(mallocNode),
+          mergeResult });
 
     auto lambdaOutput = lambda->finalize(outputs(&call));
 
@@ -3589,8 +3592,10 @@ AllMemoryNodesTest::SetupRvsdg()
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
-  auto fcttype =
-      rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
+  auto ioStateType = IOStateType::Create();
+  auto functionType = rvsdg::FunctionType::Create(
+      { MemoryStateType::Create(), ioStateType },
+      { MemoryStateType::Create(), ioStateType });
 
   auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -3620,8 +3625,9 @@ AllMemoryNodesTest::SetupRvsdg()
   // Start of function "f"
   Lambda_ = rvsdg::LambdaNode::Create(
       graph->GetRootRegion(),
-      llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
+      llvm::LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto entryMemoryState = Lambda_->GetFunctionArguments()[0];
+  auto ioStateArgument = Lambda_->GetFunctionArguments()[1];
   auto deltaContextVar = Lambda_->AddContextVar(Delta_->output()).inner;
   auto importContextVar = Lambda_->AddContextVar(*Import_).inner;
 
@@ -3635,7 +3641,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 4 });
-  Malloc_ = &MallocOperation::createNode(*mallocSize);
+  Malloc_ = &MallocOperation::createNode(*mallocSize, *ioStateArgument);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
       std::vector{ afterAllocaMemoryState, &MallocOperation::memoryStateOutput(*Malloc_) });
@@ -3673,7 +3679,7 @@ AllMemoryNodesTest::SetupRvsdg()
       { storeImportedOutputs[0] },
       8);
 
-  Lambda_->finalize({ storeOutputs[0] });
+  Lambda_->finalize({ storeOutputs[0], &MallocOperation::ioStateOutput(*Malloc_) });
 
   GraphExport::Create(Delta_->output(), "global");
   GraphExport::Create(*Lambda_->output(), "f");
