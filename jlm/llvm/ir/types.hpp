@@ -196,7 +196,7 @@ public:
         isLiteral_(isLiteral)
   {}
 
-  StructType(const StructType &) = default;
+  StructType(const StructType &) = delete;
 
   StructType(StructType &&) = delete;
 
