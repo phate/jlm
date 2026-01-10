@@ -549,18 +549,18 @@ convert_globals(::llvm::Module & lm, Context & ctx)
 }
 
 std::unique_ptr<InterProceduralGraphModule>
-ConvertLlvmModule(::llvm::Module & m)
+ConvertLlvmModule(::llvm::Module & llvmModule)
 {
-  util::FilePath fp(m.getSourceFileName());
-  auto im = InterProceduralGraphModule::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
+  auto ipgModule = InterProceduralGraphModule::create(
+      util::FilePath(llvmModule.getSourceFileName()),
+      llvmModule.getTargetTriple(),
+      llvmModule.getDataLayoutStr());
 
-  Context ctx(*im);
-  declare_globals(m, ctx);
-  convert_globals(m, ctx);
+  Context ctx(*ipgModule);
+  declare_globals(llvmModule, ctx);
+  convert_globals(llvmModule, ctx);
 
-  im->SetStructTypeDeclarations(ctx.GetTypeConverter().ReleaseStructTypeDeclarations());
-
-  return im;
+  return ipgModule;
 }
 
 }

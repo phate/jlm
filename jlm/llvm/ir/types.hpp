@@ -180,21 +180,17 @@ public:
 class StructType final : public rvsdg::Type
 {
 public:
-  class Declaration;
+  ~StructType() noexcept override;
 
-  ~StructType() override;
-
-  StructType(bool isPacked, const Declaration & declaration)
-      : rvsdg::Type(),
-        IsPacked_(isPacked),
-        Declaration_(declaration)
+  StructType(const bool isPacked, std::vector<std::shared_ptr<const Type>> types)
+      : IsPacked_(isPacked),
+        types_(std::move(types))
   {}
 
-  StructType(std::string name, bool isPacked, const Declaration & declaration)
-      : rvsdg::Type(),
-        IsPacked_(isPacked),
+  StructType(std::string name, const bool isPacked, std::vector<std::shared_ptr<const Type>> types)
+      : IsPacked_(isPacked),
         Name_(std::move(name)),
-        Declaration_(declaration)
+        types_(std::move(types))
   {}
 
   StructType(const StructType &) = default;
@@ -208,13 +204,26 @@ public:
   operator=(StructType &&) = delete;
 
   bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+  operator==(const Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
   rvsdg::TypeKind
   Kind() const noexcept override;
+
+  [[nodiscard]] size_t
+  numElements() const noexcept
+  {
+    return types_.size();
+  }
+
+  [[nodiscard]] std::shared_ptr<const Type>
+  getElementType(const size_t index) const noexcept
+  {
+    JLM_ASSERT(index < numElements());
+    return types_[index];
+  }
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -237,12 +246,6 @@ public:
     return IsPacked_;
   }
 
-  [[nodiscard]] const Declaration &
-  GetDeclaration() const noexcept
-  {
-    return Declaration_;
-  }
-
   /**
    * Gets the position of the given field, as a byte offset from the start of the struct.
    * Non-packed structs use padding to respect the alignment of each field, just like in C.
@@ -254,79 +257,21 @@ public:
   GetFieldOffset(size_t fieldIndex) const;
 
   static std::shared_ptr<const StructType>
-  Create(const std::string & name, bool isPacked, const Declaration & declaration)
+  Create(const std::string & name, bool isPacked, std::vector<std::shared_ptr<const Type>> types)
   {
-    return std::make_shared<StructType>(name, isPacked, declaration);
+    return std::make_shared<StructType>(name, isPacked, std::move(types));
   }
 
   static std::shared_ptr<const StructType>
-  Create(bool isPacked, const Declaration & declaration)
+  Create(bool isPacked, std::vector<std::shared_ptr<const Type>> types)
   {
-    return std::make_shared<StructType>(isPacked, declaration);
+    return std::make_shared<StructType>(isPacked, std::move(types));
   }
 
 private:
   bool IsPacked_;
   std::string Name_;
-  const Declaration & Declaration_;
-};
-
-class StructType::Declaration final
-{
-public:
-  ~Declaration() = default;
-
-  explicit Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
-      : Types_(std::move(types))
-  {}
-
-  Declaration() = default;
-
-  Declaration(const Declaration &) = default;
-
-  Declaration &
-  operator=(const Declaration &) = default;
-
-  [[nodiscard]] size_t
-  NumElements() const noexcept
-  {
-    return Types_.size();
-  }
-
-  [[nodiscard]] const Type &
-  GetElement(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < NumElements());
-    return *Types_[index].get();
-  }
-
-  [[nodiscard]] std::shared_ptr<const Type>
-  GetElementType(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < NumElements());
-    return Types_[index];
-  }
-
-  void
-  Append(std::shared_ptr<const Type> type)
-  {
-    Types_.push_back(std::move(type));
-  }
-
-  static std::unique_ptr<Declaration>
-  Create()
-  {
-    return std::unique_ptr<Declaration>(new Declaration());
-  }
-
-  static std::unique_ptr<Declaration>
-  Create(std::vector<std::shared_ptr<const rvsdg::Type>> types)
-  {
-    return std::make_unique<Declaration>(std::move(types));
-  }
-
-private:
-  std::vector<std::shared_ptr<const rvsdg::Type>> Types_;
+  std::vector<std::shared_ptr<const Type>> types_{};
 };
 
 class VectorType : public rvsdg::Type
@@ -491,11 +436,10 @@ IsOrContains(const jlm::rvsdg::Type & type)
   if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
     return IsOrContains<ELEMENTYPE>(arrayType->element_type());
 
-  if (auto structType = dynamic_cast<const StructType *>(&type))
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
   {
-    auto & structDeclaration = structType->GetDeclaration();
-    for (size_t n = 0; n < structDeclaration.NumElements(); n++)
-      if (IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n)))
+    for (size_t n = 0; n < structType->numElements(); n++)
+      if (IsOrContains<ELEMENTYPE>(*structType->getElementType(n)))
         return true;
 
     return false;
