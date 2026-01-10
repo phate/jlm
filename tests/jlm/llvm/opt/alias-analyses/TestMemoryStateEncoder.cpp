@@ -3,26 +3,23 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-template<class Test, class Analysis, class TModRefSummarizer>
+template<class Analysis, class TModRefSummarizer>
 static void
-ValidateTest(std::function<void(const Test &)> validateEncoding)
+encodeStates(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
-  static_assert(
-      std::is_base_of<jlm::tests::RvsdgTest, Test>::value,
-      "Test should be derived from RvsdgTest class.");
-
   static_assert(
       std::is_base_of_v<jlm::llvm::aa::PointsToAnalysis, Analysis>,
       "Analysis should be derived from PointsToAnalysis class.");
@@ -31,13 +28,6 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
       std::is_base_of_v<jlm::llvm::aa::ModRefSummarizer, TModRefSummarizer>,
       "TModRefSummarizer should be derived from ModRefSummarizer class.");
 
-  std::cout << "\n###\n";
-  std::cout << "### Performing Test " << typeid(Test).name() << " using ["
-            << typeid(Analysis).name() << ", " << typeid(TModRefSummarizer).name() << "]\n";
-  std::cout << "###\n";
-
-  Test test;
-  auto & rvsdgModule = test.module();
   jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
@@ -54,8 +44,6 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   std::cout << "run encoder\n";
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
   jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
-
-  validateEncoding(test);
 }
 
 template<class OP>
@@ -65,16 +53,18 @@ is(const jlm::rvsdg::Node & node, size_t numInputs, size_t numOutputs)
   return jlm::rvsdg::is<OP>(&node) && node.ninputs() == numInputs && node.noutputs() == numOutputs;
 }
 
-static void
-ValidateStoreTest1AndersenAgnostic(const jlm::tests::StoreTest1 & test)
+TEST(MemoryStateEncoderTests, storeTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 14);
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 14u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
 
   // Agnostic ModRef summaries lead to Join operations for all allocas
   auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
@@ -85,54 +75,58 @@ ValidateStoreTest1AndersenAgnostic(const jlm::tests::StoreTest1 & test)
       test.alloca_c->output(1)->SingleUser());
   auto [dJoinNode, dJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca_d->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(cJoinOp && cJoinNode->output(0)->nusers() == 1);
-  assert(dJoinOp && dJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(aJoinOp && aJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(bJoinOp && bJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(cJoinOp && cJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(dJoinOp && dJoinNode->output(0)->nusers() == 1);
 
   // the d alloca is not used by any operation, and goes straight to the call exit
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(dJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(dJoinNode->output(0)->SingleUser()),
+      lambdaExitMerge);
 
   auto storeD = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(cJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD, 3, 1));
-  assert(storeD->input(0)->origin() == test.alloca_c->output(0));
-  assert(storeD->input(1)->origin() == test.alloca_d->output(0));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD, 3, 1));
+  EXPECT_EQ(storeD->input(0)->origin(), test.alloca_c->output(0));
+  EXPECT_EQ(storeD->input(1)->origin(), test.alloca_d->output(0));
 
   auto storeC = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeC, 3, 1));
-  assert(storeC->input(0)->origin() == test.alloca_b->output(0));
-  assert(storeC->input(1)->origin() == test.alloca_c->output(0));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeC, 3, 1));
+  EXPECT_EQ(storeC->input(0)->origin(), test.alloca_b->output(0));
+  EXPECT_EQ(storeC->input(1)->origin(), test.alloca_c->output(0));
 
   auto storeB = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
-  assert(storeB->input(0)->origin() == test.alloca_a->output(0));
-  assert(storeB->input(1)->origin() == test.alloca_b->output(0));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
+  EXPECT_EQ(storeB->input(0)->origin(), test.alloca_a->output(0));
+  EXPECT_EQ(storeB->input(1)->origin(), test.alloca_b->output(0));
 }
 
-static void
-ValidateStoreTest1AndersenRegionAware(const jlm::tests::StoreTest1 & test)
+TEST(MemoryStateEncoderTests, storeTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 1);
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
-static void
-ValidateStoreTest2AndersenAgnostic(const jlm::tests::StoreTest2 & test)
+TEST(MemoryStateEncoderTests, storeTest2AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 17);
+  StoreTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 17u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
 
   // Agnostic ModRef summaries lead to Join operations for all allocas
   auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
@@ -145,125 +139,136 @@ ValidateStoreTest2AndersenAgnostic(const jlm::tests::StoreTest2 & test)
       test.alloca_y->output(1)->SingleUser());
   auto [pJoinNode, pJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca_p->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(xJoinOp && xJoinNode->output(0)->nusers() == 1);
-  assert(yJoinOp && yJoinNode->output(0)->nusers() == 1);
-  assert(pJoinOp && pJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(aJoinOp && aJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(bJoinOp && bJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(xJoinOp && xJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(yJoinOp && yJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(pJoinOp && pJoinNode->output(0)->nusers() == 1);
 
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser()),
+      lambdaExitMerge);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser()),
+      lambdaExitMerge);
 
   auto storeA =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 3, 1));
-  assert(storeA->input(0)->origin() == test.alloca_x->output(0));
-  assert(storeA->input(1)->origin() == test.alloca_a->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeA, 3, 1));
+  EXPECT_EQ(storeA->input(0)->origin(), test.alloca_x->output(0));
+  EXPECT_EQ(storeA->input(1)->origin(), test.alloca_a->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
-  assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(storeB->input(1)->origin() == test.alloca_b->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
+  EXPECT_EQ(storeB->input(0)->origin(), test.alloca_y->output(0));
+  EXPECT_EQ(storeB->input(1)->origin(), test.alloca_b->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
   auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
-  assert(storeX->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeX, 3, 1));
+  EXPECT_EQ(storeX->input(0)->origin(), test.alloca_p->output(0));
+  EXPECT_EQ(storeX->input(1)->origin(), test.alloca_x->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
   auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
-  assert(storeY->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeY->input(1)->origin() == test.alloca_y->output(0));
-  assert(storeY->input(2)->origin() == storeX->output(0));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeY, 3, 1));
+  EXPECT_EQ(storeY->input(0)->origin(), test.alloca_p->output(0));
+  EXPECT_EQ(storeY->input(1)->origin(), test.alloca_y->output(0));
+  EXPECT_EQ(storeY->input(2)->origin(), storeX->output(0));
 }
 
-static void
-ValidateStoreTest2AndersenRegionAware(const jlm::tests::StoreTest2 & test)
+TEST(MemoryStateEncoderTests, storeTest2AndersenRegionAware)
 {
   using namespace jlm::llvm;
-  assert(test.lambda->subregion()->numNodes() == 1);
+
+  StoreTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
-static void
-ValidateLoadTest1AndersenAgnostic(const jlm::tests::LoadTest1 & test)
+TEST(MemoryStateEncoderTests, loadTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  LoadTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
   auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(0)->origin());
 
-  assert(is<LoadNonVolatileOperation>(*loadA, 3, 3));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()) == loadX);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadA, 3, 3));
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()), loadX);
 
-  assert(is<LoadNonVolatileOperation>(*loadX, 3, 3));
-  assert(loadX->input(0)->origin() == test.lambda->GetFunctionArguments()[0]);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 3, 3));
+  EXPECT_EQ(loadX->input(0)->origin(), test.lambda->GetFunctionArguments()[0]);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+      lambdaEntrySplit);
 }
 
-static void
-ValidateLoadTest1AndersenRegionAware(const jlm::tests::LoadTest1 & test)
+TEST(MemoryStateEncoderTests, loadTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  LoadTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
   auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(0)->origin());
 
-  assert(is<LoadNonVolatileOperation>(*loadA, 2, 2));
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()) == loadX);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadA, 2, 2));
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()), loadX);
 
-  assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
-  assert(loadX->input(0)->origin() == test.lambda->GetFunctionArguments()[0]);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
+  EXPECT_EQ(loadX->input(0)->origin(), test.lambda->GetFunctionArguments()[0]);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+      lambdaEntrySplit);
 }
 
-static void
-ValidateLoadTest2AndersenAgnostic(const jlm::tests::LoadTest2 & test)
+TEST(MemoryStateEncoderTests, loadTest2AndersenAgnostic)
 {
   using namespace jlm::llvm;
+  LoadTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  assert(test.lambda->subregion()->numNodes() == 19);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 19u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
 
   // Agnostic ModRef summaries lead to Join operations for all allocas
   auto [aJoinNode, aJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
@@ -276,103 +281,114 @@ ValidateLoadTest2AndersenAgnostic(const jlm::tests::LoadTest2 & test)
       test.alloca_y->output(1)->SingleUser());
   auto [pJoinNode, pJoinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca_p->output(1)->SingleUser());
-  assert(aJoinOp && aJoinNode->output(0)->nusers() == 1);
-  assert(bJoinOp && bJoinNode->output(0)->nusers() == 1);
-  assert(xJoinOp && xJoinNode->output(0)->nusers() == 1);
-  assert(yJoinOp && yJoinNode->output(0)->nusers() == 1);
-  assert(pJoinOp && pJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(aJoinOp && aJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(bJoinOp && bJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(xJoinOp && xJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(yJoinOp && yJoinNode->output(0)->nusers() == 1);
+  EXPECT_TRUE(pJoinOp && pJoinNode->output(0)->nusers() == 1);
 
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser())
-      == lambdaExitMerge);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser()),
+      lambdaExitMerge);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser()),
+      lambdaExitMerge);
 
   auto storeA =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeA, 3, 1));
-  assert(storeA->input(0)->origin() == test.alloca_x->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeA, 3, 1));
+  EXPECT_EQ(storeA->input(0)->origin(), test.alloca_x->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
-  assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
+  EXPECT_EQ(storeB->input(0)->origin(), test.alloca_y->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
   auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
-  assert(storeX->input(0)->origin() == test.alloca_p->output(0));
-  assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-  assert(jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeX, 3, 1));
+  EXPECT_EQ(storeX->input(0)->origin(), test.alloca_p->output(0));
+  EXPECT_EQ(storeX->input(1)->origin(), test.alloca_x->output(0));
+  EXPECT_TRUE(
+      jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
   auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
-  assert(load1->input(0)->origin() == test.alloca_p->output(0));
-  assert(load1->input(1)->origin() == storeX->output(0));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load1, 2, 2));
+  EXPECT_EQ(load1->input(0)->origin(), test.alloca_p->output(0));
+  EXPECT_EQ(load1->input(1)->origin(), storeX->output(0));
 
   auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load1->output(0)->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*load2, 2, 2));
-  assert(load2->input(1)->origin() == storeA->output(0));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load2, 2, 2));
+  EXPECT_EQ(load2->input(1)->origin(), storeA->output(0));
 
   auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load2->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
-  assert(storeY->input(0)->origin() == test.alloca_y->output(0));
-  assert(storeY->input(2)->origin() == storeB->output(0));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeY, 3, 1));
+  EXPECT_EQ(storeY->input(0)->origin(), test.alloca_y->output(0));
+  EXPECT_EQ(storeY->input(2)->origin(), storeB->output(0));
 }
 
-static void
-ValidateLoadTest2AndersenRegionAware(const jlm::tests::LoadTest2 & test)
+TEST(MemoryStateEncoderTests, loadTest2AndersenRegionAware)
 {
   using namespace jlm::llvm;
-  assert(test.lambda->subregion()->numNodes() == 1);
+
+  LoadTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
 
-static void
-ValidateLoadFromUndefAndersenAgnostic(const jlm::tests::LoadFromUndefTest & test)
+TEST(MemoryStateEncoderTests, loadFromUndefAndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.Lambda().subregion()->numNodes() == 4);
+  LoadFromUndefTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[0]->origin());
-  assert(is<LoadNonVolatileOperation>(*load, 1, 1));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 1, 1));
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.Lambda().GetFunctionArguments()[0]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
-static void
-ValidateLoadFromUndefAndersenRegionAware(const jlm::tests::LoadFromUndefTest & test)
+TEST(MemoryStateEncoderTests, loadFromUndefAndersenRegionAware)
 {
   using namespace jlm::llvm;
 
-  assert(test.Lambda().subregion()->numNodes() == 3);
+  LoadFromUndefTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.Lambda().subregion()->numNodes(), 3u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
   auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[0]->origin());
-  assert(is<LoadNonVolatileOperation>(*load, 1, 1));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 1, 1));
 }
 
-static void
-ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
+TEST(MemoryStateEncoderTests, callTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
+
+  CallTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate f */
   {
@@ -385,18 +401,18 @@ ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f->GetFunctionArguments()[1]->Users().begin());
 
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
 
-    assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        lambdaEntrySplit);
 
-    assert(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()),
+        lambdaEntrySplit);
   }
 
   /* validate g */
@@ -410,16 +426,16 @@ ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_g->GetFunctionArguments()[1]->Users().begin());
 
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
 
-    assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        lambdaEntrySplit);
 
-    assert(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()) == loadX);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
+    EXPECT_TRUE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()) == loadX);
   }
 
   /* validate h */
@@ -429,23 +445,25 @@ ValidateCallTest1AndersenAgnostic(const jlm::tests::CallTest1 & test)
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallF().output(2)->SingleUser());
 
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
 
     callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
     callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallG().output(2)->SingleUser());
 
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
   }
 }
 
-static void
-ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
+TEST(MemoryStateEncoderTests, callTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
+
+  CallTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /* validate f */
   {
@@ -458,18 +476,18 @@ ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f->GetFunctionArguments()[1]->SingleUser());
 
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-    assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        lambdaEntrySplit);
 
-    assert(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()),
+        lambdaEntrySplit);
   }
 
   /* validate g */
@@ -483,626 +501,655 @@ ValidateCallTest1AndersenRegionAware(const jlm::tests::CallTest1 & test)
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_g->GetFunctionArguments()[1]->SingleUser());
 
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
-    assert(is<LoadNonVolatileOperation>(*loadX, 2, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        lambdaEntrySplit);
 
-    assert(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()) == loadX);
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
+    EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()), loadX);
   }
 
   /* validate h */
   {
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallF().input(4)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
     // There is no call exit split, as it has been removed by dead node elimination
-    assert(test.CallF().output(2)->nusers() == 0);
+    EXPECT_EQ(test.CallF().output(2)->nusers(), 0u);
 
     callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
-    assert(test.CallG().output(2)->nusers() == 0);
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
+    EXPECT_EQ(test.CallG().output(2)->nusers(), 0u);
   }
 }
 
-static void
-ValidateCallTest2AndersenAgnostic(const jlm::tests::CallTest2 & test)
+TEST(MemoryStateEncoderTests, callTest2AndersenAgnostic)
 {
   using namespace jlm::llvm;
+  CallTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate create function */
   {
-    assert(test.lambda_create->subregion()->numNodes() == 7);
+    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
-    assert(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
+    EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*stateJoin->input(1)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
     auto lambdaExitMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(stateJoin->output(0)->SingleUser());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto mallocStateLambdaEntryIndex = stateJoin->input(1)->origin()->index();
     auto mallocStateLambdaExitIndex = stateJoin->output(0)->SingleUser().index();
-    assert(mallocStateLambdaEntryIndex == mallocStateLambdaExitIndex);
+    EXPECT_EQ(mallocStateLambdaEntryIndex, mallocStateLambdaExitIndex);
   }
 
   /* validate destroy function */
   {
-    assert(test.lambda_destroy->subregion()->numNodes() == 4);
+    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4u);
   }
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->numNodes() == 16);
+    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16u);
   }
 }
 
-static void
-ValidateCallTest2AndersenRegionAware(const jlm::tests::CallTest2 & test)
+TEST(MemoryStateEncoderTests, callTest2AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  CallTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   /* validate create function */
   {
-    assert(test.lambda_create->subregion()->numNodes() == 7);
+    EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
-    assert(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
+    EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*stateJoin->input(1)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
     auto lambdaExitMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(stateJoin->output(0)->SingleUser());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto mallocStateLambdaEntryIndex = stateJoin->input(1)->origin()->index();
     auto mallocStateLambdaExitIndex = stateJoin->output(0)->SingleUser().index();
-    assert(mallocStateLambdaEntryIndex == mallocStateLambdaExitIndex);
+    EXPECT_EQ(mallocStateLambdaEntryIndex, mallocStateLambdaExitIndex);
   }
 
   /* validate destroy function */
   {
-    assert(test.lambda_destroy->subregion()->numNodes() == 4);
+    EXPECT_EQ(test.lambda_destroy->subregion()->numNodes(), 4u);
   }
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->numNodes() == 16);
+    EXPECT_EQ(test.lambda_test->subregion()->numNodes(), 16u);
   }
 }
 
-static void
-ValidateIndirectCallTest1AndersenAgnostic(const jlm::tests::IndirectCallTest1 & test)
+TEST(MemoryStateEncoderTests, indirectCallTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
+
+  IndirectCallTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->numNodes() == 6);
+    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 6u);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 3, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
     auto call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     auto lambda_entry_mux =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
   }
 
   /* validate test function */
   {
-    assert(test.GetLambdaTest().subregion()->numNodes() == 9);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 9u);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
     auto call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     call_exit_mux =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(0)->origin());
-    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
     call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     auto lambda_entry_mux =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
   }
 }
 
-static void
-ValidateIndirectCallTest1AndersenRegionAware(const jlm::tests::IndirectCallTest1 & test)
+TEST(MemoryStateEncoderTests, indirectCallTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  IndirectCallTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->numNodes() == 4);
+    EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[0]->origin());
-    assert(is<CallOperation>(*call, 3, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
   /* validate test function */
   {
-    assert(test.GetLambdaTest().subregion()->numNodes() == 6);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     auto add = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[0]->origin());
-    assert(is<jlm::rvsdg::BinaryOperation>(*add, 2, 1));
+    EXPECT_TRUE(is<jlm::rvsdg::BinaryOperation>(*add, 2, 1));
 
     auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*add->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
     auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
 
     call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*add->input(1)->origin());
-    assert(is<CallOperation>(*call, 4, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
     callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 }
 
-static void
-ValidateIndirectCallTest2AndersenAgnostic(const jlm::tests::IndirectCallTest2 & test)
+TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
+  IndirectCallTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
   // validate function three()
   {
-    assert(test.GetLambdaThree().subregion()->numNodes() == 3);
+    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 3u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaThree().GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
 
   // validate function four()
   {
-    assert(test.GetLambdaFour().subregion()->numNodes() == 3);
+    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 3u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaFour().GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->numNodes() == 6);
+    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetIndirectCall().input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
 }
 
-static void
-ValidateIndirectCallTest2AndersenRegionAware(const jlm::tests::IndirectCallTest2 & test)
+TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  IndirectCallTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   // validate function three()
   {
-    assert(test.GetLambdaThree().subregion()->numNodes() == 2);
+    EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 2u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
   }
 
   // validate function four()
   {
-    assert(test.GetLambdaFour().subregion()->numNodes() == 2);
+    EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 2u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
   }
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->numNodes() == 4);
+    EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetIndirectCall().input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
   // validate function x()
   {
-    assert(test.GetLambdaX().subregion()->numNodes() == 7);
+    EXPECT_EQ(test.GetLambdaX().subregion()->numNodes(), 7u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaX().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetCallIWithThree().input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
   // validate function y()
   {
-    assert(test.GetLambdaY().subregion()->numNodes() == 7);
+    EXPECT_EQ(test.GetLambdaY().subregion()->numNodes(), 7u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaY().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetCallIWithFour().input(3)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
   // validate function test()
   {
-    assert(test.GetLambdaTest().subregion()->numNodes() == 14);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 14u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
     auto loadG1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetContextVars()[2].inner->SingleUser());
-    assert(is<LoadNonVolatileOperation>(*loadG1, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1, 2, 2));
 
     auto loadG2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetContextVars()[3].inner->SingleUser());
-    assert(is<LoadNonVolatileOperation>(*loadG2, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2, 2, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
   }
 
   // validate function test2()
   {
-    assert(test.GetLambdaTest2().subregion()->numNodes() == 5);
+    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     // The entry memory state is unused
-    assert(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers() == 0);
+    EXPECT_EQ(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers(), 0u);
   }
 }
 
-static void
-ValidateGammaTestAndersenAgnostic(const jlm::tests::GammaTest & test)
+TEST(MemoryStateEncoderTests, gammaTestAndersenAgnostic)
 {
   using namespace jlm::llvm;
 
+  GammaTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto loadTmp2 =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp2, 3, 3));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp2, 3, 3));
 
   auto loadTmp1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp2->input(1)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp1, 3, 3));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp1, 3, 3));
 
   auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp1->input(1)->origin());
-  assert(gamma == test.gamma);
+  EXPECT_EQ(gamma, test.gamma);
 }
 
-static void
-ValidateGammaTestAndersenRegionAware(const jlm::tests::GammaTest & test)
+TEST(MemoryStateEncoderTests, gammaTestAndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  GammaTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto loadTmp2 =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp2, 2, 2));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp2, 2, 2));
 
   auto loadTmp1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp2->input(1)->origin());
-  assert(is<LoadNonVolatileOperation>(*loadTmp1, 2, 2));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp1, 2, 2));
 
   auto lambdaEntrySplit =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp1->input(1)->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
-static void
-ValidateThetaTestAndersenAgnostic(const jlm::tests::ThetaTest & test)
+TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  ThetaTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
   auto thetaOutput = lambda_exit_mux->input(0)->origin();
   auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
-  assert(theta == test.theta);
+  EXPECT_EQ(theta, test.theta);
 
   auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
   auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeStateOutput);
-  assert(is<StoreNonVolatileOperation>(*store, 4, 2));
-  assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 4, 2));
+  EXPECT_EQ(store->input(storeStateOutput->index() + 2)->origin(), loopvar.pre);
 
   auto lambda_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loopvar.input->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
 }
 
-static void
-ValidateThetaTestAndersenRegionAware(const jlm::tests::ThetaTest & test)
+TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->numNodes() == 4);
+  ThetaTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto thetaOutput = lambdaExitMerge->input(0)->origin();
   auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
-  assert(theta == test.theta);
+  EXPECT_EQ(theta, test.theta);
   auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
 
   auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeStateOutput);
-  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
-  assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
+  EXPECT_EQ(store->input(storeStateOutput->index() + 2)->origin(), loopvar.pre);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loopvar.input->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
-static void
-ValidateDeltaTest1AndersenAgnostic(const jlm::tests::DeltaTest1 & test)
+TEST(MemoryStateEncoderTests, deltaTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_h->subregion()->numNodes() == 7);
+  DeltaTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 4));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 4));
 
   auto storeF =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.constantFive->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeF, 3, 1));
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin()),
+      lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
   auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_g->GetFunctionArguments()[0]->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadF, 2, 2));
-  assert(loadF->input(1)->origin()->index() == deltaStateIndex);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadF, 2, 2));
+  EXPECT_EQ(loadF->input(1)->origin()->index(), deltaStateIndex);
 }
 
-static void
-ValidateDeltaTest1AndersenRegionAware(const jlm::tests::DeltaTest1 & test)
+TEST(MemoryStateEncoderTests, deltaTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_h->subregion()->numNodes() == 7);
+  DeltaTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
   auto storeF =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.constantFive->output(0)->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeF, 3, 1));
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin()),
+      lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
   auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_g->GetFunctionArguments()[0]->SingleUser());
-  assert(is<LoadNonVolatileOperation>(*loadF, 2, 2));
-  assert(loadF->input(1)->origin()->index() == deltaStateIndex);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadF, 2, 2));
+  EXPECT_EQ(loadF->input(1)->origin()->index(), deltaStateIndex);
 }
 
-static void
-ValidateDeltaTest2AndersenAgnostic(const jlm::tests::DeltaTest2 & test)
+TEST(MemoryStateEncoderTests, deltaTest2AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_f2->subregion()->numNodes() == 9);
+  DeltaTest2 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetContextVars()[0].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin()),
+      lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
   auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f1->GetContextVars()[0].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
-  assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
+  EXPECT_EQ(d1StateIndex, storeD1InF1->input(2)->origin()->index());
 
   auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetContextVars()[1].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
-  assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
+  EXPECT_NE(d1StateIndex, storeD2InF2->input(2)->origin()->index());
 }
 
-static void
-ValidateDeltaTest2AndersenRegionAware(const jlm::tests::DeltaTest2 & test)
+TEST(MemoryStateEncoderTests, deltaTest2AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  DeltaTest2 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   /* Validate f1() */
   {
-    assert(test.lambda_f1->subregion()->numNodes() == 4);
+    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto storeNode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeNode->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
   /* Validate f2() */
   {
-    assert(test.lambda_f2->subregion()->numNodes() == 9);
+    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
     auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetContextVars()[0].inner->SingleUser());
-    assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin()),
+        lambdaEntrySplit);
 
     auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetContextVars()[1].inner->SingleUser());
-    assert(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin()),
+        lambdaEntrySplit);
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeD1->output(0)->SingleUser());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     auto callF1 =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callEntryMerge->output(0)->SingleUser());
-    assert(is<CallOperation>(*callF1, 3, 2));
+    EXPECT_TRUE(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callF1->output(1)->SingleUser());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
 
-static void
-ValidateDeltaTest3AndersenAgnostic(const jlm::tests::DeltaTest3 & test)
+TEST(MemoryStateEncoderTests, deltaTest3AndersenAgnostic)
 {
   using namespace jlm::llvm;
 
+  DeltaTest3 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
   /* validate f() */
   {
-    assert(test.LambdaF().subregion()->numNodes() == 6);
+    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<TruncOperation>(*truncNode, 1, 1));
+    EXPECT_TRUE(is<TruncOperation>(*truncNode, 1, 1));
 
     auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
-    assert(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
@@ -1115,40 +1162,42 @@ ValidateDeltaTest3AndersenAgnostic(const jlm::tests::DeltaTest3 & test)
         break;
       }
     }
-    assert(storeG2Node != nullptr);
+    EXPECT_NE(storeG2Node, nullptr);
 
     auto loadG2Node =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
-    assert(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
     auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
-    assert(node == lambdaEntrySplit);
+    EXPECT_EQ(node, lambdaEntrySplit);
   }
 }
 
-static void
-ValidateDeltaTest3AndersenRegionAware(const jlm::tests::DeltaTest3 & test)
+TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  DeltaTest3 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   /* validate f() */
   {
-    assert(test.LambdaF().subregion()->numNodes() == 6);
+    EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
     auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<TruncOperation>(*truncNode, 1, 1));
+    EXPECT_TRUE(is<TruncOperation>(*truncNode, 1, 1));
 
     auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
-    assert(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
@@ -1161,168 +1210,178 @@ ValidateDeltaTest3AndersenRegionAware(const jlm::tests::DeltaTest3 & test)
         break;
       }
     }
-    assert(storeG2Node != nullptr);
+    EXPECT_NE(storeG2Node, nullptr);
 
     auto loadG2Node =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
-    assert(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
     auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
-    assert(node == lambdaEntrySplit);
+    EXPECT_EQ(node, lambdaEntrySplit);
   }
 }
 
-static void
-ValidateImportTestAndersenAgnostic(const jlm::tests::ImportTest & test)
+TEST(MemoryStateEncoderTests, importTestAndersenAgnostic)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_f2->subregion()->numNodes() == 9);
+  ImportTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
+  EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetContextVars()[0].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
-      == lambdaEntrySplit);
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin()),
+      lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
   auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f1->GetContextVars()[0].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
-  assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
+  EXPECT_EQ(d1StateIndex, storeD1InF1->input(2)->origin()->index());
 
   auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetContextVars()[1].inner->SingleUser());
-  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
-  assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
+  EXPECT_NE(d1StateIndex, storeD2InF2->input(2)->origin()->index());
 }
 
-static void
-ValidateImportTestAndersenRegionAware(const jlm::tests::ImportTest & test)
+TEST(MemoryStateEncoderTests, importTestAndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  ImportTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   /* Validate f1() */
   {
-    assert(test.lambda_f1->subregion()->numNodes() == 4);
+    EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto storeNode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeNode->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
   /* Validate f2() */
   {
-    assert(test.lambda_f2->subregion()->numNodes() == 9);
+    EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
     auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetContextVars()[0].inner->SingleUser());
-    assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin()),
+        lambdaEntrySplit);
 
     auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetContextVars()[1].inner->SingleUser());
-    assert(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin()),
+        lambdaEntrySplit);
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeD1->output(0)->SingleUser());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     auto callF1 =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callEntryMerge->output(0)->SingleUser());
-    assert(is<CallOperation>(*callF1, 3, 2));
+    EXPECT_TRUE(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callF1->output(1)->SingleUser());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
 
-static void
-ValidatePhiTestAndersenAgnostic(const jlm::tests::PhiTest1 & test)
+TEST(MemoryStateEncoderTests, phiTest1AndersenAgnostic)
 {
   using namespace jlm::llvm;
+
+  PhiTest1 test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   auto [joinNode, joinOp] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca->output(1)->SingleUser());
-  assert(joinNode && joinOp);
+  EXPECT_TRUE(joinNode && joinOp);
   auto arrayStateIndex = joinNode->output(0)->SingleUser().index();
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 4, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 4, 1));
 
   auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *lambdaExitMerge->input(arrayStateIndex)->origin());
-  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
+  EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
   auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
-  assert(gamma == test.gamma);
+  EXPECT_EQ(gamma, test.gamma);
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
   auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
-  assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load1->input(1)->origin());
-  assert(is<LoadNonVolatileOperation>(*load2, 2, 2));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(*load2, 2, 2));
 
-  assert(load2->input(1)->origin()->index() == arrayStateIndex);
+  EXPECT_EQ(load2->input(1)->origin()->index(), arrayStateIndex);
 }
 
-static void
-ValidatePhiTestAndersenRegionAware(const jlm::tests::PhiTest1 & test)
+TEST(MemoryStateEncoderTests, phiTest1AndersenRegionAware)
 {
   using namespace jlm::llvm;
 
+  PhiTest1 test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda_fib->GetFunctionResults()[0]->origin());
-  assert(gamma == test.gamma);
+  EXPECT_EQ(gamma, test.gamma);
 
   // In the region aware, we know that the alloca is non-reentrant, so there is no Join
   auto [node, op] = jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       test.alloca->output(1)->SingleUser());
-  assert(!op);
+  EXPECT_EQ(op, nullptr);
 }
 
-static void
-ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
+TEST(MemoryStateEncoderTests, memCpyTestAndersenAgnostic)
 {
   using namespace jlm::llvm;
+
+  MemcpyTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
   /*
    * Validate function f
@@ -1330,18 +1389,18 @@ ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
   {
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<LoadNonVolatileOperation>(*load, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 2, 2));
 
     auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
-    assert(is<StoreNonVolatileOperation>(*store, 3, 1));
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
   }
 
   /*
@@ -1350,17 +1409,17 @@ ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
   {
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaG().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 5));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 5));
 
     auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 3, 3));
+    EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 5, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 5, 1));
 
     jlm::rvsdg::Node * memcpy = nullptr;
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
@@ -1370,19 +1429,21 @@ ValidateMemcpyAndersenAgnostic(const jlm::tests::MemcpyTest & test)
       if (is<MemCpyNonVolatileOperation>(node))
         memcpy = node;
     }
-    assert(memcpy != nullptr);
-    assert(is<MemCpyNonVolatileOperation>(*memcpy, 5, 2));
+    EXPECT_NE(memcpy, nullptr);
+    EXPECT_TRUE(is<MemCpyNonVolatileOperation>(*memcpy, 5, 2));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpy->input(4)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
   }
 }
 
-static void
-ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
+TEST(MemoryStateEncoderTests, memCpyAndersenRegionAware)
 {
   using namespace jlm::llvm;
+
+  MemcpyTest test;
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
   /*
    * Validate function f
@@ -1390,18 +1451,18 @@ ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
   {
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<LoadNonVolatileOperation>(*load, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 2, 2));
 
     auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
-    assert(is<StoreNonVolatileOperation>(*store, 3, 1));
+    EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
   /*
@@ -1410,144 +1471,144 @@ ValidateMemcpyAndersenRegionAware(const jlm::tests::MemcpyTest & test)
   {
     auto callNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.LambdaG().GetContextVars()[2].inner->SingleUser());
-    assert(is<CallOperation>(*callNode, 3, 3));
+    EXPECT_TRUE(is<CallOperation>(*callNode, 3, 3));
 
     auto callEntryMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callNode->input(2)->origin());
-    assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     auto callExitSplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callNode->output(2)->SingleUser());
-    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
+    EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto memcpyNode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
-    assert(is<MemCpyNonVolatileOperation>(*memcpyNode, 5, 2));
+    EXPECT_TRUE(is<MemCpyNonVolatileOperation>(*memcpyNode, 5, 2));
 
     auto lambdaEntrySplit =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(3)->origin());
-    assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
-    assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(4)->origin())
-        == lambdaEntrySplit);
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(4)->origin()),
+        lambdaEntrySplit);
 
     auto lambdaExitMerge =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
-    assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
 
-static void
-ValidateFreeNullTestAndersenAgnostic(const jlm::tests::FreeNullTest & test)
+TEST(MemoryStateEncoderTests, freeNullTestAndersenAgnostic)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
+  FreeNullTest test;
+  encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
+
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *GetMemoryStateRegionResult(test.LambdaMain()).origin());
-  assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto free = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.LambdaMain().GetFunctionResults()[0]->origin());
-  assert(is<FreeOperation>(*free, 2, 1));
+  EXPECT_TRUE(is<FreeOperation>(*free, 2, 1));
 
   auto lambdaEntrySplit =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
-  assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
-static void
-TestMemoryStateEncoder()
+TEST(MemoryStateEncoderTests, LambdaMemoryStateArgumentMultipleUsers)
 {
-  using namespace jlm::llvm::aa;
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
 
-  ValidateTest<jlm::tests::StoreTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateStoreTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::StoreTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateStoreTest1AndersenRegionAware);
+  // Arrange
+  auto bitType32 = BitType::Create(32);
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto pointerType = PointerType::Create();
+  auto functionTypeOne = FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { bitType32, ioStateType, memoryStateType });
+  auto functionTypeMain = FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bitType32, ioStateType, memoryStateType });
 
-  ValidateTest<jlm::tests::StoreTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateStoreTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::StoreTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateStoreTest2AndersenRegionAware);
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
-  ValidateTest<jlm::tests::LoadTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::LoadTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadTest1AndersenRegionAware);
+  LambdaNode * lambdaOne = nullptr;
+  {
+    lambdaOne = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeOne, "one", Linkage::privateLinkage));
+    auto ioStateArgument = lambdaOne->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambdaOne->GetFunctionArguments()[1];
 
-  ValidateTest<jlm::tests::LoadTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::LoadTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadTest2AndersenRegionAware);
+    auto & one = IntegerConstantOperation::Create(*lambdaOne->subregion(), 32, 1);
 
-  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateLoadFromUndefAndersenAgnostic);
-  ValidateTest<jlm::tests::LoadFromUndefTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateLoadFromUndefAndersenRegionAware);
+    lambdaOne->finalize({ one.output(0), ioStateArgument, memoryStateArgument });
+  }
 
-  ValidateTest<jlm::tests::CallTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateCallTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::CallTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateCallTest1AndersenRegionAware);
+  LambdaNode * lambdaMain = nullptr;
+  {
+    lambdaMain = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeMain, "main", Linkage::externalLinkage));
+    auto pointerArgument = lambdaMain->GetFunctionArguments()[0];
+    auto ioStateArgument = lambdaMain->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambdaMain->GetFunctionArguments()[2];
+    auto ctxVarOne = lambdaMain->AddContextVar(*lambdaOne->output());
 
-  ValidateTest<jlm::tests::CallTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateCallTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::CallTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateCallTest2AndersenRegionAware);
+    auto callResults = CallOperation::Create(
+        ctxVarOne.inner,
+        functionTypeOne,
+        { ioStateArgument, memoryStateArgument });
 
-  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest1AndersenRegionAware);
+    auto & loadNode = LoadNonVolatileOperation::CreateNode(
+        *pointerArgument,
+        { memoryStateArgument },
+        bitType32,
+        4);
 
-  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateIndirectCallTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateIndirectCallTest2AndersenRegionAware);
+    auto & addNode = CreateOpNode<IntegerAddOperation>({ callResults[0], loadNode.output(0) }, 32);
 
-  ValidateTest<jlm::tests::GammaTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateGammaTestAndersenAgnostic);
-  ValidateTest<jlm::tests::GammaTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateGammaTestAndersenRegionAware);
+    lambdaMain->finalize({ addNode.output(0), callResults[1], loadNode.output(1) });
+  }
 
-  ValidateTest<jlm::tests::ThetaTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateThetaTestAndersenAgnostic);
-  ValidateTest<jlm::tests::ThetaTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateThetaTestAndersenRegionAware);
+  GraphExport::Create(*lambdaMain->output(), "main");
 
-  ValidateTest<jlm::tests::DeltaTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest1AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest1AndersenRegionAware);
+  view(rvsdg, stdout);
 
-  ValidateTest<jlm::tests::DeltaTest2, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest2AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest2, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest2AndersenRegionAware);
+  // Act
+  encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(rvsdgModule);
 
-  ValidateTest<jlm::tests::DeltaTest3, Andersen, AgnosticModRefSummarizer>(
-      ValidateDeltaTest3AndersenAgnostic);
-  ValidateTest<jlm::tests::DeltaTest3, Andersen, RegionAwareModRefSummarizer>(
-      ValidateDeltaTest3AndersenRegionAware);
+  view(rvsdg, stdout);
 
-  ValidateTest<jlm::tests::ImportTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateImportTestAndersenAgnostic);
-  ValidateTest<jlm::tests::ImportTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateImportTestAndersenRegionAware);
+  // Assert
+  {
+    auto lambdaExitMerge =
+        TryGetOwnerNode<SimpleNode>(*GetMemoryStateRegionResult(*lambdaMain).origin());
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-  ValidateTest<jlm::tests::PhiTest1, Andersen, AgnosticModRefSummarizer>(
-      ValidatePhiTestAndersenAgnostic);
-  ValidateTest<jlm::tests::PhiTest1, Andersen, RegionAwareModRefSummarizer>(
-      ValidatePhiTestAndersenRegionAware);
+    auto loadNode = TryGetOwnerNode<SimpleNode>(*lambdaExitMerge->input(0)->origin());
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadNode, 2, 2));
 
-  ValidateTest<jlm::tests::MemcpyTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateMemcpyAndersenAgnostic);
-  ValidateTest<jlm::tests::MemcpyTest, Andersen, RegionAwareModRefSummarizer>(
-      ValidateMemcpyAndersenRegionAware);
+    auto lambdaEntrySplit = TryGetOwnerNode<SimpleNode>(*loadNode->input(1)->origin());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
-  ValidateTest<jlm::tests::FreeNullTest, Andersen, AgnosticModRefSummarizer>(
-      ValidateFreeNullTestAndersenAgnostic);
+    auto addNode = TryGetOwnerNode<SimpleNode>(*lambdaMain->GetFunctionResults()[0]->origin());
+    EXPECT_TRUE(is<IntegerAddOperation>(*addNode, 2, 1));
+
+    auto callNode = TryGetOwnerNode<SimpleNode>(*addNode->input(0)->origin());
+    EXPECT_TRUE(is<CallOperation>(*callNode, 3, 3));
+    EXPECT_TRUE(CallOperation::GetMemoryStateOutput(*callNode).IsDead());
+
+    auto callEntryMergeNode =
+        TryGetOwnerNode<SimpleNode>(*CallOperation::GetMemoryStateInput(*callNode).origin());
+    EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMergeNode, 0, 1));
+  }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder", TestMemoryStateEncoder)

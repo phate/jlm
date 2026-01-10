@@ -3,9 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
 #include <cassert>
@@ -13,11 +14,9 @@
 /**
  * Test check for adding a region argument to input of wrong structural node.
  */
-static void
-ArgumentNodeMismatch()
+TEST(ArgumentTests, ArgumentNodeMismatch)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto valueType = TestType::createValueType();
@@ -30,28 +29,15 @@ ArgumentNodeMismatch()
 
   auto & structuralInput = structuralNode1->addInputOnly(import);
 
-  // Act
-  bool inputErrorHandlerCalled = false;
-  try
-  {
-    TestGraphArgument::Create(*structuralNode2->subregion(0), &structuralInput, valueType);
-  }
-  catch (jlm::util::Error &)
-  {
-    inputErrorHandlerCalled = true;
-  }
-
-  // Assert
-  assert(inputErrorHandlerCalled);
+  // Act & Assert
+  EXPECT_THROW(
+      RegionArgument::Create(*structuralNode2->subregion(0), &structuralInput, valueType),
+      jlm::util::Error);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ArgumentTests-ArgumentNodeMismatch", ArgumentNodeMismatch)
-
-static void
-ArgumentInputTypeMismatch()
+TEST(ArgumentTests, ArgumentInputTypeMismatch)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -65,20 +51,7 @@ ArgumentInputTypeMismatch()
   auto & structuralInput = structuralNode->addInputOnly(x);
 
   // Act & Assert
-  bool exceptionWasCaught = false;
-  try
-  {
-    TestGraphArgument::Create(*structuralNode->subregion(0), &structuralInput, stateType);
-    // The line below should not be executed as the line above is expected to throw an exception.
-    assert(false);
-  }
-  catch (TypeError &)
-  {
-    exceptionWasCaught = true;
-  }
-  assert(exceptionWasCaught);
+  EXPECT_THROW(
+      RegionArgument::Create(*structuralNode->subregion(0), &structuralInput, stateType),
+      jlm::util::TypeError);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/ArgumentTests-ArgumentInputTypeMismatch",
-    ArgumentInputTypeMismatch)

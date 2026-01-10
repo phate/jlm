@@ -3,19 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-static void
-TestOutputIterator()
+TEST(OutputTests, TestOutputIterator)
 {
   using namespace jlm::rvsdg;
 
@@ -28,7 +27,7 @@ TestOutputIterator()
   auto i1 = &GraphImport::Create(rvsdg, valueType, "i");
   auto i2 = &GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       rootRegion,
       std::vector<std::shared_ptr<const Type>>(),
       std::vector<std::shared_ptr<const Type>>(5, valueType));
@@ -37,49 +36,46 @@ TestOutputIterator()
 
   // Act & Assert
   auto nodeIt = Output::Iterator(node.output(0));
-  assert(nodeIt.GetOutput() == node.output(0));
-  assert(nodeIt->index() == node.output(0)->index());
-  assert((*nodeIt).index() == node.output(0)->index());
-  assert(nodeIt == Output::Iterator(node.output(0)));
-  assert(nodeIt != Output::Iterator(node.output(1)));
+  EXPECT_EQ(nodeIt.GetOutput(), node.output(0));
+  EXPECT_EQ(nodeIt->index(), node.output(0)->index());
+  EXPECT_EQ((*nodeIt).index(), node.output(0)->index());
+  EXPECT_EQ(nodeIt, Output::Iterator(node.output(0)));
+  EXPECT_NE(nodeIt, Output::Iterator(node.output(1)));
 
   nodeIt++;
-  assert(nodeIt.GetOutput() == node.output(1));
+  EXPECT_EQ(nodeIt.GetOutput(), node.output(1));
 
   ++nodeIt;
-  assert(nodeIt.GetOutput() == node.output(2));
+  EXPECT_EQ(nodeIt.GetOutput(), node.output(2));
 
   ++nodeIt;
   ++nodeIt;
-  assert(nodeIt.GetOutput() == node.output(4));
+  EXPECT_EQ(nodeIt.GetOutput(), node.output(4));
 
   ++nodeIt;
-  assert(nodeIt.GetOutput() == nullptr);
+  EXPECT_EQ(nodeIt.GetOutput(), nullptr);
 
   auto regionIt = Output::Iterator(rootRegion.argument(0));
-  assert(regionIt.GetOutput() == i0);
-  assert(regionIt->index() == i0->index());
-  assert((*regionIt).index() == i0->index());
-  assert(regionIt == Output::Iterator(i0));
-  assert(regionIt != Output::Iterator(i1));
+  EXPECT_EQ(regionIt.GetOutput(), i0);
+  EXPECT_EQ(regionIt->index(), i0->index());
+  EXPECT_EQ((*regionIt).index(), i0->index());
+  EXPECT_EQ(regionIt, Output::Iterator(i0));
+  EXPECT_NE(regionIt, Output::Iterator(i1));
 
   regionIt++;
   regionIt++;
-  assert(regionIt.GetOutput() == i2);
+  EXPECT_EQ(regionIt.GetOutput(), i2);
 
   regionIt++;
-  assert(regionIt.GetOutput() == nullptr);
+  EXPECT_EQ(regionIt.GetOutput(), nullptr);
 
   auto it = Input::Iterator(nullptr);
   it++;
   ++it;
-  assert(it.GetInput() == nullptr);
+  EXPECT_EQ(it.GetInput(), nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-TestOutputIterator", TestOutputIterator)
-
-static void
-RouteToRegion_Gamma()
+TEST(OutputTests, RouteToRegion_Gamma)
 {
   using namespace jlm::rvsdg;
 
@@ -97,15 +93,12 @@ RouteToRegion_Gamma()
   const auto & output = RouteToRegion(i0, *gammaNode->subregion(1));
 
   // Assert
-  assert(output.region() == gammaNode->subregion(1));
-  assert(gammaNode->GetEntryVars().size() == 1);
-  assert(gammaNode->GetExitVars().size() == 0);
+  EXPECT_EQ(output.region(), gammaNode->subregion(1));
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1u);
+  EXPECT_EQ(gammaNode->GetExitVars().size(), 0u);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Gamma", RouteToRegion_Gamma)
-
-static void
-RouteToRegion_Theta()
+TEST(OutputTests, RouteToRegion_Theta)
 {
   using namespace jlm::rvsdg;
 
@@ -121,15 +114,12 @@ RouteToRegion_Theta()
   const auto & output = RouteToRegion(i0, *thetaNode->subregion());
 
   // Assert
-  assert(output.region() == thetaNode->subregion());
-  assert(thetaNode->GetLoopVars().size() == 1);
-  assert(&output == thetaNode->GetLoopVars()[0].pre);
+  EXPECT_EQ(output.region(), thetaNode->subregion());
+  EXPECT_EQ(thetaNode->GetLoopVars().size(), 1u);
+  EXPECT_EQ(&output, thetaNode->GetLoopVars()[0].pre);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Theta", RouteToRegion_Theta)
-
-static void
-RouteToRegion_Lambda()
+TEST(OutputTests, RouteToRegion_Lambda)
 {
   using namespace jlm::rvsdg;
 
@@ -147,15 +137,12 @@ RouteToRegion_Lambda()
   const auto & output = RouteToRegion(i0, *lambdaNode->subregion());
 
   // Assert
-  assert(output.region() == lambdaNode->subregion());
-  assert(lambdaNode->GetContextVars().size() == 1);
-  assert(&output == lambdaNode->GetContextVars()[0].inner);
+  EXPECT_EQ(output.region(), lambdaNode->subregion());
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
+  EXPECT_EQ(&output, lambdaNode->GetContextVars()[0].inner);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Lambda", RouteToRegion_Lambda)
-
-static void
-RouteToRegion_Phi()
+TEST(OutputTests, RouteToRegion_Phi)
 {
   using namespace jlm::rvsdg;
 
@@ -173,15 +160,12 @@ RouteToRegion_Phi()
   const auto & output = RouteToRegion(i0, *phiNode->subregion());
 
   // Assert
-  assert(output.region() == phiNode->subregion());
-  assert(phiNode->GetContextVars().size() == 1);
-  assert(&output == phiNode->GetContextVars()[0].inner);
+  EXPECT_EQ(output.region(), phiNode->subregion());
+  EXPECT_EQ(phiNode->GetContextVars().size(), 1u);
+  EXPECT_EQ(&output, phiNode->GetContextVars()[0].inner);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Phi", RouteToRegion_Phi)
-
-static void
-RouteToRegion_Delta()
+TEST(OutputTests, RouteToRegion_Delta)
 {
   using namespace jlm::rvsdg;
 
@@ -199,15 +183,12 @@ RouteToRegion_Delta()
   const auto & output = RouteToRegion(i0, *deltaNode->subregion());
 
   // Assert
-  assert(output.region() == deltaNode->subregion());
-  assert(deltaNode->GetContextVars().size() == 1);
-  assert(&output == deltaNode->GetContextVars()[0].inner);
+  EXPECT_EQ(output.region(), deltaNode->subregion());
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1u);
+  EXPECT_EQ(&output, deltaNode->GetContextVars()[0].inner);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Delta", RouteToRegion_Delta)
-
-static void
-RouteToRegion_Nesting()
+TEST(OutputTests, RouteToRegion_Nesting)
 {
   using namespace jlm::rvsdg;
 
@@ -229,20 +210,17 @@ RouteToRegion_Nesting()
   const auto & output = RouteToRegion(i0, *gammaNode->subregion(0));
 
   // Assert
-  assert(output.region() == gammaNode->subregion(0));
-  assert(gammaNode->GetEntryVars().size() == 1);
-  assert(gammaNode->GetExitVars().size() == 0);
-  assert(&output == gammaNode->GetEntryVars()[0].branchArgument[0]);
+  EXPECT_EQ(output.region(), gammaNode->subregion(0));
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1u);
+  EXPECT_EQ(gammaNode->GetExitVars().size(), 0u);
+  EXPECT_EQ(&output, gammaNode->GetEntryVars()[0].branchArgument[0]);
 
   auto origin = gammaNode->GetEntryVars()[0].input->origin();
-  assert(lambdaNode->GetContextVars().size() == 1);
-  assert(origin == lambdaNode->GetContextVars()[0].inner);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
+  EXPECT_EQ(origin, lambdaNode->GetContextVars()[0].inner);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Nesting", RouteToRegion_Nesting)
-
-static void
-RouteToRegion_Failure()
+TEST(OutputTests, RouteToRegion_Failure)
 {
   using namespace jlm::rvsdg;
 
@@ -258,21 +236,12 @@ RouteToRegion_Failure()
   auto entryVar = gammaNode->AddEntryVar(&i0);
 
   // Act & Assert
-  try
-  {
-    RouteToRegion(*entryVar.branchArgument[0], *gammaNode->subregion(1));
-    assert(false);
-  }
-  catch (std::logic_error const &)
-  {
-    assert(true);
-  }
+  EXPECT_THROW(
+      RouteToRegion(*entryVar.branchArgument[0], *gammaNode->subregion(1)),
+      std::logic_error);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Failure", RouteToRegion_Failure)
-
-static void
-DivertUsersWhere()
+TEST(OutputTests, DivertUsersWhere)
 {
   using namespace jlm::rvsdg;
 
@@ -297,8 +266,8 @@ DivertUsersWhere()
       {
         return true;
       });
-  assert(numDivertedUsers == 0);
-  assert(i0.nusers() == 4);
+  EXPECT_EQ(numDivertedUsers, 0u);
+  EXPECT_EQ(i0.nusers(), 4u);
 
   // Divert user x0 to new origin i0
   numDivertedUsers = i0.divertUsersWhere(
@@ -307,9 +276,9 @@ DivertUsersWhere()
       {
         return &user == &x0;
       });
-  assert(numDivertedUsers == 1);
-  assert(i0.nusers() == 3);
-  assert(x0.origin() == &i1);
+  EXPECT_EQ(numDivertedUsers, 1u);
+  EXPECT_EQ(i0.nusers(), 3u);
+  EXPECT_EQ(x0.origin(), &i1);
 
   // Nothing should happen as x0 is no longer a user of i0
   numDivertedUsers = i0.divertUsersWhere(
@@ -318,8 +287,8 @@ DivertUsersWhere()
       {
         return &user == &x0;
       });
-  assert(numDivertedUsers == 0);
-  assert(i0.nusers() == 3);
+  EXPECT_EQ(numDivertedUsers, 0u);
+  EXPECT_EQ(i0.nusers(), 3u);
 
   // Divert users x1 and x2 to i1
   numDivertedUsers = i0.divertUsersWhere(
@@ -328,10 +297,10 @@ DivertUsersWhere()
       {
         return &user == &x1 || &user == &x2;
       });
-  assert(numDivertedUsers == 2);
-  assert(i0.nusers() == 1);
-  assert(x1.origin() == &i1);
-  assert(x2.origin() == &i1);
+  EXPECT_EQ(numDivertedUsers, 2u);
+  EXPECT_EQ(i0.nusers(), 1u);
+  EXPECT_EQ(x1.origin(), &i1);
+  EXPECT_EQ(x2.origin(), &i1);
 
   // Finally, divert user x3 to i1
   numDivertedUsers = i0.divertUsersWhere(
@@ -340,9 +309,7 @@ DivertUsersWhere()
       {
         return &user == &x3;
       });
-  assert(numDivertedUsers == 1);
-  assert(i0.nusers() == 0);
-  assert(x3.origin() == &i1);
+  EXPECT_EQ(numDivertedUsers, 1u);
+  EXPECT_EQ(i0.nusers(), 0u);
+  EXPECT_EQ(x3.origin(), &i1);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-DivertUsersWhere", DivertUsersWhere)

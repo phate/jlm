@@ -4,16 +4,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 
-static void
-TestLambda()
+TEST(JlmToMlirConverterTests, TestLambda)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -46,31 +46,32 @@ TestLambda()
     // Validate the generated MLIR
     std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
-    assert(omegaBlock.getOperations().size() == 2);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2);
     auto & mlirLambda = omegaBlock.front();
-    assert(mlirLambda.getName().getStringRef().equals(mlir::rvsdg::LambdaNode::getOperationName()));
+    EXPECT_TRUE(
+        mlirLambda.getName().getStringRef().equals(mlir::rvsdg::LambdaNode::getOperationName()));
 
     // Verify function name
     std::cout << "Verify function name" << std::endl;
     auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
     auto * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
     auto string = functionName->getValue().str();
-    assert(string == "test");
+    EXPECT_EQ(string, "test");
 
     // Verify function signature
     std::cout << "Verify function signature" << std::endl;
 
     auto result = mlirLambda.getResult(0).getType();
-    assert(result.getTypeID() == mlir::FunctionType::getTypeID());
+    EXPECT_EQ(result.getTypeID(), mlir::FunctionType::getTypeID());
 
     auto lambdaOp = ::mlir::dyn_cast<::mlir::rvsdg::LambdaNode>(&mlirLambda);
 
     auto lamdbaTerminator = lambdaOp.getRegion().front().getTerminator();
     auto lambdaResult = mlir::dyn_cast<mlir::rvsdg::LambdaResult>(lamdbaTerminator);
-    assert(lambdaResult != nullptr);
+    EXPECT_NE(lambdaResult, nullptr);
     lambdaResult->dump();
 
     std::vector<mlir::Type> arguments;
@@ -78,22 +79,22 @@ TestLambda()
     {
       arguments.push_back(argument.getType());
     }
-    assert(arguments[0].getTypeID() == IOStateEdgeType::getTypeID());
-    assert(arguments[1].getTypeID() == MemStateEdgeType::getTypeID());
+    EXPECT_EQ(arguments[0].getTypeID(), IOStateEdgeType::getTypeID());
+    EXPECT_EQ(arguments[1].getTypeID(), MemStateEdgeType::getTypeID());
     std::vector<mlir::Type> results;
     for (auto returnType : lambdaResult->getOperandTypes())
     {
       results.push_back(returnType);
     }
-    assert(results[0].isa<mlir::IntegerType>());
-    assert(results[1].isa<mlir::rvsdg::IOStateEdgeType>());
-    assert(results[2].isa<mlir::rvsdg::MemStateEdgeType>());
+    EXPECT_TRUE(results[0].isa<mlir::IntegerType>());
+    EXPECT_TRUE(results[1].isa<mlir::rvsdg::IOStateEdgeType>());
+    EXPECT_TRUE(results[2].isa<mlir::rvsdg::MemStateEdgeType>());
 
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
     // Bitconstant + terminating operation
-    assert(lambdaBlock.getOperations().size() == 2);
-    assert(lambdaBlock.front().getName().getStringRef().equals(
+    EXPECT_EQ(lambdaBlock.getOperations().size(), 2);
+    EXPECT_TRUE(lambdaBlock.front().getName().getStringRef().equals(
         mlir::arith::ConstantIntOp::getOperationName()));
 
     omega->destroy();
@@ -118,7 +119,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
   std::cout << "Checking if operation: "
             << operation->getOperand(0).getDefiningOp()->getName().getStringRef().data()
             << " is equal to: " << definingOperations.back().data() << std::endl;
-  assert(operation->getOperand(0).getDefiningOp()->getName().getStringRef().equals(
+  EXPECT_TRUE(operation->getOperand(0).getDefiningOp()->getName().getStringRef().equals(
       definingOperations.back()));
   definingOperations.pop_back();
   useChainsUpTraverse(operation->getOperand(0).getDefiningOp(), definingOperations);
@@ -136,8 +137,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
  * constants. The users trace goes through the operation first operand user recursively to trace the
  * nodes.
  */
-static void
-TestAddOperation()
+TEST(JlmToMlirConverterTests, TestAddOperation)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -174,10 +174,10 @@ TestAddOperation()
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
-    assert(omegaBlock.getOperations().size() == 2);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2);
 
     // Checking lambda block operations
     std::cout << "Checking lambda block operations" << std::endl;
@@ -185,7 +185,7 @@ TestAddOperation()
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
     // 2 Bits contants + add + terminating operation
-    assert(lambdaBlock.getOperations().size() == 4);
+    EXPECT_EQ(lambdaBlock.getOperations().size(), 4);
 
     // Checking lambda block operations types
     std::cout << "Checking lambda block operations types" << std::endl;
@@ -208,16 +208,16 @@ TestAddOperation()
       }
       // Checking add operation
       std::cout << "Checking add operation" << std::endl;
-      assert(operation->getName().getStringRef().equals(
+      EXPECT_TRUE(operation->getName().getStringRef().equals(
           mlir::arith::AddIOp::getOperationName())); // Last remaining operation is the add
                                                      // operation
-      assert(operation->getNumOperands() == 2);
+      EXPECT_EQ(operation->getNumOperands(), 2);
       auto addOperand1 = operation->getOperand(0);
       auto addOperand2 = operation->getOperand(1);
-      assert(addOperand1.getType().isInteger(32));
-      assert(addOperand2.getType().isInteger(32));
+      EXPECT_TRUE(addOperand1.getType().isInteger(32));
+      EXPECT_TRUE(addOperand2.getType().isInteger(32));
     }
-    assert(constCount == 2);
+    EXPECT_EQ(constCount, 2);
 
     useChainsUpTraverse(
         &lambdaBlock.getOperations().back(),
@@ -234,8 +234,7 @@ TestAddOperation()
  * and comparison operation, it tests operations types
  * and does the use chain traversal.
  */
-static void
-TestComZeroExt()
+TEST(JlmToMlirConverterTests, TestComZeroExt)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -279,10 +278,10 @@ TestComZeroExt()
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
-    assert(omegaBlock.getOperations().size() == 2);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2);
 
     // Checking lambda block operations
     std::cout << "Checking lambda block operations" << std::endl;
@@ -290,7 +289,7 @@ TestComZeroExt()
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
     // 3 Bits contants + ZeroExt + Mul + Comp + terminating operation
-    assert(lambdaBlock.getOperations().size() == 7);
+    EXPECT_EQ(lambdaBlock.getOperations().size(), 7);
 
     // Checking lambda block operations types
     std::cout << "Checking lambda block operations types" << std::endl;
@@ -312,7 +311,7 @@ TestComZeroExt()
       if (operation->getName().getStringRef().equals(
               mlir::arith::ConstantIntOp::getOperationName()))
       {
-        assert(
+        EXPECT_TRUE(
             operation->getResult(0).getType().isInteger(8)
             || operation->getResult(0).getType().isInteger(16));
         constCount++;
@@ -320,43 +319,43 @@ TestComZeroExt()
       }
       if (operation->getName().getStringRef().equals(mlir::arith::ExtUIOp::getOperationName()))
       {
-        assert(operation->getNumOperands() == 1);
-        assert(operation->getOperand(0).getType().isInteger(8));
-        assert(operation->getNumResults() == 1);
-        assert(operation->getResult(0).getType().isInteger(16));
+        EXPECT_EQ(operation->getNumOperands(), 1);
+        EXPECT_TRUE(operation->getOperand(0).getType().isInteger(8));
+        EXPECT_EQ(operation->getNumResults(), 1);
+        EXPECT_TRUE(operation->getResult(0).getType().isInteger(16));
         extCount++;
         continue;
       }
       if (operation->getName().getStringRef().equals(mlir::arith::MulIOp::getOperationName()))
       {
-        assert(operation->getNumOperands() == 2);
-        assert(operation->getOperand(0).getType().isInteger(16));
-        assert(operation->getOperand(1).getType().isInteger(16));
-        assert(operation->getNumResults() == 1);
-        assert(operation->getResult(0).getType().isInteger(16));
+        EXPECT_EQ(operation->getNumOperands(), 2);
+        EXPECT_TRUE(operation->getOperand(0).getType().isInteger(16));
+        EXPECT_TRUE(operation->getOperand(1).getType().isInteger(16));
+        EXPECT_EQ(operation->getNumResults(), 1);
+        EXPECT_TRUE(operation->getResult(0).getType().isInteger(16));
         mulCount++;
         continue;
       }
       if (operation->getName().getStringRef().equals(mlir::arith::CmpIOp::getOperationName()))
       {
         auto comparisonOp = mlir::cast<mlir::arith::CmpIOp>(operation);
-        assert(comparisonOp.getPredicate() == mlir::arith::CmpIPredicate::sgt);
-        assert(operation->getNumOperands() == 2);
-        assert(operation->getOperand(0).getType().isInteger(16));
-        assert(operation->getOperand(1).getType().isInteger(16));
-        assert(operation->getNumResults() == 1);
+        EXPECT_EQ(comparisonOp.getPredicate(), mlir::arith::CmpIPredicate::sgt);
+        EXPECT_EQ(operation->getNumOperands(), 2);
+        EXPECT_TRUE(operation->getOperand(0).getType().isInteger(16));
+        EXPECT_TRUE(operation->getOperand(1).getType().isInteger(16));
+        EXPECT_EQ(operation->getNumResults(), 1);
         compCount++;
         continue;
       }
-      assert(false);
+      FAIL();
     }
 
     // Check counts
     std::cout << "Checking counts" << std::endl;
-    assert(constCount == 3);
-    assert(extCount == 1);
-    assert(mulCount == 1);
-    assert(compCount == 1);
+    EXPECT_EQ(constCount, 3);
+    EXPECT_EQ(extCount, 1);
+    EXPECT_EQ(mulCount, 1);
+    EXPECT_EQ(compCount, 1);
 
     useChainsUpTraverse(
         &lambdaBlock.getOperations().back(),
@@ -373,8 +372,7 @@ TestComZeroExt()
  *
  * This test is similar to previous tests, but uses a match operation
  */
-static void
-TestMatch()
+TEST(JlmToMlirConverterTests, TestMatch)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -412,10 +410,10 @@ TestMatch()
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
-    assert(omegaBlock.getOperations().size() == 2);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2);
 
     // Checking lambda block operations
     std::cout << "Checking lambda block operations" << std::endl;
@@ -423,7 +421,7 @@ TestMatch()
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
     // 1 Bits contants + Match + terminating operation
-    assert(lambdaBlock.getOperations().size() == 3);
+    EXPECT_EQ(lambdaBlock.getOperations().size(), 3);
 
     bool matchFound = false;
     for (auto & operation : lambdaBlock.getOperations())
@@ -434,40 +432,40 @@ TestMatch()
         std::cout << "Checking match operation" << std::endl;
         auto matchOp = mlir::cast<mlir::rvsdg::Match>(operation);
 
-        assert(mlir::isa<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp()));
+        EXPECT_TRUE(mlir::isa<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp()));
         auto constant = mlir::cast<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp());
-        assert(constant.value() == 4);
-        assert(constant.getType().isInteger(8));
+        EXPECT_EQ(constant.value(), 4);
+        EXPECT_TRUE(constant.getType().isInteger(8));
 
         auto mapping = matchOp.getMapping();
         mapping.dump();
         // 3 alternatives + default
-        assert(mapping.size() == 4);
+        EXPECT_EQ(mapping.size(), 4);
 
         // ** region check alternatives *$
         for (auto & attr : mapping)
         {
-          assert(attr.isa<::mlir::rvsdg::MatchRuleAttr>());
+          EXPECT_TRUE(attr.isa<::mlir::rvsdg::MatchRuleAttr>());
           auto matchRuleAttr = attr.cast<::mlir::rvsdg::MatchRuleAttr>();
           if (matchRuleAttr.isDefault())
           {
-            assert(matchRuleAttr.getIndex() == 2);
-            assert(matchRuleAttr.getValues().empty());
+            EXPECT_EQ(matchRuleAttr.getIndex(), 2);
+            EXPECT_TRUE(matchRuleAttr.getValues().empty());
             continue;
           }
 
-          assert(matchRuleAttr.getValues().size() == 1);
+          EXPECT_EQ(matchRuleAttr.getValues().size(), 1);
 
           const int64_t value = matchRuleAttr.getValues().front();
 
-          assert(
+          EXPECT_TRUE(
               (matchRuleAttr.getIndex() == 0 && value == 4)
               || (matchRuleAttr.getIndex() == 1 && (value == 5 || value == 6)));
         }
         // ** endregion check alternatives **
       }
     }
-    assert(matchFound);
+    EXPECT_TRUE(matchFound);
 
     omega->destroy();
   }
@@ -477,8 +475,7 @@ TestMatch()
  *
  * This test is similar to previous tests, but uses a gamma operation
  */
-static void
-TestGamma()
+TEST(JlmToMlirConverterTests, TestGamma)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -523,10 +520,10 @@ TestGamma()
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // 1 control + 2 constants + gamma + terminating operation
-    assert(omegaBlock.getOperations().size() == 5);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 5);
 
     bool gammaFound = false;
     for (auto & operation : omegaBlock.getOperations())
@@ -536,56 +533,56 @@ TestGamma()
         gammaFound = true;
         std::cout << "Checking gamma operation" << std::endl;
         auto gammaOp = mlir::cast<mlir::rvsdg::GammaNode>(operation);
-        assert(gammaOp.getNumRegions() == 3);
+        EXPECT_EQ(gammaOp.getNumRegions(), 3);
         // 1 predicate + 2 entryVars
-        assert(gammaOp.getNumOperands() == 3);
-        assert(gammaOp.getNumResults() == 2);
+        EXPECT_EQ(gammaOp.getNumOperands(), 3);
+        EXPECT_EQ(gammaOp.getNumResults(), 2);
 
         std::cout << "Checking gamma predicate" << std::endl;
-        assert(mlir::isa<mlir::rvsdg::ConstantCtrl>(gammaOp.getPredicate().getDefiningOp()));
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::ConstantCtrl>(gammaOp.getPredicate().getDefiningOp()));
         auto controlConstant =
             mlir::cast<mlir::rvsdg::ConstantCtrl>(gammaOp.getPredicate().getDefiningOp());
-        assert(controlConstant.getValue() == 1);
-        assert(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
+        EXPECT_EQ(controlConstant.getValue(), 1);
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
         auto ctrlType = mlir::cast<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType());
-        assert(ctrlType.getNumOptions() == 3);
+        EXPECT_EQ(ctrlType.getNumOptions(), 3);
 
         std::cout << "Checking gamma entryVars" << std::endl;
         //! getInputs() corresponds to the entryVars
         auto entryVars = gammaOp.getInputs();
-        assert(entryVars.size() == 2);
-        assert(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[0].getDefiningOp()));
-        assert(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[1].getDefiningOp()));
+        EXPECT_EQ(entryVars.size(), 2);
+        EXPECT_TRUE(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[0].getDefiningOp()));
+        EXPECT_TRUE(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[1].getDefiningOp()));
         auto entryVar1 = mlir::cast<mlir::arith::ConstantIntOp>(entryVars[0].getDefiningOp());
         auto entryVar2 = mlir::cast<mlir::arith::ConstantIntOp>(entryVars[1].getDefiningOp());
-        assert(entryVar1.value() == 5);
-        assert(entryVar2.value() == 6);
+        EXPECT_EQ(entryVar1.value(), 5);
+        EXPECT_EQ(entryVar2.value(), 6);
 
         std::cout << "Checking gamma subregions" << std::endl;
         for (size_t i = 0; i < gammaOp.getNumRegions(); i++)
         {
-          assert(gammaOp.getRegion(i).getBlocks().size() == 1);
+          EXPECT_EQ(gammaOp.getRegion(i).getBlocks().size(), 1);
           auto & gammaBlock = gammaOp.getRegion(i).front();
           // 2 bit constants + gamma result
-          assert(gammaBlock.getOperations().size() == 3);
+          EXPECT_EQ(gammaBlock.getOperations().size(), 3);
 
           std::cout << "Checking gamma exitVars" << std::endl;
           auto gammaResult = gammaBlock.getTerminator();
-          assert(mlir::isa<mlir::rvsdg::GammaResult>(gammaResult));
+          EXPECT_TRUE(mlir::isa<mlir::rvsdg::GammaResult>(gammaResult));
           auto gammaResultOp = mlir::cast<mlir::rvsdg::GammaResult>(gammaResult);
-          assert(gammaResultOp.getNumOperands() == 2);
+          EXPECT_EQ(gammaResultOp.getNumOperands(), 2);
           for (size_t j = 0; j < gammaResultOp.getNumOperands(); j++)
           {
-            assert(
+            EXPECT_TRUE(
                 mlir::isa<mlir::arith::ConstantIntOp>(gammaResultOp.getOperand(j).getDefiningOp()));
             auto constant =
                 mlir::cast<mlir::arith::ConstantIntOp>(gammaResultOp.getOperand(j).getDefiningOp());
-            assert(static_cast<size_t>(constant.value()) == (1 - j) * (i + 1) + 10 * (i + 1) * j);
+            EXPECT_EQ(static_cast<size_t>(constant.value()), (1 - j) * (i + 1) + 10 * (i + 1) * j);
           }
         }
       }
     }
-    assert(gammaFound);
+    EXPECT_TRUE(gammaFound);
     omega->destroy();
   }
 }
@@ -594,8 +591,7 @@ TestGamma()
  *
  * This test is similar to previous tests, but uses a theta operation
  */
-static void
-TestTheta()
+TEST(JlmToMlirConverterTests, TestTheta)
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -625,10 +621,10 @@ TestTheta()
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    assert(omegaRegion.getBlocks().size() == 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
     auto & omegaBlock = omegaRegion.front();
     // 1 theta + 1 predicate + 2 constants
-    assert(omegaBlock.getOperations().size() == 4);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 4);
 
     bool thetaFound = false;
     for (auto & operation : omegaBlock.getOperations())
@@ -639,40 +635,41 @@ TestTheta()
         std::cout << "Checking theta operation" << std::endl;
         auto thetaOp = mlir::cast<mlir::rvsdg::ThetaNode>(operation);
         // 2 loop vars
-        assert(thetaOp.getNumOperands() == 2);
-        assert(thetaOp.getNumResults() == 2);
+        EXPECT_EQ(thetaOp.getNumOperands(), 2);
+        EXPECT_EQ(thetaOp.getNumResults(), 2);
 
         auto & thetaBlock = thetaOp.getRegion().front();
         auto thetaResult = thetaBlock.getTerminator();
 
-        assert(mlir::isa<mlir::rvsdg::ThetaResult>(thetaResult));
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::ThetaResult>(thetaResult));
         auto thetaResultOp = mlir::cast<mlir::rvsdg::ThetaResult>(thetaResult);
 
         std::cout << "Checking theta predicate" << std::endl;
 
-        assert(mlir::isa<mlir::rvsdg::ConstantCtrl>(thetaResultOp.getPredicate().getDefiningOp()));
+        EXPECT_TRUE(
+            mlir::isa<mlir::rvsdg::ConstantCtrl>(thetaResultOp.getPredicate().getDefiningOp()));
         auto controlConstant =
             mlir::cast<mlir::rvsdg::ConstantCtrl>(thetaResultOp.getPredicate().getDefiningOp());
 
-        assert(controlConstant.getValue() == 0);
+        EXPECT_EQ(controlConstant.getValue(), 0);
 
-        assert(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
+        EXPECT_TRUE(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
         auto ctrlType = mlir::cast<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType());
-        assert(ctrlType.getNumOptions() == 2);
+        EXPECT_EQ(ctrlType.getNumOptions(), 2);
 
         std::cout << "Checking theta loop vars" << std::endl;
         //! getInputs() corresponds to the loop vars
         auto loopVars = thetaOp.getInputs();
-        assert(loopVars.size() == 2);
-        assert(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[0].getDefiningOp()));
-        assert(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[1].getDefiningOp()));
+        EXPECT_EQ(loopVars.size(), 2);
+        EXPECT_TRUE(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[0].getDefiningOp()));
+        EXPECT_TRUE(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[1].getDefiningOp()));
         auto loopVar1 = mlir::cast<mlir::arith::ConstantIntOp>(loopVars[0].getDefiningOp());
         auto loopVar2 = mlir::cast<mlir::arith::ConstantIntOp>(loopVars[1].getDefiningOp());
-        assert(loopVar1.value() == 5);
-        assert(loopVar2.value() == 6);
+        EXPECT_EQ(loopVar1.value(), 5);
+        EXPECT_EQ(loopVar2.value(), 6);
 
         // Theta result, constant control predicate
-        assert(thetaBlock.getOperations().size() == 2);
+        EXPECT_EQ(thetaBlock.getOperations().size(), 2);
 
         std::cout << "Checking loop exitVars" << std::endl;
         std::cout << thetaResultOp.getNumOperands() << std::endl;
@@ -680,18 +677,11 @@ TestTheta()
         std::cout << "Checking theta subregion" << std::endl;
 
         // Two arguments and predicate
-        assert(thetaResultOp.getNumOperands() == 3);
+        EXPECT_EQ(thetaResultOp.getNumOperands(), 3);
       }
     }
     // }
-    assert(thetaFound);
+    EXPECT_TRUE(thetaFound);
     omega->destroy();
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirAddOperationGen", TestAddOperation)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirComZeroExtGen", TestComZeroExt)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirMatchGen", TestMatch)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirGammaGen", TestGamma)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirThetaGen", TestTheta)

@@ -3,19 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/traverser.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -61,8 +60,7 @@ create_theta(
   return theta;
 }
 
-static inline void
-test_unrollinfo()
+TEST(LoopUnrollingTests, test_unrollinfo)
 {
   auto bt32 = jlm::rvsdg::BitType::Create(32);
   jlm::rvsdg::bitslt_op slt(32);
@@ -81,13 +79,13 @@ test_unrollinfo()
     auto theta = create_theta(slt, add, x, x, x);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
 
-    assert(ui);
-    assert(ui->is_additive());
-    assert(!ui->is_subtractive());
-    assert(!ui->is_known());
-    assert(!ui->niterations());
-    assert(ui->theta() == theta);
-    assert(theta->MapPreLoopVar(*ui->idv()).input->origin() == x);
+    EXPECT_NE(ui, nullptr);
+    EXPECT_TRUE(ui->is_additive());
+    EXPECT_FALSE(ui->is_subtractive());
+    EXPECT_FALSE(ui->is_known());
+    EXPECT_FALSE(ui->niterations());
+    EXPECT_EQ(ui->theta(), theta);
+    EXPECT_EQ(theta->MapPreLoopVar(*ui->idv()).input->origin(), x);
   }
 
   {
@@ -108,36 +106,35 @@ test_unrollinfo()
 
     auto theta = create_theta(ult, add, init0, step1, end100);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && *ui->niterations() == 100);
+    EXPECT_TRUE(ui && *ui->niterations() == 100);
 
     theta = create_theta(ule, add, init0, step1, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && *ui->niterations() == 101);
+    EXPECT_TRUE(ui && *ui->niterations() == 101);
 
     theta = create_theta(ugt, sub, end100, stepm1, init0);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && *ui->niterations() == 100);
+    EXPECT_TRUE(ui && *ui->niterations() == 100);
 
     theta = create_theta(sge, sub, end100, stepm1, init0);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && *ui->niterations() == 101);
+    EXPECT_TRUE(ui && *ui->niterations() == 101);
 
     theta = create_theta(ult, add, init0, step0, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && !ui->niterations());
+    EXPECT_TRUE(ui && !ui->niterations());
 
     theta = create_theta(eq, add, initm1, step1, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && *ui->niterations() == 101);
+    EXPECT_TRUE(ui && *ui->niterations() == 101);
 
     theta = create_theta(eq, add, init1, step2, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
-    assert(ui && !ui->niterations());
+    EXPECT_TRUE(ui && !ui->niterations());
   }
 }
 
-static inline void
-test_known_boundaries()
+TEST(LoopUnrollingTests, test_known_boundaries)
 {
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitsgt_op sgt(32);
@@ -159,7 +156,7 @@ test_known_boundaries()
       The unroll factor is greater than or equal the number of iterations.
       The loop should be fully unrolled and the theta removed.
     */
-    assert(nthetas(&graph.GetRootRegion()) == 0);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0u);
   }
 
   {
@@ -177,7 +174,7 @@ test_known_boundaries()
       The unroll factor is a multiple of the number of iterations.
       We should only find one (unrolled) theta.
     */
-    assert(nthetas(&graph.GetRootRegion()) == 1);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -196,7 +193,7 @@ test_known_boundaries()
       and we have one remaining iteration. We should find only the
       unrolled theta and the body of the old theta as epilogue.
     */
-    assert(nthetas(&graph.GetRootRegion()) == 1);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -215,18 +212,17 @@ test_known_boundaries()
       and we have four remaining iterations. We should find two thetas:
       one unrolled theta and one theta for the residual iterations.
     */
-    assert(nthetas(&graph.GetRootRegion()) == 2);
+    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 2u);
   }
 }
 
-static inline void
-test_unknown_boundaries()
+TEST(LoopUnrollingTests, test_unknown_boundaries)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   auto bt = jlm::rvsdg::BitType::Create(32);
-  jlm::tests::TestOperation op({ bt }, { bt });
+  TestOperation op({ bt }, { bt });
 
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -255,9 +251,9 @@ test_unknown_boundaries()
   //	jlm::rvsdg::view(graph, stdout);
 
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin());
-  assert(node);
+  EXPECT_NE(node, nullptr);
   node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*node->input(1)->origin());
-  assert(node);
+  EXPECT_NE(node, nullptr);
 
   /* Create cleaner output */
   DeadNodeElimination dne;
@@ -278,8 +274,7 @@ find_thetas(jlm::rvsdg::Region * region)
   return thetas;
 }
 
-static inline void
-test_nested_theta()
+TEST(LoopUnrollingTests, test_nested_theta)
 {
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -352,35 +347,36 @@ test_nested_theta()
   /*
     The outher theta should contain two inner thetas
   */
-  assert(nthetas(otheta->subregion()) == 2);
+  EXPECT_EQ(nthetas(otheta->subregion()), 2u);
   /*
     The outer theta should not be unrolled and since the
     original graph contains 7 nodes and the unroll factor
     is 4 an unrolled theta should have around 28 nodes. So
     we check for less than 20 nodes in case an updated
-    unroll algorithm would hoist code from the innner
+    unroll algorithm would hoist code from the inner
     thetas.
   */
-  assert(otheta->subregion()->numNodes() <= 20);
+  EXPECT_LE(otheta->subregion()->numNodes(), 20u);
   /*
     The inner theta should not be unrolled and since the
     original graph contains 5 nodes and the unroll factor
     is 4 an unrolled theta should have around 20 nodes. So
     we check for less than 15 nodes in case an updated
-    unroll algorithm would hoist code from the innner
+    unroll algorithm would hoist code from the inner
     thetas.
   */
-  assert(inner_theta->subregion()->numNodes() <= 15);
+  EXPECT_LE(inner_theta->subregion()->numNodes(), 15u);
   /*
     The innermost theta should be unrolled and since the
     original graph contains 3 nodes and the unroll factor
     is 4 an unrolled theta should have around 12 nodes. So
     we check for more than 7 nodes in case an updated
-    unroll algorithm would hoist code from the innner
+    unroll algorithm would hoist code from the inner
     thetas.
   */
   auto thetas = find_thetas(inner_theta->subregion());
-  assert(thetas.size() == 1 && thetas[0]->subregion()->numNodes() >= 7);
+  EXPECT_EQ(thetas.size(), 1u);
+  EXPECT_GE(thetas[0]->subregion()->numNodes(), 7u);
   /*
     The second inner theta should be unrolled and since
     the original graph contains 3 nodes and the unroll
@@ -390,7 +386,8 @@ test_nested_theta()
     innner thetas.
   */
   thetas = find_thetas(otheta->subregion());
-  assert(thetas.size() == 2 && thetas[1]->subregion()->numNodes() >= 7);
+  EXPECT_EQ(thetas.size(), 2u);
+  EXPECT_GE(thetas[1]->subregion()->numNodes(), 7u);
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::unroll(otheta, 4);
   //	jlm::rvsdg::view(graph, stdout);
@@ -399,17 +396,6 @@ test_nested_theta()
     now contain 8 thetas.
   */
   thetas = find_thetas(&graph.GetRootRegion());
-  assert(thetas.size() == 3 && nthetas(thetas[0]->subregion()) == 8);
+  EXPECT_EQ(thetas.size(), 3u);
+  EXPECT_EQ(nthetas(thetas[0]->subregion()), 8u);
 }
-
-static void
-verify()
-{
-  test_unrollinfo();
-
-  test_nested_theta();
-  test_known_boundaries();
-  test_unknown_boundaries();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-unroll", verify)

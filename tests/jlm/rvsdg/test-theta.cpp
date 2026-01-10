@@ -3,15 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestThetaCreation()
+TEST(ThetaTests, TestThetaCreation)
 {
   using namespace jlm::rvsdg;
 
@@ -38,19 +36,18 @@ TestThetaCreation()
       { imp1, imp2, imp3 });
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv1.output) == theta);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv2.output) == theta);
-  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv3.output) == theta);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv1.output), theta);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv2.output), theta);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv3.output), theta);
 
-  assert(theta->predicate() == theta->subregion()->result(0));
-  assert(theta->GetLoopVars().size() == 3);
-  assert(theta->GetLoopVars()[0].post == theta->subregion()->result(1));
+  EXPECT_EQ(theta->predicate(), theta->subregion()->result(0));
+  EXPECT_EQ(theta->GetLoopVars().size(), 3u);
+  EXPECT_EQ(theta->GetLoopVars()[0].post, theta->subregion()->result(1));
 
-  assert(dynamic_cast<const jlm::rvsdg::ThetaNode *>(theta2));
+  EXPECT_NE(dynamic_cast<const jlm::rvsdg::ThetaNode *>(theta2), nullptr);
 }
 
-static void
-TestThetaLoopVarRemoval()
+TEST(ThetaTests, TestThetaLoopVarRemoval)
 {
   using namespace jlm::rvsdg;
 
@@ -74,22 +71,13 @@ TestThetaLoopVarRemoval()
   // Act & Assert
   thetaNode->RemoveLoopVars({ lv1 });
   auto loopvars = thetaNode->GetLoopVars();
-  assert(loopvars.size() == 2);
-  assert(loopvars[0].input = lv0.input);
-  assert(loopvars[0].pre = lv0.pre);
-  assert(loopvars[0].post = lv0.post);
-  assert(loopvars[0].output = lv0.output);
-  assert(loopvars[1].input = lv2.input);
-  assert(loopvars[1].pre = lv2.pre);
-  assert(loopvars[1].post = lv2.post);
-  assert(loopvars[1].output = lv2.output);
+  EXPECT_EQ(loopvars.size(), 2u);
+  EXPECT_EQ(loopvars[0].input, lv0.input);
+  EXPECT_EQ(loopvars[0].pre, lv0.pre);
+  EXPECT_EQ(loopvars[0].post, lv0.post);
+  EXPECT_EQ(loopvars[0].output, lv0.output);
+  EXPECT_EQ(loopvars[1].input, lv2.input);
+  EXPECT_EQ(loopvars[1].pre, lv2.pre);
+  EXPECT_EQ(loopvars[1].post, lv2.post);
+  EXPECT_EQ(loopvars[1].output, lv2.output);
 }
-
-static void
-TestTheta()
-{
-  TestThetaCreation();
-  TestThetaLoopVarRemoval();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-theta", TestTheta)

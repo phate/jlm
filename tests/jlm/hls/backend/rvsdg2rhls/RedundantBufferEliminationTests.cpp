@@ -3,17 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-BufferWithLocalLoad()
+TEST(RedundantBufferEliminationTests, BufferWithLocalLoad)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -46,19 +45,14 @@ BufferWithLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithLocalLoad",
-    BufferWithLocalLoad)
-
-static void
-BufferWithLocalStore()
+TEST(RedundantBufferEliminationTests, BufferWithLocalStore)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -91,19 +85,14 @@ BufferWithLocalStore()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithLocalStore",
-    BufferWithLocalStore)
-
-static void
-BufferWithLoad()
+TEST(RedundantBufferEliminationTests, BufferWithLoad)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -136,19 +125,14 @@ BufferWithLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithLoad",
-    BufferWithLoad)
-
-static void
-BufferWithStore()
+TEST(RedundantBufferEliminationTests, BufferWithStore)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -186,19 +170,14 @@ BufferWithStore()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithStore",
-    BufferWithStore)
-
-static void
-BufferWithForkAndLocalLoad()
+TEST(RedundantBufferEliminationTests, BufferWithForkAndLocalLoad)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -232,19 +211,14 @@ BufferWithForkAndLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithForkAndLocalLoad",
-    BufferWithForkAndLocalLoad)
-
-static void
-BufferWithBranchAndLocalLoad()
+TEST(RedundantBufferEliminationTests, BufferWithBranchAndLocalLoad)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -280,19 +254,14 @@ BufferWithBranchAndLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithBranchAndLocalLoad",
-    BufferWithBranchAndLocalLoad)
-
-static void
-BufferWithOtherNode()
+TEST(RedundantBufferEliminationTests, BufferWithOtherNode)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -308,10 +277,8 @@ BufferWithOtherNode()
 
   auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
-  auto node = jlm::tests::TestOperation::createNode(
-      &rvsdg.GetRootRegion(),
-      { &importValue },
-      { memoryStateType });
+  auto node =
+      TestOperation::createNode(&rvsdg.GetRootRegion(), { &importValue }, { memoryStateType });
   auto bufferResults = BufferOperation::create(*node->output(0), 4, false);
 
   auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
@@ -326,20 +293,15 @@ BufferWithOtherNode()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
-  assert(x.origin() == bufferResults[0]);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(!bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_FALSE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithOtherNode",
-    BufferWithOtherNode)
-
-static void
-BufferWithNonMemoryStateOperand()
+TEST(RedundantBufferEliminationTests, BufferWithNonMemoryStateOperand)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -373,20 +335,15 @@ BufferWithNonMemoryStateOperand()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node is not of type llvm::MemoryStateType
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
-  assert(x.origin() == bufferResults[0]);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(!bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_FALSE(bufferOperation->IsPassThrough());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-BufferWithNonMemoryStateOperand",
-    BufferWithNonMemoryStateOperand)
-
-static void
-PassthroughBuffer()
+TEST(RedundantBufferEliminationTests, PassthroughBuffer)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -420,14 +377,10 @@ PassthroughBuffer()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the BufferOperation is already
   // marked as passthrough.
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
-  assert(x.origin() == bufferResults[0]);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
-  assert(bufferNode && bufferOperation);
-  assert(bufferOperation->Capacity() == 4);
-  assert(bufferOperation->IsPassThrough());
+  EXPECT_TRUE(bufferNode && bufferOperation);
+  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests-PassthroughBuffer",
-    PassthroughBuffer)

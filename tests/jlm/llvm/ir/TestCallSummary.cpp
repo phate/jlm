@@ -3,17 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/CallSummary.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-TestCallSummaryComputationDead()
+TEST(CallSummaryTests, TestCallSummaryComputationDead)
 {
   using namespace jlm;
 
@@ -31,7 +32,7 @@ TestCallSummaryComputationDead()
           "f",
           jlm::llvm::Linkage::externalLinkage));
 
-  auto result = tests::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
+  auto result = rvsdg::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
 
   lambdaNode->finalize({ result });
 
@@ -39,16 +40,15 @@ TestCallSummaryComputationDead()
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
 
   // Assert
-  assert(callSummary.IsDead());
+  EXPECT_TRUE(callSummary.IsDead());
 
-  assert(callSummary.IsExported() == false);
-  assert(callSummary.IsOnlyExported() == false);
-  assert(callSummary.GetRvsdgExport() == nullptr);
-  assert(callSummary.HasOnlyDirectCalls() == false);
+  EXPECT_FALSE(callSummary.IsExported());
+  EXPECT_FALSE(callSummary.IsOnlyExported());
+  EXPECT_EQ(callSummary.GetRvsdgExport(), nullptr);
+  EXPECT_FALSE(callSummary.HasOnlyDirectCalls());
 }
 
-static void
-TestCallSummaryComputationExport()
+TEST(CallSummaryTests, TestCallSummaryComputationExport)
 {
   using namespace jlm;
 
@@ -66,7 +66,7 @@ TestCallSummaryComputationExport()
           "f",
           jlm::llvm::Linkage::externalLinkage));
 
-  auto result = tests::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
+  auto result = rvsdg::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ result });
   auto & rvsdgExport = rvsdg::GraphExport::Create(*lambdaOutput, "f");
@@ -75,16 +75,15 @@ TestCallSummaryComputationExport()
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
 
   // Assert
-  assert(callSummary.IsExported());
-  assert(callSummary.IsOnlyExported());
-  assert(callSummary.GetRvsdgExport() == &rvsdgExport);
+  EXPECT_TRUE(callSummary.IsExported());
+  EXPECT_TRUE(callSummary.IsOnlyExported());
+  EXPECT_EQ(callSummary.GetRvsdgExport(), &rvsdgExport);
 
-  assert(callSummary.IsDead() == false);
-  assert(callSummary.HasOnlyDirectCalls() == false);
+  EXPECT_FALSE(callSummary.IsDead());
+  EXPECT_FALSE(callSummary.HasOnlyDirectCalls());
 }
 
-static void
-TestCallSummaryComputationDirectCalls()
+TEST(CallSummaryTests, TestCallSummaryComputationDirectCalls)
 {
   using namespace jlm;
 
@@ -108,7 +107,7 @@ TestCallSummaryComputationDirectCalls()
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
 
-    auto result = tests::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
+    auto result = rvsdg::TestOperation::createNode(lambdaNode->subregion(), {}, { vt })->output(0);
 
     return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
@@ -158,7 +157,7 @@ TestCallSummaryComputationDirectCalls()
         functionType,
         { callXResults[1], callXResults[2] });
 
-    auto result = tests::TestOperation::createNode(
+    auto result = rvsdg::TestOperation::createNode(
                       lambdaNode->subregion(),
                       { callXResults[0], callYResults[0] },
                       { vt })
@@ -183,30 +182,31 @@ TestCallSummaryComputationDirectCalls()
       jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaZ));
 
   // Assert
-  assert(lambdaXCallSummary.HasOnlyDirectCalls());
-  assert(lambdaXCallSummary.NumDirectCalls() == 2);
-  assert(lambdaXCallSummary.IsDead() == false);
-  assert(lambdaXCallSummary.IsExported() == false);
-  assert(lambdaXCallSummary.IsOnlyExported() == false);
+  EXPECT_TRUE(lambdaXCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaXCallSummary.NumDirectCalls(), 2u);
+  EXPECT_FALSE(lambdaXCallSummary.IsDead());
+  EXPECT_FALSE(lambdaXCallSummary.IsExported());
+  EXPECT_FALSE(lambdaXCallSummary.IsOnlyExported());
 
-  assert(lambdaYCallSummary.IsDead() == false);
-  assert(lambdaYCallSummary.HasOnlyDirectCalls() == false);
-  assert(lambdaYCallSummary.NumDirectCalls() == 1);
-  assert(lambdaYCallSummary.IsExported());
-  assert(lambdaYCallSummary.IsOnlyExported() == false);
+  EXPECT_FALSE(lambdaYCallSummary.IsDead());
+  EXPECT_FALSE(lambdaYCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaYCallSummary.NumDirectCalls(), 1u);
+  EXPECT_TRUE(lambdaYCallSummary.IsExported());
+  EXPECT_FALSE(lambdaYCallSummary.IsOnlyExported());
 
-  assert(lambdaZCallSummary.IsDead() == false);
-  assert(lambdaZCallSummary.HasOnlyDirectCalls() == false);
-  assert(lambdaZCallSummary.NumDirectCalls() == 0);
-  assert(lambdaZCallSummary.IsExported());
-  assert(lambdaZCallSummary.IsOnlyExported());
+  EXPECT_FALSE(lambdaZCallSummary.IsDead());
+  EXPECT_FALSE(lambdaZCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaZCallSummary.NumDirectCalls(), 0u);
+  EXPECT_TRUE(lambdaZCallSummary.IsExported());
+  EXPECT_TRUE(lambdaZCallSummary.IsOnlyExported());
 }
 
-static void
-TestCallSummaryComputationIndirectCalls()
+TEST(CallSummaryTests, TestCallSummaryComputationIndirectCalls)
 {
+  using namespace jlm::llvm;
+
   // Arrange
-  jlm::tests::IndirectCallTest1 test;
+  IndirectCallTest1 test;
   test.module();
 
   // Act
@@ -216,37 +216,36 @@ TestCallSummaryComputationIndirectCalls()
   auto lambdaTestCallSummary = jlm::llvm::ComputeCallSummary(test.GetLambdaTest());
 
   // Assert
-  assert(lambdaThreeCallSummary.HasOnlyDirectCalls() == false);
-  assert(lambdaThreeCallSummary.NumDirectCalls() == 0);
-  assert(lambdaThreeCallSummary.IsDead() == false);
-  assert(lambdaThreeCallSummary.IsExported() == false);
-  assert(lambdaThreeCallSummary.IsOnlyExported() == false);
-  assert(lambdaThreeCallSummary.NumOtherUsers() == 1);
+  EXPECT_FALSE(lambdaThreeCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaThreeCallSummary.NumDirectCalls(), 0u);
+  EXPECT_FALSE(lambdaThreeCallSummary.IsDead());
+  EXPECT_FALSE(lambdaThreeCallSummary.IsExported());
+  EXPECT_FALSE(lambdaThreeCallSummary.IsOnlyExported());
+  EXPECT_EQ(lambdaThreeCallSummary.NumOtherUsers(), 1u);
 
-  assert(lambdaFourCallSummary.HasOnlyDirectCalls() == false);
-  assert(lambdaFourCallSummary.NumDirectCalls() == 0);
-  assert(lambdaFourCallSummary.IsDead() == false);
-  assert(lambdaFourCallSummary.IsExported() == false);
-  assert(lambdaFourCallSummary.IsOnlyExported() == false);
-  assert(lambdaFourCallSummary.NumOtherUsers() == 1);
+  EXPECT_FALSE(lambdaFourCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaFourCallSummary.NumDirectCalls(), 0u);
+  EXPECT_FALSE(lambdaFourCallSummary.IsDead());
+  EXPECT_FALSE(lambdaFourCallSummary.IsExported());
+  EXPECT_FALSE(lambdaFourCallSummary.IsOnlyExported());
+  EXPECT_EQ(lambdaFourCallSummary.NumOtherUsers(), 1u);
 
-  assert(lambdaIndcallCallSummary.HasOnlyDirectCalls());
-  assert(lambdaIndcallCallSummary.NumDirectCalls() == 2);
-  assert(lambdaIndcallCallSummary.IsDead() == false);
-  assert(lambdaIndcallCallSummary.IsExported() == false);
-  assert(lambdaIndcallCallSummary.IsOnlyExported() == false);
-  assert(lambdaIndcallCallSummary.NumOtherUsers() == 0);
+  EXPECT_TRUE(lambdaIndcallCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaIndcallCallSummary.NumDirectCalls(), 2u);
+  EXPECT_FALSE(lambdaIndcallCallSummary.IsDead());
+  EXPECT_FALSE(lambdaIndcallCallSummary.IsExported());
+  EXPECT_FALSE(lambdaIndcallCallSummary.IsOnlyExported());
+  EXPECT_EQ(lambdaIndcallCallSummary.NumOtherUsers(), 0u);
 
-  assert(lambdaTestCallSummary.HasOnlyDirectCalls() == false);
-  assert(lambdaTestCallSummary.NumDirectCalls() == 0);
-  assert(lambdaTestCallSummary.IsDead() == false);
-  assert(lambdaTestCallSummary.IsExported());
-  assert(lambdaTestCallSummary.IsOnlyExported());
-  assert(lambdaTestCallSummary.NumOtherUsers() == 0);
+  EXPECT_FALSE(lambdaTestCallSummary.HasOnlyDirectCalls());
+  EXPECT_EQ(lambdaTestCallSummary.NumDirectCalls(), 0u);
+  EXPECT_FALSE(lambdaTestCallSummary.IsDead());
+  EXPECT_TRUE(lambdaTestCallSummary.IsExported());
+  EXPECT_TRUE(lambdaTestCallSummary.IsOnlyExported());
+  EXPECT_EQ(lambdaTestCallSummary.NumOtherUsers(), 0u);
 }
 
-static void
-TestCallSummaryComputationFunctionPointerInDelta()
+TEST(CallSummaryTests, TestCallSummaryComputationFunctionPointerInDelta)
 {
   using namespace jlm::llvm;
 
@@ -274,12 +273,11 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
 
   // Assert
-  assert(callSummary.NumOtherUsers() == 1);
-  assert(callSummary.HasOnlyOtherUsages());
+  EXPECT_EQ(callSummary.NumOtherUsers(), 1u);
+  EXPECT_TRUE(callSummary.HasOnlyOtherUsages());
 }
 
-static void
-TestCallSummaryComputationLambdaResult()
+TEST(CallSummaryTests, TestCallSummaryComputationLambdaResult)
 {
   using namespace jlm::llvm;
 
@@ -311,19 +309,6 @@ TestCallSummaryComputationLambdaResult()
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNodeG);
 
   // Assert
-  assert(callSummary.NumOtherUsers() == 1);
-  assert(callSummary.HasOnlyOtherUsages());
+  EXPECT_EQ(callSummary.NumOtherUsers(), 1u);
+  EXPECT_TRUE(callSummary.HasOnlyOtherUsages());
 }
-
-static void
-Test()
-{
-  TestCallSummaryComputationDead();
-  TestCallSummaryComputationExport();
-  TestCallSummaryComputationDirectCalls();
-  TestCallSummaryComputationIndirectCalls();
-  TestCallSummaryComputationFunctionPointerInDelta();
-  TestCallSummaryComputationLambdaResult();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestCallSummary", Test)

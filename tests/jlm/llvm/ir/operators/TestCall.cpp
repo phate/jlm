@@ -3,20 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/DotWriter.hpp>
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/GraphWriter.hpp>
 
-static void
-TestCopy()
+TEST(CallOperationTests, TestCopy)
 {
   using namespace jlm::llvm;
 
@@ -48,13 +46,12 @@ TestCopy()
       node->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
-  assert(
-      node->GetOperation()
-      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+  EXPECT_EQ(
+      node->GetOperation(),
+      jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
-static void
-TestCallNodeAccessors()
+TEST(CallOperationTests, TestCallNodeAccessors)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -79,27 +76,26 @@ TestCallNodeAccessors()
       *jlm::util::assertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
   // Assert
-  assert(CallOperation::NumArguments(callNode) == 3);
-  assert(CallOperation::NumArguments(callNode) == callNode.ninputs() - 1);
-  assert(CallOperation::Argument(callNode, 0)->origin() == v);
-  assert(CallOperation::Argument(callNode, 1)->origin() == i);
-  assert(CallOperation::Argument(callNode, 2)->origin() == m);
+  EXPECT_EQ(CallOperation::NumArguments(callNode), 3u);
+  EXPECT_EQ(CallOperation::NumArguments(callNode), callNode.ninputs() - 1);
+  EXPECT_EQ(CallOperation::Argument(callNode, 0)->origin(), v);
+  EXPECT_EQ(CallOperation::Argument(callNode, 1)->origin(), i);
+  EXPECT_EQ(CallOperation::Argument(callNode, 2)->origin(), m);
 
-  assert(callNode.noutputs() == 3);
-  assert(*callNode.output(0)->Type() == *valueType);
-  assert(*callNode.output(1)->Type() == *iOStateType);
-  assert(*callNode.output(2)->Type() == *memoryStateType);
+  EXPECT_EQ(callNode.noutputs(), 3u);
+  EXPECT_EQ(*callNode.output(0)->Type(), *valueType);
+  EXPECT_EQ(*callNode.output(1)->Type(), *iOStateType);
+  EXPECT_EQ(*callNode.output(2)->Type(), *memoryStateType);
 
-  assert(CallOperation::GetFunctionInput(callNode).origin() == f);
-  assert(CallOperation::GetIOStateInput(callNode).origin() == i);
-  assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
+  EXPECT_EQ(CallOperation::GetFunctionInput(callNode).origin(), f);
+  EXPECT_EQ(CallOperation::GetIOStateInput(callNode).origin(), i);
+  EXPECT_EQ(CallOperation::GetMemoryStateInput(callNode).origin(), m);
 
-  assert(*CallOperation::GetIOStateOutput(callNode).Type() == *iOStateType);
-  assert(*CallOperation::GetMemoryStateOutput(callNode).Type() == *memoryStateType);
+  EXPECT_EQ(*CallOperation::GetIOStateOutput(callNode).Type(), *iOStateType);
+  EXPECT_EQ(*CallOperation::GetMemoryStateOutput(callNode).Type(), *memoryStateType);
 }
 
-static void
-TestCallTypeClassifierIndirectCall()
+TEST(CallOperationTests, TestCallTypeClassifierIndirectCall)
 {
   using namespace jlm::llvm;
 
@@ -157,17 +153,17 @@ TestCallTypeClassifierIndirectCall()
   auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
-  assert(callTypeClassifier->IsIndirectCall());
-  assert(loadOutput == &callTypeClassifier->GetFunctionOrigin());
+  EXPECT_TRUE(callTypeClassifier->IsIndirectCall());
+  EXPECT_EQ(loadOutput, &callTypeClassifier->GetFunctionOrigin());
 }
 
-static void
-TestCallTypeClassifierNonRecursiveDirectCall()
+TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCall)
 {
   // Arrange
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -186,7 +182,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt });
+    auto constant = TestOperation::createNode(lambda->subregion(), {}, { vt });
 
     auto lambdaOutput =
         lambda->finalize({ constant->output(0), iOStateArgument, memoryStateArgument });
@@ -256,17 +252,17 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
-  assert(callTypeClassifier->IsNonRecursiveDirectCall());
-  assert(&callTypeClassifier->GetLambdaOutput() == g);
+  EXPECT_TRUE(callTypeClassifier->IsNonRecursiveDirectCall());
+  EXPECT_EQ(&callTypeClassifier->GetLambdaOutput(), g);
 }
 
-static void
-TestCallTypeClassifierNonRecursiveDirectCallTheta()
+TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCallTheta)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -285,7 +281,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto c1 = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt });
+    auto c1 = TestOperation::createNode(lambda->subregion(), {}, { vt });
 
     return lambda->finalize({ c1->output(0), iOStateArgument, memoryStateArgument });
   };
@@ -347,7 +343,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto value = jlm::tests::TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
+    auto value = TestOperation::createNode(lambda->subregion(), {}, { vt })->output(0);
 
     auto [loopValue, iOState, memoryState, callNode] = SetupOuterTheta(
         lambda->subregion(),
@@ -371,12 +367,11 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
-  assert(callTypeClassifier->IsNonRecursiveDirectCall());
-  assert(&callTypeClassifier->GetLambdaOutput() == g);
+  EXPECT_TRUE(callTypeClassifier->IsNonRecursiveDirectCall());
+  EXPECT_EQ(&callTypeClassifier->GetLambdaOutput(), g);
 }
 
-static void
-TestCallTypeClassifierRecursiveDirectCall()
+TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -496,23 +491,9 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto callTypeClassifier2 = CallOperation::ClassifyCall(*callFib2);
 
   // Assert
-  assert(callTypeClassifier1->IsRecursiveDirectCall());
-  assert(&callTypeClassifier1->GetLambdaOutput() == fibfct);
+  EXPECT_TRUE(callTypeClassifier1->IsRecursiveDirectCall());
+  EXPECT_EQ(&callTypeClassifier1->GetLambdaOutput(), fibfct);
 
-  assert(callTypeClassifier2->IsRecursiveDirectCall());
-  assert(&callTypeClassifier2->GetLambdaOutput() == fibfct);
+  EXPECT_TRUE(callTypeClassifier2->IsRecursiveDirectCall());
+  EXPECT_EQ(&callTypeClassifier2->GetLambdaOutput(), fibfct);
 }
-
-static void
-Test()
-{
-  TestCopy();
-
-  TestCallNodeAccessors();
-  TestCallTypeClassifierIndirectCall();
-  TestCallTypeClassifierNonRecursiveDirectCall();
-  TestCallTypeClassifierNonRecursiveDirectCallTheta();
-  TestCallTypeClassifierRecursiveDirectCall();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestCall", Test)

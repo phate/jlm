@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -15,8 +14,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static void
-StoreConversion()
+TEST(StoreTests, StoreConversion)
 {
   using namespace llvm;
 
@@ -43,7 +41,7 @@ StoreConversion()
   builder.CreateStore(valueArgument, addressArgument, true);
   builder.CreateRetVoid();
 
-  jlm::tests::print(*llvmModule);
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
@@ -68,25 +66,23 @@ StoreConversion()
         auto ioStateAssignment = *std::next(it);
         auto memoryStateAssignment = *std::next(it, 2);
 
-        assert(is<AssignmentOperation>(ioStateAssignment->operation()));
-        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(ioStateAssignment->operation()));
+        EXPECT_TRUE(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
       else if (is<StoreNonVolatileOperation>(*it))
       {
         numStoreThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
     }
 
-    assert(numStoreThreeAddressCodes == 1);
-    assert(numStoreVolatileThreeAddressCodes == 2);
+    EXPECT_EQ(numStoreThreeAddressCodes, 1u);
+    EXPECT_EQ(numStoreVolatileThreeAddressCodes, 2u);
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/StoreTests-StoreConversion", StoreConversion)

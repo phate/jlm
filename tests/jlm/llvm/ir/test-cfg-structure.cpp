@@ -3,19 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-test_straightening()
+TEST(ControlFlowGraphStructureTests, test_straightening)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
@@ -38,17 +37,16 @@ test_straightening()
   auto bb3_last = static_cast<const BasicBlock *>(bb3)->tacs().last();
   straighten(cfg);
 
-  assert(cfg.nnodes() == 1);
+  EXPECT_EQ(cfg.nnodes(), 1u);
   auto node = cfg.entry()->OutEdge(0)->sink();
 
-  assert(is<BasicBlock>(node));
+  EXPECT_TRUE(is<BasicBlock>(node));
   auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
-  assert(tacs.ntacs() == 3);
-  assert(tacs.last() == bb3_last);
+  EXPECT_EQ(tacs.ntacs(), 3u);
+  EXPECT_EQ(tacs.last(), bb3_last);
 }
 
-static void
-test_is_structured()
+TEST(ControlFlowGraphStructureTests, test_is_structured)
 {
   using namespace jlm::llvm;
 
@@ -66,14 +64,5 @@ test_is_structured()
   join->add_outedge(cfg.exit());
 
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
-  assert(is_structured(cfg));
+  EXPECT_TRUE(is_structured(cfg));
 }
-
-static void
-verify()
-{
-  test_straightening();
-  test_is_structured();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-structure", verify)

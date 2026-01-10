@@ -4,16 +4,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestPhiCreation()
+TEST(PhiTests, TestPhiCreation)
 {
   using namespace jlm::llvm;
 
@@ -79,11 +77,3 @@ TestPhiCreation()
 
   view(&graph.GetRootRegion(), stderr);
 }
-
-static void
-TestPhi()
-{
-  TestPhiCreation();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestPhi", TestPhi)

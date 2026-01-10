@@ -1002,37 +1002,47 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
     const rvsdg::SimpleNode & simpleNode,
     const rvsdg::LambdaNode & lambda)
 {
-  if (is<LoadOperation>(&simpleNode))
-    return AnnotateLoad(simpleNode, lambda);
-
-  if (is<StoreOperation>(&simpleNode))
-    return AnnotateStore(simpleNode, lambda);
-
-  if (is<AllocaOperation>(&simpleNode))
-    return AnnotateAlloca(simpleNode);
-
-  if (is<MallocOperation>(&simpleNode))
-    return AnnotateMalloc(simpleNode);
-
-  if (is<FreeOperation>(&simpleNode))
-    return AnnotateFree(simpleNode, lambda);
-
-  if (is<MemCpyOperation>(&simpleNode))
-    return AnnotateMemcpy(simpleNode, lambda);
-
-  if (is<CallOperation>(&simpleNode))
-    return AnnotateCall(simpleNode, lambda);
-
-  if (is<MemoryStateOperation>(&simpleNode))
-  {
-    // MemoryStateOperations are only used to route memory states, and can be ignored
-    return std::nullopt;
-  }
-
-  // Any remaining type of node should not involve any memory states
-  JLM_ASSERT(!hasMemoryState(simpleNode));
-
-  return std::nullopt;
+  return MatchTypeWithDefault(
+      simpleNode.GetOperation(),
+      [&](const LoadOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateLoad(simpleNode, lambda);
+      },
+      [&](const StoreOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateStore(simpleNode, lambda);
+      },
+      [&](const AllocaOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateAlloca(simpleNode);
+      },
+      [&](const MallocOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateMalloc(simpleNode);
+      },
+      [&](const FreeOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateFree(simpleNode, lambda);
+      },
+      [&](const MemCpyOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateMemcpy(simpleNode, lambda);
+      },
+      [&](const CallOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateCall(simpleNode, lambda);
+      },
+      [&](const MemoryStateOperation &) -> std::optional<ModRefSetIndex>
+      {
+        // MemoryStateOperations are only used to route memory states, and can be ignored
+        return std::nullopt;
+      },
+      [&]() -> std::optional<ModRefSetIndex>
+      {
+        // Any remaining type of node should not involve any memory states
+        JLM_ASSERT(!hasMemoryState(simpleNode));
+        return std::nullopt;
+      });
 }
 
 void
@@ -1129,7 +1139,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
     const rvsdg::SimpleNode & freeNode,
     const rvsdg::LambdaNode & lambda)
 {
-  JLM_ASSERT(is<FreeOperation>(&freeNode));
+  JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(freeNode);
   const auto origin = FreeOperation::addressInput(freeNode).origin();
@@ -1144,7 +1154,7 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
     const rvsdg::SimpleNode & memcpyNode,
     const rvsdg::LambdaNode & lambda)
 {
-  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(memcpyNode);
   const auto dstOrigin = MemCpyOperation::destinationInput(memcpyNode).origin();
@@ -1161,7 +1171,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
     const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambda)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   const auto & pointsToGraph = Context_->pointsToGraph;
 
@@ -1358,5 +1368,4 @@ RegionAwareModRefSummarizer::Create(
   util::StatisticsCollector statisticsCollector;
   return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
-
 }

@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -16,8 +15,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static void
-test_function_call()
+TEST(FunctionCallTests, test_function_call)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -57,21 +55,20 @@ test_function_call()
     }
 
     auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
-    assert(is<CallOperation>(*std::next(bb->rbegin(), 2)));
+    EXPECT_TRUE(is<CallOperation>(*std::next(bb->rbegin(), 2)));
   };
 
   llvm::LLVMContext ctx;
-  auto llmod = setup(ctx);
-  jlm::tests::print(*llmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->print(llvm::errs(), nullptr);
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
 }
 
-static void
-test_malloc_call()
+TEST(FunctionCallTests, test_malloc_call)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -114,22 +111,21 @@ test_malloc_call()
     }
 
     auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
-    assert(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
-    assert(is<MallocOperation>((*std::next(bb->rbegin(), 2))));
+    EXPECT_TRUE(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
+    EXPECT_TRUE(is<MallocOperation>((*std::next(bb->rbegin(), 3))));
   };
 
   llvm::LLVMContext ctx;
-  auto llmod = setup(ctx);
-  jlm::tests::print(*llmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->print(llvm::errs(), nullptr);
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
 }
 
-static void
-test_free_call()
+TEST(FunctionCallTests, test_free_call)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -170,27 +166,17 @@ test_free_call()
     }
 
     auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
-    assert(is<AssignmentOperation>(*bb->rbegin()));
-    assert(is<AssignmentOperation>(*std::next(bb->rbegin())));
-    assert(is<FreeOperation>(*std::next(bb->rbegin(), 2)));
+    EXPECT_TRUE(is<AssignmentOperation>(*bb->rbegin()));
+    EXPECT_TRUE(is<AssignmentOperation>(*std::next(bb->rbegin())));
+    EXPECT_TRUE(is<FreeOperation>(*std::next(bb->rbegin(), 2)));
   };
 
   llvm::LLVMContext ctx;
-  auto llvmmod = setup(ctx);
-  jlm::tests::print(*llvmmod);
+  auto llvmModule = setup(ctx);
+  llvmModule->print(llvm::errs(), nullptr);
 
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmmod);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgmod, stdout);
 
   verify(*ipgmod);
 }
-
-static void
-test()
-{
-  test_function_call();
-  test_malloc_call();
-  test_free_call();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-function-call", test)

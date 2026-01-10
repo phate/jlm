@@ -3,12 +3,23 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
+#ifndef JLM_LLVM_TESTRVSDGS_HPP
+#define JLM_LLVM_TESTRVSDGS_HPP
 
-namespace jlm::tests
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+
+namespace jlm::rvsdg
+{
+class Graph;
+class GammaNode;
+class LambdaNode;
+class PhiNode;
+class ThetaNode;
+}
+
+namespace jlm::llvm
 {
 
 /**
@@ -241,8 +252,8 @@ public:
   }
 
 private:
-  jlm::rvsdg::LambdaNode * Lambda_;
-  rvsdg::Node * UndefValueNode_;
+  jlm::rvsdg::LambdaNode * Lambda_{};
+  rvsdg::Node * UndefValueNode_{};
 };
 
 /** \brief GetElementPtrTest class
@@ -351,12 +362,12 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::LambdaNode * LambdaBits2Ptr_;
-  jlm::rvsdg::LambdaNode * LambdaTest_;
+  jlm::rvsdg::LambdaNode * LambdaBits2Ptr_{};
+  jlm::rvsdg::LambdaNode * LambdaTest_{};
 
-  rvsdg::Node * BitsToPtrNode_;
+  rvsdg::Node * BitsToPtrNode_{};
 
-  rvsdg::SimpleNode * CallNode_;
+  rvsdg::SimpleNode * CallNode_{};
 };
 
 /** \brief ConstantPointerNullTest class
@@ -438,8 +449,8 @@ public:
   rvsdg::SimpleNode * alloca_z;
 
 private:
-  rvsdg::SimpleNode * CallF_;
-  rvsdg::SimpleNode * CallG_;
+  rvsdg::SimpleNode * CallF_{};
+  rvsdg::SimpleNode * CallG_{};
 };
 
 /** \brief CallTest2 class
@@ -511,11 +522,11 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallCreate1_;
-  rvsdg::SimpleNode * CallCreate2_;
+  rvsdg::SimpleNode * CallCreate1_{};
+  rvsdg::SimpleNode * CallCreate2_{};
 
-  rvsdg::SimpleNode * CallDestroy1_;
-  rvsdg::SimpleNode * CallDestroy2_;
+  rvsdg::SimpleNode * CallDestroy1_{};
+  rvsdg::SimpleNode * CallDestroy2_{};
 };
 
 /** \brief IndirectCallTest1 class
@@ -600,14 +611,14 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallIndcall_;
-  rvsdg::SimpleNode * CallThree_;
-  rvsdg::SimpleNode * CallFour_;
+  rvsdg::SimpleNode * CallIndcall_{};
+  rvsdg::SimpleNode * CallThree_{};
+  rvsdg::SimpleNode * CallFour_{};
 
-  jlm::rvsdg::LambdaNode * LambdaThree_;
-  jlm::rvsdg::LambdaNode * LambdaFour_;
-  jlm::rvsdg::LambdaNode * LambdaIndcall_;
-  jlm::rvsdg::LambdaNode * LambdaTest_;
+  jlm::rvsdg::LambdaNode * LambdaThree_{};
+  jlm::rvsdg::LambdaNode * LambdaFour_{};
+  jlm::rvsdg::LambdaNode * LambdaIndcall_{};
+  jlm::rvsdg::LambdaNode * LambdaTest_{};
 };
 
 /** \brief IndirectCallTest2 class
@@ -787,27 +798,27 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::DeltaNode * DeltaG1_;
-  jlm::rvsdg::DeltaNode * DeltaG2_;
+  jlm::rvsdg::DeltaNode * DeltaG1_{};
+  jlm::rvsdg::DeltaNode * DeltaG2_{};
 
-  jlm::rvsdg::LambdaNode * LambdaThree_;
-  jlm::rvsdg::LambdaNode * LambdaFour_;
-  jlm::rvsdg::LambdaNode * LambdaI_;
-  jlm::rvsdg::LambdaNode * LambdaX_;
-  jlm::rvsdg::LambdaNode * LambdaY_;
-  jlm::rvsdg::LambdaNode * LambdaTest_;
-  jlm::rvsdg::LambdaNode * LambdaTest2_;
+  jlm::rvsdg::LambdaNode * LambdaThree_{};
+  jlm::rvsdg::LambdaNode * LambdaFour_{};
+  jlm::rvsdg::LambdaNode * LambdaI_{};
+  jlm::rvsdg::LambdaNode * LambdaX_{};
+  jlm::rvsdg::LambdaNode * LambdaY_{};
+  jlm::rvsdg::LambdaNode * LambdaTest_{};
+  jlm::rvsdg::LambdaNode * LambdaTest2_{};
 
-  rvsdg::SimpleNode * IndirectCall_;
-  rvsdg::SimpleNode * CallIWithThree_;
-  rvsdg::SimpleNode * CallIWithFour_;
-  rvsdg::SimpleNode * TestCallX_;
-  rvsdg::SimpleNode * Test2CallX_;
-  rvsdg::SimpleNode * CallY_;
+  rvsdg::SimpleNode * IndirectCall_{};
+  rvsdg::SimpleNode * CallIWithThree_{};
+  rvsdg::SimpleNode * CallIWithFour_{};
+  rvsdg::SimpleNode * TestCallX_{};
+  rvsdg::SimpleNode * Test2CallX_{};
+  rvsdg::SimpleNode * CallY_{};
 
-  jlm::rvsdg::SimpleNode * AllocaPx_;
-  jlm::rvsdg::SimpleNode * AllocaPy_;
-  jlm::rvsdg::SimpleNode * AllocaPz_;
+  jlm::rvsdg::SimpleNode * AllocaPx_{};
+  jlm::rvsdg::SimpleNode * AllocaPy_{};
+  jlm::rvsdg::SimpleNode * AllocaPz_{};
 };
 
 /**
@@ -852,11 +863,11 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::LambdaNode * LambdaF_;
+  jlm::rvsdg::LambdaNode * LambdaF_{};
 
-  rvsdg::SimpleNode * CallG_;
+  rvsdg::SimpleNode * CallG_{};
 
-  jlm::rvsdg::GraphImport * ExternalGArgument_;
+  jlm::rvsdg::GraphImport * ExternalGArgument_{};
 };
 
 /**
@@ -1077,20 +1088,20 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::LambdaNode * LambdaF_;
-  rvsdg::LambdaNode * LambdaG_;
-  rvsdg::LambdaNode * LambdaH_;
+  rvsdg::LambdaNode * LambdaF_{};
+  rvsdg::LambdaNode * LambdaG_{};
+  rvsdg::LambdaNode * LambdaH_{};
 
-  rvsdg::GammaNode * Gamma_;
+  rvsdg::GammaNode * Gamma_{};
 
-  rvsdg::SimpleNode * CallFromG_;
-  rvsdg::SimpleNode * CallFromH_;
+  rvsdg::SimpleNode * CallFromG_{};
+  rvsdg::SimpleNode * CallFromH_{};
 
-  rvsdg::Node * AllocaXFromG_;
-  rvsdg::Node * AllocaYFromG_;
-  rvsdg::Node * AllocaXFromH_;
-  rvsdg::Node * AllocaYFromH_;
-  rvsdg::Node * AllocaZ_;
+  rvsdg::Node * AllocaXFromG_{};
+  rvsdg::Node * AllocaYFromG_{};
+  rvsdg::Node * AllocaXFromH_{};
+  rvsdg::Node * AllocaYFromH_{};
+  rvsdg::Node * AllocaZ_{};
 };
 
 /** \brief ThetaTest class
@@ -1166,7 +1177,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallG_;
+  rvsdg::SimpleNode * CallG_{};
 };
 
 /** \brief DeltaTest2 class
@@ -1214,7 +1225,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallF1_;
+  rvsdg::SimpleNode * CallF1_{};
 };
 
 /** \brief DeltaTest3 class
@@ -1279,13 +1290,13 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::LambdaNode * LambdaF_;
-  jlm::rvsdg::LambdaNode * LambdaTest_;
+  jlm::rvsdg::LambdaNode * LambdaF_{};
+  jlm::rvsdg::LambdaNode * LambdaTest_{};
 
-  jlm::rvsdg::DeltaNode * DeltaG1_;
-  jlm::rvsdg::DeltaNode * DeltaG2_;
+  jlm::rvsdg::DeltaNode * DeltaG1_{};
+  jlm::rvsdg::DeltaNode * DeltaG2_{};
 
-  rvsdg::SimpleNode * CallF_;
+  rvsdg::SimpleNode * CallF_{};
 };
 
 /** \brief ImportTest class
@@ -1333,7 +1344,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallF1_;
+  rvsdg::SimpleNode * CallF1_{};
 };
 
 /** \brief PhiTest1 class
@@ -1401,10 +1412,10 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::SimpleNode * CallFibm1_;
-  rvsdg::SimpleNode * CallFibm2_;
+  rvsdg::SimpleNode * CallFibm1_{};
+  rvsdg::SimpleNode * CallFibm2_{};
 
-  rvsdg::SimpleNode * CallFib_;
+  rvsdg::SimpleNode * CallFib_{};
 };
 
 /** \brief PhiTest2 class
@@ -1605,28 +1616,28 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::LambdaNode * LambdaEight_;
-  jlm::rvsdg::LambdaNode * LambdaI_;
-  jlm::rvsdg::LambdaNode * LambdaA_;
-  jlm::rvsdg::LambdaNode * LambdaB_;
-  jlm::rvsdg::LambdaNode * LambdaC_;
-  jlm::rvsdg::LambdaNode * LambdaD_;
-  jlm::rvsdg::LambdaNode * LambdaTest_;
+  jlm::rvsdg::LambdaNode * LambdaEight_{};
+  jlm::rvsdg::LambdaNode * LambdaI_{};
+  jlm::rvsdg::LambdaNode * LambdaA_{};
+  jlm::rvsdg::LambdaNode * LambdaB_{};
+  jlm::rvsdg::LambdaNode * LambdaC_{};
+  jlm::rvsdg::LambdaNode * LambdaD_{};
+  jlm::rvsdg::LambdaNode * LambdaTest_{};
 
-  rvsdg::SimpleNode * CallAFromTest_;
-  rvsdg::SimpleNode * CallAFromC_;
-  rvsdg::SimpleNode * CallAFromD_;
-  rvsdg::SimpleNode * CallB_;
-  rvsdg::SimpleNode * CallC_;
-  rvsdg::SimpleNode * CallD_;
-  rvsdg::SimpleNode * CallI_;
-  rvsdg::SimpleNode * IndirectCall_;
+  rvsdg::SimpleNode * CallAFromTest_{};
+  rvsdg::SimpleNode * CallAFromC_{};
+  rvsdg::SimpleNode * CallAFromD_{};
+  rvsdg::SimpleNode * CallB_{};
+  rvsdg::SimpleNode * CallC_{};
+  rvsdg::SimpleNode * CallD_{};
+  rvsdg::SimpleNode * CallI_{};
+  rvsdg::SimpleNode * IndirectCall_{};
 
-  jlm::rvsdg::SimpleNode * PTestAlloca_;
-  jlm::rvsdg::SimpleNode * PaAlloca_;
-  jlm::rvsdg::SimpleNode * PbAlloca_;
-  jlm::rvsdg::SimpleNode * PcAlloca_;
-  jlm::rvsdg::SimpleNode * PdAlloca_;
+  jlm::rvsdg::SimpleNode * PTestAlloca_{};
+  jlm::rvsdg::SimpleNode * PaAlloca_{};
+  jlm::rvsdg::SimpleNode * PbAlloca_{};
+  jlm::rvsdg::SimpleNode * PcAlloca_{};
+  jlm::rvsdg::SimpleNode * PdAlloca_{};
 };
 
 /**
@@ -1886,15 +1897,15 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::LambdaNode * LambdaF_;
-  jlm::rvsdg::LambdaNode * LambdaG_;
+  jlm::rvsdg::LambdaNode * LambdaF_{};
+  jlm::rvsdg::LambdaNode * LambdaG_{};
 
-  jlm::rvsdg::DeltaNode * LocalArray_;
-  jlm::rvsdg::DeltaNode * GlobalArray_;
+  jlm::rvsdg::DeltaNode * LocalArray_{};
+  jlm::rvsdg::DeltaNode * GlobalArray_{};
 
-  rvsdg::SimpleNode * CallF_;
+  rvsdg::SimpleNode * CallF_{};
 
-  rvsdg::SimpleNode * Memcpy_;
+  rvsdg::SimpleNode * Memcpy_{};
 };
 
 /**
@@ -2070,11 +2081,11 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::rvsdg::DeltaNode * DeltaMyList_;
+  jlm::rvsdg::DeltaNode * DeltaMyList_{};
 
-  jlm::rvsdg::LambdaNode * LambdaNext_;
+  jlm::rvsdg::LambdaNode * LambdaNext_{};
 
-  rvsdg::SimpleNode * Alloca_;
+  rvsdg::SimpleNode * Alloca_{};
 };
 
 /** \brief RVSDG module with one of each memory node type.
@@ -2397,7 +2408,7 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  rvsdg::LambdaNode * LambdaMain_;
+  rvsdg::LambdaNode * LambdaMain_{};
 };
 
 /**
@@ -2543,3 +2554,5 @@ private:
 };
 
 }
+
+#endif

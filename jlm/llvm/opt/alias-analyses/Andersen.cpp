@@ -732,7 +732,7 @@ Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
 
-  const auto & outputRegister = *node.output(0);
+  const auto & outputRegister = MallocOperation::addressOutput(node);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
 
   // We do not know what types will be stored in the malloc, so let it track pointers

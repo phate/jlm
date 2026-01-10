@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -32,8 +31,7 @@ Contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string
   return hasInstruction;
 }
 
-static void
-TestFNegScalar()
+TEST(FNegTests, TestFNegScalar)
 {
   auto Setup = [](llvm::LLVMContext & context)
   {
@@ -58,16 +56,15 @@ TestFNegScalar()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::tests::print(*llvmModule);
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::FNegOperation>(*ipgModule, "f"));
+  EXPECT_TRUE(Contains<jlm::llvm::FNegOperation>(*ipgModule, "f"));
 }
 
-static void
-TestFNegVector()
+TEST(FNegTests, TestFNegVector)
 {
   auto Setup = [](llvm::LLVMContext & context)
   {
@@ -92,19 +89,10 @@ TestFNegVector()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::tests::print(*llvmModule);
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::VectorUnaryOperation>(*ipgModule, "f"));
+  EXPECT_TRUE(Contains<jlm::llvm::VectorUnaryOperation>(*ipgModule, "f"));
 }
-
-static void
-Test()
-{
-  TestFNegScalar();
-  TestFNegVector();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/TestFNeg", Test)

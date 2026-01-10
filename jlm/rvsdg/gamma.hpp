@@ -329,28 +329,23 @@ public:
   RemoveEntryVars(const std::vector<EntryVar> & entryVars);
 
   /**
-   * Removes all gamma outputs and their respective results. The outputs must have no users and
-   * match the condition specified by \p match.
+   * Remove all exit variables where the variables' output is dead.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const rvsdg::output&)
-   * @param match Defines the condition of the elements to remove.
-   */
-  template<typename F>
-  void
-  RemoveGammaOutputsWhere(const F & match);
-
-  /**
-   * Removes all outputs that have no users.
+   * @see Output::IsDead()
    */
   void
-  PruneOutputs()
+  PruneExitVars()
   {
-    auto match = [](const rvsdg::Output &)
+    std::vector<ExitVar> exitVars;
+    for (auto exitVar : GetExitVars())
     {
-      return true;
-    };
+      if (exitVar.output->IsDead())
+      {
+        exitVars.push_back(exitVar);
+      }
+    }
 
-    RemoveGammaOutputsWhere(match);
+    RemoveExitVars(exitVars);
   }
 
   GammaNode *
@@ -403,25 +398,6 @@ inline rvsdg::Input *
 GammaNode::predicate() const noexcept
 {
   return StructuralNode::input(0);
-}
-
-template<typename F>
-void
-GammaNode::RemoveGammaOutputsWhere(const F & match)
-{
-  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-  for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    if (output(n)->nusers() == 0 && match(*output(n)))
-    {
-      for (size_t r = 0; r < nsubregions(); r++)
-      {
-        subregion(r)->RemoveResult(n);
-      }
-
-      removeOutput(n);
-    }
-  }
 }
 
 /**

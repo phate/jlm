@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -28,8 +28,8 @@ public:
     auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand1);
     auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand2);
 
-    if (jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1)
-        && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2))
+    if (n1 && n2 && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1->GetOperation())
+        && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2->GetOperation()))
     {
       return 1;
     }
@@ -80,14 +80,13 @@ private:
   enum jlm::rvsdg::BinaryOperation::flags Flags_;
 };
 
-static void
-ReduceFlattenedBinaryReductionParallel()
+TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionParallel)
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = TestType::createValueType();
-  const jlm::tests::TestBinaryOperation binaryOperation(
+  const TestBinaryOperation binaryOperation(
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
@@ -110,30 +109,25 @@ ReduceFlattenedBinaryReductionParallel()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
-  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node0));
+  auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
 
-  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node1));
+  auto node1 = TryGetOwnerNode<SimpleNode>(*node0->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node1->GetOperation()));
 
-  auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node2));
+  auto node2 = TryGetOwnerNode<SimpleNode>(*node0->input(1)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node2->GetOperation()));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionParallel",
-    ReduceFlattenedBinaryReductionParallel)
-
-static void
-ReduceFlattenedBinaryReductionLinear()
+TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionLinear)
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = TestType::createValueType();
-  const jlm::tests::TestBinaryOperation binaryOperation(
+  const TestBinaryOperation binaryOperation(
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
@@ -157,24 +151,19 @@ ReduceFlattenedBinaryReductionLinear()
   view(graph, stdout);
 
   // Assert
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
-  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node0));
+  auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
 
-  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node1));
+  auto node1 = TryGetOwnerNode<SimpleNode>(*node0->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node1->GetOperation()));
 
-  auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
-  assert(is<jlm::tests::TestBinaryOperation>(node2));
+  auto node2 = TryGetOwnerNode<SimpleNode>(*node1->input(0)->origin());
+  EXPECT_TRUE(is<TestBinaryOperation>(node2->GetOperation()));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionLinear",
-    ReduceFlattenedBinaryReductionLinear)
-
-static void
-FlattenAssociativeBinaryOperation_NotAssociativeBinary()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_NotAssociativeBinary)
 {
   using namespace jlm::rvsdg;
 
@@ -186,12 +175,12 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
-  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o2 = &CreateOpNode<TestBinaryOperation>(
       { o1->output(0), i2 },
       valueType,
       valueType,
@@ -203,22 +192,16 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
-  assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
+  EXPECT_FALSE(success);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex.origin()), node);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NotAssociativeBinary",
-    FlattenAssociativeBinaryOperation_NotAssociativeBinary)
-
-static void
-FlattenAssociativeBinaryOperation_NoNewOperands()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_NoNewOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -229,9 +212,9 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i1 }, valueType, valueType);
-  auto b2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ i0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ i1 }, valueType, valueType);
+  auto b2 = &CreateOpNode<TestBinaryOperation>(
       { u1->output(0), u2->output(0) },
       valueType,
       valueType,
@@ -243,22 +226,16 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
-  assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
+  EXPECT_FALSE(success);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex.origin()), node);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NoNewOperands",
-    FlattenAssociativeBinaryOperation_NoNewOperands)
-
-static void
-FlattenAssociativeBinaryOperation_Success()
+TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_Success)
 {
   using namespace jlm::rvsdg;
 
@@ -270,12 +247,12 @@ FlattenAssociativeBinaryOperation_Success()
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o2 = &CreateOpNode<TestBinaryOperation>(
       { o1->output(0), i2 },
       valueType,
       valueType,
@@ -287,24 +264,18 @@ FlattenAssociativeBinaryOperation_Success()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success =
-      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success);
+  EXPECT_TRUE(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(is<FlattenedBinaryOperation>(flattenedBinaryNode));
-  assert(flattenedBinaryNode->ninputs() == 3);
+  EXPECT_TRUE(is<FlattenedBinaryOperation>(flattenedBinaryNode->GetOperation()));
+  EXPECT_EQ(flattenedBinaryNode->ninputs(), 3u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_Success",
-    FlattenAssociativeBinaryOperation_Success)
-
-static void
-NormalizeBinaryOperation_NoNewOperands()
+TEST(BinaryOperationTests, NormalizeBinaryOperation_NoNewOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -315,7 +286,7 @@ NormalizeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
-  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+  auto o1 = &CreateOpNode<TestBinaryOperation>(
       { i0, i1 },
       valueType,
       valueType,
@@ -327,20 +298,15 @@ NormalizeBinaryOperation_NoNewOperands()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success = ReduceNode<jlm::tests::TestBinaryOperation>(NormalizeBinaryOperation, *node);
+  auto success = ReduceNode<TestBinaryOperation>(NormalizeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == false);
+  EXPECT_FALSE(success);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-NormalizeBinaryOperation_NoNewOperands",
-    NormalizeBinaryOperation_NoNewOperands)
-
-static void
-NormalizeBinaryOperation_SingleOperand()
+TEST(BinaryOperationTests, NormalizeBinaryOperation_SingleOperand)
 {
   using namespace jlm::rvsdg;
 
@@ -351,8 +317,8 @@ NormalizeBinaryOperation_SingleOperand()
   auto s0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s0 }, valueType, valueType);
-  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, valueType, valueType);
+  auto u1 = &CreateOpNode<TestUnaryOperation>({ s0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<TestUnaryOperation>({ s1 }, valueType, valueType);
 
   auto o1 = &CreateOpNode<::BinaryOperation>(
       { u1->output(0), u2->output(0) },
@@ -371,10 +337,6 @@ NormalizeBinaryOperation_SingleOperand()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(success == true);
-  assert(ex.origin() == u2->output(0));
+  EXPECT_TRUE(success);
+  EXPECT_EQ(ex.origin(), u2->output(0));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-binary-NormalizeBinaryOperation_SingleOperand",
-    NormalizeBinaryOperation_SingleOperand)

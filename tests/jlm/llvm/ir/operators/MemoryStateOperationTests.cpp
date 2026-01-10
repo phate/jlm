@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -12,32 +11,28 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-MemoryStateSplitEquality()
+TEST(MemoryStateOperationTests, MemoryStateSplitEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   MemoryStateSplitOperation operation1(2);
   MemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Number of results differ
+  EXPECT_NE(operation1, operation3); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateSplitEquality",
-    MemoryStateSplitEquality)
-
-static void
-MemoryStateSplitNormalizeSingleResult()
+TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeSingleResult)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -62,16 +57,11 @@ MemoryStateSplitNormalizeSingleResult()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 0);
-  assert(ex.origin() == &ix);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
+  EXPECT_EQ(ex.origin(), &ix);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateSplitNormalizeSingleResult",
-    MemoryStateSplitNormalizeSingleResult)
-
-static void
-MemoryStateSplitNormalizeNestedSplits()
+TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeNestedSplits)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -105,10 +95,10 @@ MemoryStateSplitNormalizeNestedSplits()
 
   // Assert
   // We should only have MemoryStateSplit left
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [splitNode, splitOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*ex0.origin());
-  assert(splitNode && splitOperation);
+  EXPECT_TRUE(splitNode && splitOperation);
 
   // We should have 7 outputs:
   // - 2 from splitNode1
@@ -116,20 +106,15 @@ MemoryStateSplitNormalizeNestedSplits()
   // - 1 from splitNode0
   // - 1 from splitNode0 -> splitNode1
   // - 1 from splitNode0 -> splitNode2
-  assert(splitNode->noutputs() == 7);
-  assert(TryGetOwnerNode<SimpleNode>(*ex0.origin()) == splitNode);
-  assert(TryGetOwnerNode<SimpleNode>(*ex1.origin()) == splitNode);
-  assert(TryGetOwnerNode<SimpleNode>(*ex2.origin()) == splitNode);
-  assert(TryGetOwnerNode<SimpleNode>(*ex3.origin()) == splitNode);
-  assert(TryGetOwnerNode<SimpleNode>(*ex4.origin()) == splitNode);
+  EXPECT_EQ(splitNode->noutputs(), 7u);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin()), splitNode);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex1.origin()), splitNode);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex2.origin()), splitNode);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex3.origin()), splitNode);
+  EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex4.origin()), splitNode);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateSplitNormalizeNestedSplits",
-    MemoryStateSplitNormalizeNestedSplits)
-
-static void
-MemoryStateSplitNormalizeSplitMerge()
+TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeSplitMerge)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -158,39 +143,30 @@ MemoryStateSplitNormalizeSplitMerge()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 0);
-  assert(ex0.origin() == &ix0);
-  assert(ex1.origin() == &ix1);
-  assert(ex2.origin() == &ix2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
+  EXPECT_EQ(ex0.origin(), &ix0);
+  EXPECT_EQ(ex1.origin(), &ix1);
+  EXPECT_EQ(ex2.origin(), &ix2);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateSplitNormalizeSplitMerge",
-    MemoryStateSplitNormalizeSplitMerge)
-
-static void
-MemoryStateMergeEquality()
+TEST(MemoryStateOperationTests, MemoryStateMergeEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   MemoryStateMergeOperation operation1(2);
   MemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of operands differ
-  assert(operation1 != operation3); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Number of operands differ
+  EXPECT_NE(operation1, operation3); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeEquality",
-    MemoryStateMergeEquality)
-
-static void
-MemoryStateMergeNormalizeSingleOperand()
+TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeSingleOperand)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -215,16 +191,11 @@ MemoryStateMergeNormalizeSingleOperand()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 0);
-  assert(ex.origin() == &ix);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
+  EXPECT_EQ(ex.origin(), &ix);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeSingleOperand",
-    MemoryStateMergeNormalizeSingleOperand)
-
-static void
-MemoryStateMergeNormalizeDuplicateOperands()
+TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeDuplicateOperands)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -250,20 +221,15 @@ MemoryStateMergeNormalizeDuplicateOperands()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
-  assert(mergeNode && mergeOperation);
+  EXPECT_TRUE(mergeNode && mergeOperation);
 
-  assert(mergeNode->ninputs() == 2);
+  EXPECT_EQ(mergeNode->ninputs(), 2u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeDuplicateOperands",
-    MemoryStateMergeNormalizeDuplicateOperands)
-
-static void
-MemoryStateMergeNormalizeNestedMerges()
+TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedMerges)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -295,20 +261,15 @@ MemoryStateMergeNormalizeNestedMerges()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
-  assert(mergeNode && mergeOperation);
+  EXPECT_TRUE(mergeNode && mergeOperation);
 
-  assert(mergeNode->ninputs() == 5);
+  EXPECT_EQ(mergeNode->ninputs(), 5u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeNestedMerges",
-    MemoryStateMergeNormalizeNestedMerges)
-
-static void
-MemoryStateMergeNormalizeNestedSplits()
+TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedSplits)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -339,25 +300,20 @@ MemoryStateMergeNormalizeNestedSplits()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [node, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
-  assert(node && mergeOperation);
+  EXPECT_TRUE(node && mergeOperation);
 
-  assert(node->ninputs() == 5);
-  assert(node->input(0)->origin() == &ix0);
-  assert(node->input(1)->origin() == &ix0);
-  assert(node->input(2)->origin() == &ix1);
-  assert(node->input(3)->origin() == &ix1);
-  assert(node->input(4)->origin() == &ix2);
+  EXPECT_EQ(node->ninputs(), 5u);
+  EXPECT_EQ(node->input(0)->origin(), &ix0);
+  EXPECT_EQ(node->input(1)->origin(), &ix0);
+  EXPECT_EQ(node->input(2)->origin(), &ix1);
+  EXPECT_EQ(node->input(3)->origin(), &ix1);
+  EXPECT_EQ(node->input(4)->origin(), &ix2);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeNestedSplits",
-    MemoryStateMergeNormalizeNestedSplits)
-
-static void
-MemoryStateJoin_NormalizeSingleOperand()
+TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeSingleOperand)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -380,16 +336,11 @@ MemoryStateJoin_NormalizeSingleOperand()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 0);
-  assert(ex.origin() == &ix);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
+  EXPECT_EQ(ex.origin(), &ix);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeSingleOperand",
-    MemoryStateJoin_NormalizeSingleOperand)
-
-static void
-MemoryStateJoin_NormalizeDuplicateOperands()
+TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeDuplicateOperands)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -416,29 +367,24 @@ MemoryStateJoin_NormalizeDuplicateOperands()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
 
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*x0.origin());
-    assert(joinNode && joinOperation);
+    EXPECT_TRUE(joinNode && joinOperation);
 
-    assert(joinNode->ninputs() == 2);
-    assert(joinNode->input(0)->origin() == &i0);
-    assert(joinNode->input(1)->origin() == &i1);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
+    EXPECT_EQ(joinNode->input(0)->origin(), &i0);
+    EXPECT_EQ(joinNode->input(1)->origin(), &i1);
   }
 
   {
-    assert(x1.origin() == &i0);
+    EXPECT_EQ(x1.origin(), &i0);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeDuplicateOperands",
-    MemoryStateJoin_NormalizeDuplicateOperands)
-
-static void
-MemoryStateJoin_NormalizeNestedJoins()
+TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeNestedJoins)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -470,51 +416,40 @@ MemoryStateJoin_NormalizeNestedJoins()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [joinNode, joinOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
-  assert(joinNode && joinOperation);
+  EXPECT_TRUE(joinNode && joinOperation);
 
-  assert(joinNode->ninputs() == 6);
-  assert(joinNode->input(0)->origin() == &ix0);
-  assert(joinNode->input(1)->origin() == &ix1);
-  assert(joinNode->input(2)->origin() == &ix2);
-  assert(joinNode->input(3)->origin() == &ix3);
-  assert(joinNode->input(4)->origin() == &ix4);
-  assert(joinNode->input(5)->origin() == &ix5);
+  EXPECT_EQ(joinNode->ninputs(), 6u);
+  EXPECT_EQ(joinNode->input(0)->origin(), &ix0);
+  EXPECT_EQ(joinNode->input(1)->origin(), &ix1);
+  EXPECT_EQ(joinNode->input(2)->origin(), &ix2);
+  EXPECT_EQ(joinNode->input(3)->origin(), &ix3);
+  EXPECT_EQ(joinNode->input(4)->origin(), &ix4);
+  EXPECT_EQ(joinNode->input(5)->origin(), &ix5);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeNestedJoins",
-    MemoryStateJoin_NormalizeNestedJoins)
-
-static void
-LambdaEntryMemStateOperatorEquality()
+TEST(MemoryStateOperationTests, LambdaEntryMemStateOperatorEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const LambdaEntryMemoryStateSplitOperation operation1({ 1, 2 });
   const LambdaEntryMemoryStateSplitOperation operation2({ 3, 4 });
   const LambdaEntryMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
-  const jlm::tests::TestOperation operation4(
-      { memoryStateType },
-      { memoryStateType, memoryStateType });
+  const TestOperation operation4({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Memory node identifiers differ
-  assert(operation1 != operation3); // Number of results differ
-  assert(operation1 != operation4); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Memory node identifiers differ
+  EXPECT_NE(operation1, operation3); // Number of results differ
+  EXPECT_NE(operation1, operation4); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/MemoryStateOperationTests-LambdaEntryMemStateOperatorEquality",
-    LambdaEntryMemStateOperatorEquality)
-
-static void
-LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
+TEST(MemoryStateOperationTests, LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -562,53 +497,43 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
 
   {
-    assert(success1);
-    assert(x0.origin() == &i2);
-    assert(x1.origin() == &i1);
-    assert(x2.origin() == &i0);
+    EXPECT_TRUE(success1);
+    EXPECT_EQ(x0.origin(), &i2);
+    EXPECT_EQ(x1.origin(), &i1);
+    EXPECT_EQ(x2.origin(), &i0);
   }
 
   // The reduction should not be performed if the number of memory region IDs mismatches
   {
-    assert(!success2);
-    assert(x3.origin() == lambdaEntrySplitNode2.output(0));
-    assert(x4.origin() == lambdaEntrySplitNode2.output(1));
+    EXPECT_FALSE(success2);
+    EXPECT_EQ(x3.origin(), lambdaEntrySplitNode2.output(0));
+    EXPECT_EQ(x4.origin(), lambdaEntrySplitNode2.output(1));
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/"
-    "MemoryStateOperationTests-LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge",
-    LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge)
-
-static void
-LambdaExitMemStateOperatorEquality()
+TEST(MemoryStateOperationTests, LambdaExitMemStateOperatorEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const LambdaExitMemoryStateMergeOperation operation1({ 1, 2 });
   const LambdaExitMemoryStateMergeOperation operation2({ 3, 4 });
   const LambdaExitMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
-  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Memory node identifiers differ
-  assert(operation1 != operation3); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Memory node identifiers differ
+  EXPECT_NE(operation1, operation3); // Number of results differ
+  EXPECT_NE(operation1, operation3); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemStateOperatorEquality",
-    LambdaExitMemStateOperatorEquality)
-
-static void
-LambdaExitMemoryStateMergeNormalizeLoad()
+TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeLoad)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -652,29 +577,24 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
-  assert(graph.GetRootRegion().numNodes() == 4);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 4u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
-  assert(memStateMerge1Node != &lambdaExitMergeNode1);
-  assert(memStateMerge1Node->ninputs() == 2);
-  assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
-  assert(memStateMerge1Node->input(1)->origin() == &memState1);
-  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
+  EXPECT_EQ(memStateMerge1Node->input(0)->origin(), allocaResults[1]);
+  EXPECT_EQ(memStateMerge1Node->input(1)->origin(), &memState1);
+  EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
-  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+  EXPECT_EQ(memStateMerge2Node, &lambdaExitMergeNode2);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeLoad",
-    LambdaExitMemoryStateMergeNormalizeLoad)
-
-static void
-LambdaExitMemoryStateMergeNormalizeStore()
+TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeStore)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -717,29 +637,24 @@ LambdaExitMemoryStateMergeNormalizeStore()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
-  assert(memStateMerge1Node != &lambdaExitMergeNode1);
-  assert(memStateMerge1Node->ninputs() == 2);
-  assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
-  assert(memStateMerge1Node->input(1)->origin() == &memState1);
-  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
+  EXPECT_EQ(memStateMerge1Node->input(0)->origin(), allocaResults[1]);
+  EXPECT_EQ(memStateMerge1Node->input(1)->origin(), &memState1);
+  EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
-  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+  EXPECT_EQ(memStateMerge2Node, &lambdaExitMergeNode2);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeStore",
-    LambdaExitMemoryStateMergeNormalizeStore)
-
-static void
-LambdaExitMemoryStateMergeNormalizeAlloca()
+TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeAlloca)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -780,78 +695,63 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
-  assert(graph.GetRootRegion().numNodes() == 3);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
-  assert(memStateMerge1Node != &lambdaExitMergeNode1);
-  assert(memStateMerge1Node->ninputs() == 2);
-  assert(memStateMerge1Operation->getMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
+  EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
+  EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
   const auto undefNode = TryGetOwnerNode<Node>(*memStateMerge1Node->input(0)->origin());
-  assert(undefNode);
-  assert(memStateMerge1Node->input(1)->origin() == &memState1);
+  EXPECT_NE(undefNode, nullptr);
+  EXPECT_EQ(memStateMerge1Node->input(1)->origin(), &memState1);
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
-  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+  EXPECT_EQ(memStateMerge2Node, &lambdaExitMergeNode2);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeAlloca",
-    LambdaExitMemoryStateMergeNormalizeAlloca)
-
-static void
-CallEntryMemStateOperatorEquality()
+TEST(MemoryStateOperationTests, CallEntryMemStateOperatorEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const CallEntryMemoryStateMergeOperation operation1({ 1, 2 });
   const CallEntryMemoryStateMergeOperation operation2({ 3, 4 });
   const CallEntryMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
-  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
+  TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Memory node identifiers differ
-  assert(operation1 != operation3); // Number of operands differ
-  assert(operation1 != operation3); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Memory node identifiers differ
+  EXPECT_NE(operation1, operation3); // Number of operands differ
+  EXPECT_NE(operation1, operation3); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/MemoryStateOperationTests-CallEntryMemStateOperatorEquality",
-    CallEntryMemStateOperatorEquality)
-
-static void
-CallExitMemStateOperatorEquality()
+TEST(MemoryStateOperationTests, CallExitMemStateOperatorEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   const CallExitMemoryStateSplitOperation operation1({ 1, 2 });
   const CallExitMemoryStateSplitOperation operation2({ 3, 4 });
   const CallExitMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
-  const jlm::tests::TestOperation operation4(
-      { memoryStateType },
-      { memoryStateType, memoryStateType });
+  const TestOperation operation4({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // Memory node identifiers differ
-  assert(operation1 != operation3); // Number of memory node identifiers differ
-  assert(operation1 != operation4); // Operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // Memory node identifiers differ
+  EXPECT_NE(operation1, operation3); // Number of memory node identifiers differ
+  EXPECT_NE(operation1, operation4); // Operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-CallExitMemStateOperatorEquality",
-    CallExitMemStateOperatorEquality)
-
-static void
-CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
+TEST(MemoryStateOperationTests, CallExitMemoryStateSplit_NormalizeLambdaExitMerge)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -900,23 +800,18 @@ CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
 
   {
-    assert(success1);
-    assert(x0.origin() == &i2);
-    assert(x1.origin() == &i1);
-    assert(x2.origin() == &i0);
+    EXPECT_TRUE(success1);
+    EXPECT_EQ(x0.origin(), &i2);
+    EXPECT_EQ(x1.origin(), &i1);
+    EXPECT_EQ(x2.origin(), &i0);
   }
 
   // The reduction should not be performed if the number of memory region IDs mismatches
   {
-    assert(!success2);
-    assert(x3.origin() == callExitSplitNode2.output(0));
+    EXPECT_FALSE(success2);
+    EXPECT_EQ(x3.origin(), callExitSplitNode2.output(0));
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/"
-    "MemoryStateOperationTests-CallExitMemoryStateSplit_NormalizeLambdaExitMerge",
-    CallExitMemoryStateSplit_NormalizeLambdaExitMerge)

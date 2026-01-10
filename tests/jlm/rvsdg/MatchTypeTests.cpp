@@ -5,8 +5,9 @@
 
 #include <cassert>
 
-#include "jlm/rvsdg/MatchType.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
+
+#include <jlm/rvsdg/MatchType.hpp>
 
 namespace
 {
@@ -155,40 +156,29 @@ Discriminate5(const Base & obj)
 
 }
 
-static void
-TestBasicTypeMatch()
+TEST(MatchTypeTests, TestBasicTypeMatch)
 {
-  assert(Discriminate1(X()) == 0);
-  assert(Discriminate1(Y()) == 1);
-  assert(Discriminate1(Z()) == 2);
-  assert(Discriminate1(U()) == -1);
+  EXPECT_EQ(Discriminate1(X()), 0);
+  EXPECT_EQ(Discriminate1(Y()), 1);
+  EXPECT_EQ(Discriminate1(Z()), 2);
+  EXPECT_EQ(Discriminate1(U()), -1);
 
-  assert(Discriminate2(X()) == 0);
-  assert(Discriminate2(Y()) == 1);
-  assert(Discriminate2(Z()) == 2);
-  assert(Discriminate2(U()) == -1);
+  EXPECT_EQ(Discriminate2(X()), 0);
+  EXPECT_EQ(Discriminate2(Y()), 1);
+  EXPECT_EQ(Discriminate2(Z()), 2);
+  EXPECT_EQ(Discriminate2(U()), -1);
 
-  assert(Discriminate3(X()) == 0);
-  assert(Discriminate3(Y()) == 1);
-  assert(Discriminate3(Z()) == 2);
-  assert(Discriminate3(U()) == -1);
+  EXPECT_EQ(Discriminate3(X()), 0);
+  EXPECT_EQ(Discriminate3(Y()), 1);
+  EXPECT_EQ(Discriminate3(Z()), 2);
+  EXPECT_EQ(Discriminate3(U()), -1);
 
-  assert(Discriminate4(X()) == 0);
-  assert(Discriminate4(Y()) == 1);
-  assert(Discriminate4(Z()) == 2);
-  try
-  {
-    Discriminate4(U());
-    assert(false);
-  }
-  catch (const std::logic_error &)
-  {
-    assert(true);
-  }
+  EXPECT_EQ(Discriminate4(X()), 0);
+  EXPECT_EQ(Discriminate4(Y()), 1);
+  EXPECT_EQ(Discriminate4(Z()), 2);
+  EXPECT_THROW(Discriminate4(U()), std::logic_error);
 
-  assert(Discriminate5(X()) == 0);
-  assert(Discriminate5(Y()) == 1);
-  assert(Discriminate5(Z()) == 2);
+  EXPECT_EQ(Discriminate5(X()), 0);
+  EXPECT_EQ(Discriminate5(Y()), 1);
+  EXPECT_EQ(Discriminate5(Z()), 2);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/MatchTypeTests-TestBasicTypeMatch", TestBasicTypeMatch)

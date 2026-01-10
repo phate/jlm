@@ -3,16 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-NormalizeSimpleOperationCne_NodesWithoutOperands()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_NodesWithoutOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -21,14 +20,10 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   const auto valueType = TestType::createValueType();
   const auto stateType = TestType::createStateType();
 
-  auto & nullaryValueNode1 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryValueNode2 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryStateNode1 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
-  auto & nullaryStateNode2 =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & nullaryValueNode1 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryValueNode2 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryStateNode1 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & nullaryStateNode2 = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
 
   auto & exNullaryValueNode1 = GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
   auto & exNullaryValueNode2 = GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
@@ -64,17 +59,12 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   view(graph, stdout);
 
   // Assert
-  assert(exNullaryValueNode1.origin() == exNullaryValueNode2.origin());
-  assert(exNullaryStateNode1.origin() == exNullaryStateNode2.origin());
-  assert(exNullaryValueNode1.origin() != exNullaryStateNode2.origin());
+  EXPECT_EQ(exNullaryValueNode1.origin(), exNullaryValueNode2.origin());
+  EXPECT_EQ(exNullaryStateNode1.origin(), exNullaryStateNode2.origin());
+  EXPECT_NE(exNullaryValueNode1.origin(), exNullaryStateNode2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithoutOperands",
-    NormalizeSimpleOperationCne_NodesWithoutOperands)
-
-static void
-NormalizeSimpleOperationCne_NodesWithOperands()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_NodesWithOperands)
 {
   using namespace jlm::rvsdg;
 
@@ -86,10 +76,10 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   auto v1 = &GraphImport::Create(graph, valueType, "v1");
   auto s1 = &GraphImport::Create(graph, stateType, "s1");
 
-  auto & valueNode1 = CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
-  auto & valueNode2 = CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
-  auto & stateNode1 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
-  auto & stateNode2 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
+  auto & valueNode1 = CreateOpNode<TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & valueNode2 = CreateOpNode<TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & stateNode1 = CreateOpNode<TestUnaryOperation>({ s1 }, stateType, stateType);
+  auto & stateNode2 = CreateOpNode<TestUnaryOperation>({ s1 }, stateType, stateType);
 
   auto & exValueNode1 = GraphExport::Create(*valueNode1.output(0), "nvn1");
   auto & exValueNode2 = GraphExport::Create(*valueNode2.output(0), "nvn2");
@@ -117,17 +107,12 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   view(graph, stdout);
 
   // Assert
-  assert(exValueNode1.origin() == exValueNode2.origin());
-  assert(exStateNode1.origin() == exStateNode2.origin());
-  assert(exValueNode1.origin() != exStateNode2.origin());
+  EXPECT_EQ(exValueNode1.origin(), exValueNode2.origin());
+  EXPECT_EQ(exStateNode1.origin(), exStateNode2.origin());
+  EXPECT_NE(exValueNode1.origin(), exStateNode2.origin());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithOperands",
-    NormalizeSimpleOperationCne_NodesWithOperands)
-
-static void
-NormalizeSimpleOperationCne_Failure()
+TEST(SimpleOperationTests, NormalizeSimpleOperationCne_Failure)
 {
   using namespace jlm::rvsdg;
 
@@ -139,14 +124,10 @@ NormalizeSimpleOperationCne_Failure()
   auto v1 = &GraphImport::Create(graph, valueType, "v1");
   auto s1 = &GraphImport::Create(graph, stateType, "s1");
 
-  auto & nullaryValueNode =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
-  auto & nullaryStateNode =
-      CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), stateType);
-  auto & unaryValueNode =
-      CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
-  auto & unaryStateNode =
-      CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
+  auto & nullaryValueNode = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryStateNode = CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & unaryValueNode = CreateOpNode<TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & unaryStateNode = CreateOpNode<TestUnaryOperation>({ s1 }, stateType, stateType);
 
   auto & exNullaryValueNode = GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
   auto & exNullaryStateNode = GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
@@ -182,12 +163,8 @@ NormalizeSimpleOperationCne_Failure()
   view(graph, stdout);
 
   // Assert
-  assert(TryGetOwnerNode<Node>(*exNullaryValueNode.origin()) == &nullaryValueNode);
-  assert(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()) == &nullaryStateNode);
-  assert(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()) == &unaryValueNode);
-  assert(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()) == &unaryStateNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exNullaryValueNode.origin()), &nullaryValueNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()), &nullaryStateNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()), &unaryValueNode);
+  EXPECT_EQ(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()), &unaryStateNode);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/NormalizeSimpleOperationCne_Failure",
-    NormalizeSimpleOperationCne_Failure)

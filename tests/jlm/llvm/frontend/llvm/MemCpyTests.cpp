@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
@@ -15,8 +14,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static void
-MemCpyConversion()
+TEST(MemCpyTests, MemCpyConversion)
 {
   using namespace llvm;
 
@@ -44,7 +42,7 @@ MemCpyConversion()
   builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, true);
   builder.CreateRetVoid();
 
-  jlm::tests::print(*llvmModule);
+  llvmModule->print(llvm::errs(), nullptr);
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
@@ -69,25 +67,23 @@ MemCpyConversion()
         auto ioStateAssignment = *std::next(it);
         auto memoryStateAssignment = *std::next(it, 2);
 
-        assert(is<AssignmentOperation>(ioStateAssignment->operation()));
-        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(ioStateAssignment->operation()));
+        EXPECT_TRUE(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
       else if (is<MemCpyNonVolatileOperation>(*it))
       {
         numMemCpyThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);
 
-        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
-        assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
     }
 
-    assert(numMemCpyThreeAddressCodes == 1);
-    assert(numMemCpyVolatileThreeAddressCodes == 2);
+    EXPECT_EQ(numMemCpyThreeAddressCodes, 1u);
+    EXPECT_EQ(numMemCpyVolatileThreeAddressCodes, 2u);
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/MemCpyTests-MemCpyConversion", MemCpyConversion)

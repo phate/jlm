@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-TestInputIterator()
+TEST(InputTests, TestInputIterator)
 {
   using namespace jlm::rvsdg;
 
@@ -20,7 +20,7 @@ TestInputIterator()
   auto & rootRegion = rvsdg.GetRootRegion();
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
@@ -31,49 +31,46 @@ TestInputIterator()
 
   // Act & Assert
   auto nodeIt = Input::Iterator(node.input(0));
-  assert(nodeIt.GetInput() == node.input(0));
-  assert(nodeIt->index() == node.input(0)->index());
-  assert((*nodeIt).index() == node.input(0)->index());
-  assert(nodeIt == Input::Iterator(node.input(0)));
-  assert(nodeIt != Input::Iterator(node.input(1)));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(0));
+  EXPECT_EQ(nodeIt->index(), node.input(0)->index());
+  EXPECT_EQ((*nodeIt).index(), node.input(0)->index());
+  EXPECT_EQ(nodeIt, Input::Iterator(node.input(0)));
+  EXPECT_NE(nodeIt, Input::Iterator(node.input(1)));
 
   nodeIt++;
-  assert(nodeIt.GetInput() == node.input(1));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(1));
 
   ++nodeIt;
-  assert(nodeIt.GetInput() == node.input(2));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(2));
 
   ++nodeIt;
   ++nodeIt;
-  assert(nodeIt.GetInput() == node.input(4));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(4));
 
   ++nodeIt;
-  assert(nodeIt.GetInput() == nullptr);
+  EXPECT_EQ(nodeIt.GetInput(), nullptr);
 
   auto regionIt = Input::Iterator(rootRegion.result(0));
-  assert(regionIt.GetInput() == rootRegion.result(0));
-  assert(regionIt->index() == rootRegion.result(0)->index());
-  assert((*regionIt).index() == rootRegion.result(0)->index());
-  assert(regionIt == Input::Iterator(rootRegion.result(0)));
-  assert(regionIt != Input::Iterator(rootRegion.result(1)));
+  EXPECT_EQ(regionIt.GetInput(), rootRegion.result(0));
+  EXPECT_EQ(regionIt->index(), rootRegion.result(0)->index());
+  EXPECT_EQ((*regionIt).index(), rootRegion.result(0)->index());
+  EXPECT_EQ(regionIt, Input::Iterator(rootRegion.result(0)));
+  EXPECT_NE(regionIt, Input::Iterator(rootRegion.result(1)));
 
   regionIt++;
   regionIt++;
-  assert(regionIt.GetInput() == rootRegion.result(2));
+  EXPECT_EQ(regionIt.GetInput(), rootRegion.result(2));
 
   regionIt++;
-  assert(regionIt.GetInput() == nullptr);
+  EXPECT_EQ(regionIt.GetInput(), nullptr);
 
   auto it = Input::Iterator(nullptr);
   it++;
   ++it;
-  assert(it.GetInput() == nullptr);
+  EXPECT_EQ(it.GetInput(), nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests-TestInputIterator", TestInputIterator)
-
-static void
-TestInputConstIterator()
+TEST(InputTests, TestInputConstIterator)
 {
   using namespace jlm::rvsdg;
 
@@ -84,7 +81,7 @@ TestInputConstIterator()
   auto & rootRegion = rvsdg.GetRootRegion();
   auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
-  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
@@ -95,43 +92,41 @@ TestInputConstIterator()
 
   // Act & Assert
   auto nodeIt = Input::ConstIterator(node.input(0));
-  assert(nodeIt.GetInput() == node.input(0));
-  assert(nodeIt->index() == node.input(0)->index());
-  assert((*nodeIt).index() == node.input(0)->index());
-  assert(nodeIt == Input::ConstIterator(node.input(0)));
-  assert(nodeIt != Input::ConstIterator(node.input(1)));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(0));
+  EXPECT_EQ(nodeIt->index(), node.input(0)->index());
+  EXPECT_EQ((*nodeIt).index(), node.input(0)->index());
+  EXPECT_EQ(nodeIt, Input::ConstIterator(node.input(0)));
+  EXPECT_NE(nodeIt, Input::ConstIterator(node.input(1)));
 
   nodeIt++;
-  assert(nodeIt.GetInput() == node.input(1));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(1));
 
   ++nodeIt;
-  assert(nodeIt.GetInput() == node.input(2));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(2));
 
   ++nodeIt;
   ++nodeIt;
-  assert(nodeIt.GetInput() == node.input(4));
+  EXPECT_EQ(nodeIt.GetInput(), node.input(4));
 
   ++nodeIt;
-  assert(nodeIt.GetInput() == nullptr);
+  EXPECT_EQ(nodeIt.GetInput(), nullptr);
 
   auto regionIt = Input::ConstIterator(rootRegion.result(0));
-  assert(regionIt.GetInput() == rootRegion.result(0));
-  assert(regionIt->index() == rootRegion.result(0)->index());
-  assert((*regionIt).index() == rootRegion.result(0)->index());
-  assert(regionIt == Input::ConstIterator(rootRegion.result(0)));
-  assert(regionIt != Input::ConstIterator(rootRegion.result(1)));
+  EXPECT_EQ(regionIt.GetInput(), rootRegion.result(0));
+  EXPECT_EQ(regionIt->index(), rootRegion.result(0)->index());
+  EXPECT_EQ((*regionIt).index(), rootRegion.result(0)->index());
+  EXPECT_EQ(regionIt, Input::ConstIterator(rootRegion.result(0)));
+  EXPECT_NE(regionIt, Input::ConstIterator(rootRegion.result(1)));
 
   regionIt++;
   regionIt++;
-  assert(regionIt.GetInput() == rootRegion.result(2));
+  EXPECT_EQ(regionIt.GetInput(), rootRegion.result(2));
 
   regionIt++;
-  assert(regionIt.GetInput() == nullptr);
+  EXPECT_EQ(regionIt.GetInput(), nullptr);
 
   auto it = Input::ConstIterator(nullptr);
   it++;
   ++it;
-  assert(it.GetInput() == nullptr);
+  EXPECT_EQ(it.GetInput(), nullptr);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests-TestInputConstIterator", TestInputConstIterator)

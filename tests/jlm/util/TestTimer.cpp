@@ -21,7 +21,7 @@ sleepUs(int us)
 TEST(TimerTests, TestStartStop)
 {
   Timer t;
-  EXPECT_EQ(t.ns(), 0);
+  EXPECT_EQ(t.ns(), 0u);
   EXPECT_FALSE(t.isRunning());
 
   t.start();
@@ -30,7 +30,7 @@ TEST(TimerTests, TestStartStop)
   t.stop();
   EXPECT_FALSE(t.isRunning());
   auto ns = t.ns();
-  EXPECT_GE(ns, 10000);
+  EXPECT_GE(ns, 10000u);
 
   // Add more time
   t.start();
@@ -42,21 +42,21 @@ TEST(TimerTests, TestStartStop)
 TEST(TimerTests, TestReset)
 {
   Timer t;
-  EXPECT_EQ(t.ns(), 0);
+  EXPECT_EQ(t.ns(), 0u);
   EXPECT_FALSE(t.isRunning());
 
   t.start();
   sleepUs(1);
   t.stop();
 
-  EXPECT_NE(t.ns(), 0);
+  EXPECT_NE(t.ns(), 0u);
   t.reset();
-  EXPECT_EQ(t.ns(), 0);
+  EXPECT_EQ(t.ns(), 0u);
   EXPECT_FALSE(t.isRunning());
 
   // Resetting while running
   t.start();
   t.reset();
-  EXPECT_EQ(t.ns(), 0);
+  EXPECT_EQ(t.ns(), 0u);
   EXPECT_FALSE(t.isRunning());
 }

@@ -14,6 +14,8 @@ librvsdg_SOURCES = \
     jlm/rvsdg/region.cpp \
     jlm/rvsdg/simple-node.cpp \
     jlm/rvsdg/structural-node.cpp \
+    jlm/rvsdg/TestNodes.cpp \
+    jlm/rvsdg/TestOperations.cpp \
     jlm/rvsdg/theta.cpp \
     jlm/rvsdg/Transformation.cpp \
     jlm/rvsdg/Trace.cpp \
@@ -59,6 +61,8 @@ librvsdg_HEADERS = \
     jlm/rvsdg/unary.hpp \
     jlm/rvsdg/UnitType.hpp \
     jlm/rvsdg/simple-node.hpp \
+    jlm/rvsdg/TestNodes.hpp \
+    jlm/rvsdg/TestOperations.hpp \
     jlm/rvsdg/TestType.hpp \
     jlm/rvsdg/type.hpp \
     jlm/rvsdg/binary.hpp \
@@ -75,35 +79,30 @@ librvsdg_HEADERS = \
     jlm/rvsdg/control.hpp \
     jlm/rvsdg/region.hpp \
 
-librvsdg_TESTS = \
-    tests/jlm/rvsdg/ArgumentTests \
-    tests/jlm/rvsdg/InputTests \
-    tests/jlm/rvsdg/OutputTests \
-    tests/jlm/rvsdg/MatchTypeTests \
-    tests/jlm/rvsdg/RegionTests \
-    tests/jlm/rvsdg/ResultTests \
-    tests/jlm/rvsdg/SimpleOperationTests \
-    tests/jlm/rvsdg/test-binary \
-    tests/jlm/rvsdg/test-bottomup \
-    tests/jlm/rvsdg/test-cse \
-    tests/jlm/rvsdg/test-gamma \
-    tests/jlm/rvsdg/test-graph \
-    tests/jlm/rvsdg/test-nodes \
-    tests/jlm/rvsdg/test-theta \
-    tests/jlm/rvsdg/test-topdown \
-    tests/jlm/rvsdg/test-typemismatch \
-    tests/jlm/rvsdg/TestStructuralNode \
-    tests/jlm/rvsdg/TraceTests \
-    tests/jlm/rvsdg/TransformationSequenceTests \
-    tests/jlm/rvsdg/UnaryOperationTests \
-
-librvsdg_TEST_LIBS = \
-    libjlmtest \
-    librvsdg \
-    libutil \
-
 $(eval $(call common_library,librvsdg))
 
-tests/jlm/rvsdg/bitstring/bitstring_SOURCES = tests/jlm/rvsdg/bitstring/bitstring.cpp
-tests/jlm/rvsdg/bitstring/bitstring_LIBS = librvsdg libutil
-$(eval $(call common_test,tests/jlm/rvsdg/bitstring/bitstring))
+tests/jlm/rvsdg/run-librvsdg-tests_SOURCES = \
+    tests/jlm/rvsdg/bitstring/bitstring.cpp \
+    tests/jlm/rvsdg/ArgumentTests.cpp \
+    tests/jlm/rvsdg/InputTests.cpp \
+    tests/jlm/rvsdg/MatchTypeTests.cpp \
+    tests/jlm/rvsdg/OutputTests.cpp \
+    tests/jlm/rvsdg/RegionTests.cpp \
+    tests/jlm/rvsdg/ResultTests.cpp \
+    tests/jlm/rvsdg/SimpleOperationTests.cpp \
+    tests/jlm/rvsdg/test-binary.cpp \
+    tests/jlm/rvsdg/test-bottomup.cpp \
+    tests/jlm/rvsdg/test-cse.cpp \
+    tests/jlm/rvsdg/test-gamma.cpp \
+    tests/jlm/rvsdg/test-graph.cpp \
+    tests/jlm/rvsdg/test-nodes.cpp \
+    tests/jlm/rvsdg/test-theta.cpp \
+    tests/jlm/rvsdg/test-topdown.cpp \
+    tests/jlm/rvsdg/test-typemismatch.cpp \
+    tests/jlm/rvsdg/TestStructuralNode.cpp \
+    tests/jlm/rvsdg/TraceTests.cpp \
+    tests/jlm/rvsdg/TransformationSequenceTests.cpp \
+    tests/jlm/rvsdg/UnaryOperationTests.cpp \
+
+tests/jlm/rvsdg/run-librvsdg-tests_LIBS = librvsdg libutil
+$(eval $(call common_test,tests/jlm/rvsdg/run-librvsdg-tests))

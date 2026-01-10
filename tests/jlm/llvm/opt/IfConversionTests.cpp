@@ -3,22 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-GammaWithoutMatch()
+TEST(IfConversionTests, GammaWithoutMatch)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -56,28 +54,22 @@ GammaWithoutMatch()
 
   // Assert
 
-  assert(gammaNode->IsDead());
+  EXPECT_TRUE(gammaNode->IsDead());
   const auto selectNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  assert(selectNode && is<SelectOperation>(selectNode));
-  assert(selectNode->input(1)->origin() == falseValue);
-  assert(selectNode->input(2)->origin() == trueValue);
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  EXPECT_EQ(selectNode->input(1)->origin(), falseValue);
+  EXPECT_EQ(selectNode->input(2)->origin(), trueValue);
 
   const auto controlToBitsNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
-  assert(controlToBitsNode && is<ControlToIntOperation>(controlToBitsNode));
-  assert(controlToBitsNode->input(0)->origin() == conditionValue);
+  EXPECT_TRUE(controlToBitsNode && is<ControlToIntOperation>(controlToBitsNode));
+  EXPECT_EQ(controlToBitsNode->input(0)->origin(), conditionValue);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/IfConversionTests-GammaWithoutMatch",
-    GammaWithoutMatch)
-
-static void
-EmptyGammaWithTwoSubregionsAndMatch()
+TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -117,47 +109,41 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   // Assert
 
-  assert(gammaNode->IsDead());
+  EXPECT_TRUE(gammaNode->IsDead());
   const auto selectNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  assert(selectNode && is<SelectOperation>(selectNode));
-  assert(selectNode->input(1)->origin() == trueValue);
-  assert(selectNode->input(2)->origin() == falseValue);
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  EXPECT_EQ(selectNode->input(1)->origin(), trueValue);
+  EXPECT_EQ(selectNode->input(2)->origin(), falseValue);
 
   const auto eqNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*selectNode->input(0)->origin());
-  assert(eqNode && is<IntegerEqOperation>(eqNode));
+  EXPECT_TRUE(eqNode && is<IntegerEqOperation>(eqNode));
 
   auto constantNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(0)->origin());
   if (constantNode)
   {
-    assert(eqNode->input(1)->origin() == conditionValue);
+    EXPECT_EQ(eqNode->input(1)->origin(), conditionValue);
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
-    assert(constantOperation);
-    assert(constantOperation->Representation() == 24);
+    EXPECT_NE(constantOperation, nullptr);
+    EXPECT_EQ(constantOperation->Representation(), 24);
   }
   else
   {
-    assert(eqNode->input(0)->origin() == conditionValue);
+    EXPECT_EQ(eqNode->input(0)->origin(), conditionValue);
     constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(1)->origin());
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
-    assert(constantOperation);
-    assert(constantOperation->Representation() == 24);
+    EXPECT_NE(constantOperation, nullptr);
+    EXPECT_EQ(constantOperation->Representation(), 24);
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithTwoSubregionsAndMatch",
-    EmptyGammaWithTwoSubregionsAndMatch)
-
-static void
-EmptyGammaWithTwoSubregions()
+TEST(IfConversionTests, EmptyGammaWithTwoSubregions)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -203,23 +189,17 @@ EmptyGammaWithTwoSubregions()
   view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
-  assert(gammaNode1->IsDead());
+  EXPECT_TRUE(gammaNode1->IsDead());
   const auto selectNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  assert(selectNode && is<SelectOperation>(selectNode));
-  assert(selectNode->input(1)->origin() == trueValue);
-  assert(selectNode->input(2)->origin() == falseValue);
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  EXPECT_EQ(selectNode->input(1)->origin(), trueValue);
+  EXPECT_EQ(selectNode->input(2)->origin(), falseValue);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithTwoSubregions",
-    EmptyGammaWithTwoSubregions)
-
-static void
-EmptyGammaWithThreeSubregions()
+TEST(IfConversionTests, EmptyGammaWithThreeSubregions)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
@@ -260,19 +240,14 @@ EmptyGammaWithThreeSubregions()
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  assert(lambdaNode->subregion()->numNodes() == 2);
-  assert(!gammaNode->IsDead());
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
+  EXPECT_FALSE(gammaNode->IsDead());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithThreeSubregions",
-    EmptyGammaWithThreeSubregions)
-
-static void
-PartialEmptyGamma()
+TEST(IfConversionTests, PartialEmptyGamma)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
@@ -281,7 +256,7 @@ PartialEmptyGamma()
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -314,10 +289,6 @@ PartialEmptyGamma()
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  assert(lambdaNode->subregion()->numNodes() == 2);
-  assert(!gammaNode->IsDead());
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
+  EXPECT_FALSE(gammaNode->IsDead());
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tests/jlm/llvm/opt/IfConversionTests-PartialEmptyGamma",
-    PartialEmptyGamma)

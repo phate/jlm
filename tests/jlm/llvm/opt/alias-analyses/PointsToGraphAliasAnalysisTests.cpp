@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -23,11 +23,11 @@ Expect(
     jlm::llvm::aa::AliasAnalysis::AliasQueryResponse expected)
 {
   const auto actual = aa.Query(p1, s1, p2, s2);
-  assert(actual == expected);
+  EXPECT_EQ(actual, expected);
 
   // An alias analysis query should always be symmetrical, so check the opposite as well
   const auto mirror = aa.Query(p2, s2, p1, s1);
-  assert(mirror == expected);
+  EXPECT_EQ(mirror, expected);
 }
 
 /**
@@ -62,7 +62,7 @@ Expect(
  *   }
  * \endcode
  */
-class PtGAliasAnalysisTest final : public jlm::tests::RvsdgTest
+class PtGAliasAnalysisTest final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -238,8 +238,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestPtGAliasAnalysis()
+TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysis)
 {
   using namespace jlm::llvm::aa;
 
@@ -323,10 +322,6 @@ TestPtGAliasAnalysis()
   Expect(aa, *outputs.R, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests-TestPtGAliasAnalysis",
-    TestPtGAliasAnalysis);
-
 /**
  * This class sets up an RVSDG representing the following code:
  *
@@ -343,7 +338,7 @@ JLM_UNIT_TEST_REGISTER(
  *   }
  * \endcode
  */
-class PtGAliasAnalysisTestOffsets final : public jlm::tests::RvsdgTest
+class PtGAliasAnalysisTestOffsets final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -427,8 +422,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestPtGAliasAnalysisOffsets()
+TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysisOffsets)
 {
   using namespace jlm::llvm::aa;
 
@@ -469,7 +463,3 @@ TestPtGAliasAnalysisOffsets()
   Expect(aa, *outputs.IntWithOffset, 4, *outputs.GlobalInt, 4, AliasAnalysis::MustAlias);
   Expect(aa, *outputs.LongWithOffset, 8, *outputs.GlobalLong, 8, AliasAnalysis::MustAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests-TestPtGAliasAnalysisOffsets",
-    TestPtGAliasAnalysisOffsets);

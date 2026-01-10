@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/TypeConverter.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
@@ -13,8 +13,7 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/LLVMContext.h>
 
-static void
-LlvmIntegerTypeConversion()
+TEST(TypeConverterTests, LlvmIntegerTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -47,21 +46,16 @@ LlvmIntegerTypeConversion()
       std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i64));
 
   // Assert
-  assert(i1BitType && i1BitType->nbits() == 1);
-  assert(i2BitType && i2BitType->nbits() == 2);
-  assert(i4BitType && i4BitType->nbits() == 4);
-  assert(i8BitType && i8BitType->nbits() == 8);
-  assert(i16BitType && i16BitType->nbits() == 16);
-  assert(i32BitType && i32BitType->nbits() == 32);
-  assert(i64BitType && i64BitType->nbits() == 64);
+  EXPECT_TRUE(i1BitType && i1BitType->nbits() == 1);
+  EXPECT_TRUE(i2BitType && i2BitType->nbits() == 2);
+  EXPECT_TRUE(i4BitType && i4BitType->nbits() == 4);
+  EXPECT_TRUE(i8BitType && i8BitType->nbits() == 8);
+  EXPECT_TRUE(i16BitType && i16BitType->nbits() == 16);
+  EXPECT_TRUE(i32BitType && i32BitType->nbits() == 32);
+  EXPECT_TRUE(i64BitType && i64BitType->nbits() == 64);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmIntegerTypeConversion",
-    LlvmIntegerTypeConversion);
-
-static void
-LlvmPointerTypeConversion()
+TEST(TypeConverterTests, LlvmPointerTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -76,15 +70,10 @@ LlvmPointerTypeConversion()
       std::dynamic_pointer_cast<const PointerType>(typeConverter.ConvertLlvmType(*pointerTypeLlvm));
 
   // Assert
-  assert(pointerTypeJlm);
+  EXPECT_NE(pointerTypeJlm, nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmPointerTypeConversion",
-    LlvmPointerTypeConversion);
-
-static void
-LlvmFunctionTypeConversion()
+TEST(TypeConverterTests, LlvmFunctionTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -108,50 +97,45 @@ LlvmFunctionTypeConversion()
       typeConverter.ConvertLlvmType(*functionType3Llvm));
 
   // Assert
-  assert(functionType1Jlm != nullptr);
-  assert(functionType1Jlm->NumArguments() == 4);
-  assert(functionType1Jlm->NumResults() == 2);
+  EXPECT_NE(functionType1Jlm, nullptr);
+  EXPECT_EQ(functionType1Jlm->NumArguments(), 4u);
+  EXPECT_EQ(functionType1Jlm->NumResults(), 2u);
   auto arguments = functionType1Jlm->Arguments();
-  assert(is<BitType>(arguments[0]));
-  assert(is<BitType>(arguments[1]));
-  assert(is<IOStateType>(arguments[2]));
-  assert(is<MemoryStateType>(arguments[3]));
+  EXPECT_TRUE(is<BitType>(arguments[0]));
+  EXPECT_TRUE(is<BitType>(arguments[1]));
+  EXPECT_TRUE(is<IOStateType>(arguments[2]));
+  EXPECT_TRUE(is<MemoryStateType>(arguments[3]));
   auto results = functionType1Jlm->Results();
-  assert(is<IOStateType>(results[0]));
-  assert(is<MemoryStateType>(results[1]));
+  EXPECT_TRUE(is<IOStateType>(results[0]));
+  EXPECT_TRUE(is<MemoryStateType>(results[1]));
 
-  assert(functionType2Jlm != nullptr);
-  assert(functionType2Jlm->NumArguments() == 2);
-  assert(functionType2Jlm->NumResults() == 3);
+  EXPECT_NE(functionType2Jlm, nullptr);
+  EXPECT_EQ(functionType2Jlm->NumArguments(), 2u);
+  EXPECT_EQ(functionType2Jlm->NumResults(), 3u);
   arguments = functionType2Jlm->Arguments();
-  assert(is<IOStateType>(arguments[0]));
-  assert(is<MemoryStateType>(arguments[1]));
+  EXPECT_TRUE(is<IOStateType>(arguments[0]));
+  EXPECT_TRUE(is<MemoryStateType>(arguments[1]));
   results = functionType2Jlm->Results();
-  assert(is<BitType>(results[0]));
-  assert(is<IOStateType>(results[1]));
-  assert(is<MemoryStateType>(results[2]));
+  EXPECT_TRUE(is<BitType>(results[0]));
+  EXPECT_TRUE(is<IOStateType>(results[1]));
+  EXPECT_TRUE(is<MemoryStateType>(results[2]));
 
-  assert(functionType3Jlm != nullptr);
-  assert(functionType3Jlm->NumArguments() == 5);
-  assert(functionType3Jlm->NumResults() == 3);
+  EXPECT_NE(functionType3Jlm, nullptr);
+  EXPECT_EQ(functionType3Jlm->NumArguments(), 5u);
+  EXPECT_EQ(functionType3Jlm->NumResults(), 3u);
   arguments = functionType3Jlm->Arguments();
-  assert(is<BitType>(arguments[0]));
-  assert(is<BitType>(arguments[1]));
-  assert(is<VariableArgumentType>(arguments[2]));
-  assert(is<IOStateType>(arguments[3]));
-  assert(is<MemoryStateType>(arguments[4]));
+  EXPECT_TRUE(is<BitType>(arguments[0]));
+  EXPECT_TRUE(is<BitType>(arguments[1]));
+  EXPECT_TRUE(is<VariableArgumentType>(arguments[2]));
+  EXPECT_TRUE(is<IOStateType>(arguments[3]));
+  EXPECT_TRUE(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
-  assert(is<BitType>(results[0]));
-  assert(is<IOStateType>(results[1]));
-  assert(is<MemoryStateType>(results[2]));
+  EXPECT_TRUE(is<BitType>(results[0]));
+  EXPECT_TRUE(is<IOStateType>(results[1]));
+  EXPECT_TRUE(is<MemoryStateType>(results[2]));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmFunctionTypeConversion",
-    LlvmFunctionTypeConversion);
-
-static void
-LlvmFloatingPointTypeConversion()
+TEST(TypeConverterTests, LlvmFloatingPointTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -178,19 +162,14 @@ LlvmFloatingPointTypeConversion()
       typeConverter.ConvertLlvmType(*fp128TypeLlvm));
 
   // Assert
-  assert(halfTypeJlm && halfTypeJlm->size() == fpsize::half);
-  assert(floatTypeJlm && floatTypeJlm->size() == fpsize::flt);
-  assert(doubleTypeJlm && doubleTypeJlm->size() == fpsize::dbl);
-  assert(x86fp80TypeJlm && x86fp80TypeJlm->size() == fpsize::x86fp80);
-  assert(fp128TypeJlm->size() == fpsize::fp128);
+  EXPECT_TRUE(halfTypeJlm && halfTypeJlm->size() == fpsize::half);
+  EXPECT_TRUE(floatTypeJlm && floatTypeJlm->size() == fpsize::flt);
+  EXPECT_TRUE(doubleTypeJlm && doubleTypeJlm->size() == fpsize::dbl);
+  EXPECT_TRUE(x86fp80TypeJlm && x86fp80TypeJlm->size() == fpsize::x86fp80);
+  EXPECT_TRUE(fp128TypeJlm->size() == fpsize::fp128);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmFloatingPointTypeConversion",
-    LlvmFloatingPointTypeConversion);
-
-static void
-LlvmStructTypeConversion()
+TEST(TypeConverterTests, LlvmStructTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -201,10 +180,11 @@ LlvmStructTypeConversion()
   auto i32Type = ::llvm::Type::getInt32Ty(context);
   const auto halfType = ::llvm::Type::getHalfTy(context);
   const auto structType1Llvm = ::llvm::StructType::get(context, { i32Type, halfType }, false);
+  // get() creates a literal struct without a name
   const auto structType2Llvm =
       ::llvm::StructType::get(context, { i32Type, i32Type, i32Type }, true);
-  const auto structType3Llvm = ::llvm::StructType::get(context, { i32Type }, true);
-  structType3Llvm->setName("myStruct");
+  const auto structType3Llvm = ::llvm::StructType::create(context, { i32Type }, "myStruct", true);
+  const auto structType4Llvm = ::llvm::StructType::create(context, { i32Type });
 
   // Act
   const auto structType1Jlm =
@@ -213,48 +193,44 @@ LlvmStructTypeConversion()
       std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType2Llvm));
   const auto structType3Jlm =
       std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType3Llvm));
-
   const auto structType4Jlm =
-      std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType1Llvm));
+      std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType4Llvm));
 
-  // Assert
-  assert(structType1Jlm);
-  assert(structType1Jlm->GetDeclaration().NumElements() == 2);
-  assert(!structType1Jlm->IsPacked());
-  assert(!structType1Jlm->HasName());
-
-  assert(structType2Jlm);
-  assert(structType2Jlm->GetDeclaration().NumElements() == 3);
-  assert(structType2Jlm->IsPacked());
-  assert(!structType2Jlm->HasName());
-
-  assert(structType3Jlm);
-  assert(structType3Jlm->GetDeclaration().NumElements() == 1);
-  assert(structType3Jlm->IsPacked());
-  assert(structType3Jlm->HasName() && structType3Jlm->GetName() == "myStruct");
-
-  assert(&structType1Jlm->GetDeclaration() != &structType2Jlm->GetDeclaration());
-  assert(&structType1Jlm->GetDeclaration() != &structType3Jlm->GetDeclaration());
-  assert(&structType1Jlm->GetDeclaration() == &structType4Jlm->GetDeclaration());
-  assert(&structType2Jlm->GetDeclaration() != &structType3Jlm->GetDeclaration());
-
-  const auto declarations = typeConverter.ReleaseStructTypeDeclarations();
-  assert(declarations.size() == 3);
-
-  // We released all struct declarations. After that, translating the same type again should get
-  // us a new declarations.
   const auto structType5Jlm =
       std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType1Llvm));
 
-  assert(&structType5Jlm->GetDeclaration() != &structType1Jlm->GetDeclaration());
+  // Assert
+  EXPECT_NE(structType1Jlm, nullptr);
+  EXPECT_EQ(structType1Jlm->numElements(), 2u);
+  EXPECT_FALSE(structType1Jlm->IsPacked());
+  EXPECT_TRUE(structType1Jlm->IsLiteral());
+  EXPECT_FALSE(structType1Jlm->HasName());
+
+  EXPECT_NE(structType2Jlm, nullptr);
+  EXPECT_EQ(structType2Jlm->numElements(), 3u);
+  EXPECT_TRUE(structType2Jlm->IsPacked());
+  EXPECT_TRUE(structType2Jlm->IsLiteral());
+  EXPECT_FALSE(structType2Jlm->HasName());
+
+  EXPECT_NE(structType3Jlm, nullptr);
+  EXPECT_EQ(structType3Jlm->numElements(), 1u);
+  EXPECT_TRUE(structType3Jlm->IsPacked());
+  EXPECT_FALSE(structType3Jlm->IsLiteral());
+  EXPECT_TRUE(structType3Jlm->HasName() && structType3Jlm->GetName() == "myStruct");
+
+  EXPECT_NE(structType4Jlm, nullptr);
+  EXPECT_EQ(structType4Jlm->numElements(), 1u);
+  EXPECT_FALSE(structType4Jlm->IsPacked());
+  EXPECT_FALSE(structType4Jlm->IsLiteral());
+  EXPECT_FALSE(structType4Jlm->HasName());
+
+  EXPECT_NE(structType1Jlm.get(), structType2Jlm.get());
+  EXPECT_NE(structType1Jlm.get(), structType3Jlm.get());
+  EXPECT_EQ(structType1Jlm.get(), structType5Jlm.get());
+  EXPECT_NE(structType2Jlm.get(), structType3Jlm.get());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmStructTypeConversion",
-    LlvmStructTypeConversion);
-
-static void
-LlvmArrayTypeConversion()
+TEST(TypeConverterTests, LlvmArrayTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -275,21 +251,16 @@ LlvmArrayTypeConversion()
       std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
 
   // Assert
-  assert(arrayType1Jlm);
-  assert(is<BitType>(arrayType1Jlm->element_type()));
-  assert(arrayType1Jlm->nelements() == 4);
+  EXPECT_NE(arrayType1Jlm, nullptr);
+  EXPECT_TRUE(is<BitType>(arrayType1Jlm->element_type()));
+  EXPECT_EQ(arrayType1Jlm->nelements(), 4u);
 
-  assert(arrayType2Jlm);
-  assert(is<FloatingPointType>(arrayType2Jlm->element_type()));
-  assert(arrayType2Jlm->nelements() == 9);
+  EXPECT_NE(arrayType2Jlm, nullptr);
+  EXPECT_TRUE(is<FloatingPointType>(arrayType2Jlm->element_type()));
+  EXPECT_EQ(arrayType2Jlm->nelements(), 9u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmArrayTypeConversion",
-    LlvmArrayTypeConversion);
-
-static void
-LlvmVectorTypeConversion()
+TEST(TypeConverterTests, LlvmVectorTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -310,21 +281,16 @@ LlvmVectorTypeConversion()
       typeConverter.ConvertLlvmType(*vectorType2Llvm));
 
   // Assert
-  assert(vectorType1Jlm);
-  assert(is<BitType>(vectorType1Jlm->type()));
-  assert(vectorType1Jlm->size() == 4);
+  EXPECT_NE(vectorType1Jlm, nullptr);
+  EXPECT_TRUE(is<BitType>(vectorType1Jlm->type()));
+  EXPECT_EQ(vectorType1Jlm->size(), 4u);
 
-  assert(vectorType2Jlm);
-  assert(is<FloatingPointType>(vectorType2Jlm->type()));
-  assert(vectorType2Jlm->size() == 9);
+  EXPECT_NE(vectorType2Jlm, nullptr);
+  EXPECT_TRUE(is<FloatingPointType>(vectorType2Jlm->type()));
+  EXPECT_EQ(vectorType2Jlm->size(), 9u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-LlvmVectorTypeConversion",
-    LlvmVectorTypeConversion);
-
-static void
-JLmBitTypeConversion()
+TEST(TypeConverterTests, JLmBitTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -350,32 +316,29 @@ JLmBitTypeConversion()
   const auto i64Type = typeConverter.ConvertJlmType(*i64, context);
 
   // Assert
-  assert(i1Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i1Type->getIntegerBitWidth() == 1);
+  EXPECT_EQ(i1Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i1Type->getIntegerBitWidth(), 1u);
 
-  assert(i2Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i2Type->getIntegerBitWidth() == 2);
+  EXPECT_EQ(i2Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i2Type->getIntegerBitWidth(), 2u);
 
-  assert(i4Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i4Type->getIntegerBitWidth() == 4);
+  EXPECT_EQ(i4Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i4Type->getIntegerBitWidth(), 4u);
 
-  assert(i8Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i8Type->getIntegerBitWidth() == 8);
+  EXPECT_EQ(i8Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i8Type->getIntegerBitWidth(), 8u);
 
-  assert(i16Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i16Type->getIntegerBitWidth() == 16);
+  EXPECT_EQ(i16Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i16Type->getIntegerBitWidth(), 16u);
 
-  assert(i32Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i32Type->getIntegerBitWidth() == 32);
+  EXPECT_EQ(i32Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i32Type->getIntegerBitWidth(), 32u);
 
-  assert(i64Type->getTypeID() == llvm::Type::IntegerTyID);
-  assert(i64Type->getIntegerBitWidth() == 64);
+  EXPECT_EQ(i64Type->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(i64Type->getIntegerBitWidth(), 64u);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TypeConverterTests-JLmBitTypeConversion", JLmBitTypeConversion);
-
-static void
-JlmFunctionTypeConversion()
+TEST(TypeConverterTests, JlmFunctionTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -407,32 +370,27 @@ JlmFunctionTypeConversion()
       llvm::dyn_cast<llvm::FunctionType>(typeConverter.ConvertJlmType(*functionType3Jlm, context));
 
   // Assert
-  assert(functionType1Llvm != nullptr);
-  assert(functionType1Llvm->getNumParams() == 2);
-  assert(functionType1Llvm->getParamType(0)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(functionType1Llvm->getParamType(1)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(functionType1Llvm->getReturnType()->getTypeID() == llvm::Type::VoidTyID);
-  assert(!functionType1Llvm->isVarArg());
+  EXPECT_NE(functionType1Llvm, nullptr);
+  EXPECT_EQ(functionType1Llvm->getNumParams(), 2u);
+  EXPECT_EQ(functionType1Llvm->getParamType(0)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(functionType1Llvm->getParamType(1)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(functionType1Llvm->getReturnType()->getTypeID(), llvm::Type::VoidTyID);
+  EXPECT_FALSE(functionType1Llvm->isVarArg());
 
-  assert(functionType2Llvm != nullptr);
-  assert(functionType2Llvm->getNumParams() == 0);
-  assert(functionType2Llvm->getReturnType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(!functionType2Llvm->isVarArg());
+  EXPECT_NE(functionType2Llvm, nullptr);
+  EXPECT_EQ(functionType2Llvm->getNumParams(), 0u);
+  EXPECT_EQ(functionType2Llvm->getReturnType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_FALSE(functionType2Llvm->isVarArg());
 
-  assert(functionType3Llvm != nullptr);
-  assert(functionType3Llvm->getNumParams() == 2);
-  assert(functionType3Llvm->getParamType(0)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(functionType3Llvm->getParamType(1)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(functionType3Llvm->getReturnType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(functionType3Llvm->isVarArg());
+  EXPECT_NE(functionType3Llvm, nullptr);
+  EXPECT_EQ(functionType3Llvm->getNumParams(), 2u);
+  EXPECT_EQ(functionType3Llvm->getParamType(0)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(functionType3Llvm->getParamType(1)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(functionType3Llvm->getReturnType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_TRUE(functionType3Llvm->isVarArg());
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmFunctionTypeConversion",
-    JlmFunctionTypeConversion);
-
-static void
-JlmPointerTypeConversion()
+TEST(TypeConverterTests, JlmPointerTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -447,16 +405,11 @@ JlmPointerTypeConversion()
       llvm::dyn_cast<llvm::PointerType>(typeConverter.ConvertJlmType(*pointerTypeJlm, context));
 
   // Assert
-  assert(pointerTypeLlvm);
-  assert(pointerTypeLlvm->getAddressSpace() == 0);
+  EXPECT_NE(pointerTypeLlvm, nullptr);
+  EXPECT_EQ(pointerTypeLlvm->getAddressSpace(), 0u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmPointerTypeConversion",
-    JlmPointerTypeConversion);
-
-static void
-JlmArrayTypeConversion()
+TEST(TypeConverterTests, JlmArrayTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -475,21 +428,16 @@ JlmArrayTypeConversion()
   const auto arrayType2Llvm = typeConverter.ConvertJlmType(*arrayType2Jlm, context);
 
   // Assert
-  assert(arrayType1Llvm->isArrayTy());
-  assert(arrayType1Llvm->getArrayNumElements() == 4);
-  assert(arrayType1Llvm->getArrayElementType()->getTypeID() == llvm::Type::IntegerTyID);
+  EXPECT_TRUE(arrayType1Llvm->isArrayTy());
+  EXPECT_EQ(arrayType1Llvm->getArrayNumElements(), 4u);
+  EXPECT_EQ(arrayType1Llvm->getArrayElementType()->getTypeID(), llvm::Type::IntegerTyID);
 
-  assert(arrayType2Llvm->isArrayTy());
-  assert(arrayType2Llvm->getArrayNumElements() == 9);
-  assert(arrayType2Llvm->getArrayElementType()->getTypeID() == llvm::Type::HalfTyID);
+  EXPECT_TRUE(arrayType2Llvm->isArrayTy());
+  EXPECT_EQ(arrayType2Llvm->getArrayNumElements(), 9u);
+  EXPECT_EQ(arrayType2Llvm->getArrayElementType()->getTypeID(), llvm::Type::HalfTyID);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmArrayTypeConversion",
-    JlmArrayTypeConversion);
-
-static void
-JlmControlTypeConversion()
+TEST(TypeConverterTests, JlmControlTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -505,19 +453,14 @@ JlmControlTypeConversion()
   const auto integerType2Llvm = typeConverter.ConvertJlmType(*controlType10, context);
 
   // Assert
-  assert(integerType1Llvm->getTypeID() == llvm::Type::IntegerTyID);
-  assert(integerType1Llvm->getIntegerBitWidth() == 1);
+  EXPECT_EQ(integerType1Llvm->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(integerType1Llvm->getIntegerBitWidth(), 1u);
 
-  assert(integerType2Llvm->getTypeID() == llvm::Type::IntegerTyID);
-  assert(integerType2Llvm->getIntegerBitWidth() == 32);
+  EXPECT_EQ(integerType2Llvm->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(integerType2Llvm->getIntegerBitWidth(), 32u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmControlTypeConversion",
-    JlmControlTypeConversion);
-
-static void
-JlmFloatingPointTypeConversion()
+TEST(TypeConverterTests, JlmFloatingPointTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -539,19 +482,14 @@ JlmFloatingPointTypeConversion()
   const auto fp128TypeLlvm = typeConverter.ConvertJlmType(*fp128TypeJlm, context);
 
   // Assert
-  assert(halfTypeLlvm->getTypeID() == llvm::Type::HalfTyID);
-  assert(floatTypeLlvm->getTypeID() == llvm::Type::FloatTyID);
-  assert(doubleTypeLlvm->getTypeID() == llvm::Type::DoubleTyID);
-  assert(x86fp80TypeLlvm->getTypeID() == llvm::Type::X86_FP80TyID);
-  assert(fp128TypeLlvm->getTypeID() == llvm::Type::FP128TyID);
+  EXPECT_EQ(halfTypeLlvm->getTypeID(), llvm::Type::HalfTyID);
+  EXPECT_EQ(floatTypeLlvm->getTypeID(), llvm::Type::FloatTyID);
+  EXPECT_EQ(doubleTypeLlvm->getTypeID(), llvm::Type::DoubleTyID);
+  EXPECT_EQ(x86fp80TypeLlvm->getTypeID(), llvm::Type::X86_FP80TyID);
+  EXPECT_EQ(fp128TypeLlvm->getTypeID(), llvm::Type::FP128TyID);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmFloatingPointTypeConversion",
-    JlmFloatingPointTypeConversion);
-
-static void
-JlmStructTypeConversion()
+TEST(TypeConverterTests, JlmStructTypeConversion)
 {
   using namespace jlm::llvm;
 
@@ -562,13 +500,10 @@ JlmStructTypeConversion()
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
 
-  const auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
-  const auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });
-  const auto declaration3 = StructType::Declaration::Create({ bit32Type });
-
-  const auto structType1Jlm = StructType::Create(false, *declaration1);
-  const auto structType2Jlm = StructType::Create(true, *declaration2);
-  const auto structType3Jlm = StructType::Create("myStruct", true, *declaration3);
+  const auto structType1Jlm = StructType::CreateIdentified({ bit32Type, halfType }, false);
+  const auto structType2Jlm =
+      StructType::CreateIdentified({ bit32Type, bit32Type, bit32Type }, false);
+  const auto structType3Jlm = StructType::CreateIdentified("myStruct", { bit32Type }, true);
 
   // Act
   const auto structType1Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
@@ -578,43 +513,32 @@ JlmStructTypeConversion()
   const auto structType4Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
 
   // Assert
-  assert(structType1Llvm->getTypeID() == llvm::Type::StructTyID);
-  assert(structType1Llvm->getStructNumElements() == 2);
-  assert(structType1Llvm->getStructElementType(0)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(structType1Llvm->getStructElementType(1)->getTypeID() == llvm::Type::HalfTyID);
-  assert(!llvm::dyn_cast<llvm::StructType>(structType1Llvm)->isPacked());
+  EXPECT_EQ(structType1Llvm->getTypeID(), llvm::Type::StructTyID);
+  EXPECT_EQ(structType1Llvm->getStructNumElements(), 2u);
+  EXPECT_EQ(structType1Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(structType1Llvm->getStructElementType(1)->getTypeID(), llvm::Type::HalfTyID);
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType1Llvm)->isLiteral());
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType1Llvm)->isPacked());
 
-  assert(structType2Llvm->getTypeID() == llvm::Type::StructTyID);
-  assert(structType2Llvm->getStructNumElements() == 3);
-  assert(structType2Llvm->getStructElementType(0)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(structType2Llvm->getStructElementType(1)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(structType2Llvm->getStructElementType(2)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isPacked());
+  EXPECT_EQ(structType2Llvm->getTypeID(), llvm::Type::StructTyID);
+  EXPECT_EQ(structType2Llvm->getStructNumElements(), 3u);
+  EXPECT_EQ(structType2Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(structType2Llvm->getStructElementType(1)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(structType2Llvm->getStructElementType(2)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isLiteral());
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType2Llvm)->isPacked());
 
-  assert(structType3Llvm->getTypeID() == llvm::Type::StructTyID);
-  assert(structType3Llvm->getStructNumElements() == 1);
-  assert(structType3Llvm->getStructElementType(0)->getTypeID() == llvm::Type::IntegerTyID);
-  assert(structType3Llvm->getStructName() == "myStruct");
-  assert(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isPacked());
+  EXPECT_EQ(structType3Llvm->getTypeID(), llvm::Type::StructTyID);
+  EXPECT_EQ(structType3Llvm->getStructNumElements(), 1u);
+  EXPECT_EQ(structType3Llvm->getStructElementType(0)->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(structType3Llvm->getStructName(), "myStruct");
+  EXPECT_FALSE(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isLiteral());
+  EXPECT_TRUE(llvm::dyn_cast<llvm::StructType>(structType3Llvm)->isPacked());
 
-  assert(structType4Llvm == structType1Llvm);
-
-  // The type converter created no jlm struct types. It is therefore not the owner of any
-  // declarations.
-  const auto declarations = typeConverter.ReleaseStructTypeDeclarations();
-  assert(declarations.size() == 0);
-
-  // Converting the same type again after the declaration release should give us a new Llvm type
-  const auto structType5Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
-  assert(structType5Llvm != structType1Llvm);
+  EXPECT_EQ(structType4Llvm, structType1Llvm);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmStructTypeConversion",
-    JlmStructTypeConversion);
-
-static void
-JlmFixedVectorTypeConversion()
+TEST(TypeConverterTests, JlmFixedVectorTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -634,21 +558,16 @@ JlmFixedVectorTypeConversion()
       llvm::dyn_cast<llvm::VectorType>(typeConverter.ConvertJlmType(*fixedVectorType2, context));
 
   // Assert
-  assert(vectorType1->getTypeID() == llvm::Type::FixedVectorTyID);
-  assert(vectorType1->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(vectorType1->getElementCount().getFixedValue() == 2);
+  EXPECT_EQ(vectorType1->getTypeID(), llvm::Type::FixedVectorTyID);
+  EXPECT_EQ(vectorType1->getElementType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(vectorType1->getElementCount().getFixedValue(), 2u);
 
-  assert(vectorType2->getTypeID() == llvm::Type::FixedVectorTyID);
-  assert(vectorType2->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(vectorType2->getElementCount().getFixedValue() == 4);
+  EXPECT_EQ(vectorType2->getTypeID(), llvm::Type::FixedVectorTyID);
+  EXPECT_EQ(vectorType2->getElementType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(vectorType2->getElementCount().getFixedValue(), 4u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmFixedVectorTypeConversion",
-    JlmFixedVectorTypeConversion);
-
-static void
-JlmScalableVectorTypeConversion()
+TEST(TypeConverterTests, JlmScalableVectorTypeConversion)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -668,15 +587,11 @@ JlmScalableVectorTypeConversion()
       llvm::dyn_cast<llvm::VectorType>(typeConverter.ConvertJlmType(*scalableVectorType2, context));
 
   // Assert
-  assert(vectorType1->getTypeID() == llvm::Type::ScalableVectorTyID);
-  assert(vectorType1->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(vectorType1->getElementCount().getKnownMinValue() == 2);
+  EXPECT_EQ(vectorType1->getTypeID(), llvm::Type::ScalableVectorTyID);
+  EXPECT_EQ(vectorType1->getElementType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(vectorType1->getElementCount().getKnownMinValue(), 2u);
 
-  assert(vectorType2->getTypeID() == llvm::Type::ScalableVectorTyID);
-  assert(vectorType2->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
-  assert(vectorType2->getElementCount().getKnownMinValue() == 4);
+  EXPECT_EQ(vectorType2->getTypeID(), llvm::Type::ScalableVectorTyID);
+  EXPECT_EQ(vectorType2->getElementType()->getTypeID(), llvm::Type::IntegerTyID);
+  EXPECT_EQ(vectorType2->getElementCount().getKnownMinValue(), 4u);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/TypeConverterTests-JlmScalableVectorTypeConversion",
-    JlmScalableVectorTypeConversion);

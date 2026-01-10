@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -25,7 +25,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<jlm::tests::TestNullaryOperation>(node))
+        node && jlm::rvsdg::is<jlm::rvsdg::TestNullaryOperation>(node->GetOperation()))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
@@ -64,8 +64,7 @@ public:
   }
 };
 
-static void
-NormalizeUnaryOperation_Success()
+TEST(ArgumentTests, NormalizeUnaryOperation_Success)
 {
   using namespace jlm::rvsdg;
 
@@ -73,8 +72,7 @@ NormalizeUnaryOperation_Success()
   Graph graph;
   const auto valueType = TestType::createValueType();
 
-  const auto nullaryNode =
-      &CreateOpNode<jlm::tests::TestNullaryOperation>(graph.GetRootRegion(), valueType);
+  const auto nullaryNode = &CreateOpNode<TestNullaryOperation>(graph.GetRootRegion(), valueType);
 
   const auto unaryNode =
       &CreateOpNode<::UnaryOperation>({ nullaryNode->output(0) }, valueType, valueType);
@@ -88,21 +86,16 @@ NormalizeUnaryOperation_Success()
   view(graph, stdout);
 
   // Assert
-  assert(success == true);
+  EXPECT_TRUE(success);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(node == nullaryNode);
+  EXPECT_EQ(node, nullaryNode);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Success",
-    NormalizeUnaryOperation_Success)
-
-static void
-NormalizeUnaryOperation_Failure()
+TEST(ArgumentTests, NormalizeUnaryOperation_Failure)
 {
   using namespace jlm::rvsdg;
 
@@ -123,15 +116,11 @@ NormalizeUnaryOperation_Failure()
   view(graph, stdout);
 
   // Assert
-  assert(success == false);
+  EXPECT_FALSE(success);
 
   graph.PruneNodes();
-  assert(graph.GetRootRegion().numNodes() == 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(node == unaryNode);
+  EXPECT_EQ(node, unaryNode);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Failure",
-    NormalizeUnaryOperation_Failure)

@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -16,7 +15,6 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IRReader/IRReader.h>
-#include <llvm/Support/SourceMgr.h>
 
 #include <string>
 
@@ -48,8 +46,7 @@
  *     return popcnt;
  * }
  */
-static void
-TestPhiConversion()
+TEST(LlvmPhiConversionTests, TestPhiConversion)
 {
   // Arrange
   llvm::LLVMContext ctx;
@@ -119,9 +116,9 @@ TestPhiConversion()
   auto popcount =
       jlm::util::assertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("popcount"));
   auto entry_node = popcount->cfg()->entry();
-  assert(entry_node->single_successor());
+  EXPECT_TRUE(entry_node->single_successor());
   auto bb1_node = entry_node->OutEdge(0)->sink();
-  assert(bb1_node->single_successor());
+  EXPECT_TRUE(bb1_node->single_successor());
   auto bb2_node = bb1_node->OutEdge(0)->sink();
   auto bb2 = jlm::util::assertedCast<jlm::llvm::BasicBlock>(bb2_node);
 
@@ -136,33 +133,29 @@ TestPhiConversion()
       *jlm::util::assertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
 
   // Both phi nodes should have 3 operands, representing the loop entry, and the two "continue"s
-  assert(phiX->noperands() == 3);
+  EXPECT_EQ(phiX->noperands(), 3u);
   // The phi node for x takes its value from the function arg in the first operand
-  assert(phiX->operand(0) == popcount->cfg()->entry()->argument(0));
+  EXPECT_EQ(phiX->operand(0), popcount->cfg()->entry()->argument(0));
   // The last two predecessor basic blocks both use the same value for x
-  assert(phiX->operand(1) == phiX->operand(2));
+  EXPECT_EQ(phiX->operand(1), phiX->operand(2));
 
-  assert(phiPopcnt->noperands() == 3);
+  EXPECT_EQ(phiPopcnt->noperands(), 3u);
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
   auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->Representation() == 0);
+  EXPECT_EQ(constant0op->Representation(), 0);
   // The last operand of the popcnt phi is the result of the phi itself
-  assert(phiPopcnt->operand(2) == phiPopcnt->result(0));
+  EXPECT_EQ(phiPopcnt->operand(2), phiPopcnt->result(0));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiConversion",
-    TestPhiConversion)
 
 /**
  * Tests converting instances of ::llvm::PHINode where some of the predecessors are "dead".
  * A dead predecessor is a basic block that is not reachable from the function's entry.
  * This test has one phi node with 4 operands, where two of them are dead.
  */
-static void
-TestPhiOperandElision()
+TEST(LlvmPhiConversionTests, TestPhiOperandElision)
 {
   // Arrange
   llvm::LLVMContext ctx;
@@ -209,7 +202,7 @@ TestPhiOperandElision()
     bb5phi->addIncoming(xPlus2, bb4);
   }
 
-  jlm::tests::print(module);
+  module.print(llvm::errs(), nullptr);
 
   // Act
   auto ipgmod = jlm::llvm::ConvertLlvmModule(module);
@@ -235,19 +228,16 @@ TestPhiOperandElision()
   }
 
   // There should be 3 basic blocks left (bb1, bb4, bb5)
-  assert(numBasicBlocks == 3);
+  EXPECT_EQ(numBasicBlocks, 3u);
   // There should be exactly one phi three address code
-  assert(phiTacs.size() == 1);
+  EXPECT_EQ(phiTacs.size(), 1u);
   auto phiTac = phiTacs[0];
   // The phi should have two operands
-  assert(phiTac->noperands() == 2);
+  EXPECT_EQ(phiTac->noperands(), 2u);
   // The first phi operand should be a constant 0
   auto constant0variable =
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));
   auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->Representation() == 0);
+  EXPECT_EQ(constant0op->Representation(), 0);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiOperandElision",
-    TestPhiOperandElision)

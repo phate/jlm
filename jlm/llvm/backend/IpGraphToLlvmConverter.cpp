@@ -928,13 +928,14 @@ IpGraphToLlvmConverter::convert(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(args.size() == 1);
+  JLM_ASSERT(args.size() == 2);
   auto & typeConverter = Context_->GetTypeConverter();
-  auto & lm = Context_->llvm_module();
+  auto & llvmModule = Context_->llvm_module();
 
-  auto fcttype = typeConverter.ConvertFunctionType(op.fcttype(), lm.getContext());
-  auto function = lm.getOrInsertFunction("malloc", fcttype);
-  auto operands = std::vector<::llvm::Value *>(1, Context_->value(args[0]));
+  auto functionType =
+      typeConverter.ConvertFunctionType(op.getFunctionType(), llvmModule.getContext());
+  auto function = llvmModule.getOrInsertFunction("malloc", functionType);
+  auto operands = std::vector(1, Context_->value(args[0]));
   return builder.CreateCall(function, operands);
 }
 

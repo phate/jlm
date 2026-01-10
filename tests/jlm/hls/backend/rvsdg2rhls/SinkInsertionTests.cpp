@@ -3,19 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-SinkInsertion()
+TEST(SinkInsertionTests, SinkInsertion)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -34,7 +33,7 @@ SinkInsertion()
       LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);
+  auto structuralNode = TestStructuralNode::create(lambdaNode->subregion(), 1);
   const auto inputVar0 = structuralNode->addInputWithArguments(*argument);
   const auto inputVar1 = structuralNode->addInputWithArguments(*argument);
 
@@ -53,21 +52,19 @@ SinkInsertion()
   view(rvsdg, stdout);
 
   // Assert
-  assert(structuralNode->subregion(0)->numNodes() == 1);
-  assert(lambdaNode->subregion()->numNodes() == 2);
+  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
 
   // The sink insertion pass should have inserted a SinkOperation node at output o0
   {
-    assert(outputVar0.output->nusers() == 1);
-    assert(IsOwnerNodeOperation<SinkOperation>(*outputVar0.output->Users().begin()));
+    EXPECT_EQ(outputVar0.output->nusers(), 1);
+    EXPECT_TRUE(IsOwnerNodeOperation<SinkOperation>(*outputVar0.output->Users().begin()));
   }
 
   // The sink insertion pass should have inserted a SinkOperation node at the argument of i0
   {
     auto & i0Argument = *inputVar0.argument[0];
-    assert(i0Argument.nusers() == 1);
-    assert(IsOwnerNodeOperation<SinkOperation>(*i0Argument.Users().begin()));
+    EXPECT_EQ(i0Argument.nusers(), 1);
+    EXPECT_TRUE(IsOwnerNodeOperation<SinkOperation>(*i0Argument.Users().begin()));
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/SinkInsertionTests-SinkInsertion", SinkInsertion)

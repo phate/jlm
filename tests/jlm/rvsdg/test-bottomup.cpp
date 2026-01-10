@@ -3,19 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-static void
-testInitialization()
+TEST(BottomUpTraverserTests, testInitialization)
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto vtype = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, {});
-  auto n2 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { vtype });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, {});
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), {}, { vtype });
 
   jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
@@ -29,21 +30,19 @@ testInitialization()
       n2_visited = true;
   }
 
-  assert(n1_visited);
-  assert(n2_visited);
+  EXPECT_TRUE(n1_visited);
+  EXPECT_TRUE(n2_visited);
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testInitialization", testInitialization)
 
-static void
-testBasicTraversal()
+TEST(BottomUpTraverserTests, testBasicTraversal)
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 = jlm::tests::TestOperation::createNode(
-      &graph.GetRootRegion(),
-      { n1->output(0), n1->output(1) },
-      { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 =
+      TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0), n1->output(1) }, { type });
 
   jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
@@ -51,40 +50,36 @@ testBasicTraversal()
     const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
     tmp = trav.next();
-    assert(tmp == n2);
+    EXPECT_EQ(tmp, n2);
     tmp = trav.next();
-    assert(tmp == n1);
+    EXPECT_EQ(tmp, n1);
     tmp = trav.next();
-    assert(tmp == 0);
+    EXPECT_EQ(tmp, nullptr);
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testBasicTraversal", testBasicTraversal)
 
-static void
-testOrderEnforcement()
+TEST(BottomUpTraverserTests, testOrderEnforcement)
 {
+  using namespace jlm::rvsdg;
+
   jlm::rvsdg::Graph graph;
   auto type = jlm::rvsdg::TestType::createValueType();
-  auto n1 = jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
-  auto n2 =
-      jlm::tests::TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::TestOperation::createNode(
-      &graph.GetRootRegion(),
-      { n2->output(0), n1->output(1) },
-      { type });
+  auto n1 = TestOperation::createNode(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = TestOperation::createNode(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 =
+      TestOperation::createNode(&graph.GetRootRegion(), { n2->output(0), n1->output(1) }, { type });
 
   {
     const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
-    assert(tmp == n3);
+    EXPECT_EQ(tmp, n3);
     tmp = trav.next();
-    assert(tmp == n2);
+    EXPECT_EQ(tmp, n2);
     tmp = trav.next();
-    assert(tmp == n1);
+    EXPECT_EQ(tmp, n1);
     tmp = trav.next();
-    assert(tmp == nullptr);
+    EXPECT_EQ(tmp, nullptr);
   }
 }
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testOrderEnforcement", testOrderEnforcement)

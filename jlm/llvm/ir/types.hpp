@@ -176,28 +176,27 @@ public:
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.
+ * There are two different kinds of struct types: Literal structs and Identified structs.
+ * Literal struct types (e.g., { i32, i32 }) are uniqued structurally.
+ * Identified structs (e.g., foo or %42) may optionally have a name and are not uniqued.
  */
 class StructType final : public rvsdg::Type
 {
 public:
-  class Declaration;
+  ~StructType() noexcept override;
 
-  ~StructType() override;
-
-  StructType(bool isPacked, const Declaration & declaration)
-      : rvsdg::Type(),
-        IsPacked_(isPacked),
-        Declaration_(declaration)
+  StructType(
+      std::string name,
+      std::vector<std::shared_ptr<const Type>> types,
+      const bool isPacked,
+      const bool isLiteral)
+      : name_(std::move(name)),
+        types_(std::move(types)),
+        isPacked_(isPacked),
+        isLiteral_(isLiteral)
   {}
 
-  StructType(std::string name, bool isPacked, const Declaration & declaration)
-      : rvsdg::Type(),
-        IsPacked_(isPacked),
-        Name_(std::move(name)),
-        Declaration_(declaration)
-  {}
-
-  StructType(const StructType &) = default;
+  StructType(const StructType &) = delete;
 
   StructType(StructType &&) = delete;
 
@@ -208,7 +207,7 @@ public:
   operator=(StructType &&) = delete;
 
   bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+  operator==(const Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -216,31 +215,64 @@ public:
   rvsdg::TypeKind
   Kind() const noexcept override;
 
+  [[nodiscard]] size_t
+  numElements() const noexcept
+  {
+    return types_.size();
+  }
+
+  [[nodiscard]] std::shared_ptr<const Type>
+  getElementType(const size_t index) const noexcept
+  {
+    JLM_ASSERT(index < numElements());
+    return types_[index];
+  }
+
   [[nodiscard]] std::string
   debug_string() const override;
 
+  /**
+   * Checks if the struct is an identified struct that has a name.
+   * Will always return false for literal structs.
+   * @return true if the struct has a name, false otherwise.
+   */
   [[nodiscard]] bool
   HasName() const noexcept
   {
-    return !Name_.empty();
+    if (isLiteral_)
+      JLM_ASSERT(name_.empty());
+    return !name_.empty();
   }
 
+  /**
+   * Returns the name of the identified struct.
+   * If the struct has no name, an empty string is returned.
+   * Must not be called on literal structs.
+   * @pre the struct is an identified struct.
+   * @return the name of the struct, or an empty string.
+   */
   [[nodiscard]] const std::string &
   GetName() const noexcept
   {
-    return Name_;
+    JLM_ASSERT(!isLiteral_);
+    return name_;
   }
 
   [[nodiscard]] bool
   IsPacked() const noexcept
   {
-    return IsPacked_;
+    return isPacked_;
   }
 
-  [[nodiscard]] const Declaration &
-  GetDeclaration() const noexcept
+  /**
+   * Struct types can either be literal or identified.
+   * Literal structs are defined only through their fields, and can not have names.
+   * @return true if this struct type is literal, false if it is identified.
+   */
+  [[nodiscard]] bool
+  IsLiteral() const noexcept
   {
-    return Declaration_;
+    return isLiteral_;
   }
 
   /**
@@ -253,80 +285,52 @@ public:
   [[nodiscard]] size_t
   GetFieldOffset(size_t fieldIndex) const;
 
+  /**
+   * Creates an identified struct, with a name. The name should be unique to this struct.
+   * @param name the name of the struct, or an empty string if the struct is unnamed.
+   * @param types the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
   static std::shared_ptr<const StructType>
-  Create(const std::string & name, bool isPacked, const Declaration & declaration)
+  CreateIdentified(
+      const std::string & name,
+      std::vector<std::shared_ptr<const Type>> types,
+      bool isPacked)
   {
-    return std::make_shared<StructType>(name, isPacked, declaration);
+    return std::make_shared<StructType>(name, std::move(types), isPacked, false);
   }
 
+  /**
+   * Creates an identified struct, without a name.
+   * @param types the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
   static std::shared_ptr<const StructType>
-  Create(bool isPacked, const Declaration & declaration)
+  CreateIdentified(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
   {
-    return std::make_shared<StructType>(isPacked, declaration);
+    return CreateIdentified("", std::move(types), isPacked);
+  }
+
+  /**
+   * Creates a literal struct, which is anonymous and only identified through its fields.
+   * @param types the fields in the struct
+   * @param isPacked true if the struct is packed (no padding or alignment), false otherwise
+   * @return the created struct type
+   */
+  static std::shared_ptr<const StructType>
+  CreateLiteral(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
+  {
+    // Literal structs don't have names, so always use the empty string
+    return std::make_shared<StructType>("", std::move(types), isPacked, true);
   }
 
 private:
-  bool IsPacked_;
-  std::string Name_;
-  const Declaration & Declaration_;
-};
-
-class StructType::Declaration final
-{
-public:
-  ~Declaration() = default;
-
-  explicit Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
-      : Types_(std::move(types))
-  {}
-
-  Declaration() = default;
-
-  Declaration(const Declaration &) = default;
-
-  Declaration &
-  operator=(const Declaration &) = default;
-
-  [[nodiscard]] size_t
-  NumElements() const noexcept
-  {
-    return Types_.size();
-  }
-
-  [[nodiscard]] const Type &
-  GetElement(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < NumElements());
-    return *Types_[index].get();
-  }
-
-  [[nodiscard]] std::shared_ptr<const Type>
-  GetElementType(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < NumElements());
-    return Types_[index];
-  }
-
-  void
-  Append(std::shared_ptr<const Type> type)
-  {
-    Types_.push_back(std::move(type));
-  }
-
-  static std::unique_ptr<Declaration>
-  Create()
-  {
-    return std::unique_ptr<Declaration>(new Declaration());
-  }
-
-  static std::unique_ptr<Declaration>
-  Create(std::vector<std::shared_ptr<const rvsdg::Type>> types)
-  {
-    return std::make_unique<Declaration>(std::move(types));
-  }
-
-private:
-  std::vector<std::shared_ptr<const rvsdg::Type>> Types_;
+  std::string name_;
+  std::vector<std::shared_ptr<const Type>> types_{};
+  bool isPacked_;
+  bool isLiteral_;
 };
 
 class VectorType : public rvsdg::Type
@@ -491,11 +495,10 @@ IsOrContains(const jlm::rvsdg::Type & type)
   if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
     return IsOrContains<ELEMENTYPE>(arrayType->element_type());
 
-  if (auto structType = dynamic_cast<const StructType *>(&type))
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
   {
-    auto & structDeclaration = structType->GetDeclaration();
-    for (size_t n = 0; n < structDeclaration.NumElements(); n++)
-      if (IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n)))
+    for (size_t n = 0; n < structType->numElements(); n++)
+      if (IsOrContains<ELEMENTYPE>(*structType->getElementType(n)))
         return true;
 
     return false;

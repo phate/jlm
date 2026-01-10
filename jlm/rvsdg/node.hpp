@@ -714,38 +714,18 @@ protected:
   NodeInput *
   addInput(std::unique_ptr<NodeInput> input, bool notifyRegion);
 
-  /**
-   * Removes an input from the node given the inputs' \p index.
-   *
-   * The removal of an input invalidates the node's existing input iterators,
-   * and changes the index of all following inputs.
-   *
-   * @param index The inputs' index. It must be between [0, ninputs()).
-   * @param notifyRegion If true, the region is informed about the removal.
-   * This should be false if the node has already notified the region about being removed,
-   * i.e., this function is being called from the node's destructor.
-   *
-   * \see ninputs()
-   * \see input#index()
-   */
-  void
-  removeInput(size_t index, bool notifyRegion);
-
-  // FIXME: I really would not like to be RemoveInputsWhere() to be public
+  // FIXME: I really would not like to be RemoveInputs() to be public
 public:
   /**
    * Removes all inputs that have an index in \p indices.
    *
-   * @param indices The indices of the arguments that should be removed.
-   * @param notifyRegion If true, the region is informed about the removal of an input.
-   * This should be false if the node has already notified the region about being removed,
-   * i.e., this function is being called from the node's destructor.
+   * @param indices The indices of the inputs that should be removed.
    *
    * @return The number of inputs that were removed. This might be less than the number of indices
    * as some provided input indices might not belong to an actual input.
    */
   size_t
-  RemoveInputs(const util::HashSet<size_t> & indices, bool notifyRegion);
+  RemoveInputs(const util::HashSet<size_t> & indices);
 
 protected:
   NodeOutput *
@@ -758,25 +738,7 @@ protected:
     return this->output(noutputs() - 1);
   }
 
-  /**
-   * Removes an output from the node given the outputs' index.
-   *
-   * An output can only be removed, if it has no users. The removal of an output invalidates the
-   * node's existing output iterators.
-   *
-   * @param index The outputs' index. It must be between [0, noutputs()).
-   *
-   * \note The method must adjust the indices of the other outputs after the removal. The methods'
-   * runtime is therefore O(n), where n is the node's number of outputs.
-   *
-   * \see noutputs()
-   * \see output#index()
-   * \see output#nusers()
-   */
-  void
-  removeOutput(size_t index);
-
-  // FIXME: I really would not like to be RemoveOutputsWhere() to be public
+  // FIXME: I really would not like to be RemoveOutputs() to be public
 public:
   /**
    * Removes all outputs that have no users and an index contained in \p indices.

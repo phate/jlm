@@ -3,22 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-
-#include <jlm/rvsdg/view.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-test()
+TEST(RecursiveDataTests, test)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto pointerType = PointerType::Create();
@@ -54,5 +52,3 @@ test()
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-recursive-data", test)

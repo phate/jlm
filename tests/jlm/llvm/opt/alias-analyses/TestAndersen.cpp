@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <cassert>
@@ -71,19 +70,18 @@ EscapedIsExactly(
   return expected == actual;
 }
 
-static void
-TestStore1()
+TEST(AndersenTests, TestStore1)
 {
-  jlm::tests::StoreTest1 test;
+  jlm::llvm::StoreTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   // std::unordered_map<const jlm::rvsdg::output*, std::string> outputMap;
   // std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::endl;
   // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*ptg, outputMap) << std::endl;
 
-  assert(ptg->numAllocaNodes() == 4);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 5);
+  EXPECT_EQ(ptg->numAllocaNodes(), 4u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -98,32 +96,30 @@ TestStore1()
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto plambda = ptg->getNodeForRegister(*test.lambda->output());
 
-  assert(TargetsExactly(*ptg, alloca_a, { alloca_b }));
-  assert(TargetsExactly(*ptg, alloca_b, { alloca_c }));
-  assert(TargetsExactly(*ptg, alloca_c, { alloca_d }));
-  assert(TargetsExactly(*ptg, alloca_d, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_a, { alloca_b }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_b, { alloca_c }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_c, { alloca_d }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_d, {}));
 
-  assert(TargetsExactly(*ptg, palloca_a, { alloca_a }));
-  assert(TargetsExactly(*ptg, palloca_b, { alloca_b }));
-  assert(TargetsExactly(*ptg, palloca_c, { alloca_c }));
-  assert(TargetsExactly(*ptg, palloca_d, { alloca_d }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_a, { alloca_a }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_b, { alloca_b }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_c, { alloca_c }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_d, { alloca_d }));
 
-  assert(TargetsExactly(*ptg, lambda, {}));
-  assert(TargetsExactly(*ptg, plambda, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda, { lambda }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore1", TestStore1)
 
-static void
-TestStore2()
+TEST(AndersenTests, TestStore2)
 {
-  jlm::tests::StoreTest2 test;
+  jlm::llvm::StoreTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 5);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 6);
+  EXPECT_EQ(ptg->numAllocaNodes(), 5u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 6u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -140,33 +136,31 @@ TestStore2()
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto plambda = ptg->getNodeForRegister(*test.lambda->output());
 
-  assert(TargetsExactly(*ptg, alloca_a, {}));
-  assert(TargetsExactly(*ptg, alloca_b, {}));
-  assert(TargetsExactly(*ptg, alloca_x, { alloca_a }));
-  assert(TargetsExactly(*ptg, alloca_y, { alloca_b }));
-  assert(TargetsExactly(*ptg, alloca_p, { alloca_x, alloca_y }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_a, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_b, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_x, { alloca_a }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_y, { alloca_b }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_p, { alloca_x, alloca_y }));
 
-  assert(TargetsExactly(*ptg, palloca_a, { alloca_a }));
-  assert(TargetsExactly(*ptg, palloca_b, { alloca_b }));
-  assert(TargetsExactly(*ptg, palloca_x, { alloca_x }));
-  assert(TargetsExactly(*ptg, palloca_y, { alloca_y }));
-  assert(TargetsExactly(*ptg, palloca_p, { alloca_p }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_a, { alloca_a }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_b, { alloca_b }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_x, { alloca_x }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_y, { alloca_y }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_p, { alloca_p }));
 
-  assert(TargetsExactly(*ptg, lambda, {}));
-  assert(TargetsExactly(*ptg, plambda, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda, { lambda }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore2", TestStore2)
 
-static void
-TestLoad1()
+TEST(AndersenTests, TestLoad1)
 {
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto loadResult = ptg->getNodeForRegister(*test.load_p->output(0));
 
@@ -174,24 +168,22 @@ TestLoad1()
   auto lambdaOutput = ptg->getNodeForRegister(*test.lambda->output());
   auto lambdaArgument0 = ptg->getNodeForRegister(*test.lambda->GetFunctionArguments()[0]);
 
-  assert(TargetsExactly(*ptg, loadResult, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, loadResult, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(TargetsExactly(*ptg, lambdaOutput, { lambda }));
-  assert(TargetsExactly(*ptg, lambdaArgument0, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaOutput, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaArgument0, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad1", TestLoad1)
 
-static void
-TestLoad2()
+TEST(AndersenTests, TestLoad2)
 {
-  jlm::tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 5);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 8);
+  EXPECT_EQ(ptg->numAllocaNodes(), 5u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -204,44 +196,38 @@ TestLoad2()
 
   auto lambdaMemoryNode = ptg->getNodeForLambda(*test.lambda);
 
-  assert(TargetsExactly(*ptg, alloca_x, { alloca_a }));
-  assert(TargetsExactly(*ptg, alloca_y, { alloca_a, alloca_b }));
-  assert(TargetsExactly(*ptg, alloca_p, { alloca_x }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_x, { alloca_a }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_y, { alloca_a, alloca_b }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_p, { alloca_x }));
 
-  assert(TargetsExactly(*ptg, pload_x, { alloca_x }));
-  assert(TargetsExactly(*ptg, pload_a, { alloca_a }));
+  EXPECT_TRUE(TargetsExactly(*ptg, pload_x, { alloca_x }));
+  EXPECT_TRUE(TargetsExactly(*ptg, pload_a, { alloca_a }));
 
-  assert(EscapedIsExactly(*ptg, { lambdaMemoryNode }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaMemoryNode }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad2", TestLoad2)
 
-static void
-TestLoadFromUndef()
+TEST(AndersenTests, TestLoadFromUndef)
 {
-  jlm::tests::LoadFromUndefTest test;
+  jlm::llvm::LoadFromUndefTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 2);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 2u);
 
   auto lambdaMemoryNode = ptg->getNodeForLambda(test.Lambda());
   auto undefValueNode = ptg->getNodeForRegister(*test.UndefValueNode()->output(0));
 
-  assert(TargetsExactly(*ptg, undefValueNode, {}));
-  assert(EscapedIsExactly(*ptg, { lambdaMemoryNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, undefValueNode, {}));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaMemoryNode }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestLoadFromUndef",
-    TestLoadFromUndef)
 
-static void
-TestGetElementPtr()
+TEST(AndersenTests, TestGetElementPtr)
 {
-  jlm::tests::GetElementPtrTest test;
+  jlm::llvm::GetElementPtrTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 4);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 4u);
 
   // We only care about the getelemenptr's in this test, skipping the validation for all other nodes
   auto lambda = ptg->getNodeForLambda(*test.lambda);
@@ -249,46 +235,40 @@ TestGetElementPtr()
   auto gepY = ptg->getNodeForRegister(*test.getElementPtrY->output(0));
 
   // The RegisterNode is the same
-  assert(gepX == gepY);
+  EXPECT_EQ(gepX, gepY);
 
-  assert(TargetsExactly(*ptg, gepX, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, gepX, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestGetElementPtr",
-    TestGetElementPtr)
 
-static void
-TestBitCast()
+TEST(AndersenTests, TestBitCast)
 {
-  jlm::tests::BitCastTest test;
+  jlm::llvm::BitCastTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaOut = ptg->getNodeForRegister(*test.lambda->output());
   auto lambdaArg = ptg->getNodeForRegister(*test.lambda->GetFunctionArguments()[0]);
   auto bitCast = ptg->getNodeForRegister(*test.bitCast->output(0));
 
-  assert(TargetsExactly(*ptg, lambdaOut, { lambda }));
-  assert(TargetsExactly(*ptg, lambdaArg, { lambda, ptg->getExternalMemoryNode() }));
-  assert(TargetsExactly(*ptg, bitCast, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaOut, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaArg, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, bitCast, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBitCast", TestBitCast)
 
-static void
-TestConstantPointerNull()
+TEST(AndersenTests, TestConstantPointerNull)
 {
-  jlm::tests::ConstantPointerNullTest test;
+  jlm::llvm::ConstantPointerNullTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaOut = ptg->getNodeForRegister(*test.lambda->output());
@@ -296,24 +276,20 @@ TestConstantPointerNull()
 
   auto constantPointerNull = ptg->getNodeForRegister(*test.constantPointerNullNode->output(0));
 
-  assert(TargetsExactly(*ptg, lambdaOut, { lambda }));
-  assert(TargetsExactly(*ptg, lambdaArg, { lambda, ptg->getExternalMemoryNode() }));
-  assert(TargetsExactly(*ptg, constantPointerNull, {}));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaOut, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaArg, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, constantPointerNull, {}));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstantPointerNull",
-    TestConstantPointerNull)
 
-static void
-TestBits2Ptr()
+TEST(AndersenTests, TestBits2Ptr)
 {
-  jlm::tests::Bits2PtrTest test;
+  jlm::llvm::Bits2PtrTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 5);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambdaTestMemoryNode = ptg->getNodeForLambda(test.GetLambdaTest());
   auto externalMemoryNode = ptg->getExternalMemoryNode();
@@ -321,22 +297,20 @@ TestBits2Ptr()
   auto callOutput0 = ptg->getNodeForRegister(*test.GetCallNode().output(0));
   auto bits2ptr = ptg->getNodeForRegister(*test.GetBitsToPtrNode().output(0));
 
-  assert(TargetsExactly(*ptg, callOutput0, { lambdaTestMemoryNode, externalMemoryNode }));
-  assert(TargetsExactly(*ptg, bits2ptr, { lambdaTestMemoryNode, externalMemoryNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, callOutput0, { lambdaTestMemoryNode, externalMemoryNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, bits2ptr, { lambdaTestMemoryNode, externalMemoryNode }));
 
-  assert(EscapedIsExactly(*ptg, { lambdaTestMemoryNode }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaTestMemoryNode }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBits2Ptr", TestBits2Ptr)
 
-static void
-TestCall1()
+TEST(AndersenTests, TestCall1)
 {
-  jlm::tests::CallTest1 test;
+  jlm::llvm::CallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 3);
-  assert(ptg->numLambdaNodes() == 3);
-  assert(ptg->numMappedRegisters() == 12);
+  EXPECT_EQ(ptg->numAllocaNodes(), 3u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 12u);
 
   auto alloca_x = ptg->getNodeForAlloca(*test.alloca_x);
   auto alloca_y = ptg->getNodeForAlloca(*test.alloca_y);
@@ -363,37 +337,35 @@ TestCall1()
   auto lambda_h_cv0 = ptg->getNodeForRegister(*test.lambda_h->GetContextVars()[0].inner);
   auto lambda_h_cv1 = ptg->getNodeForRegister(*test.lambda_h->GetContextVars()[1].inner);
 
-  assert(TargetsExactly(*ptg, palloca_x, { alloca_x }));
-  assert(TargetsExactly(*ptg, palloca_y, { alloca_y }));
-  assert(TargetsExactly(*ptg, palloca_z, { alloca_z }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_x, { alloca_x }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_y, { alloca_y }));
+  EXPECT_TRUE(TargetsExactly(*ptg, palloca_z, { alloca_z }));
 
-  assert(TargetsExactly(*ptg, plambda_f, { lambda_f }));
-  assert(TargetsExactly(*ptg, plambda_g, { lambda_g }));
-  assert(TargetsExactly(*ptg, plambda_h, { lambda_h }));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda_f, { lambda_f }));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda_g, { lambda_g }));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda_h, { lambda_h }));
 
-  assert(TargetsExactly(*ptg, lambda_f_arg0, { alloca_x }));
-  assert(TargetsExactly(*ptg, lambda_f_arg1, { alloca_y }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f_arg0, { alloca_x }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f_arg1, { alloca_y }));
 
-  assert(TargetsExactly(*ptg, lambda_g_arg0, { alloca_z }));
-  assert(TargetsExactly(*ptg, lambda_g_arg1, { alloca_z }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_g_arg0, { alloca_z }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_g_arg1, { alloca_z }));
 
-  assert(TargetsExactly(*ptg, lambda_h_cv0, { lambda_f }));
-  assert(TargetsExactly(*ptg, lambda_h_cv1, { lambda_g }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_h_cv0, { lambda_f }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_h_cv1, { lambda_g }));
 
-  assert(EscapedIsExactly(*ptg, { lambda_h }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_h }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall1", TestCall1)
 
-static void
-TestCall2()
+TEST(AndersenTests, TestCall2)
 {
-  jlm::tests::CallTest2 test;
+  jlm::llvm::CallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 3);
-  assert(ptg->numMallocNodes() == 1);
-  assert(ptg->numImportNodes() == 0);
-  assert(ptg->numMappedRegisters() == 11);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMallocNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 0u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto lambda_create = ptg->getNodeForLambda(*test.lambda_create);
   auto lambda_create_out = ptg->getNodeForRegister(*test.lambda_create->output());
@@ -414,33 +386,31 @@ TestCall2()
   auto malloc = ptg->getNodeForMalloc(*test.malloc);
   auto malloc_out = ptg->getNodeForRegister(*test.malloc->output(0));
 
-  assert(TargetsExactly(*ptg, lambda_create_out, { lambda_create }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_create_out, { lambda_create }));
 
-  assert(TargetsExactly(*ptg, lambda_destroy_out, { lambda_destroy }));
-  assert(TargetsExactly(*ptg, lambda_destroy_arg, { malloc }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_destroy_out, { lambda_destroy }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_destroy_arg, { malloc }));
 
-  assert(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
-  assert(TargetsExactly(*ptg, lambda_test_cv1, { lambda_create }));
-  assert(TargetsExactly(*ptg, lambda_test_cv2, { lambda_destroy }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_cv1, { lambda_create }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_cv2, { lambda_destroy }));
 
-  assert(TargetsExactly(*ptg, call_create1_out, { malloc }));
-  assert(TargetsExactly(*ptg, call_create2_out, { malloc }));
+  EXPECT_TRUE(TargetsExactly(*ptg, call_create1_out, { malloc }));
+  EXPECT_TRUE(TargetsExactly(*ptg, call_create2_out, { malloc }));
 
-  assert(TargetsExactly(*ptg, malloc_out, { malloc }));
+  EXPECT_TRUE(TargetsExactly(*ptg, malloc_out, { malloc }));
 
-  assert(EscapedIsExactly(*ptg, { lambda_test }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_test }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall2", TestCall2)
 
-static void
-TestIndirectCall1()
+TEST(AndersenTests, TestIndirectCall1)
 {
-  jlm::tests::IndirectCallTest1 test;
+  jlm::llvm::IndirectCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 4);
-  assert(ptg->numImportNodes() == 0);
-  assert(ptg->numMappedRegisters() == 11);
+  EXPECT_EQ(ptg->numLambdaNodes(), 4u);
+  EXPECT_EQ(ptg->numImportNodes(), 0u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto lambda_three = ptg->getNodeForLambda(test.GetLambdaThree());
   auto lambda_three_out = ptg->getNodeForRegister(*test.GetLambdaThree().output());
@@ -459,34 +429,30 @@ TestIndirectCall1()
   auto lambda_test_cv1 = ptg->getNodeForRegister(*test.GetLambdaTest().GetContextVars()[1].inner);
   auto lambda_test_cv2 = ptg->getNodeForRegister(*test.GetLambdaTest().GetContextVars()[2].inner);
 
-  assert(TargetsExactly(*ptg, lambda_three_out, { lambda_three }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_three_out, { lambda_three }));
 
-  assert(TargetsExactly(*ptg, lambda_four_out, { lambda_four }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_four_out, { lambda_four }));
 
-  assert(TargetsExactly(*ptg, lambda_indcall_out, { lambda_indcall }));
-  assert(TargetsExactly(*ptg, lambda_indcall_arg, { lambda_three, lambda_four }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_indcall_out, { lambda_indcall }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_indcall_arg, { lambda_three, lambda_four }));
 
-  assert(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
-  assert(TargetsExactly(*ptg, lambda_test_cv0, { lambda_indcall }));
-  assert(TargetsExactly(*ptg, lambda_test_cv1, { lambda_four }));
-  assert(TargetsExactly(*ptg, lambda_test_cv2, { lambda_three }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_cv0, { lambda_indcall }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_cv1, { lambda_four }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_cv2, { lambda_three }));
 
-  assert(EscapedIsExactly(*ptg, { lambda_test }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_test }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall1",
-    TestIndirectCall1)
 
-static void
-TestIndirectCall2()
+TEST(AndersenTests, TestIndirectCall2)
 {
-  jlm::tests::IndirectCallTest2 test;
+  jlm::llvm::IndirectCallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 3);
-  assert(ptg->numLambdaNodes() == 7);
-  assert(ptg->numDeltaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 27);
+  EXPECT_EQ(ptg->numAllocaNodes(), 3u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 7u);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 27u);
 
   auto lambdaThree = ptg->getNodeForLambda(test.GetLambdaThree());
   auto lambdaThreeOutput = ptg->getNodeForRegister(*test.GetLambdaThree().output());
@@ -494,23 +460,19 @@ TestIndirectCall2()
   auto lambdaFour = ptg->getNodeForLambda(test.GetLambdaFour());
   auto lambdaFourOutput = ptg->getNodeForRegister(*test.GetLambdaFour().output());
 
-  assert(TargetsExactly(*ptg, lambdaThreeOutput, { lambdaThree }));
-  assert(TargetsExactly(*ptg, lambdaFourOutput, { lambdaFour }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaThreeOutput, { lambdaThree }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaFourOutput, { lambdaFour }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall2",
-    TestIndirectCall2)
 
-static void
-TestExternalCall1()
+TEST(AndersenTests, TestExternalCall1)
 {
-  jlm::tests::ExternalCallTest1 test;
+  jlm::llvm::ExternalCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 2);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numImportNodes() == 1);
-  assert(ptg->numMappedRegisters() == 10);
+  EXPECT_EQ(ptg->numAllocaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto lambdaF = ptg->getNodeForLambda(test.LambdaF());
   auto lambdaFArgument0 = ptg->getNodeForRegister(*test.LambdaF().GetFunctionArguments()[0]);
@@ -521,60 +483,54 @@ TestExternalCall1()
 
   auto externalMemory = ptg->getExternalMemoryNode();
 
-  assert(TargetsExactly(*ptg, lambdaFArgument0, { lambdaF, importG, externalMemory }));
-  assert(TargetsExactly(*ptg, lambdaFArgument1, { lambdaF, importG, externalMemory }));
-  assert(TargetsExactly(*ptg, callResult, { lambdaF, importG, externalMemory }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaFArgument0, { lambdaF, importG, externalMemory }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaFArgument1, { lambdaF, importG, externalMemory }));
+  EXPECT_TRUE(TargetsExactly(*ptg, callResult, { lambdaF, importG, externalMemory }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalCall1",
-    TestExternalCall1)
 
-static void
-TestGamma()
+TEST(AndersenTests, TestGamma)
 {
-  jlm::tests::GammaTest test;
+  jlm::llvm::GammaTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 15);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 15u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
 
   for (size_t n = 1; n < 5; n++)
   {
     auto lambdaArgument = ptg->getNodeForRegister(*test.lambda->GetFunctionArguments()[n]);
-    assert(TargetsExactly(*ptg, lambdaArgument, { lambda, ptg->getExternalMemoryNode() }));
+    EXPECT_TRUE(TargetsExactly(*ptg, lambdaArgument, { lambda, ptg->getExternalMemoryNode() }));
   }
 
   auto entryvars = test.gamma->GetEntryVars();
-  assert(entryvars.size() == 4);
+  EXPECT_EQ(entryvars.size(), 4u);
   for (const auto & entryvar : entryvars)
   {
     auto argument0 = ptg->getNodeForRegister(*entryvar.branchArgument[0]);
     auto argument1 = ptg->getNodeForRegister(*entryvar.branchArgument[1]);
 
-    assert(TargetsExactly(*ptg, argument0, { lambda, ptg->getExternalMemoryNode() }));
-    assert(TargetsExactly(*ptg, argument1, { lambda, ptg->getExternalMemoryNode() }));
+    EXPECT_TRUE(TargetsExactly(*ptg, argument0, { lambda, ptg->getExternalMemoryNode() }));
+    EXPECT_TRUE(TargetsExactly(*ptg, argument1, { lambda, ptg->getExternalMemoryNode() }));
   }
 
   for (size_t n = 0; n < 4; n++)
   {
     auto gammaOutput = ptg->getNodeForRegister(*test.gamma->GetExitVars()[0].output);
-    assert(TargetsExactly(*ptg, gammaOutput, { lambda, ptg->getExternalMemoryNode() }));
+    EXPECT_TRUE(TargetsExactly(*ptg, gammaOutput, { lambda, ptg->getExternalMemoryNode() }));
   }
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestGamma", TestGamma)
 
-static void
-TestTheta()
+TEST(AndersenTests, TestTheta)
 {
-  jlm::tests::ThetaTest test;
+  jlm::llvm::ThetaTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 5);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaArgument1 = ptg->getNodeForRegister(*test.lambda->GetFunctionArguments()[1]);
@@ -585,27 +541,25 @@ TestTheta()
   auto thetaArgument2 = ptg->getNodeForRegister(*test.theta->GetLoopVars()[2].pre);
   auto thetaOutput2 = ptg->getNodeForRegister(*test.theta->output(2));
 
-  assert(TargetsExactly(*ptg, lambdaArgument1, { lambda, ptg->getExternalMemoryNode() }));
-  assert(TargetsExactly(*ptg, lambdaOutput, { lambda }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaArgument1, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaOutput, { lambda }));
 
-  assert(TargetsExactly(*ptg, gepOutput, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, gepOutput, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(TargetsExactly(*ptg, thetaArgument2, { lambda, ptg->getExternalMemoryNode() }));
-  assert(TargetsExactly(*ptg, thetaOutput2, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, thetaArgument2, { lambda, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, thetaOutput2, { lambda, ptg->getExternalMemoryNode() }));
 
-  assert(EscapedIsExactly(*ptg, { lambda }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestTheta", TestTheta)
 
-static void
-TestDelta1()
+TEST(AndersenTests, TestDelta1)
 {
-  jlm::tests::DeltaTest1 test;
+  jlm::llvm::DeltaTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numDeltaNodes() == 1);
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 6);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 6u);
 
   auto delta_f = ptg->getNodeForDelta(*test.delta_f);
   auto pdelta_f = ptg->getNodeForRegister(test.delta_f->output());
@@ -619,29 +573,27 @@ TestDelta1()
   auto lambda_h_cv0 = ptg->getNodeForRegister(*test.lambda_h->GetContextVars()[0].inner);
   auto lambda_h_cv1 = ptg->getNodeForRegister(*test.lambda_h->GetContextVars()[1].inner);
 
-  assert(TargetsExactly(*ptg, pdelta_f, { delta_f }));
+  EXPECT_TRUE(TargetsExactly(*ptg, pdelta_f, { delta_f }));
 
-  assert(TargetsExactly(*ptg, plambda_g, { lambda_g }));
-  assert(TargetsExactly(*ptg, plambda_h, { lambda_h }));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda_g, { lambda_g }));
+  EXPECT_TRUE(TargetsExactly(*ptg, plambda_h, { lambda_h }));
 
-  assert(TargetsExactly(*ptg, lambda_g_arg0, { delta_f }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_g_arg0, { delta_f }));
 
-  assert(TargetsExactly(*ptg, lambda_h_cv0, { delta_f }));
-  assert(TargetsExactly(*ptg, lambda_h_cv1, { lambda_g }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_h_cv0, { delta_f }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_h_cv1, { lambda_g }));
 
-  assert(EscapedIsExactly(*ptg, { lambda_h }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_h }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta1", TestDelta1)
 
-static void
-TestDelta2()
+TEST(AndersenTests, TestDelta2)
 {
-  jlm::tests::DeltaTest2 test;
+  jlm::llvm::DeltaTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numDeltaNodes() == 2);
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 8);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto delta_d1 = ptg->getNodeForDelta(*test.delta_d1);
   auto delta_d1_out = ptg->getNodeForRegister(test.delta_d1->output());
@@ -659,30 +611,28 @@ TestDelta2()
   auto lambda_f2_cvd2 = ptg->getNodeForRegister(*test.lambda_f2->GetContextVars()[1].inner);
   auto lambda_f2_cvf1 = ptg->getNodeForRegister(*test.lambda_f2->GetContextVars()[2].inner);
 
-  assert(TargetsExactly(*ptg, delta_d1_out, { delta_d1 }));
-  assert(TargetsExactly(*ptg, delta_d2_out, { delta_d2 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, delta_d1_out, { delta_d1 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, delta_d2_out, { delta_d2 }));
 
-  assert(TargetsExactly(*ptg, lambda_f1_out, { lambda_f1 }));
-  assert(TargetsExactly(*ptg, lambda_f2_out, { lambda_f2 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f1_out, { lambda_f1 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f2_out, { lambda_f2 }));
 
-  assert(lambda_f1_cvd1 == delta_d1_out);
-  assert(lambda_f2_cvd1 == delta_d1_out);
-  assert(lambda_f2_cvd2 == delta_d2_out);
-  assert(lambda_f2_cvf1 == lambda_f1_out);
+  EXPECT_EQ(lambda_f1_cvd1, delta_d1_out);
+  EXPECT_EQ(lambda_f2_cvd1, delta_d1_out);
+  EXPECT_EQ(lambda_f2_cvd2, delta_d2_out);
+  EXPECT_EQ(lambda_f2_cvf1, lambda_f1_out);
 
-  assert(EscapedIsExactly(*ptg, { lambda_f2 }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_f2 }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta2", TestDelta2)
 
-static void
-TestImports()
+TEST(AndersenTests, TestImports)
 {
-  jlm::tests::ImportTest test;
+  jlm::llvm::ImportTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numImportNodes() == 2);
-  assert(ptg->numMappedRegisters() == 8);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numImportNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto d1 = ptg->getNodeForImport(*test.import_d1);
   auto import_d1 = ptg->getNodeForRegister(*test.import_d1);
@@ -700,30 +650,28 @@ TestImports()
   auto lambda_f2_cvd2 = ptg->getNodeForRegister(*test.lambda_f2->GetContextVars()[1].inner);
   auto lambda_f2_cvf1 = ptg->getNodeForRegister(*test.lambda_f2->GetContextVars()[2].inner);
 
-  assert(TargetsExactly(*ptg, import_d1, { d1 }));
-  assert(TargetsExactly(*ptg, import_d2, { d2 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, import_d1, { d1 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, import_d2, { d2 }));
 
-  assert(TargetsExactly(*ptg, lambda_f1_out, { lambda_f1 }));
-  assert(TargetsExactly(*ptg, lambda_f2_out, { lambda_f2 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f1_out, { lambda_f1 }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_f2_out, { lambda_f2 }));
 
-  assert(lambda_f1_cvd1 == import_d1);
-  assert(lambda_f2_cvd1 == import_d1);
-  assert(lambda_f2_cvd2 == import_d2);
-  assert(lambda_f2_cvf1 == lambda_f1_out);
+  EXPECT_EQ(lambda_f1_cvd1, import_d1);
+  EXPECT_EQ(lambda_f2_cvd1, import_d1);
+  EXPECT_EQ(lambda_f2_cvd2, import_d2);
+  EXPECT_EQ(lambda_f2_cvf1, lambda_f1_out);
 
-  assert(EscapedIsExactly(*ptg, { lambda_f2, d1, d2 }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_f2, d1, d2 }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestImports", TestImports)
 
-static void
-TestPhi1()
+TEST(AndersenTests, TestPhi1)
 {
-  jlm::tests::PhiTest1 test;
+  jlm::llvm::PhiTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 1);
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 16);
+  EXPECT_EQ(ptg->numAllocaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 16u);
 
   auto lambda_fib = ptg->getNodeForLambda(*test.lambda_fib);
   auto lambda_fib_out = ptg->getNodeForRegister(*test.lambda_fib->output());
@@ -741,54 +689,48 @@ TestPhi1()
   auto alloca = ptg->getNodeForAlloca(*test.alloca);
   auto alloca_out = ptg->getNodeForRegister(*test.alloca->output(0));
 
-  assert(TargetsExactly(*ptg, lambda_fib_out, { lambda_fib }));
-  assert(TargetsExactly(*ptg, lambda_fib_arg1, { alloca }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_fib_out, { lambda_fib }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_fib_arg1, { alloca }));
 
-  assert(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambda_test_out, { lambda_test }));
 
-  assert(phi_rv == lambda_fib_out);
-  assert(TargetsExactly(*ptg, phi_rv_arg, { lambda_fib }));
+  EXPECT_EQ(phi_rv, lambda_fib_out);
+  EXPECT_TRUE(TargetsExactly(*ptg, phi_rv_arg, { lambda_fib }));
 
-  assert(TargetsExactly(*ptg, gamma_result, { alloca }));
-  assert(TargetsExactly(*ptg, gamma_fib, { lambda_fib }));
+  EXPECT_TRUE(TargetsExactly(*ptg, gamma_result, { alloca }));
+  EXPECT_TRUE(TargetsExactly(*ptg, gamma_fib, { lambda_fib }));
 
-  assert(TargetsExactly(*ptg, alloca_out, { alloca }));
+  EXPECT_TRUE(TargetsExactly(*ptg, alloca_out, { alloca }));
 
-  assert(EscapedIsExactly(*ptg, { lambda_test }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambda_test }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestPhi1", TestPhi1)
 
-static void
-TestExternalMemory()
+TEST(AndersenTests, TestExternalMemory)
 {
-  jlm::tests::ExternalMemoryTest test;
+  jlm::llvm::ExternalMemoryTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambdaF = ptg->getNodeForLambda(*test.LambdaF);
   auto lambdaFArgument0 = ptg->getNodeForRegister(*test.LambdaF->GetFunctionArguments()[0]);
   auto lambdaFArgument1 = ptg->getNodeForRegister(*test.LambdaF->GetFunctionArguments()[1]);
 
-  assert(TargetsExactly(*ptg, lambdaFArgument0, { lambdaF, ptg->getExternalMemoryNode() }));
-  assert(TargetsExactly(*ptg, lambdaFArgument1, { lambdaF, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaFArgument0, { lambdaF, ptg->getExternalMemoryNode() }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaFArgument1, { lambdaF, ptg->getExternalMemoryNode() }));
 
-  assert(EscapedIsExactly(*ptg, { lambdaF }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaF }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalMemory",
-    TestExternalMemory)
 
-static void
-TestEscapedMemory1()
+TEST(AndersenTests, TestEscapedMemory1)
 {
-  jlm::tests::EscapedMemoryTest1 test;
+  jlm::llvm::EscapedMemoryTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numDeltaNodes() == 4);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 10);
+  EXPECT_EQ(ptg->numDeltaNodes(), 4u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto lambdaTestArgument0 = ptg->getNodeForRegister(*test.LambdaTest->GetFunctionArguments()[0]);
   auto lambdaTestCv0 = ptg->getNodeForRegister(*test.LambdaTest->GetContextVars()[0].inner);
@@ -801,32 +743,28 @@ TestEscapedMemory1()
   auto lambdaTest = ptg->getNodeForLambda(*test.LambdaTest);
   auto externalMemory = ptg->getExternalMemoryNode();
 
-  assert(TargetsExactly(
+  EXPECT_TRUE(TargetsExactly(
       *ptg,
       lambdaTestArgument0,
       { deltaA, deltaX, deltaY, lambdaTest, externalMemory }));
-  assert(TargetsExactly(*ptg, lambdaTestCv0, { deltaB }));
-  assert(TargetsExactly(
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaTestCv0, { deltaB }));
+  EXPECT_TRUE(TargetsExactly(
       *ptg,
       loadNode1Output,
       { deltaA, deltaX, deltaY, lambdaTest, externalMemory }));
 
-  assert(EscapedIsExactly(*ptg, { lambdaTest, deltaA, deltaX, deltaY }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaTest, deltaA, deltaX, deltaY }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory1",
-    TestEscapedMemory1)
 
-static void
-TestEscapedMemory2()
+TEST(AndersenTests, TestEscapedMemory2)
 {
-  jlm::tests::EscapedMemoryTest2 test;
+  jlm::llvm::EscapedMemoryTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numImportNodes() == 2);
-  assert(ptg->numLambdaNodes() == 3);
-  assert(ptg->numMallocNodes() == 2);
-  assert(ptg->numMappedRegisters() == 10);
+  EXPECT_EQ(ptg->numImportNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMallocNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto returnAddressFunction = ptg->getNodeForLambda(*test.ReturnAddressFunction);
   auto callExternalFunction1 = ptg->getNodeForLambda(*test.CallExternalFunction1);
@@ -840,7 +778,7 @@ TestEscapedMemory2()
   auto externalFunction2CallResult =
       ptg->getNodeForRegister(*test.ExternalFunction2Call->output(0));
 
-  assert(TargetsExactly(
+  EXPECT_TRUE(TargetsExactly(
       *ptg,
       externalFunction2CallResult,
       { returnAddressFunction,
@@ -852,7 +790,7 @@ TestEscapedMemory2()
         externalFunction1Import,
         externalFunction2Import }));
 
-  assert(EscapedIsExactly(
+  EXPECT_TRUE(EscapedIsExactly(
       *ptg,
       { returnAddressFunction,
         callExternalFunction1,
@@ -862,20 +800,16 @@ TestEscapedMemory2()
         externalFunction1Import,
         externalFunction2Import }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory2",
-    TestEscapedMemory2)
 
-static void
-TestEscapedMemory3()
+TEST(AndersenTests, TestEscapedMemory3)
 {
-  jlm::tests::EscapedMemoryTest3 test;
+  jlm::llvm::EscapedMemoryTest3 test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numDeltaNodes() == 1);
-  assert(ptg->numImportNodes() == 1);
-  assert(ptg->numLambdaNodes() == 1);
-  assert(ptg->numMappedRegisters() == 5);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambdaTest = ptg->getNodeForLambda(*test.LambdaTest);
   auto deltaGlobal = ptg->getNodeForDelta(*test.DeltaGlobal);
@@ -884,26 +818,22 @@ TestEscapedMemory3()
 
   auto callExternalFunctionResult = ptg->getNodeForRegister(*test.CallExternalFunction->output(0));
 
-  assert(TargetsExactly(
+  EXPECT_TRUE(TargetsExactly(
       *ptg,
       callExternalFunctionResult,
       { lambdaTest, deltaGlobal, importExternalFunction, externalMemory }));
 
-  assert(EscapedIsExactly(*ptg, { lambdaTest, deltaGlobal, importExternalFunction }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { lambdaTest, deltaGlobal, importExternalFunction }));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory3",
-    TestEscapedMemory3)
 
-static void
-TestMemcpy()
+TEST(AndersenTests, TestMemcpy)
 {
-  jlm::tests::MemcpyTest test;
+  jlm::llvm::MemcpyTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numDeltaNodes() == 2);
-  assert(ptg->numLambdaNodes() == 2);
-  assert(ptg->numMappedRegisters() == 11);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto localArray = ptg->getNodeForDelta(test.LocalArray());
   auto globalArray = ptg->getNodeForDelta(test.GlobalArray());
@@ -914,41 +844,38 @@ TestMemcpy()
   auto lambdaF = ptg->getNodeForLambda(test.LambdaF());
   auto lambdaG = ptg->getNodeForLambda(test.LambdaG());
 
-  assert(TargetsExactly(*ptg, memCpyDest, { globalArray }));
-  assert(TargetsExactly(*ptg, memCpySrc, { localArray }));
+  EXPECT_TRUE(TargetsExactly(*ptg, memCpyDest, { globalArray }));
+  EXPECT_TRUE(TargetsExactly(*ptg, memCpySrc, { localArray }));
 
-  assert(EscapedIsExactly(*ptg, { globalArray, localArray, lambdaF, lambdaG }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { globalArray, localArray, lambdaF, lambdaG }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestMemcpy", TestMemcpy)
 
-static void
-TestLinkedList()
+TEST(AndersenTests, TestLinkedList)
 {
-  jlm::tests::LinkedListTest test;
+  jlm::llvm::LinkedListTest test;
   const auto ptg = RunAndersen(test.module());
 
-  assert(ptg->numAllocaNodes() == 1);
-  assert(ptg->numDeltaNodes() == 1);
-  assert(ptg->numLambdaNodes() == 1);
+  EXPECT_EQ(ptg->numAllocaNodes(), 1u);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
 
   auto allocaNode = ptg->getNodeForAlloca(test.GetAlloca());
   auto deltaMyListNode = ptg->getNodeForDelta(test.GetDeltaMyList());
   auto lambdaNextNode = ptg->getNodeForLambda(test.GetLambdaNext());
   auto externalMemoryNode = ptg->getExternalMemoryNode();
 
-  assert(TargetsExactly(*ptg, allocaNode, { deltaMyListNode, lambdaNextNode, externalMemoryNode }));
-  assert(TargetsExactly(
+  EXPECT_TRUE(
+      TargetsExactly(*ptg, allocaNode, { deltaMyListNode, lambdaNextNode, externalMemoryNode }));
+  EXPECT_TRUE(TargetsExactly(
       *ptg,
       deltaMyListNode,
       { deltaMyListNode, lambdaNextNode, externalMemoryNode }));
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLinkedList", TestLinkedList)
 
-static void
-TestStatistics()
+TEST(AndersenTests, TestStatistics)
 {
   // Arrange
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::AndersenAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
@@ -958,18 +885,16 @@ TestStatistics()
   auto ptg = andersen.Analyze(test.module(), statisticsCollector);
 
   // Assert
-  assert(statisticsCollector.NumCollectedStatistics() == 1);
+  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
   const auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  assert(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints") == 0);
-  assert(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints") == 1);
-  assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes") == ptg->numNodes());
-  assert(statistics.GetTimerElapsedNanoseconds("AnalysisTimer") > 0);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints"), 0u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints"), 1u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes"), ptg->numNodes());
+  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("AnalysisTimer"), 0u);
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStatistics", TestStatistics)
 
-static void
-TestConfiguration()
+TEST(AndersenTests, TestConfiguration)
 {
   using namespace jlm::llvm::aa;
   auto config = Andersen::Configuration::NaiveSolverConfiguration();
@@ -983,12 +908,12 @@ TestConfiguration()
   auto configString = config.ToString();
 
   // Assert
-  assert(!config.IsOfflineVariableSubstitutionEnabled());
-  assert(config.IsOfflineConstraintNormalizationEnabled());
-  assert(config.GetSolver() == Andersen::Configuration::Solver::Naive);
-  assert(configString.find("OVS") == std::string::npos);
-  assert(configString.find("NORM") != std::string::npos);
-  assert(configString.find("Solver=Naive") != std::string::npos);
+  EXPECT_FALSE(config.IsOfflineVariableSubstitutionEnabled());
+  EXPECT_TRUE(config.IsOfflineConstraintNormalizationEnabled());
+  EXPECT_EQ(config.GetSolver(), Andersen::Configuration::Solver::Naive);
+  EXPECT_EQ(configString.find("OVS"), std::string::npos);
+  EXPECT_NE(configString.find("NORM"), std::string::npos);
+  EXPECT_NE(configString.find("Solver=Naive"), std::string::npos);
 
   // Arrange some more
   auto policy = PointerObjectConstraintSet::WorklistSolverPolicy::TwoPhaseLeastRecentlyFired;
@@ -1001,10 +926,10 @@ TestConfiguration()
   configString = config.ToString();
 
   // Assert
-  assert(configString.find("Solver=Worklist") != std::string::npos);
-  assert(configString.find("Policy=TwoPhaseLeastRecentlyFired") != std::string::npos);
-  assert(configString.find("OVS") == std::string::npos);
-  assert(configString.find("OnlineCD") != std::string::npos);
+  EXPECT_NE(configString.find("Solver=Worklist"), std::string::npos);
+  EXPECT_NE(configString.find("Policy=TwoPhaseLeastRecentlyFired"), std::string::npos);
+  EXPECT_EQ(configString.find("OVS"), std::string::npos);
+  EXPECT_NE(configString.find("OnlineCD"), std::string::npos);
 
   // Arrange some more
   config.EnableOnlineCycleDetection(false);
@@ -1014,19 +939,15 @@ TestConfiguration()
   configString = config.ToString();
 
   // Assert
-  assert(configString.find("OnlineCD") == std::string::npos);
-  assert(configString.find("HybridCD") != std::string::npos);
+  EXPECT_EQ(configString.find("OnlineCD"), std::string::npos);
+  EXPECT_NE(configString.find("HybridCD"), std::string::npos);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConfiguration",
-    TestConfiguration)
 
-static void
-TestConstructPointsToGraph()
+TEST(AndersenTests, TestConstructPointsToGraph)
 {
   using namespace jlm::llvm::aa;
 
-  jlm::tests::AllMemoryNodesTest rvsdg;
+  jlm::llvm::AllMemoryNodesTest rvsdg;
   rvsdg.InitializeTest();
 
   // Arrange a very standard set of memory objects and registers
@@ -1084,60 +1005,61 @@ TestConstructPointsToGraph()
 
   // ==== Targets of allocaR, importR and deltaR ==== (2 explicit, 2 total)
   // Make sure unification causes allocaR to point to all of its pointees
-  assert(TargetsExactly(*ptg, allocaRNode, { allocaNode, importNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, allocaRNode, { allocaNode, importNode }));
   // The unified registers should share RegisterNode
-  assert(allocaRNode == importRNode);
+  EXPECT_EQ(allocaRNode, importRNode);
   // deltaR was mapped to importR, so it too should share RegisterNode
-  assert(allocaRNode == deltaRNode);
+  EXPECT_EQ(allocaRNode, deltaRNode);
 
   // ==== Targets of lambdaR ==== (1 explicit, 1 total)
-  assert(TargetsExactly(*ptg, lambdaRNode, { lambdaNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaRNode, { lambdaNode }));
 
   // ==== Targets of mallocR ==== (1 explicit, 4 total)
   // mallocR points to mallocNode, as well as everything that has escaped
-  assert(TargetsExactly(*ptg, mallocRNode, { mallocNode, deltaNode, importNode, externalMemory }));
+  EXPECT_TRUE(
+      TargetsExactly(*ptg, mallocRNode, { mallocNode, deltaNode, importNode, externalMemory }));
 
   // ==== Targets of alloca0 ==== (1 explicit, 1 total)
-  assert(TargetsExactly(*ptg, allocaNode, { lambdaNode }));
+  EXPECT_TRUE(TargetsExactly(*ptg, allocaNode, { lambdaNode }));
 
   // ==== Targets of malloc0 ==== (1 explicit, 1 total)
   // Because malloc0 was unified with lambdaR, they have the same targets, but are not the same node
-  assert(lambdaRNode != mallocNode);
-  assert(TargetsExactly(*ptg, mallocNode, { lambdaNode }));
+  EXPECT_NE(lambdaRNode, mallocNode);
+  EXPECT_TRUE(TargetsExactly(*ptg, mallocNode, { lambdaNode }));
 
   // ==== Targets of delta0 ==== (0 explicit, 3 total)
   // deltaNode points to everything that has escaped, but only implicitly
-  assert(ptg->isExternallyAvailable(deltaNode));
-  assert(ptg->isTargetingAllExternallyAvailable(deltaNode));
-  assert(TargetsExactly(*ptg, deltaNode, { deltaNode, importNode, externalMemory }));
+  EXPECT_TRUE(ptg->isExternallyAvailable(deltaNode));
+  EXPECT_TRUE(ptg->isTargetingAllExternallyAvailable(deltaNode));
+  EXPECT_TRUE(TargetsExactly(*ptg, deltaNode, { deltaNode, importNode, externalMemory }));
 
   // ==== Targets of import0 ==== (0 explicit, 3 total)
   // The importNode should be flagged as targeting everything externally available
-  assert(ptg->isExternallyAvailable(importNode));
-  assert(ptg->isTargetingAllExternallyAvailable(importNode));
-  assert(TargetsExactly(*ptg, importNode, { deltaNode, importNode, externalMemory }));
+  EXPECT_TRUE(ptg->isExternallyAvailable(importNode));
+  EXPECT_TRUE(ptg->isTargetingAllExternallyAvailable(importNode));
+  EXPECT_TRUE(TargetsExactly(*ptg, importNode, { deltaNode, importNode, externalMemory }));
 
   // ==== Targets of lambda0 ==== (0 explicit, 0 total)
   // Because lambda nodes are marked as CanPoint()=false, they have no targets
-  assert(!ptg->isTargetingAllExternallyAvailable(lambdaNode));
-  assert(!ptg->isExternallyAvailable(lambdaNode));
-  assert(TargetsExactly(*ptg, lambdaNode, {}));
+  EXPECT_FALSE(ptg->isTargetingAllExternallyAvailable(lambdaNode));
+  EXPECT_FALSE(ptg->isExternallyAvailable(lambdaNode));
+  EXPECT_TRUE(TargetsExactly(*ptg, lambdaNode, {}));
 
   // ==== Targets of externalMemoryNode ==== (0 explicit, 3 total)
   // While the external node has no explicit targets, it targets everything externally available
-  assert(ptg->getExplicitTargets(externalMemory).Size() == 0);
-  assert(TargetsExactly(*ptg, externalMemory, { deltaNode, importNode, externalMemory }));
+  EXPECT_EQ(ptg->getExplicitTargets(externalMemory).Size(), 0u);
+  EXPECT_TRUE(TargetsExactly(*ptg, externalMemory, { deltaNode, importNode, externalMemory }));
 
   // 5 memory node + register pairs, plus one external memory node,
   // minus two registers that have been unified into allocaRNode
-  assert(ptg->numNodes() == 5 * 2 + 1 - 2);
+  unsigned int expectedNumNodes = 5 * 2 + 1 - 2;
+  EXPECT_EQ(ptg->numNodes(), expectedNumNodes);
 
   // Adding up the out-edges for all nodes
   auto [numExplicitEdges, numTotalEdges] = ptg->numEdges();
-  assert(numExplicitEdges == 2 + 1 + 1 + 1 + 1);
+  unsigned int expectedNumExplicitEdges = 2 + 1 + 1 + 1 + 1;
+  EXPECT_EQ(numExplicitEdges, expectedNumExplicitEdges);
   // total edges also includes the outgoing implicit edges from the external node
-  assert(numTotalEdges == 2 + 1 + 4 + 1 + 1 + 3 + 3 + 0 + 3);
+  unsigned int expectedNumTotalEdges = 2 + 1 + 4 + 1 + 1 + 3 + 3 + 0 + 3;
+  EXPECT_EQ(numTotalEdges, expectedNumTotalEdges);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstructPointsToGraph",
-    TestConstructPointsToGraph)

@@ -4,8 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -16,8 +15,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-static void
-TestLambda()
+TEST(MlirToJlmConverterTests, TestLambda)
 {
   {
     using namespace mlir::rvsdg;
@@ -112,13 +110,13 @@ TestLambda()
       using namespace jlm::rvsdg;
       std::cout << "Checking the result" << std::endl;
 
-      assert(region->numNodes() == 1);
+      EXPECT_EQ(region->numNodes(), 1);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
-      assert(convertedLambda->subregion()->numNodes() == 1);
-      assert(is<jlm::llvm::IntegerConstantOperation>(
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(
           convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
@@ -130,8 +128,7 @@ TestLambda()
  * lambda block and do a graph traversal.
  * This function is similar to the TestAddOperation function in the backend tests.
  */
-static void
-TestDivOperation()
+TEST(MlirToJlmConverterTests, TestDivOperation)
 {
   {
     using namespace mlir::rvsdg;
@@ -261,43 +258,43 @@ TestDivOperation()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->numNodes() == 1);
+      EXPECT_EQ(region->numNodes(), 1);
 
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
-      assert(convertedLambda->subregion()->numNodes() == 3);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      NodeOutput * lambdaResultOriginNodeOuput = nullptr;
-      assert(
-          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::NodeOutput *>(
-              convertedLambda->subregion()->result(0)->origin()));
-      Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
-      assert(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
-      assert(lambdaResultOriginNode->ninputs() == 2);
+      NodeOutput * lambdaResultOriginNodeOutput =
+          dynamic_cast<jlm::rvsdg::NodeOutput *>(convertedLambda->subregion()->result(0)->origin());
+      EXPECT_NE(lambdaResultOriginNodeOutput, nullptr);
+      Node * lambdaResultOriginNode = lambdaResultOriginNodeOutput->node();
+      EXPECT_TRUE(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
+      EXPECT_EQ(lambdaResultOriginNode->ninputs(), 2);
 
       // Check first input
-      RegionArgument * DivInput0 = nullptr;
-      assert(
-          DivInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(
-              lambdaResultOriginNode->input(0)->origin()));
-      assert(jlm::rvsdg::is<BitType>(DivInput0->Type()));
-      assert(std::dynamic_pointer_cast<const BitType>(DivInput0->Type())->nbits() == 32);
+      RegionArgument * DivInput0 =
+          dynamic_cast<jlm::rvsdg::RegionArgument *>(lambdaResultOriginNode->input(0)->origin());
+      EXPECT_NE(DivInput0, nullptr);
+      EXPECT_TRUE(jlm::rvsdg::is<BitType>(DivInput0->Type()));
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(DivInput0->Type())->nbits(), 32);
 
       // Check second input
       auto DivInput1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
           *lambdaResultOriginNode->input(1)->origin());
-      assert(DivInput1Node);
-      assert(is<jlm::llvm::IntegerConstantOperation>(DivInput1Node->GetOperation()));
+      EXPECT_NE(DivInput1Node, nullptr);
+      EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(DivInput1Node->GetOperation()));
       auto DivInput1Constant =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&DivInput1Node->GetOperation());
-      assert(DivInput1Constant->Representation().to_int() == 5);
-      assert(is<const BitType>(DivInput1Constant->result(0)));
-      assert(std::dynamic_pointer_cast<const BitType>(DivInput1Constant->result(0))->nbits() == 32);
+      EXPECT_EQ(DivInput1Constant->Representation().to_int(), 5);
+      EXPECT_TRUE(is<const BitType>(DivInput1Constant->result(0)));
+      EXPECT_EQ(
+          std::dynamic_pointer_cast<const BitType>(DivInput1Constant->result(0))->nbits(),
+          32);
     }
   }
 }
@@ -309,8 +306,7 @@ TestDivOperation()
  * similar to the TestComZeroExt function in the backend tests.
  *
  */
-static void
-TestCompZeroExt()
+TEST(MlirToJlmConverterTests, TestCompZeroExt)
 {
   {
     using namespace mlir::rvsdg;
@@ -434,82 +430,83 @@ TestCompZeroExt()
 
       std::cout << "Checking the result" << std::endl;
 
-      assert(region->numNodes() == 1);
+      EXPECT_EQ(region->numNodes(), 1);
 
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
-      assert(convertedLambda->subregion()->numNodes() == 5);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 5);
 
       // Traverse the rvsgd graph upwards to check connections
       std::cout << "Testing lambdaResultOriginNodeOuput\n";
       auto ZExtNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
           *convertedLambda->subregion()->result(0)->origin());
-      assert(ZExtNode);
-      assert(is<jlm::llvm::ZExtOperation>(ZExtNode->GetOperation()));
-      assert(ZExtNode->ninputs() == 1);
+      EXPECT_NE(ZExtNode, nullptr);
+      EXPECT_TRUE(is<jlm::llvm::ZExtOperation>(ZExtNode->GetOperation()));
+      EXPECT_EQ(ZExtNode->ninputs(), 1);
 
       // Check ZExt
       auto ZExtOp = dynamic_cast<const jlm::llvm::ZExtOperation *>(&ZExtNode->GetOperation());
-      assert(ZExtOp->nsrcbits() == 1);
-      assert(ZExtOp->ndstbits() == 32);
+      EXPECT_EQ(ZExtOp->nsrcbits(), 1);
+      EXPECT_EQ(ZExtOp->ndstbits(), 32);
 
       // Check ZExt input
       std::cout << "Testing input 0\n";
       auto BitEqNode =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ZExtNode->input(0)->origin());
-      assert(is<jlm::llvm::IntegerEqOperation>(BitEqNode->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::IntegerEqOperation>(BitEqNode->GetOperation()));
 
       // Check BitEq
-      assert(
+      EXPECT_EQ(
           dynamic_cast<const jlm::llvm::IntegerEqOperation *>(&BitEqNode->GetOperation())
               ->Type()
-              .nbits()
-          == 32);
-      assert(BitEqNode->ninputs() == 2);
+              .nbits(),
+          32);
+      EXPECT_EQ(BitEqNode->ninputs(), 2);
 
       // Check BitEq input 0
       auto AddNode =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*BitEqNode->input(0)->origin());
-      assert(is<jlm::llvm::IntegerAddOperation>(AddNode->GetOperation()));
-      assert(AddNode->ninputs() == 2);
+      EXPECT_TRUE(is<jlm::llvm::IntegerAddOperation>(AddNode->GetOperation()));
+      EXPECT_EQ(AddNode->ninputs(), 2);
 
       // Check BitEq input 1
       auto Const2Node =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*BitEqNode->input(1)->origin());
-      assert(is<jlm::llvm::IntegerConstantOperation>(Const2Node->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(Const2Node->GetOperation()));
 
       // Check Const2
       auto Const2Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const2Node->GetOperation());
-      assert(Const2Op->Representation().to_int() == 5);
-      assert(is<const BitType>(Const2Op->result(0)));
-      assert(std::dynamic_pointer_cast<const BitType>(Const2Op->result(0))->nbits() == 32);
+      EXPECT_EQ(Const2Op->Representation().to_int(), 5);
+      EXPECT_TRUE(is<const BitType>(Const2Op->result(0)));
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const2Op->result(0))->nbits(), 32);
 
       // Check add op
       auto AddOp = dynamic_cast<const jlm::llvm::IntegerAddOperation *>(&AddNode->GetOperation());
-      assert(AddOp->Type().nbits() == 32);
+      EXPECT_EQ(AddOp->Type().nbits(), 32);
 
       // Check add input0
-      RegionArgument * AddInput0 = nullptr;
-      assert(AddInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin()));
-      assert(jlm::rvsdg::is<BitType>(AddInput0->Type()));
-      assert(std::dynamic_pointer_cast<const BitType>(AddInput0->Type())->nbits() == 32);
+      RegionArgument * AddInput0 =
+          dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin());
+      EXPECT_NE(AddInput0, nullptr);
+      EXPECT_TRUE(jlm::rvsdg::is<BitType>(AddInput0->Type()));
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(AddInput0->Type())->nbits(), 32);
 
       // Check add input1
       auto Const1Node =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*AddNode->input(1)->origin());
-      assert(is<jlm::llvm::IntegerConstantOperation>(Const1Node->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(Const1Node->GetOperation()));
 
       // Check Const1
       auto Const1Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const1Node->GetOperation());
-      assert(Const1Op->Representation().to_int() == 20);
-      assert(is<const BitType>(Const1Op->result(0)));
-      assert(std::dynamic_pointer_cast<const BitType>(Const1Op->result(0))->nbits() == 32);
+      EXPECT_EQ(Const1Op->Representation().to_int(), 20);
+      EXPECT_TRUE(is<const BitType>(Const1Op->result(0)));
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const1Op->result(0))->nbits(), 32);
     }
   }
 }
@@ -519,8 +516,7 @@ TestCompZeroExt()
  * This function tests the Match operation. It creates a lambda block with a Match operation.
  *
  */
-static void
-TestMatchOp()
+TEST(MlirToJlmConverterTests, TestMatchOp)
 {
   {
     using namespace mlir::rvsdg;
@@ -643,27 +639,27 @@ TestMatchOp()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
 
       auto matchNode =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
-      assert(is<MatchOperation>(matchNode->GetOperation()));
+      EXPECT_TRUE(is<MatchOperation>(matchNode->GetOperation()));
 
       auto matchOp = dynamic_cast<const MatchOperation *>(&matchNode->GetOperation());
-      assert(matchOp->narguments() == 1);
-      assert(is<const BitType>(matchOp->argument(0)));
-      assert(std::dynamic_pointer_cast<const BitType>(matchOp->argument(0))->nbits() == 32);
+      EXPECT_EQ(matchOp->narguments(), 1);
+      EXPECT_TRUE(is<const BitType>(matchOp->argument(0)));
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(matchOp->argument(0))->nbits(), 32);
 
       // 3 alternatives + default
-      assert(matchOp->nalternatives() == 4);
+      EXPECT_EQ(matchOp->nalternatives(), 4);
 
-      assert(matchOp->default_alternative() == 2);
+      EXPECT_EQ(matchOp->default_alternative(), 2);
 
       for (auto mapping : *matchOp)
       {
-        assert(
+        EXPECT_TRUE(
             (mapping.first == 0 && mapping.second == 4)
             || (mapping.first == 1 && mapping.second == 5)
             || (mapping.first == 1 && mapping.second == 6));
@@ -677,8 +673,7 @@ TestMatchOp()
  * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
  *
  */
-static void
-TestGammaOp()
+TEST(MlirToJlmConverterTests, TestGammaOp)
 {
   {
     using namespace mlir::rvsdg;
@@ -806,26 +801,26 @@ TestGammaOp()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->numNodes() == 1);
+      EXPECT_EQ(region->numNodes(), 1);
 
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 
       // 2 constants + gamma
-      assert(lambdaRegion->numNodes() == 3);
+      EXPECT_EQ(lambdaRegion->numNodes(), 3);
 
       auto gammaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(
           *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking gamma operation" << std::endl;
       auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
-      assert(gammaNode->ninputs() == 3);
-      assert(gammaOp->nalternatives() == 3);
-      assert(gammaNode->noutputs() == 2);
+      EXPECT_EQ(gammaNode->ninputs(), 3);
+      EXPECT_EQ(gammaOp->nalternatives(), 3);
+      EXPECT_EQ(gammaNode->noutputs(), 2);
     }
   }
 }
@@ -835,8 +830,7 @@ TestGammaOp()
  * This function tests the Theta operation. It creates a lambda block with a Theta operation.
  *
  */
-static void
-TestThetaOp()
+TEST(MlirToJlmConverterTests, TestThetaOp)
 {
   {
     using namespace mlir::rvsdg;
@@ -931,38 +925,31 @@ TestThetaOp()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->numNodes() == 1);
+      EXPECT_EQ(region->numNodes(), 1);
 
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 
       // Just the theta node
-      assert(lambdaRegion->numNodes() == 1);
+      EXPECT_EQ(lambdaRegion->numNodes(), 1);
 
       auto thetaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::ThetaNode>(
           *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking theta node" << std::endl;
-      assert(thetaNode->ninputs() == 2);
-      assert(thetaNode->GetLoopVars().size() == 2);
-      assert(thetaNode->noutputs() == 2);
-      assert(thetaNode->nsubregions() == 1);
-      assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->Type()));
+      EXPECT_EQ(thetaNode->ninputs(), 2);
+      EXPECT_EQ(thetaNode->GetLoopVars().size(), 2);
+      EXPECT_EQ(thetaNode->noutputs(), 2);
+      EXPECT_EQ(thetaNode->nsubregions(), 1);
+      EXPECT_TRUE(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->Type()));
       auto predicateType =
           std::dynamic_pointer_cast<const ControlType>(thetaNode->predicate()->Type());
-      assert(predicateType->nalternatives() == 2);
+      EXPECT_EQ(predicateType->nalternatives(), 2);
       std::cout << predicate.getValue() << std::endl;
     }
   }
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgLambdaGen", TestLambda)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgDivOperationGen", TestDivOperation)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgCompZeroExtGen", TestCompZeroExt)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestMatchGen", TestMatchOp)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestGammaGen", TestGammaOp)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestThetaGen", TestThetaOp)

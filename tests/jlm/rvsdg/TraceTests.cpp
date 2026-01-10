@@ -3,27 +3,23 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/view.hpp>
-
-#include <cassert>
-#include <jlm/rvsdg/TestType.hpp>
 
 /**
  * Tests tracing out of and through a single gamma node.
  * One of the gamma's exit vars is trivially invariant, and can be traced through the gamma.
  */
-static void
-TestTraceOutputIntraProcedural_Gamma()
+TEST(TraceTests, TestTraceOutputIntraProcedural_Gamma)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto controlType = ControlType::Create(2);
@@ -65,25 +61,19 @@ TestTraceOutputIntraProcedural_Gamma()
   const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
 
   // Assert
-  assert(&tracedX0 == &i1);
-  assert(&tracedX1 == x1.origin());
-  assert(&tracedX2 == x2.origin());
-  assert(&traceGammaEntry == &i1);
-  assert(&tracedNodeInput == &i2);
+  EXPECT_EQ(&tracedX0, &i1);
+  EXPECT_EQ(&tracedX1, x1.origin());
+  EXPECT_EQ(&tracedX2, x2.origin());
+  EXPECT_EQ(&traceGammaEntry, &i1);
+  EXPECT_EQ(&tracedNodeInput, &i2);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-nodes-TestTraceOutputIntraProcedural_Gamma",
-    TestTraceOutputIntraProcedural_Gamma)
 
 /**
  * Tests tracing out of and through a single theta node.
  */
-static void
-TestTraceOutputIntraProcedural_Theta()
+TEST(TraceTests, TestTraceOutputIntraProcedural_Theta)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto valueType = TestType::createValueType();
@@ -113,25 +103,19 @@ TestTraceOutputIntraProcedural_Theta()
   const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
 
   // Assert
-  assert(&tracedX0 == &i0);
-  assert(&tracedX1 == x1.origin());
-  assert(&traceLoopVar0Pre == &i0);
-  assert(&traceLoopVar1Pre == loopVar1.pre);
-  assert(&tracedNodeInput == loopVar1.pre);
+  EXPECT_EQ(&tracedX0, &i0);
+  EXPECT_EQ(&tracedX1, x1.origin());
+  EXPECT_EQ(&traceLoopVar0Pre, &i0);
+  EXPECT_EQ(&traceLoopVar1Pre, loopVar1.pre);
+  EXPECT_EQ(&tracedNodeInput, loopVar1.pre);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-nodes-TestTraceOutputIntraProcedural_Theta",
-    TestTraceOutputIntraProcedural_Theta)
 
 /**
  * Creates a graph with a gamma node inside a theta node, where some values are invariant.
  */
-static void
-TestTraceNestedStructuralNodes()
+TEST(TraceTests, TestTraceNestedStructuralNodes)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Assert
   const auto controlType = ControlType::Create(2);
@@ -149,9 +133,8 @@ TestTraceNestedStructuralNodes()
   auto loopVar2 = thetaNode->AddLoopVar(&i2);
 
   // Create the gamma that sends loopVar0 and loopVar1 directly through
-  auto & undefNode = jlm::rvsdg::CreateOpNode<jlm::tests::TestNullaryOperation>(
-      *thetaNode->subregion(),
-      controlType);
+  auto & undefNode =
+      jlm::rvsdg::CreateOpNode<TestNullaryOperation>(*thetaNode->subregion(), controlType);
   const auto gammaNode = GammaNode::create(undefNode.output(0), 2);
   auto entryVar0 = gammaNode->AddEntryVar(loopVar0.pre);
   auto entryVar1 = gammaNode->AddEntryVar(loopVar1.pre);
@@ -184,16 +167,16 @@ TestTraceNestedStructuralNodes()
     const auto & traceLoopVar1Pre = traceOutputIntraProcedurally(*loopVar1.pre);
     const auto & traceLoopVar2Pre = traceOutputIntraProcedurally(*loopVar2.pre);
 
-    assert(&tracedX0 == &i0);
-    assert(&tracedX1 == loopVar1.output);
-    assert(&tracedX2 == &i2);
-    assert(&traceExitVar0 == &i0);
-    assert(&traceExitVar1 == loopVar1.pre);
-    assert(&traceBranchArgument0 == &i0);
-    assert(&traceBranchArgument1 == loopVar1.pre);
-    assert(&traceLoopVar0Pre == &i0);
-    assert(&traceLoopVar1Pre == loopVar1.pre);
-    assert(&traceLoopVar2Pre == &i2);
+    EXPECT_EQ(&tracedX0, &i0);
+    EXPECT_EQ(&tracedX1, loopVar1.output);
+    EXPECT_EQ(&tracedX2, &i2);
+    EXPECT_EQ(&traceExitVar0, &i0);
+    EXPECT_EQ(&traceExitVar1, loopVar1.pre);
+    EXPECT_EQ(&traceBranchArgument0, &i0);
+    EXPECT_EQ(&traceBranchArgument1, loopVar1.pre);
+    EXPECT_EQ(&traceLoopVar0Pre, &i0);
+    EXPECT_EQ(&traceLoopVar1Pre, loopVar1.pre);
+    EXPECT_EQ(&traceLoopVar2Pre, &i2);
   }
 
   // Act & Assert 2
@@ -213,18 +196,15 @@ TestTraceNestedStructuralNodes()
     const auto & traceLoopVar1Pre = shallowTracer.trace(*loopVar1.pre);
     const auto & traceLoopVar2Pre = shallowTracer.trace(*loopVar2.pre);
 
-    assert(&tracedX0 == loopVar0.output);
-    assert(&tracedX1 == loopVar1.output);
-    assert(&tracedX2 == &i2); // loopVar2 can still be traced through as it is trivially invariant
-    assert(&traceExitVar0 == loopVar0.pre);
-    assert(&traceExitVar1 == loopVar1.pre);
-    assert(&traceBranchArgument0 == loopVar0.pre);
-    assert(&traceBranchArgument1 == loopVar1.pre);
-    assert(&traceLoopVar0Pre == loopVar0.pre);
-    assert(&traceLoopVar1Pre == loopVar1.pre);
-    assert(&traceLoopVar2Pre == &i2);
+    EXPECT_EQ(&tracedX0, loopVar0.output);
+    EXPECT_EQ(&tracedX1, loopVar1.output);
+    EXPECT_EQ(&tracedX2, &i2); // loopVar2 can still be traced through as it is trivially invariant
+    EXPECT_EQ(&traceExitVar0, loopVar0.pre);
+    EXPECT_EQ(&traceExitVar1, loopVar1.pre);
+    EXPECT_EQ(&traceBranchArgument0, loopVar0.pre);
+    EXPECT_EQ(&traceBranchArgument1, loopVar1.pre);
+    EXPECT_EQ(&traceLoopVar0Pre, loopVar0.pre);
+    EXPECT_EQ(&traceLoopVar1Pre, loopVar1.pre);
+    EXPECT_EQ(&traceLoopVar2Pre, &i2);
   }
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/test-nodes-TestTraceNestedStructuralNodes",
-    TestTraceNestedStructuralNodes)

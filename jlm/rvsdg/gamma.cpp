@@ -78,7 +78,7 @@ is_control_constant_reducible(GammaNode * gamma)
 {
   // check gamma predicate
   auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
-  if (!is<MatchOperation>(match))
+  if (!match || !is<MatchOperation>(match->GetOperation()))
     return {};
 
   /* check number of alternatives */
@@ -101,7 +101,7 @@ is_control_constant_reducible(GammaNode * gamma)
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
       auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());
-      if (!is<ControlConstantOperation>(node))
+      if (!node || !is<ControlConstantOperation>(node->GetOperation()))
         break;
 
       auto op = static_cast<const ControlConstantOperation *>(&node->GetOperation());
@@ -431,7 +431,7 @@ GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryVars)
     [[maybe_unused]] const auto numRemovedArguments = subregion.RemoveArguments(indices);
     JLM_ASSERT(numRemovedArguments == indices.Size());
   }
-  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(indices, true);
+  [[maybe_unused]] const auto numRemovedInputs = RemoveInputs(indices);
   JLM_ASSERT(numRemovedInputs == indices.Size());
 }
 

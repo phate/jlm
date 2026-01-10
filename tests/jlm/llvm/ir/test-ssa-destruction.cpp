@@ -3,20 +3,19 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/ssa.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static inline void
-test_two_phis()
+TEST(StaticSingleAssignmentDestructionTests, test_two_phis)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
@@ -55,11 +54,3 @@ test_two_phis()
 
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 }
-
-static void
-verify()
-{
-  test_two_phis();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-ssa-destruction", verify)

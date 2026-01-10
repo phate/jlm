@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
@@ -12,8 +12,7 @@
 
 #include <fstream>
 
-static void
-TestStatistics()
+TEST(JlmOptCommandTests, TestStatistics)
 {
   using namespace jlm::llvm;
   using namespace jlm::tooling;
@@ -54,13 +53,10 @@ TestStatistics()
       "-o outputFile.ll ",
       "inputFile.ll");
 
-  assert(receivedCommandLine == expectedCommandLine);
+  EXPECT_EQ(receivedCommandLine, expectedCommandLine);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-TestStatistics", TestStatistics)
-
-static void
-OptimizationIdToOptimizationTranslation()
+TEST(JlmOptCommandTests, OptimizationIdToOptimizationTranslation)
 {
   using namespace jlm::llvm;
   using namespace jlm::tooling;
@@ -92,12 +88,7 @@ OptimizationIdToOptimizationTranslation()
   JlmOptCommand command("jlm-opt", options);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/tooling/TestJlmOptCommand-OptimizationIdToOptimizationTranslation",
-    OptimizationIdToOptimizationTranslation)
-
-static void
-PrintRvsdgTreeToFile()
+TEST(JlmOptCommandTests, PrintRvsdgTreeToFile)
 {
   using namespace jlm;
 
@@ -119,7 +110,5 @@ PrintRvsdgTreeToFile()
   std::ifstream istream(outputFile.to_str());
   buffer << istream.rdbuf();
 
-  assert(buffer.str() == "RootRegion\n");
+  EXPECT_EQ(buffer.str(), "RootRegion\n");
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-PrintRvsdgTreeToFile", PrintRvsdgTreeToFile)

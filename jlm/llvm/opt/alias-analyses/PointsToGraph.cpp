@@ -66,7 +66,7 @@ PointsToGraph::registerNodes() const noexcept
 PointsToGraph::NodeIndex
 PointsToGraph::addNodeForAlloca(const rvsdg::SimpleNode & allocaNode, bool externallyAvailable)
 {
-  if (!is<AllocaOperation>(&allocaNode))
+  if (!is<AllocaOperation>(allocaNode.GetOperation()))
     throw std::logic_error("Node is not an alloca operation");
 
   auto [it, added] = allocaMap_.try_emplace(&allocaNode, 0);
@@ -76,7 +76,8 @@ PointsToGraph::addNodeForAlloca(const rvsdg::SimpleNode & allocaNode, bool exter
   // Try to include the size of the allocation in the created node
   const auto getMemorySize = [](const rvsdg::Node & allocaNode) -> std::optional<size_t>
   {
-    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+    const auto allocaOp = util::assertedCast<const AllocaOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(allocaNode).GetOperation());
 
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
     const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
@@ -160,7 +161,7 @@ PointsToGraph::addNodeForLambda(const rvsdg::LambdaNode & lambdaNode, bool exter
 PointsToGraph::NodeIndex
 PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool externallyAvailable)
 {
-  if (!is<MallocOperation>(&mallocNode))
+  if (!is<MallocOperation>(mallocNode.GetOperation()))
     throw std::logic_error("Node is not an alloca operation");
 
   auto [it, added] = mallocMap_.try_emplace(&mallocNode, 0);
@@ -170,7 +171,7 @@ PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool exter
   const auto tryGetMemorySize = [](const rvsdg::Node & mallocNode) -> std::optional<size_t>
   {
     // If the size parameter of the malloc node is a constant, that is our size
-    auto size = tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+    auto size = tryGetConstantSignedInteger(*MallocOperation::sizeInput(mallocNode).origin());
 
     // Only return the size if it is a positive integer, to avoid unsigned underflow
     if (size.has_value() && *size >= 0)

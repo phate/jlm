@@ -4,13 +4,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <gtest/gtest.h>
+
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
-
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -31,33 +31,32 @@ setsEqual(
   return receivedMemoryNodes == expectedMemoryNodes;
 }
 
-static void
-TestStore1()
+TEST(RegionAwareModRefSummarizerTests, TestStore1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::StoreTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::StoreTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto allocaAMemoryNode = pointsToGraph.getNodeForAlloca(*test.alloca_a);
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
 
     auto storeANode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
-    assert(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode));
+    EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode));
 
     auto & storeANodes = modRefSummary.GetSimpleNodeModRef(*storeANode);
-    assert(setsEqual(storeANodes, { allocaAMemoryNode }));
+    EXPECT_TRUE(setsEqual(storeANodes, { allocaAMemoryNode }));
   };
 
-  jlm::tests::StoreTest1 test;
+  jlm::llvm::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -74,17 +73,13 @@ TestStore1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestStore1",
-    TestStore1)
 
-static void
-TestStore2()
+TEST(RegionAwareModRefSummarizerTests, TestStore2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::StoreTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::StoreTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -101,13 +96,13 @@ TestStore2()
                                             allocaYMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
   };
 
-  jlm::tests::StoreTest2 test;
+  jlm::llvm::StoreTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -124,30 +119,26 @@ TestStore2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestStore2",
-    TestStore2)
 
-static void
-TestLoad1()
+TEST(RegionAwareModRefSummarizerTests, TestLoad1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::LoadTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::LoadTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
     auto lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
 
     auto lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::LoadTest1 test;
+  jlm::llvm::LoadTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -164,27 +155,23 @@ TestLoad1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestLoad1",
-    TestLoad1)
 
-static void
-TestLoad2()
+TEST(RegionAwareModRefSummarizerTests, TestLoad2)
 {
   /*
    * Arrange
    */
   auto ValidateProvider =
-      [](const jlm::tests::LoadTest2 & test, const jlm::llvm::aa::ModRefSummary & modRefSummary)
+      [](const jlm::llvm::LoadTest2 & test, const jlm::llvm::aa::ModRefSummary & modRefSummary)
   {
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, {}));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
   };
 
-  jlm::tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -201,28 +188,24 @@ TestLoad2()
    */
   ValidateProvider(test, *modRefSummary);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestLoad2",
-    TestLoad2)
 
-static void
-TestLoadFromUndef()
+TEST(RegionAwareModRefSummarizerTests, TestLoadFromUndef)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::LoadFromUndefTest & test,
+  auto ValidateProvider = [](const jlm::llvm::LoadFromUndefTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph &)
   {
     auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda()).Size();
     auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda()).Size();
 
-    assert(numLambdaEntryNodes == 0);
-    assert(numLambdaExitNodes == 0);
+    EXPECT_EQ(numLambdaEntryNodes, 0u);
+    EXPECT_EQ(numLambdaExitNodes, 0u);
   };
 
-  jlm::tests::LoadFromUndefTest test;
+  jlm::llvm::LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -239,17 +222,13 @@ TestLoadFromUndef()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestLoadFromUndef",
-    TestLoadFromUndef)
 
-static void
-TestCall1()
+TEST(RegionAwareModRefSummarizerTests, TestCall1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::CallTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::CallTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -262,10 +241,10 @@ TestCall1()
      */
     {
       auto & lambdaFEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f);
-      assert(setsEqual(lambdaFEntryNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaFEntryNodes, { allocaXMemoryNode, allocaYMemoryNode }));
 
       auto & lambdaFExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f);
-      assert(setsEqual(lambdaFExitNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaFExitNodes, { allocaXMemoryNode, allocaYMemoryNode }));
     }
 
     /*
@@ -273,10 +252,10 @@ TestCall1()
      */
     {
       auto & lambdaGEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g);
-      assert(setsEqual(lambdaGEntryNodes, { allocaZMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaGEntryNodes, { allocaZMemoryNode }));
 
       auto & lambdaGExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g);
-      assert(setsEqual(lambdaGExitNodes, { allocaZMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaGExitNodes, { allocaZMemoryNode }));
     }
 
     /*
@@ -284,20 +263,20 @@ TestCall1()
      */
     {
       auto & lambdaHEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h);
-      assert(setsEqual(lambdaHEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaHEntryNodes, {}));
 
       auto & callFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
-      assert(setsEqual(callFNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      EXPECT_TRUE(setsEqual(callFNodes, { allocaXMemoryNode, allocaYMemoryNode }));
 
       auto & callGNodes = modRefSummary.GetSimpleNodeModRef(test.CallG());
-      assert(setsEqual(callGNodes, { allocaZMemoryNode }));
+      EXPECT_TRUE(setsEqual(callGNodes, { allocaZMemoryNode }));
 
       auto & lambdaHExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h);
-      assert(setsEqual(lambdaHExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaHExitNodes, {}));
     }
   };
 
-  jlm::tests::CallTest1 test;
+  jlm::llvm::CallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -314,17 +293,13 @@ TestCall1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestCall1",
-    TestCall1)
 
-static void
-TestCall2()
+TEST(RegionAwareModRefSummarizerTests, TestCall2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::CallTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::CallTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -335,10 +310,10 @@ TestCall2()
      */
     {
       auto & lambdaCreateEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_create);
-      assert(setsEqual(lambdaCreateEntryNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaCreateEntryNodes, { mallocMemoryNode }));
 
       auto & lambdaCreateExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_create);
-      assert(setsEqual(lambdaCreateExitNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaCreateExitNodes, { mallocMemoryNode }));
     }
 
     /*
@@ -346,10 +321,10 @@ TestCall2()
      */
     {
       auto & lambdaDestroyEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_destroy);
-      assert(setsEqual(lambdaDestroyEntryNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaDestroyEntryNodes, { mallocMemoryNode }));
 
       auto & lambdaDestroyExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_destroy);
-      assert(setsEqual(lambdaDestroyExitNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaDestroyExitNodes, { mallocMemoryNode }));
     }
 
     /*
@@ -357,26 +332,26 @@ TestCall2()
      */
     {
       auto & lambdaTestEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test);
-      assert(setsEqual(lambdaTestEntryNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaTestEntryNodes, { mallocMemoryNode }));
 
       auto & callCreate1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate1());
-      assert(setsEqual(callCreate1Nodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(callCreate1Nodes, { mallocMemoryNode }));
 
       auto & callCreate2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate2());
-      assert(setsEqual(callCreate2Nodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(callCreate2Nodes, { mallocMemoryNode }));
 
       auto & callDestroy1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy1());
-      assert(setsEqual(callDestroy1Nodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(callDestroy1Nodes, { mallocMemoryNode }));
 
       auto & callDestroy2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy2());
-      assert(setsEqual(callDestroy2Nodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(callDestroy2Nodes, { mallocMemoryNode }));
 
       auto & lambdaTestExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test);
-      assert(setsEqual(lambdaTestExitNodes, { mallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaTestExitNodes, { mallocMemoryNode }));
     }
   };
 
-  jlm::tests::CallTest2 test;
+  jlm::llvm::CallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -393,17 +368,13 @@ TestCall2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestCall2",
-    TestCall2)
 
-static void
-TestIndirectCall()
+TEST(RegionAwareModRefSummarizerTests, TestIndirectCall)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::IndirectCallTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::IndirectCallTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              [[maybe_unused]] const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -412,10 +383,10 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaFour());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -423,10 +394,10 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaThree());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -434,13 +405,13 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallIndcall());
-      assert(setsEqual(callNodes, {}));
+      EXPECT_TRUE(setsEqual(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -448,20 +419,20 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callFourNodes = modRefSummary.GetSimpleNodeModRef(test.CallFour());
-      assert(setsEqual(callFourNodes, {}));
+      EXPECT_TRUE(setsEqual(callFourNodes, {}));
 
       auto & callThreeNodes = modRefSummary.GetSimpleNodeModRef(test.CallThree());
-      assert(setsEqual(callThreeNodes, {}));
+      EXPECT_TRUE(setsEqual(callThreeNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
   };
 
-  jlm::tests::IndirectCallTest1 test;
+  jlm::llvm::IndirectCallTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -478,17 +449,13 @@ TestIndirectCall()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestIndirectCall",
-    TestIndirectCall)
 
-static void
-TestIndirectCall2()
+TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::IndirectCallTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::IndirectCallTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -521,10 +488,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaFour());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -532,10 +499,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaThree());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -543,13 +510,13 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaI());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetIndirectCall());
-      assert(setsEqual(callNodes, {}));
+      EXPECT_TRUE(setsEqual(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaI());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -557,10 +524,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaX());
-      assert(setsEqual(lambdaEntryNodes, pXZ));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pXZ));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaX());
-      assert(setsEqual(lambdaExitNodes, pXZ));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pXZ));
     }
 
     /*
@@ -568,10 +535,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaY());
-      assert(setsEqual(lambdaEntryNodes, pY));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pY));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaY());
-      assert(setsEqual(lambdaExitNodes, pY));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pY));
     }
 
     /*
@@ -579,16 +546,16 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaEntryNodes, pG1G2));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pG1G2));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTestCallX());
-      assert(setsEqual(callXNodes, pX));
+      EXPECT_TRUE(setsEqual(callXNodes, pX));
 
       auto & callYNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallY());
-      assert(setsEqual(callYNodes, pY));
+      EXPECT_TRUE(setsEqual(callYNodes, pY));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaExitNodes, pG1G2));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pG1G2));
     }
 
     /*
@@ -596,17 +563,17 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest2());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTest2CallX());
-      assert(setsEqual(callXNodes, pZ));
+      EXPECT_TRUE(setsEqual(callXNodes, pZ));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest2());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
   };
 
-  jlm::tests::IndirectCallTest2 test;
+  jlm::llvm::IndirectCallTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -623,36 +590,32 @@ TestIndirectCall2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestIndirectCall2",
-    TestIndirectCall2)
 
-static void
-TestGamma()
+TEST(RegionAwareModRefSummarizerTests, TestGamma)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::GammaTest & test,
+  auto ValidateProvider = [](const jlm::llvm::GammaTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
 
     auto gammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma);
-    assert(setsEqual(gammaEntryNodes, {}));
+    EXPECT_TRUE(setsEqual(gammaEntryNodes, {}));
 
     auto gammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma);
-    assert(setsEqual(gammaExitNodes, {}));
+    EXPECT_TRUE(setsEqual(gammaExitNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::GammaTest test;
+  jlm::llvm::GammaTest test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -669,33 +632,29 @@ TestGamma()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestGamma",
-    TestGamma)
 
-static void
-TestTheta()
+TEST(RegionAwareModRefSummarizerTests, TestTheta)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::ThetaTest & test,
+  auto ValidateProvider = [](const jlm::llvm::ThetaTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
 
     auto & thetaEntryExitNodes = modRefSummary.GetThetaModRef(*test.theta);
-    assert(setsEqual(thetaEntryExitNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(thetaEntryExitNodes, { externalMemoryNode }));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
   };
 
-  jlm::tests::ThetaTest test;
+  jlm::llvm::ThetaTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -712,17 +671,13 @@ TestTheta()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestTheta",
-    TestTheta)
 
-static void
-TestDelta1()
+TEST(RegionAwareModRefSummarizerTests, TestDelta1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::DeltaTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::DeltaTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -733,10 +688,10 @@ TestDelta1()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g);
-      assert(setsEqual(lambdaEntryNodes, { deltaFNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaFNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g);
-      assert(setsEqual(lambdaExitNodes, { deltaFNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaFNode }));
     }
 
     /*
@@ -744,17 +699,17 @@ TestDelta1()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h);
-      assert(setsEqual(lambdaEntryNodes, { deltaFNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaFNode }));
 
       auto & callEntryNodes = modRefSummary.GetSimpleNodeModRef(test.CallG());
-      assert(setsEqual(callEntryNodes, { deltaFNode }));
+      EXPECT_TRUE(setsEqual(callEntryNodes, { deltaFNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h);
-      assert(setsEqual(lambdaExitNodes, { deltaFNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaFNode }));
     }
   };
 
-  jlm::tests::DeltaTest1 test;
+  jlm::llvm::DeltaTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -771,17 +726,13 @@ TestDelta1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestDelta1",
-    TestDelta1)
 
-static void
-TestDelta2()
+TEST(RegionAwareModRefSummarizerTests, TestDelta2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::DeltaTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::DeltaTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -793,10 +744,10 @@ TestDelta2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1);
-      assert(setsEqual(lambdaEntryNodes, { deltaD1Node }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaD1Node }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1);
-      assert(setsEqual(lambdaExitNodes, { deltaD1Node }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaD1Node }));
     }
 
     /*
@@ -804,17 +755,17 @@ TestDelta2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2);
-      assert(setsEqual(lambdaEntryNodes, { deltaD1Node, deltaD2Node }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaD1Node, deltaD2Node }));
 
       auto & callEntryNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1());
-      assert(setsEqual(callEntryNodes, { deltaD1Node }));
+      EXPECT_TRUE(setsEqual(callEntryNodes, { deltaD1Node }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2);
-      assert(setsEqual(lambdaExitNodes, { deltaD1Node, deltaD2Node }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaD1Node, deltaD2Node }));
     }
   };
 
-  jlm::tests::DeltaTest2 test;
+  jlm::llvm::DeltaTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -831,17 +782,13 @@ TestDelta2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestDelta2",
-    TestDelta2)
 
-static void
-TestImports()
+TEST(RegionAwareModRefSummarizerTests, TestImports)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::ImportTest & test,
+  auto ValidateProvider = [](const jlm::llvm::ImportTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -853,10 +800,10 @@ TestImports()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1);
-      assert(setsEqual(lambdaEntryNodes, { importD1Node }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { importD1Node }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1);
-      assert(setsEqual(lambdaExitNodes, { importD1Node }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { importD1Node }));
     }
 
     /*
@@ -864,17 +811,17 @@ TestImports()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2);
-      assert(setsEqual(lambdaEntryNodes, { importD1Node, importD2Node }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { importD1Node, importD2Node }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1());
-      assert(setsEqual(callNodes, { importD1Node }));
+      EXPECT_TRUE(setsEqual(callNodes, { importD1Node }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2);
-      assert(setsEqual(lambdaExitNodes, { importD1Node, importD2Node }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { importD1Node, importD2Node }));
     }
   };
 
-  jlm::tests::ImportTest test;
+  jlm::llvm::ImportTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -891,17 +838,13 @@ TestImports()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestImports",
-    TestImports)
 
-static void
-TestPhi1()
+TEST(RegionAwareModRefSummarizerTests, TestPhi1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::PhiTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::PhiTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -912,16 +855,16 @@ TestPhi1()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_fib);
-      assert(setsEqual(lambdaEntryNodes, { resultAllocaNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { resultAllocaNode }));
 
       auto & callFibM1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm1());
-      assert(setsEqual(callFibM1Nodes, { resultAllocaNode }));
+      EXPECT_TRUE(setsEqual(callFibM1Nodes, { resultAllocaNode }));
 
       auto & callFibM2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm2());
-      assert(setsEqual(callFibM2Nodes, { resultAllocaNode }));
+      EXPECT_TRUE(setsEqual(callFibM2Nodes, { resultAllocaNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_fib);
-      assert(setsEqual(lambdaExitNodes, { resultAllocaNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { resultAllocaNode }));
     }
 
     /*
@@ -929,17 +872,17 @@ TestPhi1()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test);
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallFib());
-      assert(setsEqual(callNodes, { resultAllocaNode }));
+      EXPECT_TRUE(setsEqual(callNodes, { resultAllocaNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test);
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
   };
 
-  jlm::tests::PhiTest1 test;
+  jlm::llvm::PhiTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -956,17 +899,13 @@ TestPhi1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestPhi1",
-    TestPhi1)
 
-static void
-TestPhi2()
+TEST(RegionAwareModRefSummarizerTests, TestPhi2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::PhiTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::PhiTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -988,10 +927,10 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaEight());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaEight());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -999,13 +938,13 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaI());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetIndirectCall());
-      assert(setsEqual(callNodes, {}));
+      EXPECT_TRUE(setsEqual(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaI());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
 
     /*
@@ -1013,16 +952,16 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaA());
-      assert(setsEqual(lambdaEntryNodes, pTestCD));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestCD));
 
       auto & callBNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallB());
-      assert(setsEqual(callBNodes, pTestAD));
+      EXPECT_TRUE(setsEqual(callBNodes, pTestAD));
 
       auto & callDNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallD());
-      assert(setsEqual(callDNodes, pTestAC));
+      EXPECT_TRUE(setsEqual(callDNodes, pTestAC));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaA());
-      assert(setsEqual(lambdaExitNodes, pTestCD));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestCD));
     }
 
     /*
@@ -1030,16 +969,16 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaB());
-      assert(setsEqual(lambdaEntryNodes, pTestAD));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestAD));
 
       auto & callINodes = modRefSummary.GetSimpleNodeModRef(test.GetCallI());
-      assert(setsEqual(callINodes, {}));
+      EXPECT_TRUE(setsEqual(callINodes, {}));
 
       auto & callCNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallC());
-      assert(setsEqual(callCNodes, pTestBD));
+      EXPECT_TRUE(setsEqual(callCNodes, pTestBD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaB());
-      assert(setsEqual(lambdaExitNodes, pTestAD));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestAD));
     }
 
     /*
@@ -1047,13 +986,13 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaC());
-      assert(setsEqual(lambdaEntryNodes, pTestBD));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestBD));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromC());
-      assert(setsEqual(callNodes, pTestCD));
+      EXPECT_TRUE(setsEqual(callNodes, pTestCD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaC());
-      assert(setsEqual(lambdaExitNodes, pTestBD));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestBD));
     }
 
     /*
@@ -1061,13 +1000,13 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaD());
-      assert(setsEqual(lambdaEntryNodes, pTestAC));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestAC));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromD());
-      assert(setsEqual(callNodes, pTestCD));
+      EXPECT_TRUE(setsEqual(callNodes, pTestCD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaD());
-      assert(setsEqual(lambdaExitNodes, pTestAC));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestAC));
     }
 
     /*
@@ -1075,17 +1014,17 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromTest());
-      assert(setsEqual(callNodes, { pTestAllocaMemoryNode }));
+      EXPECT_TRUE(setsEqual(callNodes, { pTestAllocaMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaExitNodes, {}));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
     }
   };
 
-  jlm::tests::PhiTest2 test;
+  jlm::llvm::PhiTest2 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1102,15 +1041,11 @@ TestPhi2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestPhi2",
-    TestPhi2)
 
-static void
-TestPhiWithDelta()
+TEST(RegionAwareModRefSummarizerTests, TestPhiWithDelta)
 {
   // Assert
-  jlm::tests::PhiWithDeltaTest test;
+  jlm::llvm::PhiWithDeltaTest test;
   std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   // std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
@@ -1124,17 +1059,13 @@ TestPhiWithDelta()
   // Assert
   // Nothing needs to be validated as there are only phi and delta nodes in the RVSDG.
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestPhiWithDelta",
-    TestPhiWithDelta)
 
-static void
-TestMemcpy()
+TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::MemcpyTest & test,
+  auto ValidateProvider = [](const jlm::llvm::MemcpyTest & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1146,10 +1077,10 @@ TestMemcpy()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaF());
-      assert(setsEqual(lambdaEntryNodes, { globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { globalArrayMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaF());
-      assert(setsEqual(lambdaExitNodes, { globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { globalArrayMemoryNode }));
     }
 
     /*
@@ -1157,17 +1088,17 @@ TestMemcpy()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG());
-      assert(setsEqual(lambdaEntryNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
-      assert(setsEqual(callNodes, { globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(callNodes, { globalArrayMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG());
-      assert(setsEqual(lambdaExitNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
     }
   };
 
-  jlm::tests::MemcpyTest test;
+  jlm::llvm::MemcpyTest test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1184,17 +1115,13 @@ TestMemcpy()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestMemcpy",
-    TestMemcpy)
 
-static void
-TestEscapedMemory1()
+TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory1)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest1 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest1 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1211,13 +1138,13 @@ TestEscapedMemory1()
                                             externalMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
-    assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.LambdaTest);
-    assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
   };
 
-  jlm::tests::EscapedMemoryTest1 test;
+  jlm::llvm::EscapedMemoryTest1 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1234,17 +1161,13 @@ TestEscapedMemory1()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestEscapedMemory1",
-    TestEscapedMemory1)
 
-static void
-TestEscapedMemory2()
+TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest2 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest2 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1259,10 +1182,10 @@ TestEscapedMemory2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.ReturnAddressFunction);
-      assert(setsEqual(lambdaEntryNodes, { returnAddressMallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { returnAddressMallocMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.ReturnAddressFunction);
-      assert(setsEqual(lambdaExitNodes, { returnAddressMallocMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { returnAddressMallocMemoryNode }));
     }
 
     /*
@@ -1274,13 +1197,13 @@ TestEscapedMemory2()
                                               externalMemoryNode };
 
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.CallExternalFunction1);
-      assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.ExternalFunction1Call);
-      assert(setsEqual(callNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.CallExternalFunction1);
-      assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
     }
 
     /*
@@ -1294,17 +1217,17 @@ TestEscapedMemory2()
       };
 
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.CallExternalFunction2);
-      assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.ExternalFunction2Call);
-      assert(setsEqual(callNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.CallExternalFunction2);
-      assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
     }
   };
 
-  jlm::tests::EscapedMemoryTest2 test;
+  jlm::llvm::EscapedMemoryTest2 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1321,17 +1244,13 @@ TestEscapedMemory2()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestEscapedMemory2",
-    TestEscapedMemory2)
 
-static void
-TestEscapedMemory3()
+TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory3)
 {
   /*
    * Arrange
    */
-  auto ValidateProvider = [](const jlm::tests::EscapedMemoryTest3 & test,
+  auto ValidateProvider = [](const jlm::llvm::EscapedMemoryTest3 & test,
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1341,16 +1260,16 @@ TestEscapedMemory3()
     jlm::util::HashSet expectedMemoryNodes{ deltaMemoryNode, externalMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
-    assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
 
     auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.CallExternalFunction);
-    assert(setsEqual(callNodes, expectedMemoryNodes));
+    EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.LambdaTest);
-    assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
   };
 
-  jlm::tests::EscapedMemoryTest3 test;
+  jlm::llvm::EscapedMemoryTest3 test;
   //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
@@ -1367,12 +1286,8 @@ TestEscapedMemory3()
    */
   ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestEscapedMemory3",
-    TestEscapedMemory3)
 
-static void
-testSetjmpHandling()
+TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
 {
   using namespace jlm;
   using namespace jlm::llvm;
@@ -1585,43 +1500,39 @@ testSetjmpHandling()
   const auto modRefSummary = aa::RegionAwareModRefSummarizer::Create(rvsdgModule, *ptg, collector);
 
   // Assert
-  assert(callOpaqueNode);
-  assert(callHNode);
-  assert(callKNode);
-  assert(allocaNode);
+  EXPECT_NE(callOpaqueNode, nullptr);
+  EXPECT_NE(callHNode, nullptr);
+  EXPECT_NE(callKNode, nullptr);
+  EXPECT_NE(allocaNode, nullptr);
 
   const auto allocaPtgNode = ptg->getNodeForAlloca(*allocaNode);
 
   // The call to h() within g() should contain a in its Mod/Ref set
   const auto callHModRef = modRefSummary->GetSimpleNodeModRef(*callHNode);
-  assert(callHModRef.Contains(allocaPtgNode));
+  EXPECT_TRUE(callHModRef.Contains(allocaPtgNode));
 
   // The call to k() should NOT contain a in its Mod/Ref set
   const auto callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
-  assert(!callKModRef.Contains(allocaPtgNode));
+  EXPECT_FALSE(callKModRef.Contains(allocaPtgNode));
 
   // The call to opaque() within h() should contain a in its Mod/Ref set
   const auto callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
-  assert(callOpaqueModRef.Contains(allocaPtgNode));
+  EXPECT_TRUE(callOpaqueModRef.Contains(allocaPtgNode));
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();
   // Only k() is not in the same SCC as <external>
-  assert(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
   // g(), k() and h() are the only functions within an active setjmp
-  assert(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp") == 1);
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1u);
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-testSetjmpHandling",
-    testSetjmpHandling)
 
-static void
-TestStatistics()
+TEST(RegionAwareModRefSummarizerTests, TestStatistics)
 {
   using namespace jlm;
 
   // Arrange
-  tests::LoadTest2 test;
+  jlm::llvm::LoadTest2 test;
   auto pointsToGraph = RunAndersen(test.module());
 
   util::StatisticsCollectorSettings statisticsCollectorSettings(
@@ -1635,24 +1546,21 @@ TestStatistics()
       statisticsCollector);
 
   // Assert
-  assert(statisticsCollector.NumCollectedStatistics() == 1);
+  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 18);
-  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions") == 2);
-  assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes") == 7);
-  assert(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas") == 5);
-  assert(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas") == 5);
-  assert(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes"), 18u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas"), 5u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
 
-  assert(statistics.HasTimer("CallGraphTimer"));
-  assert(statistics.HasTimer("AllocasDeadInSccsTimer"));
-  assert(statistics.HasTimer("SimpleAllocasSetTimer"));
-  assert(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
-  assert(statistics.HasTimer("CreateExternalModRefSetTimer"));
-  assert(statistics.HasTimer("AnnotationTimer"));
-  assert(statistics.HasTimer("SolvingTimer"));
+  EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
+  EXPECT_TRUE(statistics.HasTimer("AllocasDeadInSccsTimer"));
+  EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
+  EXPECT_TRUE(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
+  EXPECT_TRUE(statistics.HasTimer("CreateExternalModRefSetTimer"));
+  EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
+  EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
 }
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestStatistics",
-    TestStatistics)

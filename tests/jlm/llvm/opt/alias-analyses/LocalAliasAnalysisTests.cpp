@@ -3,10 +3,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
+#include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -22,11 +34,11 @@ Expect(
     jlm::llvm::aa::AliasAnalysis::AliasQueryResponse expected)
 {
   const auto actual = aa.Query(p1, s1, p2, s2);
-  assert(actual == expected);
+  EXPECT_EQ(actual, expected);
 
   // An alias analysis query should always be symmetrical, so check the opposite as well
   const auto mirror = aa.Query(p2, s2, p1, s1);
-  assert(mirror == expected);
+  EXPECT_EQ(mirror, expected);
 }
 
 /**
@@ -63,7 +75,7 @@ Expect(
  *   }
  * \endcode
  */
-class LocalAliasAnalysisTest1 final : public jlm::tests::RvsdgTest
+class LocalAliasAnalysisTest1 final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -225,8 +237,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestLocalAliasAnalysis()
+TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysis)
 {
   using namespace jlm::llvm::aa;
 
@@ -306,10 +317,6 @@ TestLocalAliasAnalysis()
   Expect(aa, *outputs.BytePtrPlus2, 2, *outputs.Arr1, 2, AliasAnalysis::MayAlias);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysis",
-    TestLocalAliasAnalysis);
-
 /**
  * This class sets up an RVSDG representing the following code:
  *
@@ -340,7 +347,7 @@ JLM_UNIT_TEST_REGISTER(
  *   }
  * \endcode
  */
-class LocalAliasAnalysisTest2 final : public jlm::tests::RvsdgTest
+class LocalAliasAnalysisTest2 final : public jlm::llvm::RvsdgTest
 {
   struct Outputs
   {
@@ -454,8 +461,7 @@ private:
   Outputs Outputs_ = {};
 };
 
-void
-TestLocalAliasAnalysisMultipleOrigins()
+TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysisMultipleOrigins)
 {
   using namespace jlm::llvm::aa;
 
@@ -520,7 +526,3 @@ TestLocalAliasAnalysisMultipleOrigins()
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::MustAlias);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysisMultipleOrigins",
-    TestLocalAliasAnalysisMultipleOrigins);

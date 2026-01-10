@@ -63,7 +63,7 @@ public:
     {
       return it->second;
     }
-    if (is<CallOperation>(&node))
+    if (is<CallOperation>(node.GetOperation()))
     {
       return AllMemoryNodes_;
     }
@@ -211,59 +211,62 @@ AgnosticModRefSummarizer::AddPointerTargetsToModRefSet(
 void
 AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
 {
-  if (is<StoreOperation>(&node))
-  {
-    const auto & address = *StoreOperation::AddressInput(node).origin();
-    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
-    AddPointerTargetsToModRefSet(address, modRefSet);
-    ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
-  }
-  else if (is<LoadOperation>(&node))
-  {
-    const auto & address = *LoadOperation::AddressInput(node).origin();
-    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
-    AddPointerTargetsToModRefSet(address, modRefSet);
-    ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
-  }
-  else if (is<MemCpyOperation>(&node))
-  {
-    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
-    const auto & srcAddress = *MemCpyOperation::sourceInput(node).origin();
-    const auto & dstAddress = *MemCpyOperation::destinationInput(node).origin();
-    AddPointerTargetsToModRefSet(srcAddress, modRefSet);
-    AddPointerTargetsToModRefSet(dstAddress, modRefSet);
-    ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
-  }
-  else if (is<FreeOperation>(&node))
-  {
-    util::HashSet<PointsToGraph::NodeIndex> modRefSet;
-    const auto & freeAddress = *FreeOperation::addressInput(node).origin();
-    AddPointerTargetsToModRefSet(freeAddress, modRefSet);
-    ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
-  }
-  else if (is<AllocaOperation>(&node))
-  {
-    const auto allocaMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForAlloca(node);
-    ModRefSummary_->SetSimpleNodeModRef(node, { allocaMemoryNode });
-  }
-  else if (is<MallocOperation>(&node))
-  {
-    const auto mallocMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForMalloc(node);
-    ModRefSummary_->SetSimpleNodeModRef(node, { mallocMemoryNode });
-  }
-  else if (is<CallOperation>(&node))
-  {
-    // CallOperations are omitted on purpose, as calls use the AllMemoryNodes as their ModRef set.
-  }
-  else if (is<MemoryStateOperation>(&node))
-  {
-    // Memory state operations are only used to route memory state edges
-  }
-  else
-  {
-    // Any remaining type of node should not involve any memory states
-    JLM_ASSERT(!hasMemoryState(node));
-  }
+  MatchTypeWithDefault(
+      node.GetOperation(),
+      [&](const StoreOperation &)
+      {
+        const auto & address = *StoreOperation::AddressInput(node).origin();
+        util::HashSet<PointsToGraph::NodeIndex> modRefSet;
+        AddPointerTargetsToModRefSet(address, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
+      [&](const LoadOperation &)
+      {
+        const auto & address = *LoadOperation::AddressInput(node).origin();
+        util::HashSet<PointsToGraph::NodeIndex> modRefSet;
+        AddPointerTargetsToModRefSet(address, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
+      [&](const MemCpyOperation &)
+      {
+        util::HashSet<PointsToGraph::NodeIndex> modRefSet;
+        const auto & srcAddress = *MemCpyOperation::sourceInput(node).origin();
+        const auto & dstAddress = *MemCpyOperation::destinationInput(node).origin();
+        AddPointerTargetsToModRefSet(srcAddress, modRefSet);
+        AddPointerTargetsToModRefSet(dstAddress, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
+      [&](const FreeOperation &)
+      {
+        util::HashSet<PointsToGraph::NodeIndex> modRefSet;
+        const auto & freeAddress = *FreeOperation::addressInput(node).origin();
+        AddPointerTargetsToModRefSet(freeAddress, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
+      [&](const AllocaOperation &)
+      {
+        const auto allocaMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForAlloca(node);
+        ModRefSummary_->SetSimpleNodeModRef(node, { allocaMemoryNode });
+      },
+      [&](const MallocOperation &)
+      {
+        const auto mallocMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForMalloc(node);
+        ModRefSummary_->SetSimpleNodeModRef(node, { mallocMemoryNode });
+      },
+      [&](const CallOperation &)
+      {
+        // CallOperations are omitted on purpose, as calls use the AllMemoryNodes as their ModRef
+        // set.
+      },
+      [&](const MemoryStateOperation &)
+      {
+        // Memory state operations are only used to route memory state edges
+      },
+      [&]()
+      {
+        // Any remaining type of node should not involve any memory states
+        JLM_ASSERT(!hasMemoryState(node));
+      });
 }
 
 std::unique_ptr<ModRefSummary>

@@ -6,8 +6,6 @@
 
 #include <gtest/gtest.h>
 
-#include <test-operation.hpp>
-
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -609,7 +607,7 @@ expect_static_true(jlm::rvsdg::Output * port)
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
   ASSERT_TRUE(op);
-  EXPECT_EQ(op->value().nbits(), 1);
+  EXPECT_EQ(op->value().nbits(), 1u);
   EXPECT_EQ(op->value().str(), "1");
 }
 
@@ -619,7 +617,7 @@ expect_static_false(jlm::rvsdg::Output * port)
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::BitConstantOperation *>(&node->GetOperation());
   ASSERT_TRUE(op);
-  EXPECT_EQ(op->value().nbits(), 1);
+  EXPECT_EQ(op->value().nbits(), 1u);
   EXPECT_EQ(op->value().str(), "0");
 }
 
@@ -1205,7 +1203,7 @@ TEST(bitstring, bitstring_test_normalize)
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_EQ(node->GetOperation(), bitadd_op(32));
-  EXPECT_EQ(node->ninputs(), 2);
+  EXPECT_EQ(node->ninputs(), 2u);
   auto op1 = node->input(0)->origin();
   auto op2 = node->input(1)->origin();
   if (!is<NodeOutput>(op1))
@@ -1315,16 +1313,16 @@ TEST(bitstring, SliceOfConcatReduction)
   const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
   const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
   EXPECT_TRUE(is<BitConcatOperation>(node->GetOperation()));
-  EXPECT_EQ(node->ninputs(), 2);
+  EXPECT_EQ(node->ninputs(), 2u);
   EXPECT_TRUE(is<BitSliceOperation>(o0_node->GetOperation()));
   EXPECT_TRUE(is<BitSliceOperation>(o1_node->GetOperation()));
 
   auto attrs = dynamic_cast<const BitSliceOperation *>(&o0_node->GetOperation());
-  EXPECT_EQ(attrs->low(), 8);
-  EXPECT_EQ(attrs->high(), 16);
+  EXPECT_EQ(attrs->low(), 8u);
+  EXPECT_EQ(attrs->high(), 16u);
   attrs = dynamic_cast<const BitSliceOperation *>(&o1_node->GetOperation());
-  EXPECT_EQ(attrs->low(), 0);
-  EXPECT_EQ(attrs->high(), 8);
+  EXPECT_EQ(attrs->low(), 0u);
+  EXPECT_EQ(attrs->high(), 8u);
 
   EXPECT_EQ(o0_node->input(0)->origin(), x);
   EXPECT_EQ(o1_node->input(0)->origin(), y);
@@ -1414,8 +1412,8 @@ TEST(bitstring, SliceOfSlice)
   // Assert
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   const auto operation = dynamic_cast<const BitSliceOperation *>(&node->GetOperation());
-  EXPECT_EQ(operation->low(), 3);
-  EXPECT_EQ(operation->high(), 5);
+  EXPECT_EQ(operation->low(), 3u);
+  EXPECT_EQ(operation->high(), 5u);
 }
 
 TEST(bitstring, SliceOfFullNode)
@@ -1475,7 +1473,7 @@ TEST(bitstring, SliceOfConcat)
   // Assert
   const auto bitType = std::dynamic_pointer_cast<const BitType>(ex.origin()->Type());
   ASSERT_TRUE(bitType);
-  EXPECT_EQ(bitType->nbits(), 8);
+  EXPECT_EQ(bitType->nbits(), 8u);
   EXPECT_EQ(ex.origin(), x);
 }
 
@@ -1504,7 +1502,7 @@ TEST(bitstring, ConcatFlattening)
   // Assert
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_TRUE(is<BitConcatOperation>(node->GetOperation()));
-  EXPECT_EQ(node->ninputs(), 3);
+  EXPECT_EQ(node->ninputs(), 3u);
   EXPECT_EQ(node->input(0)->origin(), x);
   EXPECT_EQ(node->input(1)->origin(), y);
   EXPECT_EQ(node->input(2)->origin(), z);
@@ -2118,7 +2116,7 @@ TEST(bitstring, test_value_representation)
     }
   }
 
-  EXPECT_EQ(BitValueRepresentation("000110").to_uint(), 24);
+  EXPECT_EQ(BitValueRepresentation("000110").to_uint(), 24u);
   EXPECT_EQ(BitValueRepresentation("00011").to_int(), -8);
 
   for (ssize_t r = -4; r < 5; r++)

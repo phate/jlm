@@ -3,17 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/hls/opt/IOStateElimination.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-testCall()
+TEST(IOStateEliminationTests, testCall)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -57,19 +56,15 @@ testCall()
   view(rvsdg, stdout);
 
   // Assert
-  assert(callNode.output(0)->IsDead());
-  assert(lambdaNode->GetFunctionResults()[0]->origin() == ioStateArgument);
+  EXPECT_TRUE(callNode.output(0)->IsDead());
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), ioStateArgument);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/opt/IOStateEliminationTests-testCall", testCall)
-
-static void
-testNesting()
+TEST(IOStateEliminationTests, testNesting)
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   auto ioStateType = IOStateType::Create();
@@ -118,12 +113,10 @@ testNesting()
   view(rvsdg, stdout);
 
   // Assert
-  assert(node1->output(0)->IsDead());
-  assert(node2->output(0)->IsDead());
-  assert(exitVar.output->IsDead());
-  assert(lambdaNode->GetFunctionResults()[0]->origin() == ioStateArgument);
+  EXPECT_TRUE(node1->output(0)->IsDead());
+  EXPECT_TRUE(node2->output(0)->IsDead());
+  EXPECT_TRUE(exitVar.output->IsDead());
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), ioStateArgument);
 
-  assert(gammaNode->GetEntryVars().size() == 3);
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 3);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/opt/IOStateEliminationTests-testNesting", testNesting)

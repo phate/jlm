@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -14,13 +13,14 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static void
-OperationEquality()
+TEST(LoadOperationTests, OperationEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -31,22 +31,17 @@ OperationEquality()
   LoadNonVolatileOperation operation2(pointerType, 2, 4);
   LoadNonVolatileOperation operation3(valueType, 4, 4);
   LoadNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // loaded type differs
-  assert(operation1 != operation3); // number of memory states differs
-  assert(operation1 != operation4); // alignment differs
-  assert(operation1 != operation5); // operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // loaded type differs
+  EXPECT_NE(operation1, operation3); // number of memory states differs
+  EXPECT_NE(operation1, operation4); // alignment differs
+  EXPECT_NE(operation1, operation5); // operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-OperationEquality",
-    OperationEquality)
-
-static void
-TestCopy()
+TEST(LoadOperationTests, TestCopy)
 {
   using namespace jlm::llvm;
 
@@ -66,19 +61,16 @@ TestCopy()
 
   // Act
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadResults[0]);
-  assert(is<LoadNonVolatileOperation>(node));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
   auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
-  assert(
-      node->GetOperation()
-      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+  EXPECT_EQ(
+      node->GetOperation(),
+      jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests-Copy", TestCopy)
-
-static void
-TestLoadAllocaReduction()
+TEST(LoadOperationTests, TestLoadAllocaReduction)
 {
   using namespace jlm::llvm;
 
@@ -109,18 +101,13 @@ TestLoadAllocaReduction()
 
   // Assert
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
-  assert(is<LoadNonVolatileOperation>(node));
-  assert(node->ninputs() == 3);
-  assert(node->input(1)->origin() == alloca1[1]);
-  assert(node->input(2)->origin() == mux);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
+  EXPECT_EQ(node->ninputs(), 3u);
+  EXPECT_EQ(node->input(1)->origin(), alloca1[1]);
+  EXPECT_EQ(node->input(2)->origin(), mux);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadAllocaReduction",
-    TestLoadAllocaReduction)
-
-static void
-TestDuplicateStateReduction()
+TEST(LoadOperationTests, TestDuplicateStateReduction)
 {
   using namespace jlm::llvm;
 
@@ -154,26 +141,21 @@ TestDuplicateStateReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
+  EXPECT_TRUE(success);
   const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exA.origin());
-  assert(is<LoadNonVolatileOperation>(node));
-  assert(node->ninputs() == 4);  // 1 address + 3 states
-  assert(node->noutputs() == 4); // 1 loaded value + 3 states
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
+  EXPECT_EQ(node->ninputs(), 4u);  // 1 address + 3 states
+  EXPECT_EQ(node->noutputs(), 4u); // 1 loaded value + 3 states
 
-  assert(exA.origin() == node->output(0));
-  assert(exS1.origin() == node->output(1));
-  assert(exS2.origin() == node->output(2));
-  assert(exS3.origin() == node->output(1));
-  assert(exS4.origin() == node->output(2));
-  assert(exS5.origin() == node->output(3));
+  EXPECT_EQ(exA.origin(), node->output(0));
+  EXPECT_EQ(exS1.origin(), node->output(1));
+  EXPECT_EQ(exS2.origin(), node->output(2));
+  EXPECT_EQ(exS3.origin(), node->output(1));
+  EXPECT_EQ(exS4.origin(), node->output(2));
+  EXPECT_EQ(exS5.origin(), node->output(3));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-DuplicateStateReduction",
-    TestDuplicateStateReduction)
-
-static void
-TestLoadStoreStateReduction()
+TEST(LoadOperationTests, TestLoadStoreStateReduction)
 {
   using namespace jlm::llvm;
 
@@ -209,23 +191,18 @@ TestLoadStoreStateReduction()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success1);
+  EXPECT_TRUE(success1);
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
-  assert(is<LoadNonVolatileOperation>(node));
-  assert(node->ninputs() == 2);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
+  EXPECT_EQ(node->ninputs(), 2u);
 
-  assert(success2 == false);
+  EXPECT_FALSE(success2);
   node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
-  assert(is<LoadNonVolatileOperation>(node));
-  assert(node->ninputs() == 2);
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
+  EXPECT_EQ(node->ninputs(), 2u);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreStateReduction",
-    TestLoadStoreStateReduction)
-
-static void
-TestLoadStoreReduction_Success()
+TEST(LoadOperationTests, TestLoadStoreReduction_Success)
 {
   using namespace jlm::llvm;
 
@@ -255,22 +232,17 @@ TestLoadStoreReduction_Success()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success);
-  assert(graph.GetRootRegion().numNodes() == 1);
-  assert(x1.origin() == v);
-  assert(x2.origin() == s1);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
+  EXPECT_EQ(x1.origin(), v);
+  EXPECT_EQ(x2.origin(), s1);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_Success",
-    TestLoadStoreReduction_Success)
 
 /**
  * Tests the load-store reduction with the value type of the store being different from the
  * value type of the load.
  */
-static void
-LoadStoreReduction_DifferentValueOperandType()
+TEST(LoadOperationTests, LoadStoreReduction_DifferentValueOperandType)
 {
   using namespace jlm::llvm;
 
@@ -304,24 +276,19 @@ LoadStoreReduction_DifferentValueOperandType()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(success == false);
+  EXPECT_FALSE(success);
 
   const auto expectedLoadNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exportedValue.origin());
-  assert(expectedLoadNode == &loadNode);
-  assert(expectedLoadNode->ninputs() == 2);
+  EXPECT_EQ(expectedLoadNode, &loadNode);
+  EXPECT_EQ(expectedLoadNode->ninputs(), 2u);
 
   const auto expectedStoreNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*expectedLoadNode->input(1)->origin());
-  assert(expectedStoreNode == &storeNode);
+  EXPECT_EQ(expectedStoreNode, &storeNode);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_DifferentValueOperandType",
-    LoadStoreReduction_DifferentValueOperandType)
-
-static void
-IOBarrierAllocaAddressNormalization()
+TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
 {
   using namespace jlm::llvm;
 
@@ -370,25 +337,20 @@ IOBarrierAllocaAddressNormalization()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(successLoadNode1);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin())->input(0)->origin()
-      == allocaResults[0]);
+  EXPECT_TRUE(successLoadNode1);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin())->input(0)->origin(),
+      allocaResults[0]);
 
   // There is no IOBarrierOperation node as producer for the load address. We expect the
   // normalization not to trigger.
-  assert(!successLoadNode2);
-  assert(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin())->input(0)->origin()
-      == addressImport);
+  EXPECT_FALSE(successLoadNode2);
+  EXPECT_EQ(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin())->input(0)->origin(),
+      addressImport);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadTests-IOBarrierAllocaAddressNormalization",
-    IOBarrierAllocaAddressNormalization)
-
-static void
-IOBarrierAllocaAddressNormalization_Gamma()
+TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -441,25 +403,21 @@ IOBarrierAllocaAddressNormalization_Gamma()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(successLoadNode);
+  EXPECT_TRUE(successLoadNode);
   // There should only be the load node left.
   // The IOBarrier node should have been pruned.
-  assert(gammaNode->subregion(0)->numNodes() == 1);
-  assert(
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1u);
+  EXPECT_EQ(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
           ->input(0)
-          ->origin()
-      == addressEntryVar.branchArgument[0]);
+          ->origin(),
+      addressEntryVar.branchArgument[0]);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadTests-IOBarrierAllocaAddressNormalization_Gamma",
-    IOBarrierAllocaAddressNormalization_Gamma)
-
-static void
-LoadVolatileOperationEquality()
+TEST(LoadOperationTests, LoadVolatileOperationEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   MemoryStateType memoryType;
@@ -470,22 +428,17 @@ LoadVolatileOperationEquality()
   LoadVolatileOperation operation2(pointerType, 2, 4);
   LoadVolatileOperation operation3(valueType, 4, 4);
   LoadVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
+  TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
-  assert(operation1 == operation1);
-  assert(operation1 != operation2); // loaded type differs
-  assert(operation1 != operation3); // number of memory states differs
-  assert(operation1 != operation4); // alignment differs
-  assert(operation1 != operation5); // operation differs
+  EXPECT_EQ(operation1, operation1);
+  EXPECT_NE(operation1, operation2); // loaded type differs
+  EXPECT_NE(operation1, operation3); // number of memory states differs
+  EXPECT_NE(operation1, operation4); // alignment differs
+  EXPECT_NE(operation1, operation5); // operation differs
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadVolatileTests-OperationEquality",
-    LoadVolatileOperationEquality)
-
-static void
-OperationCopy()
+TEST(LoadOperationTests, OperationCopy)
 {
   using namespace jlm::llvm;
 
@@ -500,13 +453,10 @@ OperationCopy()
   auto copiedOperation = operation.copy();
 
   // Assert
-  assert(*copiedOperation == operation);
+  EXPECT_EQ(*copiedOperation, operation);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-OperationCopy", OperationCopy)
-
-static void
-OperationAccessors()
+TEST(LoadOperationTests, OperationAccessors)
 {
   using namespace jlm::llvm;
 
@@ -520,19 +470,14 @@ OperationAccessors()
   LoadVolatileOperation operation(valueType, numMemoryStates, alignment);
 
   // Assert
-  assert(operation.GetLoadedType() == valueType);
-  assert(operation.NumMemoryStates() == numMemoryStates);
-  assert(operation.GetAlignment() == alignment);
-  assert(operation.narguments() == numMemoryStates + 2); // [address, ioState, memoryStates]
-  assert(operation.nresults() == numMemoryStates + 2);   // [loadedValue, ioState, memoryStates]
+  EXPECT_EQ(operation.GetLoadedType(), valueType);
+  EXPECT_EQ(operation.NumMemoryStates(), numMemoryStates);
+  EXPECT_EQ(operation.GetAlignment(), alignment);
+  EXPECT_EQ(operation.narguments(), numMemoryStates + 2); // [address, ioState, memoryStates]
+  EXPECT_EQ(operation.nresults(), numMemoryStates + 2);   // [loadedValue, ioState, memoryStates]
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadVolatileTests-OperationAccessors",
-    OperationAccessors)
-
-static void
-NodeCopy()
+TEST(LoadOperationTests, NodeCopy)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -565,10 +510,8 @@ NodeCopy()
   // Assert
   auto copiedOperation = dynamic_cast<const LoadVolatileOperation *>(
       &jlm::util::assertedCast<SimpleNode>(copiedNode)->GetOperation());
-  assert(copiedOperation != nullptr);
-  assert(LoadOperation::AddressInput(*copiedNode).origin() == &address2);
-  assert(LoadVolatileOperation::IOStateInput(*copiedNode).origin() == &iOState2);
-  assert(*copiedOperation->GetLoadedType() == *valueType);
+  EXPECT_NE(copiedOperation, nullptr);
+  EXPECT_EQ(LoadOperation::AddressInput(*copiedNode).origin(), &address2);
+  EXPECT_EQ(LoadVolatileOperation::IOStateInput(*copiedNode).origin(), &iOState2);
+  EXPECT_EQ(*copiedOperation->GetLoadedType(), *valueType);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-NodeCopy", NodeCopy)

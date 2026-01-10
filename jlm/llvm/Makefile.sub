@@ -3,6 +3,7 @@
 
 libllvm_SOURCES = \
     jlm/llvm/DotWriter.cpp \
+    jlm/llvm/TestRvsdgs.cpp \
     \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
@@ -77,6 +78,7 @@ libllvm_SOURCES = \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
+    jlm/llvm/TestRvsdgs.hpp \
     \
     jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
@@ -157,85 +159,86 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
-libllvm_TESTS += \
-    tests/jlm/llvm/DotWriterTests \
-    \
-    tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
-    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
-    tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests \
-    tests/jlm/llvm/frontend/llvm/LoadTests \
-    tests/jlm/llvm/frontend/llvm/MemCpyTests \
-    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
-    tests/jlm/llvm/frontend/llvm/StoreTests \
-    tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
-    tests/jlm/llvm/frontend/llvm/test-endless-loop \
-    tests/jlm/llvm/frontend/llvm/test-export \
-    tests/jlm/llvm/frontend/llvm/TestFNeg \
-    tests/jlm/llvm/frontend/llvm/test-function-call \
-    tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
-    tests/jlm/llvm/frontend/llvm/test-recursive-data \
-    tests/jlm/llvm/frontend/llvm/test-select \
-    tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
-    tests/jlm/llvm/ir/operators/LoadTests \
-    tests/jlm/llvm/ir/operators/MemCpyTests \
-    tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
-    tests/jlm/llvm/ir/operators/TestCall \
-    tests/jlm/llvm/ir/operators/test-ConstantFP \
-    tests/jlm/llvm/ir/operators/test-delta \
-    tests/jlm/llvm/ir/operators/TestFree \
-    tests/jlm/llvm/ir/operators/TestGetElementPtr \
-    tests/jlm/llvm/ir/operators/TestLambda \
-    tests/jlm/llvm/ir/operators/TestPhi \
-    tests/jlm/llvm/ir/operators/test-sext \
-    tests/jlm/llvm/ir/operators/StoreTests \
-    tests/jlm/llvm/ir/AttributeSetTests \
-    tests/jlm/llvm/ir/test-aggregation \
-    tests/jlm/llvm/ir/test-cfg \
-    tests/jlm/llvm/ir/test-cfg-node \
-    tests/jlm/llvm/ir/test-cfg-orderings \
-    tests/jlm/llvm/ir/test-cfg-prune \
-    tests/jlm/llvm/ir/test-cfg-purge \
-    tests/jlm/llvm/ir/test-cfg-structure \
-    tests/jlm/llvm/ir/test-cfg-validity \
-    tests/jlm/llvm/ir/test-domtree \
-    tests/jlm/llvm/ir/test-ssa-destruction \
-    tests/jlm/llvm/ir/TestTypes \
-    tests/jlm/llvm/ir/TestAnnotation \
-    tests/jlm/llvm/ir/TestCallSummary \
-    tests/jlm/llvm/ir/ThreeAddressCodeTests \
-    tests/jlm/llvm/ir/TraceTests \
-    tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
-    tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
-    tests/jlm/llvm/opt/alias-analyses/PointsToGraphTests \
-    tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
-    tests/jlm/llvm/opt/alias-analyses/TestAndersen \
-    tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
-    tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
-    tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
-    tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
-    tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
-    tests/jlm/llvm/opt/CommonNodeEliminationTests \
-    tests/jlm/llvm/opt/DeadNodeEliminationTests \
-    tests/jlm/llvm/opt/IfConversionTests \
-    tests/jlm/llvm/opt/InvariantValueRedirectionTests \
-    tests/jlm/llvm/opt/LoadChainSeparationTests \
-    tests/jlm/llvm/opt/LoopUnswitchingTests \
-    tests/jlm/llvm/opt/NodeReductionTests \
-    tests/jlm/llvm/opt/PredicateCorrelationTests \
-    tests/jlm/llvm/opt/RvsdgTreePrinterTests \
-    tests/jlm/llvm/opt/ScalarEvolutionTests \
-    tests/jlm/llvm/opt/test-inlining \
-    tests/jlm/llvm/opt/test-pull \
-    tests/jlm/llvm/opt/test-push \
-    tests/jlm/llvm/opt/test-unroll \
-
-libllvm_TEST_LIBS = \
-    libjlmtest \
-    libllvm \
-    librvsdg \
-    libutil \
-
-libllvm_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
-
 $(eval $(call common_library,libllvm))
+
+tests/jlm/llvm/run-libllvm-tests_SOURCES = \
+    tests/jlm/llvm/DotWriterTests.cpp \
+    \
+    tests/jlm/llvm/backend/IpGraphToLlvmConverterTests.cpp \
+    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests.cpp \
+    \
+    tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests.cpp \
+    tests/jlm/llvm/frontend/llvm/LoadTests.cpp \
+    tests/jlm/llvm/frontend/llvm/MemCpyTests.cpp \
+    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests.cpp \
+    tests/jlm/llvm/frontend/llvm/StoreTests.cpp \
+    tests/jlm/llvm/frontend/llvm/TestAttributeConversion.cpp \
+    tests/jlm/llvm/frontend/llvm/test-endless-loop.cpp \
+    tests/jlm/llvm/frontend/llvm/test-export.cpp \
+    tests/jlm/llvm/frontend/llvm/TestFNeg.cpp \
+    tests/jlm/llvm/frontend/llvm/test-function-call.cpp \
+    tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests.cpp \
+    tests/jlm/llvm/frontend/llvm/test-recursive-data.cpp \
+    tests/jlm/llvm/frontend/llvm/test-select.cpp \
+    tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests.cpp \
+    \
+    tests/jlm/llvm/ir/operators/LoadTests.cpp \
+    tests/jlm/llvm/ir/operators/MemCpyTests.cpp \
+    tests/jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \
+    tests/jlm/llvm/ir/operators/TestCall.cpp \
+    tests/jlm/llvm/ir/operators/test-ConstantFP.cpp \
+    tests/jlm/llvm/ir/operators/test-delta.cpp \
+    tests/jlm/llvm/ir/operators/TestFree.cpp \
+    tests/jlm/llvm/ir/operators/TestGetElementPtr.cpp \
+    tests/jlm/llvm/ir/operators/TestLambda.cpp \
+    tests/jlm/llvm/ir/operators/TestPhi.cpp \
+    tests/jlm/llvm/ir/operators/test-sext.cpp \
+    tests/jlm/llvm/ir/operators/StoreTests.cpp \
+    \
+    tests/jlm/llvm/ir/AttributeSetTests.cpp \
+    tests/jlm/llvm/ir/test-aggregation.cpp \
+    tests/jlm/llvm/ir/test-cfg.cpp \
+    tests/jlm/llvm/ir/test-cfg-node.cpp \
+    tests/jlm/llvm/ir/test-cfg-orderings.cpp \
+    tests/jlm/llvm/ir/test-cfg-prune.cpp \
+    tests/jlm/llvm/ir/test-cfg-purge.cpp \
+    tests/jlm/llvm/ir/test-cfg-structure.cpp \
+    tests/jlm/llvm/ir/test-cfg-validity.cpp \
+    tests/jlm/llvm/ir/test-domtree.cpp \
+    tests/jlm/llvm/ir/test-ssa-destruction.cpp \
+    tests/jlm/llvm/ir/TestTypes.cpp \
+    tests/jlm/llvm/ir/TestAnnotation.cpp \
+    tests/jlm/llvm/ir/TestCallSummary.cpp \
+    tests/jlm/llvm/ir/ThreeAddressCodeTests.cpp \
+    tests/jlm/llvm/ir/TraceTests.cpp \
+    tests/jlm/llvm/ir/TypeConverterTests.cpp \
+    \
+    tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests.cpp \
+    tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests.cpp \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphTests.cpp \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestAndersen.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder.cpp \
+    tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet.cpp \
+    tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests.cpp \
+    \
+    tests/jlm/llvm/opt/CommonNodeEliminationTests.cpp \
+    tests/jlm/llvm/opt/DeadNodeEliminationTests.cpp \
+    tests/jlm/llvm/opt/IfConversionTests.cpp \
+    tests/jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
+    tests/jlm/llvm/opt/LoadChainSeparationTests.cpp \
+    tests/jlm/llvm/opt/LoopUnswitchingTests.cpp \
+    tests/jlm/llvm/opt/NodeReductionTests.cpp \
+    tests/jlm/llvm/opt/PredicateCorrelationTests.cpp \
+    tests/jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
+    tests/jlm/llvm/opt/ScalarEvolutionTests.cpp \
+    tests/jlm/llvm/opt/test-inlining.cpp \
+    tests/jlm/llvm/opt/test-pull.cpp \
+    tests/jlm/llvm/opt/test-push.cpp \
+    tests/jlm/llvm/opt/test-unroll.cpp \
+
+tests/jlm/llvm/run-libllvm-tests_LIBS = libllvm librvsdg libutil
+tests/jlm/llvm/run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+$(eval $(call common_test,tests/jlm/llvm/run-libllvm-tests))

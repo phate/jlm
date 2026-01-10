@@ -3,20 +3,19 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-static void
-test()
+TEST(ControlFlowGraphPruneTests, test)
 {
   using namespace jlm::llvm;
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
 
@@ -44,7 +43,5 @@ test()
   prune(cfg);
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
-  assert(cfg.nnodes() == 1);
+  EXPECT_EQ(cfg.nnodes(), 1u);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-prune", test)

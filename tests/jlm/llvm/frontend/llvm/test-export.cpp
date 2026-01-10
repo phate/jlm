@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/rvsdg/view.hpp>
 
@@ -13,8 +13,7 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static void
-test()
+TEST(ExportTests, test)
 {
   using namespace jlm::llvm;
 
@@ -34,12 +33,8 @@ test()
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
-  /*
-    We should have no exports in the RVSDG. The data and function
-    node should be converted to RVSDG imports as they do not have
-    a body, i.e., either a CFG or a initialization.
-  */
-  assert(rvsdgModule->Rvsdg().GetRootRegion().nresults() == 0);
+  // We should have no exports in the RVSDG. The data and function
+  // node should be converted to RVSDG imports as they do not have
+  // a body, i.e., either a CFG or a initialization.
+  EXPECT_EQ(rvsdgModule->Rvsdg().GetRootRegion().nresults(), 0u);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-export", test)

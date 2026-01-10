@@ -48,7 +48,7 @@ ValidateTopologicalOrderAndSccIndices(
     numNodesInScc[sccIndex[node]]++;
   }
   for (size_t i = 0; i < numSccs; i++)
-    EXPECT_GT(numNodesInScc[i], 0);
+    EXPECT_GT(numNodesInScc[i], 0u);
 
   // Check that no edge in the graph points to an earlier SCC
   for (size_t i = 0; i < numNodes; i++)
@@ -159,16 +159,16 @@ TEST(TarjanSccTests, TestCycles)
       sccIndex,
       reverseTopologicalOrder);
 
-  EXPECT_EQ(numSccs, 3);
+  EXPECT_EQ(numSccs, 3u);
   // 5 has to be at the end
-  EXPECT_EQ(sccIndex[5], 0);
-  EXPECT_EQ(reverseTopologicalOrder[0], 5);
+  EXPECT_EQ(sccIndex[5], 0u);
+  EXPECT_EQ(reverseTopologicalOrder[0], 5u);
   // 6 has to be at the beginning
-  EXPECT_EQ(sccIndex[6], 2);
-  EXPECT_EQ(reverseTopologicalOrder[numNodes - 1], 6);
+  EXPECT_EQ(sccIndex[6], 2u);
+  EXPECT_EQ(reverseTopologicalOrder[numNodes - 1], 6u);
   // The rest belong to the middle SCC
   for (size_t i = 0; i < 5; i++)
-    EXPECT_EQ(sccIndex[i], 1);
+    EXPECT_EQ(sccIndex[i], 1u);
 }
 
 /**
@@ -194,7 +194,7 @@ TEST(TarjanSccTests, TestCycles)
 static std::tuple<size_t, size_t, std::vector<size_t>>
 CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraEdge)
 {
-  EXPECT_GE(knots, 2);
+  EXPECT_GE(knots, 2u);
   const size_t numNodes = 3 * knots - 2;
   std::vector<std::vector<size_t>> successors(numNodes);
 
@@ -319,9 +319,9 @@ TEST(TarjanSccTests, TestVisitEachNodeTwice)
       sccIndex,
       reverseTopologicalOrder);
 
-  EXPECT_EQ(numSccs, 4);
+  EXPECT_EQ(numSccs, 4u);
   for (size_t timesQueried : successorsQueried)
-    EXPECT_LE(timesQueried, 2);
+    EXPECT_LE(timesQueried, 2u);
 
   // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
   ValidateTopologicalOrderAndSccIndices(
@@ -355,7 +355,7 @@ TEST(TarjanSccTests, TestUnifiedNodes)
 
   auto GetSuccessors = [&](size_t node)
   {
-    EXPECT_LT(node, 5);
+    EXPECT_LT(node, 5u);
     return successors[node];
   };
 
@@ -368,7 +368,7 @@ TEST(TarjanSccTests, TestUnifiedNodes)
       sccIndex,
       reverseTopologicalOrder);
 
-  EXPECT_EQ(numSccs, 4);
+  EXPECT_EQ(numSccs, 4u);
 
   // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
   ValidateTopologicalOrderAndSccIndices(

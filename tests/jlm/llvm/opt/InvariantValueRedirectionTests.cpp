@@ -3,21 +3,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
-#include <TestRvsdgs.hpp>
-
-#include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/view.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -32,8 +33,7 @@ RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 }
 
-static void
-TestGamma()
+TEST(InvariantValueRedirectionTests, TestGamma)
 {
   using namespace jlm::llvm;
 
@@ -77,14 +77,11 @@ TestGamma()
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  assert(lambdaNode->GetFunctionResults()[0]->origin() == x);
-  assert(lambdaNode->GetFunctionResults()[1]->origin() == y);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), x);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[1]->origin(), y);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Gamma", TestGamma)
-
-static void
-TestTheta()
+TEST(InvariantValueRedirectionTests, TestTheta)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -130,15 +127,12 @@ TestTheta()
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  assert(lambdaNode->GetFunctionResults()[0]->origin() == c);
-  assert(lambdaNode->GetFunctionResults()[1]->origin() == x);
-  assert(lambdaNode->GetFunctionResults()[2]->origin() == thetaVar3.output);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), c);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[1]->origin(), x);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), thetaVar3.output);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Theta", TestTheta)
-
-static void
-TestCall()
+TEST(InvariantValueRedirectionTests, TestCall)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -218,17 +212,14 @@ TestCall()
 
   // Assert
   auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
-  assert(lambdaNode.GetFunctionResults().size() == 4);
-  assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[1]);
-  assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[0]);
-  assert(lambdaNode.GetFunctionResults()[2]->origin() == lambdaNode.GetFunctionArguments()[2]);
-  assert(lambdaNode.GetFunctionResults()[3]->origin() == lambdaNode.GetFunctionArguments()[3]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 4u);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), lambdaNode.GetFunctionArguments()[1]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), lambdaNode.GetFunctionArguments()[0]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[2]->origin(), lambdaNode.GetFunctionArguments()[2]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[3]->origin(), lambdaNode.GetFunctionArguments()[3]);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Call", TestCall)
-
-static void
-TestCallWithMemoryStateNodes()
+TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -327,25 +318,20 @@ TestCallWithMemoryStateNodes()
 
   // Assert
   auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
-  assert(lambdaNode.GetFunctionResults().size() == 3);
-  assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[0]);
-  assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[1]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3u);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), lambdaNode.GetFunctionArguments()[0]);
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), lambdaNode.GetFunctionArguments()[1]);
 
   auto lambdaEntrySplit = tryGetMemoryStateEntrySplit(lambdaNode);
   auto lambdaExitMerge = tryGetMemoryStateExitMerge(lambdaNode);
 
-  assert(lambdaEntrySplit && lambdaEntrySplit->noutputs() == 2);
-  assert(lambdaExitMerge && lambdaExitMerge->ninputs() == 2);
-  assert(lambdaExitMerge->input(0)->origin() == lambdaEntrySplit->output(1));
-  assert(lambdaExitMerge->input(1)->origin() == lambdaEntrySplit->output(0));
+  EXPECT_TRUE(lambdaEntrySplit && lambdaEntrySplit->noutputs() == 2);
+  EXPECT_TRUE(lambdaExitMerge && lambdaExitMerge->ninputs() == 2);
+  EXPECT_EQ(lambdaExitMerge->input(0)->origin(), lambdaEntrySplit->output(1));
+  EXPECT_EQ(lambdaExitMerge->input(1)->origin(), lambdaEntrySplit->output(0));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMemoryStateNodes",
-    TestCallWithMemoryStateNodes)
-
-static void
-TestCallWithMissingMemoryStateNodes()
+TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
 {
   // Arrange
   using namespace jlm::llvm;
@@ -440,38 +426,33 @@ TestCallWithMissingMemoryStateNodes()
   const auto & lambdaNode1 = AssertGetOwnerNode<LambdaNode>(*lambdaOutputTest1);
   const auto lambdaEntrySplit1 = tryGetMemoryStateEntrySplit(lambdaNode1);
   const auto lambdaExitMerge1 = tryGetMemoryStateExitMerge(lambdaNode1);
-  assert(lambdaEntrySplit1 == nullptr);
-  assert(lambdaExitMerge1 && lambdaExitMerge1->ninputs() == 1);
+  EXPECT_EQ(lambdaEntrySplit1, nullptr);
+  EXPECT_TRUE(lambdaExitMerge1 && lambdaExitMerge1->ninputs() == 1);
 
   const auto & lambdaNode2 = AssertGetOwnerNode<LambdaNode>(*lambdaOutputTest2);
   const auto lambdaEntrySplit2 = tryGetMemoryStateEntrySplit(lambdaNode2);
   const auto lambdaExitMerge2 = tryGetMemoryStateExitMerge(lambdaNode2);
-  assert(lambdaEntrySplit2 && lambdaEntrySplit2->noutputs() == 1);
-  assert(lambdaExitMerge2 && lambdaExitMerge2->ninputs() == 1);
+  EXPECT_TRUE(lambdaEntrySplit2 && lambdaEntrySplit2->noutputs() == 1);
+  EXPECT_TRUE(lambdaExitMerge2 && lambdaExitMerge2->ninputs() == 1);
   const auto & [callExitSplitNode, _] =
       TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(
           *lambdaExitMerge2->input(0)->origin());
-  assert(callExitSplitNode->noutputs() == 1);
+  EXPECT_EQ(callExitSplitNode->noutputs(), 1u);
   const auto & [callNode, calOperation] =
       TryGetSimpleNodeAndOptionalOp<CallOperation>(*callExitSplitNode->input(0)->origin());
-  assert(callNode->noutputs() == 3);
-  assert(callNode->ninputs() == 4);
+  EXPECT_EQ(callNode->noutputs(), 3u);
+  EXPECT_EQ(callNode->ninputs(), 4u);
   const auto & memoryStateInput = CallOperation::GetMemoryStateInput(*callNode);
   const auto & [callEntryMergeNode, callEntryMergeOperation] =
       TryGetSimpleNodeAndOptionalOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
-  assert(callEntryMergeNode->ninputs() == 1);
-  assert(callEntryMergeNode->input(0)->origin() == lambdaEntrySplit2->output(0));
+  EXPECT_EQ(callEntryMergeNode->ninputs(), 1u);
+  EXPECT_EQ(callEntryMergeNode->input(0)->origin(), lambdaEntrySplit2->output(0));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMissingMemoryStateNodes",
-    TestCallWithMissingMemoryStateNodes)
-
-static void
-TestLambdaCallArgumentMismatch()
+TEST(InvariantValueRedirectionTests, TestLambdaCallArgumentMismatch)
 {
   // Arrange
-  jlm::tests::LambdaCallArgumentMismatch test;
+  jlm::llvm::LambdaCallArgumentMismatch test;
 
   // Act
   RunInvariantValueRedirection(test.module());
@@ -480,24 +461,18 @@ TestLambdaCallArgumentMismatch()
   auto & callNode = test.GetCall();
   auto & lambdaNode = test.GetLambdaMain();
 
-  assert(lambdaNode.GetFunctionResults().size() == 3);
-  assert(lambdaNode.GetFunctionResults().size() == callNode.noutputs());
-  assert(lambdaNode.GetFunctionResults()[0]->origin() == callNode.output(0));
-  assert(lambdaNode.GetFunctionResults()[1]->origin() == callNode.output(1));
-  assert(lambdaNode.GetFunctionResults()[2]->origin() == callNode.output(2));
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3u);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), callNode.noutputs());
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), callNode.output(0));
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), callNode.output(1));
+  EXPECT_EQ(lambdaNode.GetFunctionResults()[2]->origin(), callNode.output(2));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/InvariantValueRedirectionTests-LambdaCallArgumentMismatch",
-    TestLambdaCallArgumentMismatch)
-
-static void
-testThetaGammaRedirection()
+TEST(InvariantValueRedirectionTests, testThetaGammaRedirection)
 {
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
   auto controlType = ControlType::Create(2);
@@ -554,14 +529,14 @@ testThetaGammaRedirection()
   // We expect that the post value of both loop variables does not originate from the gamma any
   // longer.
   auto loopVars = thetaNode->GetLoopVars();
-  assert(loopVars.size() == 2);
+  EXPECT_EQ(loopVars.size(), 2u);
 
   // Loop variable 0 was dead after the loop, which means it is irrelevant what happens to it in
   // the last iteration of the loop. As the loop predicate originates from a control constant in
   // one of the gamma nodes' subregions, the loop variables' value is always the same as the one
   // from the gamma subregion with control constant 1 (i.e. loop repetition). This means we could
   // redirect the loop variable from the gamma to the respective entry variables' origin.
-  assert(loopVars[0].post->origin() == loopVars[0].pre);
+  EXPECT_EQ(loopVars[0].post->origin(), loopVars[0].pre);
 
   // Loop variable 1 was dead at the beginning of each loop iteration, which means it is irrelevant
   // what happens to it except in the last iteration of the loop. As the loop predicate originates
@@ -569,9 +544,5 @@ testThetaGammaRedirection()
   // always the same as the one from the gamma subregion with control constant 0 (i.e. loop exit).
   // This means we could redirect the loop variable from the gamma to the respective entry
   // variables' origin.
-  assert(loopVars[1].post->origin() == dummyNodeTheta->output(0));
+  EXPECT_EQ(loopVars[1].post->origin(), dummyNodeTheta->output(0));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/InvariantValueRedirectionTests-testThetaGammaRedirection",
-    testThetaGammaRedirection)

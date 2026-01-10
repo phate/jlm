@@ -3,16 +3,17 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <fstream>
-#include <jlm/rvsdg/TestType.hpp>
 
 static std::string
 ReadFile(const jlm::util::FilePath & outputFilePath)
@@ -47,8 +48,7 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
   return result;
 }
 
-static void
-PrintRvsdgTree()
+TEST(RvsdgTreePrinterTests, PrintRvsdgTree)
 {
   using namespace jlm::llvm;
   using namespace jlm::util;
@@ -77,26 +77,24 @@ PrintRvsdgTree()
                       "-LAMBDA[f]\n"
                       "--Region[0]\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/RvsdgTreePrinterTests-PrintRvsdgTree", PrintRvsdgTree)
-
-static void
-PrintNumRvsdgNodesAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumRvsdgNodesAnnotation)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(0), {}, {});
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
+  auto structuralNode = TestStructuralNode::create(rootRegion, 2);
+  TestOperation::createNode(structuralNode->subregion(0), {}, {});
+  TestOperation::createNode(structuralNode->subregion(1), {}, {});
 
-  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
+  TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes });
@@ -112,17 +110,13 @@ PrintNumRvsdgNodesAnnotation()
                       "--Region[0] NumRvsdgNodes:1\n"
                       "--Region[1] NumRvsdgNodes:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumRvsdgNodesAnnotation",
-    PrintNumRvsdgNodesAnnotation)
-
-static void
-PrintNumLoadNodesAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumLoadNodesAnnotation)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
@@ -130,14 +124,14 @@ PrintNumLoadNodesAnnotation()
   const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto rootRegion = &rvsdg.GetRootRegion();
 
   auto & address = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "a");
   auto & memoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "m");
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
+  auto structuralNode = TestStructuralNode::create(rootRegion, 3);
   const auto addressInput = structuralNode->addInputWithArguments(address);
   const auto memoryStateInput = structuralNode->addInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
@@ -145,14 +139,14 @@ PrintNumLoadNodesAnnotation()
       { memoryStateInput.argument[0] },
       valueType,
       4);
-  jlm::tests::TestOperation::createNode(structuralNode->subregion(1), {}, {});
+  TestOperation::createNode(structuralNode->subregion(1), {}, {});
   LoadNonVolatileOperation::Create(
       addressInput.argument[2],
       { memoryStateInput.argument[2] },
       valueType,
       4);
 
-  jlm::tests::TestOperation::createNode(rootRegion, {}, {});
+  TestOperation::createNode(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes });
@@ -169,30 +163,26 @@ PrintNumLoadNodesAnnotation()
                       "--Region[1] NumLoadNodes:0\n"
                       "--Region[2] NumLoadNodes:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumLoadNodesAnnotation",
-    PrintNumLoadNodesAnnotation)
-
-static void
-PrintNumMemoryStateInputsOutputsAnnotation()
+TEST(RvsdgTreePrinterTests, PrintNumMemoryStateInputsOutputsAnnotation)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & y = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
   const auto inputVarX = structuralNode->addInputWithArguments(x);
   const auto inputVarY = structuralNode->addInputWithArguments(y);
 
@@ -219,9 +209,5 @@ PrintNumMemoryStateInputsOutputsAnnotation()
       "--Region[0] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
       "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
 
-  assert(tree == expectedTree);
+  EXPECT_EQ(tree, expectedTree);
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumMemoryStateInputsOutputsAnnotation",
-    PrintNumMemoryStateInputsOutputsAnnotation)

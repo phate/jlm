@@ -3,9 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
-namespace jlm::tests
+namespace jlm::llvm
 {
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -277,9 +280,8 @@ GetElementPtrTest::SetupRvsdg()
   auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) }));
-  auto structType = StructType::Create(false, declaration);
+  auto structType =
+      StructType::CreateIdentified({ BitType::Create(32), BitType::Create(32) }, false);
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -669,15 +671,14 @@ CallTest2::SetupRvsdg()
     auto four = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = MallocOperation::create(prod);
-    auto cast = BitCastOperation::create(alloc[0], pt32);
+    auto & mallocNode = MallocOperation::createNode(*prod, *iOStateArgument);
+    auto cast = BitCastOperation::create(&MallocOperation::addressOutput(mallocNode), pt32);
     auto mx = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
+        std::vector({ &MallocOperation::memoryStateOutput(mallocNode), memoryStateArgument }));
 
-    lambda->finalize({ cast, iOStateArgument, mx });
+    lambda->finalize({ cast, &MallocOperation::ioStateOutput(mallocNode), mx });
 
-    auto mallocNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*alloc[0]);
-    return std::make_tuple(lambda, mallocNode);
+    return std::make_tuple(lambda, &mallocNode);
   };
 
   auto SetupDestroy = [&]()
@@ -1270,9 +1271,10 @@ ExternalCallTest2::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { rvsdg::BitType::Create(32), PointerType::Create(), PointerType::Create() }));
-  auto structType = StructType::Create("myStruct", false, structDeclaration);
+  auto structType = StructType::CreateIdentified(
+      "myStruct",
+      { rvsdg::BitType::Create(32), PointerType::Create(), PointerType::Create() },
+      false);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   VariableArgumentType varArgType;
@@ -2686,9 +2688,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ PointerType::Create() }));
-  auto structType = StructType::Create("myStruct", false, structDeclaration);
+  auto structType = StructType::CreateIdentified("myStruct", { PointerType::Create() }, false);
   auto arrayType = ArrayType::Create(structType, 2);
 
   jlm::rvsdg::PhiBuilder pb;
@@ -2943,17 +2943,17 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto mallocResults = MallocOperation::create(eight);
+    auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResults = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
+        std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
-    auto lambdaOutput = lambda->finalize({ mallocResults[0], iOStateArgument, mergeResults });
+    auto lambdaOutput = lambda->finalize({ &MallocOperation::addressOutput(mallocNode),
+                                           &MallocOperation::ioStateOutput(mallocNode),
+                                           mergeResults });
 
     GraphExport::Create(*lambdaOutput, "ReturnAddress");
 
-    return std::make_tuple(
-        lambdaOutput,
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocResults[0]));
+    return std::make_tuple(lambdaOutput, &mallocNode);
   };
 
   auto SetupCallExternalFunction1 = [&](jlm::rvsdg::RegionArgument * externalFunction1Argument)
@@ -2977,23 +2977,22 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
 
-    auto mallocResults = MallocOperation::create(eight);
+    auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResult = MemoryStateMergeOperation::Create(
-        std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
+        std::vector({ memoryStateArgument, &MallocOperation::memoryStateOutput(mallocNode) }));
 
     auto & call = CallOperation::CreateNode(
         externalFunction1,
         externalFunction1Type,
-        { mallocResults[0], iOStateArgument, mergeResult });
+        { &MallocOperation::addressOutput(mallocNode),
+          &MallocOperation::ioStateOutput(mallocNode),
+          mergeResult });
 
     auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "CallExternalFunction1");
 
-    return std::make_tuple(
-        lambdaOutput,
-        &call,
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocResults[0]));
+    return std::make_tuple(lambdaOutput, &call, &mallocNode);
   };
 
   auto SetupCallExternalFunction2 = [&](jlm::rvsdg::RegionArgument * externalFunction2Argument)
@@ -3343,9 +3342,7 @@ MemcpyTest2::SetupRvsdg()
 
   auto pointerType = PointerType::Create();
   auto arrayType = ArrayType::Create(PointerType::Create(), 32);
-  auto & structBDeclaration =
-      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ arrayType }));
-  auto structTypeB = StructType::Create("structTypeB", false, structBDeclaration);
+  auto structTypeB = StructType::CreateIdentified("structTypeB", { arrayType }, false);
 
   auto SetupFunctionG = [&]()
   {
@@ -3446,9 +3443,7 @@ MemcpyTest3::SetupRvsdg()
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & declaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ PointerType::Create() }));
-  auto structType = StructType::Create("myStruct", false, declaration);
+  auto structType = StructType::CreateIdentified("myStruct", { PointerType::Create() }, false);
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -3505,9 +3500,7 @@ LinkedListTest::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & declaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ PointerType::Create() }));
-  auto structType = StructType::Create("list", false, declaration);
+  auto structType = StructType::CreateIdentified("list", { PointerType::Create() }, false);
 
   auto SetupDeltaMyList = [&]()
   {
@@ -3591,8 +3584,10 @@ AllMemoryNodesTest::SetupRvsdg()
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
-  auto fcttype =
-      rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
+  auto ioStateType = IOStateType::Create();
+  auto functionType = rvsdg::FunctionType::Create(
+      { MemoryStateType::Create(), ioStateType },
+      { MemoryStateType::Create(), ioStateType });
 
   auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -3622,8 +3617,9 @@ AllMemoryNodesTest::SetupRvsdg()
   // Start of function "f"
   Lambda_ = rvsdg::LambdaNode::Create(
       graph->GetRootRegion(),
-      llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
+      llvm::LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto entryMemoryState = Lambda_->GetFunctionArguments()[0];
+  auto ioStateArgument = Lambda_->GetFunctionArguments()[1];
   auto deltaContextVar = Lambda_->AddContextVar(Delta_->output()).inner;
   auto importContextVar = Lambda_->AddContextVar(*Import_).inner;
 
@@ -3637,16 +3633,15 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 4 });
-  auto mallocOutputs = MallocOperation::create(mallocSize);
-  Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mallocOutputs[0]);
+  Malloc_ = &MallocOperation::createNode(*mallocSize, *ioStateArgument);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
-      std::vector<jlm::rvsdg::Output *>{ afterAllocaMemoryState, mallocOutputs[1] });
+      std::vector{ afterAllocaMemoryState, &MallocOperation::memoryStateOutput(*Malloc_) });
 
   // Store the result of malloc into the alloca'd memory
   auto storeAllocaOutputs = StoreNonVolatileOperation::Create(
       allocaOutputs[0],
-      mallocOutputs[0],
+      &MallocOperation::addressOutput(*Malloc_),
       { afterMallocMemoryState },
       8);
 
@@ -3676,7 +3671,7 @@ AllMemoryNodesTest::SetupRvsdg()
       { storeImportedOutputs[0] },
       8);
 
-  Lambda_->finalize({ storeOutputs[0] });
+  Lambda_->finalize({ storeOutputs[0], &MallocOperation::ioStateOutput(*Malloc_) });
 
   GraphExport::Create(Delta_->output(), "global");
   GraphExport::Create(*Lambda_->output(), "f");
@@ -4027,12 +4022,13 @@ VariadicFunctionTest2::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ rvsdg::BitType::Create(32),
-                                        rvsdg::BitType::Create(32),
-                                        PointerType::Create(),
-                                        PointerType::Create() }));
-  auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
+  auto structType = StructType::CreateIdentified(
+      "struct.__va_list_tag",
+      { rvsdg::BitType::Create(32),
+        rvsdg::BitType::Create(32),
+        PointerType::Create(),
+        PointerType::Create() },
+      false);
   auto arrayType = ArrayType::Create(structType, 1);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();

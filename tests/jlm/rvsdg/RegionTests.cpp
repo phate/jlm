@@ -3,19 +3,19 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-operation.hpp>
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
+#include <jlm/rvsdg/TestNodes.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/util/AnnotationMap.hpp>
 
 #include <algorithm>
 #include <cassert>
 
-static void
-IteratorRanges()
+TEST(RegionTests, IteratorRanges)
 {
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -26,8 +26,8 @@ IteratorRanges()
   auto & subregion = *structuralNode->subregion(0);
   auto & constSubregion = *static_cast<const jlm::rvsdg::Region *>(structuralNode->subregion(0));
 
-  auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
-  auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
+  auto & argument0 = *structuralNode->addArguments(valueType).argument[0];
+  auto & argument1 = *structuralNode->addArguments(valueType).argument[0];
 
   auto topNode0 = TestOperation::createNode(&subregion, {}, { valueType });
   auto node0 = TestOperation::createNode(&subregion, { &argument0 }, { valueType });
@@ -41,53 +41,47 @@ IteratorRanges()
 
   // Act & Assert
   auto numArguments = std::distance(subregion.Arguments().begin(), subregion.Arguments().end());
-  assert(numArguments == 2);
+  EXPECT_EQ(numArguments, 2);
   for (auto & argument : constSubregion.Arguments())
   {
-    assert(argument == &argument0 || argument == &argument1);
+    EXPECT_TRUE(argument == &argument0 || argument == &argument1);
   }
 
   auto numTopNodes = std::distance(subregion.TopNodes().begin(), subregion.TopNodes().end());
-  assert(numTopNodes == 1);
+  EXPECT_EQ(numTopNodes, 1);
   for (auto & topNode : constSubregion.TopNodes())
   {
-    assert(&topNode == topNode0);
+    EXPECT_EQ(&topNode, topNode0);
   }
 
   auto numNodes = std::distance(subregion.Nodes().begin(), subregion.Nodes().end());
-  assert(numNodes == 4);
+  EXPECT_EQ(numNodes, 4);
   for (auto & node : constSubregion.Nodes())
   {
-    assert(&node == topNode0 || &node == node0 || &node == node1 || &node == bottomNode0);
+    EXPECT_TRUE(&node == topNode0 || &node == node0 || &node == node1 || &node == bottomNode0);
   }
 
   auto numBottomNodes =
       std::distance(subregion.BottomNodes().begin(), subregion.BottomNodes().end());
-  assert(numBottomNodes == 1);
+  EXPECT_EQ(numBottomNodes, 1);
   for (auto & bottomNode : constSubregion.BottomNodes())
   {
-    assert(&bottomNode == bottomNode0);
+    EXPECT_EQ(&bottomNode, bottomNode0);
   }
 
   auto numResults = std::distance(subregion.Results().begin(), subregion.Results().end());
-  assert(numResults == 3);
+  EXPECT_EQ(numResults, 3);
   for (auto & result : constSubregion.Results())
   {
-    assert(
+    EXPECT_TRUE(
         result == outputVar0.result[0] || result == outputVar1.result[0]
         || result == outputVar2.result[0]);
   }
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IteratorRanges", IteratorRanges)
-
-/**
- * Test Region::Contains().
- */
-static void
-Contains()
+TEST(RegionTests, Contains)
 {
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -108,37 +102,30 @@ Contains()
   TestBinaryOperation::create(valueType, valueType, inputVar2.argument[0], inputVar2.argument[0]);
 
   // Act & Assert
-  assert(jlm::rvsdg::Region::ContainsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
-  assert(jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
-  assert(jlm::rvsdg::Region::ContainsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
-  assert(!jlm::rvsdg::Region::ContainsOperation<TestOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(
+      jlm::rvsdg::Region::ContainsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(!jlm::rvsdg::Region::ContainsOperation<TestOperation>(graph.GetRootRegion(), true));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
-
-/**
- * Test Region::IsRootRegion().
- */
-static void
-IsRootRegion()
+TEST(RegionTests, IsRootRegion)
 {
+  using namespace jlm::rvsdg;
+
   // Arrange
   jlm::rvsdg::Graph graph;
 
-  auto structuralNode = jlm::tests::TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
   // Act & Assert
-  assert(graph.GetRootRegion().IsRootRegion());
-  assert(!structuralNode->subregion(0)->IsRootRegion());
+  EXPECT_TRUE(graph.GetRootRegion().IsRootRegion());
+  EXPECT_FALSE(structuralNode->subregion(0)->IsRootRegion());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IsRootRegion", IsRootRegion)
-
-/**
- * Test Region::NumRegions() with an empty Rvsdg.
- */
-static void
-NumRegions_EmptyRvsdg()
+TEST(RegionTests, NumRegions_EmptyRvsdg)
 {
   using namespace jlm::rvsdg;
 
@@ -146,19 +133,12 @@ NumRegions_EmptyRvsdg()
   Graph graph;
 
   // Act & Assert
-  assert(Region::NumRegions(graph.GetRootRegion()) == 1);
+  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), 1u);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_EmptyRvsdg", NumRegions_EmptyRvsdg)
-
-/**
- * Test Region::NumRegions() with non-empty Rvsdg.
- */
-static void
-NumRegions_NonEmptyRvsdg()
+TEST(RegionTests, NumRegions_NonEmptyRvsdg)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const Graph graph;
@@ -167,16 +147,13 @@ NumRegions_NonEmptyRvsdg()
   TestStructuralNode::create(structuralNode->subregion(3), 5);
 
   // Act & Assert
-  assert(Region::NumRegions(graph.GetRootRegion()) == 1 + 4 + 2 + 5);
+  constexpr unsigned int numTotalSubRegions = 1 + 4 + 2 + 5;
+  EXPECT_EQ(Region::NumRegions(graph.GetRootRegion()), numTotalSubRegions);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_NonEmptyRvsdg", NumRegions_NonEmptyRvsdg)
-
-static void
-RemoveResults()
+TEST(RegionTests, RemoveResults)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   const auto valueType = TestType::createValueType();
@@ -208,104 +185,102 @@ RemoveResults()
   GraphExport::Create(i9, "x9");
 
   // Act & Arrange
-  assert(rvsdg.GetRootRegion().nresults() == 10);
+  EXPECT_EQ(rvsdg.GetRootRegion().nresults(), 10u);
 
   // Remove all results that have an even index
   size_t numRemovedResults = rootRegion.RemoveResults({ 0, 2, 4, 6, 8 });
-  assert(numRemovedResults == 5);
-  assert(rootRegion.nresults() == 5);
-  assert(rootRegion.result(0)->origin() == &i1);
-  assert(rootRegion.result(1)->origin() == &i3);
-  assert(rootRegion.result(2)->origin() == &i5);
-  assert(rootRegion.result(3)->origin() == &i7);
-  assert(rootRegion.result(4)->origin() == &i9);
-  assert(i0.nusers() == 0);
-  assert(i2.nusers() == 0);
-  assert(i4.nusers() == 0);
-  assert(i6.nusers() == 0);
-  assert(i8.nusers() == 0);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(numRemovedResults, 5u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
+  EXPECT_EQ(rootRegion.result(0)->origin(), &i1);
+  EXPECT_EQ(rootRegion.result(1)->origin(), &i3);
+  EXPECT_EQ(rootRegion.result(2)->origin(), &i5);
+  EXPECT_EQ(rootRegion.result(3)->origin(), &i7);
+  EXPECT_EQ(rootRegion.result(4)->origin(), &i9);
+  EXPECT_EQ(i0.nusers(), 0u);
+  EXPECT_EQ(i2.nusers(), 0u);
+  EXPECT_EQ(i4.nusers(), 0u);
+  EXPECT_EQ(i6.nusers(), 0u);
+  EXPECT_EQ(i8.nusers(), 0u);
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove no result
   numRemovedResults = rootRegion.RemoveResults({});
-  assert(numRemovedResults == 0);
-  assert(rootRegion.nresults() == 5);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(numRemovedResults, 0u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove non-existent input
   numRemovedResults = rootRegion.RemoveResults({ 15 });
-  assert(numRemovedResults == 0);
-  assert(rootRegion.nresults() == 5);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8 }));
+  EXPECT_EQ(numRemovedResults, 0u);
+  EXPECT_EQ(rootRegion.nresults(), 5u);
+  EXPECT_EQ(observer.destroyedInputIndices(), std::vector<size_t>({ 0, 2, 4, 6, 8 }));
 
   // Remove remaining results
   numRemovedResults = rootRegion.RemoveResults({ 0, 1, 2, 3, 4 });
-  assert(numRemovedResults == 5);
-  assert(rootRegion.nresults() == 0);
-  assert(i1.nusers() == 0);
-  assert(i3.nusers() == 0);
-  assert(i5.nusers() == 0);
-  assert(i7.nusers() == 0);
-  assert(i9.nusers() == 0);
-  assert(observer.destroyedInputIndices() == std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
+  EXPECT_EQ(numRemovedResults, 5u);
+  EXPECT_EQ(rootRegion.nresults(), 0u);
+  EXPECT_EQ(i1.nusers(), 0u);
+  EXPECT_EQ(i3.nusers(), 0u);
+  EXPECT_EQ(i5.nusers(), 0u);
+  EXPECT_EQ(i7.nusers(), 0u);
+  EXPECT_EQ(i9.nusers(), 0u);
+  EXPECT_EQ(
+      observer.destroyedInputIndices(),
+      std::vector<size_t>({ 0, 2, 4, 6, 8, 0, 1, 2, 3, 4 }));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResults", RemoveResults)
-
-/**
- * Test Region::RemoveArguments()
- */
-static void
-RemoveArguments()
+TEST(RegionTests, RemoveArguments)
 {
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
+  Graph rvsdg;
+  auto & rootRegion = rvsdg.GetRootRegion();
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  auto argument0 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument1 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument2 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument3 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument4 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument5 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument6 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument7 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument8 = &TestGraphArgument::Create(region, nullptr, valueType);
-  auto argument9 = &TestGraphArgument::Create(region, nullptr, valueType);
+  auto argument0 = &GraphImport::Create(rvsdg, valueType, "argument0");
+  auto argument1 = &GraphImport::Create(rvsdg, valueType, "argument1");
+  auto argument2 = &GraphImport::Create(rvsdg, valueType, "argument2");
+  auto argument3 = &GraphImport::Create(rvsdg, valueType, "argument3");
+  auto argument4 = &GraphImport::Create(rvsdg, valueType, "argument4");
+  auto argument5 = &GraphImport::Create(rvsdg, valueType, "argument5");
+  auto argument6 = &GraphImport::Create(rvsdg, valueType, "argument6");
+  auto argument7 = &GraphImport::Create(rvsdg, valueType, "argument7");
+  auto argument8 = &GraphImport::Create(rvsdg, valueType, "argument8");
+  auto argument9 = &GraphImport::Create(rvsdg, valueType, "argument9");
 
-  auto node =
-      TestOperation::createNode(&region, { argument2, argument4, argument6 }, { valueType });
+  auto node = TestOperation::createNode(
+      &rvsdg.GetRootRegion(),
+      { argument2, argument4, argument6 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 10);
-  assert(argument0->index() == 0);
-  assert(argument1->index() == 1);
-  assert(argument2->index() == 2);
-  assert(argument3->index() == 3);
-  assert(argument4->index() == 4);
-  assert(argument5->index() == 5);
-  assert(argument6->index() == 6);
-  assert(argument7->index() == 7);
-  assert(argument8->index() == 8);
-  assert(argument9->index() == 9);
+  EXPECT_EQ(rootRegion.narguments(), 10u);
+  EXPECT_EQ(argument0->index(), 0u);
+  EXPECT_EQ(argument1->index(), 1u);
+  EXPECT_EQ(argument2->index(), 2u);
+  EXPECT_EQ(argument3->index(), 3u);
+  EXPECT_EQ(argument4->index(), 4u);
+  EXPECT_EQ(argument5->index(), 5u);
+  EXPECT_EQ(argument6->index(), 6u);
+  EXPECT_EQ(argument7->index(), 7u);
+  EXPECT_EQ(argument8->index(), 8u);
+  EXPECT_EQ(argument9->index(), 9u);
 
   // Remove all arguments that have an even index
-  size_t numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6, 8 });
+  size_t numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6, 8 });
   // We expect only argument0 and argument8 to be removed, as argument2, argument4, and
   // argument6 are not dead
-  assert(numRemovedArguments == 2);
-  assert(region.narguments() == 8);
-  assert(argument1->index() == 0);
-  assert(argument2->index() == 1);
-  assert(argument3->index() == 2);
-  assert(argument4->index() == 3);
-  assert(argument5->index() == 4);
-  assert(argument6->index() == 5);
-  assert(argument7->index() == 6);
-  assert(argument9->index() == 7);
+  EXPECT_EQ(numRemovedArguments, 2u);
+  EXPECT_EQ(rootRegion.narguments(), 8u);
+  EXPECT_EQ(argument1->index(), 0u);
+  EXPECT_EQ(argument2->index(), 1u);
+  EXPECT_EQ(argument3->index(), 2u);
+  EXPECT_EQ(argument4->index(), 3u);
+  EXPECT_EQ(argument5->index(), 4u);
+  EXPECT_EQ(argument6->index(), 5u);
+  EXPECT_EQ(argument7->index(), 6u);
+  EXPECT_EQ(argument9->index(), 7u);
 
   // Reassign arguments to avoid mental gymnastics
   argument0 = argument1;
@@ -318,17 +293,17 @@ RemoveArguments()
   argument7 = argument9;
 
   // Remove all users from the arguments
-  region.removeNode(node);
+  rootRegion.removeNode(node);
 
   // Remove all arguments that have an even index
-  numRemovedArguments = region.RemoveArguments({ 0, 2, 4, 6 });
+  numRemovedArguments = rootRegion.RemoveArguments({ 0, 2, 4, 6 });
   // We expect argument0, argument2, argument4, and argument6 to be removed
-  assert(numRemovedArguments == 4);
-  assert(region.narguments() == 4);
-  assert(argument1->index() == 0);
-  assert(argument3->index() == 1);
-  assert(argument5->index() == 2);
-  assert(argument7->index() == 3);
+  EXPECT_EQ(numRemovedArguments, 4u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
+  EXPECT_EQ(argument1->index(), 0u);
+  EXPECT_EQ(argument3->index(), 1u);
+  EXPECT_EQ(argument5->index(), 2u);
+  EXPECT_EQ(argument7->index(), 3u);
 
   // Reassign arguments to avoid mental gymnastics
   argument0 = argument1;
@@ -337,65 +312,60 @@ RemoveArguments()
   argument3 = argument7;
 
   // Remove no argument
-  numRemovedArguments = region.RemoveArguments({});
-  assert(numRemovedArguments == 0);
-  assert(region.narguments() == 4);
-  assert(argument0->index() == 0);
-  assert(argument1->index() == 1);
-  assert(argument2->index() == 2);
-  assert(argument3->index() == 3);
+  numRemovedArguments = rootRegion.RemoveArguments({});
+  EXPECT_EQ(numRemovedArguments, 0u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
+  EXPECT_EQ(argument0->index(), 0u);
+  EXPECT_EQ(argument1->index(), 1u);
+  EXPECT_EQ(argument2->index(), 2u);
+  EXPECT_EQ(argument3->index(), 3u);
 
   // Remove non-existent argument
-  numRemovedArguments = region.RemoveArguments({ 15 });
-  assert(numRemovedArguments == 0);
-  assert(region.narguments() == 4);
+  numRemovedArguments = rootRegion.RemoveArguments({ 15 });
+  EXPECT_EQ(numRemovedArguments, 0u);
+  EXPECT_EQ(rootRegion.narguments(), 4u);
 
   // Remove all remaining arguments
-  numRemovedArguments = region.RemoveArguments({ 0, 1, 2, 3 });
-  assert(numRemovedArguments == 4);
-  assert(region.narguments() == 0);
+  numRemovedArguments = rootRegion.RemoveArguments({ 0, 1, 2, 3 });
+  EXPECT_EQ(numRemovedArguments, 4u);
+  EXPECT_EQ(rootRegion.narguments(), 0u);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArguments", RemoveArguments)
-
-/**
- * Test Region::PruneArguments()
- */
-static void
-PruneArguments()
+TEST(RegionTests, PruneArguments)
 {
-  using namespace jlm::tests;
+  using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
+  auto valueType = TestType::createValueType();
 
-  auto valueType = jlm::rvsdg::TestType::createValueType();
-  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
-  TestGraphArgument::Create(region, nullptr, valueType);
-  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
+  Graph rvsdg;
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
 
-  auto node = TestOperation::createNode(&region, { &argument0, &argument2 }, { valueType });
+  auto & argument0 = *structuralNode->addArguments(valueType).argument[0];
+  structuralNode->addArguments(valueType);
+  auto & argument2 = *structuralNode->addArguments(valueType).argument[0];
+
+  auto node = TestOperation::createNode(
+      structuralNode->subregion(0),
+      { &argument0, &argument2 },
+      { valueType });
 
   // Act & Arrange
-  assert(region.narguments() == 3);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 3u);
 
-  size_t numRemovedArguments = region.PruneArguments();
-  assert(numRemovedArguments == 1);
-  assert(region.narguments() == 2);
-  assert(argument0.index() == 0);
-  assert(argument2.index() == 1);
+  size_t numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
+  EXPECT_EQ(numRemovedArguments, 1u);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 2u);
+  EXPECT_EQ(argument0.index(), 0u);
+  EXPECT_EQ(argument2.index(), 1u);
 
-  region.removeNode(node);
-  numRemovedArguments = region.PruneArguments();
-  assert(numRemovedArguments == 2);
-  assert(region.narguments() == 0);
+  structuralNode->subregion(0)->removeNode(node);
+  numRemovedArguments = structuralNode->subregion(0)->PruneArguments();
+  EXPECT_EQ(numRemovedArguments, 2u);
+  EXPECT_EQ(structuralNode->subregion(0)->narguments(), 0u);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-PruneArguments", PruneArguments)
-
-static void
-ToTree_EmptyRvsdg()
+TEST(RegionTests, ToTree_EmptyRvsdg)
 {
   using namespace jlm::rvsdg;
 
@@ -407,13 +377,10 @@ ToTree_EmptyRvsdg()
   std::cout << tree << std::flush;
 
   // Assert
-  assert(tree == "RootRegion\n");
+  EXPECT_EQ(tree, "RootRegion\n");
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ToTree_EmptyRvsdg", ToTree_EmptyRvsdg)
-
-static void
-ToTree_EmptyRvsdgWithAnnotations()
+TEST(RegionTests, ToTree_EmptyRvsdgWithAnnotations)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
@@ -431,18 +398,12 @@ ToTree_EmptyRvsdgWithAnnotations()
   std::cout << tree << std::flush;
 
   // Assert
-  assert(tree == "RootRegion NumNodes:0\n");
+  EXPECT_EQ(tree, "RootRegion NumNodes:0\n");
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/RegionTests-ToTree_EmptyRvsdgWithAnnotations",
-    ToTree_EmptyRvsdgWithAnnotations)
-
-static void
-ToTree_RvsdgWithStructuralNodes()
+TEST(RegionTests, ToTree_RvsdgWithStructuralNodes)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -458,23 +419,17 @@ ToTree_RvsdgWithStructuralNodes()
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
   // We should find '\n' 10 times: 1 root region + 3 structural nodes + 6 subregions
-  assert(numLines == 10);
+  EXPECT_EQ(numLines, 10);
 
   // Check that the last line printed looks accordingly
   auto lastLine = std::string("----Region[2]\n");
-  assert(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine) == 0);
+  EXPECT_EQ(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine), 0);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodes",
-    ToTree_RvsdgWithStructuralNodes)
-
-static void
-ToTree_RvsdgWithStructuralNodesAndAnnotations()
+TEST(RegionTests, ToTree_RvsdgWithStructuralNodesAndAnnotations)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
-  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
@@ -498,22 +453,16 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
   // We should find '\n' 8 times: 1 root region + 2 structural nodes + 5 subregions
-  assert(numLines == 8);
+  EXPECT_EQ(numLines, 8);
 
   // Check that the last line printed looks accordingly
   auto lastLine = std::string("----Region[2] NumNodes:0 NumArguments:0\n");
-  assert(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine) == 0);
+  EXPECT_EQ(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine), 0);
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodesAndAnnotations",
-    ToTree_RvsdgWithStructuralNodesAndAnnotations)
-
-static void
-BottomNodeTests()
+TEST(RegionTests, BottomNodeTests)
 {
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
 
@@ -523,32 +472,28 @@ BottomNodeTests()
   // Act & Assert
   // A newly created node without any users should automatically be added to the bottom nodes
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  assert(structuralNode->IsDead());
-  assert(rvsdg.GetRootRegion().numBottomNodes() == 1);
-  assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
+  EXPECT_TRUE(structuralNode->IsDead());
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1u);
+  EXPECT_EQ(&*(rvsdg.GetRootRegion().BottomNodes().begin()), structuralNode);
 
   // The node cedes to be dead
   auto & output = structuralNode->addOutputOnly(valueType);
   GraphExport::Create(output, "x");
-  assert(structuralNode->IsDead() == false);
-  assert(rvsdg.GetRootRegion().numBottomNodes() == 0);
-  assert(rvsdg.GetRootRegion().BottomNodes().begin() == rvsdg.GetRootRegion().BottomNodes().end());
+  EXPECT_FALSE(structuralNode->IsDead());
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 0u);
+  EXPECT_EQ(rvsdg.GetRootRegion().BottomNodes().begin(), rvsdg.GetRootRegion().BottomNodes().end());
 
   // And it becomes dead again
   rvsdg.GetRootRegion().RemoveResults({ 0 });
-  assert(structuralNode->IsDead());
-  assert(rvsdg.GetRootRegion().numBottomNodes() == 1);
-  assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
+  EXPECT_TRUE(structuralNode->IsDead());
+  EXPECT_EQ(rvsdg.GetRootRegion().numBottomNodes(), 1u);
+  EXPECT_EQ(&*(rvsdg.GetRootRegion().BottomNodes().begin()), structuralNode);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-BottomNodeTests", BottomNodeTests)
-
-static void
-computeDepthMap()
+TEST(RegionTests, computeDepthMap)
 {
   // Arrange
   using namespace jlm::rvsdg;
-  using namespace jlm::tests;
 
   auto valueType = TestType::createValueType();
 
@@ -572,11 +517,9 @@ computeDepthMap()
   const auto depthMap = computeDepthMap(rvsdg.GetRootRegion());
 
   // Assert
-  assert(depthMap.size() == 4);
-  assert(depthMap.at(node0) == 0);
-  assert(depthMap.at(node1) == 1);
-  assert(depthMap.at(node2) == 0);
-  assert(depthMap.at(node3) == 2);
+  EXPECT_EQ(depthMap.size(), 4u);
+  EXPECT_EQ(depthMap.at(node0), 0u);
+  EXPECT_EQ(depthMap.at(node1), 1u);
+  EXPECT_EQ(depthMap.at(node2), 0u);
+  EXPECT_EQ(depthMap.at(node3), 2u);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-computeDepthMap", computeDepthMap)

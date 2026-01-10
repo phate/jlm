@@ -1,20 +1,6 @@
 JLC ?= $(BUILD_OUT_PREFIX)jlc
 JLC_OPT ?= -O3
 
-libjlmtest_SOURCES = \
-	tests/test-operation.cpp \
-	tests/test-registry.cpp \
-	tests/test-runner.cpp \
-	tests/TestRvsdgs.cpp \
-
-libjlmtest_HEADERS = \
-	tests/test-operation.hpp \
-	tests/test-registry.hpp \
-	tests/test-util.hpp \
-	tests/TestRvsdgs.hpp \
-
-$(eval $(call common_library,libjlmtest))
-
 ################################################################################
 # Rules to compile test cases with jlc and run them
 

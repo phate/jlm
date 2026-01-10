@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/print.hpp>
@@ -13,8 +12,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static void
-test()
+TEST(EndlessLoopTests, test)
 {
   auto setup = [](llvm::LLVMContext & ctx)
   {
@@ -40,10 +38,8 @@ test()
 
   llvm::LLVMContext ctx;
   auto llvmModule = setup(ctx);
-  jlm::tests::print(*llvmModule);
+  llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-endless-loop", test)

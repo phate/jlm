@@ -3,24 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 
-static void
-TestOperationEquality()
+TEST(GetElementPtrOperationTests, TestOperationEquality)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto arrayType = ArrayType::Create(jlm::rvsdg::BitType::Create(8), 11);
+  auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
-  auto declaration1 = StructType::Declaration::Create(
-      { jlm::rvsdg::BitType::Create(64), jlm::rvsdg::BitType::Create(64) });
-  auto declaration2 =
-      StructType::Declaration::Create({ arrayType, jlm::rvsdg::BitType::Create(32) });
-
-  auto structType1 = StructType::Create(false, *declaration1);
-  auto structType2 = StructType::Create("myStructType", false, *declaration2);
+  auto structType1 = StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
+  auto structType2 =
+      StructType::CreateIdentified("myStructType", { arrayType, BitType::Create(32) }, false);
 
   GetElementPtrOperation operation1(
       { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
@@ -29,13 +25,5 @@ TestOperationEquality()
       { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
       structType2);
 
-  assert(operation1 != operation2);
+  EXPECT_NE(operation1, operation2);
 }
-
-static void
-Test()
-{
-  TestOperationEquality();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestGetElementPtr", Test)

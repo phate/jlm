@@ -3,11 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <gtest/gtest.h>
 
 #include <jlm/tooling/CommandLine.hpp>
 
-#include <cassert>
 #include <cstring>
 
 static const jlm::tooling::JlcCommandLineOptions &
@@ -25,101 +24,72 @@ ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
       cStrings.data());
 }
 
-static void
-Test1()
+TEST(JlcCommandLineParserTests, Test1)
 {
-  /*
-   * Arrange
-   */
+  // Arrange
   std::vector<std::string> commandLineArguments({ "jlc", "-c", "-o", "foo.o", "foo.c" });
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.Compilations_.size() == 1);
+  // Assert
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
   auto & compilation = commandLineOptions.Compilations_[0];
 
-  assert(compilation.RequiresLinking() == false);
-  assert(compilation.OutputFile() == "foo.o");
+  EXPECT_EQ(compilation.RequiresLinking(), false);
+  EXPECT_EQ(compilation.OutputFile(), "foo.o");
 }
 
-static void
-Test2()
+TEST(JlcCommandLineParserTests, Test2)
 {
-  /*
-   * Arrange
-   */
+  // Arrange
   std::vector<std::string> commandLineArguments({ "jlc", "-o", "foobar", "/tmp/f1.o" });
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.Compilations_.size() == 1);
-  assert(commandLineOptions.OutputFile_ == "foobar");
+  // Assert
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
+  EXPECT_EQ(commandLineOptions.OutputFile_, "foobar");
 
   auto & compilation = commandLineOptions.Compilations_[0];
-  assert(compilation.RequiresParsing() == false);
-  assert(compilation.RequiresOptimization() == false);
-  assert(compilation.RequiresAssembly() == false);
-  assert(compilation.RequiresLinking() == true);
+  EXPECT_FALSE(compilation.RequiresParsing());
+  EXPECT_FALSE(compilation.RequiresOptimization());
+  EXPECT_FALSE(compilation.RequiresAssembly());
+  EXPECT_TRUE(compilation.RequiresLinking());
 }
 
-static void
-Test3()
+TEST(JlcCommandLineParserTests, Test3)
 {
   using namespace jlm::tooling;
 
-  /*
-   * Arrange
-   */
+  // Arrange
   std::vector<std::string> commandLineArguments({ "jlc", "-O", "foobar.c" });
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.OptimizationLevel_ == JlcCommandLineOptions::OptimizationLevel::O0);
+  // Assert
+  EXPECT_EQ(commandLineOptions.OptimizationLevel_, JlcCommandLineOptions::OptimizationLevel::O0);
 }
 
-static void
-Test4()
+TEST(JlcCommandLineParserTests, Test4)
 {
-  /*
-   * Arrange
-   */
+  // Arrange
   std::vector<std::string> commandLineArguments({ "jlc", "foobar.c", "-c" });
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.Compilations_.size() == 1);
+  // Assert
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
 
   auto & compilation = commandLineOptions.Compilations_[0];
-  assert(compilation.RequiresLinking() == false);
-  assert(compilation.OutputFile() == "foobar.o");
+  EXPECT_FALSE(compilation.RequiresLinking());
+  EXPECT_EQ(compilation.OutputFile(), "foobar.o");
 }
 
-static void
-TestJlmOptOptimizations()
+TEST(JlcCommandLineParserTests, TestJlmOptOptimizations)
 {
   using namespace jlm::tooling;
 
@@ -131,17 +101,16 @@ TestJlmOptOptimizations()
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  assert(commandLineOptions.JlmOptOptimizations_.size() == 2);
-  assert(
-      commandLineOptions.JlmOptOptimizations_[0]
-      == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
-  assert(
-      commandLineOptions.JlmOptOptimizations_[1]
-      == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
+  EXPECT_EQ(commandLineOptions.JlmOptOptimizations_.size(), 2u);
+  EXPECT_EQ(
+      commandLineOptions.JlmOptOptimizations_[0],
+      JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  EXPECT_EQ(
+      commandLineOptions.JlmOptOptimizations_[1],
+      JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
-static void
-TestFalseJlmOptOptimization()
+TEST(JlcCommandLineParserTests, TestFalseJlmOptOptimization)
 {
   using namespace jlm::tooling;
 
@@ -149,21 +118,10 @@ TestFalseJlmOptOptimization()
   std::vector<std::string> commandLineArguments({ "jlc", "-JFoobar", "foobar.c" });
 
   // Act & Assert
-  bool exceptionThrown = false;
-  try
-  {
-    ParseCommandLineArguments(commandLineArguments);
-  }
-  catch (CommandLineParser::Exception &)
-  {
-    exceptionThrown = true;
-  }
-
-  assert(exceptionThrown);
+  EXPECT_THROW(ParseCommandLineArguments(commandLineArguments), CommandLineParser::Exception);
 }
 
-static void
-TestJlmOptPassStatistics()
+TEST(JlcCommandLineParserTests, TestJlmOptPassStatistics)
 {
   using namespace jlm::tooling;
 
@@ -173,26 +131,12 @@ TestJlmOptPassStatistics()
                                                   "--JlmOptPassStatistics=print-andersen-analysis",
                                                   "foobar.c" });
 
-  jlm::util::HashSet<jlm::util::Statistics::Id> expectedStatistics(
+  jlm::util::HashSet expectedStatistics(
       { jlm::util::Statistics::Id::Aggregation, jlm::util::Statistics::Id::AndersenAnalysis });
 
   // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  assert(commandLineOptions.JlmOptPassStatistics_ == expectedStatistics);
+  EXPECT_EQ(commandLineOptions.JlmOptPassStatistics_, expectedStatistics);
 }
-
-static void
-Test()
-{
-  Test1();
-  Test2();
-  Test3();
-  Test4();
-  TestJlmOptOptimizations();
-  TestFalseJlmOptOptimization();
-  TestJlmOptPassStatistics();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandLineParser", Test)

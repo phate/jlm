@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
-#include <test-util.hpp>
+#include <gtest/gtest.h>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -14,8 +13,7 @@
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static void
-TestFMulAdd()
+TEST(ViewTests, TestFMulAdd)
 {
   // Arrange
   using namespace llvm;
@@ -41,7 +39,7 @@ TestFMulAdd()
     builder.CreateRet(returnValue);
   }
 
-  jlm::tests::print(llvmModule);
+  llvmModule.print(llvm::errs(), nullptr);
 
   // Act
   const auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
@@ -54,10 +52,6 @@ TestFMulAdd()
     const auto basicBlock =
         dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
     const auto fMulAdd = *std::next(basicBlock->rbegin(), 1);
-    assert(jlm::llvm::is<jlm::llvm::FMulAddIntrinsicOperation>(fMulAdd));
+    EXPECT_TRUE(jlm::llvm::is<jlm::llvm::FMulAddIntrinsicOperation>(fMulAdd));
   }
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests-TestFMulAdd",
-    TestFMulAdd);

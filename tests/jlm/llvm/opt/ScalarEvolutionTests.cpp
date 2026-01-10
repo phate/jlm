@@ -10,9 +10,8 @@
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <test-registry.hpp>
 
-#include <cassert>
+#include <gtest/gtest.h>
 
 static std::
     unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>
@@ -23,8 +22,7 @@ static std::
   return chrecMap;
 }
 
-static void
-ConstantInductionVariable()
+TEST(ScalarEvolutionTests, ConstantInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -49,21 +47,16 @@ ConstantInductionVariable()
   const auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 1);
+  EXPECT_EQ(chrecMap.size(), 1u);
 
   // Since lv1 is not a valid induction variable, it's chain recurrence should be
   // {Unknown}<THETA>
   auto testChrec = SCEVChainRecurrence(*theta);
   testChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-ConstantInductionVariable",
-    ConstantInductionVariable)
-
-static void
-SimpleInductionVariable()
+TEST(ScalarEvolutionTests, SimpleInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -98,28 +91,23 @@ SimpleInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a constant with the recurrence {2}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-SimpleInductionVariable",
-    SimpleInductionVariable)
-
-static void
-InductionVariableWithMultiplication()
+TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
 {
   using namespace jlm::llvm;
 
@@ -159,29 +147,24 @@ InductionVariableWithMultiplication()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is not an induction variable because of illegal mult operation.
   // Recurrence: {Unknown}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-InductionVariableWithMultiplication",
-    InductionVariableWithMultiplication)
-
-static void
-RecursiveInductionVariable()
+TEST(ScalarEvolutionTests, RecursiveInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -225,29 +208,24 @@ RecursiveInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a recursive induction variable, which should be folded to {4,+,5}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(4));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(5));
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-RecursiveInductionVariable",
-    RecursiveInductionVariable)
-
-static void
-PolynomialInductionVariable()
+TEST(ScalarEvolutionTests, PolynomialInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -286,15 +264,15 @@ PolynomialInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a (second degree) polynomial induction variable with three operands,
   // Recurrence: {2,+,1,+,1}<THETA>
@@ -302,15 +280,10 @@ PolynomialInductionVariable()
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-PolynomialInductionVariable",
-    PolynomialInductionVariable)
-
-static void
-ThirdDegreePolynomialInductionVariable()
+TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -350,23 +323,23 @@ ThirdDegreePolynomialInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 3);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
-  assert(chrecMap.find(lv3.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 3u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {2,+,1}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
   lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a second degree polynomial induction variable with three operands, {3,+,2,+,1}<THETA>
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(3));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv2 is a third degree polynomial induction variable with three operands,
   // Recurrence: {4,+,3,+,2,+,1}<THETA>
@@ -375,15 +348,10 @@ ThirdDegreePolynomialInductionVariable()
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(3));
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(2));
   lv3TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
-  assert(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-ThirdDegreePolynomialInductionVariable",
-    ThirdDegreePolynomialInductionVariable)
-
-static void
-InductionVariablesWithNonConstantInitialValues()
+TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
 {
   // This test checks the functionality of the folding rules for variables that have start values
   // that are not constants. These will get a SCEVInit node instead, which cannot be folded like a
@@ -442,17 +410,17 @@ InductionVariablesWithNonConstantInitialValues()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 4);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
-  assert(chrecMap.find(lv3.pre) != chrecMap.end());
-  assert(chrecMap.find(lv4.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 4u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv4.pre), chrecMap.end());
 
   // lv1 is a trivial (constant) induction variable.
   // Recurrence: {Init(a0)}
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a general induction variable which is incremented by the value of lv1 for each
   // iteration.
@@ -460,7 +428,7 @@ InductionVariablesWithNonConstantInitialValues()
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv2.pre));
   lv2TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // Tests that two init nodes folded together creates an NAryAdd expression
   // Recurrence: {Init(a2),+,(Init(a1) + Init(a0)),+,Init(a0)}
@@ -470,7 +438,7 @@ InductionVariablesWithNonConstantInitialValues()
       std::make_unique<SCEVInit>(*lv2.pre),
       std::make_unique<SCEVInit>(*lv1.pre)));
   lv3TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
-  assert(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 
   // Tests that when two NAryAdd expressions are folded together, the operands of the RHS add is
   // added to the LHS add
@@ -490,15 +458,10 @@ InductionVariablesWithNonConstantInitialValues()
       std::make_unique<SCEVInit>(*lv1.pre),
       std::make_unique<SCEVInit>(*lv1.pre)));
   lv4TestChrec.AddOperand(std::make_unique<SCEVInit>(*lv1.pre));
-  assert(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-InductionVariablesWithNonConstantInitialValues",
-    InductionVariablesWithNonConstantInitialValues)
-
-static void
-SelfRecursiveInductionVariable()
+TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -530,21 +493,16 @@ SelfRecursiveInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 1);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 1u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-SelfRecursiveInductionVariable",
-    SelfRecursiveInductionVariable)
-
-static void
-DependentOnInvalidInductionVariable()
+TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -582,28 +540,23 @@ DependentOnInvalidInductionVariable()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}<THETA>
   auto lv1TestChrec = SCEVChainRecurrence(*theta);
   lv1TestChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 has the recurrence {0,+,Unknown}<THETA> due to the dependency of lv1
   auto lv2TestChrec = SCEVChainRecurrence(*theta);
   lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
   lv2TestChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-DependentOnInvalidInductionVariable",
-    DependentOnInvalidInductionVariable)
-
-static void
-MutuallyDependentInductionVariables()
+TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
 {
   // Testing mutually dependent variables (A->B->A)
   using namespace jlm::llvm;
@@ -642,23 +595,18 @@ MutuallyDependentInductionVariables()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 2);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 2u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // Both lv1 and lv2 should be {Unknown}<THETA> due to mutual dependency (A->B->A)
   auto testChrec = SCEVChainRecurrence(*theta);
   testChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-MutuallyDependentInductionVariables",
-    MutuallyDependentInductionVariables)
-
-static void
-MultiLayeredMutuallyDependentInductionVariables()
+TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
 {
   // Testing chains of mutually dependent IVs (A->B->C->D->A)
   using namespace jlm::llvm;
@@ -706,21 +654,17 @@ MultiLayeredMutuallyDependentInductionVariables()
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  assert(chrecMap.size() == 4);
-  assert(chrecMap.find(lv1.pre) != chrecMap.end());
-  assert(chrecMap.find(lv2.pre) != chrecMap.end());
-  assert(chrecMap.find(lv3.pre) != chrecMap.end());
-  assert(chrecMap.find(lv4.pre) != chrecMap.end());
+  EXPECT_EQ(chrecMap.size(), 4u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv4.pre), chrecMap.end());
 
   // All variables should be {Unknown}<THETA> due to mutual dependency chain (A->B->C->D->A)
   auto testChrec = SCEVChainRecurrence(*theta);
   testChrec.AddOperand(std::make_unique<SCEVUnknown>());
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  assert(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
 }
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/ScalarEvolutionTests-MultiLayeredMutuallyDependentInductionVariables",
-    MultiLayeredMutuallyDependentInductionVariables)
