@@ -149,17 +149,18 @@ TypeConverter::ConvertStructType(const StructType & type, ::llvm::LLVMContext & 
     return llvmStructType;
   }
 
-  const auto llvmStructType = ::llvm::StructType::create(context);
-  StructTypeMap_.Insert(llvmStructType, sharedPtr);
-
   std::vector<::llvm::Type *> elements;
   for (size_t n = 0; n < type.numElements(); n++)
     elements.push_back(ConvertJlmType(*type.getElementType(n), context));
 
-  if (type.HasName())
-    llvmStructType->setName(type.GetName());
-  llvmStructType->setBody(elements, type.IsPacked());
+  // ::llvm::StructType::get() creates a literal struct, while create() creates an identified struct
+  // Giving the create() method an empty name is equivalent to not providing a name.
+  ::llvm::StructType * llvmStructType =
+      type.IsLiteral()
+          ? ::llvm::StructType::get(context, elements, type.IsPacked())
+          : ::llvm::StructType::create(context, elements, type.GetName(), type.IsPacked());
 
+  StructTypeMap_.Insert(llvmStructType, sharedPtr);
   return llvmStructType;
 }
 
@@ -261,10 +262,12 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
       elementTypes.push_back(ConvertLlvmType(*elementType));
     }
 
-    auto jlmType =
-        structType->hasName()
-            ? StructType::Create(structType->getName().str(), isPacked, std::move(elementTypes))
-            : StructType::Create(isPacked, std::move(elementTypes));
+    auto jlmType = structType->isLiteral()
+                     ? StructType::CreateLiteral(std::move(elementTypes), isPacked)
+                     : StructType::CreateIdentified(
+                           structType->getName().str(),
+                           std::move(elementTypes),
+                           isPacked);
 
     StructTypeMap_.Insert(structType, jlmType);
     return jlmType;

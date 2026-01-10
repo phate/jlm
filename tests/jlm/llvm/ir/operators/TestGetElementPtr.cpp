@@ -14,8 +14,9 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
 
   auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
-  auto structType1 = StructType::Create(false, { BitType::Create(64), BitType::Create(64) });
-  auto structType2 = StructType::Create("myStructType", false, { arrayType, BitType::Create(32) });
+  auto structType1 = StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
+  auto structType2 =
+      StructType::CreateIdentified("myStructType", { arrayType, BitType::Create(32) }, false);
 
   GetElementPtrOperation operation1(
       { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },

@@ -189,8 +189,8 @@ bool
 StructType::operator==(const Type & other) const noexcept
 {
   const auto type = dynamic_cast<const StructType *>(&other);
-  if (!type || type->IsPacked_ != IsPacked_ || type->Name_ != Name_
-      || type->numElements() != numElements())
+  if (!type || type->isPacked_ != isPacked_ || type->isLiteral_ != isLiteral_
+      || type->name_ != name_ || type->numElements() != numElements())
     return false;
 
   for (size_t n = 0; n < numElements(); n++)
@@ -206,10 +206,11 @@ std::size_t
 StructType::ComputeHash() const noexcept
 {
   const auto typeHash = typeid(StructType).hash_code();
-  const auto isPackedHash = std::hash<bool>()(IsPacked_);
-  const auto nameHash = std::hash<std::string>()(Name_);
+  const auto isLiteralHash = std::hash<bool>()(isLiteral_);
+  const auto isPackedHash = std::hash<bool>()(isPacked_);
+  const auto nameHash = std::hash<std::string>()(name_);
 
-  auto hash = util::CombineHashes(typeHash, isPackedHash, nameHash);
+  auto hash = util::CombineHashes(typeHash, isLiteralHash, isPackedHash, nameHash);
   for (auto & type : types_)
   {
     hash = util::CombineHashes(hash, type->ComputeHash());
