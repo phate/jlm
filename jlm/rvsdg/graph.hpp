@@ -79,6 +79,20 @@ public:
   Graph();
 
   /**
+   * @return A unique identifier for a region within this graph.
+   *
+   * @note This method is automatically invoked when a region is created.
+   * The identifier is only unique within this graph.
+   */
+  [[nodiscard]] Region::Id
+  generateRegionId() noexcept
+  {
+    const auto regionId = nextRegionId_;
+    nextRegionId_++;
+    return regionId;
+  }
+
+  /**
    * @return The root region of the graph.
    */
   [[nodiscard]] Region &
@@ -117,6 +131,7 @@ public:
   ExtractTailNodes(const Graph & rvsdg);
 
 private:
+  Region::Id nextRegionId_;
   std::unique_ptr<Region> RootRegion_;
 };
 

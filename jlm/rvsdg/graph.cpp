@@ -71,7 +71,8 @@ GraphExport::Create(Output & origin, std::string name)
 Graph::~Graph() noexcept = default;
 
 Graph::Graph()
-    : RootRegion_(new Region(nullptr, this))
+    : nextRegionId_(0),
+      RootRegion_(new Region(nullptr, this))
 {}
 
 std::unique_ptr<Graph>
