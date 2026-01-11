@@ -25,7 +25,7 @@ TEST(IfConversionTests, GammaWithoutMatch)
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -78,7 +78,7 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -152,7 +152,7 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -208,7 +208,7 @@ TEST(IfConversionTests, EmptyGammaWithThreeSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -256,7 +256,7 @@ TEST(IfConversionTests, PartialEmptyGamma)
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),

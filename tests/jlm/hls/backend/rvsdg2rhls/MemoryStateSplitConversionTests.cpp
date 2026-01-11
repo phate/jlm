@@ -22,7 +22,7 @@ TEST(MemoryStateSplitConversionTests, SplitConversion)
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importX = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");

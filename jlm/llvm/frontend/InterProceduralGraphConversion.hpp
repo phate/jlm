@@ -17,9 +17,9 @@ namespace jlm::llvm
 {
 
 class InterProceduralGraphModule;
-class RvsdgModule;
+class LlvmRvsdgModule;
 
-std::unique_ptr<RvsdgModule>
+std::unique_ptr<LlvmRvsdgModule>
 ConvertInterProceduralGraphModule(
     InterProceduralGraphModule & interProceduralGraphModule,
     jlm::util::StatisticsCollector & statisticsCollector);

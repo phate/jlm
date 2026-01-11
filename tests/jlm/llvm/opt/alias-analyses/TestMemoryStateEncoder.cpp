@@ -1537,7 +1537,7 @@ TEST(MemoryStateEncoderTests, LambdaMemoryStateArgumentMultipleUsers)
       { pointerType, ioStateType, memoryStateType },
       { bitType32, ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   LambdaNode * lambdaOne = nullptr;

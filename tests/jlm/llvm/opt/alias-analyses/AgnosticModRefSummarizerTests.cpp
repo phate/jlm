@@ -12,7 +12,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunAndersen(const jlm::llvm::RvsdgModule & module)
+RunAndersen(const jlm::llvm::LlvmRvsdgModule & module)
 {
   using namespace jlm::llvm;
 

@@ -21,7 +21,7 @@ TEST(LoopUnswitchingTests, Test1)
   // Arrange
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -89,7 +89,7 @@ TEST(LoopUnswitchingTests, Test2)
   // Arrange
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");

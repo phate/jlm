@@ -21,7 +21,7 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
   const auto bitType = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto & sizeArgument = jlm::rvsdg::GraphImport::Create(graph, bitType, "size");

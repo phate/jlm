@@ -24,7 +24,7 @@ TEST(IOStateEliminationTests, testCall)
   const auto functionType =
       FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, functionType, "g");
@@ -74,7 +74,7 @@ TEST(IOStateEliminationTests, testNesting)
       { controlType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   const auto lambdaNode = LambdaNode::Create(

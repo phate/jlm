@@ -33,7 +33,7 @@ TEST(LoopPassThroughTests, test)
       { rvsdg::BitType::Create(1), rvsdg::BitType::Create(8), rvsdg::BitType::Create(8) },
       { rvsdg::BitType::Create(8) });
 
-  jlm::llvm::RvsdgModule rm(util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(util::FilePath(""), "", "");
 
   /* setup graph */
 

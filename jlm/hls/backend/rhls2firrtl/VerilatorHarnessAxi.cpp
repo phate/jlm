@@ -14,7 +14,7 @@ namespace jlm::hls
 {
 
 std::string
-VerilatorHarnessAxi::GetText(llvm::RvsdgModule & rm)
+VerilatorHarnessAxi::GetText(llvm::LlvmRvsdgModule & rm)
 {
   std::ostringstream cpp;
   const auto & kernel = *get_hls_lambda(rm);

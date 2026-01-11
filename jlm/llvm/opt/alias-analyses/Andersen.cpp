@@ -1525,7 +1525,7 @@ Andersen::Analyze(
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::Analyze(const RvsdgModule & module)
+Andersen::Analyze(const LlvmRvsdgModule & module)
 {
   util::StatisticsCollector statisticsCollector;
   return Analyze(module, statisticsCollector);

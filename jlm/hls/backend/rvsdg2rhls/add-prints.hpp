@@ -16,10 +16,10 @@ void
 add_prints(rvsdg::Region * region);
 
 void
-add_prints(llvm::RvsdgModule & rm);
+add_prints(llvm::LlvmRvsdgModule & rm);
 
 void
-convert_prints(llvm::RvsdgModule & rm);
+convert_prints(llvm::LlvmRvsdgModule & rm);
 
 void
 convert_prints(

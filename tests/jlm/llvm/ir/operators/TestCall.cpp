@@ -110,7 +110,7 @@ TEST(CallOperationTests, TestCallTypeClassifierIndirectCall)
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { vt, IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFunction = [&]()
@@ -163,7 +163,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCall)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -262,7 +262,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCallTheta)
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -376,7 +376,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
   // Arrange
   using namespace jlm::llvm;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFib = [&]()

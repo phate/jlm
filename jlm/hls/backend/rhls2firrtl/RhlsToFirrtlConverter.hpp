@@ -41,7 +41,7 @@ class RhlsToFirrtlConverter : public BaseHLS
 
 public:
   std::string
-  GetText(llvm::RvsdgModule &) override
+  GetText(llvm::LlvmRvsdgModule &) override
   {
     return "MLIR/FIRRTL generator";
   }
@@ -74,7 +74,7 @@ public:
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
 
   std::string
-  ToString(llvm::RvsdgModule & rvsdgModule)
+  ToString(llvm::LlvmRvsdgModule & rvsdgModule)
   {
     // Generate a FIRRTL circuit of the rvsdgModule
     auto lambdaNode = get_hls_lambda(rvsdgModule);
@@ -85,7 +85,7 @@ public:
   }
 
   std::unique_ptr<mlir::ModuleOp>
-  ConvertToMduleOp(llvm::RvsdgModule & rvsdgModule)
+  ConvertToMduleOp(llvm::LlvmRvsdgModule & rvsdgModule)
   {
     auto lambdaNode = get_hls_lambda(rvsdgModule);
     auto mlirGen = RhlsToFirrtlConverter();

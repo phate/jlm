@@ -106,13 +106,13 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override
   {
     using namespace jlm;
     using namespace jlm::llvm;
 
-    auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     const auto pointerType = PointerType::Create();
@@ -372,13 +372,13 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override
   {
     using namespace jlm;
     using namespace jlm::llvm;
 
-    auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     const auto pointerType = PointerType::Create();

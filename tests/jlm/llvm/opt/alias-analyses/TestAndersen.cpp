@@ -13,7 +13,7 @@
 #include <cassert>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunAndersen(jlm::llvm::RvsdgModule & module)
+RunAndersen(jlm::llvm::LlvmRvsdgModule & module)
 {
   using namespace jlm::llvm;
 

@@ -57,7 +57,7 @@ public:
    * \param filePath The path to the file containing RVSDG MLIR IR.
    * \return The converted RVSDG graph.
    */
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ReadAndConvertMlir(const util::FilePath & filePath);
 
   /**
@@ -65,7 +65,7 @@ public:
    * \param block The RVSDG MLIR block to be converted.
    * \return The converted RVSDG graph.
    */
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ConvertMlir(std::unique_ptr<::mlir::Block> & block);
 
   /**
@@ -74,7 +74,7 @@ public:
    * \param block The RVSDG MLIR block to be converted.
    * \return The converted RVSDG graph.
    */
-  static std::unique_ptr<llvm::RvsdgModule>
+  static std::unique_ptr<llvm::LlvmRvsdgModule>
   CreateAndConvert(std::unique_ptr<::mlir::Block> & block)
   {
     jlm::mlir::MlirToJlmConverter converter;
@@ -206,7 +206,7 @@ private:
    * \param omegaNode The MLIR omega opeation to the converted
    * \return The converted RVSDG graph.
    */
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode);
 
   /**

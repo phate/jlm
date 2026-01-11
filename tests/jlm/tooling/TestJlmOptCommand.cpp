@@ -95,7 +95,7 @@ TEST(JlmOptCommandTests, PrintRvsdgTreeToFile)
   // Arrange
   util::FilePath outputFile("/tmp/RvsdgTree");
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   util::StatisticsCollector statisticsCollector;
 
   // Act
