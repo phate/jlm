@@ -15,7 +15,7 @@
 
 namespace jlm::llvm
 {
-class RvsdgModule;
+class LlvmRvsdgModule;
 }
 
 namespace jlm::tooling
@@ -365,59 +365,59 @@ public:
 
   static void
   PrintRvsdgModule(
-      llvm::RvsdgModule & rvsdgModule,
+      llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
       util::StatisticsCollector & statisticsCollector);
 
 private:
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ParseInputFile(
       const util::FilePath & inputFile,
       const JlmOptCommandLineOptions::InputFormat & inputFormat,
       util::StatisticsCollector & statisticsCollector) const;
 
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ParseLlvmIrFile(const util::FilePath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
 
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   ParseMlirIrFile(const util::FilePath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
 
   static void
   PrintAsAscii(
-      const llvm::RvsdgModule & rvsdgModule,
+      const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsXml(
-      const llvm::RvsdgModule & rvsdgModule,
+      const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsLlvm(
-      llvm::RvsdgModule & rvsdgModule,
+      llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsMlir(
-      const llvm::RvsdgModule & rvsdgModule,
+      const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsRvsdgTree(
-      const llvm::RvsdgModule & rvsdgModule,
+      const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsDot(
-      const llvm::RvsdgModule & rvsdgModule,
+      const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 

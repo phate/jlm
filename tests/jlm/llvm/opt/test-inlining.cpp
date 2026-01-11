@@ -24,7 +24,7 @@
  * @return the statistics instance produced by the inlining pass
  */
 static std::unique_ptr<jlm::util::Statistics>
-runInlining(jlm::llvm::RvsdgModule & rm)
+runInlining(jlm::llvm::LlvmRvsdgModule & rm)
 {
   jlm::llvm::FunctionInlining fctinline;
   jlm::util::StatisticsCollectorSettings settings({ jlm::util::Statistics::Id::FunctionInlining });
@@ -74,7 +74,7 @@ TEST(FunctionInliningTests, testSimpleInlining)
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
@@ -213,7 +213,7 @@ TEST(FunctionInliningTests, testInliningWithAlloca)
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
@@ -332,7 +332,7 @@ TEST(FunctionInliningTests, testIndirectCall)
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, functionType2, "i");
 
@@ -401,7 +401,7 @@ TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto SetupF1 = [&]()

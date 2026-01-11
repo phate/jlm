@@ -24,7 +24,7 @@ TEST(RedundantBufferEliminationTests, BufferWithLocalLoad)
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
@@ -64,7 +64,7 @@ TEST(RedundantBufferEliminationTests, BufferWithLocalStore)
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
@@ -104,7 +104,7 @@ TEST(RedundantBufferEliminationTests, BufferWithLoad)
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
@@ -144,7 +144,7 @@ TEST(RedundantBufferEliminationTests, BufferWithStore)
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
@@ -189,7 +189,7 @@ TEST(RedundantBufferEliminationTests, BufferWithForkAndLocalLoad)
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
@@ -231,7 +231,7 @@ TEST(RedundantBufferEliminationTests, BufferWithBranchAndLocalLoad)
   auto controlType = ControlType::Create(2);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
@@ -272,7 +272,7 @@ TEST(RedundantBufferEliminationTests, BufferWithOtherNode)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
@@ -313,7 +313,7 @@ TEST(RedundantBufferEliminationTests, BufferWithNonMemoryStateOperand)
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
@@ -355,7 +355,7 @@ TEST(RedundantBufferEliminationTests, PassthroughBuffer)
   auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");

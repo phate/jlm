@@ -58,7 +58,7 @@ namespace jlm::hls
 {
 
 void
-split_opt(llvm::RvsdgModule & rm)
+split_opt(llvm::LlvmRvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
@@ -76,7 +76,7 @@ split_opt(llvm::RvsdgModule & rm)
 }
 
 void
-pre_opt(jlm::llvm::RvsdgModule & rm)
+pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
@@ -94,7 +94,7 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
 }
 
 void
-dump_xml(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
+dump_xml(llvm::LlvmRvsdgModule & rvsdgModule, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
   jlm::rvsdg::view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), xml_file);
@@ -340,12 +340,13 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::Linkage link)
   return lambda;
 }
 
-std::unique_ptr<jlm::llvm::RvsdgModule>
-split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name)
 {
   // TODO: use a different datastructure for rhls?
   // create a copy of rm
-  auto rhls = llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
+  auto rhls =
+      llvm::LlvmRvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
   std::cout << "processing " << rm.SourceFileName().name() << "\n";
   auto root = &rm.Rvsdg().GetRootRegion();
   for (auto node : rvsdg::TopDownTraverser(root))
@@ -436,7 +437,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
+rvsdg2ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & path)
 {
   dump_ref(rhls, path);
 }
@@ -523,10 +524,10 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
+dump_ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & path)
 {
   auto reference =
-      llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
+      llvm::LlvmRvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
   rvsdg::SubstitutionMap smap;
   rhls.Rvsdg().GetRootRegion().copy(&reference->Rvsdg().GetRootRegion(), smap, true, true);
   pre_opt(*reference);

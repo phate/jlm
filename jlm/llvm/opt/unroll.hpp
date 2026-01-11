@@ -15,7 +15,7 @@
 namespace jlm::llvm
 {
 
-class RvsdgModule;
+class LlvmRvsdgModule;
 
 /**
  * \brief Optimization that attempts to unroll loops (thetas).

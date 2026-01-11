@@ -30,7 +30,7 @@ class RvsdgTest
 public:
   virtual ~RvsdgTest() = default;
 
-  jlm::llvm::RvsdgModule &
+  jlm::llvm::LlvmRvsdgModule &
   module()
   {
     InitializeTest();
@@ -58,10 +58,10 @@ private:
   /**
    * \brief Create RVSDG for this test.
    */
-  virtual std::unique_ptr<jlm::llvm::RvsdgModule>
+  virtual std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() = 0;
 
-  std::unique_ptr<jlm::llvm::RvsdgModule> module_;
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule> module_;
 };
 
 /** \brief StoreTest1 class
@@ -88,7 +88,7 @@ private:
 class StoreTest1 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -126,7 +126,7 @@ public:
 class StoreTest2 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -160,7 +160,7 @@ public:
 class LoadTest1 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -199,7 +199,7 @@ public:
 class LoadTest2 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -235,7 +235,7 @@ public:
 class LoadFromUndefTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -278,7 +278,7 @@ private:
 class GetElementPtrTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -302,7 +302,7 @@ public:
 class BitCastTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -359,7 +359,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaBits2Ptr_{};
@@ -384,7 +384,7 @@ private:
 class ConstantPointerNullTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -424,7 +424,7 @@ public:
 class CallTest1 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -519,7 +519,7 @@ public:
   rvsdg::SimpleNode * free;
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallCreate1_{};
@@ -608,7 +608,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallIndcall_{};
@@ -795,7 +795,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::DeltaNode * DeltaG1_{};
@@ -860,7 +860,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaF_{};
@@ -925,7 +925,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaG_ = {};
@@ -960,7 +960,7 @@ private:
 class GammaTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1085,7 +1085,7 @@ public:
   }
 
 private:
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::LambdaNode * LambdaF_{};
@@ -1124,7 +1124,7 @@ private:
 class ThetaTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1174,7 +1174,7 @@ public:
   rvsdg::Node * constantFive;
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallG_{};
@@ -1222,7 +1222,7 @@ public:
   jlm::rvsdg::DeltaNode * delta_d2;
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallF1_{};
@@ -1287,7 +1287,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaF_{};
@@ -1341,7 +1341,7 @@ public:
   jlm::rvsdg::GraphImport * import_d2;
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallF1_{};
@@ -1409,7 +1409,7 @@ public:
   rvsdg::SimpleNode * alloca;
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::SimpleNode * CallFibm1_{};
@@ -1613,7 +1613,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaEight_{};
@@ -1666,7 +1666,7 @@ class PhiWithDeltaTest final : public RvsdgTest
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::DeltaNode * Delta_ = {};
@@ -1691,7 +1691,7 @@ private:
 class ExternalMemoryTest final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1723,7 +1723,7 @@ public:
 class EscapedMemoryTest1 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1772,7 +1772,7 @@ public:
 class EscapedMemoryTest2 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1812,7 +1812,7 @@ public:
 class EscapedMemoryTest3 final : public RvsdgTest
 {
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
 public:
@@ -1894,7 +1894,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaF_{};
@@ -1970,7 +1970,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaF_ = {};
@@ -2025,7 +2025,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * Lambda_ = {};
@@ -2078,7 +2078,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::DeltaNode * DeltaMyList_{};
@@ -2174,7 +2174,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::DeltaNode * Delta_ = {};
@@ -2239,7 +2239,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   size_t NumAllocaNodes_;
@@ -2317,7 +2317,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::DeltaNode * Global_ = {};
@@ -2372,7 +2372,7 @@ public:
   }
 
 private:
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::LambdaNode * LambdaG_ = {};
@@ -2405,7 +2405,7 @@ public:
   }
 
 private:
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::LambdaNode * LambdaMain_{};
@@ -2476,7 +2476,7 @@ public:
   }
 
 private:
-  std::unique_ptr<llvm::RvsdgModule>
+  std::unique_ptr<llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   rvsdg::LambdaNode * LambdaF_ = {};
@@ -2544,7 +2544,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::llvm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
   SetupRvsdg() override;
 
   jlm::rvsdg::LambdaNode * LambdaFst_ = {};

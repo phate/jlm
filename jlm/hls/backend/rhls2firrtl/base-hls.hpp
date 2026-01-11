@@ -25,7 +25,7 @@ public:
   virtual ~BaseHLS();
 
   std::string
-  run(llvm::RvsdgModule & rm)
+  run(llvm::LlvmRvsdgModule & rm)
   {
     JLM_ASSERT(node_map.empty());
     // ensure consistent naming across runs
@@ -54,16 +54,16 @@ protected:
   get_port_name(jlm::rvsdg::Output * port);
 
   const rvsdg::LambdaNode *
-  get_hls_lambda(llvm::RvsdgModule & rm);
+  get_hls_lambda(llvm::LlvmRvsdgModule & rm);
 
   void
   create_node_names(rvsdg::Region * r);
 
   virtual std::string
-  GetText(llvm::RvsdgModule & rm) = 0;
+  GetText(llvm::LlvmRvsdgModule & rm) = 0;
 
   static std::string
-  get_base_file_name(const llvm::RvsdgModule & rm);
+  get_base_file_name(const llvm::LlvmRvsdgModule & rm);
 
   /**
    * Extracts all region arguments of the given kernel that represent memory responses.
