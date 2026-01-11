@@ -70,7 +70,7 @@ public:
    * longer needed.
    */
   ::mlir::rvsdg::OmegaNode
-  ConvertModule(const llvm::RvsdgModule & rvsdgModule);
+  ConvertModule(const llvm::LlvmRvsdgModule & rvsdgModule);
 
   /**
    * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to

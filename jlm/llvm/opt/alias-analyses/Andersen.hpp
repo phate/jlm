@@ -322,7 +322,7 @@ public:
    * @see Analyze
    */
   std::unique_ptr<PointsToGraph>
-  Analyze(const RvsdgModule & module);
+  Analyze(const LlvmRvsdgModule & module);
 
   /**
    * Converts a PointerObjectSet into PointsToGraph nodes,

@@ -224,7 +224,7 @@ TEST(LoopUnrollingTests, test_unknown_boundaries)
   auto bt = jlm::rvsdg::BitType::Create(32);
   TestOperation op({ bt }, { bt });
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bt, "x");
@@ -276,7 +276,7 @@ find_thetas(jlm::rvsdg::Region * region)
 
 TEST(LoopUnrollingTests, test_nested_theta)
 {
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });

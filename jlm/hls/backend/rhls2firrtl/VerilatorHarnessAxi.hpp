@@ -22,7 +22,7 @@ class VerilatorHarnessAxi : public BaseHLS
   }
 
   std::string
-  GetText(llvm::RvsdgModule & rm) override;
+  GetText(llvm::LlvmRvsdgModule & rm) override;
 
 public:
   /**

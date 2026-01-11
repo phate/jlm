@@ -33,7 +33,7 @@ namespace jlm::llvm
 class ControlFlowGraph;
 class DataNodeInit;
 class InterProceduralGraphModule;
-class RvsdgModule;
+class LlvmRvsdgModule;
 class Variable;
 
 class RvsdgToIpGraphConverter final
@@ -57,11 +57,11 @@ public:
   operator=(RvsdgToIpGraphConverter &&) = delete;
 
   std::unique_ptr<InterProceduralGraphModule>
-  ConvertModule(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
+  ConvertModule(LlvmRvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
 
   static std::unique_ptr<InterProceduralGraphModule>
   CreateAndConvertModule(
-      RvsdgModule & rvsdgModule,
+      LlvmRvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector);
 
 private:

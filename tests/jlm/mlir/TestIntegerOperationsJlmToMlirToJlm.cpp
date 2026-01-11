@@ -38,7 +38,7 @@ TestIntegerBinaryOperation()
   const uint64_t val1 = 2;
   const uint64_t val2 = 3;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -162,7 +162,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
   const uint64_t val1 = 2;
   const uint64_t val2 = 3;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {

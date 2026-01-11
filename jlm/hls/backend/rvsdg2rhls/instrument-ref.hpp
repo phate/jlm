@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-instrument_ref(llvm::RvsdgModule & rm);
+instrument_ref(llvm::LlvmRvsdgModule & rm);
 
 void
 instrument_ref(

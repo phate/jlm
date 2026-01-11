@@ -16,7 +16,7 @@ TEST(LambdaTests, TestArgumentIterators)
   using namespace jlm::rvsdg;
 
   auto vt = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
@@ -80,7 +80,7 @@ TEST(LambdaTests, TestInvalidOperandRegion)
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -103,7 +103,7 @@ TEST(LambdaTests, TestRemoveLambdaInputsWhere)
   auto valueType = TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
@@ -173,7 +173,7 @@ TEST(LambdaTests, TestPruneLambdaInputs)
   auto valueType = TestType::createValueType();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");

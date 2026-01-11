@@ -456,14 +456,14 @@ ViewDot(rvsdg::Region * region, FILE * out)
 }
 
 void
-DumpDot(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
+DumpDot(llvm::LlvmRvsdgModule & rvsdgModule, const std::string & file_name)
 {
   DumpDot(&rvsdgModule.Rvsdg().GetRootRegion(), file_name);
 }
 
 void
 DumpDot(
-    llvm::RvsdgModule & rvsdgModule,
+    llvm::LlvmRvsdgModule & rvsdgModule,
     const std::string & file_name,
     std::unordered_map<rvsdg::Output *, ViewColors> outputColor,
     std::unordered_map<rvsdg::Input *, ViewColors> inputColor,

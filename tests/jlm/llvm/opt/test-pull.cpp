@@ -26,7 +26,7 @@ TEST(NodeSinkingTests, testPullInTop)
   TestOperation bop({ vt, vt }, { vt });
   TestOperation cop({ ct, vt }, { ct });
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
@@ -104,7 +104,7 @@ TEST(NodeSinkingTests, testPull)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto p = &jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");

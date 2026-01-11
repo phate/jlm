@@ -24,7 +24,7 @@ TEST(UnusedStateRemovalTests, TestGamma)
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
@@ -84,7 +84,7 @@ TEST(UnusedStateRemovalTests, TestTheta)
       { ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto importP = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "p");
@@ -133,7 +133,7 @@ TEST(UnusedStateRemovalTests, TestLambda)
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
@@ -190,7 +190,7 @@ TEST(UnusedStateRemovalTests, TestUsedMemoryState)
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -233,7 +233,7 @@ TEST(UnusedStateRemovalTests, TestUnusedMemoryState)
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -277,7 +277,7 @@ TEST(UnusedStateRemovalTests, TestInvariantMemoryState)
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;

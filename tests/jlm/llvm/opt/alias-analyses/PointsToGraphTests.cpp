@@ -31,14 +31,14 @@ public:
   }
 
   std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-  Analyze(const jlm::llvm::RvsdgModule & rvsdgModule)
+  Analyze(const jlm::llvm::LlvmRvsdgModule & rvsdgModule)
   {
     jlm::util::StatisticsCollector statisticsCollector;
     return Analyze(rvsdgModule, statisticsCollector);
   }
 
   static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-  CreateAndAnalyze(const jlm::llvm::RvsdgModule & rvsdgModule)
+  CreateAndAnalyze(const jlm::llvm::LlvmRvsdgModule & rvsdgModule)
   {
     TestAnalysis analysis;
     return analysis.Analyze(rvsdgModule);

@@ -133,7 +133,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
 }
 
 const jlm::rvsdg::LambdaNode *
-BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
+BaseHLS::get_hls_lambda(llvm::LlvmRvsdgModule & rm)
 {
   auto region = &rm.Rvsdg().GetRootRegion();
   auto ln = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
@@ -148,7 +148,7 @@ BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 }
 
 std::string
-BaseHLS::get_base_file_name(const llvm::RvsdgModule & rm)
+BaseHLS::get_base_file_name(const llvm::LlvmRvsdgModule & rm)
 {
   auto source_file_name = rm.SourceFileName().name();
   auto base_file_name = source_file_name.substr(0, source_file_name.find_last_of('.'));

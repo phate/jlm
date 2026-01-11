@@ -22,7 +22,7 @@ TEST(ForkInsertionTests, ForkInsertion)
       { bit32Type, bit32Type, bit32Type },
       { bit32Type, bit32Type, bit32Type });
 
-  RvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -82,7 +82,7 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
   auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = rvsdg::FunctionType::Create({ bit32Type }, { bit32Type });
 
-  RvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   auto lambda = rvsdg::LambdaNode::Create(

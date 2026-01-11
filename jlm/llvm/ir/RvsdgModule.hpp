@@ -107,26 +107,26 @@ private:
 /**
  * An LLVM module utilizing the RVSDG representation.
  */
-class RvsdgModule final : public rvsdg::RvsdgModule
+class LlvmRvsdgModule final : public rvsdg::RvsdgModule
 {
 public:
-  ~RvsdgModule() noexcept override = default;
+  ~LlvmRvsdgModule() noexcept override = default;
 
-  RvsdgModule(util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
+  LlvmRvsdgModule(util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
       : rvsdg::RvsdgModule(std::move(sourceFileName)),
         DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple))
   {}
 
-  RvsdgModule(const RvsdgModule &) = delete;
+  LlvmRvsdgModule(const LlvmRvsdgModule &) = delete;
 
-  RvsdgModule(RvsdgModule &&) = delete;
+  LlvmRvsdgModule(LlvmRvsdgModule &&) = delete;
 
-  RvsdgModule &
-  operator=(const RvsdgModule &) = delete;
+  LlvmRvsdgModule &
+  operator=(const LlvmRvsdgModule &) = delete;
 
-  RvsdgModule &
-  operator=(RvsdgModule &&) = delete;
+  LlvmRvsdgModule &
+  operator=(LlvmRvsdgModule &&) = delete;
 
   [[nodiscard]] const util::FilePath &
   SourceFileName() const noexcept
@@ -146,13 +146,13 @@ public:
     return DataLayout_;
   }
 
-  static std::unique_ptr<RvsdgModule>
+  static std::unique_ptr<LlvmRvsdgModule>
   Create(
       const util::FilePath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout)
   {
-    return std::make_unique<RvsdgModule>(sourceFileName, targetTriple, dataLayout);
+    return std::make_unique<LlvmRvsdgModule>(sourceFileName, targetTriple, dataLayout);
   }
 
 private:

@@ -22,7 +22,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
+RunInvariantValueRedirection(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
 {
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -44,7 +44,7 @@ TEST(InvariantValueRedirectionTests, TestGamma)
       { controlType, valueType, valueType },
       { valueType, valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -93,7 +93,7 @@ TEST(InvariantValueRedirectionTests, TestTheta)
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -145,7 +145,7 @@ TEST(InvariantValueRedirectionTests, TestCall)
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
@@ -232,7 +232,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
@@ -345,7 +345,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
       { valueType, ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   Output * lambdaOutputTest1 = nullptr;
@@ -478,7 +478,7 @@ TEST(InvariantValueRedirectionTests, testThetaGammaRedirection)
   auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create({ valueType, valueType }, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(

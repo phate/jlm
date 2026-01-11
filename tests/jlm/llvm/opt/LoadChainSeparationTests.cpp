@@ -39,7 +39,7 @@ TEST(LoadChainSeparationTests, LoadNonVolatile)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -135,7 +135,7 @@ TEST(LoadChainSeparationTests, LoadVolatile)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -203,7 +203,7 @@ TEST(LoadChainSeparationTests, SingleLoad)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -251,7 +251,7 @@ TEST(LoadChainSeparationTests, LoadAndStore)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -335,7 +335,7 @@ TEST(LoadChainSeparationTests, GammaWithOnlyLoads)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -439,7 +439,7 @@ TEST(LoadChainSeparationTests, GammaWithLoadsAndStores)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -540,7 +540,7 @@ TEST(LoadChainSeparationTests, ThetaWithLoadsOnly)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -632,7 +632,7 @@ TEST(LoadChainSeparationTests, ExternalCall)
   const auto externalFunctionType =
       FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & externalFunction = jlm::rvsdg::GraphImport::Create(rvsdg, externalFunctionType, "g");
@@ -781,7 +781,7 @@ TEST(LoadChainSeparationTests, DeadOutputs)
       { pointerType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
