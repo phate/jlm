@@ -28,16 +28,16 @@ std::unique_ptr<rvsdg::TransformationSequence>
 createTransformationSequence(rvsdg::DotWriter & dotWriter, bool dumpRvsdgDotGraphs);
 
 void
-rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);
+rvsdg2ref(llvm::LlvmRvsdgModule & rm, const util::FilePath & function_name);
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & function_name);
+dump_ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & function_name);
 
 const jlm::rvsdg::Output *
 trace_call(jlm::rvsdg::Input * input);
 
-std::unique_ptr<llvm::RvsdgModule>
-split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);
+std::unique_ptr<llvm::LlvmRvsdgModule>
+split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name);
 
 }
 

@@ -145,7 +145,8 @@ Region::~Region() noexcept
 }
 
 Region::Region(Region *, Graph * graph)
-    : index_(0),
+    : id_(graph->generateRegionId()),
+      index_(0),
       graph_(graph),
       nextNodeId_(0),
       node_(nullptr),
@@ -154,8 +155,9 @@ Region::Region(Region *, Graph * graph)
       numNodes_(0)
 {}
 
-Region::Region(rvsdg::StructuralNode * node, size_t index)
-    : index_(index),
+Region::Region(StructuralNode * node, const size_t index)
+    : id_(node->graph()->generateRegionId()),
+      index_(index),
       graph_(node->graph()),
       nextNodeId_(0),
       node_(node),

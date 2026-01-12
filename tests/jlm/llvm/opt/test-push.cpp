@@ -34,7 +34,7 @@ TEST(NodeHoistingTests, simpleGamma)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -98,7 +98,7 @@ TEST(NodeHoistingTests, nestedGamma)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -178,7 +178,7 @@ TEST(NodeHoistingTests, simpleTheta)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -245,7 +245,7 @@ TEST(NodeHoistingTests, invariantMemoryOperation)
       { controlType, pointerType, valueType, memoryStateType },
       { memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -302,7 +302,7 @@ TEST(NodeHoistingTests, statefulOperations)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(

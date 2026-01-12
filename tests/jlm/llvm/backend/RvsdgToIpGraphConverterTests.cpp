@@ -29,7 +29,7 @@ TEST(ViewTests, GammaWithMatch)
       { jlm::rvsdg::BitType::Create(1), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -72,7 +72,7 @@ TEST(ViewTests, GammaWithoutMatch)
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -114,7 +114,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -162,7 +162,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -217,7 +217,7 @@ TEST(ViewTests, EmptyGammaWithThreeSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -263,7 +263,7 @@ TEST(ViewTests, PartialEmptyGamma)
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -308,7 +308,7 @@ TEST(ViewTests, RecursiveData)
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto pt = PointerType::Create();
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
 

@@ -24,7 +24,7 @@ namespace jlm::hls
  * \see hls::loop_node
  */
 void
-EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule);
+EliminateDeadNodes(llvm::LlvmRvsdgModule & rvsdgModule);
 
 }
 

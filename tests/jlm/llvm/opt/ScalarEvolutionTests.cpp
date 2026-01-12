@@ -29,7 +29,7 @@ TEST(ScalarEvolutionTests, ConstantInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -63,7 +63,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -114,7 +114,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -171,7 +171,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -232,7 +232,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -290,7 +290,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
@@ -361,7 +361,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   jlm::rvsdg::Graph & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
@@ -468,7 +468,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -509,7 +509,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -564,7 +564,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -614,7 +614,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);

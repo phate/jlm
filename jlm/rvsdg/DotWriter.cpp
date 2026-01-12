@@ -163,6 +163,7 @@ DotWriter::CreateGraphNodes(
       for (auto & subregion : structuralNode->Subregions())
       {
         auto & subGraph = node.CreateSubgraph();
+        subGraph.SetLabel(util::strfmt("RegionID: ", subregion.getRegionId()));
         CreateGraphNodes(subGraph, subregion, typeGraph, traverseRecursively);
       }
     }
@@ -206,7 +207,7 @@ DotWriter::WriteGraphs(
     typeGraph->SetLabel("Type graph");
   }
   util::graph::Graph & rootGraph = writer.CreateGraph();
-  rootGraph.SetLabel("RVSDG root graph");
+  rootGraph.SetLabel(util::strfmt("RegionID: ", region.getRegionId()));
   CreateGraphNodes(rootGraph, region, typeGraph, true);
 
   return rootGraph;

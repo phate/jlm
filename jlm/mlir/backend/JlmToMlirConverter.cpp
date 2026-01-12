@@ -54,7 +54,7 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath
 }
 
 ::mlir::rvsdg::OmegaNode
-JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
+JlmToMlirConverter::ConvertModule(const llvm::LlvmRvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
 

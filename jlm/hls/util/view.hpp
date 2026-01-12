@@ -52,14 +52,14 @@ ViewDot(
 
 void
 DumpDot(
-    llvm::RvsdgModule & rvsdgModule,
+    llvm::LlvmRvsdgModule & rvsdgModule,
     const std::string & fileName,
     std::unordered_map<rvsdg::Output *, ViewColors> outputColor,
     std::unordered_map<rvsdg::Input *, ViewColors> inputColor,
     std::unordered_map<rvsdg::Output *, ViewColors> tailLabel);
 void
 
-DumpDot(llvm::RvsdgModule & rvsdgModule, const std::string & fileName);
+DumpDot(llvm::LlvmRvsdgModule & rvsdgModule, const std::string & fileName);
 
 void
 DumpDot(

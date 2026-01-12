@@ -21,7 +21,7 @@ class JsonHLS : public BaseHLS
   }
 
   std::string
-  GetText(llvm::RvsdgModule & rm) override;
+  GetText(llvm::LlvmRvsdgModule & rm) override;
 
 private:
 };

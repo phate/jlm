@@ -16,7 +16,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunAndersen(jlm::llvm::RvsdgModule & rvsdgModule)
+RunAndersen(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
 {
   jlm::llvm::aa::Andersen andersen;
   return andersen.Analyze(rvsdgModule);
@@ -1324,7 +1324,7 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   // }
 
   // Arrange
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto & rootRegion = graph.GetRootRegion();
 

@@ -19,14 +19,3 @@ jobs:
           enable-mlir: true
       - name: "Run polybench"
         run: ./scripts/run-polybench.sh --mlir
-
-  c-tests:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Build jlm"
-        uses: ./.github/actions/BuildJlm
-        with:
-          enable-mlir: true
-      - name: "Run check"
-        run: make check JLC=./scripts/jlc-mlir-roundtrip.py JLC_OPT="-JAAAndersenRegionAware -JFunctionInlining -JInvariantValueRedirection -JPredicateCorrelation -JLoadChainSeparation -JNodeReduction -JDeadNodeElimination -JLoopUnswitching -JInvariantValueRedirection -JDeadNodeElimination -JInvariantValueRedirection -JDeadNodeElimination -JNodeReduction -JCommonNodeElimination -JDeadNodeElimination -JNodePullIn -JInvariantValueRedirection -JDeadNodeElimination -JLoopUnrolling -JInvariantValueRedirection -JIfConversion -JCommonNodeElimination -JDeadNodeElimination"

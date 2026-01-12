@@ -44,7 +44,7 @@ add_prints(rvsdg::Region * region)
 }
 
 void
-add_prints(llvm::RvsdgModule & rm)
+add_prints(llvm::LlvmRvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
@@ -52,7 +52,7 @@ add_prints(llvm::RvsdgModule & rm)
 }
 
 void
-convert_prints(llvm::RvsdgModule & rm)
+convert_prints(llvm::LlvmRvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();

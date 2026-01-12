@@ -19,7 +19,7 @@ TEST(DeadNodeEliminationTests, TestDeadLoopNode)
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -50,7 +50,7 @@ TEST(DeadNodeEliminationTests, TestDeadLoopNodeOutput)
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(

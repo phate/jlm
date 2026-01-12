@@ -19,7 +19,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
+RunDeadNodeElimination(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::DeadNodeElimination deadNodeElimination;
@@ -31,7 +31,7 @@ TEST(DeadNodeEliminationTests, RootRegion)
   using namespace jlm::llvm;
 
   // Arrange
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::TestType::createValueType(), "x");
@@ -56,7 +56,7 @@ TEST(DeadNodeEliminationTests, Gamma1)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -102,7 +102,7 @@ TEST(DeadNodeEliminationTests, Gamma2)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -135,7 +135,7 @@ TEST(DeadNodeEliminationTests, Theta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
@@ -180,7 +180,7 @@ TEST(DeadNodeEliminationTests, NestedTheta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -226,7 +226,7 @@ TEST(DeadNodeEliminationTests, EvolvingTheta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x1");
@@ -267,7 +267,7 @@ TEST(DeadNodeEliminationTests, Lambda)
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
@@ -309,7 +309,7 @@ TEST(DeadNodeEliminationTests, Phi)
   auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
@@ -431,7 +431,7 @@ TEST(DeadNodeEliminationTests, Delta)
   // Arrange
   auto valueType = TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
