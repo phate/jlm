@@ -15,7 +15,6 @@
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
-#include <jlm/util/BijectiveMap.hpp>
 
 // MLIR RVSDG dialects
 #include <RVSDG/RVSDGDialect.h>
