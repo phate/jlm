@@ -85,8 +85,8 @@ TEST(PointerObjectSetTests, TestCreatePointerObjects)
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
   const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput(), false);
 
-  EXPECT_EQ(set.NumPointerObjects(), 7);
-  EXPECT_EQ(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register), 2);
+  EXPECT_EQ(set.NumPointerObjects(), 7u);
+  EXPECT_EQ(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register), 2u);
 
   EXPECT_EQ(set.GetPointerObjectKind(register0), PointerObjectKind::Register);
   EXPECT_EQ(set.GetPointerObjectKind(dummy0), PointerObjectKind::Register);
@@ -184,8 +184,8 @@ TEST(PointerObjectSetTests, TestPointerObjectUnificationPointees)
   auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), true);
 
   set.AddToPointsToSet(alloca0, lambda0);
-  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
-  EXPECT_EQ(set.GetPointsToSet(delta0).Size(), 0);
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1u);
+  EXPECT_EQ(set.GetPointsToSet(delta0).Size(), 0u);
 
   set.UnifyPointerObjects(delta0, alloca0);
 
@@ -227,10 +227,10 @@ TEST(PointerObjectSetTests, TestAddToPointsToSet)
   const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0), false);
   const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
 
-  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 0);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 0u);
 
   EXPECT_TRUE(set.AddToPointsToSet(reg0, alloca0));
-  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1u);
   EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca0));
 
   // Trying to add it again returns false
@@ -255,12 +255,12 @@ TEST(PointerObjectSetTests, TestMakePointsToSetSuperset)
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
 
-  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 1u);
   EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca0));
 
   EXPECT_TRUE(set.MakePointsToSetSuperset(reg0, reg1));
-  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 1);
-  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 2);
+  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 1u);
+  EXPECT_EQ(set.GetPointsToSet(reg0).Size(), 2u);
   EXPECT_TRUE(set.GetPointsToSet(reg0).Contains(alloca1));
 
   // Calling it again without changing reg1 makes no difference, returns false
@@ -344,7 +344,7 @@ TEST(PointerObjectSetTests, TestSupersetConstraint)
   while (c1.ApplyDirectly(set))
     ;
   // For now this only makes alloca0 point to alloca1
-  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1u);
   EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Make reg1 point to everything reg2 points to
@@ -360,7 +360,7 @@ TEST(PointerObjectSetTests, TestSupersetConstraint)
   while (c1.ApplyDirectly(set))
     ;
   // Now alloca0 should also point to alloca2
-  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 2);
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 2u);
   EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca2));
 
   // Make reg2 point to external, and propagate through constraints
@@ -405,14 +405,14 @@ TEST(PointerObjectSetTests, TestStoreConstraintDirectly)
   EXPECT_TRUE(c2.ApplyDirectly(set));
   while (c2.ApplyDirectly(set))
     ;
-  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(alloca0).Size(), 1u);
   EXPECT_TRUE(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Do c1 again, now that alloca0 points to alloca1
   EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
-  EXPECT_EQ(set.GetPointsToSet(alloca1).Size(), 1);
+  EXPECT_EQ(set.GetPointsToSet(alloca1).Size(), 1u);
   EXPECT_TRUE(set.GetPointsToSet(alloca1).Contains(alloca2));
 }
 
@@ -446,7 +446,7 @@ TEST(PointerObjectSetTests, TestLoadConstraintDirectly)
   EXPECT_TRUE(c1.ApplyDirectly(set));
   while (c1.ApplyDirectly(set))
     ;
-  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 2);
+  EXPECT_EQ(set.GetPointsToSet(reg1).Size(), 2u);
   EXPECT_TRUE(set.GetPointsToSet(reg1).Contains(alloca2));
 }
 
@@ -887,37 +887,37 @@ TestPointerObjectConstraintSetSolve(Args... args)
   }
 
   // alloca1 should point to alloca2, etc
-  EXPECT_LE(set.GetPointsToSet(alloca1).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(alloca1).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(alloca1, alloca2));
-  EXPECT_LE(set.GetPointsToSet(alloca2).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(alloca2).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(alloca2, alloca3));
-  EXPECT_LE(set.GetPointsToSet(alloca3).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(alloca3).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(alloca3, alloca4));
 
   // %5 is a load of alloca1, and should only be a pointer to alloca2
-  EXPECT_LE(set.GetPointsToSet(reg[5]).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(reg[5]).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(reg[5], alloca2));
 
   // %6 is a load of alloca3, and should only be a pointer to alloca4
-  EXPECT_LE(set.GetPointsToSet(reg[6]).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(reg[6]).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(reg[6], alloca4));
 
   // %7 can point to either alloca2 or alloca4
-  EXPECT_LE(set.GetPointsToSet(reg[7]).Size(), 2);
+  EXPECT_LE(set.GetPointsToSet(reg[7]).Size(), 2u);
   EXPECT_TRUE(set.IsPointingTo(reg[7], alloca2));
   EXPECT_TRUE(set.IsPointingTo(reg[7], alloca4));
 
   // %8 should point to external, since it points to the superset of %0 and %1
   EXPECT_TRUE(set.IsPointingToExternal(reg[8]));
   // %8 may also point to alloca4
-  EXPECT_LE(set.GetPointsToSet(reg[8]).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(reg[8]).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(reg[8], alloca4));
 
   // %9 may point to v3
   EXPECT_TRUE(set.IsPointingTo(reg[9], alloca3));
 
   // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
-  EXPECT_LE(set.GetPointsToSet(alloca4).Size(), 1);
+  EXPECT_LE(set.GetPointsToSet(alloca4).Size(), 1u);
   EXPECT_TRUE(set.IsPointingTo(alloca4, alloca3));
 
   // Also due to the same store, alloca3 might have escaped
@@ -991,8 +991,8 @@ TEST(PointerObjectSetTests, TestClonePointerObjectConstraintSet)
 
   // Modifying the copy doesn't affect the original
   constraintsClone->AddConstraint(LoadConstraint(register0, alloca0));
-  EXPECT_EQ(constraintsClone->GetConstraints().size(), 2);
-  EXPECT_EQ(constraints.GetConstraints().size(), 1);
+  EXPECT_EQ(constraintsClone->GetConstraints().size(), 2u);
+  EXPECT_EQ(constraints.GetConstraints().size(), 1u);
 
   // Solving only affects the PointerObjectSet belonging to that constraint set
   constraints.SolveNaively();

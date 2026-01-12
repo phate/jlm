@@ -20,7 +20,7 @@ DotHLS::extension()
 }
 
 std::string
-DotHLS::GetText(llvm::RvsdgModule & rm)
+DotHLS::GetText(llvm::LlvmRvsdgModule & rm)
 {
   return subregion_to_dot(get_hls_lambda(rm)->subregion());
 }

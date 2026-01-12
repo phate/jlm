@@ -21,7 +21,7 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
   const auto bitType = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto & sizeArgument = jlm::rvsdg::GraphImport::Create(graph, bitType, "size");
@@ -56,16 +56,16 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
   // the add operation
   // 2. Constant folding on the add operation
   // The result is that a single constant node with value 8 is left in the graph.
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*sumExport.origin());
   auto constantOperation =
       dynamic_cast<const BitConstantOperation *>(&constantNode->GetOperation());
-  EXPECT_EQ(constantOperation->value().to_uint(), 8);
+  EXPECT_EQ(constantOperation->value().to_uint(), 8u);
 
   // We expect that the node reductions transformation iterated over the root region 2 times.
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
   auto & nodeReductionStatistics = dynamic_cast<const NodeReduction::Statistics &>(statistics);
   auto numIterations = nodeReductionStatistics.GetNumIterations(graph.GetRootRegion()).value();
-  EXPECT_EQ(numIterations, 2);
+  EXPECT_EQ(numIterations, 2u);
 }

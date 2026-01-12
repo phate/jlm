@@ -12,7 +12,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunAndersen(const jlm::llvm::RvsdgModule & module)
+RunAndersen(const jlm::llvm::LlvmRvsdgModule & module)
 {
   using namespace jlm::llvm;
 
@@ -733,7 +733,7 @@ TEST(AgnosticModRefSummarizerTests, TestMemcpy)
       EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
       EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
       EXPECT_EQ(numCallFNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numMemcpyNodes, 2);
+      EXPECT_EQ(numMemcpyNodes, 2u);
     }
   };
 
@@ -772,12 +772,12 @@ TEST(AgnosticModRefSummarizerTests, TestStatistics)
       statisticsCollector);
 
   // Assert
-  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1);
+  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
 
   auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticModRefSummarizer::Statistics &>(
       *statisticsCollector.CollectedStatistics().begin());
 
   EXPECT_EQ(statistics.GetSourceFile(), test.module().SourceFileName());
-  EXPECT_EQ(statistics.NumPointsToGraphMemoryNodes(), 2);
-  EXPECT_NE(statistics.GetTime(), 0);
+  EXPECT_EQ(statistics.NumPointsToGraphMemoryNodes(), 2u);
+  EXPECT_NE(statistics.GetTime(), 0u);
 }

@@ -1580,8 +1580,8 @@ private:
   create_srctypes(const StructType & type)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
-    for (size_t n = 0; n < type.GetDeclaration().NumElements(); n++)
-      types.push_back(type.GetDeclaration().GetElementType(n));
+    for (size_t n = 0; n < type.numElements(); n++)
+      types.push_back(type.getElementType(n));
 
     return types;
   }
@@ -2372,10 +2372,10 @@ private:
     {
       if (auto st = std::dynamic_pointer_cast<const StructType>(type))
       {
-        if (index >= st->GetDeclaration().NumElements())
+        if (index >= st->numElements())
           throw util::Error("extractvalue index out of bound.");
 
-        type = st->GetDeclaration().GetElementType(index);
+        type = st->getElementType(index);
       }
       else if (auto at = std::dynamic_pointer_cast<const ArrayType>(type))
       {
@@ -2394,13 +2394,20 @@ private:
   std::vector<unsigned> indices_;
 };
 
+/**
+ * Represents the standard C library call malloc() used for dynamically allocating memory.
+ *
+ * This operation has no equivalent LLVM instruction.
+ */
 class MallocOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~MallocOperation() noexcept override;
 
-  explicit MallocOperation(std::shared_ptr<const jlm::rvsdg::BitType> btype)
-      : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
+  explicit MallocOperation(std::shared_ptr<const rvsdg::BitType> type)
+      : SimpleOperation(
+            { std::move(type), IOStateType::Create() },
+            { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() })
   {}
 
   bool
@@ -2412,38 +2419,87 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const jlm::rvsdg::BitType &
-  size_type() const noexcept
+  const rvsdg::BitType &
+  getSizeType() const noexcept
   {
     return *std::static_pointer_cast<const rvsdg::BitType>(argument(0));
   }
 
   rvsdg::FunctionType
-  fcttype() const
+  getFunctionType() const
   {
-    JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return rvsdg::FunctionType({ argument(0) }, { result(0), result(1) });
+    JLM_ASSERT(narguments() == 2 && nresults() == 3);
+    return rvsdg::FunctionType({ argument(0), argument(1) }, { result(0), result(1), result(2) });
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * size)
+  static rvsdg::Input &
+  sizeInput(const rvsdg::Node & node)
   {
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(size->Type());
-    if (!bt)
-      throw util::Error("expected bits type.");
-
-    auto op = std::make_unique<MallocOperation>(std::move(bt));
-    return ThreeAddressCode::create(std::move(op), { size });
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & size = *node.input(0);
+    JLM_ASSERT(is<rvsdg::BitType>(size.Type()));
+    return size;
   }
 
-  static std::vector<jlm::rvsdg::Output *>
-  create(jlm::rvsdg::Output * size)
+  static rvsdg::Input &
+  ioStateInput(const rvsdg::Node & node)
   {
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(size->Type());
-    if (!bt)
-      throw util::Error("expected bits type.");
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & ioState = *node.input(1);
+    JLM_ASSERT(is<IOStateType>(ioState.Type()));
+    return ioState;
+  }
 
-    return outputs(&rvsdg::CreateOpNode<MallocOperation>({ size }, std::move(bt)));
+  static rvsdg::Output &
+  addressOutput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & address = *node.output(0);
+    JLM_ASSERT(is<PointerType>(address.Type()));
+    return address;
+  }
+
+  static rvsdg::Output &
+  ioStateOutput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & ioState = *node.output(1);
+    JLM_ASSERT(is<IOStateType>(ioState.Type()));
+    return ioState;
+  }
+
+  static rvsdg::Output &
+  memoryStateOutput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
+    auto & memoryState = *node.output(2);
+    JLM_ASSERT(is<MemoryStateType>(memoryState.Type()));
+    return memoryState;
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * size, const Variable * ioState)
+  {
+    auto bitType = checkAndExtractSizeType(size->Type());
+    auto op = std::make_unique<MallocOperation>(std::move(bitType));
+    return ThreeAddressCode::create(std::move(op), { size, ioState });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & size, rvsdg::Output & ioState)
+  {
+    auto bitType = checkAndExtractSizeType(size.Type());
+    return rvsdg::CreateOpNode<MallocOperation>({ &size, &ioState }, std::move(bitType));
+  }
+
+private:
+  static std::shared_ptr<const rvsdg::BitType>
+  checkAndExtractSizeType(const std::shared_ptr<const rvsdg::Type> & type)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(type))
+      return bitType;
+
+    throw std::runtime_error("Expected bits type.");
   }
 };
 

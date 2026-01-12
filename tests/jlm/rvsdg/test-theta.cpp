@@ -41,7 +41,7 @@ TEST(ThetaTests, TestThetaCreation)
   EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*lv3.output), theta);
 
   EXPECT_EQ(theta->predicate(), theta->subregion()->result(0));
-  EXPECT_EQ(theta->GetLoopVars().size(), 3);
+  EXPECT_EQ(theta->GetLoopVars().size(), 3u);
   EXPECT_EQ(theta->GetLoopVars()[0].post, theta->subregion()->result(1));
 
   EXPECT_NE(dynamic_cast<const jlm::rvsdg::ThetaNode *>(theta2), nullptr);
@@ -71,7 +71,7 @@ TEST(ThetaTests, TestThetaLoopVarRemoval)
   // Act & Assert
   thetaNode->RemoveLoopVars({ lv1 });
   auto loopvars = thetaNode->GetLoopVars();
-  EXPECT_EQ(loopvars.size(), 2);
+  EXPECT_EQ(loopvars.size(), 2u);
   EXPECT_EQ(loopvars[0].input, lv0.input);
   EXPECT_EQ(loopvars[0].pre, lv0.pre);
   EXPECT_EQ(loopvars[0].post, lv0.post);

@@ -183,24 +183,40 @@ VariableArgumentType::Create()
   return std::shared_ptr<const VariableArgumentType>(std::shared_ptr<void>(), &instance);
 }
 
-StructType::~StructType() = default;
+StructType::~StructType() noexcept = default;
 
 bool
-StructType::operator==(const jlm::rvsdg::Type & other) const noexcept
+StructType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const StructType *>(&other);
-  return type && type->IsPacked_ == IsPacked_ && type->Name_ == Name_
-      && &type->Declaration_ == &Declaration_;
+  const auto type = dynamic_cast<const StructType *>(&other);
+  if (!type || type->isPacked_ != isPacked_ || type->isLiteral_ != isLiteral_
+      || type->name_ != name_ || type->numElements() != numElements())
+    return false;
+
+  for (size_t n = 0; n < numElements(); n++)
+  {
+    if (*types_[n] != *type->types_[n])
+      return false;
+  }
+
+  return true;
 }
 
 std::size_t
 StructType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(StructType).hash_code();
-  auto isPackedHash = std::hash<bool>()(IsPacked_);
-  auto nameHash = std::hash<std::string>()(Name_);
-  auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
-  return util::CombineHashes(typeHash, isPackedHash, nameHash, declarationHash);
+  const auto typeHash = typeid(StructType).hash_code();
+  const auto isLiteralHash = std::hash<bool>()(isLiteral_);
+  const auto isPackedHash = std::hash<bool>()(isPacked_);
+  const auto nameHash = std::hash<std::string>()(name_);
+
+  auto hash = util::CombineHashes(typeHash, isLiteralHash, isPackedHash, nameHash);
+  for (auto & type : types_)
+  {
+    hash = util::CombineHashes(hash, type->ComputeHash());
+  }
+
+  return hash;
 }
 
 rvsdg::TypeKind
@@ -218,24 +234,23 @@ StructType::debug_string() const
 size_t
 StructType::GetFieldOffset(size_t fieldIndex) const
 {
-  const auto & decl = GetDeclaration();
   const auto isPacked = IsPacked();
 
   size_t offset = 0;
 
-  for (size_t i = 0; i < decl.NumElements(); i++)
+  for (size_t i = 0; i < numElements(); i++)
   {
-    auto & field = decl.GetElement(i);
+    auto field = getElementType(i);
 
     // First round up to the alignment of the field
-    auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
+    auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(*field);
     offset = util::RoundUpToMultipleOf(offset, fieldAlignment);
 
     if (i == fieldIndex)
       return offset;
 
     // Add the size of the field
-    offset += GetTypeAllocSize(field);
+    offset += GetTypeAllocSize(*field);
   }
 
   JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
@@ -408,19 +423,18 @@ GetTypeStoreSize(const rvsdg::Type & type)
     size_t totalSize = 0;
     size_t alignment = 1;
 
-    const auto & decl = structType->GetDeclaration();
     // A packed struct has alignment 1, and all fields are tightly packed
     const auto isPacked = structType->IsPacked();
 
-    for (size_t i = 0; i < decl.NumElements(); i++)
+    for (size_t i = 0; i < structType->numElements(); i++)
     {
-      auto & field = decl.GetElement(i);
+      auto field = structType->getElementType(i);
 
       // Note: It is correct to use the TypeAllocSize here.
       // An unpacked LLVM struct { i8, i33, i8 } takes up 24 bytes in store size.
       // Even in a packed struct <{ i8, i33, i8 }>, it still takes up 10 bytes.
-      auto fieldSize = GetTypeAllocSize(field);
-      auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
+      auto fieldSize = GetTypeAllocSize(*field);
+      auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(*field);
 
       // First add any padding needed to align the start of the field
       totalSize = util::RoundUpToMultipleOf(totalSize, fieldAlignment);
@@ -482,17 +496,16 @@ GetTypeAlignment(const rvsdg::Type & type)
   }
   if (const auto structType = dynamic_cast<const StructType *>(&type))
   {
-    const auto & decl = structType->GetDeclaration();
     // A packed struct has alignment 1, and all fields are tightly packed
     if (structType->IsPacked())
       return 1;
 
     size_t alignment = 1;
 
-    for (size_t i = 0; i < decl.NumElements(); i++)
+    for (size_t i = 0; i < structType->numElements(); i++)
     {
-      auto & field = decl.GetElement(i);
-      auto fieldAlignment = GetTypeAlignment(field);
+      auto field = structType->getElementType(i);
+      auto fieldAlignment = GetTypeAlignment(*field);
 
       // The struct as a whole must be at least as aligned as each field
       alignment = std::lcm(alignment, fieldAlignment);

@@ -22,7 +22,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
+RunInvariantValueRedirection(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
 {
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -44,7 +44,7 @@ TEST(InvariantValueRedirectionTests, TestGamma)
       { controlType, valueType, valueType },
       { valueType, valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -93,7 +93,7 @@ TEST(InvariantValueRedirectionTests, TestTheta)
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -145,7 +145,7 @@ TEST(InvariantValueRedirectionTests, TestCall)
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
@@ -212,7 +212,7 @@ TEST(InvariantValueRedirectionTests, TestCall)
 
   // Assert
   auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
-  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 4);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 4u);
   EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), lambdaNode.GetFunctionArguments()[1]);
   EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), lambdaNode.GetFunctionArguments()[0]);
   EXPECT_EQ(lambdaNode.GetFunctionResults()[2]->origin(), lambdaNode.GetFunctionArguments()[2]);
@@ -232,7 +232,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
@@ -318,7 +318,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
 
   // Assert
   auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
-  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3u);
   EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), lambdaNode.GetFunctionArguments()[0]);
   EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), lambdaNode.GetFunctionArguments()[1]);
 
@@ -345,7 +345,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
       { valueType, ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   Output * lambdaOutputTest1 = nullptr;
@@ -437,15 +437,15 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
   const auto & [callExitSplitNode, _] =
       TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(
           *lambdaExitMerge2->input(0)->origin());
-  EXPECT_EQ(callExitSplitNode->noutputs(), 1);
+  EXPECT_EQ(callExitSplitNode->noutputs(), 1u);
   const auto & [callNode, calOperation] =
       TryGetSimpleNodeAndOptionalOp<CallOperation>(*callExitSplitNode->input(0)->origin());
-  EXPECT_EQ(callNode->noutputs(), 3);
-  EXPECT_EQ(callNode->ninputs(), 4);
+  EXPECT_EQ(callNode->noutputs(), 3u);
+  EXPECT_EQ(callNode->ninputs(), 4u);
   const auto & memoryStateInput = CallOperation::GetMemoryStateInput(*callNode);
   const auto & [callEntryMergeNode, callEntryMergeOperation] =
       TryGetSimpleNodeAndOptionalOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
-  EXPECT_EQ(callEntryMergeNode->ninputs(), 1);
+  EXPECT_EQ(callEntryMergeNode->ninputs(), 1u);
   EXPECT_EQ(callEntryMergeNode->input(0)->origin(), lambdaEntrySplit2->output(0));
 }
 
@@ -461,7 +461,7 @@ TEST(InvariantValueRedirectionTests, TestLambdaCallArgumentMismatch)
   auto & callNode = test.GetCall();
   auto & lambdaNode = test.GetLambdaMain();
 
-  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3);
+  EXPECT_EQ(lambdaNode.GetFunctionResults().size(), 3u);
   EXPECT_EQ(lambdaNode.GetFunctionResults().size(), callNode.noutputs());
   EXPECT_EQ(lambdaNode.GetFunctionResults()[0]->origin(), callNode.output(0));
   EXPECT_EQ(lambdaNode.GetFunctionResults()[1]->origin(), callNode.output(1));
@@ -478,7 +478,7 @@ TEST(InvariantValueRedirectionTests, testThetaGammaRedirection)
   auto controlType = ControlType::Create(2);
   const auto functionType = FunctionType::Create({ valueType, valueType }, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -529,7 +529,7 @@ TEST(InvariantValueRedirectionTests, testThetaGammaRedirection)
   // We expect that the post value of both loop variables does not originate from the gamma any
   // longer.
   auto loopVars = thetaNode->GetLoopVars();
-  EXPECT_EQ(loopVars.size(), 2);
+  EXPECT_EQ(loopVars.size(), 2u);
 
   // Loop variable 0 was dead after the loop, which means it is irrelevant what happens to it in
   // the last iteration of the loop. As the loop predicate originates from a control constant in

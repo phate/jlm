@@ -430,9 +430,9 @@ public:
     return output;
   }
 
-  std::unique_ptr<RvsdgModule>
+  std::unique_ptr<LlvmRvsdgModule>
   CollectInterProceduralGraphToRvsdgStatistics(
-      const std::function<std::unique_ptr<RvsdgModule>(InterProceduralGraphModule &)> &
+      const std::function<std::unique_ptr<LlvmRvsdgModule>(InterProceduralGraphModule &)> &
           convertInterProceduralGraphModule,
       InterProceduralGraphModule & interProceduralGraphModule)
   {
@@ -1183,16 +1183,15 @@ ConvertStronglyConnectedComponent(
   }
 }
 
-static std::unique_ptr<RvsdgModule>
+static std::unique_ptr<LlvmRvsdgModule>
 ConvertInterProceduralGraphModule(
     InterProceduralGraphModule & interProceduralGraphModule,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto rvsdgModule = RvsdgModule::Create(
+  auto rvsdgModule = LlvmRvsdgModule::Create(
       interProceduralGraphModule.source_filename(),
       interProceduralGraphModule.target_triple(),
-      interProceduralGraphModule.data_layout(),
-      std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
+      interProceduralGraphModule.data_layout());
   auto graph = &rvsdgModule->Rvsdg();
 
   RegionalizedVariableMap regionalizedVariableMap(
@@ -1210,7 +1209,7 @@ ConvertInterProceduralGraphModule(
   return rvsdgModule;
 }
 
-std::unique_ptr<RvsdgModule>
+std::unique_ptr<LlvmRvsdgModule>
 ConvertInterProceduralGraphModule(
     InterProceduralGraphModule & interProceduralGraphModule,
     util::StatisticsCollector & statisticsCollector)

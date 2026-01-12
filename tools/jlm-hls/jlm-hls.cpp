@@ -35,7 +35,7 @@ stringToFile(const std::string & output, const jlm::util::FilePath & fileName)
 }
 
 static void
-llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::FilePath & fileName)
+llvmToFile(jlm::llvm::LlvmRvsdgModule & module, const jlm::util::FilePath & fileName)
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;

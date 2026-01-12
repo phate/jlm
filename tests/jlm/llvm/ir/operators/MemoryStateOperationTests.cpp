@@ -57,7 +57,7 @@ TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeSingleResult)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
   EXPECT_EQ(ex.origin(), &ix);
 }
 
@@ -95,7 +95,7 @@ TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeNestedSplits)
 
   // Assert
   // We should only have MemoryStateSplit left
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [splitNode, splitOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*ex0.origin());
   EXPECT_TRUE(splitNode && splitOperation);
@@ -106,7 +106,7 @@ TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeNestedSplits)
   // - 1 from splitNode0
   // - 1 from splitNode0 -> splitNode1
   // - 1 from splitNode0 -> splitNode2
-  EXPECT_EQ(splitNode->noutputs(), 7);
+  EXPECT_EQ(splitNode->noutputs(), 7u);
   EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex0.origin()), splitNode);
   EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex1.origin()), splitNode);
   EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*ex2.origin()), splitNode);
@@ -143,7 +143,7 @@ TEST(MemoryStateOperationTests, MemoryStateSplitNormalizeSplitMerge)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
   EXPECT_EQ(ex0.origin(), &ix0);
   EXPECT_EQ(ex1.origin(), &ix1);
   EXPECT_EQ(ex2.origin(), &ix2);
@@ -191,7 +191,7 @@ TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeSingleOperand)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
   EXPECT_EQ(ex.origin(), &ix);
 }
 
@@ -221,12 +221,12 @@ TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeDuplicateOperands)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   EXPECT_TRUE(mergeNode && mergeOperation);
 
-  EXPECT_EQ(mergeNode->ninputs(), 2);
+  EXPECT_EQ(mergeNode->ninputs(), 2u);
 }
 
 TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedMerges)
@@ -261,12 +261,12 @@ TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedMerges)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   EXPECT_TRUE(mergeNode && mergeOperation);
 
-  EXPECT_EQ(mergeNode->ninputs(), 5);
+  EXPECT_EQ(mergeNode->ninputs(), 5u);
 }
 
 TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedSplits)
@@ -300,12 +300,12 @@ TEST(MemoryStateOperationTests, MemoryStateMergeNormalizeNestedSplits)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [node, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   EXPECT_TRUE(node && mergeOperation);
 
-  EXPECT_EQ(node->ninputs(), 5);
+  EXPECT_EQ(node->ninputs(), 5u);
   EXPECT_EQ(node->input(0)->origin(), &ix0);
   EXPECT_EQ(node->input(1)->origin(), &ix0);
   EXPECT_EQ(node->input(2)->origin(), &ix1);
@@ -336,7 +336,7 @@ TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeSingleOperand)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 0u);
   EXPECT_EQ(ex.origin(), &ix);
 }
 
@@ -367,14 +367,14 @@ TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeDuplicateOperands)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
 
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*x0.origin());
     EXPECT_TRUE(joinNode && joinOperation);
 
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
     EXPECT_EQ(joinNode->input(0)->origin(), &i0);
     EXPECT_EQ(joinNode->input(1)->origin(), &i1);
   }
@@ -416,12 +416,12 @@ TEST(MemoryStateOperationTests, MemoryStateJoin_NormalizeNestedJoins)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto [joinNode, joinOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
   EXPECT_TRUE(joinNode && joinOperation);
 
-  EXPECT_EQ(joinNode->ninputs(), 6);
+  EXPECT_EQ(joinNode->ninputs(), 6u);
   EXPECT_EQ(joinNode->input(0)->origin(), &ix0);
   EXPECT_EQ(joinNode->input(1)->origin(), &ix1);
   EXPECT_EQ(joinNode->input(2)->origin(), &ix2);
@@ -497,7 +497,7 @@ TEST(MemoryStateOperationTests, LambdaEntryMemoryStateSplit_NormalizeCallEntryMe
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
 
   {
     EXPECT_TRUE(success1);
@@ -578,13 +578,13 @@ TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeLoad)
 
   // Assert
   EXPECT_TRUE(success);
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 4);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 4u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
-  EXPECT_EQ(memStateMerge1Node->ninputs(), 2);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
   EXPECT_EQ(memStateMerge1Node->input(0)->origin(), allocaResults[1]);
   EXPECT_EQ(memStateMerge1Node->input(1)->origin(), &memState1);
   EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
@@ -638,13 +638,13 @@ TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeStore)
 
   // Assert
   EXPECT_TRUE(success);
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
-  EXPECT_EQ(memStateMerge1Node->ninputs(), 2);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
   EXPECT_EQ(memStateMerge1Node->input(0)->origin(), allocaResults[1]);
   EXPECT_EQ(memStateMerge1Node->input(1)->origin(), &memState1);
   EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
@@ -696,13 +696,13 @@ TEST(MemoryStateOperationTests, LambdaExitMemoryStateMergeNormalizeAlloca)
 
   // Assert
   EXPECT_TRUE(success);
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
       TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   EXPECT_NE(memStateMerge1Node, &lambdaExitMergeNode1);
-  EXPECT_EQ(memStateMerge1Node->ninputs(), 2);
+  EXPECT_EQ(memStateMerge1Node->ninputs(), 2u);
   EXPECT_EQ(memStateMerge1Operation->getMemoryNodeIds(), std::vector<MemoryNodeId>({ 1, 2 }));
   const auto undefNode = TryGetOwnerNode<Node>(*memStateMerge1Node->input(0)->origin());
   EXPECT_NE(undefNode, nullptr);
@@ -800,7 +800,7 @@ TEST(MemoryStateOperationTests, CallExitMemoryStateSplit_NormalizeLambdaExitMerg
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
 
   {
     EXPECT_TRUE(success1);

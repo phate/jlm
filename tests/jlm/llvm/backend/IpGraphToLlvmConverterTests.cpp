@@ -475,8 +475,9 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
   {
     using namespace jlm::llvm;
 
-    auto mt = MemoryStateType::Create();
-    auto pt = PointerType::Create();
+    auto memoryStateType = MemoryStateType::Create();
+    auto pointerType = PointerType::Create();
+    auto ioStateType = IOStateType::Create();
     auto im = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
 
     auto cfg = ControlFlowGraph::create(*im);
@@ -486,16 +487,19 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
 
     auto size =
         cfg->entry()->append_argument(Argument::create("size", jlm::rvsdg::BitType::Create(64)));
+    auto ioState =
+        cfg->entry()->append_argument(Argument::create("ioState", IOStateType::Create()));
 
-    bb->append_last(MallocOperation::create(size));
+    bb->append_last(MallocOperation::createTac(size, ioState));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
+    cfg->exit()->append_result(bb->last()->result(2));
 
-    auto ft = jlm::rvsdg::FunctionType::Create(
-        { jlm::rvsdg::BitType::Create(64) },
-        { PointerType::Create(), MemoryStateType::Create() });
-    auto f = FunctionNode::create(im->ipgraph(), "f", ft, Linkage::externalLinkage);
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { jlm::rvsdg::BitType::Create(64), ioStateType },
+        { pointerType, ioStateType, memoryStateType });
+    auto f = FunctionNode::create(im->ipgraph(), "f", functionType, Linkage::externalLinkage);
     f->add_cfg(std::move(cfg));
 
     return im;

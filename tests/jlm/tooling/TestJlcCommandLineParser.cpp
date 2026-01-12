@@ -33,7 +33,7 @@ TEST(JlcCommandLineParserTests, Test1)
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1);
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
   auto & compilation = commandLineOptions.Compilations_[0];
 
   EXPECT_EQ(compilation.RequiresLinking(), false);
@@ -49,7 +49,7 @@ TEST(JlcCommandLineParserTests, Test2)
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1);
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
   EXPECT_EQ(commandLineOptions.OutputFile_, "foobar");
 
   auto & compilation = commandLineOptions.Compilations_[0];
@@ -82,7 +82,7 @@ TEST(JlcCommandLineParserTests, Test4)
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1);
+  EXPECT_EQ(commandLineOptions.Compilations_.size(), 1u);
 
   auto & compilation = commandLineOptions.Compilations_[0];
   EXPECT_FALSE(compilation.RequiresLinking());
@@ -101,7 +101,7 @@ TEST(JlcCommandLineParserTests, TestJlmOptOptimizations)
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
-  EXPECT_EQ(commandLineOptions.JlmOptOptimizations_.size(), 2);
+  EXPECT_EQ(commandLineOptions.JlmOptOptimizations_.size(), 2u);
   EXPECT_EQ(
       commandLineOptions.JlmOptOptimizations_[0],
       JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);

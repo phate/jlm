@@ -32,17 +32,17 @@ TEST(HashSetTests, TestInt)
 
   jlm::util::HashSet<int> hashSet2({ 8, 9 });
   hashSet.UnionWith(hashSet2);
-  EXPECT_EQ(hashSet.Size(), 9);
+  EXPECT_EQ(hashSet.Size(), 9u);
 
   auto numRemoved = hashSet.RemoveWhere(
       [](int n) -> bool
       {
         return n % 2 != 0;
       });
-  EXPECT_EQ(numRemoved, 4);
+  EXPECT_EQ(numRemoved, 4u);
 
   hashSet.Clear();
-  EXPECT_EQ(hashSet.Size(), 0);
+  EXPECT_EQ(hashSet.Size(), 0u);
 }
 
 TEST(HashSetTests, TestUniquePointer)
@@ -50,13 +50,13 @@ TEST(HashSetTests, TestUniquePointer)
   jlm::util::HashSet<std::unique_ptr<int>> hashSet;
 
   hashSet.insert(std::make_unique<int>(0));
-  EXPECT_EQ(hashSet.Size(), 1);
+  EXPECT_EQ(hashSet.Size(), 1u);
 
   hashSet.Remove(std::make_unique<int>(0));
-  EXPECT_EQ(hashSet.Size(), 1);
+  EXPECT_EQ(hashSet.Size(), 1u);
 
   hashSet.Clear();
-  EXPECT_EQ(hashSet.Size(), 0);
+  EXPECT_EQ(hashSet.Size(), 0u);
 }
 
 TEST(HashSetTests, TestPair)
@@ -66,12 +66,12 @@ TEST(HashSetTests, TestPair)
   // Inserting new value
   auto result = hashSet.insert({ 7, 70 });
   EXPECT_TRUE(result);
-  EXPECT_EQ(hashSet.Size(), 3);
+  EXPECT_EQ(hashSet.Size(), 3u);
 
   // Try inserting already inserted
   result = hashSet.insert({ 1, 10 });
   EXPECT_FALSE(result);
-  EXPECT_EQ(hashSet.Size(), 3);
+  EXPECT_EQ(hashSet.Size(), 3u);
 
   // Contains is only true in the correct order
   EXPECT_TRUE(hashSet.Contains({ 5, 50 }));
@@ -80,10 +80,10 @@ TEST(HashSetTests, TestPair)
   // Removing works
   result = hashSet.Remove({ 5, 50 });
   EXPECT_TRUE(result);
-  EXPECT_EQ(hashSet.Size(), 2);
+  EXPECT_EQ(hashSet.Size(), 2u);
   result = hashSet.Remove({ 5, 50 });
   EXPECT_FALSE(result);
-  EXPECT_EQ(hashSet.Size(), 2);
+  EXPECT_EQ(hashSet.Size(), 2u);
 }
 
 TEST(HashSetTests, TestIsSubsetOf)
@@ -112,12 +112,12 @@ TEST(HashSetTests, TestUnionWith)
   // Unioning with a subset should not change anything
   bool result = set123.UnionWith(set12);
   EXPECT_FALSE(result);
-  EXPECT_EQ(set123.Size(), 3);
+  EXPECT_EQ(set123.Size(), 3u);
 
   // Putting {1, 2, 3} into {1, 2} should make it grow
   result = set12.UnionWith(set123);
   EXPECT_TRUE(result);
-  EXPECT_EQ(set12.Size(), 3);
+  EXPECT_EQ(set12.Size(), 3u);
   EXPECT_EQ(set12, set123);
 
   // Unioning again does nothing
@@ -127,7 +127,7 @@ TEST(HashSetTests, TestUnionWith)
   // Test union and clear
   result = set45.UnionWithAndClear(set123);
   EXPECT_TRUE(result);
-  EXPECT_EQ(set45.Size(), 5);
+  EXPECT_EQ(set45.Size(), 5u);
   EXPECT_TRUE(set123.IsEmpty());
 }
 
@@ -143,15 +143,15 @@ TEST(HashSetTests, TestIntersectWith)
   EXPECT_EQ(set123, set12);
 
   set123.IntersectWith(set45);
-  EXPECT_EQ(set123.Size(), 0);
+  EXPECT_EQ(set123.Size(), 0u);
 
   set123.insert(1);
   set123.insert(2);
   set123.insert(3);
   set123.IntersectWithAndClear(set12);
 
-  EXPECT_EQ(set123.Size(), 2);
-  EXPECT_EQ(set12.Size(), 0);
+  EXPECT_EQ(set123.Size(), 2u);
+  EXPECT_EQ(set12.Size(), 0u);
 }
 
 TEST(HashSetTests, TestDifferenceWith)
@@ -165,7 +165,7 @@ TEST(HashSetTests, TestDifferenceWith)
   const auto set12Copy = set12;
 
   set123.DifferenceWith(set12); // {1, 2, 3} - {1, 2}
-  EXPECT_EQ(set123.Size(), 1);
+  EXPECT_EQ(set123.Size(), 1u);
   EXPECT_TRUE(set123.Contains(3));
 
   // set12 was not touched
@@ -176,13 +176,13 @@ TEST(HashSetTests, TestDifferenceWith)
   set123.insert(1);
 
   set12.DifferenceWith(set123); // {1, 2} - {0, 1, 3}
-  EXPECT_EQ(set12.Size(), 1);
+  EXPECT_EQ(set12.Size(), 1u);
   EXPECT_TRUE(set12.Contains(2));
 
   // Difference with other sets becomes empty
   set45.DifferenceWith(set123);
   set45.DifferenceWith(set12);
-  EXPECT_EQ(set45.Size(), 2);
+  EXPECT_EQ(set45.Size(), 2u);
 
   // We handle the case where both sets are the same set without crashing
   set45.DifferenceWith(set45);

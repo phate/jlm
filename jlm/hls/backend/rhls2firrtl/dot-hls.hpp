@@ -18,7 +18,7 @@ class DotHLS : public BaseHLS
   extension() override;
 
   std::string
-  GetText(llvm::RvsdgModule & rm) override;
+  GetText(llvm::LlvmRvsdgModule & rm) override;
 
 private:
   std::string

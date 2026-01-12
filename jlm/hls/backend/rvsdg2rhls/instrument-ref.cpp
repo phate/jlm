@@ -59,7 +59,7 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
 }
 
 void
-instrument_ref(llvm::RvsdgModule & rm)
+instrument_ref(llvm::LlvmRvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();

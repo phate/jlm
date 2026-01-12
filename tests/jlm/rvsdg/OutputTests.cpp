@@ -94,8 +94,8 @@ TEST(OutputTests, RouteToRegion_Gamma)
 
   // Assert
   EXPECT_EQ(output.region(), gammaNode->subregion(1));
-  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1);
-  EXPECT_EQ(gammaNode->GetExitVars().size(), 0);
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1u);
+  EXPECT_EQ(gammaNode->GetExitVars().size(), 0u);
 }
 
 TEST(OutputTests, RouteToRegion_Theta)
@@ -115,7 +115,7 @@ TEST(OutputTests, RouteToRegion_Theta)
 
   // Assert
   EXPECT_EQ(output.region(), thetaNode->subregion());
-  EXPECT_EQ(thetaNode->GetLoopVars().size(), 1);
+  EXPECT_EQ(thetaNode->GetLoopVars().size(), 1u);
   EXPECT_EQ(&output, thetaNode->GetLoopVars()[0].pre);
 }
 
@@ -138,7 +138,7 @@ TEST(OutputTests, RouteToRegion_Lambda)
 
   // Assert
   EXPECT_EQ(output.region(), lambdaNode->subregion());
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(&output, lambdaNode->GetContextVars()[0].inner);
 }
 
@@ -161,7 +161,7 @@ TEST(OutputTests, RouteToRegion_Phi)
 
   // Assert
   EXPECT_EQ(output.region(), phiNode->subregion());
-  EXPECT_EQ(phiNode->GetContextVars().size(), 1);
+  EXPECT_EQ(phiNode->GetContextVars().size(), 1u);
   EXPECT_EQ(&output, phiNode->GetContextVars()[0].inner);
 }
 
@@ -184,7 +184,7 @@ TEST(OutputTests, RouteToRegion_Delta)
 
   // Assert
   EXPECT_EQ(output.region(), deltaNode->subregion());
-  EXPECT_EQ(deltaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(&output, deltaNode->GetContextVars()[0].inner);
 }
 
@@ -211,12 +211,12 @@ TEST(OutputTests, RouteToRegion_Nesting)
 
   // Assert
   EXPECT_EQ(output.region(), gammaNode->subregion(0));
-  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1);
-  EXPECT_EQ(gammaNode->GetExitVars().size(), 0);
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 1u);
+  EXPECT_EQ(gammaNode->GetExitVars().size(), 0u);
   EXPECT_EQ(&output, gammaNode->GetEntryVars()[0].branchArgument[0]);
 
   auto origin = gammaNode->GetEntryVars()[0].input->origin();
-  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(lambdaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(origin, lambdaNode->GetContextVars()[0].inner);
 }
 
@@ -266,8 +266,8 @@ TEST(OutputTests, DivertUsersWhere)
       {
         return true;
       });
-  EXPECT_EQ(numDivertedUsers, 0);
-  EXPECT_EQ(i0.nusers(), 4);
+  EXPECT_EQ(numDivertedUsers, 0u);
+  EXPECT_EQ(i0.nusers(), 4u);
 
   // Divert user x0 to new origin i0
   numDivertedUsers = i0.divertUsersWhere(
@@ -276,8 +276,8 @@ TEST(OutputTests, DivertUsersWhere)
       {
         return &user == &x0;
       });
-  EXPECT_EQ(numDivertedUsers, 1);
-  EXPECT_EQ(i0.nusers(), 3);
+  EXPECT_EQ(numDivertedUsers, 1u);
+  EXPECT_EQ(i0.nusers(), 3u);
   EXPECT_EQ(x0.origin(), &i1);
 
   // Nothing should happen as x0 is no longer a user of i0
@@ -287,8 +287,8 @@ TEST(OutputTests, DivertUsersWhere)
       {
         return &user == &x0;
       });
-  EXPECT_EQ(numDivertedUsers, 0);
-  EXPECT_EQ(i0.nusers(), 3);
+  EXPECT_EQ(numDivertedUsers, 0u);
+  EXPECT_EQ(i0.nusers(), 3u);
 
   // Divert users x1 and x2 to i1
   numDivertedUsers = i0.divertUsersWhere(
@@ -297,8 +297,8 @@ TEST(OutputTests, DivertUsersWhere)
       {
         return &user == &x1 || &user == &x2;
       });
-  EXPECT_EQ(numDivertedUsers, 2);
-  EXPECT_EQ(i0.nusers(), 1);
+  EXPECT_EQ(numDivertedUsers, 2u);
+  EXPECT_EQ(i0.nusers(), 1u);
   EXPECT_EQ(x1.origin(), &i1);
   EXPECT_EQ(x2.origin(), &i1);
 
@@ -309,7 +309,7 @@ TEST(OutputTests, DivertUsersWhere)
       {
         return &user == &x3;
       });
-  EXPECT_EQ(numDivertedUsers, 1);
-  EXPECT_EQ(i0.nusers(), 0);
+  EXPECT_EQ(numDivertedUsers, 1u);
+  EXPECT_EQ(i0.nusers(), 0u);
   EXPECT_EQ(x3.origin(), &i1);
 }

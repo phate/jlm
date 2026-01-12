@@ -222,14 +222,13 @@ CalculateIntraTypeGepOffset(
   }
   if (auto strct = dynamic_cast<const StructType *>(&type))
   {
-    if (*indexingValue < 0
-        || static_cast<size_t>(*indexingValue) >= strct->GetDeclaration().NumElements())
+    if (*indexingValue < 0 || static_cast<size_t>(*indexingValue) >= strct->numElements())
       throw std::logic_error("Struct type has fewer fields than requested by GEP");
 
-    const auto & fieldType = strct->GetDeclaration().GetElement(*indexingValue);
+    const auto & fieldType = strct->getElementType(*indexingValue);
     int64_t offset = strct->GetFieldOffset(*indexingValue);
 
-    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, fieldType);
+    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *fieldType);
     if (subOffset.has_value())
       return offset + *subOffset;
 
@@ -487,7 +486,8 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = tryGetConstantSignedInteger(*node->input(0)->origin());
+    const auto mallocSize =
+        tryGetConstantSignedInteger(*MallocOperation::sizeInput(*node).origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }

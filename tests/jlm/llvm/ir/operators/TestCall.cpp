@@ -76,13 +76,13 @@ TEST(CallOperationTests, TestCallNodeAccessors)
       *jlm::util::assertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
   // Assert
-  EXPECT_EQ(CallOperation::NumArguments(callNode), 3);
+  EXPECT_EQ(CallOperation::NumArguments(callNode), 3u);
   EXPECT_EQ(CallOperation::NumArguments(callNode), callNode.ninputs() - 1);
   EXPECT_EQ(CallOperation::Argument(callNode, 0)->origin(), v);
   EXPECT_EQ(CallOperation::Argument(callNode, 1)->origin(), i);
   EXPECT_EQ(CallOperation::Argument(callNode, 2)->origin(), m);
 
-  EXPECT_EQ(callNode.noutputs(), 3);
+  EXPECT_EQ(callNode.noutputs(), 3u);
   EXPECT_EQ(*callNode.output(0)->Type(), *valueType);
   EXPECT_EQ(*callNode.output(1)->Type(), *iOStateType);
   EXPECT_EQ(*callNode.output(2)->Type(), *memoryStateType);
@@ -110,7 +110,7 @@ TEST(CallOperationTests, TestCallTypeClassifierIndirectCall)
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { vt, IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFunction = [&]()
@@ -163,7 +163,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCall)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -262,7 +262,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCallTheta)
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto module = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::rvsdg::TestType::createValueType();
@@ -376,7 +376,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
   // Arrange
   using namespace jlm::llvm;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFib = [&]()

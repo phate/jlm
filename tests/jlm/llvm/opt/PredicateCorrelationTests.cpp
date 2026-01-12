@@ -132,7 +132,7 @@ TEST(PredicateCorrelationTests, testControlConstantCorrelation)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto [gammaNode, thetaNode, matchNode, controlConstants] =
@@ -150,7 +150,7 @@ TEST(PredicateCorrelationTests, testControlConstantCorrelation)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode.subregion()->numNodes(), 2);
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 2u);
   EXPECT_EQ(thetaNode.predicate()->origin(), matchNode.output(0));
 }
 
@@ -165,7 +165,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelationDetection)
   for (auto alternatives : gammaSubregionAlternatives)
   {
     // Arrange
-    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     auto [gammaNode, thetaNode, matchNode] = setupMatchConstantCorrelationTest(rvsdg, alternatives);
@@ -185,7 +185,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelationDetection)
         std::get<ThetaGammaPredicateCorrelation::MatchConstantCorrelationData>(
             correlationOpt.value()->data());
     EXPECT_EQ(correlationData.matchNode, &matchNode);
-    EXPECT_EQ(correlationData.alternatives.size(), 2);
+    EXPECT_EQ(correlationData.alternatives.size(), 2u);
     EXPECT_EQ(correlationData.alternatives[0], alternatives.first);
     EXPECT_EQ(correlationData.alternatives[1], alternatives.second);
   }
@@ -197,7 +197,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Success)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto [gammaNode, thetaNode, _] = setupMatchConstantCorrelationTest(rvsdg, { 0, 1 });
@@ -214,7 +214,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Success)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode.subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode.subregion()->numNodes(), 1u);
   EXPECT_EQ(thetaNode.predicate()->origin(), gammaPredicate);
 }
 
@@ -224,7 +224,7 @@ TEST(PredicateCorrelationTests, testMatchConstantCorrelation_Failure)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto gammaSubregionAlternatives = std::make_pair(1, 0);
@@ -256,7 +256,7 @@ TEST(PredicateCorrelationTests, testThetaGammaMatchCorrelationDetection)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto [gammaNode, thetaNode, matchNode] = setupThetaGammaMatchCorrelationTest(rvsdg);
@@ -286,7 +286,7 @@ TEST(PredicateCorrelationTests, testThetaGammaCorrelationFixPoint)
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
@@ -322,7 +322,7 @@ TEST(PredicateCorrelationTests, testThetaGammaCorrelationFixPoint)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 1);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 1u);
   EXPECT_EQ(thetaNode->predicate()->origin(), predicate);
 }
 
@@ -333,7 +333,7 @@ TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_ControlConstant
 
   {
     // Arrange
-    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     constexpr std::pair<uint64_t, uint64_t> controlAlternatives = { 0, 1 };
@@ -355,7 +355,7 @@ TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_ControlConstant
 
   {
     // Arrange
-    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     constexpr std::pair<uint64_t, uint64_t> controlAlternatives = { 1, 0 };
@@ -383,7 +383,7 @@ TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_MatchConstantCo
 
   {
     // Arrange
-    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     constexpr std::pair<uint64_t, uint64_t> gammaSubregionAlternatives = { 0, 1 };
@@ -405,7 +405,7 @@ TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_MatchConstantCo
 
   {
     // Arrange
-    auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     constexpr std::pair<uint64_t, uint64_t> gammaSubregionAlternatives = { 1, 0 };
@@ -431,7 +431,7 @@ TEST(PredicateCorrelationTests, testDetermineGammaSubregionRoles_MatchCorrelatio
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
   // Arrange
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto [gammaNode, thetaNode, matchNode] = setupThetaGammaMatchCorrelationTest(rvsdg);
@@ -456,7 +456,7 @@ TEST(PredicateCorrelationTests, testGammaGammaMatchCorrelationDetection)
   auto bitType32 = BitType::Create(32);
   auto controlType = ControlType::Create(2);
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto constantNode = TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType32 });

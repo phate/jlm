@@ -27,7 +27,7 @@ TEST(DistributeConstantsTests, GammaSubregionUsage)
   auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({ controlType }, { bit32Type });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -99,7 +99,7 @@ TEST(DistributeConstantsTests, NestedGammas)
   auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({ controlType }, { bit32Type });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -185,7 +185,7 @@ TEST(DistributeConstantsTests, Theta)
   auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({}, { bit32Type, bit32Type, bit32Type });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -285,7 +285,7 @@ TEST(DistributeConstantsTests, Lambda)
   auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({}, { bit32Type });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(

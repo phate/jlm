@@ -34,7 +34,7 @@ TEST(NodeHoistingTests, simpleGamma)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -76,11 +76,11 @@ TEST(NodeHoistingTests, simpleGamma)
 
   // Assert
   // All nodes from the gamma subregions should have been hoisted to the lambda subregion
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4u);
 
   // The original nodes in the gamma subregions should have been removed
-  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 0);
-  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 0);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 0u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 0u);
 }
 
 TEST(NodeHoistingTests, nestedGamma)
@@ -98,7 +98,7 @@ TEST(NodeHoistingTests, nestedGamma)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -152,15 +152,15 @@ TEST(NodeHoistingTests, nestedGamma)
 
   // Assert
   // All simple nodes from both gamma subregions should have been hoisted to the lambda subregion
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5u);
 
   // Only gamma node 2 should be left in gamma node 1 subregion 0
-  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 1);
-  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0);
+  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 1u);
+  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0u);
 
   // All nodes should have been hoisted out
-  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0);
-  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0);
+  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0u);
+  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0u);
 }
 
 TEST(NodeHoistingTests, simpleTheta)
@@ -178,7 +178,7 @@ TEST(NodeHoistingTests, simpleTheta)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -224,8 +224,8 @@ TEST(NodeHoistingTests, simpleTheta)
 
   // Assert
   // We expect node1 and node2 to be hoisted out of the theta subregion
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3);
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3u);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 2u);
 
   EXPECT_EQ(lv2.post->origin(), node3->output(0));
   EXPECT_EQ(lv4.post->origin(), node4->output(0));
@@ -245,7 +245,7 @@ TEST(NodeHoistingTests, invariantMemoryOperation)
       { controlType, pointerType, valueType, memoryStateType },
       { memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -281,8 +281,8 @@ TEST(NodeHoistingTests, invariantMemoryOperation)
 
   // Assert
   // We expect the store node hoisted out of the theta subregion
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 0);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 0u);
 }
 
 TEST(NodeHoistingTests, statefulOperations)
@@ -302,7 +302,7 @@ TEST(NodeHoistingTests, statefulOperations)
       },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -352,12 +352,12 @@ TEST(NodeHoistingTests, statefulOperations)
   // region as stateNode
 
   // Gamma node and undef node
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1u);
 
   // stateNode, gammaNode2, and binaryNode
-  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 3);
-  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0);
+  EXPECT_EQ(gammaNode1->subregion(0)->numNodes(), 3u);
+  EXPECT_EQ(gammaNode1->subregion(1)->numNodes(), 0u);
 
-  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0);
-  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0);
+  EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0u);
+  EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0u);
 }

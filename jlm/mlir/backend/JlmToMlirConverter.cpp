@@ -54,7 +54,7 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath
 }
 
 ::mlir::rvsdg::OmegaNode
-JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
+JlmToMlirConverter::ConvertModule(const llvm::LlvmRvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
 
@@ -607,8 +607,10 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Malloc>(
         Builder_->getUnknownLoc(),
         ConvertType(*malloc_op->result(0)), // ptr
-        ConvertType(*malloc_op->result(1)), // memstate
-        inputs[0]                           // size
+        ConvertType(*malloc_op->result(1)), // IOState
+        ConvertType(*malloc_op->result(2)), // memstate
+        inputs[0],                          // size
+        inputs[1]                           // IOState
     );
   }
   else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))

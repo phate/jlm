@@ -21,7 +21,7 @@ TEST(GammaConversionTests, TestWithMatch)
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::BitType::Create(1), vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
@@ -58,7 +58,7 @@ TEST(GammaConversionTests, TestWithoutMatch)
   auto ft =
       jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   /* Setup graph */
 

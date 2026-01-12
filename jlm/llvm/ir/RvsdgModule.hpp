@@ -107,35 +107,26 @@ private:
 /**
  * An LLVM module utilizing the RVSDG representation.
  */
-class RvsdgModule final : public rvsdg::RvsdgModule
+class LlvmRvsdgModule final : public rvsdg::RvsdgModule
 {
 public:
-  ~RvsdgModule() noexcept override = default;
+  ~LlvmRvsdgModule() noexcept override = default;
 
-  RvsdgModule(jlm::util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
-      : RvsdgModule(std::move(sourceFileName), std::move(targetTriple), std::move(dataLayout), {})
-  {}
-
-  RvsdgModule(
-      util::FilePath sourceFileName,
-      std::string targetTriple,
-      std::string dataLayout,
-      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
+  LlvmRvsdgModule(util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
       : rvsdg::RvsdgModule(std::move(sourceFileName)),
         DataLayout_(std::move(dataLayout)),
-        TargetTriple_(std::move(targetTriple)),
-        StructTypeDeclarations_(std::move(declarations))
+        TargetTriple_(std::move(targetTriple))
   {}
 
-  RvsdgModule(const RvsdgModule &) = delete;
+  LlvmRvsdgModule(const LlvmRvsdgModule &) = delete;
 
-  RvsdgModule(RvsdgModule &&) = delete;
+  LlvmRvsdgModule(LlvmRvsdgModule &&) = delete;
 
-  RvsdgModule &
-  operator=(const RvsdgModule &) = delete;
+  LlvmRvsdgModule &
+  operator=(const LlvmRvsdgModule &) = delete;
 
-  RvsdgModule &
-  operator=(RvsdgModule &&) = delete;
+  LlvmRvsdgModule &
+  operator=(LlvmRvsdgModule &&) = delete;
 
   [[nodiscard]] const util::FilePath &
   SourceFileName() const noexcept
@@ -155,58 +146,18 @@ public:
     return DataLayout_;
   }
 
-  /**
-   * Adds a struct type declaration to the module. The module becomes the owner of the declaration.
-   *
-   * @param declaration A declaration that is added to the module.
-   * @return A reference to the added documentation.
-   */
-  const StructType::Declaration &
-  AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
-  {
-    StructTypeDeclarations_.emplace_back(std::move(declaration));
-    return *StructTypeDeclarations_.back();
-  }
-
-  /**
-   * Releases all struct type declarations from the module to the caller. The caller is the new
-   * owner of the declarations.
-   *
-   * @return A vector of declarations.
-   */
-  std::vector<std::unique_ptr<StructType::Declaration>> &&
-  ReleaseStructTypeDeclarations()
-  {
-    return std::move(StructTypeDeclarations_);
-  }
-
-  static std::unique_ptr<RvsdgModule>
+  static std::unique_ptr<LlvmRvsdgModule>
   Create(
-      const jlm::util::FilePath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout)
   {
-    return Create(sourceFileName, targetTriple, dataLayout, {});
-  }
-
-  static std::unique_ptr<RvsdgModule>
-  Create(
-      const jlm::util::FilePath & sourceFileName,
-      const std::string & targetTriple,
-      const std::string & dataLayout,
-      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
-  {
-    return std::make_unique<RvsdgModule>(
-        sourceFileName,
-        targetTriple,
-        dataLayout,
-        std::move(declarations));
+    return std::make_unique<LlvmRvsdgModule>(sourceFileName, targetTriple, dataLayout);
   }
 
 private:
   std::string DataLayout_;
   std::string TargetTriple_;
-  std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 }

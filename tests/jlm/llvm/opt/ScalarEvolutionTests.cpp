@@ -29,7 +29,7 @@ TEST(ScalarEvolutionTests, ConstantInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -47,7 +47,7 @@ TEST(ScalarEvolutionTests, ConstantInductionVariable)
   const auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1);
+  EXPECT_EQ(chrecMap.size(), 1u);
 
   // Since lv1 is not a valid induction variable, it's chain recurrence should be
   // {Unknown}<THETA>
@@ -63,7 +63,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -91,7 +91,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -114,7 +114,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -147,7 +147,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -171,7 +171,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -208,7 +208,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -232,7 +232,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -264,7 +264,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -290,7 +290,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
@@ -323,7 +323,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 3);
+  EXPECT_EQ(chrecMap.size(), 3u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -361,7 +361,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   jlm::rvsdg::Graph & graph = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
@@ -410,7 +410,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 4);
+  EXPECT_EQ(chrecMap.size(), 4u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -468,7 +468,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -493,7 +493,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1);
+  EXPECT_EQ(chrecMap.size(), 1u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}<THETA>
@@ -509,7 +509,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -540,7 +540,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -564,7 +564,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -595,7 +595,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -614,7 +614,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
@@ -654,7 +654,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 4);
+  EXPECT_EQ(chrecMap.size(), 4u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());

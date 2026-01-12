@@ -241,6 +241,8 @@ class Region
   using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 
 public:
+  using Id = uint64_t;
+
   ~Region() noexcept;
 
   Region(rvsdg::Region * parent, Graph * graph);
@@ -251,6 +253,17 @@ public:
 
   Region &
   operator=(const Region &) = delete;
+
+  /**
+   * @return The unique identifier of the region instance within the graph.
+   *
+   * \see Graph::generateRegionId()
+   */
+  [[nodiscard]] Id
+  getRegionId() const noexcept
+  {
+    return id_;
+  }
 
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
@@ -733,6 +746,7 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
+  Id id_;
   size_t index_;
   Graph * graph_;
   Node::Id nextNodeId_;

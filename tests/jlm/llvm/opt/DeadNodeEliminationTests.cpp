@@ -19,7 +19,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
+RunDeadNodeElimination(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::DeadNodeElimination deadNodeElimination;
@@ -31,7 +31,7 @@ TEST(DeadNodeEliminationTests, RootRegion)
   using namespace jlm::llvm;
 
   // Arrange
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::TestType::createValueType(), "x");
@@ -45,7 +45,7 @@ TEST(DeadNodeEliminationTests, RootRegion)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Gamma1)
@@ -56,7 +56,7 @@ TEST(DeadNodeEliminationTests, Gamma1)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -86,11 +86,11 @@ TEST(DeadNodeEliminationTests, Gamma1)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(gamma->noutputs(), 2);
-  EXPECT_EQ(gamma->subregion(1)->numNodes(), 0);
-  EXPECT_EQ(gamma->subregion(1)->narguments(), 3);
-  EXPECT_EQ(gamma->ninputs(), 3);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 2);
+  EXPECT_EQ(gamma->noutputs(), 2u);
+  EXPECT_EQ(gamma->subregion(1)->numNodes(), 0u);
+  EXPECT_EQ(gamma->subregion(1)->narguments(), 3u);
+  EXPECT_EQ(gamma->ninputs(), 3u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 2u);
 }
 
 TEST(DeadNodeEliminationTests, Gamma2)
@@ -102,7 +102,7 @@ TEST(DeadNodeEliminationTests, Gamma2)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -123,7 +123,7 @@ TEST(DeadNodeEliminationTests, Gamma2)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Theta)
@@ -135,7 +135,7 @@ TEST(DeadNodeEliminationTests, Theta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
@@ -167,9 +167,9 @@ TEST(DeadNodeEliminationTests, Theta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(theta->noutputs(), 3);
-  EXPECT_EQ(theta->subregion()->numNodes(), 1);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 2);
+  EXPECT_EQ(theta->noutputs(), 3u);
+  EXPECT_EQ(theta->subregion()->numNodes(), 1u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 2u);
 }
 
 TEST(DeadNodeEliminationTests, NestedTheta)
@@ -180,7 +180,7 @@ TEST(DeadNodeEliminationTests, NestedTheta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
@@ -215,7 +215,7 @@ TEST(DeadNodeEliminationTests, NestedTheta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(outerTheta->noutputs(), 3);
+  EXPECT_EQ(outerTheta->noutputs(), 3u);
 }
 
 TEST(DeadNodeEliminationTests, EvolvingTheta)
@@ -226,7 +226,7 @@ TEST(DeadNodeEliminationTests, EvolvingTheta)
   auto valueType = jlm::rvsdg::TestType::createValueType();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
   auto x1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x1");
@@ -256,7 +256,7 @@ TEST(DeadNodeEliminationTests, EvolvingTheta)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(theta->noutputs(), 5);
+  EXPECT_EQ(theta->noutputs(), 5u);
 }
 
 TEST(DeadNodeEliminationTests, Lambda)
@@ -267,7 +267,7 @@ TEST(DeadNodeEliminationTests, Lambda)
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
@@ -296,8 +296,8 @@ TEST(DeadNodeEliminationTests, Lambda)
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(lambda->subregion()->numNodes(), 0);
-  EXPECT_EQ(graph.GetRootRegion().narguments(), 1);
+  EXPECT_EQ(lambda->subregion()->numNodes(), 0u);
+  EXPECT_EQ(graph.GetRootRegion().narguments(), 1u);
 }
 
 TEST(DeadNodeEliminationTests, Phi)
@@ -309,7 +309,7 @@ TEST(DeadNodeEliminationTests, Phi)
   auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
@@ -406,20 +406,20 @@ TEST(DeadNodeEliminationTests, Phi)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(phiNode->noutputs(), 3); // f1, f2, and f4 are alive
+  EXPECT_EQ(phiNode->noutputs(), 3u); // f1, f2, and f4 are alive
   EXPECT_EQ(phiNode->output(0), rv1.output);
   EXPECT_EQ(phiNode->output(1), rv2.output);
   EXPECT_EQ(phiNode->output(2), rv4.output);
-  EXPECT_EQ(phiSubregion.nresults(), 3); // f1, f2, and f4 are alive
+  EXPECT_EQ(phiSubregion.nresults(), 3u); // f1, f2, and f4 are alive
   EXPECT_EQ(phiSubregion.result(0), rv1.result);
   EXPECT_EQ(phiSubregion.result(1), rv2.result);
   EXPECT_EQ(phiSubregion.result(2), rv4.result);
-  EXPECT_EQ(phiSubregion.narguments(), 4); // f1, f2, f4, and dx are alive
+  EXPECT_EQ(phiSubregion.narguments(), 4u); // f1, f2, f4, and dx are alive
   EXPECT_EQ(phiSubregion.argument(0), rv1.recref);
   EXPECT_EQ(phiSubregion.argument(1), rv2.recref);
   EXPECT_EQ(phiSubregion.argument(2), rv4.recref);
   EXPECT_EQ(phiSubregion.argument(3), dx.inner);
-  EXPECT_EQ(phiNode->ninputs(), 1); // dx is alive
+  EXPECT_EQ(phiNode->ninputs(), 1u); // dx is alive
   EXPECT_EQ(phiNode->input(0), dx.input);
 }
 
@@ -431,7 +431,7 @@ TEST(DeadNodeEliminationTests, Delta)
   // Arrange
   auto valueType = TestType::createValueType();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
@@ -466,6 +466,6 @@ TEST(DeadNodeEliminationTests, Delta)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(deltaNode->subregion()->numNodes(), 1);
-  EXPECT_EQ(deltaNode->ninputs(), 1);
+  EXPECT_EQ(deltaNode->subregion()->numNodes(), 1u);
+  EXPECT_EQ(deltaNode->ninputs(), 1u);
 }

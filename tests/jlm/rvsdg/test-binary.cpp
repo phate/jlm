@@ -109,7 +109,7 @@ TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionParallel)
   view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
@@ -151,7 +151,7 @@ TEST(BinaryOperationTests, ReduceFlattenedBinaryReductionLinear)
   view(graph, stdout);
 
   // Assert
-  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(graph.GetRootRegion().numNodes(), 3u);
 
   auto node0 = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_TRUE(is<TestBinaryOperation>(node0->GetOperation()));
@@ -272,7 +272,7 @@ TEST(BinaryOperationTests, FlattenAssociativeBinaryOperation_Success)
   EXPECT_TRUE(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   EXPECT_TRUE(is<FlattenedBinaryOperation>(flattenedBinaryNode->GetOperation()));
-  EXPECT_EQ(flattenedBinaryNode->ninputs(), 3);
+  EXPECT_EQ(flattenedBinaryNode->ninputs(), 3u);
 }
 
 TEST(BinaryOperationTests, NormalizeBinaryOperation_NoNewOperands)

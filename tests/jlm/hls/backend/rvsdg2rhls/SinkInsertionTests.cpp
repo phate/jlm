@@ -25,7 +25,7 @@ TEST(SinkInsertionTests, SinkInsertion)
   auto valueType = TestType::createValueType();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(

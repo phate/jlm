@@ -24,14 +24,14 @@
  * @return the statistics instance produced by the inlining pass
  */
 static std::unique_ptr<jlm::util::Statistics>
-runInlining(jlm::llvm::RvsdgModule & rm)
+runInlining(jlm::llvm::LlvmRvsdgModule & rm)
 {
   jlm::llvm::FunctionInlining fctinline;
   jlm::util::StatisticsCollectorSettings settings({ jlm::util::Statistics::Id::FunctionInlining });
   jlm::util::StatisticsCollector collector(settings);
   fctinline.Run(rm, collector);
 
-  EXPECT_EQ(collector.NumCollectedStatistics(), 1);
+  EXPECT_EQ(collector.NumCollectedStatistics(), 1u);
   return collector.releaseStatistic(jlm::util::Statistics::Id::FunctionInlining);
 }
 
@@ -74,7 +74,7 @@ TEST(FunctionInliningTests, testSimpleInlining)
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
@@ -165,11 +165,11 @@ TEST(FunctionInliningTests, testSimpleInlining)
   EXPECT_TRUE(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
 
   // Check that the statistics match what we expect. f2 is technically inlineable
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 1u);
 }
 
 TEST(FunctionInliningTests, testInliningWithAlloca)
@@ -213,7 +213,7 @@ TEST(FunctionInliningTests, testInliningWithAlloca)
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto vt = TestType::createValueType();
   auto iOStateType = IOStateType::Create();
@@ -332,7 +332,7 @@ TEST(FunctionInliningTests, testIndirectCall)
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::rvsdg::GraphImport::Create(graph, functionType2, "i");
 
@@ -380,11 +380,11 @@ TEST(FunctionInliningTests, testIndirectCall)
 
   // Assert
   // No inlining happens in this test, but both f1 and f2 are technically possible to inline
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 0);
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 2u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#FunctionCalls"), 1u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlinableCalls"), 0u);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#CallsInlined"), 0u);
 }
 
 /**
@@ -401,7 +401,7 @@ TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto SetupF1 = [&]()
@@ -427,7 +427,7 @@ TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
   auto statistics = runInlining(rm);
 
   // Assert
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1u);
   // f1 should not be considered inlinable, due to the alloca
-  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0);
+  EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0u);
 }

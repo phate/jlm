@@ -29,7 +29,7 @@ TEST(ViewTests, GammaWithMatch)
       { jlm::rvsdg::BitType::Create(1), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -54,10 +54,10 @@ TEST(ViewTests, GammaWithMatch)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  EXPECT_EQ(cfg->nnodes(), 4);
+  EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
 TEST(ViewTests, GammaWithoutMatch)
@@ -72,7 +72,7 @@ TEST(ViewTests, GammaWithoutMatch)
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -96,10 +96,10 @@ TEST(ViewTests, GammaWithoutMatch)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
-  EXPECT_EQ(cfg->nnodes(), 4);
+  EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
 TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
@@ -114,7 +114,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -144,7 +144,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  EXPECT_EQ(ipGraph.nnodes(), 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1u);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   EXPECT_TRUE(is_closed(*controlFlowGraph));
@@ -162,7 +162,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -199,7 +199,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregions)
 
   // Assert
   const auto & ipGraph = module->ipgraph();
-  EXPECT_EQ(ipGraph.nnodes(), 1);
+  EXPECT_EQ(ipGraph.nnodes(), 1u);
 
   const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   EXPECT_TRUE(is_closed(*controlFlowGraph));
@@ -217,7 +217,7 @@ TEST(ViewTests, EmptyGammaWithThreeSubregions)
       { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -245,7 +245,7 @@ TEST(ViewTests, EmptyGammaWithThreeSubregions)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   EXPECT_TRUE(is_closed(*cfg));
@@ -263,7 +263,7 @@ TEST(ViewTests, PartialEmptyGamma)
       { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -291,7 +291,7 @@ TEST(ViewTests, PartialEmptyGamma)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 1);
+  EXPECT_EQ(ipg.nnodes(), 1u);
 
   auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
@@ -308,7 +308,7 @@ TEST(ViewTests, RecursiveData)
   auto vt = jlm::rvsdg::TestType::createValueType();
   auto pt = PointerType::Create();
 
-  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
 
@@ -355,5 +355,5 @@ TEST(ViewTests, RecursiveData)
 
   // Assert
   auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 3);
+  EXPECT_EQ(ipg.nnodes(), 3u);
 }

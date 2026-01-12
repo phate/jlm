@@ -26,7 +26,7 @@ class Writer;
 namespace jlm::llvm
 {
 
-class RvsdgModule;
+class LlvmRvsdgModule;
 
 namespace aa
 {

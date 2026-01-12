@@ -112,7 +112,7 @@ GetParameterListAsC(const rvsdg::LambdaNode & kernel)
 }
 
 std::string
-VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
+VerilatorHarnessHLS::GetText(llvm::LlvmRvsdgModule & rm)
 {
   std::ostringstream cpp;
   const auto & kernel = *get_hls_lambda(rm);

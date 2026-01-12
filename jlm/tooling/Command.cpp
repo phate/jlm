@@ -443,7 +443,7 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
   }
 }
 
-std::unique_ptr<llvm::RvsdgModule>
+std::unique_ptr<llvm::LlvmRvsdgModule>
 JlmOptCommand::ParseLlvmIrFile(
     const util::FilePath & llvmIrFile,
     util::StatisticsCollector & statisticsCollector) const
@@ -471,7 +471,7 @@ JlmOptCommand::ParseLlvmIrFile(
   return rvsdgModule;
 }
 
-std::unique_ptr<llvm::RvsdgModule>
+std::unique_ptr<llvm::LlvmRvsdgModule>
 JlmOptCommand::ParseMlirIrFile(const util::FilePath & mlirIrFile, util::StatisticsCollector &) const
 {
 #ifdef ENABLE_MLIR
@@ -483,7 +483,7 @@ JlmOptCommand::ParseMlirIrFile(const util::FilePath & mlirIrFile, util::Statisti
 #endif
 }
 
-std::unique_ptr<llvm::RvsdgModule>
+std::unique_ptr<llvm::LlvmRvsdgModule>
 JlmOptCommand::ParseInputFile(
     const util::FilePath & inputFile,
     const JlmOptCommandLineOptions::InputFormat & inputFormat,
@@ -505,7 +505,7 @@ JlmOptCommand::ParseInputFile(
 
 void
 JlmOptCommand::PrintAsAscii(
-    const llvm::RvsdgModule & rvsdgModule,
+    const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
@@ -525,7 +525,7 @@ JlmOptCommand::PrintAsAscii(
 
 void
 JlmOptCommand::PrintAsXml(
-    const llvm::RvsdgModule & rvsdgModule,
+    const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
@@ -539,7 +539,7 @@ JlmOptCommand::PrintAsXml(
 
 void
 JlmOptCommand::PrintAsLlvm(
-    llvm::RvsdgModule & rvsdgModule,
+    llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -564,7 +564,7 @@ JlmOptCommand::PrintAsLlvm(
 
 void
 JlmOptCommand::PrintAsMlir(
-    const llvm::RvsdgModule & rvsdgModule,
+    const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
@@ -580,7 +580,7 @@ JlmOptCommand::PrintAsMlir(
 
 void
 JlmOptCommand::PrintAsRvsdgTree(
-    const llvm::RvsdgModule & rvsdgModule,
+    const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
@@ -602,7 +602,7 @@ JlmOptCommand::PrintAsRvsdgTree(
 
 void
 JlmOptCommand::PrintAsDot(
-    const llvm::RvsdgModule & rvsdgModule,
+    const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
@@ -627,7 +627,7 @@ JlmOptCommand::PrintAsDot(
 
 void
 JlmOptCommand::PrintRvsdgModule(
-    llvm::RvsdgModule & rvsdgModule,
+    llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)

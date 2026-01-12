@@ -29,7 +29,7 @@ ReadFile(const jlm::util::FilePath & outputFilePath)
  * Runs the given RvsdgTreePrinter on the given module, reads the file back in, and deletes the file
  */
 static std::string
-RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter & printer)
+RunAndExtractFile(jlm::llvm::LlvmRvsdgModule & module, jlm::llvm::RvsdgTreePrinter & printer)
 {
   using namespace jlm::util;
 
@@ -54,7 +54,7 @@ TEST(RvsdgTreePrinterTests, PrintRvsdgTree)
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
 
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { MemoryStateType::Create() },
@@ -87,7 +87,7 @@ TEST(RvsdgTreePrinterTests, PrintNumRvsdgNodesAnnotation)
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = TestStructuralNode::create(rootRegion, 2);
@@ -124,7 +124,7 @@ TEST(RvsdgTreePrinterTests, PrintNumLoadNodesAnnotation)
   const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto rootRegion = &rvsdg.GetRootRegion();
 
@@ -176,7 +176,7 @@ TEST(RvsdgTreePrinterTests, PrintNumMemoryStateInputsOutputsAnnotation)
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::rvsdg::TestType::createValueType();
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(FilePath(""), "", "");
+  auto rvsdgModule = jlm::llvm::LlvmRvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");

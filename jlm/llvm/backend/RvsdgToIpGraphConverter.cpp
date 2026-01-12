@@ -604,17 +604,16 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
 
 std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::ConvertModule(
-    RvsdgModule & rvsdgModule,
+    LlvmRvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
 
-  auto ipGraphModule = InterProceduralGraphModule::Create(
+  auto ipGraphModule = InterProceduralGraphModule::create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
-      rvsdgModule.DataLayout(),
-      std::move(rvsdgModule.ReleaseStructTypeDeclarations()));
+      rvsdgModule.DataLayout());
 
   Context_ = Context::Create(*ipGraphModule);
   ConvertImports(rvsdgModule.Rvsdg());
@@ -628,7 +627,7 @@ RvsdgToIpGraphConverter::ConvertModule(
 
 std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
-    RvsdgModule & rvsdgModule,
+    LlvmRvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
   RvsdgToIpGraphConverter converter;

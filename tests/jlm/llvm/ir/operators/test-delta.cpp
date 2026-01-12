@@ -19,7 +19,7 @@ TEST(DeltaTests, TestDeltaCreation)
   // Arrange & Act
   auto valueType = TestType::createValueType();
   auto pointerType = PointerType::Create();
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto imp = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -52,7 +52,7 @@ TEST(DeltaTests, TestDeltaCreation)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
-  EXPECT_EQ(rvsdgModule.Rvsdg().GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdgModule.Rvsdg().GetRootRegion().numNodes(), 2u);
 
   EXPECT_TRUE(delta1->constant());
   EXPECT_EQ(*delta1->Type(), *valueType);
@@ -68,7 +68,7 @@ TEST(DeltaTests, TestRemoveDeltaInputsWhere)
 
   // Arrange
   auto valueType = TestType::createValueType();
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -94,9 +94,9 @@ TEST(DeltaTests, TestRemoveDeltaInputsWhere)
       {
         return input.index() == deltaInput1->index();
       });
-  EXPECT_EQ(numRemovedInputs, 0);
-  EXPECT_EQ(deltaNode->ninputs(), 3);
-  EXPECT_EQ(deltaNode->GetContextVars().size(), 3);
+  EXPECT_EQ(numRemovedInputs, 0u);
+  EXPECT_EQ(deltaNode->ninputs(), 3u);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 3u);
 
   // Remove deltaInput2
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
@@ -104,9 +104,9 @@ TEST(DeltaTests, TestRemoveDeltaInputsWhere)
       {
         return input.index() == 2;
       });
-  EXPECT_EQ(numRemovedInputs, 1);
-  EXPECT_EQ(deltaNode->ninputs(), 2);
-  EXPECT_EQ(deltaNode->GetContextVars().size(), 2);
+  EXPECT_EQ(numRemovedInputs, 1u);
+  EXPECT_EQ(deltaNode->ninputs(), 2u);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 2u);
   EXPECT_EQ(deltaNode->input(0), deltaInput0);
   EXPECT_EQ(deltaNode->input(1), deltaInput1);
 
@@ -116,12 +116,12 @@ TEST(DeltaTests, TestRemoveDeltaInputsWhere)
       {
         return input.index() == 0;
       });
-  EXPECT_EQ(numRemovedInputs, 1);
-  EXPECT_EQ(deltaNode->ninputs(), 1);
-  EXPECT_EQ(deltaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(numRemovedInputs, 1u);
+  EXPECT_EQ(deltaNode->ninputs(), 1u);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(deltaNode->input(0), deltaInput1);
-  EXPECT_EQ(deltaInput1->index(), 0);
-  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0);
+  EXPECT_EQ(deltaInput1->index(), 0u);
+  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0u);
 }
 
 TEST(DeltaTests, TestPruneDeltaInputs)
@@ -131,7 +131,7 @@ TEST(DeltaTests, TestPruneDeltaInputs)
 
   // Arrange
   auto valueType = TestType::createValueType();
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -155,11 +155,11 @@ TEST(DeltaTests, TestPruneDeltaInputs)
   auto numRemovedInputs = deltaNode->PruneDeltaInputs();
 
   // Assert
-  EXPECT_EQ(numRemovedInputs, 2);
-  EXPECT_EQ(deltaNode->ninputs(), 1);
-  EXPECT_EQ(deltaNode->GetContextVars().size(), 1);
+  EXPECT_EQ(numRemovedInputs, 2u);
+  EXPECT_EQ(deltaNode->ninputs(), 1u);
+  EXPECT_EQ(deltaNode->GetContextVars().size(), 1u);
   EXPECT_EQ(deltaNode->input(0), deltaInput1);
   EXPECT_EQ(deltaNode->subregion()->argument(0), deltaNode->MapInputContextVar(*deltaInput1).inner);
-  EXPECT_EQ(deltaInput1->index(), 0);
-  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0);
+  EXPECT_EQ(deltaInput1->index(), 0u);
+  EXPECT_EQ(deltaNode->MapInputContextVar(*deltaInput1).inner->index(), 0u);
 }

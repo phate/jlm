@@ -13,7 +13,7 @@
 #include <cassert>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-RunAndersen(jlm::llvm::RvsdgModule & module)
+RunAndersen(jlm::llvm::LlvmRvsdgModule & module)
 {
   using namespace jlm::llvm;
 
@@ -79,9 +79,9 @@ TEST(AndersenTests, TestStore1)
   // std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::endl;
   // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*ptg, outputMap) << std::endl;
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 4);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 5);
+  EXPECT_EQ(ptg->numAllocaNodes(), 4u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -117,9 +117,9 @@ TEST(AndersenTests, TestStore2)
   jlm::llvm::StoreTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 5);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 6);
+  EXPECT_EQ(ptg->numAllocaNodes(), 5u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 6u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -159,8 +159,8 @@ TEST(AndersenTests, TestLoad1)
   jlm::llvm::LoadTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto loadResult = ptg->getNodeForRegister(*test.load_p->output(0));
 
@@ -181,9 +181,9 @@ TEST(AndersenTests, TestLoad2)
   jlm::llvm::LoadTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 5);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 8);
+  EXPECT_EQ(ptg->numAllocaNodes(), 5u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto alloca_a = ptg->getNodeForAlloca(*test.alloca_a);
   auto alloca_b = ptg->getNodeForAlloca(*test.alloca_b);
@@ -211,8 +211,8 @@ TEST(AndersenTests, TestLoadFromUndef)
   jlm::llvm::LoadFromUndefTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 2);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 2u);
 
   auto lambdaMemoryNode = ptg->getNodeForLambda(test.Lambda());
   auto undefValueNode = ptg->getNodeForRegister(*test.UndefValueNode()->output(0));
@@ -226,8 +226,8 @@ TEST(AndersenTests, TestGetElementPtr)
   jlm::llvm::GetElementPtrTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 4);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 4u);
 
   // We only care about the getelemenptr's in this test, skipping the validation for all other nodes
   auto lambda = ptg->getNodeForLambda(*test.lambda);
@@ -247,8 +247,8 @@ TEST(AndersenTests, TestBitCast)
   jlm::llvm::BitCastTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaOut = ptg->getNodeForRegister(*test.lambda->output());
@@ -267,8 +267,8 @@ TEST(AndersenTests, TestConstantPointerNull)
   jlm::llvm::ConstantPointerNullTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaOut = ptg->getNodeForRegister(*test.lambda->output());
@@ -288,8 +288,8 @@ TEST(AndersenTests, TestBits2Ptr)
   jlm::llvm::Bits2PtrTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 5);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambdaTestMemoryNode = ptg->getNodeForLambda(test.GetLambdaTest());
   auto externalMemoryNode = ptg->getExternalMemoryNode();
@@ -308,9 +308,9 @@ TEST(AndersenTests, TestCall1)
   jlm::llvm::CallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 3);
-  EXPECT_EQ(ptg->numLambdaNodes(), 3);
-  EXPECT_EQ(ptg->numMappedRegisters(), 12);
+  EXPECT_EQ(ptg->numAllocaNodes(), 3u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 12u);
 
   auto alloca_x = ptg->getNodeForAlloca(*test.alloca_x);
   auto alloca_y = ptg->getNodeForAlloca(*test.alloca_y);
@@ -362,10 +362,10 @@ TEST(AndersenTests, TestCall2)
   jlm::llvm::CallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 3);
-  EXPECT_EQ(ptg->numMallocNodes(), 1);
-  EXPECT_EQ(ptg->numImportNodes(), 0);
-  EXPECT_EQ(ptg->numMappedRegisters(), 11);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMallocNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 0u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto lambda_create = ptg->getNodeForLambda(*test.lambda_create);
   auto lambda_create_out = ptg->getNodeForRegister(*test.lambda_create->output());
@@ -408,9 +408,9 @@ TEST(AndersenTests, TestIndirectCall1)
   jlm::llvm::IndirectCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 4);
-  EXPECT_EQ(ptg->numImportNodes(), 0);
-  EXPECT_EQ(ptg->numMappedRegisters(), 11);
+  EXPECT_EQ(ptg->numLambdaNodes(), 4u);
+  EXPECT_EQ(ptg->numImportNodes(), 0u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto lambda_three = ptg->getNodeForLambda(test.GetLambdaThree());
   auto lambda_three_out = ptg->getNodeForRegister(*test.GetLambdaThree().output());
@@ -449,10 +449,10 @@ TEST(AndersenTests, TestIndirectCall2)
   jlm::llvm::IndirectCallTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 3);
-  EXPECT_EQ(ptg->numLambdaNodes(), 7);
-  EXPECT_EQ(ptg->numDeltaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 27);
+  EXPECT_EQ(ptg->numAllocaNodes(), 3u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 7u);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 27u);
 
   auto lambdaThree = ptg->getNodeForLambda(test.GetLambdaThree());
   auto lambdaThreeOutput = ptg->getNodeForRegister(*test.GetLambdaThree().output());
@@ -469,10 +469,10 @@ TEST(AndersenTests, TestExternalCall1)
   jlm::llvm::ExternalCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 2);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numImportNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 10);
+  EXPECT_EQ(ptg->numAllocaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto lambdaF = ptg->getNodeForLambda(test.LambdaF());
   auto lambdaFArgument0 = ptg->getNodeForRegister(*test.LambdaF().GetFunctionArguments()[0]);
@@ -493,8 +493,8 @@ TEST(AndersenTests, TestGamma)
   jlm::llvm::GammaTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 15);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 15u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
 
@@ -505,7 +505,7 @@ TEST(AndersenTests, TestGamma)
   }
 
   auto entryvars = test.gamma->GetEntryVars();
-  EXPECT_EQ(entryvars.size(), 4);
+  EXPECT_EQ(entryvars.size(), 4u);
   for (const auto & entryvar : entryvars)
   {
     auto argument0 = ptg->getNodeForRegister(*entryvar.branchArgument[0]);
@@ -529,8 +529,8 @@ TEST(AndersenTests, TestTheta)
   jlm::llvm::ThetaTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 5);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambda = ptg->getNodeForLambda(*test.lambda);
   auto lambdaArgument1 = ptg->getNodeForRegister(*test.lambda->GetFunctionArguments()[1]);
@@ -557,9 +557,9 @@ TEST(AndersenTests, TestDelta1)
   jlm::llvm::DeltaTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numDeltaNodes(), 1);
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 6);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 6u);
 
   auto delta_f = ptg->getNodeForDelta(*test.delta_f);
   auto pdelta_f = ptg->getNodeForRegister(test.delta_f->output());
@@ -591,9 +591,9 @@ TEST(AndersenTests, TestDelta2)
   jlm::llvm::DeltaTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numDeltaNodes(), 2);
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 8);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto delta_d1 = ptg->getNodeForDelta(*test.delta_d1);
   auto delta_d1_out = ptg->getNodeForRegister(test.delta_d1->output());
@@ -630,9 +630,9 @@ TEST(AndersenTests, TestImports)
   jlm::llvm::ImportTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numImportNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 8);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numImportNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 8u);
 
   auto d1 = ptg->getNodeForImport(*test.import_d1);
   auto import_d1 = ptg->getNodeForRegister(*test.import_d1);
@@ -669,9 +669,9 @@ TEST(AndersenTests, TestPhi1)
   jlm::llvm::PhiTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 1);
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 16);
+  EXPECT_EQ(ptg->numAllocaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 16u);
 
   auto lambda_fib = ptg->getNodeForLambda(*test.lambda_fib);
   auto lambda_fib_out = ptg->getNodeForRegister(*test.lambda_fib->output());
@@ -710,8 +710,8 @@ TEST(AndersenTests, TestExternalMemory)
   jlm::llvm::ExternalMemoryTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 3);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 3u);
 
   auto lambdaF = ptg->getNodeForLambda(*test.LambdaF);
   auto lambdaFArgument0 = ptg->getNodeForRegister(*test.LambdaF->GetFunctionArguments()[0]);
@@ -728,9 +728,9 @@ TEST(AndersenTests, TestEscapedMemory1)
   jlm::llvm::EscapedMemoryTest1 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numDeltaNodes(), 4);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 10);
+  EXPECT_EQ(ptg->numDeltaNodes(), 4u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto lambdaTestArgument0 = ptg->getNodeForRegister(*test.LambdaTest->GetFunctionArguments()[0]);
   auto lambdaTestCv0 = ptg->getNodeForRegister(*test.LambdaTest->GetContextVars()[0].inner);
@@ -761,10 +761,10 @@ TEST(AndersenTests, TestEscapedMemory2)
   jlm::llvm::EscapedMemoryTest2 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numImportNodes(), 2);
-  EXPECT_EQ(ptg->numLambdaNodes(), 3);
-  EXPECT_EQ(ptg->numMallocNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 10);
+  EXPECT_EQ(ptg->numImportNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 3u);
+  EXPECT_EQ(ptg->numMallocNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 10u);
 
   auto returnAddressFunction = ptg->getNodeForLambda(*test.ReturnAddressFunction);
   auto callExternalFunction1 = ptg->getNodeForLambda(*test.CallExternalFunction1);
@@ -806,10 +806,10 @@ TEST(AndersenTests, TestEscapedMemory3)
   jlm::llvm::EscapedMemoryTest3 test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numDeltaNodes(), 1);
-  EXPECT_EQ(ptg->numImportNodes(), 1);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
-  EXPECT_EQ(ptg->numMappedRegisters(), 5);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numImportNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 5u);
 
   auto lambdaTest = ptg->getNodeForLambda(*test.LambdaTest);
   auto deltaGlobal = ptg->getNodeForDelta(*test.DeltaGlobal);
@@ -831,9 +831,9 @@ TEST(AndersenTests, TestMemcpy)
   jlm::llvm::MemcpyTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numDeltaNodes(), 2);
-  EXPECT_EQ(ptg->numLambdaNodes(), 2);
-  EXPECT_EQ(ptg->numMappedRegisters(), 11);
+  EXPECT_EQ(ptg->numDeltaNodes(), 2u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 2u);
+  EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
   auto localArray = ptg->getNodeForDelta(test.LocalArray());
   auto globalArray = ptg->getNodeForDelta(test.GlobalArray());
@@ -855,9 +855,9 @@ TEST(AndersenTests, TestLinkedList)
   jlm::llvm::LinkedListTest test;
   const auto ptg = RunAndersen(test.module());
 
-  EXPECT_EQ(ptg->numAllocaNodes(), 1);
-  EXPECT_EQ(ptg->numDeltaNodes(), 1);
-  EXPECT_EQ(ptg->numLambdaNodes(), 1);
+  EXPECT_EQ(ptg->numAllocaNodes(), 1u);
+  EXPECT_EQ(ptg->numDeltaNodes(), 1u);
+  EXPECT_EQ(ptg->numLambdaNodes(), 1u);
 
   auto allocaNode = ptg->getNodeForAlloca(test.GetAlloca());
   auto deltaMyListNode = ptg->getNodeForDelta(test.GetDeltaMyList());
@@ -885,13 +885,13 @@ TEST(AndersenTests, TestStatistics)
   auto ptg = andersen.Analyze(test.module(), statisticsCollector);
 
   // Assert
-  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1);
+  EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
   const auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints"), 0);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints"), 1);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints"), 0u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints"), 1u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes"), ptg->numNodes());
-  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("AnalysisTimer"), 0);
+  EXPECT_GT(statistics.GetTimerElapsedNanoseconds("AnalysisTimer"), 0u);
 }
 
 TEST(AndersenTests, TestConfiguration)
@@ -1047,16 +1047,19 @@ TEST(AndersenTests, TestConstructPointsToGraph)
 
   // ==== Targets of externalMemoryNode ==== (0 explicit, 3 total)
   // While the external node has no explicit targets, it targets everything externally available
-  EXPECT_EQ(ptg->getExplicitTargets(externalMemory).Size(), 0);
+  EXPECT_EQ(ptg->getExplicitTargets(externalMemory).Size(), 0u);
   EXPECT_TRUE(TargetsExactly(*ptg, externalMemory, { deltaNode, importNode, externalMemory }));
 
   // 5 memory node + register pairs, plus one external memory node,
   // minus two registers that have been unified into allocaRNode
-  EXPECT_EQ(ptg->numNodes(), 5 * 2 + 1 - 2);
+  unsigned int expectedNumNodes = 5 * 2 + 1 - 2;
+  EXPECT_EQ(ptg->numNodes(), expectedNumNodes);
 
   // Adding up the out-edges for all nodes
   auto [numExplicitEdges, numTotalEdges] = ptg->numEdges();
-  EXPECT_EQ(numExplicitEdges, 2 + 1 + 1 + 1 + 1);
+  unsigned int expectedNumExplicitEdges = 2 + 1 + 1 + 1 + 1;
+  EXPECT_EQ(numExplicitEdges, expectedNumExplicitEdges);
   // total edges also includes the outgoing implicit edges from the external node
-  EXPECT_EQ(numTotalEdges, 2 + 1 + 4 + 1 + 1 + 3 + 3 + 0 + 3);
+  unsigned int expectedNumTotalEdges = 2 + 1 + 4 + 1 + 1 + 3 + 3 + 0 + 3;
+  EXPECT_EQ(numTotalEdges, expectedNumTotalEdges);
 }

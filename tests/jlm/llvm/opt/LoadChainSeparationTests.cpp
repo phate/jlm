@@ -39,7 +39,7 @@ TEST(LoadChainSeparationTests, LoadNonVolatile)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -93,7 +93,7 @@ TEST(LoadChainSeparationTests, LoadNonVolatile)
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(0)->origin());
     EXPECT_TRUE(joinNode && joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
 
     EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode2);
     EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode1);
@@ -110,7 +110,7 @@ TEST(LoadChainSeparationTests, LoadNonVolatile)
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *lambdaExitMergeNode.input(1)->origin());
     EXPECT_TRUE(joinNode && joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 3);
+    EXPECT_EQ(joinNode->ninputs(), 3u);
 
     EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode3);
     EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode2);
@@ -135,7 +135,7 @@ TEST(LoadChainSeparationTests, LoadVolatile)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -179,7 +179,7 @@ TEST(LoadChainSeparationTests, LoadVolatile)
   auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
       *GetMemoryStateRegionResult(*lambdaNode).origin());
   EXPECT_TRUE(joinNode && joinOperation);
-  EXPECT_EQ(joinNode->ninputs(), 2);
+  EXPECT_EQ(joinNode->ninputs(), 2u);
 
   EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(0)->origin()), &loadNode2);
   EXPECT_EQ(TryGetOwnerNode<SimpleNode>(*joinNode->input(1)->origin()), &loadNode1);
@@ -203,7 +203,7 @@ TEST(LoadChainSeparationTests, SingleLoad)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -251,7 +251,7 @@ TEST(LoadChainSeparationTests, LoadAndStore)
       { pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -308,14 +308,14 @@ TEST(LoadChainSeparationTests, LoadAndStore)
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode2.input(2)->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 
   {
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*storeNode1.input(2)->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 }
 
@@ -335,7 +335,7 @@ TEST(LoadChainSeparationTests, GammaWithOnlyLoads)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -405,21 +405,21 @@ TEST(LoadChainSeparationTests, GammaWithOnlyLoads)
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetExitVars()[0].branchResult[0]->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetEntryVars()[1].input->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 }
 
@@ -439,7 +439,7 @@ TEST(LoadChainSeparationTests, GammaWithLoadsAndStores)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -513,14 +513,14 @@ TEST(LoadChainSeparationTests, GammaWithLoadsAndStores)
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 
   {
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *gammaNode->GetExitVars()[0].branchResult[0]->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 }
 
@@ -540,7 +540,7 @@ TEST(LoadChainSeparationTests, ThetaWithLoadsOnly)
       { controlType, pointerType, ioStateType, memoryStateType },
       { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
@@ -602,7 +602,7 @@ TEST(LoadChainSeparationTests, ThetaWithLoadsOnly)
     auto [joinNode, joinOperation] =
         TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*memoryStateLoopVar.post->origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 2);
+    EXPECT_EQ(joinNode->ninputs(), 2u);
   }
 
   // We expect a single join node in the lambda subregion
@@ -610,7 +610,7 @@ TEST(LoadChainSeparationTests, ThetaWithLoadsOnly)
     auto [joinNode, joinOperation] = TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(
         *GetMemoryStateRegionResult(*lambdaNode).origin());
     EXPECT_TRUE(joinOperation);
-    EXPECT_EQ(joinNode->ninputs(), 5);
+    EXPECT_EQ(joinNode->ninputs(), 5u);
   }
 }
 
@@ -632,7 +632,7 @@ TEST(LoadChainSeparationTests, ExternalCall)
   const auto externalFunctionType =
       FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & externalFunction = jlm::rvsdg::GraphImport::Create(rvsdg, externalFunctionType, "g");
@@ -781,7 +781,7 @@ TEST(LoadChainSeparationTests, DeadOutputs)
       { pointerType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = LambdaNode::Create(
