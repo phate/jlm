@@ -1046,6 +1046,35 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   {
     return Builder_->getType<::mlir::NoneType>();
   }
+  else if (auto structType = dynamic_cast<const llvm::StructType *>(&type))
+  {
+    std::vector<::mlir::Type> elements;
+    for (size_t i = 0; i < structType->numElements(); i++)
+    {
+      elements.push_back(ConvertType(*structType->getElementType(i)));
+    }
+
+    if (structType->IsLiteral())
+    {
+      return ::mlir::LLVM::LLVMStructType::getLiteral(
+          Builder_->getContext(),
+          elements,
+          structType->IsPacked());
+    }
+    else
+    {
+      auto mlirStructType = ::mlir::LLVM::LLVMStructType::getIdentified(
+          Builder_->getContext(),
+          structType->GetName());
+      if (mlirStructType.isInitialized())
+        return mlirStructType;
+      if (mlirStructType.setBody(elements, structType->IsPacked()).failed())
+      {
+        throw util::Error("Not able to set the body of struct in the MLIR backend.");
+      }
+      return mlirStructType;
+    }
+  }
   else
   {
     auto message = util::strfmt("Type conversion not implemented: ", type.debug_string());

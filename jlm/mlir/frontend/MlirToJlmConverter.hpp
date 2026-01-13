@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
@@ -227,7 +228,7 @@ private:
    * \param type The MLIR type to be converted.
    * \result The converted RVSDG type.
    */
-  static std::shared_ptr<const rvsdg::Type>
+  std::shared_ptr<const rvsdg::Type>
   ConvertType(const ::mlir::Type & type);
 
   /**
@@ -247,6 +248,8 @@ private:
   }
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
+  util::BijectiveMap<::mlir::LLVM::LLVMStructType *, std::shared_ptr<const llvm::StructType>>
+      StructTypeMap_;
 };
 
 } // namespace jlm::mlir
