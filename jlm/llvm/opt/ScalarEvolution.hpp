@@ -512,6 +512,8 @@ private:
 
   static std::unique_ptr<SCEV>
   ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand);
+  static std::unique_ptr<SCEV>
+  ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);

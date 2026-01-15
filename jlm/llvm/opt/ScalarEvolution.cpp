@@ -244,6 +244,17 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
           GetOrCreateSCEVForOutput(*lhs),
           GetOrCreateSCEVForOutput(*rhs));
     }
+    if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() == 2);
+      const auto lhs = simpleNode->input(0)->origin();
+      const auto rhs = simpleNode->input(1)->origin();
+
+      const auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      const auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVMulExpr>(lhsScev->Clone(), rhsScev->Clone());
+    }
   }
   // TODO: Handle more cases
 
@@ -528,7 +539,87 @@ ScalarEvolution::CreateChainRecurrence(
 
       if (i <= rhsSize - 1)
         rhsOperand = rhsChrec->GetOperand(i);
-      chrec->AddOperand(ApplyFolding(lhsOperand, rhsOperand));
+      chrec->AddOperand(ApplyAddFolding(lhsOperand, rhsOperand));
+    }
+    return chrec;
+  }
+  if (const auto scevMulExpr = dynamic_cast<const SCEVMulExpr *>(&scevTree))
+  {
+    /* We have the following folding rules from the CR algebra:
+     * G * {e,+,f}         =>       {G * e,+,G * f}
+     * {e,+,f} * {g,+,h}   =>       {e * g,+,e * h + f * g + f * h,+,2*f*h}
+     *
+     * AFAIK these are the only rules that we are able to support as there is no general rule for
+     * folding two addrecs of arbitrary length with the multiplication operation
+     */
+
+    const auto lhsChrec = CreateChainRecurrence(IV, *scevMulExpr->GetLeftOperand(), thetaNode);
+    const auto rhsChrec = CreateChainRecurrence(IV, *scevMulExpr->GetRightOperand(), thetaNode);
+
+    const auto lhsSize = lhsChrec->GetOperands().size();
+    const auto rhsSize = rhsChrec->GetOperands().size();
+
+    if (lhsSize == 0)
+    {
+      for (auto rhsOperand : rhsChrec->GetOperands())
+      {
+        chrec->AddOperand(rhsOperand->Clone());
+      }
+    }
+    else if (rhsSize == 0)
+    {
+      for (auto lhsOperand : lhsChrec->GetOperands())
+      {
+        chrec->AddOperand(lhsOperand->Clone());
+      }
+    }
+    // Handle G * {e,+,f,...} where G is loop invariant
+    else if (lhsSize == 1)
+    {
+      // G * {e,+,f,...} = {G * e,+,G * f,...}
+      auto lhsOperand = lhsChrec->GetOperand(0);
+
+      for (auto rhsOperand : rhsChrec->GetOperands())
+      {
+        chrec->AddOperand(ApplyMultFolding(lhsOperand, const_cast<SCEV *>(rhsOperand)));
+      }
+    }
+    else if (rhsSize == 1)
+    {
+      // {e,+,f,...} * G = {e * G,+,f * G,...}
+      auto rhsOperand = rhsChrec->GetOperand(0);
+
+      for (auto lhsOperand : lhsChrec->GetOperands())
+      {
+        chrec->AddOperand(ApplyMultFolding(const_cast<SCEV *>(lhsOperand), rhsOperand));
+      }
+    }
+    else if (lhsSize == 2 && rhsSize == 2)
+    {
+      // {e,+,f} * {g,+,h} = {e*g,+,e*h + f*g + f*h,+,2*f*h}
+      const auto e = lhsChrec->GetOperand(0);
+      const auto f = lhsChrec->GetOperand(1);
+      const auto g = rhsChrec->GetOperand(0);
+      const auto h = rhsChrec->GetOperand(1);
+
+      // First step: e * g
+      chrec->AddOperand(ApplyMultFolding(e, g));
+
+      // Second step: e * h + f * g + f * h
+      const auto eh = ApplyMultFolding(e, h);
+      const auto fg = ApplyMultFolding(f, g);
+      const auto fh = ApplyMultFolding(f, h);
+      const auto sum1 = ApplyAddFolding(eh.get(), fg.get());
+      auto sum2 = ApplyAddFolding(sum1.get(), fh.get());
+      chrec->AddOperand(std::move(sum2));
+
+      // Third step: 2 * f * h
+      chrec->AddOperand(ApplyMultFolding(std::make_unique<SCEVConstant>(2).get(), fh.get()));
+    }
+    else
+    {
+      // For other cases, return unknown
+      chrec->AddOperand(std::make_unique<SCEVUnknown>());
     }
     return chrec;
   }
@@ -543,7 +634,7 @@ isNonZeroConstant(const SCEVConstant * c)
 }
 
 std::unique_ptr<SCEV>
-ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
+ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
   /* Apply folding rules
    *
@@ -567,14 +658,16 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
    * the right expression.
    */
 
-  const auto lhsUnknown = dynamic_cast<SCEVUnknown *>(lhsOperand);
-  const auto rhsUnknown = dynamic_cast<SCEVUnknown *>(rhsOperand);
-  const auto lhsInit = dynamic_cast<SCEVInit *>(lhsOperand);
-  const auto rhsInit = dynamic_cast<SCEVInit *>(rhsOperand);
-  const auto lhsNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsOperand);
-  const auto rhsNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(rhsOperand);
-  const auto lhsConstant = dynamic_cast<SCEVConstant *>(lhsOperand);
-  const auto rhsConstant = dynamic_cast<SCEVConstant *>(rhsOperand);
+  const auto lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand);
+  const auto rhsUnknown = dynamic_cast<const SCEVUnknown *>(rhsOperand);
+  const auto lhsInit = dynamic_cast<const SCEVInit *>(lhsOperand);
+  const auto rhsInit = dynamic_cast<const SCEVInit *>(rhsOperand);
+  const auto lhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(lhsOperand);
+  const auto rhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(rhsOperand);
+  const auto lhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(lhsOperand);
+  const auto rhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(rhsOperand);
+  const auto lhsConstant = dynamic_cast<const SCEVConstant *>(lhsOperand);
+  const auto rhsConstant = dynamic_cast<const SCEVConstant *>(rhsOperand);
 
   // The if-chain below goes through each of the possible combinations of lhs and rhs values
   if (lhsUnknown || rhsUnknown)
@@ -582,6 +675,50 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
     // If one of the sides is unknown. Return unknown
     return std::make_unique<SCEVUnknown>();
   }
+
+  // Handle n-ary multiply expressions - they become terms in an n-ary add expression
+  if (lhsNAryMulExpr && rhsNAryMulExpr)
+  {
+    // Two multiply expressions - create add expression with both
+    return std::make_unique<SCEVNAryAddExpr>(lhsNAryMulExpr->Clone(), rhsNAryMulExpr->Clone());
+  }
+
+  if ((lhsNAryMulExpr && rhsNAryAddExpr) || (rhsNAryMulExpr && lhsNAryAddExpr))
+  {
+    // Multiply expression with add expression - Clone the add expression and add the multiply as a
+    // term
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto * addExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
+    auto addExprClone = addExpr->Clone();
+    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    newAddExpr->AddOperand(mulExpr->Clone());
+    return newAddExpr->Clone();
+  }
+
+  if ((lhsNAryMulExpr && rhsInit) || (rhsNAryMulExpr && lhsInit))
+  {
+    // Multiply expression with init - create add expression
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    return std::make_unique<SCEVNAryAddExpr>(mulExpr->Clone(), init->Clone());
+  }
+
+  if ((lhsNAryMulExpr && isNonZeroConstant(rhsConstant))
+      || (rhsNAryMulExpr && isNonZeroConstant(lhsConstant)))
+  {
+    // Multiply expression with nonzero constant - create add expression
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return std::make_unique<SCEVNAryAddExpr>(mulExpr->Clone(), constant->Clone());
+  }
+
+  if (lhsNAryMulExpr || rhsNAryMulExpr)
+  {
+    // Single multiply expression (other is zero)
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    return mulExpr->Clone();
+  }
+
   if (lhsInit && rhsInit)
   {
     // We have two init nodes. Create a nAryAdd with lhsInit and rhsInit
@@ -639,6 +776,119 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
 
     return std::make_unique<SCEVConstant>(lhsValue + rhsValue);
   }
+std::unique_ptr<SCEV>
+ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
+{
+  /* Apply folding rules for multiplication
+   *
+   * Similar to addition, we need to handle SCEVInit nodes and n-ary expressions.
+   * For multiplication with init nodes, we create n-ary multiply expressions.
+   */
+
+  const auto lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand);
+  const auto rhsUnknown = dynamic_cast<const SCEVUnknown *>(rhsOperand);
+  const auto lhsInit = dynamic_cast<const SCEVInit *>(lhsOperand);
+  const auto rhsInit = dynamic_cast<const SCEVInit *>(rhsOperand);
+  const auto lhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(lhsOperand);
+  const auto rhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(rhsOperand);
+  const auto lhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(lhsOperand);
+  const auto rhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(rhsOperand);
+  const auto lhsConstant = dynamic_cast<const SCEVConstant *>(lhsOperand);
+  const auto rhsConstant = dynamic_cast<const SCEVConstant *>(rhsOperand);
+
+  if (lhsUnknown || rhsUnknown)
+  {
+    return std::make_unique<SCEVUnknown>();
+  }
+
+  if (lhsNAryAddExpr || rhsNAryAddExpr)
+  {
+    // Handle n-ary add expressions - distribute multiplication
+    // (a + b + c) × G = a×G + b×G + c×G
+    const auto nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
+    const auto other = lhsNAryAddExpr ? rhsOperand : lhsOperand;
+
+    auto resultAddExpr = std::make_unique<SCEVNAryAddExpr>();
+    for (auto operand : nAryAddExpr->GetOperands())
+    {
+      auto product = ApplyMultFolding(const_cast<SCEV *>(operand), other);
+      resultAddExpr->AddOperand(std::move(product));
+    }
+    return resultAddExpr;
+  }
+
+  if (lhsInit && rhsInit)
+  {
+    // Two init nodes - create n-ary multiply expression
+    return std::make_unique<SCEVNAryMulExpr>(lhsInit->Clone(), rhsInit->Clone());
+  }
+
+  if ((lhsInit && rhsNAryMulExpr) || (rhsInit && lhsNAryMulExpr))
+  {
+    // Init node with n-ary multiply expression - add init to the expression
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto nAryMulExprClone = nAryMulExpr->Clone();
+    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    newNAryMulExpr->AddOperand(init->Clone());
+    return newNAryMulExpr->Clone();
+  }
+
+  if ((lhsInit && rhsConstant && rhsConstant->GetValue() != 1)
+      || (rhsInit && lhsConstant && lhsConstant->GetValue() != 1))
+  {
+    // Init node with non-one constant - create n-ary multiply expression
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return std::make_unique<SCEVNAryMulExpr>(init->Clone(), constant->Clone());
+  }
+
+  if (lhsInit || rhsInit)
+  {
+    // Single init node (other operand is treated as identity element 1)
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    return init->Clone();
+  }
+
+  if (lhsNAryMulExpr && rhsNAryMulExpr)
+  {
+    // Two n-ary mult expressions - combine operands
+    auto lhsNAryMulExprClone = lhsNAryMulExpr->Clone();
+    auto lhsNewNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(lhsNAryMulExprClone.get());
+    for (auto op : rhsNAryMulExpr->GetOperands())
+    {
+      lhsNewNAryMulExpr->AddOperand(op->Clone());
+    }
+    return lhsNewNAryMulExpr->Clone();
+  }
+
+  if ((lhsNAryMulExpr && rhsConstant && rhsConstant->GetValue() != 1)
+      || (rhsNAryMulExpr && lhsConstant && lhsConstant->GetValue() != 1))
+  {
+    // N-ary mult expression with non-one constant - add constant to expression
+    auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+
+    auto nAryMulExprClone = nAryMulExpr->Clone();
+    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    newNAryMulExpr->AddOperand(constant->Clone());
+    return newNAryMulExpr->Clone();
+  }
+
+  if (lhsNAryMulExpr || rhsNAryMulExpr)
+  {
+    const auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    return nAryMulExpr->Clone();
+  }
+
+  if (lhsConstant && rhsConstant)
+  {
+    // Two constants - fold by multiplying values together
+    const auto lhsValue = lhsConstant->GetValue();
+    const auto rhsValue = rhsConstant->GetValue();
+    return std::make_unique<SCEVConstant>(lhsValue * rhsValue);
+  }
+
   if (lhsConstant || rhsConstant)
   {
     const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
@@ -718,11 +968,11 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
   if (dynamic_cast<const SCEVUnknown *>(&a))
     return true;
 
-  if (auto * aa = dynamic_cast<const SCEVAddExpr *>(&a))
+  if (auto * bea = dynamic_cast<const SCEVBinaryExpr *>(&a))
   {
-    auto * ab = dynamic_cast<const SCEVAddExpr *>(&b);
-    return StructurallyEqual(*aa->GetLeftOperand(), *ab->GetLeftOperand())
-        && StructurallyEqual(*aa->GetRightOperand(), *ab->GetRightOperand());
+    auto * beb = dynamic_cast<const SCEVBinaryExpr *>(&b);
+    return StructurallyEqual(*bea->GetLeftOperand(), *beb->GetLeftOperand())
+        && StructurallyEqual(*bea->GetRightOperand(), *beb->GetRightOperand());
   }
 
   if (auto * cha = dynamic_cast<const SCEVChainRecurrence *>(&a))
@@ -740,14 +990,14 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
     return true;
   }
 
-  if (auto * naa = dynamic_cast<const SCEVNAryAddExpr *>(&a))
+  if (auto * nea = dynamic_cast<const SCEVNAryExpr *>(&a))
   {
-    auto * nab = dynamic_cast<const SCEVNAryAddExpr *>(&b);
-    if (naa->GetOperands().size() != nab->GetOperands().size())
+    auto * neb = dynamic_cast<const SCEVNAryExpr *>(&b);
+    if (nea->GetOperands().size() != neb->GetOperands().size())
       return false;
-    for (size_t i = 0; i < naa->GetOperands().size(); ++i)
+    for (size_t i = 0; i < nea->GetOperands().size(); ++i)
     {
-      if (!StructurallyEqual(*naa->GetOperands()[i], *nab->GetOperands()[i]))
+      if (!StructurallyEqual(*nea->GetOperands()[i], *neb->GetOperands()[i]))
         return false;
     }
     return true;
