@@ -451,11 +451,31 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
   class Statistics;
 
 public:
+  enum class DependencyOp
+  {
+    Add,
+    Mult,
+    Direct,
+  };
+
+  struct DependencyInfo
+  {
+    int count;
+    DependencyOp operation;
+
+    explicit DependencyInfo(const int c = 0, const DependencyOp op = DependencyOp::Direct)
+        : count(c),
+          operation(op)
+    {}
+  };
+
   typedef util::HashSet<const rvsdg::Output *>
       InductionVariableSet; // Stores the pointers to the output result from the subregion for the
                             // induction variables
 
-  typedef std::unordered_map<const rvsdg::Output *, std::unordered_map<const rvsdg::Output *, int>>
+  typedef std::unordered_map<
+      const rvsdg::Output *,
+      std::unordered_map<const rvsdg::Output *, DependencyInfo>>
       IVDependencyGraph;
 
   ~ScalarEvolution() noexcept override;
@@ -498,7 +518,7 @@ private:
   IVDependencyGraph
   CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
-  static std::unordered_map<const rvsdg::Output *, int>
+  static std::unordered_map<const rvsdg::Output *, DependencyInfo>
   FindDependenciesForSCEV(const SCEV & scev);
 
   static std::vector<const rvsdg::Output *>

@@ -271,10 +271,10 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   return result;
 }
 
-std::unordered_map<const rvsdg::Output *, int>
+std::unordered_map<const rvsdg::Output *, ScalarEvolution::DependencyInfo>
 ScalarEvolution::FindDependenciesForSCEV(const SCEV & scev)
 {
-  std::unordered_map<const rvsdg::Output *, int> dependencies{};
+  std::unordered_map<const rvsdg::Output *, DependencyInfo> dependencies{};
   if (dynamic_cast<const SCEVConstant *>(&scev) || dynamic_cast<const SCEVUnknown *>(&scev))
   {
     return dependencies;
@@ -282,23 +282,53 @@ ScalarEvolution::FindDependenciesForSCEV(const SCEV & scev)
   if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&scev))
   {
     if (const auto dependency = placeholderSCEV->GetPrePointer())
-      dependencies[dependency]++;
+    {
+      auto & depInfo = dependencies[dependency];
+      depInfo.count++;
+    }
   }
   if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&scev))
   {
     // Recursively find dependencies on lhs and rhs
-    std::unordered_map<const rvsdg::Output *, int> lhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetLeftOperand());
-    std::unordered_map<const rvsdg::Output *, int> rhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetRightOperand());
+    auto lhsDependencies = FindDependenciesForSCEV(*addSCEV->GetLeftOperand());
+    auto rhsDependencies = FindDependenciesForSCEV(*addSCEV->GetRightOperand());
 
-    // Merge lhsDependencies into dependencies
-    for (const auto & [ptr, count] : lhsDependencies)
-      dependencies[ptr] += count;
+    // Merge with Add operation
+    for (const auto & [ptr, info] : lhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Add; // Update operation type
+    }
 
-    // Do the same for rhs
-    for (const auto & [ptr, count] : rhsDependencies)
-      dependencies[ptr] += count;
+    for (const auto & [ptr, info] : rhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Add;
+    }
+  }
+
+  if (const auto mulSCEV = dynamic_cast<const SCEVMulExpr *>(&scev))
+  {
+    // Recursively find dependencies on lhs and rhs
+    auto lhsDependencies = FindDependenciesForSCEV(*mulSCEV->GetLeftOperand());
+    auto rhsDependencies = FindDependenciesForSCEV(*mulSCEV->GetRightOperand());
+
+    // Merge with Mult operation
+    for (const auto & [ptr, info] : lhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Mult;
+    }
+
+    for (const auto & [ptr, info] : rhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Mult;
+    }
   }
 
   return dependencies;
@@ -313,7 +343,7 @@ ScalarEvolution::CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const
     const auto post = loopVar.post;
     const auto scev = UniqueSCEVs_.at(post->origin())->Clone();
 
-    const std::unordered_map<const rvsdg::Output *, int> dependencies =
+    const std::unordered_map<const rvsdg::Output *, DependencyInfo> dependencies =
         FindDependenciesForSCEV(*scev.get());
 
     const auto pre = loopVar.pre;
@@ -927,9 +957,20 @@ ScalarEvolution::IsValidInductionVariable(
     const rvsdg::Output & variable,
     IVDependencyGraph & dependencyGraph)
 {
-  // First check that variable has only one self-reference
-  if (dependencyGraph[&variable][&variable] != 1)
+  // First check that variable has only one self-reference,
+  if (dependencyGraph[&variable][&variable].count != 1)
     return false;
+
+  // Check that it has no reference via a mult-operation
+  // (results in a quadratic recurrence - which we treat as invalid)
+  auto deps = dependencyGraph[&variable];
+  for (auto [output, dependencyInfo] : deps)
+  {
+    if (dependencyInfo.operation == DependencyOp::Mult)
+    {
+      return false;
+    }
+  }
 
   // Then check for cycles through other variables
   std::unordered_set<const rvsdg::Output *> visited{};
