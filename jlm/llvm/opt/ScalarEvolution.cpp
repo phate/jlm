@@ -240,9 +240,6 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
       const auto rhs = simpleNode->input(1)->origin();
-      result = std::make_unique<SCEVAddExpr>(
-          GetOrCreateSCEVForOutput(*lhs),
-          GetOrCreateSCEVForOutput(*rhs));
 
       auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
       auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
