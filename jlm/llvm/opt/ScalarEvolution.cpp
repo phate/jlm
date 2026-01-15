@@ -470,8 +470,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   {
     if (!DependsOnLoopVariable(*loopVar.pre, dependencyGraph))
     {
-      // If the expression doesn't depend on atleast one loop variable (including itself), it is not
-      // an induction variable. Replace it with a SCEVUnknown
+      // If the expression doesn't depend on atleast one loop variable (including itself), it is
+      // not an induction variable. Replace it with a SCEVUnknown
       UniqueSCEVs_.insert_or_assign(loopVar.post->origin(), std::make_unique<SCEVUnknown>());
     }
     else if (IsValidInductionVariable(*loopVar.pre, dependencyGraph))
@@ -519,8 +519,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       if (chainRecurrence->GetOperands().size() == 1
           && StructurallyEqual(*chainRecurrence->GetOperand(0), SCEVConstant(0)))
       {
-        // If the recurrence is empty ({0}), delete the old unique_ptr and create a new one without
-        // any operands. This effectively removes trailing zeroes for constants
+        // If the recurrence is empty ({0}), delete the old unique_ptr and create a new one
+        // without any operands. This effectively removes trailing zeroes for constants
         chainRecurrence.reset();
         chainRecurrence = std::make_unique<SCEVChainRecurrence>(thetaNode);
       }
@@ -528,8 +528,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       // Find the start value for the recurrence
       if (auto const constantInteger = tryGetConstantSignedInteger(*loopVar.input->origin()))
       {
-        // If the input value is a constant, create a SCEV representation and set it as start value
-        // (first operand in rec)
+        // If the input value is a constant, create a SCEV representation and set it as start
+        // value (first operand in rec)
         chainRecurrence->AddOperandToFront(std::make_unique<SCEVConstant>(*constantInteger));
       }
       else
@@ -579,8 +579,8 @@ ScalarEvolution::CreateChainRecurrence(
     if (scevPlaceholder->GetPrePointer() == &IV)
     {
       // Since we are only interested in the step value, and not the initial value, we can ignore
-      // ourselves by adding a 0, which is the identity element
-      chrec->AddOperand(std::make_unique<SCEVConstant>(0));
+      // ourselves by returning an empty chain recurrence (treated as the identity element - 0 for
+      // addition and 1 for multiplication)
       return chrec;
     }
     if (ChainRecurrenceMap_.find(scevPlaceholder->GetPrePointer()) != ChainRecurrenceMap_.end())
@@ -596,6 +596,18 @@ ScalarEvolution::CreateChainRecurrence(
   }
   if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
+    /* We have the following folding rules from the CR algebra:
+     * G + {e,+,f}         =>       {G + e,+,f}         (1)
+     * {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
+     *
+     * And by generalizing rule 2, we have that:
+     * {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
+     *
+     * Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
+     * node, we can therefore pad the constant recurrence with however many zeroes we need for the
+     * length of the other recurrence. This effectively let's us apply both rules in one go.
+     */
+
     const auto lhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetLeftOperand(), thetaNode);
     const auto rhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetRightOperand(), thetaNode);
 
@@ -707,26 +719,15 @@ isNonZeroConstant(const SCEVConstant * c)
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
-  /* Apply folding rules
+  /* Apply folding rules for addition
    *
-   * We have the following folding rules from the CR algebra:
-   * G + {e,+,f}         =>       {G + e,+,f}         (1)
-   * {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
-   *
-   * And by generalizing rule 2, we have that:
-   * {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
-   *
-   * Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
-   * node, we can therefore pad the constant recurrence with however many zeroes we need for the
-   * length of the other recurrence. This effectively let's us apply both rules in one go.
-   *
-   * Now, this becomes a bit complicated when we factor in SCEVInit nodes. These nodes represent
-   * the initial value of an IV in the case where the exact value is unknown at compile time. E.g.
-   * function argument or result from a call-instruction. In the cases where we have to fold one or
-   * more of these init-nodes, we create an n-ary add expression (add expression with an arbitrary
-   * number of operands), and add this to the chrec. Folding two of these n-ary add expressions will
-   * result in another n-ary add expression, which consists of all the operands in both the left and
-   * the right expression.
+   * For constants and unknowns this is trivial, however it becomes a bit complicated when we
+   * factor in SCEVInit nodes. These nodes represent the initial value of an IV in the case where
+   * the exact value is unknown at compile time. E.g. function argument or result from a
+   * call-instruction. In the cases where we have to fold one or more of these init-nodes, we create
+   * an n-ary add expression (add expression with an arbitrary number of operands), and add this to
+   * the chrec. Folding two of these n-ary add expressions will result in another n-ary add
+   * expression, which consists of all the operands in both the left and the right expression.
    */
 
   const auto lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand);
@@ -987,6 +988,7 @@ ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOpera
     const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     return constant->Clone();
   }
+
   return std::make_unique<SCEVUnknown>();
 }
 
