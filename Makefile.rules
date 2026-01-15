@@ -190,4 +190,7 @@ format-dry-run:
 # Clang tidy rules
 
 tidy: $(COMMANDPATHSFILE)
-	clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy $(HEADERS) $(SOURCES) -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX)
+# Run clang-tidy in parallel on all source files and headers, halt on first error
+	parallel --halt now,fail=1 \
+	    clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy {} -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX) \
+	    ::: $(HEADERS) $(SOURCES)
