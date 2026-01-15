@@ -511,7 +511,8 @@ private:
       const rvsdg::ThetaNode & thetaNode);
 
   static std::unique_ptr<SCEV>
-  ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand);
+  ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+
   static std::unique_ptr<SCEV>
   ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 

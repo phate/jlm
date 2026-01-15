@@ -243,6 +243,12 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       result = std::make_unique<SCEVAddExpr>(
           GetOrCreateSCEVForOutput(*lhs),
           GetOrCreateSCEVForOutput(*rhs));
+
+      auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), std::move(rhsScev));
+    }
     }
     if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
     {
@@ -532,12 +538,12 @@ ScalarEvolution::CreateChainRecurrence(
     const auto rhsSize = rhsChrec->GetOperands().size();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
     {
-      SCEV * lhsOperand{};
-      SCEV * rhsOperand{};
-      if (i <= lhsSize - 1)
+      const SCEV * lhsOperand{};
+      const SCEV * rhsOperand{};
+      if (i < lhsSize)
         lhsOperand = lhsChrec->GetOperand(i);
 
-      if (i <= rhsSize - 1)
+      if (i < rhsSize)
         rhsOperand = rhsChrec->GetOperand(i);
       chrec->AddOperand(ApplyAddFolding(lhsOperand, rhsOperand));
     }
@@ -724,14 +730,18 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // We have two init nodes. Create a nAryAdd with lhsInit and rhsInit
     return std::make_unique<SCEVNAryAddExpr>(lhsInit->Clone(), rhsInit->Clone());
   }
+
   if ((lhsInit && rhsNAryAddExpr) || (rhsInit && lhsNAryAddExpr))
   {
     // We have an init and an add expr. Add init to the add expr
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
-    nAryAddExpr->AddOperand(init->Clone());
-    return nAryAddExpr->Clone();
+    auto addExprClone = nAryAddExpr->Clone();
+    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    newAddExpr->AddOperand(init->Clone());
+    return newAddExpr->Clone();
   }
+
   if ((lhsInit && isNonZeroConstant(rhsConstant)) || (rhsInit && isNonZeroConstant(lhsConstant)))
   {
     // We have an init and a nonzero constant. Create a nAryAdd with init and constant
@@ -739,30 +749,38 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     return std::make_unique<SCEVNAryAddExpr>(init->Clone(), constant->Clone());
   }
+
   if (lhsInit || rhsInit)
   {
     // Only one operand. Add it
     const auto * init = lhsInit ? lhsInit : rhsInit;
     return init->Clone();
   }
+
   if (lhsNAryAddExpr && rhsNAryAddExpr)
   {
     // We have two add expressions. Add the rhs operands to the lhs add expr
+    auto lhsNAryAddExprClone = lhsNAryAddExpr->Clone();
+    auto lhsNewNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsNAryAddExprClone.get());
     for (auto op : rhsNAryAddExpr->GetOperands())
     {
-      lhsNAryAddExpr->AddOperand(op->Clone());
+      lhsNewNAryAddExpr->AddOperand(op->Clone());
     }
-    return lhsNAryAddExpr->Clone();
+    return lhsNewNAryAddExpr->Clone();
   }
+
   if ((lhsNAryAddExpr && isNonZeroConstant(rhsConstant))
       || (rhsNAryAddExpr && isNonZeroConstant(lhsConstant)))
   {
     // We have an add expr and a nonzero constant. Add the constant to the add expr
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
-    nAryAddExpr->AddOperand(constant->Clone());
-    return nAryAddExpr->Clone();
+    auto nAryAddExprClone = nAryAddExpr->Clone();
+    auto newNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(nAryAddExprClone.get());
+    newNAryAddExpr->AddOperand(constant->Clone());
+    return newNAryAddExpr->Clone();
   }
+
   if (lhsNAryAddExpr || rhsNAryAddExpr)
   {
     const auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
@@ -776,6 +794,16 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
     return std::make_unique<SCEVConstant>(lhsValue + rhsValue);
   }
+
+  if (lhsConstant || rhsConstant)
+  {
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return constant->Clone();
+  }
+
+  return std::make_unique<SCEVUnknown>();
+}
+
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
