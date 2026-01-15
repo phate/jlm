@@ -509,6 +509,9 @@ private:
   void
   AnalyzeRegion(const rvsdg::Region & region);
 
+  static std::unique_ptr<SCEV>
+  GetNegativeSCEV(const SCEV & scev);
+
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 

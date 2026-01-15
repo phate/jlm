@@ -212,6 +212,34 @@ ScalarEvolution::TryGetSCEVForOutput(const rvsdg::Output & output)
 }
 
 std::unique_ptr<SCEV>
+ScalarEvolution::GetNegativeSCEV(const SCEV & scev)
+{
+  // -(c)
+  if (const auto c = dynamic_cast<const SCEVConstant *>(&scev))
+  {
+    const auto value = c->GetValue();
+    return std::make_unique<SCEVConstant>(-value);
+  }
+  // -(-x) -> x
+  if (const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev))
+  {
+    if (const auto c = dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand());
+        c && c->GetValue() == -1)
+    {
+      return mul->GetRightOperand()->Clone();
+    }
+  } // -(x + y) -> (-x) + (-y)
+  if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
+  {
+    return std::make_unique<SCEVAddExpr>(
+        GetNegativeSCEV(*add->GetLeftOperand()),
+        GetNegativeSCEV(*add->GetRightOperand()));
+  }
+  // General case: -(x) -> (-1) * x
+  return std::make_unique<SCEVMulExpr>(std::make_unique<SCEVConstant>(-1), scev.Clone());
+}
+
+std::unique_ptr<SCEV>
 ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 {
   if (const auto existing = TryGetSCEVForOutput(output))
@@ -246,6 +274,16 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), std::move(rhsScev));
     }
+    if (rvsdg::is<IntegerSubOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() == 2);
+      const auto lhs = simpleNode->input(0)->origin();
+      const auto rhs = simpleNode->input(1)->origin();
+
+      auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), GetNegativeSCEV(*rhsScev));
     }
     if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
     {
