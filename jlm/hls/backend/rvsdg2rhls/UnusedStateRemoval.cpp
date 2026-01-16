@@ -104,7 +104,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   {
     if (!IsPassthroughResult(*result))
     {
-      newResults.push_back(substitutionMap.lookup(result->origin()));
+      newResults.push_back(&substitutionMap.lookup(*result->origin()));
     }
   }
   auto newLambdaOutput = newLambda->finalize(newResults);

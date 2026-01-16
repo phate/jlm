@@ -231,7 +231,7 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 
   for (size_t i = 0; i < ninputs(); ++i)
   {
-    auto in_origin = smap.lookup(input(i)->origin());
+    auto in_origin = &smap.lookup(*input(i)->origin());
     auto inp = loop->addInput(
         std::make_unique<rvsdg::StructuralInput>(loop, in_origin, in_origin->Type()),
         true);
@@ -258,22 +258,22 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   subregion()->copy(loop->subregion(), smap);
-  loop->PredicateBuffer_ = smap.lookup(PredicateBuffer_);
+  loop->PredicateBuffer_ = &smap.lookup(*PredicateBuffer_);
   // redirect backedges
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
     auto arg = subregion()->argument(i);
     if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
-      auto na = dynamic_cast<BackEdgeArgument *>(smap.lookup(ba));
-      na->result()->divert_to(smap.lookup(ba->result()->origin()));
+      auto na = dynamic_cast<BackEdgeArgument *>(&smap.lookup(*ba));
+      na->result()->divert_to(&smap.lookup(*ba->result()->origin()));
     }
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
     auto outp = output(i);
     auto res = outp->results.begin().ptr();
-    auto origin = smap.lookup(res->origin());
+    auto origin = &smap.lookup(*res->origin());
     ExitResult::Create(*origin, *loop->output(i));
   }
 

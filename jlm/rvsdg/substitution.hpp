@@ -34,13 +34,6 @@ public:
     return *outputMap_.find(&original)->second;
   }
 
-  Output *
-  lookup(const Output * original) const noexcept
-  {
-    auto i = outputMap_.find(original);
-    return i != outputMap_.end() ? i->second : nullptr;
-  }
-
   void
   insert(const Output * original, Output * substitute)
   {

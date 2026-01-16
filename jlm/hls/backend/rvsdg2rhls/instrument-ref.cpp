@@ -47,7 +47,7 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;
   for (auto result : ln->GetFunctionResults())
-    results.push_back(subregionmap.lookup(result->origin()));
+    results.push_back(&subregionmap.lookup(*result->origin()));
 
   /* finalize lambda */
   lambda->finalize(results);

@@ -121,7 +121,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
           std::vector<jlm::rvsdg::Output *> operands;
           for (size_t j = 0; j < ex.branchResult.size(); j++)
           {
-            operands.push_back(rmap[j].lookup(ex.branchResult[j]->origin()));
+            operands.push_back(&rmap[j].lookup(*ex.branchResult[j]->origin()));
           }
           auto oex = other_gamma->AddExitVar(operands).output;
           ex.output->divert_users(oex);
