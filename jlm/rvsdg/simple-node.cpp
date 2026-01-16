@@ -68,6 +68,7 @@ SimpleNode::copy(Region * region, SubstitutionMap & smap) const
 
   auto copiedNode = copy(region, operands);
 
+  JLM_ASSERT(copiedNode->noutputs() == noutputs());
   for (size_t n = 0; n < copiedNode->noutputs(); n++)
     smap.insert(output(n), copiedNode->output(n));
 
