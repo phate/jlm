@@ -1002,7 +1002,7 @@ ScalarEvolution::IsValidInductionVariable(
     return false;
 
   // Check that it has no reference via a mult-operation
-  // (results in a quadratic recurrence - which we treat as invalid)
+  // (results in a geometric sequence - which we treat as an invalid induction variable)
   auto deps = dependencyGraph[&variable];
   for (auto [output, dependencyInfo] : deps)
   {
