@@ -76,7 +76,7 @@ split_opt(llvm::LlvmRvsdgModule & rm)
 }
 
 void
-pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
+pre_opt(rvsdg::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
@@ -526,10 +526,8 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
 void
 dump_ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & path)
 {
-  auto reference =
-      llvm::LlvmRvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
-  rvsdg::SubstitutionMap smap;
-  rhls.Rvsdg().GetRootRegion().copy(&reference->Rvsdg().GetRootRegion(), smap, true, true);
+  const std::unique_ptr<llvm::LlvmRvsdgModule> reference(
+      static_cast<llvm::LlvmRvsdgModule *>(rhls.copy().release()));
   pre_opt(*reference);
   instrument_ref(*reference);
   for (size_t i = 0; i < reference->Rvsdg().GetRootRegion().narguments(); ++i)

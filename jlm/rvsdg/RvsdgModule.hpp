@@ -19,12 +19,18 @@ namespace jlm::rvsdg
 class RvsdgModule
 {
 public:
-  virtual ~RvsdgModule() noexcept = default;
+  virtual ~RvsdgModule() noexcept;
 
   RvsdgModule() = default;
 
   explicit RvsdgModule(util::FilePath sourceFilePath)
-      : SourceFilePath_(std::move(sourceFilePath))
+      : rvsdg_(new Graph()),
+        SourceFilePath_(std::move(sourceFilePath))
+  {}
+
+  RvsdgModule(util::FilePath sourceFilePath, std::unique_ptr<Graph> rvsdg)
+      : rvsdg_(std::move(rvsdg)),
+        SourceFilePath_(std::move(sourceFilePath))
   {}
 
   RvsdgModule(const RvsdgModule &) = delete;
@@ -38,13 +44,19 @@ public:
   operator=(RvsdgModule &&) = delete;
 
   /**
+   * @return A copy of the instance.
+   */
+  [[nodiscard]] virtual std::unique_ptr<RvsdgModule>
+  copy() const;
+
+  /**
    *
    * @return The RVSDG of the module.
    */
-  jlm::rvsdg::Graph &
+  Graph &
   Rvsdg() noexcept
   {
-    return Rvsdg_;
+    return *rvsdg_;
   }
 
   /**
@@ -54,7 +66,7 @@ public:
   [[nodiscard]] const Graph &
   Rvsdg() const noexcept
   {
-    return Rvsdg_;
+    return *rvsdg_;
   }
 
   [[nodiscard]] const std::optional<util::FilePath> &
@@ -64,7 +76,7 @@ public:
   }
 
 private:
-  Graph Rvsdg_;
+  std::unique_ptr<Graph> rvsdg_{};
   std::optional<util::FilePath> SourceFilePath_{};
 };
 

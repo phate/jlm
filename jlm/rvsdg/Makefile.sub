@@ -12,6 +12,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/operation.cpp \
     jlm/rvsdg/Phi.cpp \
     jlm/rvsdg/region.cpp \
+    jlm/rvsdg/RvsdgModule.cpp \
     jlm/rvsdg/simple-node.cpp \
     jlm/rvsdg/structural-node.cpp \
     jlm/rvsdg/TestNodes.cpp \
