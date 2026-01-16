@@ -236,7 +236,6 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
         std::make_unique<rvsdg::StructuralInput>(loop, in_origin, in_origin->Type()),
         true);
 
-    smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto & narg = EntryArgument::Create(*loop->subregion(), *inp, oarg->Type());
     smap.insert(oarg, &narg);

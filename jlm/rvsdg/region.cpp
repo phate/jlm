@@ -313,11 +313,8 @@ Region::removeNode(Node * node)
 void
 Region::copy(Region * target, SubstitutionMap & smap) const
 {
-  smap.insert(this, target);
-
   for (const auto node : TopDownConstTraverser(this))
   {
-    JLM_ASSERT(target == &smap.lookup(*node->region()));
     node->copy(target, smap);
   }
 }
