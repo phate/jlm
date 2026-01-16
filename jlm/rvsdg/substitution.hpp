@@ -73,20 +73,6 @@ public:
     return i != output_map_.end() ? i->second : nullptr;
   }
 
-  [[nodiscard]] rvsdg::Region *
-  lookup(const jlm::rvsdg::Region * original) const noexcept
-  {
-    auto i = region_map_.find(original);
-    return i != region_map_.end() ? i->second : nullptr;
-  }
-
-  StructuralInput *
-  lookup(const StructuralInput * original) const noexcept
-  {
-    auto i = structinput_map_.find(original);
-    return i != structinput_map_.end() ? i->second : nullptr;
-  }
-
   inline void
   insert(const jlm::rvsdg::Output * original, jlm::rvsdg::Output * substitute)
   {

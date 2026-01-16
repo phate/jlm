@@ -319,7 +319,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   {
     for (const auto oldArgument : Arguments())
     {
-      const auto input = smap.lookup(oldArgument->input());
+      auto input = oldArgument->input() ? &smap.lookup(*oldArgument->input()) : nullptr;
       auto & newArgument = oldArgument->Copy(*target, input);
       smap.insert(oldArgument, &newArgument);
     }
@@ -328,7 +328,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   // copy nodes
   for (const auto node : TopDownConstTraverser(this))
   {
-    JLM_ASSERT(target == smap.lookup(node->region()));
+    JLM_ASSERT(target == &smap.lookup(*node->region()));
     node->copy(target, smap);
   }
 
