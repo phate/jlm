@@ -37,37 +37,126 @@ TestStructuralNode::copy(Region * parent, SubstitutionMap & smap) const
 {
   auto node = create(parent, nsubregions());
 
-  // copy inputs
-  for (size_t n = 0; n < ninputs(); n++)
+  // copy inputs and arguments
+  for (auto & argument : subregion(0)->Arguments())
   {
-    auto origin = smap.lookup(input(n)->origin());
-    auto neworigin = origin ? origin : input(n)->origin();
-    auto new_input = new StructuralInput(node, neworigin, input(n)->Type());
-    node->addInput(std::unique_ptr<StructuralInput>(new_input), true);
-    smap.insert(input(n), new_input);
+    if (const auto input = argument->input())
+    {
+      auto oldInputVar = mapInput(*input);
+      auto & newOrigin = smap.lookup(*input->origin());
+      auto newInputVar = node->addInputWithArguments(newOrigin);
+      for (size_t n = 0; n < oldInputVar.argument.size(); n++)
+      {
+        auto oldArgument = oldInputVar.argument[n];
+        auto newArgument = newInputVar.argument[n];
+        smap.insert(oldArgument, newArgument);
+      }
+    }
+    else
+    {
+      auto newInputVar = node->addArguments(argument->Type());
+      for (auto & subregion : Subregions())
+      {
+        auto oldArgument = subregion.argument(argument->index());
+        JLM_ASSERT(oldArgument->input() == nullptr);
+        smap.insert(oldArgument, newInputVar.argument[subregion.index()]);
+      }
+    }
   }
 
-  // copy outputs
-  for (size_t n = 0; n < noutputs(); n++)
+  JLM_ASSERT(ninputs() == node->ninputs());
+  for (auto & subregion : Subregions())
   {
-    auto new_output = new StructuralOutput(node, output(n)->Type());
-    node->addOutput(std::unique_ptr<StructuralOutput>(new_output));
-    smap.insert(output(n), new_output);
+    JLM_ASSERT(subregion.narguments() == node->subregion(subregion.index())->narguments());
   }
 
-  // copy regions
-  for (size_t n = 0; n < nsubregions(); n++)
-    subregion(n)->copy(node->subregion(n), smap, true, true);
+  // copy subregions
+  for (auto & subregion : Subregions())
+  {
+    subregion.copy(node->subregion(subregion.index()), smap, false, false);
+  }
+
+  // copy results and outputs
+  for (auto & result : subregion(0)->Results())
+  {
+    if (const auto output = result->output())
+    {
+      auto oldOutputVar = mapOutput(*output);
+
+      std::vector<Output *> newOrigins;
+      for (auto oldOutputVarResult : oldOutputVar.result)
+      {
+        auto & newOrigin = smap.lookup(*oldOutputVarResult->origin());
+        newOrigins.push_back(&newOrigin);
+      }
+      auto newOutputVar = node->addOutputWithResults(newOrigins);
+      smap.insert(oldOutputVar.output, newOutputVar.output);
+    }
+    else
+    {
+      std::vector<Output *> newOrigins;
+      for (auto & subregion : Subregions())
+      {
+        auto subregionResult = subregion.result(result->index());
+        JLM_ASSERT(subregionResult->output() == nullptr);
+        auto & newOrigin = smap.lookup(*subregionResult->origin());
+        newOrigins.push_back(&newOrigin);
+      }
+      node->addResults(newOrigins);
+    }
+  }
+
+  JLM_ASSERT(noutputs() == node->noutputs());
+  for (auto & subregion : Subregions())
+  {
+    JLM_ASSERT(subregion.nresults() == node->subregion(subregion.index())->nresults());
+  }
 
   return node;
 }
 
-StructuralInput &
-TestStructuralNode::addInputOnly(Output & origin)
+TestStructuralNode::InputVar
+TestStructuralNode::mapInput(const Input & input) const
 {
-  const auto input =
-      addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
-  return *input;
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<TestStructuralNode>(input) == this);
+
+  InputVar inputVar;
+  inputVar.input = this->input(input.index());
+  for (auto & subregion : Subregions())
+  {
+    for (auto & argument : subregion.Arguments())
+    {
+      if (argument->input() == inputVar.input)
+      {
+        inputVar.argument.push_back(argument);
+      }
+    }
+  }
+
+  JLM_ASSERT(inputVar.argument.size() == nsubregions());
+  return inputVar;
+}
+
+TestStructuralNode::OutputVar
+TestStructuralNode::mapOutput(const Output & output) const
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<TestStructuralNode>(output) == this);
+
+  OutputVar outputVar;
+  outputVar.output = this->output(output.index());
+  for (auto & subregion : Subregions())
+  {
+    for (auto & result : subregion.Results())
+    {
+      if (result->output() == outputVar.output)
+      {
+        outputVar.result.push_back(result);
+      }
+    }
+  }
+
+  JLM_ASSERT(outputVar.result.size() == nsubregions());
+  return outputVar;
 }
 
 TestStructuralNode::InputVar
@@ -113,6 +202,12 @@ TestStructuralNode::addArguments(const std::shared_ptr<const Type> & type)
   }
 
   return { nullptr, std::move(arguments) };
+}
+
+StructuralInput &
+TestStructuralNode::addInputOnly(Output & origin)
+{
+  return *addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
 }
 
 StructuralOutput &
