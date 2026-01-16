@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -141,7 +142,6 @@ ScalarEvolution::Run(
   statistics->Start();
 
   Context_ = Context::Create();
-  InductionVariableMap_.clear();
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   AnalyzeRegion(rootRegion);
 
@@ -162,6 +162,13 @@ ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
   return false;
 }
 
+bool
+ScalarEvolution::IsState(const rvsdg::Output & output)
+{
+  const auto type = output.Type();
+  return rvsdg::is<MemoryStateType>(type) || rvsdg::is<IOStateType>(type);
+}
+
 void
 ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 {
@@ -178,14 +185,18 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         // Add number of loop vars in theta (for statistics)
         for (const auto loopVar : thetaNode->GetLoopVars())
         {
-          Context_.get()->AddLoopVar(*loopVar.pre);
+          if (!IsState(*loopVar.pre)) // Only add loop variables that are not states
+            Context_.get()->AddLoopVar(*loopVar.pre);
         }
 
         auto chrecMap = PerformSCEVAnalysis(*thetaNode);
         for (auto & [output, chrec] : chrecMap)
         {
-          if (!IsUnknown(*chrec))
+          if (!(IsUnknown(*chrec) || IsState(*output)))
+          {
+            // Only add chrecs that are not unknown for outputs that are not states
             Context_.get()->InsertChrec(*thetaNode, chrec);
+          }
         }
       }
     }
@@ -198,6 +209,34 @@ ScalarEvolution::TryGetSCEVForOutput(const rvsdg::Output & output)
   if (const auto it = UniqueSCEVs_.find(&output); it != UniqueSCEVs_.end())
     return it->second.get();
   return std::nullopt;
+}
+
+std::unique_ptr<SCEV>
+ScalarEvolution::GetNegativeSCEV(const SCEV & scev)
+{
+  // -(c)
+  if (const auto c = dynamic_cast<const SCEVConstant *>(&scev))
+  {
+    const auto value = c->GetValue();
+    return std::make_unique<SCEVConstant>(-value);
+  }
+  // -(-x) -> x
+  if (const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev))
+  {
+    if (const auto c = dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand());
+        c && c->GetValue() == -1)
+    {
+      return mul->GetRightOperand()->Clone();
+    }
+  } // -(x + y) -> (-x) + (-y)
+  if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
+  {
+    return std::make_unique<SCEVAddExpr>(
+        GetNegativeSCEV(*add->GetLeftOperand()),
+        GetNegativeSCEV(*add->GetRightOperand()));
+  }
+  // General case: -(x) -> (-1) * x
+  return std::make_unique<SCEVMulExpr>(std::make_unique<SCEVConstant>(-1), scev.Clone());
 }
 
 std::unique_ptr<SCEV>
@@ -229,9 +268,33 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
       const auto rhs = simpleNode->input(1)->origin();
-      result = std::make_unique<SCEVAddExpr>(
-          GetOrCreateSCEVForOutput(*lhs),
-          GetOrCreateSCEVForOutput(*rhs));
+
+      auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), std::move(rhsScev));
+    }
+    if (rvsdg::is<IntegerSubOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() == 2);
+      const auto lhs = simpleNode->input(0)->origin();
+      const auto rhs = simpleNode->input(1)->origin();
+
+      auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), GetNegativeSCEV(*rhsScev));
+    }
+    if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() == 2);
+      const auto lhs = simpleNode->input(0)->origin();
+      const auto rhs = simpleNode->input(1)->origin();
+
+      const auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      const auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+
+      result = std::make_unique<SCEVMulExpr>(lhsScev->Clone(), rhsScev->Clone());
     }
   }
   // TODO: Handle more cases
@@ -246,35 +309,64 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   return result;
 }
 
-std::unordered_map<const rvsdg::Output *, int>
-ScalarEvolution::FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV)
+std::unordered_map<const rvsdg::Output *, ScalarEvolution::DependencyInfo>
+ScalarEvolution::FindDependenciesForSCEV(const SCEV & scev)
 {
-  std::unordered_map<const rvsdg::Output *, int> dependencies{};
-  if (dynamic_cast<const SCEVConstant *>(&currentSCEV)
-      || dynamic_cast<const SCEVUnknown *>(&currentSCEV))
+  std::unordered_map<const rvsdg::Output *, DependencyInfo> dependencies{};
+  if (dynamic_cast<const SCEVConstant *>(&scev) || dynamic_cast<const SCEVUnknown *>(&scev))
   {
     return dependencies;
   }
-  if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&currentSCEV))
+  if (const auto placeholderSCEV = dynamic_cast<const SCEVPlaceholder *>(&scev))
   {
     if (const auto dependency = placeholderSCEV->GetPrePointer())
-      dependencies[dependency]++;
+    {
+      auto & depInfo = dependencies[dependency];
+      depInfo.count++;
+    }
   }
-  if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&currentSCEV))
+  if (const auto addSCEV = dynamic_cast<const SCEVAddExpr *>(&scev))
   {
     // Recursively find dependencies on lhs and rhs
-    std::unordered_map<const rvsdg::Output *, int> lhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetLeftOperand(), currentIV);
-    std::unordered_map<const rvsdg::Output *, int> rhsDependencies =
-        FindDependenciesForSCEV(*addSCEV->GetRightOperand(), currentIV);
+    auto lhsDependencies = FindDependenciesForSCEV(*addSCEV->GetLeftOperand());
+    auto rhsDependencies = FindDependenciesForSCEV(*addSCEV->GetRightOperand());
 
-    // Merge lhsDependencies into dependencies
-    for (const auto & [ptr, count] : lhsDependencies)
-      dependencies[ptr] += count;
+    // Merge with Add operation
+    for (const auto & [ptr, info] : lhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Add; // Update operation type
+    }
 
-    // Do the same for rhs
-    for (const auto & [ptr, count] : rhsDependencies)
-      dependencies[ptr] += count;
+    for (const auto & [ptr, info] : rhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Add;
+    }
+  }
+
+  if (const auto mulSCEV = dynamic_cast<const SCEVMulExpr *>(&scev))
+  {
+    // Recursively find dependencies on lhs and rhs
+    auto lhsDependencies = FindDependenciesForSCEV(*mulSCEV->GetLeftOperand());
+    auto rhsDependencies = FindDependenciesForSCEV(*mulSCEV->GetRightOperand());
+
+    // Merge with Mult operation
+    for (const auto & [ptr, info] : lhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Mult;
+    }
+
+    for (const auto & [ptr, info] : rhsDependencies)
+    {
+      auto & depInfo = dependencies[ptr];
+      depInfo.count += info.count;
+      depInfo.operation = DependencyOp::Mult;
+    }
   }
 
   return dependencies;
@@ -289,9 +381,10 @@ ScalarEvolution::CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const
     const auto post = loopVar.post;
     const auto scev = UniqueSCEVs_.at(post->origin())->Clone();
 
+    const std::unordered_map<const rvsdg::Output *, DependencyInfo> dependencies =
+        FindDependenciesForSCEV(*scev.get());
+
     const auto pre = loopVar.pre;
-    const std::unordered_map<const rvsdg::Output *, int> dependencies =
-        FindDependenciesForSCEV(*scev.get(), *pre);
     graph[pre] = dependencies;
   }
 
@@ -377,8 +470,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   {
     if (!DependsOnLoopVariable(*loopVar.pre, dependencyGraph))
     {
-      // If the expression doesn't depend on atleast one loop variable (including itself), it is not
-      // an induction variable. Replace it with a SCEVUnknown
+      // If the expression doesn't depend on atleast one loop variable (including itself), it is
+      // not an induction variable. Replace it with a SCEVUnknown
       UniqueSCEVs_.insert_or_assign(loopVar.post->origin(), std::make_unique<SCEVUnknown>());
     }
     else if (IsValidInductionVariable(*loopVar.pre, dependencyGraph))
@@ -426,8 +519,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       if (chainRecurrence->GetOperands().size() == 1
           && StructurallyEqual(*chainRecurrence->GetOperand(0), SCEVConstant(0)))
       {
-        // If the recurrence is empty ({0}), delete the old unique_ptr and create a new one without
-        // any operands. This effectively removes trailing zeroes for constants
+        // If the recurrence is empty ({0}), delete the old unique_ptr and create a new one
+        // without any operands. This effectively removes trailing zeroes for constants
         chainRecurrence.reset();
         chainRecurrence = std::make_unique<SCEVChainRecurrence>(thetaNode);
       }
@@ -435,8 +528,8 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
       // Find the start value for the recurrence
       if (auto const constantInteger = tryGetConstantSignedInteger(*loopVar.input->origin()))
       {
-        // If the input value is a constant, create a SCEV representation and set it as start value
-        // (first operand in rec)
+        // If the input value is a constant, create a SCEV representation and set it as start
+        // value (first operand in rec)
         chainRecurrence->AddOperandToFront(std::make_unique<SCEVConstant>(*constantInteger));
       }
       else
@@ -486,8 +579,8 @@ ScalarEvolution::CreateChainRecurrence(
     if (scevPlaceholder->GetPrePointer() == &IV)
     {
       // Since we are only interested in the step value, and not the initial value, we can ignore
-      // ourselves by adding a 0, which is the identity element
-      chrec->AddOperand(std::make_unique<SCEVConstant>(0));
+      // ourselves by returning an empty chain recurrence (treated as the identity element - 0 for
+      // addition and 1 for multiplication)
       return chrec;
     }
     if (ChainRecurrenceMap_.find(scevPlaceholder->GetPrePointer()) != ChainRecurrenceMap_.end())
@@ -503,6 +596,18 @@ ScalarEvolution::CreateChainRecurrence(
   }
   if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
+    /* We have the following folding rules from the CR algebra:
+     * G + {e,+,f}         =>       {G + e,+,f}         (1)
+     * {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
+     *
+     * And by generalizing rule 2, we have that:
+     * {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
+     *
+     * Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
+     * node, we can therefore pad the constant recurrence with however many zeroes we need for the
+     * length of the other recurrence. This effectively let's us apply both rules in one go.
+     */
+
     const auto lhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetLeftOperand(), thetaNode);
     const auto rhsChrec = CreateChainRecurrence(IV, *scevAddExpr->GetRightOperand(), thetaNode);
 
@@ -510,14 +615,94 @@ ScalarEvolution::CreateChainRecurrence(
     const auto rhsSize = rhsChrec->GetOperands().size();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
     {
-      SCEV * lhsOperand{};
-      SCEV * rhsOperand{};
-      if (i <= lhsSize - 1)
+      const SCEV * lhsOperand{};
+      const SCEV * rhsOperand{};
+      if (i < lhsSize)
         lhsOperand = lhsChrec->GetOperand(i);
 
-      if (i <= rhsSize - 1)
+      if (i < rhsSize)
         rhsOperand = rhsChrec->GetOperand(i);
-      chrec->AddOperand(ApplyFolding(lhsOperand, rhsOperand));
+      chrec->AddOperand(ApplyAddFolding(lhsOperand, rhsOperand));
+    }
+    return chrec;
+  }
+  if (const auto scevMulExpr = dynamic_cast<const SCEVMulExpr *>(&scevTree))
+  {
+    /* We have the following folding rules from the CR algebra:
+     * G * {e,+,f}         =>       {G * e,+,G * f}
+     * {e,+,f} * {g,+,h}   =>       {e * g,+,e * h + f * g + f * h,+,2*f*h}
+     *
+     * AFAIK these are the only rules that we are able to support as there is no general rule for
+     * folding two addrecs of arbitrary length with the multiplication operation
+     */
+
+    const auto lhsChrec = CreateChainRecurrence(IV, *scevMulExpr->GetLeftOperand(), thetaNode);
+    const auto rhsChrec = CreateChainRecurrence(IV, *scevMulExpr->GetRightOperand(), thetaNode);
+
+    const auto lhsSize = lhsChrec->GetOperands().size();
+    const auto rhsSize = rhsChrec->GetOperands().size();
+
+    if (lhsSize == 0)
+    {
+      for (auto rhsOperand : rhsChrec->GetOperands())
+      {
+        chrec->AddOperand(rhsOperand->Clone());
+      }
+    }
+    else if (rhsSize == 0)
+    {
+      for (auto lhsOperand : lhsChrec->GetOperands())
+      {
+        chrec->AddOperand(lhsOperand->Clone());
+      }
+    }
+    // Handle G * {e,+,f,...} where G is loop invariant
+    else if (lhsSize == 1)
+    {
+      // G * {e,+,f,...} = {G * e,+,G * f,...}
+      auto lhsOperand = lhsChrec->GetOperand(0);
+
+      for (auto rhsOperand : rhsChrec->GetOperands())
+      {
+        chrec->AddOperand(ApplyMultFolding(lhsOperand, const_cast<SCEV *>(rhsOperand)));
+      }
+    }
+    else if (rhsSize == 1)
+    {
+      // {e,+,f,...} * G = {e * G,+,f * G,...}
+      auto rhsOperand = rhsChrec->GetOperand(0);
+
+      for (auto lhsOperand : lhsChrec->GetOperands())
+      {
+        chrec->AddOperand(ApplyMultFolding(const_cast<SCEV *>(lhsOperand), rhsOperand));
+      }
+    }
+    else if (lhsSize == 2 && rhsSize == 2)
+    {
+      // {e,+,f} * {g,+,h} = {e*g,+,e*h + f*g + f*h,+,2*f*h}
+      const auto e = lhsChrec->GetOperand(0);
+      const auto f = lhsChrec->GetOperand(1);
+      const auto g = rhsChrec->GetOperand(0);
+      const auto h = rhsChrec->GetOperand(1);
+
+      // First step: e * g
+      chrec->AddOperand(ApplyMultFolding(e, g));
+
+      // Second step: e * h + f * g + f * h
+      const auto eh = ApplyMultFolding(e, h);
+      const auto fg = ApplyMultFolding(f, g);
+      const auto fh = ApplyMultFolding(f, h);
+      const auto sum1 = ApplyAddFolding(eh.get(), fg.get());
+      auto sum2 = ApplyAddFolding(sum1.get(), fh.get());
+      chrec->AddOperand(std::move(sum2));
+
+      // Third step: 2 * f * h
+      chrec->AddOperand(ApplyMultFolding(std::make_unique<SCEVConstant>(2).get(), fh.get()));
+    }
+    else
+    {
+      // For other cases, return unknown
+      chrec->AddOperand(std::make_unique<SCEVUnknown>());
     }
     return chrec;
   }
@@ -532,38 +717,29 @@ isNonZeroConstant(const SCEVConstant * c)
 }
 
 std::unique_ptr<SCEV>
-ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
+ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
-  /* Apply folding rules
+  /* Apply folding rules for addition
    *
-   * We have the following folding rules from the CR algebra:
-   * G + {e,+,f}         =>       {G + e,+,f}         (1)
-   * {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
-   *
-   * And by generalizing rule 2, we have that:
-   * {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
-   *
-   * Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
-   * node, we can therefore pad the constant recurrence with however many zeroes we need for the
-   * length of the other recurrence. This effectively let's us apply both rules in one go.
-   *
-   * Now, this becomes a bit complicated when we factor in SCEVInit nodes. These nodes represent
-   * the initial value of an IV in the case where the exact value is unknown at compile time. E.g.
-   * function argument or result from a call-instruction. In the cases where we have to fold one or
-   * more of these init-nodes, we create an n-ary add expression (add expression with an arbitrary
-   * number of operands), and add this to the chrec. Folding two of these n-ary add expressions will
-   * result in another n-ary add expression, which consists of all the operands in both the left and
-   * the right expression.
+   * For constants and unknowns this is trivial, however it becomes a bit complicated when we
+   * factor in SCEVInit nodes. These nodes represent the initial value of an IV in the case where
+   * the exact value is unknown at compile time. E.g. function argument or result from a
+   * call-instruction. In the cases where we have to fold one or more of these init-nodes, we create
+   * an n-ary add expression (add expression with an arbitrary number of operands), and add this to
+   * the chrec. Folding two of these n-ary add expressions will result in another n-ary add
+   * expression, which consists of all the operands in both the left and the right expression.
    */
 
-  const auto lhsUnknown = dynamic_cast<SCEVUnknown *>(lhsOperand);
-  const auto rhsUnknown = dynamic_cast<SCEVUnknown *>(rhsOperand);
-  const auto lhsInit = dynamic_cast<SCEVInit *>(lhsOperand);
-  const auto rhsInit = dynamic_cast<SCEVInit *>(rhsOperand);
-  const auto lhsNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsOperand);
-  const auto rhsNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(rhsOperand);
-  const auto lhsConstant = dynamic_cast<SCEVConstant *>(lhsOperand);
-  const auto rhsConstant = dynamic_cast<SCEVConstant *>(rhsOperand);
+  const auto lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand);
+  const auto rhsUnknown = dynamic_cast<const SCEVUnknown *>(rhsOperand);
+  const auto lhsInit = dynamic_cast<const SCEVInit *>(lhsOperand);
+  const auto rhsInit = dynamic_cast<const SCEVInit *>(rhsOperand);
+  const auto lhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(lhsOperand);
+  const auto rhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(rhsOperand);
+  const auto lhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(lhsOperand);
+  const auto rhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(rhsOperand);
+  const auto lhsConstant = dynamic_cast<const SCEVConstant *>(lhsOperand);
+  const auto rhsConstant = dynamic_cast<const SCEVConstant *>(rhsOperand);
 
   // The if-chain below goes through each of the possible combinations of lhs and rhs values
   if (lhsUnknown || rhsUnknown)
@@ -571,19 +747,67 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
     // If one of the sides is unknown. Return unknown
     return std::make_unique<SCEVUnknown>();
   }
+
+  // Handle n-ary multiply expressions - they become terms in an n-ary add expression
+  if (lhsNAryMulExpr && rhsNAryMulExpr)
+  {
+    // Two multiply expressions - create add expression with both
+    return std::make_unique<SCEVNAryAddExpr>(lhsNAryMulExpr->Clone(), rhsNAryMulExpr->Clone());
+  }
+
+  if ((lhsNAryMulExpr && rhsNAryAddExpr) || (rhsNAryMulExpr && lhsNAryAddExpr))
+  {
+    // Multiply expression with add expression - Clone the add expression and add the multiply as a
+    // term
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto * addExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
+    auto addExprClone = addExpr->Clone();
+    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    newAddExpr->AddOperand(mulExpr->Clone());
+    return newAddExpr->Clone();
+  }
+
+  if ((lhsNAryMulExpr && rhsInit) || (rhsNAryMulExpr && lhsInit))
+  {
+    // Multiply expression with init - create add expression
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    return std::make_unique<SCEVNAryAddExpr>(mulExpr->Clone(), init->Clone());
+  }
+
+  if ((lhsNAryMulExpr && isNonZeroConstant(rhsConstant))
+      || (rhsNAryMulExpr && isNonZeroConstant(lhsConstant)))
+  {
+    // Multiply expression with nonzero constant - create add expression
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return std::make_unique<SCEVNAryAddExpr>(mulExpr->Clone(), constant->Clone());
+  }
+
+  if (lhsNAryMulExpr || rhsNAryMulExpr)
+  {
+    // Single multiply expression (other is zero)
+    const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    return mulExpr->Clone();
+  }
+
   if (lhsInit && rhsInit)
   {
     // We have two init nodes. Create a nAryAdd with lhsInit and rhsInit
     return std::make_unique<SCEVNAryAddExpr>(lhsInit->Clone(), rhsInit->Clone());
   }
+
   if ((lhsInit && rhsNAryAddExpr) || (rhsInit && lhsNAryAddExpr))
   {
-    // We have an init and an add expr. Add init to the add expr
+    // We have an init and an add expr. Clone the add expression and add the init as an operand
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
-    nAryAddExpr->AddOperand(init->Clone());
-    return nAryAddExpr->Clone();
+    auto addExprClone = nAryAddExpr->Clone();
+    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    newAddExpr->AddOperand(init->Clone());
+    return newAddExpr->Clone();
   }
+
   if ((lhsInit && isNonZeroConstant(rhsConstant)) || (rhsInit && isNonZeroConstant(lhsConstant)))
   {
     // We have an init and a nonzero constant. Create a nAryAdd with init and constant
@@ -591,30 +815,38 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
     const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     return std::make_unique<SCEVNAryAddExpr>(init->Clone(), constant->Clone());
   }
+
   if (lhsInit || rhsInit)
   {
     // Only one operand. Add it
     const auto * init = lhsInit ? lhsInit : rhsInit;
     return init->Clone();
   }
+
   if (lhsNAryAddExpr && rhsNAryAddExpr)
   {
-    // We have two add expressions. Add the rhs operands to the lhs add expr
+    // We have two add expressions. Clone the lhs and add the rhs operands
+    auto lhsNAryAddExprClone = lhsNAryAddExpr->Clone();
+    auto lhsNewNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsNAryAddExprClone.get());
     for (auto op : rhsNAryAddExpr->GetOperands())
     {
-      lhsNAryAddExpr->AddOperand(op->Clone());
+      lhsNewNAryAddExpr->AddOperand(op->Clone());
     }
-    return lhsNAryAddExpr->Clone();
+    return lhsNewNAryAddExpr->Clone();
   }
+
   if ((lhsNAryAddExpr && isNonZeroConstant(rhsConstant))
       || (rhsNAryAddExpr && isNonZeroConstant(lhsConstant)))
   {
-    // We have an add expr and a nonzero constant. Add the constant to the add expr
+    // We have an add expr and a nonzero constant. Clone the add expr and add the constant
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
-    nAryAddExpr->AddOperand(constant->Clone());
-    return nAryAddExpr->Clone();
+    auto nAryAddExprClone = nAryAddExpr->Clone();
+    auto newNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(nAryAddExprClone.get());
+    newNAryAddExpr->AddOperand(constant->Clone());
+    return newNAryAddExpr->Clone();
   }
+
   if (lhsNAryAddExpr || rhsNAryAddExpr)
   {
     const auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
@@ -628,11 +860,135 @@ ScalarEvolution::ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand)
 
     return std::make_unique<SCEVConstant>(lhsValue + rhsValue);
   }
+
   if (lhsConstant || rhsConstant)
   {
     const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     return constant->Clone();
   }
+
+  return std::make_unique<SCEVUnknown>();
+}
+
+std::unique_ptr<SCEV>
+ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
+{
+  /* Apply folding rules for multiplication
+   *
+   * Similar to addition, we need to handle SCEVInit nodes and n-ary expressions.
+   * For multiplication with init nodes, we create n-ary multiply expressions.
+   */
+
+  const auto lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand);
+  const auto rhsUnknown = dynamic_cast<const SCEVUnknown *>(rhsOperand);
+  const auto lhsInit = dynamic_cast<const SCEVInit *>(lhsOperand);
+  const auto rhsInit = dynamic_cast<const SCEVInit *>(rhsOperand);
+  const auto lhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(lhsOperand);
+  const auto rhsNAryMulExpr = dynamic_cast<const SCEVNAryMulExpr *>(rhsOperand);
+  const auto lhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(lhsOperand);
+  const auto rhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(rhsOperand);
+  const auto lhsConstant = dynamic_cast<const SCEVConstant *>(lhsOperand);
+  const auto rhsConstant = dynamic_cast<const SCEVConstant *>(rhsOperand);
+
+  if (lhsUnknown || rhsUnknown)
+  {
+    return std::make_unique<SCEVUnknown>();
+  }
+
+  if (lhsNAryAddExpr || rhsNAryAddExpr)
+  {
+    // Handle n-ary add expressions - distribute multiplication
+    // (a + b + c) × G = a×G + b×G + c×G
+    const auto nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
+    const auto other = lhsNAryAddExpr ? rhsOperand : lhsOperand;
+
+    auto resultAddExpr = std::make_unique<SCEVNAryAddExpr>();
+    for (auto operand : nAryAddExpr->GetOperands())
+    {
+      auto product = ApplyMultFolding(const_cast<SCEV *>(operand), other);
+      resultAddExpr->AddOperand(std::move(product));
+    }
+    return resultAddExpr;
+  }
+
+  if (lhsInit && rhsInit)
+  {
+    // Two init nodes - create n-ary multiply expression
+    return std::make_unique<SCEVNAryMulExpr>(lhsInit->Clone(), rhsInit->Clone());
+  }
+
+  if ((lhsInit && rhsNAryMulExpr) || (rhsInit && lhsNAryMulExpr))
+  {
+    // Init node with n-ary multiply expression - Clone mult expr and add init as an operand
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto nAryMulExprClone = nAryMulExpr->Clone();
+    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    newNAryMulExpr->AddOperand(init->Clone());
+    return newNAryMulExpr->Clone();
+  }
+
+  if ((lhsInit && rhsConstant && rhsConstant->GetValue() != 1)
+      || (rhsInit && lhsConstant && lhsConstant->GetValue() != 1))
+  {
+    // Init node with non-one constant - create n-ary multiply expression
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return std::make_unique<SCEVNAryMulExpr>(init->Clone(), constant->Clone());
+  }
+
+  if (lhsInit || rhsInit)
+  {
+    // Single init node (other operand is treated as identity element 1)
+    const auto * init = lhsInit ? lhsInit : rhsInit;
+    return init->Clone();
+  }
+
+  if (lhsNAryMulExpr && rhsNAryMulExpr)
+  {
+    // Two n-ary mult expressions - combine operands
+    auto lhsNAryMulExprClone = lhsNAryMulExpr->Clone();
+    auto lhsNewNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(lhsNAryMulExprClone.get());
+    for (auto op : rhsNAryMulExpr->GetOperands())
+    {
+      lhsNewNAryMulExpr->AddOperand(op->Clone());
+    }
+    return lhsNewNAryMulExpr->Clone();
+  }
+
+  if ((lhsNAryMulExpr && rhsConstant && rhsConstant->GetValue() != 1)
+      || (rhsNAryMulExpr && lhsConstant && lhsConstant->GetValue() != 1))
+  {
+    // N-ary mult expression with non-one constant - Clone mult expression and add constant
+    auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+
+    auto nAryMulExprClone = nAryMulExpr->Clone();
+    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    newNAryMulExpr->AddOperand(constant->Clone());
+    return newNAryMulExpr->Clone();
+  }
+
+  if (lhsNAryMulExpr || rhsNAryMulExpr)
+  {
+    const auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
+    return nAryMulExpr->Clone();
+  }
+
+  if (lhsConstant && rhsConstant)
+  {
+    // Two constants - fold by multiplying values together
+    const auto lhsValue = lhsConstant->GetValue();
+    const auto rhsValue = rhsConstant->GetValue();
+    return std::make_unique<SCEVConstant>(lhsValue * rhsValue);
+  }
+
+  if (lhsConstant || rhsConstant)
+  {
+    const auto * constant = lhsConstant ? lhsConstant : rhsConstant;
+    return constant->Clone();
+  }
+
   return std::make_unique<SCEVUnknown>();
 }
 
@@ -641,9 +997,20 @@ ScalarEvolution::IsValidInductionVariable(
     const rvsdg::Output & variable,
     IVDependencyGraph & dependencyGraph)
 {
-  // First check that variable has only one self-reference
-  if (dependencyGraph[&variable][&variable] != 1)
+  // First check that variable has only one self-reference,
+  if (dependencyGraph[&variable][&variable].count != 1)
     return false;
+
+  // Check that it has no reference via a mult-operation
+  // (results in a geometric sequence - which we treat as an invalid induction variable)
+  auto deps = dependencyGraph[&variable];
+  for (auto [output, dependencyInfo] : deps)
+  {
+    if (dependencyInfo.operation == DependencyOp::Mult)
+    {
+      return false;
+    }
+  }
 
   // Then check for cycles through other variables
   std::unordered_set<const rvsdg::Output *> visited{};
@@ -707,11 +1074,11 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
   if (dynamic_cast<const SCEVUnknown *>(&a))
     return true;
 
-  if (auto * aa = dynamic_cast<const SCEVAddExpr *>(&a))
+  if (auto * bea = dynamic_cast<const SCEVBinaryExpr *>(&a))
   {
-    auto * ab = dynamic_cast<const SCEVAddExpr *>(&b);
-    return StructurallyEqual(*aa->GetLeftOperand(), *ab->GetLeftOperand())
-        && StructurallyEqual(*aa->GetRightOperand(), *ab->GetRightOperand());
+    auto * beb = dynamic_cast<const SCEVBinaryExpr *>(&b);
+    return StructurallyEqual(*bea->GetLeftOperand(), *beb->GetLeftOperand())
+        && StructurallyEqual(*bea->GetRightOperand(), *beb->GetRightOperand());
   }
 
   if (auto * cha = dynamic_cast<const SCEVChainRecurrence *>(&a))
@@ -729,14 +1096,14 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
     return true;
   }
 
-  if (auto * naa = dynamic_cast<const SCEVNAryAddExpr *>(&a))
+  if (auto * nea = dynamic_cast<const SCEVNAryExpr *>(&a))
   {
-    auto * nab = dynamic_cast<const SCEVNAryAddExpr *>(&b);
-    if (naa->GetOperands().size() != nab->GetOperands().size())
+    auto * neb = dynamic_cast<const SCEVNAryExpr *>(&b);
+    if (nea->GetOperands().size() != neb->GetOperands().size())
       return false;
-    for (size_t i = 0; i < naa->GetOperands().size(); ++i)
+    for (size_t i = 0; i < nea->GetOperands().size(); ++i)
     {
-      if (!StructurallyEqual(*naa->GetOperands()[i], *nab->GetOperands()[i]))
+      if (!StructurallyEqual(*nea->GetOperands()[i], *neb->GetOperands()[i]))
         return false;
     }
     return true;
