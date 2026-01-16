@@ -113,7 +113,17 @@ public:
   ~LlvmRvsdgModule() noexcept override = default;
 
   LlvmRvsdgModule(util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
-      : rvsdg::RvsdgModule(std::move(sourceFileName)),
+      : RvsdgModule(std::move(sourceFileName)),
+        DataLayout_(std::move(dataLayout)),
+        TargetTriple_(std::move(targetTriple))
+  {}
+
+  LlvmRvsdgModule(
+      util::FilePath sourceFileName,
+      std::string targetTriple,
+      std::string dataLayout,
+      std::unique_ptr<rvsdg::Graph> rvsdg)
+      : RvsdgModule(std::move(sourceFileName), std::move(rvsdg)),
         DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple))
   {}
@@ -127,6 +137,9 @@ public:
 
   LlvmRvsdgModule &
   operator=(LlvmRvsdgModule &&) = delete;
+
+  std::unique_ptr<RvsdgModule>
+  copy() const override;
 
   [[nodiscard]] const util::FilePath &
   SourceFileName() const noexcept
