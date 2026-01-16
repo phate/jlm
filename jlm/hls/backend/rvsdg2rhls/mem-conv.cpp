@@ -719,7 +719,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   {
     smap.insert(args[i], newArgs[i]);
   }
-  lambda->subregion()->copy(newLambda->subregion(), smap, false, false);
+  lambda->subregion()->copy(newLambda->subregion(), smap);
 
   //
   // All memory nodes need to be replaced with new nodes that have explicit memory ports.

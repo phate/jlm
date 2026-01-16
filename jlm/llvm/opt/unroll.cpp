@@ -184,13 +184,13 @@ unroll_body(
 {
   for (size_t n = 0; n < factor - 1; n++)
   {
-    theta->subregion()->copy(target, smap, false, false);
+    theta->subregion()->copy(target, smap);
     rvsdg::SubstitutionMap tmap;
     for (const auto & olv : theta->GetLoopVars())
       tmap.insert(olv.pre, smap.lookup(olv.post->origin()));
     smap = tmap;
   }
-  theta->subregion()->copy(target, smap, false, false);
+  theta->subregion()->copy(target, smap);
 }
 
 /*
@@ -458,7 +458,7 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
       rmap[1].insert(olv.pre, nlv.pre);
     }
 
-    otheta->subregion()->copy(ntheta->subregion(), rmap[1], false, false);
+    otheta->subregion()->copy(ntheta->subregion(), rmap[1]);
     ntheta->set_predicate(rmap[1].lookup(otheta->predicate()->origin()));
 
     auto newLoopVars = ntheta->GetLoopVars();

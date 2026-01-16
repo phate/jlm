@@ -288,7 +288,7 @@ rename_delta(rvsdg::DeltaNode * odn)
   }
 
   /* copy subregion */
-  odn->subregion()->copy(db->subregion(), rmap, false, false);
+  odn->subregion()->copy(db->subregion(), rmap);
 
   auto result = rmap.lookup(odn->subregion()->result(0)->origin());
   auto data = &db->finalize(result);
@@ -324,7 +324,7 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::Linkage link)
   }
 
   /* copy subregion */
-  ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
+  ln->subregion()->copy(lambda->subregion(), subregionmap);
 
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;
