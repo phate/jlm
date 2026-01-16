@@ -310,7 +310,7 @@ TEST(ViewTests, RecursiveData)
 
   jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
+  auto imp = &jlm::llvm::LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
 
   jlm::rvsdg::PhiBuilder pb;
   pb.begin(&rm.Rvsdg().GetRootRegion());
