@@ -328,7 +328,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   // copy nodes
   for (const auto node : TopDownConstTraverser(this))
   {
-    JLM_ASSERT(target == smap.lookup(node->region()));
+    JLM_ASSERT(target == &smap.lookup(*node->region()));
     node->copy(target, smap);
   }
 
