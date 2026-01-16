@@ -65,8 +65,8 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
   for (size_t n = 0; n < ninputs(); n++)
   {
     auto origin = input(n)->origin();
-    auto operand = smap.lookup(origin);
-
+    auto & operand = smap.lookup(*origin);
+#if 0
     if (operand == nullptr)
     {
       if (region != this->region())
@@ -74,8 +74,8 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 
       operand = origin;
     }
-
-    operands.push_back(operand);
+#endif
+    operands.push_back(&operand);
   }
 
   auto node = copy(region, operands);
