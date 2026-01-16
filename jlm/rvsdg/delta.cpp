@@ -96,7 +96,7 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   // copy subregion
-  subregion()->copy(delta->subregion(), subregionmap, false, false);
+  subregion()->copy(delta->subregion(), subregionmap);
 
   // finalize delta
   auto result = subregionmap.lookup(delta->result().origin());

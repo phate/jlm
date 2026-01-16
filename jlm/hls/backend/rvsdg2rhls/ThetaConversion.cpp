@@ -49,7 +49,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   }
 
   // copy contents of theta
-  theta.subregion()->copy(loop->subregion(), smap, false, false);
+  theta.subregion()->copy(loop->subregion(), smap);
 
   // connect predicate/branches in loop to results
   loop->set_predicate(smap.lookup(theta.predicate()->origin()));

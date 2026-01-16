@@ -210,7 +210,7 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   /* copy subregion */
-  subregion()->copy(lambda->subregion(), subregionmap, false, false);
+  subregion()->copy(lambda->subregion(), subregionmap);
 
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;

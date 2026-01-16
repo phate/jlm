@@ -195,7 +195,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     }
 
     // Copy exit region
-    oldSubregion0->copy(newGammaNode->subregion(0), subregion0Map, false, false);
+    oldSubregion0->copy(newGammaNode->subregion(0), subregion0Map);
 
     // Update substitution map for insertion of exit variables
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
@@ -241,7 +241,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     }
 
     // Copy repetition region
-    oldSubregion1->copy(newThetaNode->subregion(), subregion1Map, false, false);
+    oldSubregion1->copy(newThetaNode->subregion(), subregion1Map);
 
     // Adjust values in substitution map for condition node copying
     for (const auto & oldLopVar : oldThetaNode.GetLoopVars())
@@ -281,7 +281,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     newThetaNode->set_predicate(predicate);
 
     // Copy exit region
-    oldSubregion0->copy(newGammaNode->subregion(1), subregion1Map, false, false);
+    oldSubregion0->copy(newGammaNode->subregion(1), subregion1Map);
 
     // Adjust values in substitution map for exit variable creation
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())

@@ -73,7 +73,7 @@ TestStructuralNode::copy(Region * parent, SubstitutionMap & smap) const
   // copy subregions
   for (auto & subregion : Subregions())
   {
-    subregion.copy(node->subregion(subregion.index()), smap, false, false);
+    subregion.copy(node->subregion(subregion.index()), smap);
   }
 
   // copy results and outputs

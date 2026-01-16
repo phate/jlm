@@ -97,7 +97,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
       new_i++;
     }
   }
-  lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap, false, false);
+  lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap);
 
   std::vector<jlm::rvsdg::Output *> newResults;
   for (auto result : lambdaNode.GetFunctionResults())

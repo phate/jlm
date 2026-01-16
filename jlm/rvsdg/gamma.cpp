@@ -35,7 +35,7 @@ perform_predicate_reduction(GammaNode * gamma)
   for (const auto & ev : gamma->GetEntryVars())
     smap.insert(ev.branchArgument[alternative], ev.input->origin());
 
-  gamma->subregion(alternative)->copy(gamma->region(), smap, false, false);
+  gamma->subregion(alternative)->copy(gamma->region(), smap);
 
   for (auto exitvar : gamma->GetExitVars())
     exitvar.output->divert_users(smap.lookup(exitvar.branchResult[alternative]->origin()));
@@ -451,7 +451,7 @@ GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 
   /* copy subregions */
   for (size_t r = 0; r < nsubregions(); r++)
-    subregion(r)->copy(gamma->subregion(r), rmap[r], false, false);
+    subregion(r)->copy(gamma->subregion(r), rmap[r]);
 
   /* add exit variables to new gamma */
   for (const auto & oex : GetExitVars())
