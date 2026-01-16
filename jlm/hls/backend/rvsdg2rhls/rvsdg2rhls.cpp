@@ -76,7 +76,7 @@ split_opt(llvm::LlvmRvsdgModule & rm)
 }
 
 void
-pre_opt(rvsdg::RvsdgModule & rm)
+pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
