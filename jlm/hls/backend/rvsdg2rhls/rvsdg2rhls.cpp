@@ -159,7 +159,7 @@ inline_calls(rvsdg::Region * region)
       auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
       if (!so)
       {
-        if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
+        if (auto graphImport = dynamic_cast<const llvm::LlvmGraphImport *>(traced))
         {
           if (graphImport->Name().rfind("decouple_", 0) == 0)
           {
@@ -367,8 +367,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
         if (!orig_node_output)
         {
           // handle decouple stuff
-          auto oldGraphImport = dynamic_cast<llvm::GraphImport *>(ln->input(i)->origin());
-          auto & newGraphImport = llvm::GraphImport::Create(
+          auto oldGraphImport = dynamic_cast<llvm::LlvmGraphImport *>(ln->input(i)->origin());
+          auto & newGraphImport = llvm::LlvmGraphImport::Create(
               rhls->Rvsdg(),
               oldGraphImport->ValueType(),
               oldGraphImport->ImportedType(),
@@ -396,7 +396,7 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           }
           std::cout << "delta node " << op->name() << ": " << op->Type()->debug_string() << "\n";
           // add import for delta to rhls
-          auto & graphImport = llvm::GraphImport::Create(
+          auto & graphImport = llvm::LlvmGraphImport::Create(
               rhls->Rvsdg(),
               op->Type(),
               llvm::PointerType::Create(),
@@ -419,7 +419,7 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
       rvsdg::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
-      auto & graphImport = llvm::GraphImport::Create(
+      auto & graphImport = llvm::LlvmGraphImport::Create(
           rm.Rvsdg(),
           op.Type(),
           op.Type(),
@@ -532,8 +532,8 @@ dump_ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & path)
   instrument_ref(*reference);
   for (size_t i = 0; i < reference->Rvsdg().GetRootRegion().narguments(); ++i)
   {
-    auto graphImport =
-        util::assertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
+    auto graphImport = util::assertedCast<const llvm::LlvmGraphImport>(
+        reference->Rvsdg().GetRootRegion().argument(i));
     std::cout << "impport " << graphImport->Name() << ": " << graphImport->Type()->debug_string()
               << "\n";
   }

@@ -429,7 +429,7 @@ bool
 LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
 {
   // Each GraphImport represents a unique object
-  if (dynamic_cast<const GraphImport *>(&pointer))
+  if (dynamic_cast<const LlvmGraphImport *>(&pointer))
     return true;
 
   if (rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(pointer))
@@ -467,7 +467,7 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
   if (auto delta = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(pointer))
     return GetTypeAllocSize(*delta->GetOperation().Type());
-  if (auto import = dynamic_cast<const GraphImport *>(&pointer))
+  if (auto import = dynamic_cast<const LlvmGraphImport *>(&pointer))
   {
     auto size = GetTypeAllocSize(*import->ValueType());
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
