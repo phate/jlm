@@ -37,10 +37,10 @@ public:
   GetOperation() const noexcept override;
 
   Node *
-  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const override;
+  copy(Region * region, const std::vector<Output *> & operands) const override;
 
   Node *
-  copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
+  copy(Region * region, SubstitutionMap & smap) const override;
 
   std::string
   DebugString() const override;
