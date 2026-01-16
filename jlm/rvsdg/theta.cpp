@@ -113,7 +113,7 @@ ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   /* copy subregion */
-  subregion()->copy(theta->subregion(), rmap, false, false);
+  subregion()->copy(theta->subregion(), rmap);
   theta->set_predicate(rmap.lookup(predicate()->origin()));
 
   /* redirect loop variables */

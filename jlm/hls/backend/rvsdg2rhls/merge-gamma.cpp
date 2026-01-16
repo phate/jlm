@@ -113,7 +113,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
         // copy subregions
         for (size_t j = 0; j < gamma->nsubregions(); ++j)
         {
-          gamma->subregion(j)->copy(other_gamma->subregion(j), rmap[j], false, false);
+          gamma->subregion(j)->copy(other_gamma->subregion(j), rmap[j]);
         }
         // handle exitvars
         for (const auto & ex : gamma->GetExitVars())

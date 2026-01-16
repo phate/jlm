@@ -42,7 +42,7 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
   }
 
   /* copy subregion */
-  ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
+  ln->subregion()->copy(lambda->subregion(), subregionmap);
 
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;

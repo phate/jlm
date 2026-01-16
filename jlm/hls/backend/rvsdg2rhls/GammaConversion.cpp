@@ -33,7 +33,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap);
   }
 
   for (const auto & ex : gammaNode.GetExitVars())
@@ -70,7 +70,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap);
   }
 
   for (const auto & ex : gammaNode.GetExitVars())

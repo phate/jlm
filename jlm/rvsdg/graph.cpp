@@ -89,7 +89,7 @@ Graph::Copy() const
   }
 
   // copy root region
-  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap, false, false);
+  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap);
 
   // copy graph exports
   for (auto xport : GetRootRegion().Results())

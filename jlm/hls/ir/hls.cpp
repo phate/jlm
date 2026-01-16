@@ -257,7 +257,7 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     }
   }
 
-  subregion()->copy(loop->subregion(), smap, false, false);
+  subregion()->copy(loop->subregion(), smap);
   loop->PredicateBuffer_ = smap.lookup(PredicateBuffer_);
   // redirect backedges
   for (size_t i = 0; i < subregion()->narguments(); ++i)

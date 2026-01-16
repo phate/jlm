@@ -213,7 +213,7 @@ PhiNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   // copy subregion
-  subregion()->copy(pb.subregion(), subregionmap, false, false);
+  subregion()->copy(pb.subregion(), subregionmap);
 
   // finalize phi
   for (auto var : GetFixVars())
