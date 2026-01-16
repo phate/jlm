@@ -799,7 +799,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
   if ((lhsInit && rhsNAryAddExpr) || (rhsInit && lhsNAryAddExpr))
   {
-    // We have an init and an add expr. Add init to the add expr
+    // We have an init and an add expr. Clone the add expression and add the init as an operand
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto addExprClone = nAryAddExpr->Clone();
@@ -825,7 +825,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
   if (lhsNAryAddExpr && rhsNAryAddExpr)
   {
-    // We have two add expressions. Add the rhs operands to the lhs add expr
+    // We have two add expressions. Clone the lhs and add the rhs operands
     auto lhsNAryAddExprClone = lhsNAryAddExpr->Clone();
     auto lhsNewNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsNAryAddExprClone.get());
     for (auto op : rhsNAryAddExpr->GetOperands())
@@ -838,7 +838,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   if ((lhsNAryAddExpr && isNonZeroConstant(rhsConstant))
       || (rhsNAryAddExpr && isNonZeroConstant(lhsConstant)))
   {
-    // We have an add expr and a nonzero constant. Add the constant to the add expr
+    // We have an add expr and a nonzero constant. Clone the add expr and add the constant
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     auto nAryAddExprClone = nAryAddExpr->Clone();
@@ -919,7 +919,7 @@ ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOpera
 
   if ((lhsInit && rhsNAryMulExpr) || (rhsInit && lhsNAryMulExpr))
   {
-    // Init node with n-ary multiply expression - add init to the expression
+    // Init node with n-ary multiply expression - Clone mult expr and add init as an operand
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     auto nAryMulExprClone = nAryMulExpr->Clone();
@@ -959,7 +959,7 @@ ScalarEvolution::ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOpera
   if ((lhsNAryMulExpr && rhsConstant && rhsConstant->GetValue() != 1)
       || (rhsNAryMulExpr && lhsConstant && lhsConstant->GetValue() != 1))
   {
-    // N-ary mult expression with non-one constant - add constant to expression
+    // N-ary mult expression with non-one constant - Clone mult expression and add constant
     auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
 
