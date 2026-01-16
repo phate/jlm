@@ -28,7 +28,7 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_conta
     auto ip = cv.input;
     auto traced = trace_call_rhls(ip);
     JLM_ASSERT(traced);
-    auto arg = util::assertedCast<const llvm::GraphImport>(traced);
+    auto arg = util::assertedCast<const llvm::LlvmGraphImport>(traced);
     if (dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get())
         && arg->Name().find(name_contains) != arg->Name().npos)
     {
@@ -263,7 +263,7 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
   auto ip = cv.input;
   auto traced = trace_call_rhls(ip);
   JLM_ASSERT(traced);
-  auto arg = util::assertedCast<const llvm::GraphImport>(traced);
+  auto arg = util::assertedCast<const llvm::LlvmGraphImport>(traced);
   return dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get());
 }
 
@@ -272,7 +272,7 @@ get_function_name(jlm::rvsdg::Input * input)
 {
   auto traced = jlm::hls::trace_call_rhls(input);
   JLM_ASSERT(traced);
-  auto arg = jlm::util::assertedCast<const jlm::llvm::GraphImport>(traced);
+  auto arg = jlm::util::assertedCast<const jlm::llvm::LlvmGraphImport>(traced);
   return arg->Name();
 }
 

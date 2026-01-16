@@ -80,7 +80,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     auto arg = region.argument(i);
     if (isRoot) // Omega arguments are treated separately
     {
-      auto imp = util::assertedCast<llvm::GraphImport>(arg);
+      auto imp = util::assertedCast<llvm::LlvmGraphImport>(arg);
       block.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
           Builder_->getUnknownLoc(),
           ConvertType(*imp->ImportedType()),

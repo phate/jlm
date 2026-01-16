@@ -8,8 +8,8 @@
 namespace jlm::llvm
 {
 
-GraphImport &
-GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
+LlvmGraphImport &
+LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
 {
   return Create(*region.graph(), ValueType(), ImportedType(), Name(), linkage(), isConstant());
 }

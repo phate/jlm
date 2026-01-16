@@ -79,7 +79,7 @@ CallTypeClassifier::isSetjmpCall()
   if (!IsExternalCall())
     return false;
 
-  if (const auto graphImport = dynamic_cast<const GraphImport *>(&GetImport()))
+  if (const auto graphImport = dynamic_cast<const LlvmGraphImport *>(&GetImport()))
   {
     // In C and C++, setjmp is a macro to some underlying function. Clang uses _setjmp
     return graphImport->Name() == "_setjmp";
@@ -94,7 +94,7 @@ CallTypeClassifier::isVaStartCall()
   if (!IsExternalCall())
     return false;
 
-  if (const auto graphImport = dynamic_cast<const GraphImport *>(&GetImport()))
+  if (const auto graphImport = dynamic_cast<const LlvmGraphImport *>(&GetImport()))
   {
     // LLVM intrinsics can contain extra suffixes like .p0, so check its prefix
     return graphImport->Name().rfind("llvm.va_start", 0) == 0;

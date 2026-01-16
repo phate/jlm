@@ -1416,7 +1416,7 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
 
-    jlm::llvm::GraphImport::Create(
+    jlm::llvm::LlvmGraphImport::Create(
         *graph,
         functionType,
         functionType,
@@ -1472,7 +1472,7 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
 
       EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1);
       auto arg = region->graph()->GetRootRegion().argument(0);
-      auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
+      auto imp = dynamic_cast<jlm::llvm::LlvmGraphImport *>(arg);
       EXPECT_NE(imp, nullptr);
       EXPECT_EQ(imp->Name(), "test");
       EXPECT_EQ(imp->linkage(), Linkage::externalLinkage);
@@ -1491,7 +1491,7 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    jlm::llvm::GraphImport::Create(
+    jlm::llvm::LlvmGraphImport::Create(
         *graph,
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
@@ -1540,7 +1540,7 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
 
       EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1);
       auto arg = region->graph()->GetRootRegion().argument(0);
-      auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
+      auto imp = dynamic_cast<jlm::llvm::LlvmGraphImport *>(arg);
       EXPECT_NE(imp, nullptr);
       EXPECT_EQ(imp->Name(), "test");
       EXPECT_EQ(imp->linkage(), Linkage::externalLinkage);

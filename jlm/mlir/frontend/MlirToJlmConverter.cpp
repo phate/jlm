@@ -120,7 +120,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
       auto jlmValueType = ConvertType(valueType);
       auto jlmImportedType = ConvertType(importedType);
 
-      jlm::llvm::GraphImport::Create(
+      jlm::llvm::LlvmGraphImport::Create(
           *rvsdgRegion.graph(),
           jlmValueType,
           jlmImportedType,

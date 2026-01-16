@@ -104,7 +104,7 @@ private:
    * The pointer is also guaranteed to be at the very beginning of the memory region.
    *
    * For example, the output of an \ref AllocaOperation, a \ref DeltaOperation,
-   * or a \ref GraphImport, are such original origins.
+   * or a \ref rvsdg::GraphImport, are such original origins.
    *
    * @param pointer the pointer value to check
    * @return true if the pointer is the original pointer to a memory location
