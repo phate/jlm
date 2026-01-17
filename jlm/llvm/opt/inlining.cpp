@@ -311,8 +311,7 @@ FunctionInlining::inlineCall(
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     const auto resultOrigin = calleeResults[n]->origin();
-    const auto newOrigin = smap.lookup(resultOrigin);
-    JLM_ASSERT(newOrigin);
+    const auto newOrigin = &smap.lookup(*resultOrigin);
     callNode.output(n)->divert_users(newOrigin);
   }
 

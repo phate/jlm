@@ -197,11 +197,8 @@ PhiNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   rvsdg::SubstitutionMap subregionmap;
   for (const auto & var : GetContextVars())
   {
-    auto origin = smap.lookup(var.input->origin());
-    if (!origin)
-      throw util::Error("Operand not provided by susbtitution map.");
-
-    auto newcv = pb.AddContextVar(*origin);
+    auto & origin = smap.lookup(*var.input->origin());
+    auto newcv = pb.AddContextVar(origin);
     subregionmap.insert(var.inner, newcv.inner);
   }
 
@@ -218,7 +215,7 @@ PhiNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   // finalize phi
   for (auto var : GetFixVars())
   {
-    auto neworigin = subregionmap.lookup(var.result->origin());
+    auto neworigin = &subregionmap.lookup(*var.result->origin());
     var.result->divert_to(neworigin);
   }
 

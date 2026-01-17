@@ -187,7 +187,7 @@ unroll_body(
     theta->subregion()->copy(target, smap);
     rvsdg::SubstitutionMap tmap;
     for (const auto & olv : theta->GetLoopVars())
-      tmap.insert(olv.pre, smap.lookup(olv.post->origin()));
+      tmap.insert(olv.pre, &smap.lookup(*olv.post->origin()));
     smap = tmap;
   }
   theta->subregion()->copy(target, smap);
@@ -208,7 +208,7 @@ copy_body_and_unroll(const rvsdg::ThetaNode * theta, size_t factor)
   unroll_body(theta, theta->region(), smap, factor);
 
   for (const auto & olv : theta->GetLoopVars())
-    olv.output->divert_users(smap.lookup(olv.post->origin()));
+    olv.output->divert_users(&smap.lookup(*olv.post->origin()));
 }
 
 /*
@@ -229,14 +229,14 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
   }
 
   unroll_body(theta, unrolled_theta->subregion(), smap, factor);
-  unrolled_theta->set_predicate(smap.lookup(theta->predicate()->origin()));
+  unrolled_theta->set_predicate(&smap.lookup(*theta->predicate()->origin()));
 
   auto newLoopVars = unrolled_theta->GetLoopVars();
   for (size_t i = 0; i < oldLoopVars.size(); ++i)
   {
     const auto & olv = oldLoopVars[i];
     const auto & nlv = newLoopVars[i];
-    auto origin = smap.lookup(olv.post->origin());
+    auto origin = &smap.lookup(*olv.post->origin());
     nlv.post->divert_to(origin);
     smap.insert(olv.output, nlv.output);
   }
@@ -248,9 +248,9 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
       to a multiple of the step value.
     */
     auto cmpnode = ui.cmpnode();
-    auto cmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*smap.lookup(cmpnode->output(0)));
-    auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
-    JLM_ASSERT(input->origin() == smap.lookup(ui.end()));
+    auto cmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(smap.lookup(*cmpnode->output(0)));
+    auto input = cmp->input(0)->origin() == &smap.lookup(*ui.end()) ? cmp->input(0) : cmp->input(1);
+    JLM_ASSERT(input->origin() == &smap.lookup(*ui.end()));
 
     auto sv = ui.is_additive() ? *ui.step_value() : ui.step_value()->neg();
     auto end = remainder.mul(sv);
@@ -277,7 +277,7 @@ add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t f
       to the outputs of the new theta node, as there are no residual iterations.
     */
     for (const auto & olv : theta->GetLoopVars())
-      olv.output->divert_users(smap.lookup(olv.output));
+      olv.output->divert_users(&smap.lookup(*olv.output));
     return remove(theta);
   }
 
@@ -287,7 +287,7 @@ add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t f
     theta.
   */
   for (const auto & olv : theta->GetLoopVars())
-    olv.input->divert_to(smap.lookup(olv.output));
+    olv.input->divert_to(&smap.lookup(*olv.output));
 
   if (remainder == 1)
   {
@@ -361,10 +361,10 @@ create_unrolled_theta_predicate(
 {
   using namespace jlm::rvsdg;
 
-  auto region = smap.lookup(ui.cmpnode()->output(0))->region();
-  auto cmpnode = rvsdg::TryGetOwnerNode<Node>(*smap.lookup(ui.cmpnode()->output(0)));
-  auto step = smap.lookup(ui.step());
-  auto end = smap.lookup(ui.end());
+  auto region = smap.lookup(*ui.cmpnode()->output(0)).region();
+  auto cmpnode = rvsdg::TryGetOwnerNode<Node>(smap.lookup(*ui.cmpnode()->output(0)));
+  auto step = &smap.lookup(*ui.step());
+  auto end = &smap.lookup(*ui.end());
   auto nbits = ui.nbits();
 
   auto i0 = cmpnode->input(0);
@@ -388,7 +388,7 @@ static jlm::rvsdg::Output *
 create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
 {
   auto region = ui.theta()->region();
-  auto idv = smap.lookup(ui.theta()->MapPreLoopVar(*ui.idv()).output);
+  auto idv = &smap.lookup(*ui.theta()->MapPreLoopVar(*ui.idv()).output);
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
   /* FIXME: order of operands */
@@ -429,7 +429,7 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
     {
       auto & olv = oldLoopVars[n];
       auto & nlv = newLoopVars[n];
-      auto origin = rmap[1].lookup(olv.post->origin());
+      auto origin = &rmap[1].lookup(*olv.post->origin());
       nlv.post->divert_to(origin);
       rmap[1].insert(olv.output, nlv.output);
     }
@@ -437,7 +437,7 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
     for (const auto & olv : oldLoopVars)
     {
       auto xv =
-          ngamma->AddExitVar({ rmap[0].lookup(olv.output), rmap[1].lookup(olv.output) }).output;
+          ngamma->AddExitVar({ &rmap[0].lookup(*olv.output), &rmap[1].lookup(*olv.output) }).output;
       smap.insert(olv.output, xv);
     }
   }
@@ -452,14 +452,14 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
     auto oldLoopVars = otheta->GetLoopVars();
     for (const auto & olv : oldLoopVars)
     {
-      auto ev = ngamma->AddEntryVar(smap.lookup(olv.output));
+      auto ev = ngamma->AddEntryVar(&smap.lookup(*olv.output));
       auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
       rmap[0].insert(olv.output, ev.branchArgument[0]);
       rmap[1].insert(olv.pre, nlv.pre);
     }
 
     otheta->subregion()->copy(ntheta->subregion(), rmap[1]);
-    ntheta->set_predicate(rmap[1].lookup(otheta->predicate()->origin()));
+    ntheta->set_predicate(&rmap[1].lookup(*otheta->predicate()->origin()));
 
     auto newLoopVars = ntheta->GetLoopVars();
 
@@ -467,14 +467,14 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
     {
       auto & olv = oldLoopVars[n];
       auto & nlv = newLoopVars[n];
-      auto origin = rmap[1].lookup(olv.post->origin());
+      auto origin = &rmap[1].lookup(*olv.post->origin());
       nlv.post->divert_to(origin);
-      auto xv = ngamma->AddExitVar({ rmap[0].lookup(olv.output), nlv.output }).output;
+      auto xv = ngamma->AddExitVar({ &rmap[0].lookup(*olv.output), nlv.output }).output;
       smap.insert(olv.output, xv);
     }
   }
   for (const auto & olv : otheta->GetLoopVars())
-    olv.output->divert_users(smap.lookup(olv.output));
+    olv.output->divert_users(&smap.lookup(*olv.output));
   remove(otheta);
 }
 

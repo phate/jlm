@@ -38,7 +38,7 @@ perform_predicate_reduction(GammaNode * gamma)
   gamma->subregion(alternative)->copy(gamma->region(), smap);
 
   for (auto exitvar : gamma->GetExitVars())
-    exitvar.output->divert_users(smap.lookup(exitvar.branchResult[alternative]->origin()));
+    exitvar.output->divert_users(&smap.lookup(*exitvar.branchResult[alternative]->origin()));
 
   remove(gamma);
 }
@@ -438,13 +438,13 @@ GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryVars)
 GammaNode *
 GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 {
-  auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
+  auto gamma = create(&smap.lookup(*predicate()->origin()), nsubregions());
 
   /* add entry variables to new gamma */
   std::vector<SubstitutionMap> rmap(nsubregions());
   for (const auto & oev : GetEntryVars())
   {
-    auto nev = gamma->AddEntryVar(smap.lookup(oev.input->origin()));
+    auto nev = gamma->AddEntryVar(&smap.lookup(*oev.input->origin()));
     for (size_t n = 0; n < nsubregions(); n++)
       rmap[n].insert(oev.branchArgument[n], nev.branchArgument[n]);
   }
@@ -458,7 +458,7 @@ GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
   {
     std::vector<jlm::rvsdg::Output *> operands;
     for (size_t n = 0; n < oex.branchResult.size(); n++)
-      operands.push_back(rmap[n].lookup(oex.branchResult[n]->origin()));
+      operands.push_back(&rmap[n].lookup(*oex.branchResult[n]->origin()));
     auto nex = gamma->AddExitVar(std::move(operands));
     smap.insert(oex.output, nex.output);
   }

@@ -170,7 +170,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
   CopyPredicateNodes(*oldThetaNode.region(), substitutionMap, conditionNodes);
 
   auto newGammaNode = rvsdg::GammaNode::create(
-      substitutionMap.lookup(oldGammaNode->predicate()->origin()),
+      &substitutionMap.lookup(*oldGammaNode->predicate()->origin()),
       oldGammaNode->nsubregions());
 
   // Handle subregion 0
@@ -188,7 +188,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
       }
       else
       {
-        auto substitute = substitutionMap.lookup(oldInput->origin());
+        auto substitute = &substitutionMap.lookup(*oldInput->origin());
         auto [_, branchArgument] = newGammaNode->AddEntryVar(substitute);
         subregion0Map.insert(oldBranchArgument[0], branchArgument[0]);
       }
@@ -201,7 +201,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
       auto output = oldLoopVar.post->origin();
-      auto substitute = subregion0Map.lookup(oldSubregion0->result(output->index())->origin());
+      auto substitute = &subregion0Map.lookup(*oldSubregion0->result(output->index())->origin());
       subregion0Map.insert(oldLoopVar.post->origin(), substitute);
     }
   }
@@ -233,7 +233,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
       else
       {
         auto [_, newBranchArgument] =
-            newGammaNode->AddEntryVar(substitutionMap.lookup(oldInput->origin()));
+            newGammaNode->AddEntryVar(&substitutionMap.lookup(*oldInput->origin()));
         auto newLoopVar = newThetaNode->AddLoopVar(newBranchArgument[1]);
         subregion1Map.insert(oldBranchArgument[1], newLoopVar.pre);
         newLoopVars[oldInput] = newLoopVar;
@@ -247,19 +247,19 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     for (const auto & oldLopVar : oldThetaNode.GetLoopVars())
     {
       auto output = oldLopVar.post->origin();
-      auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
+      auto substitute = &subregion1Map.lookup(*oldSubregion1->result(output->index())->origin());
       subregion1Map.insert(oldLopVar.pre, substitute);
     }
 
     // Copy condition nodes
     CopyPredicateNodes(*newThetaNode->subregion(), subregion1Map, conditionNodes);
-    auto predicate = subregion1Map.lookup(oldGammaNode->predicate()->origin());
+    auto predicate = &subregion1Map.lookup(*oldGammaNode->predicate()->origin());
 
     // Redirect results of loop variables and adjust substitution map for exit region copying
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
       auto output = oldLoopVar.post->origin();
-      auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
+      auto substitute = &subregion1Map.lookup(*oldSubregion1->result(output->index())->origin());
       newLoopVars[oldLoopVar.input].post->divert_to(substitute);
       subregion1Map.insert(oldLoopVar.post->origin(), newLoopVars[oldLoopVar.input].output);
     }
@@ -272,7 +272,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
       }
       else
       {
-        auto substitute = subregion1Map.lookup(input->origin());
+        auto substitute = &subregion1Map.lookup(*input->origin());
         newLoopVars[input].post->divert_to(substitute);
         subregion1Map.insert(branchArgument[0], newLoopVars[input].output);
       }
@@ -287,7 +287,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
       auto output = oldLoopVar.post->origin();
-      auto substitute = subregion1Map.lookup(oldSubregion0->result(output->index())->origin());
+      auto substitute = &subregion1Map.lookup(*oldSubregion0->result(output->index())->origin());
       subregion1Map.insert(oldLoopVar.post->origin(), substitute);
     }
   }
@@ -295,15 +295,15 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
   // Add exit variables to new gamma
   for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
   {
-    auto o0 = subregion0Map.lookup(oldLoopVar.post->origin());
-    auto o1 = subregion1Map.lookup(oldLoopVar.post->origin());
+    auto o0 = &subregion0Map.lookup(*oldLoopVar.post->origin());
+    auto o1 = &subregion1Map.lookup(*oldLoopVar.post->origin());
     auto [_, output] = newGammaNode->AddExitVar({ o0, o1 });
     substitutionMap.insert(oldLoopVar.output, output);
   }
 
   // Replace outputs
   for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-    oldLoopVar.output->divert_users(substitutionMap.lookup(oldLoopVar.output));
+    oldLoopVar.output->divert_users(&substitutionMap.lookup(*oldLoopVar.output));
 
   return true;
 }
