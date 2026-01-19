@@ -99,9 +99,6 @@ LoopUnswitching::SinkNodesIntoGamma(
     rvsdg::GammaNode & gammaNode,
     const rvsdg::ThetaNode & thetaNode)
 {
-  auto numSunkNodes = NodeSinking::sinkDependentNodesIntoGamma(gammaNode);
-  assert(numSunkNodes == 0);
-
   // Ensure all loop variables are routed through the gamma node
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
