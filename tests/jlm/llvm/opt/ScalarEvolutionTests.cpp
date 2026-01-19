@@ -482,7 +482,10 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
   auto res1 = addNode1.output(0);
 
-  auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2.pre, lv1.pre }, 32);
+  const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & mulNode =
+      jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2.pre, addNode2.output(0) }, 32);
   const auto res2 = mulNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
