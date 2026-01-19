@@ -61,6 +61,18 @@ private:
       rvsdg::Region & target,
       rvsdg::SubstitutionMap & substitutionMap,
       const std::vector<std::vector<rvsdg::Node *>> & nodes);
+
+  /**
+   * Checks that the post-values from all loop variables are originating from \p gammaNode.
+   *
+   * @param thetaNode The theta node for which to perform the check.
+   * @param gammaNode The gamma node through which all loop variables need to be routed.
+   * @return True, if all post-values originate from \p gammaNode, otherwise false.
+   */
+  static bool
+  allLoopVarsAreRoutedThroughGamma(
+      const rvsdg::ThetaNode & thetaNode,
+      const rvsdg::GammaNode & gammaNode);
 };
 
 }
