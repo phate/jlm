@@ -298,7 +298,6 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       result = std::make_unique<SCEVMulExpr>(lhsScev->Clone(), rhsScev->Clone());
     }
   }
-  // TODO: Handle more cases
 
   if (!result)
     // If none of the cases match, return an unknown SCEV expression
