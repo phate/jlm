@@ -551,7 +551,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1);
+  EXPECT_EQ(chrecMap.size(), 1u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is a simple negative induction variable with the recurrence {10,+,-1}<THETA>
@@ -600,7 +600,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   auto chrecMap = RunScalarEvolution(*theta);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2);
+  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
