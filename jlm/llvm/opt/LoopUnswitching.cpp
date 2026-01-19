@@ -152,6 +152,21 @@ LoopUnswitching::CopyPredicateNodes(
 }
 
 bool
+LoopUnswitching::allLoopVarsAreRoutedThroughGamma(
+    const rvsdg::ThetaNode & thetaNode,
+    const rvsdg::GammaNode & gammaNode)
+{
+  for (const auto & loopVar : thetaNode.GetLoopVars())
+  {
+    const auto node = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*loopVar.post->origin());
+    if (node != &gammaNode)
+      return false;
+  }
+
+  return true;
+}
+
+bool
 LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
   auto oldGammaNode = IsUnswitchable(oldThetaNode);
@@ -159,6 +174,8 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     return false;
 
   SinkNodesIntoGamma(*oldGammaNode, oldThetaNode);
+
+  JLM_ASSERT(allLoopVarsAreRoutedThroughGamma(oldThetaNode, *oldGammaNode));
 
   // Copy condition nodes for new gamma node
   rvsdg::SubstitutionMap substitutionMap;
