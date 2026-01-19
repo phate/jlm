@@ -61,6 +61,14 @@ private:
       rvsdg::Region & target,
       rvsdg::SubstitutionMap & substitutionMap,
       const std::vector<std::vector<rvsdg::Node *>> & nodes);
+
+  static rvsdg::SubstitutionMap
+  handleGammaRepetitionRegion(
+      rvsdg::ThetaNode & oldThetaNode,
+      rvsdg::GammaNode & oldGammaNode,
+      rvsdg::GammaNode & newGammaNode,
+      const std::vector<std::vector<rvsdg::Node *>> & predicateNodes,
+      const rvsdg::SubstitutionMap & substitutionMap);
 };
 
 }
