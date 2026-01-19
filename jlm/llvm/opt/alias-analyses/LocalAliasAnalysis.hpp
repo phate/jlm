@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP
 
+#include <cstddef>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
@@ -24,12 +25,27 @@ namespace jlm::llvm::aa
  */
 class LocalAliasAnalysis final : public AliasAnalysis
 {
-  // When doing origin tracing, give up if the trace set grows larger than this
-  static constexpr size_t MaxTraceCollectionSize = 1000;
 
 public:
   LocalAliasAnalysis();
+
   ~LocalAliasAnalysis() noexcept override;
+
+  /**
+   * Gets the maximum trace collection size before the analysis gives up with "MayAlias".
+   * If set <= 1, tracing stops as soon as a value has multiple origins, or unknown offset.
+   * @return the maximum number of outputs to trace before giving up on a pointer.
+   */
+  size_t
+  getMaxTraceCollectionSize();
+
+  /**
+   * Sets the maximum number of outputs a pointer can be traced to before giving up with "MayAlias"
+   * If set <= 1, tracing stops as soon as a value has multiple origins, or unknown offset.
+   * @param maxTraceCollectionSize the number of outputs
+   */
+  void
+  setMaxTraceCollectionSize(size_t maxTraceCollectionSize);
 
   std::string
   ToString() const override;
@@ -94,7 +110,7 @@ private:
    * @param traceCollection the collection of trace points being created
    * @return false if the trace collection reached its maximum allowed size, and tracing aborted
    */
-  [[nodiscard]] static bool
+  [[nodiscard]] bool
   TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection);
 
   /**
@@ -242,6 +258,12 @@ private:
    */
   [[nodiscard]] bool
   HasOnlyFullyTraceableTopOrigins(TraceCollection & traces);
+
+  /**
+   * The number of outputs a pointer can be traced to before giving up
+   * @see setMaxTraceCollectionSize
+   */
+  size_t maxTraceCollectionSize_ = 1000;
 
   /**
    * Memoization of "fully traceable" (escape analysis) queries.

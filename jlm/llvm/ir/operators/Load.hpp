@@ -89,6 +89,16 @@ public:
     return *output;
   }
 
+  [[nodiscard]] static std::shared_ptr<const rvsdg::Type>
+  LoadedValueType(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<LoadOperation>(&node));
+    const auto output = node.output(0);
+    const auto type = output->Type();
+    JLM_ASSERT(type->Kind() == rvsdg::TypeKind::Value);
+    return type;
+  }
+
   /**
    * Returns a range over the memory state outputs of a \ref LoadOperation node.
    *

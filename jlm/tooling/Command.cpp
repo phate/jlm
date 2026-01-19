@@ -27,6 +27,7 @@
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
+#include <jlm/llvm/opt/StoreValueForwarding.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
@@ -438,6 +439,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
     return std::make_shared<llvm::ScalarEvolution>();
+  case JlmOptCommandLineOptions::OptimizationId::StoreValueForwarding:
+    return std::make_shared<llvm::StoreValueForwarding>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }

@@ -89,6 +89,16 @@ public:
     return input;
   }
 
+  [[nodiscard]] static std::shared_ptr<const rvsdg::Type>
+  StoredValueType(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<StoreOperation>(&node));
+    auto & input = *node.input(1);
+    auto type = input.Type();
+    JLM_ASSERT(type->Kind() == rvsdg::TypeKind::Value);
+    return type;
+  }
+
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {

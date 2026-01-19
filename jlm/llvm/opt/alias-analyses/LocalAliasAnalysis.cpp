@@ -3,20 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
-
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <numeric>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -30,6 +28,18 @@ std::string
 LocalAliasAnalysis::ToString() const
 {
   return "LocalAA";
+}
+
+size_t
+LocalAliasAnalysis::getMaxTraceCollectionSize()
+{
+  return maxTraceCollectionSize_;
+}
+
+void
+LocalAliasAnalysis::setMaxTraceCollectionSize(size_t maxTraceCollectionSize)
+{
+  maxTraceCollectionSize_ = maxTraceCollectionSize;
 }
 
 /**
@@ -93,6 +103,11 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
 
     return QueryOffsets(p1Traced.Offset, s1, p2Traced.Offset, s2);
   }
+
+  // If the max trace collection size is set to 1,
+  // give up before tracing through multiple origins or unknown offsets.
+  if (maxTraceCollectionSize_ <= 1)
+    return MayAlias;
 
   // Keep tracing back to all sources
   TraceCollection p1TraceCollection;
@@ -325,7 +340,7 @@ LocalAliasAnalysis::QueryOffsets(
 bool
 LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection)
 {
-  if (traceCollection.AllTracedOutputs.size() >= MaxTraceCollectionSize)
+  if (traceCollection.AllTracedOutputs.size() >= maxTraceCollectionSize_)
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
