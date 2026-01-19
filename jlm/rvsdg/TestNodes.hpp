@@ -123,6 +123,28 @@ public:
   OutputVar
   addResults(const std::vector<Output *> & origins);
 
+  /**
+   * Maps \p input to an InputVar
+   *
+   * @param input Input to be mapped
+   * @return The variable description corresponding to this input.
+   *
+   * @pre \p input must be an input of this node.
+   */
+  InputVar
+  mapInput(const Input & input) const;
+
+  /**
+   * Maps \p output to an OutputVar
+   *
+   * @param output Output to be mapped
+   * @return The variable description corresponding to this output.
+   *
+   * @pre \p output must be an output of this node.
+   */
+  OutputVar
+  mapOutput(const Output & output) const;
+
   [[nodiscard]] const TestStructuralOperation &
   GetOperation() const noexcept override;
 

@@ -303,7 +303,7 @@ FunctionInlining::inlineCall(
   }
 
   // Use the substitution map to copy the function body into the caller region
-  callee.subregion()->copy(callNode.region(), smap, false, false);
+  callee.subregion()->copy(callNode.region(), smap);
 
   // Move all users of the call node's outputs to the callee's result origins
   const auto calleeResults = callee.GetFunctionResults();
@@ -311,8 +311,7 @@ FunctionInlining::inlineCall(
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     const auto resultOrigin = calleeResults[n]->origin();
-    const auto newOrigin = smap.lookup(resultOrigin);
-    JLM_ASSERT(newOrigin);
+    const auto newOrigin = &smap.lookup(*resultOrigin);
     callNode.output(n)->divert_users(newOrigin);
   }
 

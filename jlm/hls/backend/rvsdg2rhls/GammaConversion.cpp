@@ -33,7 +33,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap);
   }
 
   for (const auto & ex : gammaNode.GetExitVars())
@@ -41,7 +41,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
     std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));
+      alternatives.push_back(&substitutionMap.lookup(*ex.branchResult[s]->origin()));
     }
     // create mux nodes for each gamma output
     // use mux instead of merge in case of paths with different delay - otherwise one could overtake
@@ -70,7 +70,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap);
   }
 
   for (const auto & ex : gammaNode.GetExitVars())
@@ -78,7 +78,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
     std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));
+      alternatives.push_back(&substitutionMap.lookup(*ex.branchResult[s]->origin()));
     }
 
     // create discarding mux for each gamma output

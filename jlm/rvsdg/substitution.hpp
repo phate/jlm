@@ -15,8 +15,6 @@ namespace jlm::rvsdg
 {
 
 class Output;
-class Region;
-class StructuralInput;
 
 class SubstitutionMap final
 {
@@ -24,19 +22,7 @@ public:
   bool
   contains(const Output & original) const noexcept
   {
-    return output_map_.find(&original) != output_map_.end();
-  }
-
-  bool
-  contains(const Region & original) const noexcept
-  {
-    return region_map_.find(&original) != region_map_.end();
-  }
-
-  bool
-  contains(const StructuralInput & original) const noexcept
-  {
-    return structinput_map_.find(&original) != structinput_map_.end();
+    return outputMap_.find(&original) != outputMap_.end();
   }
 
   Output &
@@ -45,70 +31,17 @@ public:
     if (!contains(original))
       throw util::Error("Output not in substitution map.");
 
-    return *output_map_.find(&original)->second;
+    return *outputMap_.find(&original)->second;
   }
 
-  Region &
-  lookup(const Region & original) const
+  void
+  insert(const Output * original, Output * substitute)
   {
-    if (!contains(original))
-      throw util::Error("Region not in substitution map.");
-
-    return *region_map_.find(&original)->second;
-  }
-
-  [[nodiscard]] StructuralInput &
-  lookup(const StructuralInput & original) const
-  {
-    if (!contains(original))
-      throw util::Error("Structural input not in substitution map.");
-
-    return *structinput_map_.find(&original)->second;
-  }
-
-  inline jlm::rvsdg::Output *
-  lookup(const jlm::rvsdg::Output * original) const noexcept
-  {
-    auto i = output_map_.find(original);
-    return i != output_map_.end() ? i->second : nullptr;
-  }
-
-  [[nodiscard]] rvsdg::Region *
-  lookup(const jlm::rvsdg::Region * original) const noexcept
-  {
-    auto i = region_map_.find(original);
-    return i != region_map_.end() ? i->second : nullptr;
-  }
-
-  StructuralInput *
-  lookup(const StructuralInput * original) const noexcept
-  {
-    auto i = structinput_map_.find(original);
-    return i != structinput_map_.end() ? i->second : nullptr;
-  }
-
-  inline void
-  insert(const jlm::rvsdg::Output * original, jlm::rvsdg::Output * substitute)
-  {
-    output_map_[original] = substitute;
-  }
-
-  inline void
-  insert(const rvsdg::Region * original, rvsdg::Region * substitute)
-  {
-    region_map_[original] = substitute;
-  }
-
-  inline void
-  insert(const StructuralInput * original, StructuralInput * substitute)
-  {
-    structinput_map_[original] = substitute;
+    outputMap_[original] = substitute;
   }
 
 private:
-  std::unordered_map<const rvsdg::Region *, rvsdg::Region *> region_map_;
-  std::unordered_map<const jlm::rvsdg::Output *, jlm::rvsdg::Output *> output_map_;
-  std::unordered_map<const StructuralInput *, StructuralInput *> structinput_map_;
+  std::unordered_map<const Output *, Output *> outputMap_{};
 };
 
 }

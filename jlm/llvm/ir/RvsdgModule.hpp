@@ -18,9 +18,9 @@ namespace jlm::llvm
  * Represents an import into the RVSDG of an external entity.
  * It is used to model LLVM module declarations.
  */
-class GraphImport final : public rvsdg::GraphImport
+class LlvmGraphImport final : public rvsdg::GraphImport
 {
-  GraphImport(
+  LlvmGraphImport(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
@@ -74,10 +74,10 @@ public:
     return ImportedType_;
   }
 
-  GraphImport &
+  LlvmGraphImport &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override;
 
-  static GraphImport &
+  static LlvmGraphImport &
   Create(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::Type> valueType,
@@ -86,7 +86,7 @@ public:
       Linkage linkage,
       bool isConstant = false)
   {
-    auto graphImport = new GraphImport(
+    auto graphImport = new LlvmGraphImport(
         graph,
         std::move(valueType),
         std::move(importedType),
@@ -113,7 +113,17 @@ public:
   ~LlvmRvsdgModule() noexcept override = default;
 
   LlvmRvsdgModule(util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
-      : rvsdg::RvsdgModule(std::move(sourceFileName)),
+      : RvsdgModule(std::move(sourceFileName)),
+        DataLayout_(std::move(dataLayout)),
+        TargetTriple_(std::move(targetTriple))
+  {}
+
+  LlvmRvsdgModule(
+      util::FilePath sourceFileName,
+      std::string targetTriple,
+      std::string dataLayout,
+      std::unique_ptr<rvsdg::Graph> rvsdg)
+      : RvsdgModule(std::move(sourceFileName), std::move(rvsdg)),
         DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple))
   {}
@@ -127,6 +137,9 @@ public:
 
   LlvmRvsdgModule &
   operator=(LlvmRvsdgModule &&) = delete;
+
+  std::unique_ptr<RvsdgModule>
+  copy() const override;
 
   [[nodiscard]] const util::FilePath &
   SourceFileName() const noexcept

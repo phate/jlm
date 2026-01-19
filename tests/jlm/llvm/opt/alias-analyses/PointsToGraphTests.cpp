@@ -97,7 +97,7 @@ private:
     auto & rootRegion = rvsdg.GetRootRegion();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
-      auto & graphImport = *jlm::util::assertedCast<const GraphImport>(rootRegion.argument(n));
+      auto & graphImport = *jlm::util::assertedCast<const LlvmGraphImport>(rootRegion.argument(n));
 
       const auto ptgImportNode = pointsToGraph_->addNodeForImport(graphImport, true);
       const auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
@@ -370,10 +370,20 @@ TEST(PointsToGraphTests, testIsMemoryNodeConstant)
     const auto intType = jlm::rvsdg::BitType::Create(32);
     const auto pointerType = jlm::llvm::PointerType::Create();
 
-    auto & constImport =
-        GraphImport::Create(graph, intType, pointerType, "test", Linkage::externalLinkage, true);
-    auto & nonConstImport =
-        GraphImport::Create(graph, intType, pointerType, "test", Linkage::externalLinkage, false);
+    auto & constImport = LlvmGraphImport::Create(
+        graph,
+        intType,
+        pointerType,
+        "test",
+        Linkage::externalLinkage,
+        true);
+    auto & nonConstImport = LlvmGraphImport::Create(
+        graph,
+        intType,
+        pointerType,
+        "test",
+        Linkage::externalLinkage,
+        false);
 
     auto & constDelta = *jlm::rvsdg::DeltaNode::Create(
         &graph.GetRootRegion(),

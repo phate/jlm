@@ -196,7 +196,7 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   rvsdg::SubstitutionMap subregionmap;
   for (const auto & cv : GetContextVars())
   {
-    auto origin = smap.lookup(cv.input->origin());
+    auto origin = &smap.lookup(*cv.input->origin());
     subregionmap.insert(cv.inner, lambda->AddContextVar(*origin).inner);
   }
 
@@ -210,12 +210,12 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   /* copy subregion */
-  subregion()->copy(lambda->subregion(), subregionmap, false, false);
+  subregion()->copy(lambda->subregion(), subregionmap);
 
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;
   for (auto result : GetFunctionResults())
-    results.push_back(subregionmap.lookup(result->origin()));
+    results.push_back(&subregionmap.lookup(*result->origin()));
 
   /* finalize lambda */
   auto o = lambda->finalize(results);

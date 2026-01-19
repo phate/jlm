@@ -578,7 +578,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
 
   for (size_t n = 0; n < graph.GetRootRegion().narguments(); n++)
   {
-    const auto graphImport = util::assertedCast<GraphImport>(graph.GetRootRegion().argument(n));
+    const auto graphImport = util::assertedCast<LlvmGraphImport>(graph.GetRootRegion().argument(n));
     if (const auto functionType =
             std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType()))
     {

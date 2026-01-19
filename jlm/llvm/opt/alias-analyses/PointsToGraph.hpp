@@ -364,7 +364,7 @@ public:
   }
 
   /**
-   * Retrieves the index of the PointsToGraph node mapped to the given \ref GraphImport.
+   * Retrieves the index of the PointsToGraph node mapped to the given \ref rvsdg::GraphImport.
    * @param argument the import being looked up.
    * @return the PointsToGraph node mapped to \p argument, always of ImportNode kind.
    * @throws std::out_of_range if the argument is not mapped to a PointsToGraph node.

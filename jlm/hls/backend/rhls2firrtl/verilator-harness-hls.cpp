@@ -180,7 +180,7 @@ bool terminate = false;
 
   for (const auto arg : rm.Rvsdg().GetRootRegion().Arguments())
   {
-    const auto graphImport = util::assertedCast<llvm::GraphImport>(arg);
+    const auto graphImport = util::assertedCast<llvm::LlvmGraphImport>(arg);
     cpp << "extern \"C\" char " << graphImport->Name() << ";" << std::endl;
   }
   cpp << R"(

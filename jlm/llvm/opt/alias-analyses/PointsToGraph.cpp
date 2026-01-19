@@ -117,14 +117,14 @@ PointsToGraph::addNodeForImport(const rvsdg::GraphImport & import, bool external
 
   const auto isConstant = [](const rvsdg::GraphImport & import) -> bool
   {
-    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+    if (const auto graphImport = dynamic_cast<const LlvmGraphImport *>(&import))
       return graphImport->isConstant();
     return false;
   };
 
   const auto getMemorySize = [](const rvsdg::GraphImport & import) -> std::optional<size_t>
   {
-    if (const auto graphImport = dynamic_cast<const GraphImport *>(&import))
+    if (const auto graphImport = dynamic_cast<const LlvmGraphImport *>(&import))
     {
       auto size = GetTypeAllocSize(*graphImport->ValueType());
 
