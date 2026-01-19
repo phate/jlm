@@ -5,10 +5,13 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Trace.hpp>
+#include <jlm/rvsdg/type.hpp>
 
 namespace jlm::llvm
 {
@@ -18,11 +21,6 @@ llvm::OutputTracer::OutputTracer() = default;
 rvsdg::Output &
 OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 {
-  // FIXME: Needing to create a custom subclass of OutputTracer to make it handle a single LLVM
-  // specific operation is not great, as we now have multiple choices for traceOutput.
-  // It would be better to have a single tracing class that handles all operations,
-  // and somehow marking the IOBarrier with a "trait" that makes the output map to the input.
-
   auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
 
   if (const auto [node, ioBarrierOp] =
@@ -30,6 +28,21 @@ OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
       node && ioBarrierOp)
   {
     return *IOBarrierOperation::BarredInput(*node).origin();
+  }
+
+  // If enabled, try tracing through the memory states of load nodes
+  if (traceThroughLoadedStates_)
+  {
+    if (const auto [node, loadOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(trace1);
+        node && loadOp)
+    {
+      if (is<MemoryStateType>(trace1.Type()))
+      {
+        // Map the memory state output to the corresponding memory state input
+        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1);
+        return *memoryStateInput.origin();
+      }
+    }
   }
 
   return trace1;

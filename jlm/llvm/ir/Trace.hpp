@@ -19,9 +19,33 @@ class OutputTracer : public rvsdg::OutputTracer
 public:
   OutputTracer();
 
+  /**
+   * When enabled, tracing can continue through the memory state output of a load,
+   * and keep tracing from the load's memory state input.
+   * @return true if tracing states through loads is enabled, false otherwise
+   */
+  bool
+  isTracingThroughLoadedStates()
+  {
+    return traceThroughLoadedStates_;
+  }
+
+  /**
+   * Enables or disables tracing state edges through load operation nodes.
+   * @param traceThroughLoadedStates the new value
+   */
+  void
+  setTraceThroughLoadedStates(bool traceThroughLoadedStates)
+  {
+    traceThroughLoadedStates_ = traceThroughLoadedStates;
+  }
+
 protected:
   [[nodiscard]] rvsdg::Output &
   traceStep(rvsdg::Output & output, bool mayLeaveRegion) override;
+
+private:
+  bool traceThroughLoadedStates_ = false;
 };
 
 /**

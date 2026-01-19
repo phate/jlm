@@ -232,17 +232,11 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
 rvsdg::Output *
 StoreValueForwarding::traceStateEdgeToStoreNode(rvsdg::Output & state)
 {
-  auto & tracedOutput = llvm::traceOutput(state);
-
-  // Check if we traced to a load operation
-  if (auto [loadNode, loadOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(tracedOutput);
-      loadNode && loadOp)
-  {
-    // Map the memory state output to the corresponding memory state input
-    auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(tracedOutput);
-    // Continue tracing from the memory state input
-    return traceStateEdgeToStoreNode(*memoryStateInput.origin());
-  }
+  // Allow the tracer to go through loads, as we only care about stores
+  llvm::OutputTracer tracer;
+  tracer.setTraceThroughStructuralNodes(true);
+  tracer.setTraceThroughLoadedStates(true);
+  auto & tracedOutput = tracer.trace(state);
 
   // Check if we traced to a store operation
   if (auto [storeNode, storeOp] =
