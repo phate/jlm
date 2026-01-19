@@ -73,6 +73,13 @@ private:
   allLoopVarsAreRoutedThroughGamma(
       const rvsdg::ThetaNode & thetaNode,
       const rvsdg::GammaNode & gammaNode);
+
+  static rvsdg::SubstitutionMap
+  handleGammaExitRegion(
+      rvsdg::ThetaNode & oldThetaNode,
+      rvsdg::GammaNode & oldGammaNode,
+      rvsdg::GammaNode & newGammaNode,
+      const rvsdg::SubstitutionMap & substitutionMap);
 };
 
 }
