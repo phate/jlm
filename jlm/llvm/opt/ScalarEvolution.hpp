@@ -454,29 +454,27 @@ public:
   enum class DependencyOp
   {
     Add,
-    Mult,
-    Direct,
+    Mul,
+    None,
   };
 
   struct DependencyInfo
   {
-    int count;
-    DependencyOp operation;
+    // Helper struct to keep track of dependencies between loop variables.
 
-    explicit DependencyInfo(const int c = 0, const DependencyOp op = DependencyOp::Direct)
+    int count; // How many times the dependency occurs. A variable can be dependent on other
+               // variables (or itself) multiple times.)
+    DependencyOp operation; // The operation of the dependency (Add, Mul or None)
+
+    explicit DependencyInfo(const int c = 0, const DependencyOp op = DependencyOp::None)
         : count(c),
           operation(op)
     {}
   };
 
-  typedef util::HashSet<const rvsdg::Output *>
-      InductionVariableSet; // Stores the pointers to the output result from the subregion for the
-                            // induction variables
+  typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
 
-  typedef std::unordered_map<
-      const rvsdg::Output *,
-      std::unordered_map<const rvsdg::Output *, DependencyInfo>>
-      IVDependencyGraph;
+  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> IVDependencyGraph;
 
   ~ScalarEvolution() noexcept override;
 
@@ -521,8 +519,8 @@ private:
   IVDependencyGraph
   CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
-  static std::unordered_map<const rvsdg::Output *, DependencyInfo>
-  FindDependenciesForSCEV(const SCEV & scev);
+  static void
+  FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
 
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
@@ -537,7 +535,7 @@ private:
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
   static std::unique_ptr<SCEV>
-  ApplyMultFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+  ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
@@ -550,9 +548,6 @@ private:
    */
   static bool
   IsUnknown(const SCEVChainRecurrence & chrec);
-
-  static bool
-  IsState(const rvsdg::Output & output);
 
   static bool
   HasCycleThroughOthers(
