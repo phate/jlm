@@ -80,6 +80,14 @@ private:
       rvsdg::GammaNode & oldGammaNode,
       rvsdg::GammaNode & newGammaNode,
       const rvsdg::SubstitutionMap & substitutionMap);
+
+  static rvsdg::SubstitutionMap
+  handleGammaRepetitionRegion(
+      rvsdg::ThetaNode & oldThetaNode,
+      rvsdg::GammaNode & oldGammaNode,
+      rvsdg::GammaNode & newGammaNode,
+      const std::vector<std::vector<rvsdg::Node *>> & predicateNodes,
+      const rvsdg::SubstitutionMap & substitutionMap);
 };
 
 }
