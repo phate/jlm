@@ -513,8 +513,6 @@ public:
     \brief Copy a region with substitutions
     \param target Target region to create nodes in
     \param smap Operand substitutions
-    \param copy_arguments Copy region arguments
-    \param copy_results Copy region results
 
     Copies all nodes of the specified region and its
     subregions into the target region. Substitutions
@@ -522,7 +520,7 @@ public:
     map will be updated as nodes are copied.
   */
   void
-  copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const;
+  copy(Region * target, SubstitutionMap & smap) const;
 
   /**
    * Removes all dead nodes from the region, including nodes that become dead during pruning.

@@ -107,19 +107,19 @@ ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   std::vector<LoopVar> newLoopVars;
   for (auto olv : oldLoopVars)
   {
-    auto nlv = theta->AddLoopVar(smap.lookup(olv.input->origin()));
+    auto nlv = theta->AddLoopVar(&smap.lookup(*olv.input->origin()));
     newLoopVars.push_back(nlv);
     rmap.insert(olv.pre, nlv.pre);
   }
 
   /* copy subregion */
-  subregion()->copy(theta->subregion(), rmap, false, false);
-  theta->set_predicate(rmap.lookup(predicate()->origin()));
+  subregion()->copy(theta->subregion(), rmap);
+  theta->set_predicate(&rmap.lookup(*predicate()->origin()));
 
   /* redirect loop variables */
   for (size_t i = 0; i < oldLoopVars.size(); ++i)
   {
-    newLoopVars[i].post->divert_to(rmap.lookup(oldLoopVars[i].post->origin()));
+    newLoopVars[i].post->divert_to(&rmap.lookup(*oldLoopVars[i].post->origin()));
     smap.insert(oldLoopVars[i].output, newLoopVars[i].output);
   }
 

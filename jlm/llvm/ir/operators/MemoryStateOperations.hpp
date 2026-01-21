@@ -340,23 +340,6 @@ public:
   [[nodiscard]] static MemoryNodeId
   mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
-  /**
-   * Perform the following transformation:
-   *
-   * oN = CallEntryMemoryStateMergeOperation o0 ... oK
-   * oX ... oZ = LambdaEntryMemoryStateSplitOperation oN
-   * ... = AnyOp oX ... oZ
-   * =>
-   * ... = AnyOp o0 ... oK
-   *
-   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
-   * replaced with the body of its respective \ref rvsdg::LambdaNode.
-   */
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeCallEntryMemoryStateMerge(
-      const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
-      const std::vector<rvsdg::Output *> & operands);
-
   static rvsdg::SimpleNode &
   CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
   {
@@ -631,23 +614,6 @@ public:
    */
   [[nodiscard]] static MemoryNodeId
   mapOutputToMemoryNodeId(const rvsdg::Output & output);
-
-  /**
-   * Perform the following transformation:
-   *
-   * oN = LambdaExitMemoryStateMergeOperation o0 ... oK
-   * oX ... oZ = CallExitMemoryStateSplitOperation oN
-   * ... = AnyOp oX ... oZ
-   * =>
-   * ... = AnyOp o0 ... oK
-   *
-   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
-   * replaced with the body of its respective \ref rvsdg::LambdaNode.
-   */
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLambdaExitMemoryStateMerge(
-      const CallExitMemoryStateSplitOperation & callExitSplitOperation,
-      const std::vector<rvsdg::Output *> & operands);
 
   static rvsdg::SimpleNode &
   CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)

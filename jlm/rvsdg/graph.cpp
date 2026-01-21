@@ -80,7 +80,24 @@ Graph::Copy() const
 {
   SubstitutionMap substitutionMap;
   auto graph = std::make_unique<Graph>();
-  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap, true, true);
+
+  // copy graph imports
+  for (auto import : GetRootRegion().Arguments())
+  {
+    auto & importCopy = import->Copy(graph->GetRootRegion(), nullptr);
+    substitutionMap.insert(import, &importCopy);
+  }
+
+  // copy root region
+  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap);
+
+  // copy graph exports
+  for (auto xport : GetRootRegion().Results())
+  {
+    auto & newOrigin = substitutionMap.lookup(*xport->origin());
+    xport->Copy(newOrigin, nullptr);
+  }
+
   return graph;
 }
 

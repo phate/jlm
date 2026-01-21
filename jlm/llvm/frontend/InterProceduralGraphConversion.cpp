@@ -982,7 +982,7 @@ ConvertFunctionNode(
    */
   if (functionNode.cfg() == nullptr)
   {
-    return &GraphImport::Create(
+    return &LlvmGraphImport::Create(
         *region.graph(),
         functionNode.GetFunctionType(),
         functionNode.GetFunctionType(),
@@ -1026,7 +1026,7 @@ ConvertDataNode(
      */
     if (!dataNodeInitialization)
     {
-      return &GraphImport::Create(
+      return &LlvmGraphImport::Create(
           *region.graph(),
           dataNode.GetValueType(),
           PointerType::Create(),

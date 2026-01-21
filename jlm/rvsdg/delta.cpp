@@ -90,16 +90,16 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   rvsdg::SubstitutionMap subregionmap;
   for (auto & cv : GetContextVars())
   {
-    auto origin = smap.lookup(cv.input->origin());
+    auto origin = &smap.lookup(*cv.input->origin());
     auto newCtxVar = delta->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newCtxVar.inner);
   }
 
   // copy subregion
-  subregion()->copy(delta->subregion(), subregionmap, false, false);
+  subregion()->copy(delta->subregion(), subregionmap);
 
   // finalize delta
-  auto result = subregionmap.lookup(delta->result().origin());
+  auto result = &subregionmap.lookup(*delta->result().origin());
   auto o = &delta->finalize(result);
   smap.insert(&output(), o);
 

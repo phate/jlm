@@ -42,12 +42,12 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
   }
 
   /* copy subregion */
-  ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
+  ln->subregion()->copy(lambda->subregion(), subregionmap);
 
   /* collect function results */
   std::vector<jlm::rvsdg::Output *> results;
   for (auto result : ln->GetFunctionResults())
-    results.push_back(subregionmap.lookup(result->origin()));
+    results.push_back(&subregionmap.lookup(*result->origin()));
 
   /* finalize lambda */
   lambda->finalize(results);
@@ -92,13 +92,13 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
         llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
-  auto & reference_load = llvm::GraphImport::Create(
+  auto & reference_load = llvm::LlvmGraphImport::Create(
       graph,
       loadFunctionType,
       loadFunctionType,
       "reference_load",
       llvm::Linkage::externalLinkage);
-  auto & reference_store = llvm::GraphImport::Create(
+  auto & reference_store = llvm::LlvmGraphImport::Create(
       graph,
       loadFunctionType,
       loadFunctionType,
@@ -111,7 +111,7 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
         llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
-  auto & reference_alloca = llvm::GraphImport::Create(
+  auto & reference_alloca = llvm::LlvmGraphImport::Create(
       graph,
       allocaFunctionType,
       allocaFunctionType,

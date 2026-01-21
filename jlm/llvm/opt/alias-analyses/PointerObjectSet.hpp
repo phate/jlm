@@ -175,7 +175,7 @@ class PointerObjectSet final
 
   util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const LlvmGraphImport *, PointerObjectIndex> ImportMap_;
 
   // How many items have been attempted added to explicit points-to sets
   size_t NumSetInsertionAttempts_ = 0;
@@ -307,7 +307,7 @@ public:
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const GraphImport & importNode, bool canPoint);
+  CreateImportMemoryObject(const LlvmGraphImport & importNode, bool canPoint);
 
   const std::unordered_map<const rvsdg::Output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
@@ -324,7 +324,7 @@ public:
   const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const GraphImport *, PointerObjectIndex> &
+  const std::unordered_map<const LlvmGraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
   /**
