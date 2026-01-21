@@ -107,7 +107,13 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
   // If the max trace collection size is set to 1,
   // give up before tracing through multiple origins or unknown offsets.
   if (maxTraceCollectionSize_ <= 1)
+  {
+    // If both pointers are original origins, and not the same pointer, we have NoAlias
+    if (IsOriginalOrigin(*p1Traced.BasePointer) && IsOriginalOrigin(*p2Traced.BasePointer))
+      return NoAlias;
+
     return MayAlias;
+  }
 
   // Keep tracing back to all sources
   TraceCollection p1TraceCollection;
