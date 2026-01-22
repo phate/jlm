@@ -93,7 +93,7 @@ LlvmDotWriter::AnnotateRegionArgument(
     util::graph::Graph * typeGraph)
 {
   // If the argument is a GraphImport, include extra type and linkage data
-  if (const auto graphImport = dynamic_cast<const GraphImport *>(&rvsdgArgument))
+  if (const auto graphImport = dynamic_cast<const LlvmGraphImport *>(&rvsdgArgument))
   {
     node.SetAttribute("linkage", std::string(linkageToString(graphImport->linkage())));
     if (typeGraph)

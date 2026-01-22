@@ -1352,14 +1352,14 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
       { ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
 
-  auto & opaqueImport = GraphImport::Create(
+  auto & opaqueImport = LlvmGraphImport::Create(
       graph,
       unitFunctionType,
       unitFunctionType,
       "opaque",
       Linkage::externalLinkage);
 
-  auto & setjmpImport = GraphImport::Create(
+  auto & setjmpImport = LlvmGraphImport::Create(
       graph,
       setjmpFunctionType,
       setjmpFunctionType,

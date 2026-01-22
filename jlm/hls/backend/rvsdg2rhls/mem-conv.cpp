@@ -411,7 +411,7 @@ ReplaceLoad(
   // We need the load in the new lambda such that we can replace it with a load node with explicit
   // memory ports
   auto replacedLoad =
-      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalLoad->output(0)));
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(smap.lookup(*originalLoad->output(0)));
 
   auto loadAddress = replacedLoad->input(0)->origin();
   std::vector<rvsdg::Output *> states;
@@ -453,7 +453,7 @@ ReplaceStore(
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
   auto replacedStore =
-      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalStore->output(0)));
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(smap.lookup(*originalStore->output(0)));
 
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
@@ -499,7 +499,7 @@ ConnectRequestResponseMemPorts(
   {
     auto oldLoadedValue = loadNode->output(0);
     JLM_ASSERT(smap.contains(*oldLoadedValue));
-    auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldLoadedValue));
+    auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(smap.lookup(*oldLoadedValue));
     loadNodes.push_back(&newLoadNode);
     auto loadOp =
         util::assertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
@@ -511,7 +511,7 @@ ConnectRequestResponseMemPorts(
     auto oldOutput = decoupleRequest->output(0);
     JLM_ASSERT(smap.contains(*oldOutput));
     auto & decoupledRequestNode =
-        rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+        rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(smap.lookup(*oldOutput));
     decoupledNodes.push_back(&decoupledRequestNode);
     // get load type from response output
     auto channel = decoupleRequest->input(1)->origin();
@@ -525,7 +525,7 @@ ConnectRequestResponseMemPorts(
   {
     auto oldOutput = storeNode->output(0);
     JLM_ASSERT(smap.contains(*oldOutput));
-    auto & newStoreNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+    auto & newStoreNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(smap.lookup(*oldOutput));
     storeNodes.push_back(&newStoreNode);
     // use memory state type as response for stores
     auto vt = std::make_shared<llvm::MemoryStateType>();
@@ -719,7 +719,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   {
     smap.insert(args[i], newArgs[i]);
   }
-  lambda->subregion()->copy(newLambda->subregion(), smap, false, false);
+  lambda->subregion()->copy(newLambda->subregion(), smap);
 
   //
   // All memory nodes need to be replaced with new nodes that have explicit memory ports.
@@ -755,7 +755,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   std::vector<rvsdg::Output *> originalResults;
   for (auto result : lambda->GetFunctionResults())
   {
-    originalResults.push_back(smap.lookup(result->origin()));
+    originalResults.push_back(&smap.lookup(*result->origin()));
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);

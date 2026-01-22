@@ -1320,7 +1320,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
   // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
-    auto & argument = *util::assertedCast<GraphImport>(rootRegion.argument(n));
+    auto & argument = *util::assertedCast<LlvmGraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
     if (!IsOrContainsPointerType(*argument.Type()))

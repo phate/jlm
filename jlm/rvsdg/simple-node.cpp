@@ -51,40 +51,28 @@ SimpleNode::GetOperation() const noexcept
 }
 
 Node *
-SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
+SimpleNode::copy(Region * region, const std::vector<Output *> & operands) const
 {
-  std::unique_ptr<SimpleOperation> operation(
-      util::assertedCast<SimpleOperation>(GetOperation().copy().release()));
-  return &Create(*region, std::move(operation), operands);
+  return &Create(*region, GetOperation().copy(), operands);
 }
 
 Node *
-SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
+SimpleNode::copy(Region * region, SubstitutionMap & smap) const
 {
-  std::vector<jlm::rvsdg::Output *> operands;
-  for (size_t n = 0; n < ninputs(); n++)
+  std::vector<Output *> operands;
+  for (auto & input : Inputs())
   {
-    auto origin = input(n)->origin();
-    auto operand = smap.lookup(origin);
-
-    if (operand == nullptr)
-    {
-      if (region != this->region())
-        throw util::Error("Node operand not in substitution map.");
-
-      operand = origin;
-    }
-
-    operands.push_back(operand);
+    auto & operand = smap.lookup(*input.origin());
+    operands.push_back(&operand);
   }
 
-  auto node = copy(region, operands);
+  auto copiedNode = copy(region, operands);
 
-  JLM_ASSERT(node->noutputs() == noutputs());
-  for (size_t n = 0; n < node->noutputs(); n++)
-    smap.insert(output(n), node->output(n));
+  JLM_ASSERT(copiedNode->noutputs() == noutputs());
+  for (size_t n = 0; n < copiedNode->noutputs(); n++)
+    smap.insert(output(n), copiedNode->output(n));
 
-  return node;
+  return copiedNode;
 }
 
 std::string

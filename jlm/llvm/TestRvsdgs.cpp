@@ -1192,7 +1192,7 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return &llvm::GraphImport::Create(
+    return &llvm::LlvmGraphImport::Create(
         *rvsdg,
         functionGType,
         functionGType,
@@ -1300,22 +1300,27 @@ ExternalCallTest2::SetupRvsdg()
           MemoryStateType::Create(),
       });
 
-  auto llvmLifetimeStart = &GraphImport::Create(
+  auto llvmLifetimeStart = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeStartType,
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
       true);
-  auto llvmLifetimeEnd = &GraphImport::Create(
+  auto llvmLifetimeEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
       true);
-  ExternalFArgument_ =
-      &GraphImport::Create(rvsdg, lambdaFType, lambdaFType, "f", Linkage::externalLinkage, true);
+  ExternalFArgument_ = &LlvmGraphImport::Create(
+      rvsdg,
+      lambdaFType,
+      lambdaFType,
+      "f",
+      Linkage::externalLinkage,
+      true);
 
   // Setup function g()
   LambdaG_ = rvsdg::LambdaNode::Create(
@@ -2100,13 +2105,13 @@ ImportTest::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 = &llvm::GraphImport::Create(
+  auto d1 = &llvm::LlvmGraphImport::Create(
       *graph,
       jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d1",
       Linkage::externalLinkage);
-  auto d2 = &llvm::GraphImport::Create(
+  auto d2 = &llvm::LlvmGraphImport::Create(
       *graph,
       jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
@@ -2906,7 +2911,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction1Declaration = [&]()
   {
-    return &llvm::GraphImport::Create(
+    return &llvm::LlvmGraphImport::Create(
         *rvsdg,
         externalFunction1Type,
         externalFunction1Type,
@@ -2917,7 +2922,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    return &llvm::GraphImport::Create(
+    return &llvm::LlvmGraphImport::Create(
         *rvsdg,
         externalFunction2Type,
         externalFunction2Type,
@@ -3087,7 +3092,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return &llvm::GraphImport::Create(
+    return &llvm::LlvmGraphImport::Create(
         *rvsdg,
         externalFunctionType,
         externalFunctionType,
@@ -3593,7 +3598,7 @@ AllMemoryNodesTest::SetupRvsdg()
   auto graph = &module->Rvsdg();
 
   // Create imported symbol "imported"
-  Import_ = &llvm::GraphImport::Create(
+  Import_ = &llvm::LlvmGraphImport::Create(
       *graph,
       rvsdg::BitType::Create(32),
       PointerType::Create(),
@@ -3951,8 +3956,13 @@ VariadicFunctionTest1::SetupRvsdg()
       { IOStateType::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ =
-      &GraphImport::Create(rvsdg, lambdaHType, lambdaHType, "h", Linkage::externalLinkage, true);
+  ImportH_ = &LlvmGraphImport::Create(
+      rvsdg,
+      lambdaHType,
+      lambdaHType,
+      "h",
+      Linkage::externalLinkage,
+      true);
 
   // Setup f()
   {
@@ -4058,28 +4068,28 @@ VariadicFunctionTest2::SetupRvsdg()
       { IOStateType::Create(), MemoryStateType::Create() },
       { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-  auto llvmLifetimeStart = &GraphImport::Create(
+  auto llvmLifetimeStart = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeStartType,
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
       true);
-  auto llvmLifetimeEnd = &GraphImport::Create(
+  auto llvmLifetimeEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
       true);
-  auto llvmVaStart = &GraphImport::Create(
+  auto llvmVaStart = &LlvmGraphImport::Create(
       rvsdg,
       lambdaVaStartType,
       lambdaVaStartType,
       "llvm.va_start",
       Linkage::externalLinkage,
       true);
-  auto llvmVaEnd = &GraphImport::Create(
+  auto llvmVaEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaVaEndType,
       lambdaVaEndType,

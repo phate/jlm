@@ -113,7 +113,7 @@ private:
         { ioStateType, memoryStateType },
         { pointerType, ioStateType, memoryStateType });
 
-    Outputs_.GetPtr = &GraphImport::Create(
+    Outputs_.GetPtr = &LlvmGraphImport::Create(
         rvsdg,
         getPtrFuncType,
         getPtrFuncType,
@@ -143,8 +143,12 @@ private:
     }
     Outputs_.Local = &localDelta.output();
 
-    Outputs_.Imported =
-        &GraphImport::Create(rvsdg, pointerType, pointerType, "imported", Linkage::externalLinkage);
+    Outputs_.Imported = &LlvmGraphImport::Create(
+        rvsdg,
+        pointerType,
+        pointerType,
+        "imported",
+        Linkage::externalLinkage);
 
     // Setup the function "func"
     {
@@ -379,11 +383,19 @@ private:
         { pointerType, int32Type, ioStateType, memoryStateType },
         { ioStateType, memoryStateType });
 
-    Outputs_.GlobalInt =
-        &GraphImport::Create(rvsdg, int32Type, pointerType, "globalInt", Linkage::externalLinkage);
+    Outputs_.GlobalInt = &LlvmGraphImport::Create(
+        rvsdg,
+        int32Type,
+        pointerType,
+        "globalInt",
+        Linkage::externalLinkage);
 
-    Outputs_.GlobalLong =
-        &GraphImport::Create(rvsdg, int64Type, pointerType, "globalLong", Linkage::externalLinkage);
+    Outputs_.GlobalLong = &LlvmGraphImport::Create(
+        rvsdg,
+        int64Type,
+        pointerType,
+        "globalLong",
+        Linkage::externalLinkage);
 
     // Setup the function "func"
     {

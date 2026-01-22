@@ -311,36 +311,11 @@ Region::removeNode(Node * node)
 }
 
 void
-Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const
+Region::copy(Region * target, SubstitutionMap & smap) const
 {
-  smap.insert(this, target);
-
-  if (copy_arguments)
-  {
-    for (const auto oldArgument : Arguments())
-    {
-      const auto input = smap.lookup(oldArgument->input());
-      auto & newArgument = oldArgument->Copy(*target, input);
-      smap.insert(oldArgument, &newArgument);
-    }
-  }
-
-  // copy nodes
   for (const auto node : TopDownConstTraverser(this))
   {
-    JLM_ASSERT(target == smap.lookup(node->region()));
     node->copy(target, smap);
-  }
-
-  if (copy_results)
-  {
-    for (const auto oldResult : Results())
-    {
-      const auto newOrigin = smap.lookup(oldResult->origin());
-      JLM_ASSERT(newOrigin != nullptr);
-      const auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
-      oldResult->Copy(*newOrigin, newOutput);
-    }
   }
 }
 

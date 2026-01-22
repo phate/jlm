@@ -8,10 +8,20 @@
 namespace jlm::llvm
 {
 
-GraphImport &
-GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
+LlvmGraphImport &
+LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
 {
   return Create(*region.graph(), ValueType(), ImportedType(), Name(), linkage(), isConstant());
+}
+
+std::unique_ptr<rvsdg::RvsdgModule>
+LlvmRvsdgModule::copy() const
+{
+  return std::make_unique<LlvmRvsdgModule>(
+      SourceFileName(),
+      TargetTriple(),
+      DataLayout(),
+      Rvsdg().Copy());
 }
 
 }
