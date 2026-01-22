@@ -284,7 +284,9 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
       auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
 
-      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), GetNegativeSCEV(*rhsScev));
+      auto rhsNegativeScev = GetNegativeSCEV(*rhsScev);
+
+      result = std::make_unique<SCEVAddExpr>(std::move(lhsScev), std::move(rhsNegativeScev));
     }
     if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
     {
@@ -292,10 +294,10 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       const auto lhs = simpleNode->input(0)->origin();
       const auto rhs = simpleNode->input(1)->origin();
 
-      const auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
-      const auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
+      auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
+      auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
 
-      result = std::make_unique<SCEVMulExpr>(lhsScev->Clone(), rhsScev->Clone());
+      result = std::make_unique<SCEVMulExpr>(std::move(lhsScev), std::move(rhsScev));
     }
   }
 
@@ -634,7 +636,7 @@ ScalarEvolution::CreateChainRecurrence(
 
       for (auto rhsOperand : rhsChrec->GetOperands())
       {
-        chrec->AddOperand(ApplyMulFolding(lhsOperand, const_cast<SCEV *>(rhsOperand)));
+        chrec->AddOperand(ApplyMulFolding(lhsOperand, rhsOperand));
       }
     }
     else if (rhsSize == 1)
@@ -644,7 +646,7 @@ ScalarEvolution::CreateChainRecurrence(
 
       for (auto lhsOperand : lhsChrec->GetOperands())
       {
-        chrec->AddOperand(ApplyMulFolding(const_cast<SCEV *>(lhsOperand), rhsOperand));
+        chrec->AddOperand(ApplyMulFolding(lhsOperand, rhsOperand));
       }
     }
     else if (lhsSize == 2 && rhsSize == 2)
@@ -754,7 +756,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
   if (lhsNAryMulExpr || rhsNAryMulExpr)
   {
-    // Single multiply expression (other is zero)
+    // Single multiply expression, no folding necessary
     const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     return mulExpr->Clone();
   }
@@ -865,7 +867,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto resultAddExpr = std::make_unique<SCEVNAryAddExpr>();
     for (auto operand : nAryAddExpr->GetOperands())
     {
-      auto product = ApplyMulFolding(const_cast<SCEV *>(operand), other);
+      auto product = ApplyMulFolding(operand, other);
       resultAddExpr->AddOperand(std::move(product));
     }
     return resultAddExpr;
@@ -905,7 +907,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
   if (lhsInit || rhsInit)
   {
-    // Single init node (other operand is treated as identity element 1)
+    // Single init node, no folding necessary
     const auto * init = lhsInit ? lhsInit : rhsInit;
     return init->Clone();
   }
