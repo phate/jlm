@@ -168,34 +168,41 @@ LoopUnswitching::handleGammaExitRegion(
   rvsdg::SubstitutionMap exitSubregionMap;
   for (const auto & [oldInput, oldBranchArgument] : oldGammaNode.GetEntryVars())
   {
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
+    rvsdg::Output * newGammaInputOrigin = nullptr;
+    auto & oldGammaInputOrigin = *oldInput->origin();
+
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(oldGammaInputOrigin))
     {
-      auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
-      auto [_, branchArgument] = newGammaNode.AddEntryVar(oldLoopVar.input->origin());
-      exitSubregionMap.insert(
-          oldBranchArgument[exitSubregionIndex],
-          branchArgument[exitSubregionIndex]);
+      const auto oldLoopVar = oldThetaNode.MapPreLoopVar(oldGammaInputOrigin);
+      newGammaInputOrigin = oldLoopVar.input->origin();
+    }
+    else if (std::holds_alternative<rvsdg::Node *>(oldGammaInputOrigin.GetOwner()))
+    {
+      // The origin is from one of the predicate nodes
+      const auto substitute = &substitutionMap.lookup(oldGammaInputOrigin);
+      newGammaInputOrigin = substitute;
     }
     else
     {
-      auto substitute = &substitutionMap.lookup(*oldInput->origin());
-      auto [_, branchArgument] = newGammaNode.AddEntryVar(substitute);
-      exitSubregionMap.insert(
-          oldBranchArgument[exitSubregionIndex],
-          branchArgument[exitSubregionIndex]);
+      throw std::logic_error("This should have never happened!");
     }
+
+    auto [_, newBranchArgument] = newGammaNode.AddEntryVar(newGammaInputOrigin);
+    exitSubregionMap.insert(
+        oldBranchArgument[exitSubregionIndex],
+        newBranchArgument[exitSubregionIndex]);
   }
 
-  // Copy exit region
   oldExitSubregion->copy(newExitSubregion, exitSubregionMap);
 
   // Update substitution map for insertion of exit variables
   for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
   {
-    auto output = oldLoopVar.post->origin();
-    auto substitute =
-        &exitSubregionMap.lookup(*oldExitSubregion->result(output->index())->origin());
-    exitSubregionMap.insert(oldLoopVar.post->origin(), substitute);
+    const auto output = oldLoopVar.post->origin();
+    auto [oldBranchResult, _] = oldGammaNode.MapOutputExitVar(*output);
+    const auto substitute =
+        &exitSubregionMap.lookup(*oldBranchResult[exitSubregionIndex]->origin());
+    exitSubregionMap.insert(output, substitute);
   }
 
   return exitSubregionMap;
