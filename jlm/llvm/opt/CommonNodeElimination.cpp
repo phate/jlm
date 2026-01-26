@@ -642,29 +642,37 @@ markSubregionsFromInputs(
 
   for (auto & subregion : node.Subregions())
   {
-    // create a partitioning of the region arguments
-    std::vector<size_t> partitions(subregion.narguments());
-    // Arguments that do not belong to any input are given partition keys higher than any real index
-    size_t nextUniquePartitionKey = context.numCongruenceSets();
-
-    for (const auto argument : subregion.Arguments())
+    if (subregion.narguments() == 0)
     {
-      if (const auto input = argument->input())
-      {
-        // If the argument corresponds to an input, use the partition key of the input
-        partitions[argument->index()] = context.getSetFor(*input->origin());
-      }
-      else
-      {
-        // Otherwise make sure the argument is not partitioned with any other argument
-        partitions[argument->index()] = nextUniquePartitionKey++;
-      }
-    }
-
-    if (partitionArguments(subregion, partitions, context))
-    {
-      anyChanges = true;
       markRegion(subregion, context);
+    }
+    else
+    {
+      // create a partitioning of the region arguments
+      std::vector<size_t> partitions(subregion.narguments());
+      // Arguments that do not belong to any input are given partition keys higher than any real
+      // index
+      size_t nextUniquePartitionKey = context.numCongruenceSets();
+
+      for (const auto argument : subregion.Arguments())
+      {
+        if (const auto input = argument->input())
+        {
+          // If the argument corresponds to an input, use the partition key of the input
+          partitions[argument->index()] = context.getSetFor(*input->origin());
+        }
+        else
+        {
+          // Otherwise make sure the argument is not partitioned with any other argument
+          partitions[argument->index()] = nextUniquePartitionKey++;
+        }
+      }
+
+      if (partitionArguments(subregion, partitions, context))
+      {
+        anyChanges = true;
+        markRegion(subregion, context);
+      }
     }
   }
 
