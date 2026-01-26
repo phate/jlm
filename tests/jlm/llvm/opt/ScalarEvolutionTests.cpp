@@ -1060,3 +1060,72 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
 }
+
+TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
+{
+  using namespace jlm::llvm;
+
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto theta1 = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta1->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 1);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto res1 = addNode1.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 5);
+  auto & sltNode1 = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult1 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode1.output(0), { { 1, 1 } }, 0, 2);
+
+  const auto theta2 = jlm::rvsdg::ThetaNode::create(theta1->subregion());
+  const auto lv2 = theta2->AddLoopVar(c1.output(0));
+  const auto lv3 = theta2->AddLoopVar(lv1.pre);
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, lv3.pre }, 32);
+  const auto & res2 = addNode2.output(0);
+
+  const auto & c10 = IntegerConstantOperation::Create(*theta2->subregion(), 32, 10);
+  auto & sltNode2 = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res2, c10.output(0) }, 32);
+
+  const auto matchResult2 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode2.output(0), { { 1, 1 } }, 0, 2);
+
+  theta1->set_predicate(matchResult1);
+  theta2->set_predicate(matchResult2);
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
+
+  // Assert
+  EXPECT_EQ(chrecMap.size(), 3u);
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+
+  // lv1 is a simple induction variable with the recurrence {0,+,1}<1>
+  auto lv1TestChrec = SCEVChainRecurrence(*theta1);
+  lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(0));
+  lv1TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+
+  // lv2 is a nested induction variable, which is incremented by the value of lv1 for each iteration
+  auto lv2TestChrec = SCEVChainRecurrence(*theta2);
+  lv2TestChrec.AddOperand(std::make_unique<SCEVConstant>(1));
+  lv2TestChrec.AddOperand(lv1TestChrec.Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+
+  // lv3 has the same value as lv1, but for the inner loop
+  auto lv3TestChrec = SCEVChainRecurrence(*theta2);
+  lv3TestChrec.AddOperand(lv1TestChrec.Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+}
