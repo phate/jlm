@@ -3,26 +3,27 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp"
-#include "jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp"
-#include "jlm/rvsdg/delta.hpp"
-#include "jlm/rvsdg/gamma.hpp"
-#include "jlm/rvsdg/node.hpp"
-#include "jlm/rvsdg/Phi.hpp"
-#include "jlm/rvsdg/simple-node.hpp"
-#include "jlm/rvsdg/theta.hpp"
-#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
+
 #include <memory>
 
 namespace jlm::llvm
@@ -126,23 +127,17 @@ StoreValueForwarding::traverseIntraProceduralRegion(rvsdg::Region & region)
         },
         [&](rvsdg::SimpleNode & simpleNode)
         {
-          processSimpleNode(simpleNode);
+          if (is<LoadNonVolatileOperation>(&simpleNode))
+          {
+            processLoadNode(simpleNode);
+          }
+
+          // For other node types, we don't need to do anything for store value forwarding
         });
   }
 
   // Any forwarded loads will have been removed
   region.prune(false);
-}
-
-void
-StoreValueForwarding::processSimpleNode(rvsdg::SimpleNode & node)
-{
-  if (is<LoadNonVolatileOperation>(&node))
-  {
-    processLoadNode(node);
-  }
-
-  // For other node types, we don't need to do anything for store value forwarding
 }
 
 void
@@ -192,7 +187,8 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
       return false; // May alias responses always disqualify from forwarding
     case aa::AliasAnalysis::NoAlias:
     {
-      // NoAlias means the store node can be ignored, and tracing can continue on the other side
+      // NoAlias means the store node can be ignored.
+      // Tracing continues from the memory state input corresponding to the memory state output.
       auto & memoryStateInput = StoreOperation::MapMemoryStateOutputToInput(*foundStoreOutput);
       return traceMemoryStateToCommonStore(*memoryStateInput.origin());
     }
@@ -226,7 +222,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   if (!commonStoreNode)
     return;
 
-  performStoreLoadForwarding(*commonStoreNode, loadNode);
+  forwardStoredValue(*commonStoreNode, loadNode);
 }
 
 rvsdg::Output *
@@ -271,7 +267,7 @@ StoreValueForwarding::queryAliasAnalysis(
 }
 
 void
-StoreValueForwarding::performStoreLoadForwarding(
+StoreValueForwarding::forwardStoredValue(
     rvsdg::SimpleNode & storeNode,
     rvsdg::SimpleNode & loadNode)
 {

@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 #define JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 
-#include "jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp"
-#include "jlm/rvsdg/simple-node.hpp"
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
@@ -64,14 +64,6 @@ private:
   traverseIntraProceduralRegion(rvsdg::Region & region);
 
   /**
-   * Process a node during top-down traversal
-   *
-   * @param node the node to process
-   */
-  void
-  processSimpleNode(rvsdg::SimpleNode & node);
-
-  /**
    * Process a non-volatile load node during traversal
    *
    * @param loadNode the load node to handle
@@ -102,7 +94,7 @@ private:
       rvsdg::SimpleNode & storeNode);
 
   /**
-   * Diverts all users of the \ref loadNode to instead take the value stored by the \ref storeNode.
+   * Diverts all users of the \p loadNode to instead take the value stored by the \p storeNode.
    * The store may be in a parent region of the load, in which case the value is routed in.
    *
    * @pre the store and load nodes have matching value types, and the store preceeds the load
@@ -110,7 +102,7 @@ private:
    * @param loadNode the LoadOperation node to be replaced
    */
   void
-  performStoreLoadForwarding(rvsdg::SimpleNode & storeNode, rvsdg::SimpleNode & loadNode);
+  forwardStoredValue(rvsdg::SimpleNode & storeNode, rvsdg::SimpleNode & loadNode);
 
   std::unique_ptr<Context> context_;
 };
