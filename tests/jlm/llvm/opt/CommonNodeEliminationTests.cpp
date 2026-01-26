@@ -556,3 +556,44 @@ TEST(CommonNodeEliminationTests, test_phi)
       jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).input(0)->origin(),
       jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
+
+TEST(CommonNodeEliminationTests, EmptyTheta)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto valueType = TestType::createValueType();
+  auto controlType = ControlType::Create(2);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+
+  auto node1 = TestOperation::createNode(thetaNode->subregion(), {}, { valueType });
+  auto node2 =
+      TestOperation::createNode(thetaNode->subregion(), { node1->output(0) }, { valueType });
+  auto node3 =
+      TestOperation::createNode(thetaNode->subregion(), { node1->output(0) }, { valueType });
+  auto node4 = TestOperation::createNode(
+      thetaNode->subregion(),
+      { node2->output(0), node3->output(0) },
+      { controlType });
+
+  thetaNode->set_predicate(node4->output(0));
+
+  view(rvsdg, stdout);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  thetaNode->subregion()->prune(false);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect that node2 and node3 are unified in the theta subregion
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 3);
+}

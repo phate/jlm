@@ -110,6 +110,11 @@ The MLIR RVSDG dialect and the MLIR backend can be setup with the following comm
 An introduction to the RVSDG and the optimizations supported by jlm can be found in the
 following articles:
 
+H. R. Krogstie, H. Bahmann, M. Själander, and N. Reissmann
+*"PIP: Making Andersen's Points-to Analysis Sound and Practical for Incomplete C Programs"*
+Proceedings of the ACM/IEEE International Conference on Code Generation and Optimization (CGO), Feb. 2026.
+https://www.arxiv.org/pdf/2512.07299
+
 D. Metz, N. Reissmann, and M. Själander
 *"R-HLS: An IR for Dynamic High-Level Synthesis and Memory Disambiguation based on Regions and State Edges"*
 Proceedings of the ACM/IEEE International Conference on Computer-Aided Design (ICCAD), Oct. 2024.
