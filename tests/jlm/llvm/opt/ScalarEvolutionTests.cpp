@@ -18,6 +18,8 @@ static std::
     RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
   const auto ctx = jlm::llvm::ScalarEvolution::CreateContext();
+  jlm::llvm::ScalarEvolution::AnalyzeRegion(rvsdgModule.Rvsdg().GetRootRegion(), *ctx);
+  jlm::llvm::ScalarEvolution::FoldChrecsInNestedLoops(*ctx);
   return ctx->GetChrecs();
 }
 

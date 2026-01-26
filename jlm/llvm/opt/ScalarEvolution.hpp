@@ -548,11 +548,18 @@ public:
   static void
   PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context & ctx);
 
+  static void
+  FoldChrecsInNestedLoops(Context & ctx);
+
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
   static void
   AnalyzeRegion(const rvsdg::Region & region, Context & ctx);
+
+  static std::optional<std::unique_ptr<SCEV>>
+  TryReplaceInitForSCEV(const SCEV & scev, Context & ctx);
+
 private:
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
