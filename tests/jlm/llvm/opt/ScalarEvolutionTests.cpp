@@ -15,11 +15,10 @@
 
 static std::
     unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>
-    RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
+    RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
-  jlm::llvm::ScalarEvolution scalarEvolution;
-  auto chrecMap = scalarEvolution.PerformSCEVAnalysis(thetaNode);
-  return chrecMap;
+  const auto ctx = jlm::llvm::ScalarEvolution::CreateContext();
+  return ctx->GetChrecs();
 }
 
 TEST(ScalarEvolutionTests, ConstantInductionVariable)
@@ -44,7 +43,7 @@ TEST(ScalarEvolutionTests, ConstantInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto chrecMap = RunScalarEvolution(*theta);
+  const auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 1u);
@@ -88,7 +87,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -148,7 +147,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -204,7 +203,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -263,7 +262,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 3u);
@@ -334,7 +333,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -386,7 +385,7 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 1u);
@@ -438,7 +437,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -500,7 +499,7 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -551,7 +550,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 1u);
@@ -600,7 +599,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -678,7 +677,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 4u);
@@ -787,7 +786,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 4u);
@@ -881,7 +880,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 1u);
@@ -928,7 +927,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -983,7 +982,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 2u);
@@ -1042,7 +1041,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(*theta);
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_EQ(chrecMap.size(), 4u);
