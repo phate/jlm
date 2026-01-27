@@ -44,6 +44,12 @@ public:
   {
     return std::make_unique<SCEVUnknown>();
   }
+
+  static std::unique_ptr<SCEVUnknown>
+  Create()
+  {
+    return std::make_unique<SCEVUnknown>();
+  }
 };
 
 class SCEVInit final : public SCEV
@@ -71,6 +77,12 @@ public:
   Clone() const override
   {
     return std::make_unique<SCEVInit>(*PrePointer_);
+  }
+
+  static std::unique_ptr<SCEVInit>
+  Create(const rvsdg::Output & prePointer)
+  {
+    return std::make_unique<SCEVInit>(prePointer);
   }
 
 private:
@@ -104,6 +116,12 @@ public:
     return std::make_unique<SCEVPlaceholder>(*PrePointer_);
   }
 
+  static std::unique_ptr<SCEVPlaceholder>
+  Create(const rvsdg::Output & PrePointer_)
+  {
+    return std::make_unique<SCEVPlaceholder>(PrePointer_);
+  }
+
 private:
   const rvsdg::Output * PrePointer_;
 };
@@ -131,6 +149,12 @@ public:
   Clone() const override
   {
     return std::make_unique<SCEVConstant>(Value_);
+  }
+
+  static std::unique_ptr<SCEVConstant>
+  Create(const int64_t value)
+  {
+    return std::make_unique<SCEVConstant>(value);
   }
 
 private:
@@ -203,6 +227,12 @@ public:
     std::unique_ptr<SCEV> rightClone = RightOperand_ ? RightOperand_->Clone() : nullptr;
     return std::make_unique<SCEVAddExpr>(std::move(leftClone), std::move(rightClone));
   }
+
+  static std::unique_ptr<SCEVAddExpr>
+  Create(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+  {
+    return std::make_unique<SCEVAddExpr>(std::move(left), std::move(right));
+  }
 };
 
 class SCEVMulExpr final : public SCEVBinaryExpr
@@ -229,12 +259,16 @@ public:
     std::unique_ptr<SCEV> rightClone = RightOperand_ ? RightOperand_->Clone() : nullptr;
     return std::make_unique<SCEVMulExpr>(std::move(leftClone), std::move(rightClone));
   }
+
+  static std::unique_ptr<SCEVMulExpr>
+  Create(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+  {
+    return std::make_unique<SCEVMulExpr>(std::move(left), std::move(right));
+  }
 };
 
 class SCEVNAryExpr : public SCEV
 {
-  friend class ScalarEvolution;
-
 public:
   explicit SCEVNAryExpr()
       : Operands_{}
@@ -298,8 +332,6 @@ protected:
 
 class SCEVChainRecurrence final : public SCEVNAryExpr
 {
-  friend class ScalarEvolution;
-
 public:
   explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
       : SCEVNAryExpr(),
@@ -350,6 +382,12 @@ public:
     return copy;
   }
 
+  static std::unique_ptr<SCEVChainRecurrence>
+  Create(const rvsdg::ThetaNode & loop)
+  {
+    return std::make_unique<SCEVChainRecurrence>(loop);
+  }
+
 protected:
   const rvsdg::ThetaNode * Loop_;
 };
@@ -393,6 +431,13 @@ public:
     }
     return copy;
   }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVNAryAddExpr>
+  Create(Args &&... operands)
+  {
+    return std::make_unique<SCEVNAryAddExpr>(std::forward<Args>(operands)...);
+  }
 };
 
 class SCEVNAryMulExpr final : public SCEVNAryExpr
@@ -433,6 +478,13 @@ public:
       copy->AddOperand(op->Clone());
     }
     return copy;
+  }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVNAryMulExpr>
+  Create(Args &&... operands)
+  {
+    return std::make_unique<SCEVNAryMulExpr>(std::forward<Args>(operands)...);
   }
 };
 
