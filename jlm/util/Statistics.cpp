@@ -43,6 +43,7 @@ GetStatisticsIdNames()
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },
     { Statistics::Id::RvsdgTreePrinter, "RvsdgTreePrinter" },
     { Statistics::Id::ScalarEvolution, "ScalarEvolution" },
+    { Statistics::Id::StoreValueForwarding, "StoreValueForwarding" },
   };
   // Make sure every Statistic is mentioned in the mapping
   auto lastIdx = static_cast<size_t>(Statistics::Id::LastEnumValue);
