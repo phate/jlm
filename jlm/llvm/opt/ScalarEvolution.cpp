@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -59,7 +58,7 @@ clone_as(const SCEV & scev)
 {
   auto cloned = scev.Clone();
   auto * ptr = dynamic_cast<T *>(cloned.release());
-  JLM_ASSERT(ptr && "Cannot create unique_ptr from pointer because pointer is undefined!");
+  JLM_ASSERT(ptr);
   return std::unique_ptr<T>(ptr);
 }
 
@@ -158,7 +157,7 @@ ScalarEvolution::Run(
   const auto ctx = Context::Create();
   const rvsdg::Region & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   AnalyzeRegion(rootRegion, *ctx);
-  FoldChrecsInNestedLoops(*ctx);
+  FoldChrecsAcrossLoops(*ctx);
 
   statistics->Stop(*ctx);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -223,12 +222,17 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev, Context & ctx)
       const auto & inputOrigin = llvm::traceOutput(*correspondingInput->origin());
       if (const auto originSCEV = ctx.TryGetSCEVForOutput(inputOrigin))
       {
-        // We have found a SCEV for the origin of the input
-        if (const auto outerTheta = dynamic_cast<rvsdg::ThetaNode *>(inputOrigin.region()->node()))
-        {
-          // Create a chain recurrence for the SCEV, with the outer theta as the loop
-          return GetOrCreateChainRecurrence(inputOrigin, *originSCEV, *outerTheta, ctx);
-        }
+        // We have found a SCEV for the origin of the input, find the corresponding theta node so we
+        // can create a recurrence for it
+        const auto thetaParent = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(inputOrigin);
+        const auto outerTheta = thetaParent ? thetaParent : dynamic_cast<rvsdg::ThetaNode *>(inputOrigin.region()->node());
+
+        JLM_ASSERT(outerTheta);
+
+        const auto chrec = GetOrCreateChainRecurrence(inputOrigin, *originSCEV, *outerTheta, ctx);
+
+        // Create a chain recurrence for the SCEV, with the outer theta as the loop
+        return chrec->Clone();
       }
     }
   }
@@ -308,7 +312,7 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev, Context & ctx)
 }
 
 void
-ScalarEvolution::FoldChrecsInNestedLoops(Context & ctx)
+ScalarEvolution::FoldChrecsAcrossLoops(Context & ctx)
 {
   bool changed{};
   do
@@ -533,7 +537,7 @@ ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
       }
     }
   }
-  JLM_ASSERT(result.size() == numVertices && "Dependency graph can't contain cycles!");
+  JLM_ASSERT(result.size() == numVertices);
   return result;
 }
 
@@ -594,24 +598,10 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context
     // Process valid induction variables
     const auto loopVarPre = allVars[i];
     const auto loopVar = thetaNode.MapPreLoopVar(*loopVarPre);
-    const auto post = loopVar.post;
-    const auto scev = ctx.TryGetSCEVForOutput(*post->origin());
+    const auto loopVarPost = loopVar.post;
+    const auto scev = ctx.TryGetSCEVForOutput(*loopVarPost->origin());
 
-    auto chainRecurrence = GetOrCreateChainRecurrence(*loopVarPre, *scev, thetaNode, ctx);
-
-    // Find the start value for the recurrence
-    if (auto const constantInteger = tryGetConstantSignedInteger(*loopVar.input->origin()))
-    {
-      // If the input value is a constant, create a SCEV representation and set it as start
-      // value (first operand in rec)
-      chainRecurrence->AddOperandToFront(SCEVConstant::Create(*constantInteger));
-    }
-    else
-    {
-      // If not, create a SCEVInit node representing the start value
-      chainRecurrence->AddOperandToFront(SCEVInit::Create(*loopVarPre));
-    }
-    ctx.InsertChrec(*loopVarPre, chainRecurrence);
+    ctx.InsertChrec(*loopVarPre, GetOrCreateChainRecurrence(*loopVarPre, *scev, thetaNode, ctx));
   }
 
   for (size_t i = order.size(); i < allVars.size(); ++i)
@@ -626,6 +616,39 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context
 
 std::unique_ptr<SCEVChainRecurrence>
 ScalarEvolution::GetOrCreateChainRecurrence(
+    const rvsdg::Output & output,
+    const SCEV & scev,
+    const rvsdg::ThetaNode & thetaNode,
+    Context & ctx)
+{
+  if (const auto existing = ctx.TryGetChrecForOutput(output))
+  {
+    return clone_as<SCEVChainRecurrence>(*existing);
+  }
+
+  auto stepRecurrence = GetOrCreateStepForSCEV(output, scev, thetaNode, ctx);
+
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    // Find the start value for the recurrence
+    const auto inputOrigin = thetaNode.MapPreLoopVar(output).input->origin();
+    if (const auto constantInteger = tryGetConstantSignedInteger(*inputOrigin))
+    {
+      // If the input value is a constant, create a SCEV representation and set it as start
+      // value (first operand in rec)
+      stepRecurrence->AddOperandToFront(SCEVConstant::Create(*constantInteger));
+    }
+    else
+    {
+      // If not, create a SCEVInit node representing the start value
+      stepRecurrence->AddOperandToFront(SCEVInit::Create(output));
+    }
+  }
+  return stepRecurrence;
+}
+
+std::unique_ptr<SCEVChainRecurrence>
+ScalarEvolution::GetOrCreateStepForSCEV(
     const rvsdg::Output & output,
     const SCEV & scevTree,
     const rvsdg::ThetaNode & thetaNode,
@@ -664,41 +687,22 @@ ScalarEvolution::GetOrCreateChainRecurrence(
   }
   if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
-    // We have the following folding rules from the CR algebra:
-    // G + {e,+,f}         =>       {G + e,+,f}         (1)
-    // {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
-    //
-    // And by generalizing rule 2, we have that:
-    // {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
-    //
-    // Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
-    // node, we can therefore pad the constant recurrence with however many zeroes we need for the
-    // length of the other recurrence. This effectively lets us apply both rules in one go.
+    const auto lhsStep =
+        GetOrCreateStepForSCEV(output, *scevAddExpr->GetLeftOperand(), thetaNode, ctx);
+    const auto rhsStep =
+        GetOrCreateStepForSCEV(output, *scevAddExpr->GetRightOperand(), thetaNode, ctx);
 
-    const auto lhsChrec =
-        GetOrCreateChainRecurrence(output, *scevAddExpr->GetLeftOperand(), thetaNode, ctx);
-    const auto rhsChrec =
-        GetOrCreateChainRecurrence(output, *scevAddExpr->GetRightOperand(), thetaNode, ctx);
-
-    return clone_as<SCEVChainRecurrence>(*ApplyAddFolding(lhsChrec.get(), rhsChrec.get()));
+    return clone_as<SCEVChainRecurrence>(*ApplyAddFolding(lhsStep.get(), rhsStep.get()));
   }
   if (const auto scevMulExpr = dynamic_cast<const SCEVMulExpr *>(&scevTree))
   {
-    // We have the following folding rules from the CR algebra:
-    // G * {e,+,f}         =>       {G * e,+,G * f}
-    // {e,+,f} * {g,+,h}   =>       {e * g,+,e * h + f * g + f * h,+,2*f*h}
-    //
-    // AFAIK these are the only rules that we are able to support as there is no general rule for
-    // folding two addrecs of arbitrary length with the multiplication operation
+    const auto lhsStep =
+        GetOrCreateStepForSCEV(output, *scevMulExpr->GetLeftOperand(), thetaNode, ctx);
+    const auto rhsStep =
+        GetOrCreateStepForSCEV(output, *scevMulExpr->GetRightOperand(), thetaNode, ctx);
 
-    const auto lhsChrec =
-        GetOrCreateChainRecurrence(output, *scevMulExpr->GetLeftOperand(), thetaNode, ctx);
-    const auto rhsChrec =
-        GetOrCreateChainRecurrence(output, *scevMulExpr->GetRightOperand(), thetaNode, ctx);
-
-    return clone_as<SCEVChainRecurrence>(*ApplyMulFolding(lhsChrec.get(), rhsChrec.get()));
+    return clone_as<SCEVChainRecurrence>(*ApplyMulFolding(lhsStep.get(), rhsStep.get()));
   }
-  JLM_ASSERT(false && "Unknown SCEV type in GetOrCreateChainRecurrence!");
   return chrec;
 }
 
@@ -712,6 +716,17 @@ std::unique_ptr<SCEV>
 ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
   // Apply folding rules for addition
+  //
+  // We have the following folding rules from the CR algebra:
+  // G + {e,+,f}         =>       {G + e,+,f}         (1)
+  // {e,+,f} + {g,+,h}   =>       {e + g,+,f + h}     (2)
+  //
+  // And by generalizing rule 2, we have that:
+  // {G,+,0} + {e,+,f} = {G + e,+,0 + f} = {G + e,+,f}
+  //
+  // Since we represent constants in the SCEVTree as recurrences consisting of only a SCEVConstant
+  // node, we can therefore pad the constant recurrence with however many zeroes we need for the
+  // length of the other recurrence. This effectively lets us apply both rules in one go.
   //
   // For constants and unknowns this is trivial, however it becomes a bit complicated when we
   // factor in SCEVInit nodes. These nodes represent the initial value of an IV in the case where
@@ -924,6 +939,10 @@ std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
   // Apply folding rules for multiplication
+  //
+  // We have the following folding rules from the CR algebra:
+  // G * {e,+,f}         =>       {G * e,+,G * f}
+  // {e,+,f} * {g,+,h}   =>       {e * g,+,e * h + f * g + f * h,+,2*f*h}
   //
   // Similar to addition, we need to handle SCEVInit nodes and n-ary expressions.
   // For multiplication with init nodes, we create n-ary multiply expressions.

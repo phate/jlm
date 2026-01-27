@@ -561,7 +561,7 @@ public:
     // Helper struct to keep track of dependencies between loop variables.
 
     int count; // How many times the dependency occurs. A variable can be dependent on other
-               // variables (or itself) multiple times.)
+               // variables (or itself) multiple times.
     DependencyOp operation; // The operation of the dependency (Add, Mul or None)
 
     explicit DependencyInfo(const int c = 0, const DependencyOp op = DependencyOp::None)
@@ -598,19 +598,13 @@ public:
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
-  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context & ctx);
+  AnalyzeRegion(const rvsdg::Region & region, Context & ctx);
 
   static void
-  FoldChrecsInNestedLoops(Context & ctx);
+  FoldChrecsAcrossLoops(Context & ctx);
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
-
-  static void
-  AnalyzeRegion(const rvsdg::Region & region, Context & ctx);
-
-  static std::optional<std::unique_ptr<SCEV>>
-  TryReplaceInitForSCEV(const SCEV & scev, Context & ctx);
 
 private:
   static std::unique_ptr<SCEV>
@@ -628,8 +622,21 @@ private:
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
 
+  static void
+  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context & ctx);
+
+  static std::optional<std::unique_ptr<SCEV>>
+  TryReplaceInitForSCEV(const SCEV & scev, Context & ctx);
+
   static std::unique_ptr<SCEVChainRecurrence>
   GetOrCreateChainRecurrence(
+      const rvsdg::Output & output,
+      const SCEV & scev,
+      const rvsdg::ThetaNode & thetaNode,
+      Context & ctx);
+
+  static std::unique_ptr<SCEVChainRecurrence>
+  GetOrCreateStepForSCEV(
       const rvsdg::Output & output,
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode,
