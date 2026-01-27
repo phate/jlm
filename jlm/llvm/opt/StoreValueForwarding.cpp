@@ -86,11 +86,10 @@ StoreValueForwarding::StoreValueForwarding()
 void
 StoreValueForwarding::traverseInterProceduralRegion(rvsdg::Region & region)
 {
-  rvsdg::TopDownTraverser traverser(&region);
-  for (auto node : traverser)
+  for (auto & node : region.Nodes())
   {
     rvsdg::MatchTypeOrFail(
-        *node,
+        node,
         [&](rvsdg::PhiNode & phiNode)
         {
           traverseInterProceduralRegion(*phiNode.subregion());
@@ -150,7 +149,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
 
   // Extract info about the loaded address and loaded type
   auto & loadedAddress = llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
-  auto loadedType = LoadOperation::LoadedValueType(loadNode);
+  auto loadedType = LoadOperation::LoadedValueOutput(loadNode).Type();
   const auto loadedTypeSize = GetTypeStoreSize(*loadedType);
 
   // Try tracing all memory state inputs to the same store node.
@@ -201,7 +200,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
       return false;
 
     // Only allow forwarding values with identical types
-    auto storedType = StoreOperation::StoredValueType(foundStoreNode);
+    auto storedType = StoreOperation::StoredValueInput(foundStoreNode).Type();
     if (*storedType != *loadedType)
       return false;
 
@@ -259,7 +258,7 @@ StoreValueForwarding::queryAliasAnalysis(
   localAA.setMaxTraceCollectionSize(1);
 
   const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
-  const auto storeType = StoreOperation::StoredValueType(storeNode);
+  const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
   const auto storedSize = GetTypeStoreSize(*storeType);
 
   // Query the alias analysis

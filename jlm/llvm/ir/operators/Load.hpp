@@ -89,12 +89,6 @@ public:
     return *output;
   }
 
-  [[nodiscard]] static std::shared_ptr<const rvsdg::Type>
-  LoadedValueType(const rvsdg::Node & node)
-  {
-    return LoadedValueOutput(node).Type();
-  }
-
   /**
    * Returns a range over the memory state outputs of a \ref LoadOperation node.
    *

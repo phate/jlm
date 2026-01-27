@@ -89,12 +89,6 @@ public:
     return input;
   }
 
-  [[nodiscard]] static std::shared_ptr<const rvsdg::Type>
-  StoredValueType(const rvsdg::Node & node) noexcept
-  {
-    return StoredValueInput(node).Type();
-  }
-
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {
