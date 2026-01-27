@@ -595,5 +595,5 @@ TEST(CommonNodeEliminationTests, EmptyTheta)
 
   // Assert
   // We expect that node2 and node3 are unified in the theta subregion
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 3);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 3u);
 }
