@@ -1127,3 +1127,154 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   lv3TestChrec.AddOperand(lv1TestChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
+
+TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
+{
+  using namespace jlm::llvm;
+
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c2_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
+  const auto & c3_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 3);
+
+  const auto theta1 = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1_1 = theta1->AddLoopVar(c0_1.output(0));
+  const auto lv2_1 = theta1->AddLoopVar(c2_1.output(0));
+  const auto lv3_1 = theta1->AddLoopVar(c3_1.output(0));
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 1);
+  const auto & c2_2 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 2);
+  const auto & c3_2 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 3);
+
+  auto & addNode1 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1_1.pre, c1_2.output(0) }, 32);
+  auto & addNode2 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2_1.pre, c2_2.output(0) }, 32);
+  auto & addNode3 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3_1.pre, c3_2.output(0) }, 32);
+  const auto res1 = addNode1.output(0);
+  const auto res2 = addNode2.output(0);
+  const auto res3 = addNode3.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 5);
+  auto & sltNode1 = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult1 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode1.output(0), { { 1, 1 } }, 0, 2);
+
+  const auto theta2 = jlm::rvsdg::ThetaNode::create(theta1->subregion());
+  const auto lv1_2 = theta2->AddLoopVar(res1);
+  const auto lv2_2 = theta2->AddLoopVar(res2);
+  const auto lv3_2 = theta2->AddLoopVar(res3);
+  const auto lv4 = theta2->AddLoopVar(c1_2.output(0));
+  const auto lv5 = theta2->AddLoopVar(c1_2.output(0));
+
+  auto & addNode4 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1_2.pre, lv2_2.pre }, 32);
+  auto & addNode5 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ addNode4.output(0), lv3_2.pre }, 32);
+  auto & addNode6 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv4.pre, addNode5.output(0) }, 32);
+  const auto & res4 = addNode6.output(0);
+
+  auto & mulNode1 = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1_2.pre, lv2_2.pre }, 32);
+  auto & addNode7 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv5.pre, mulNode1.output(0) }, 32);
+  const auto & res5 = addNode7.output(0);
+
+  const auto & c10 = IntegerConstantOperation::Create(*theta2->subregion(), 32, 10);
+  auto & sltNode2 = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res4, c10.output(0) }, 32);
+
+  const auto matchResult2 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode2.output(0), { { 1, 1 } }, 0, 2);
+
+  // Outer loop
+  theta1->set_predicate(matchResult1);
+  lv1_1.post->divert_to(res1);
+  lv2_1.post->divert_to(res2);
+  lv3_1.post->divert_to(res3);
+
+  // Inner loop
+  theta2->set_predicate(matchResult2);
+  lv4.post->divert_to(res4);
+  lv5.post->divert_to(res5);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
+
+  // Assert
+  EXPECT_EQ(chrecMap.size(), 8u);
+  EXPECT_NE(chrecMap.find(lv1_1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2_1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3_1.pre), chrecMap.end());
+
+  EXPECT_NE(chrecMap.find(lv4.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv5.pre), chrecMap.end());
+
+  // lv1 is a simple induction variable with the recurrence {0,+,1}<1>
+  auto lv1TestChrec = SCEVChainRecurrence(*theta1);
+  lv1TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv1TestChrec.AddOperand(SCEVConstant::Create(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1_1.pre)));
+
+  // lv2 is a simple induction variable with the recurrence {2,+,2}<1>
+  auto lv2TestChrec = SCEVChainRecurrence(*theta1);
+  lv2TestChrec.AddOperand(SCEVConstant::Create(2));
+  lv2TestChrec.AddOperand(SCEVConstant::Create(2));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2_1.pre)));
+
+  // lv3 is a simple induction variable with the recurrence {3,+,3}<1>
+  auto lv3TestChrec = SCEVChainRecurrence(*theta1);
+  lv3TestChrec.AddOperand(SCEVConstant::Create(3));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(3));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3_1.pre)));
+
+  // lv1_2 is lv1_1 incremented by 1 but in the inner loop
+  auto lv1_2TestChrec = SCEVChainRecurrence(*theta2);
+  const auto lv1_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  lv1_2InnerChrec->AddOperand(SCEVConstant::Create(1));
+  lv1_2InnerChrec->AddOperand(SCEVConstant::Create(1));
+  lv1_2TestChrec.AddOperand(lv1_2InnerChrec->Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1_2TestChrec, *chrecMap.at(lv1_2.pre)));
+
+  // lv2_2 is lv2_1 incremented by 2 but in the inner loop
+  auto lv2_2TestChrec = SCEVChainRecurrence(*theta2);
+  const auto lv2_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  lv2_2InnerChrec->AddOperand(SCEVConstant::Create(4));
+  lv2_2InnerChrec->AddOperand(SCEVConstant::Create(2));
+  lv2_2TestChrec.AddOperand(lv2_2InnerChrec->Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2_2TestChrec, *chrecMap.at(lv2_2.pre)));
+
+  // lv3_2 is lv3_1 incremented by 3 but in the inner loop
+  auto lv3_2TestChrec = SCEVChainRecurrence(*theta2);
+  const auto lv3_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  lv3_2InnerChrec->AddOperand(SCEVConstant::Create(6));
+  lv3_2InnerChrec->AddOperand(SCEVConstant::Create(3));
+  lv3_2TestChrec.AddOperand(lv3_2InnerChrec->Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3_2TestChrec, *chrecMap.at(lv3_2.pre)));
+
+  // lv4 is in the inner loop and has a start value of 1 which is incremented by the result of
+  // folding ({1,+,1}<1> + {4,+,2}<1> + {6,+,3}<1>) = {11,+,6}<1>. Recurrence: {1,+,{11,+,6}<1>}<2>
+  auto lv4TestChrec = SCEVChainRecurrence(*theta2);
+  lv4TestChrec.AddOperand(SCEVConstant::Create(1));
+  const auto lv4InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  lv4InnerChrec->AddOperand(SCEVConstant::Create(11));
+  lv4InnerChrec->AddOperand(SCEVConstant::Create(6));
+  lv4TestChrec.AddOperand(lv4InnerChrec->Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
+
+  // lv5 is in the inner loop and has a start value of 1 which is incremented by the result of
+  // folding ({1,+,1}<1> * {4,+,2}<1>) = {4,+,8,+,4}<1>. Recurrence: {1,+,{4,+,8,+,4}<1>}<2>
+  auto lv5TestChrec = SCEVChainRecurrence(*theta2);
+  lv5TestChrec.AddOperand(SCEVConstant::Create(1));
+  const auto lv5InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  lv5InnerChrec->AddOperand(SCEVConstant::Create(4));
+  lv5InnerChrec->AddOperand(SCEVConstant::Create(8));
+  lv5InnerChrec->AddOperand(SCEVConstant::Create(4));
+  lv5TestChrec.AddOperand(lv5InnerChrec->Clone());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv5TestChrec, *chrecMap.at(lv5.pre)));
+}
