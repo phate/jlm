@@ -519,7 +519,7 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
     GetNumOfChrecsWithOrder(const int n) const;
 
     size_t
-    GetNumOfTotalChrecs() const;
+    GetNumTotalChrecs() const;
 
     void
     AddLoopVar(const rvsdg::Output & var);
@@ -601,7 +601,7 @@ public:
   AnalyzeRegion(const rvsdg::Region & region, Context & ctx);
 
   static void
-  FoldChrecsAcrossLoops(Context & ctx);
+  CombineChrecsAcrossLoops(Context & ctx);
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
@@ -614,7 +614,9 @@ private:
   GetOrCreateSCEVForOutput(const rvsdg::Output & output, Context & ctx);
 
   static IVDependencyGraph
-  CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode, const Context & ctx);
+  CreateDependencyGraph(
+      const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars,
+      const Context & ctx);
 
   static void
   FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);

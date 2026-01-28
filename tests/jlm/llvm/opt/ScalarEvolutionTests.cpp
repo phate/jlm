@@ -19,7 +19,7 @@ static std::
 {
   const auto ctx = jlm::llvm::ScalarEvolution::CreateContext();
   jlm::llvm::ScalarEvolution::AnalyzeRegion(rvsdgModule.Rvsdg().GetRootRegion(), *ctx);
-  jlm::llvm::ScalarEvolution::FoldChrecsAcrossLoops(*ctx);
+  jlm::llvm::ScalarEvolution::CombineChrecsAcrossLoops(*ctx);
   return ctx->GetChrecs();
 }
 
