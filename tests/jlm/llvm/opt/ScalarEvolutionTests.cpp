@@ -1213,6 +1213,9 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
   EXPECT_NE(chrecMap.find(lv2_1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3_1.pre), chrecMap.end());
 
+  EXPECT_NE(chrecMap.find(lv1_2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2_2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3_2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv4.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv5.pre), chrecMap.end());
 
