@@ -37,7 +37,7 @@ public:
   Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumTotalRecurrences, context.GetNumOfTotalChrecs());
+    AddMeasurement(Label::NumTotalRecurrences, context.GetNumTotalChrecs());
     AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
     AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
     AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
