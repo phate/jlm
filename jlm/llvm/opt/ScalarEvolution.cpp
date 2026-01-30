@@ -287,49 +287,10 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev, Context & ctx)
       // Result is a new chain recurrence, return it
       return clone;
     }
-
-    if (dynamic_cast<const SCEVNAryExpr *>(&scev))
-    {
-      // If it is a n-ary expression, we try to fold the operands into themselves, e.g. if, after
-      // replacing Init nodes with recurrences, we have ({0,+,1} + {1,+,2}) in an n-ary add
-      // expression, we can fold this into {1,+,3}.
-      bool folded{};
-      do
-      {
-        folded = false;
-        for (size_t i = 1; i < clone->GetOperands().size(); ++i)
-        {
-          std::vector<const SCEV *> ops = clone->GetOperands();
-          const auto firstOp = ops[i - 1];
-          const auto secondOp = ops[i];
-          std::unique_ptr<SCEV> foldedOperand{};
-          if (dynamic_cast<const SCEVNAryAddExpr *>(&scev))
-          {
-            foldedOperand = ApplyAddFolding(firstOp, secondOp);
-          }
-          else
-          {
-            foldedOperand = ApplyMulFolding(firstOp, secondOp);
-          }
-
-          if (foldedOperand)
-          {
-            clone->RemoveOperand(i);
-            clone->SwapOperand(i - 1, foldedOperand);
-
-            folded = true;
-          }
-        }
-      } while (folded);
-
-      if (clone->GetOperands().size() == 1)
-      {
-        // If there is only one operand in the n-ary expression, we just return the operand
-        return clone->GetOperand(0)->Clone();
-      }
-    }
-
-    return clone;
+    // If it is an n-ary expression (Add or Mul), we try to fold the operands into themselves, e.g.
+    // if, after replacing Init nodes with recurrences, we have ({0,+,1} + {1,+,2}) in an n-ary add
+    // expression, we can fold this into {1,+,3}.
+    return FoldNAryExpression(*clone);
   }
   // Default is to just return nothing
   return std::nullopt;
@@ -686,6 +647,52 @@ isNonZeroConstant(const SCEVConstant * c)
 }
 
 std::unique_ptr<SCEV>
+ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
+{
+  bool folded{};
+  do
+  {
+    folded = false;
+    for (size_t i = 0; i < expression.GetOperands().size(); ++i)
+    {
+      std::vector<const SCEV *> ops = expression.GetOperands();
+      if (dynamic_cast<const SCEVInit *>(ops[i]))
+        continue; // Cannot fold init
+      for (size_t j = i + 1; j < expression.GetOperands().size(); ++j)
+      {
+        if (dynamic_cast<const SCEVInit *>(ops[j]))
+          continue;
+
+        // Both are foldable (constants or recurrences) fold them according to the rules
+        std::unique_ptr<SCEV> foldedOperand{};
+        if (dynamic_cast<SCEVNAryAddExpr *>(&expression))
+        {
+          foldedOperand = ApplyAddFolding(ops[i], ops[j]);
+        }
+        else
+        {
+          foldedOperand = ApplyMulFolding(ops[i], ops[j]);
+        }
+        expression.RemoveOperand(j);
+        expression.SwapOperand(i, foldedOperand);
+        folded = true;
+        break;
+      }
+      if (folded)
+        break;
+    }
+  } while (folded);
+
+  if (expression.GetOperands().size() == 1)
+  {
+    // If there is only one operand in the n-ary expression, we just return the operand
+    return expression.GetOperand(0)->Clone();
+  }
+
+  return expression.Clone();
+}
+
+std::unique_ptr<SCEV>
 ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
   // Apply folding rules for addition
@@ -795,8 +802,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // term
     const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     auto * addExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
-    auto addExprClone = addExpr->Clone();
-    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    auto newAddExpr = clone_as<SCEVNAryExpr>(*addExpr);
     newAddExpr->AddOperand(mulExpr->Clone());
     return newAddExpr->Clone();
   }
@@ -840,8 +846,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // We have an init and an add expr. Clone the add expression and add the init as an operand
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
-    auto addExprClone = nAryAddExpr->Clone();
-    auto newAddExpr = dynamic_cast<SCEVNAryAddExpr *>(addExprClone.get());
+    auto newAddExpr = clone_as<SCEVNAryAddExpr>(*nAryAddExpr);
     newAddExpr->AddOperand(init->Clone());
     return newAddExpr->Clone();
   }
@@ -864,13 +869,12 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   if (lhsNAryAddExpr && rhsNAryAddExpr)
   {
     // We have two add expressions. Clone the lhs and add the rhs operands
-    auto lhsNAryAddExprClone = lhsNAryAddExpr->Clone();
-    auto lhsNewNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(lhsNAryAddExprClone.get());
+    auto lhsNewNAryAddExpr = clone_as<SCEVNAryAddExpr>(*lhsNAryAddExpr);
     for (auto op : rhsNAryAddExpr->GetOperands())
     {
       lhsNewNAryAddExpr->AddOperand(op->Clone());
     }
-    return lhsNewNAryAddExpr->Clone();
+    return FoldNAryExpression(*lhsNewNAryAddExpr);
   }
 
   if ((lhsNAryAddExpr && isNonZeroConstant(rhsConstant))
@@ -879,10 +883,9 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // We have an add expr and a nonzero constant. Clone the add expr and add the constant
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
-    auto nAryAddExprClone = nAryAddExpr->Clone();
-    auto newNAryAddExpr = dynamic_cast<SCEVNAryAddExpr *>(nAryAddExprClone.get());
+    auto newNAryAddExpr = clone_as<SCEVNAryAddExpr>(*nAryAddExpr);
     newNAryAddExpr->AddOperand(constant->Clone());
-    return newNAryAddExpr->Clone();
+    return FoldNAryExpression(*newNAryAddExpr);
   }
 
   if (lhsNAryAddExpr || rhsNAryAddExpr)
@@ -1066,8 +1069,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // Init node with n-ary multiply expression - Clone mult expr and add init as an operand
     const auto * init = lhsInit ? lhsInit : rhsInit;
     auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
-    auto nAryMulExprClone = nAryMulExpr->Clone();
-    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    auto newNAryMulExpr = clone_as<SCEVNAryMulExpr>(*nAryMulExpr);
     newNAryMulExpr->AddOperand(init->Clone());
     return newNAryMulExpr->Clone();
   }
@@ -1093,13 +1095,12 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   if (lhsNAryMulExpr && rhsNAryMulExpr)
   {
     // Two n-ary mult expressions - combine operands
-    auto lhsNAryMulExprClone = lhsNAryMulExpr->Clone();
-    auto lhsNewNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(lhsNAryMulExprClone.get());
+    auto lhsNewNAryMulExpr = clone_as<SCEVNAryMulExpr>(*lhsNAryMulExpr);
     for (auto op : rhsNAryMulExpr->GetOperands())
     {
       lhsNewNAryMulExpr->AddOperand(op->Clone());
     }
-    return lhsNewNAryMulExpr->Clone();
+    return FoldNAryExpression(*lhsNewNAryMulExpr);
   }
 
   if ((lhsNAryMulExpr && rhsConstant && rhsConstant->GetValue() != 1)
@@ -1109,10 +1110,9 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto * nAryMulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
 
-    auto nAryMulExprClone = nAryMulExpr->Clone();
-    auto newNAryMulExpr = dynamic_cast<SCEVNAryMulExpr *>(nAryMulExprClone.get());
+    auto newNAryMulExpr = clone_as<SCEVNAryMulExpr>(*nAryMulExpr);
     newNAryMulExpr->AddOperand(constant->Clone());
-    return newNAryMulExpr->Clone();
+    return FoldNAryExpression(*newNAryMulExpr);
   }
 
   if (lhsNAryMulExpr || rhsNAryMulExpr)

@@ -650,6 +650,9 @@ private:
   static std::unique_ptr<SCEV>
   ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
+  static std::unique_ptr<SCEV>
+  FoldNAryExpression(SCEVNAryExpr & expression);
+
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
 
