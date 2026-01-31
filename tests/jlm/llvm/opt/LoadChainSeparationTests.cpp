@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -826,4 +827,100 @@ TEST(LoadChainSeparationTests, DeadOutputs)
   EXPECT_EQ(loadNode1.input(1)->origin(), storeNode.output(0));
   EXPECT_TRUE(loadNode2.output(1)->IsDead());
   EXPECT_EQ(loadNode2.input(1)->origin(), storeNode.output(0));
+}
+
+TEST(LoadChainSeperationTests, StoreInThetaWithMultipleUsers)
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  const auto bit32Type = BitType::Create(32);
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = TestType::createValueType();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto functionType = FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { valueType, ioStateType, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto & ioStateArgument = *lambdaNode->GetFunctionArguments()[0];
+  auto & memoryStateArgument = *lambdaNode->GetFunctionArguments()[1];
+
+  auto sizeNode = TestOperation::createNode(lambdaNode->subregion(), {}, { bit32Type });
+  auto allocaResults = AllocaOperation::create(valueType, sizeNode->output(0), 4);
+
+  auto lambdaValueNode = TestOperation::createNode(lambdaNode->subregion(), {}, { valueType });
+  auto & lambdaStoreNode = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *lambdaValueNode->output(0),
+      { allocaResults[1] },
+      4);
+
+  // theta node
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto loopVar1 = thetaNode->AddLoopVar(&memoryStateArgument);
+  auto loopVar2 = thetaNode->AddLoopVar(lambdaStoreNode.output(0));
+
+  auto thetaAddressNode = TestOperation::createNode(thetaNode->subregion(), {}, { pointerType });
+  auto thetaValueNode = TestOperation::createNode(thetaNode->subregion(), {}, { valueType });
+  auto & thetaLoadNode = LoadNonVolatileOperation::CreateNode(
+      *thetaAddressNode->output(0),
+      { loopVar2.pre },
+      valueType,
+      4);
+  auto & thetaStoreNode = StoreNonVolatileOperation::CreateNode(
+      *thetaAddressNode->output(0),
+      *thetaValueNode->output(0),
+      { thetaLoadNode.output(1) },
+      4);
+
+  // gamma node
+  auto gammaPredicateNode = TestOperation::createNode(thetaNode->subregion(), {}, { controlType });
+  auto gammaNode = GammaNode::create(gammaPredicateNode->output(0), 2);
+
+  auto entryVar1 = gammaNode->AddEntryVar(thetaStoreNode.output(0));
+  auto entryVar2 = gammaNode->AddEntryVar(loopVar1.pre);
+
+  auto gammaAddressNode = TestOperation::createNode(gammaNode->subregion(1), {}, { pointerType });
+  auto gammaValueNode = TestOperation::createNode(gammaNode->subregion(1), {}, { valueType });
+  auto & gammaStoreNode = StoreNonVolatileOperation::CreateNode(
+      *gammaAddressNode->output(0),
+      *gammaValueNode->output(0),
+      { entryVar2.branchArgument[1] },
+      4);
+
+  auto exitVar1 =
+      gammaNode->AddExitVar({ entryVar1.branchArgument[0], entryVar1.branchArgument[1] });
+  auto exitVar2 = gammaNode->AddExitVar({ entryVar2.branchArgument[0], gammaStoreNode.output(0) });
+  // done with gamma gamma node
+
+  loopVar1.post->divert_to(exitVar2.output);
+  loopVar2.post->divert_to(thetaStoreNode.output(0));
+  // done with theta node
+
+  auto & lambdaLoadNode =
+      LoadNonVolatileOperation::CreateNode(*allocaResults[0], { loopVar2.output }, valueType, 4);
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ lambdaLoadNode.output(0), &ioStateArgument, loopVar1.output });
+
+  GraphExport::Create(*lambdaOutput, "f");
+
+  view(rvsdg, stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  LoadChainSeparation loadChainSeparation;
+  loadChainSeparation.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
 }
