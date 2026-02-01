@@ -55,9 +55,11 @@ public:
   }
 
   void
-  markVisited(const rvsdg::Output & output, ModRefChainInformation modRefChainInformation)
+  addModRefChainInformation(
+      const rvsdg::Output & output,
+      ModRefChainInformation modRefChainInformation)
   {
-    auto & outputMap = getOrInsertOutputMap(*output.region());
+    auto & outputMap = getOrInsertModRefChainInformationMap(*output.region());
     JLM_ASSERT(outputMap.find(&output) == outputMap.end());
     outputMap[&output] = std::move(modRefChainInformation);
   }
@@ -98,7 +100,7 @@ private:
       std::unordered_map<const rvsdg::Output *, ModRefChainInformation>;
 
   ModRefChainInformationMap &
-  getOrInsertOutputMap(const rvsdg::Region & region)
+  getOrInsertModRefChainInformationMap(const rvsdg::Region & region)
   {
     if (const auto it = RegionMap_.find(&region); it != RegionMap_.end())
     {
@@ -500,7 +502,7 @@ LoadChainSeparation::traceModRefChains(
   } while (!doneTracing);
 
   summary.add(std::move(currentModRefChain));
-  Context_->markVisited(startOutput, { summary.hasModificationChainLink });
+  Context_->addModRefChainInformation(startOutput, { summary.hasModificationChainLink });
   return summary.hasModificationChainLink;
 }
 
