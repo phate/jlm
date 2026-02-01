@@ -145,9 +145,7 @@ private:
    * \p startOutput in the region, otherwise false.
    */
   bool
-  traceModRefChains(
-      rvsdg::Output & startOutput,
-      ModRefChainSummary & summary);
+  traceModRefChains(rvsdg::Output & startOutput, ModRefChainSummary & summary);
 
   /**
    * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain

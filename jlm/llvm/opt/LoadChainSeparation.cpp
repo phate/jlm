@@ -343,9 +343,7 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
 }
 
 bool
-LoadChainSeparation::traceModRefChains(
-    rvsdg::Output & startOutput,
-    ModRefChainSummary & summary)
+LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainSummary & summary)
 {
   JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
 
@@ -426,9 +424,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                traceModRefChains(
-                    *CallOperation::GetMemoryStateInput(node).origin(),
-                    summary);
+                traceModRefChains(*CallOperation::GetMemoryStateInput(node).origin(), summary);
                 doneTracing = true;
               },
               [&](const LambdaExitMemoryStateMergeOperation &)
