@@ -923,4 +923,14 @@ TEST(LoadChainSeperationTests, StoreInThetaWithMultipleUsers)
   loadChainSeparation.Run(rvsdgModule, statisticsCollector);
 
   view(rvsdg, stdout);
+
+  // Assert
+  // We expect no new join nodes added to any of the regions
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 6u);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 7u);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 0u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 3u);
+
+  EXPECT_NE(TryGetOwnerNode<ThetaNode>(*GetMemoryStateRegionResult(*lambdaNode).origin()), nullptr);
+  EXPECT_NE(TryGetOwnerNode<ThetaNode>(*lambdaLoadNode.input(1)->origin()), nullptr);
 }
