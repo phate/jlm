@@ -28,6 +28,11 @@ namespace jlm::llvm
 class LoadChainSeparation::Context
 {
 public:
+  struct ModRefChainInformation
+  {
+    bool hasModificationChainLinkAboveInRegion = false;
+  };
+
   bool
   hasModRefChainLinkType(const rvsdg::Output & output) const noexcept
   {
@@ -49,6 +54,41 @@ public:
     return Types_.find(&output)->second;
   }
 
+  void
+  addModRefChainInformation(
+      const rvsdg::Output & output,
+      ModRefChainInformation modRefChainInformation)
+  {
+    auto & outputMap = getOrInsertModRefChainInformationMap(*output.region());
+    JLM_ASSERT(outputMap.find(&output) == outputMap.end());
+    outputMap[&output] = std::move(modRefChainInformation);
+  }
+
+  std::optional<ModRefChainInformation>
+  tryGetModRefChainInformation(const rvsdg::Output & output) const
+  {
+    const auto regionMapIt = RegionMap_.find(output.region());
+    if (regionMapIt == RegionMap_.end())
+    {
+      return std::nullopt;
+    }
+
+    auto & outputMap = regionMapIt->second;
+    const auto outputMapIt = outputMap.find(&output);
+    if (outputMapIt == outputMap.end())
+    {
+      return std::nullopt;
+    }
+
+    return outputMapIt->second;
+  }
+
+  void
+  dropModRefChainInformation(const rvsdg::Region & region)
+  {
+    RegionMap_.erase(&region);
+  }
+
   static std::unique_ptr<Context>
   create()
   {
@@ -56,7 +96,22 @@ public:
   }
 
 private:
+  using ModRefChainInformationMap =
+      std::unordered_map<const rvsdg::Output *, ModRefChainInformation>;
+
+  ModRefChainInformationMap &
+  getOrInsertModRefChainInformationMap(const rvsdg::Region & region)
+  {
+    if (const auto it = RegionMap_.find(&region); it != RegionMap_.end())
+    {
+      return it->second;
+    }
+
+    return RegionMap_.emplace(&region, ModRefChainInformationMap()).first->second;
+  }
+
   std::unordered_map<const rvsdg::Output *, ModRefChainLink::Type> Types_{};
+  std::unordered_map<const rvsdg::Region *, ModRefChainInformationMap> RegionMap_{};
 };
 
 LoadChainSeparation::~LoadChainSeparation() noexcept = default;
@@ -97,7 +152,7 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
         },
         [&](rvsdg::ThetaNode & thetaNode)
         {
-          separateRefenceChainsInTheta(thetaNode, visitedOutputs);
+          separateRefenceChainsInTheta(thetaNode);
         },
         [](rvsdg::DeltaNode &)
         {
@@ -111,7 +166,7 @@ LoadChainSeparation::separateReferenceChainsInRegion(rvsdg::Region & region)
             {
               // Dead memory state outputs will never be reachable from structural node results.
               // Thus, we need to handle them here in order to separate all reference chains.
-              separateReferenceChains(output, visitedOutputs);
+              separateReferenceChains(output);
             }
           }
         },
@@ -128,8 +183,11 @@ LoadChainSeparation::separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaN
   // Handle innermost regions first
   separateReferenceChainsInRegion(*lambdaNode.subregion());
 
-  util::HashSet<rvsdg::Output *> visitedOutputs;
-  separateReferenceChains(*GetMemoryStateRegionResult(lambdaNode).origin(), visitedOutputs);
+  separateReferenceChains(*GetMemoryStateRegionResult(lambdaNode).origin());
+
+  // We are done with the lambda subregion.
+  // Clean up all information we temporarily stored.
+  Context_->dropModRefChainInformation(*lambdaNode.subregion());
 }
 
 void
@@ -141,25 +199,27 @@ LoadChainSeparation::separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode)
     separateReferenceChainsInRegion(subregion);
   }
 
-  std::vector<util::HashSet<rvsdg::Output *>> visitedOutputs(gammaNode.nsubregions());
   for (auto & [branchResults, output] : gammaNode.GetExitVars())
   {
     if (is<MemoryStateType>(output->Type()))
     {
       for (const auto branchResult : branchResults)
       {
-        const auto regionIndex = branchResult->region()->index();
-        JLM_ASSERT(regionIndex < visitedOutputs.size());
-        separateReferenceChains(*branchResult->origin(), visitedOutputs[regionIndex]);
+        separateReferenceChains(*branchResult->origin());
       }
     }
+  }
+
+  // We are done with the gamma subregions.
+  // Clean up all information we temporarily stored.
+  for (auto & subregion : gammaNode.Subregions())
+  {
+    Context_->dropModRefChainInformation(subregion);
   }
 }
 
 void
-LoadChainSeparation::separateRefenceChainsInTheta(
-    rvsdg::ThetaNode & thetaNode,
-    util::HashSet<rvsdg::Output *> & visitedOutputs)
+LoadChainSeparation::separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode)
 {
   // Handle innermost region first
   separateReferenceChainsInRegion(*thetaNode.subregion());
@@ -171,30 +231,32 @@ LoadChainSeparation::separateRefenceChainsInTheta(
       continue;
 
     // Separate reference chains in theta subregion
-    auto hasModificationChainLink =
-        separateReferenceChains(*loopVar.post->origin(), visitedOutputsSubregion);
+    const auto hasModificationChainLinkAboveInRegion =
+        separateReferenceChains(*loopVar.post->origin());
     Context_->add(
         *loopVar.output,
-        hasModificationChainLink ? ModRefChainLink::Type::Modification
-                                 : ModRefChainLink::Type::Reference);
+        hasModificationChainLinkAboveInRegion ? ModRefChainLink::Type::Modification
+                                              : ModRefChainLink::Type::Reference);
 
     // Handle dead theta outputs
     if (loopVar.output->IsDead())
     {
-      separateReferenceChains(*loopVar.output, visitedOutputs);
+      separateReferenceChains(*loopVar.output);
     }
   }
+
+  // We are done with the theta subregion.
+  // Clean up all information we temporarily stored.
+  Context_->dropModRefChainInformation(*thetaNode.subregion());
 }
 
 bool
-LoadChainSeparation::separateReferenceChains(
-    rvsdg::Output & startOutput,
-    util::HashSet<rvsdg::Output *> & visitedOutputs)
+LoadChainSeparation::separateReferenceChains(rvsdg::Output & startOutput)
 {
   JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
 
   ModRefChainSummary summary;
-  traceModRefChains(startOutput, visitedOutputs, summary);
+  const bool hasModRefChainLinkAboveInRegion = traceModRefChains(startOutput, summary);
   for (auto & modRefChain : summary.modRefChains)
   {
     const auto refSubchains = extractReferenceSubchains(modRefChain);
@@ -226,7 +288,7 @@ LoadChainSeparation::separateReferenceChains(
     }
   }
 
-  return summary.hasModificationChainLink;
+  return hasModRefChainLinkAboveInRegion;
 }
 
 rvsdg::Input &
@@ -280,17 +342,15 @@ LoadChainSeparation::extractReferenceSubchains(const ModRefChain & modRefChain)
   return refSubchains;
 }
 
-void
-LoadChainSeparation::traceModRefChains(
-    rvsdg::Output & startOutput,
-    util::HashSet<rvsdg::Output *> & visitedOutputs,
-    ModRefChainSummary & summary)
+bool
+LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainSummary & summary)
 {
   JLM_ASSERT(is<MemoryStateType>(startOutput.Type()));
 
-  if (!visitedOutputs.insert(&startOutput))
+  if (const auto modRefChainInformationOpt = Context_->tryGetModRefChainInformation(startOutput))
   {
-    return;
+    // This output was visited before.
+    return modRefChainInformationOpt.value().hasModificationChainLinkAboveInRegion;
   }
 
   ModRefChain currentModRefChain;
@@ -319,7 +379,7 @@ LoadChainSeparation::traceModRefChains(
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
             {
-              traceModRefChains(*entryVarInput->origin(), visitedOutputs, summary);
+              traceModRefChains(*entryVarInput->origin(), summary);
             }
           }
           doneTracing = true;
@@ -364,17 +424,14 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                traceModRefChains(
-                    *CallOperation::GetMemoryStateInput(node).origin(),
-                    visitedOutputs,
-                    summary);
+                traceModRefChains(*CallOperation::GetMemoryStateInput(node).origin(), summary);
                 doneTracing = true;
               },
               [&](const LambdaExitMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), visitedOutputs, summary);
+                  traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -389,14 +446,14 @@ LoadChainSeparation::traceModRefChains(
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                traceModRefChains(*node.input(0)->origin(), visitedOutputs, summary);
+                traceModRefChains(*node.input(0)->origin(), summary);
                 doneTracing = true;
               },
               [&](const CallEntryMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), visitedOutputs, summary);
+                  traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -404,7 +461,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), visitedOutputs, summary);
+                  traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -412,7 +469,7 @@ LoadChainSeparation::traceModRefChains(
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), visitedOutputs, summary);
+                  traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -441,6 +498,8 @@ LoadChainSeparation::traceModRefChains(
   } while (!doneTracing);
 
   summary.add(std::move(currentModRefChain));
+  Context_->addModRefChainInformation(startOutput, { summary.hasModificationChainLink });
+  return summary.hasModificationChainLink;
 }
 
 }
