@@ -295,7 +295,7 @@ public:
   }
 
   void
-  SwapOperand(const size_t index, const std::unique_ptr<SCEV> & operand)
+  ReplaceOperand(const size_t index, const std::unique_ptr<SCEV> & operand)
   {
     Operands_[index] = operand->Clone();
   }
@@ -490,63 +490,8 @@ public:
 
 class ScalarEvolution final : public jlm::rvsdg::Transformation
 {
+  class Context;
   class Statistics;
-
-  class Context final
-  {
-  public:
-    ~Context() = default;
-
-    Context() = default;
-
-    Context(const Context &) = delete;
-
-    Context(Context &&) = delete;
-
-    Context &
-    operator=(const Context &) = delete;
-
-    Context &
-    operator=(Context &&) = delete;
-
-    void
-    InsertChrec(const rvsdg::Output & output, const std::unique_ptr<SCEVChainRecurrence> & chrec);
-
-    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
-    GetChrecs() const;
-
-    int
-    GetNumOfChrecsWithOrder(const int n) const;
-
-    size_t
-    GetNumTotalChrecs() const;
-
-    void
-    AddLoopVar(const rvsdg::Output & var);
-
-    void
-    InsertSCEV(const rvsdg::Output & output, const std::unique_ptr<SCEV> & scev);
-
-    std::unique_ptr<SCEVChainRecurrence>
-    TryGetChrecForOutput(const rvsdg::Output & output) const;
-
-    std::unique_ptr<SCEV>
-    TryGetSCEVForOutput(const rvsdg::Output & output) const;
-
-    size_t
-    GetNumTotalLoopVars() const;
-
-    static std::unique_ptr<Context>
-    Create()
-    {
-      return std::make_unique<Context>();
-    }
-
-  private:
-    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
-    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
-    std::vector<const rvsdg::Output *> LoopVars_;
-  };
 
 public:
   enum class DependencyOp
@@ -589,34 +534,36 @@ public:
   operator=(ScalarEvolution &&) = delete;
 
   static std::unique_ptr<Context>
-  CreateContext()
-  {
-    return Context::Create();
-  }
+  CreateContext();
+
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
+  GetChrecMap() const;
 
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  static void
-  AnalyzeRegion(const rvsdg::Region & region, Context & ctx);
+  void
+  AnalyzeRegion(const rvsdg::Region & region);
 
-  static void
-  CombineChrecsAcrossLoops(Context & ctx);
+  void
+  CombineChrecsAcrossLoops();
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
+  template<class T>
+  static std::unique_ptr<T>
+  CloneAs(const SCEV & scev);
+
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
 
-  static std::unique_ptr<SCEV>
-  GetOrCreateSCEVForOutput(const rvsdg::Output & output, Context & ctx);
+  std::unique_ptr<SCEV>
+  GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
-  static IVDependencyGraph
-  CreateDependencyGraph(
-      const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars,
-      const Context & ctx);
+  IVDependencyGraph
+  CreateDependencyGraph(const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars) const;
 
   static void
   FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
@@ -624,25 +571,26 @@ private:
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
 
-  static void
-  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode, Context & ctx);
+  void
+  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
 
-  static std::optional<std::unique_ptr<SCEV>>
-  TryReplaceInitForSCEV(const SCEV & scev, Context & ctx);
+  std::optional<std::unique_ptr<SCEV>>
+  TryReplaceInitForSCEV(const SCEV & scev);
 
-  static std::unique_ptr<SCEVChainRecurrence>
+  std::unique_ptr<SCEVChainRecurrence>
   GetOrCreateChainRecurrence(
       const rvsdg::Output & output,
       const SCEV & scev,
-      const rvsdg::ThetaNode & thetaNode,
-      Context & ctx);
+      const rvsdg::ThetaNode & thetaNode);
 
-  static std::unique_ptr<SCEVChainRecurrence>
+  std::unique_ptr<SCEVChainRecurrence>
   GetOrCreateStepForSCEV(
       const rvsdg::Output & output,
       const SCEV & scevTree,
-      const rvsdg::ThetaNode & thetaNode,
-      Context & ctx);
+      const rvsdg::ThetaNode & thetaNode);
+
+  static bool
+  IsNonZeroConstant(const SCEVConstant * c);
 
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
@@ -672,6 +620,8 @@ private:
       IVDependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
+
+  std::unique_ptr<Context> Context_;
 };
 
 }

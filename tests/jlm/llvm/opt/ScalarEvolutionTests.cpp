@@ -17,10 +17,10 @@ static std::
     unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>
     RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
-  const auto ctx = jlm::llvm::ScalarEvolution::CreateContext();
-  jlm::llvm::ScalarEvolution::AnalyzeRegion(rvsdgModule.Rvsdg().GetRootRegion(), *ctx);
-  jlm::llvm::ScalarEvolution::CombineChrecsAcrossLoops(*ctx);
-  return ctx->GetChrecs();
+  jlm::llvm::ScalarEvolution scalarEvolution;
+  jlm::util::StatisticsCollector statisticsCollector;
+  scalarEvolution.Run(rvsdgModule, statisticsCollector);
+  return scalarEvolution.GetChrecMap();
 }
 
 TEST(ScalarEvolutionTests, ConstantInductionVariable)
