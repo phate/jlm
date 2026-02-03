@@ -949,8 +949,6 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
-  // Apply folding rules for multiplication to combine two operands into one
-  //
   // We have the following folding rules from the CR algebra:
   // G * {e,+,f}         =>       {G * e,+,G * f}
   // {e,+,f} * {g,+,h}   =>       {e * g,+,e * h + f * g + f * h,+,2*f*h}
