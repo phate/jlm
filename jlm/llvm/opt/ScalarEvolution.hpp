@@ -25,6 +25,16 @@ public:
 
   virtual std::unique_ptr<SCEV>
   Clone() const = 0;
+
+  template<typename T>
+  static std::unique_ptr<T>
+  CloneAs(const SCEV & scev)
+  {
+    auto cloned = scev.Clone();
+    auto * ptr = dynamic_cast<T *>(cloned.release());
+    JLM_ASSERT(ptr);
+    return std::unique_ptr<T>(ptr);
+  }
 };
 
 class SCEVUnknown final : public SCEV
@@ -155,6 +165,12 @@ public:
   Create(const int64_t value)
   {
     return std::make_unique<SCEVConstant>(value);
+  }
+
+  static bool
+  IsNonZero(const SCEVConstant * c)
+  {
+    return c && c->GetValue() != 0;
   }
 
 private:
@@ -533,9 +549,6 @@ public:
   ScalarEvolution &
   operator=(ScalarEvolution &&) = delete;
 
-  static std::unique_ptr<Context>
-  CreateContext();
-
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
@@ -552,10 +565,6 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
-  template<class T>
-  static std::unique_ptr<T>
-  CloneAs(const SCEV & scev);
-
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
 
@@ -588,9 +597,6 @@ private:
       const rvsdg::Output & output,
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode);
-
-  static bool
-  IsNonZeroConstant(const SCEVConstant * c);
 
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
