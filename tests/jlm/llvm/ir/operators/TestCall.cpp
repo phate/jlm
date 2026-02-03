@@ -407,9 +407,9 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
 
     auto two = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 64, 2 });
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
-    auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
+    auto & predicateNode = jlm::rvsdg::MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
-    auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(predicateNode.output(0), 2);
     auto nev = gammaNode->AddEntryVar(valueArgument);
     auto resultev = gammaNode->AddEntryVar(pointerArgument);
     auto fibev = gammaNode->AddEntryVar(ctxVarFib);

@@ -313,9 +313,9 @@ TEST(MemoryConverterTests, TestThetaLoad)
   auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
   auto arm = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
   auto cmp = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
-  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
   idv.post->divert_to(arm);
-  theta->set_predicate(match);
+  theta->set_predicate(matchNode.output(0));
 
   // Load node
   auto loadAddress = theta->AddLoopVar(lambda->GetFunctionArguments()[3]);
@@ -441,9 +441,9 @@ TEST(MemoryConverterTests, TestThetaStore)
   auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
   auto arm = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
   auto cmp = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
-  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
   idv.post->divert_to(arm);
-  theta->set_predicate(match);
+  theta->set_predicate(matchNode.output(0));
 
   // Store node
   auto storeAddress = theta->AddLoopVar(lambda->GetFunctionArguments()[3]);
