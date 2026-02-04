@@ -131,9 +131,9 @@ TEST(StoreValueForwardingTests, NestedAllocas)
     else if (is<LoadOperation>(&node))
       loadCount++;
   }
-  EXPECT_EQ(allocaCount, 0);
-  EXPECT_EQ(storeCount, 0);
-  EXPECT_EQ(loadCount, 0);
+  EXPECT_EQ(allocaCount, 0u);
+  EXPECT_EQ(storeCount, 0u);
+  EXPECT_EQ(loadCount, 0u);
 
   // Verify that the return value is a constant 20
   const auto & result = *lambdaNode.GetFunctionResults()[0]->origin();
@@ -262,8 +262,8 @@ TEST(StoreValueForwardingTests, GetElementPointerOffsets)
     else if (is<LoadOperation>(&node))
       loadCount++;
   }
-  EXPECT_EQ(storeCount, 2);
-  EXPECT_EQ(loadCount, 1);
+  EXPECT_EQ(storeCount, 2u);
+  EXPECT_EQ(loadCount, 1u);
 
   // Verify that the last two return values are constants 40 and 20
   const auto results = lambdaNode.GetFunctionResults();
