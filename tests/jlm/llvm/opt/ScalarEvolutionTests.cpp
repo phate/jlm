@@ -23,7 +23,7 @@ static std::
   return scalarEvolution.GetChrecMap();
 }
 
-TEST(ScalarEvolutionTests, ConstantInductionVariable)
+TEST(ScalarEvolutionTests, NonEvolvingVariable)
 {
   using namespace jlm::llvm;
 
@@ -48,13 +48,10 @@ TEST(ScalarEvolutionTests, ConstantInductionVariable)
   const auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1u);
 
-  // Since lv1 is not a valid induction variable, it's chain recurrence should be
-  // {Unknown}
-  auto testChrec = SCEVChainRecurrence(*theta);
-  testChrec.AddOperand(SCEVUnknown::Create());
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
+  // Since lv1 is a variable which does not depend on the previous value (no evolution). There
+  // should be no computed chrec for it
+  EXPECT_EQ(chrecMap.find(lv1.pre), chrecMap.end());
 }
 
 TEST(ScalarEvolutionTests, SimpleInductionVariable)
@@ -92,7 +89,6 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -152,7 +148,6 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -208,7 +203,6 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -267,7 +261,6 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 3u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -338,7 +331,6 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -390,7 +382,6 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of illegal mult operation
@@ -442,7 +433,6 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -504,7 +494,6 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -555,7 +544,6 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is a simple negative induction variable with the recurrence {10,+,-1}
@@ -604,7 +592,6 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -682,7 +669,6 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 4u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -790,7 +776,6 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 4u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -881,7 +866,6 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 1u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}
@@ -928,7 +912,6 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -983,7 +966,6 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 2u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
@@ -1042,7 +1024,6 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 4u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
@@ -1105,7 +1086,6 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 3u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
@@ -1208,7 +1188,6 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 8u);
   EXPECT_NE(chrecMap.find(lv1_1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv2_1.pre), chrecMap.end());
   EXPECT_NE(chrecMap.find(lv3_1.pre), chrecMap.end());
@@ -1333,7 +1312,6 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   auto chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(chrecMap.size(), 3u);
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());

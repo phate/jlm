@@ -6,7 +6,6 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
-#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -85,6 +84,17 @@ public:
     for (auto & [output, chrec] : ChrecMap_)
     {
       mapCopy.emplace(output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
+    }
+    return mapCopy;
+  }
+
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+  GetSCEVMap() const
+  {
+    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> mapCopy{};
+    for (auto & [output, scev] : SCEVMap_)
+    {
+      mapCopy.emplace(output, scev->Clone());
     }
     return mapCopy;
   }
@@ -337,30 +347,27 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   for (const auto loopVar : nonStateLoopVars)
   {
     const auto post = loopVar.post;
+    // We compute the SCEV for each non-state loop variable in a recursive bottom up fashion,
+    // starting at the post's origin
     auto scev = GetOrCreateSCEVForOutput(*post->origin());
     Context_->InsertSCEV(*loopVar.output, scev); // Save the SCEV at the theta outputs as well
   }
-  auto dependencyGraph = CreateDependencyGraph(nonStateLoopVars);
 
-  util::HashSet<const rvsdg::Output *> validIVs{};
-  for (const auto loopVar : nonStateLoopVars)
+  auto dependencyGraph = CreateDependencyGraph(thetaNode);
+
+  util::HashSet<const rvsdg::Output *> validOutputs{};
+  for (const auto & [output, deps] : dependencyGraph)
   {
-    if (dependencyGraph[loopVar.pre].size() == 0)
-    {
-      // If the expression doesn't depend on at least one loop variable (including itself), it is
-      // not an induction variable. Replace it with a SCEVUnknown
-      Context_->InsertSCEV(*loopVar.post->origin(), SCEVUnknown::Create());
-    }
-    else if (IsValidInductionVariable(*loopVar.pre, dependencyGraph))
-      validIVs.insert(loopVar.pre);
+    if (CanCreateChainRecurrence(*output, dependencyGraph))
+      validOutputs.insert(output);
   }
 
-  // Filter the dependency graph to only contain the IVs that are valid and update dependencies
-  // accordingly
+  // Filter the dependency graph to only contain the outputs of the SCEVs that are valid chain
+  // recurrences and update dependencies accordingly
   auto filteredDependencyGraph = dependencyGraph;
   for (auto it = filteredDependencyGraph.begin(); it != filteredDependencyGraph.end();)
   {
-    if (!validIVs.Contains(it->first))
+    if (!validOutputs.Contains(it->first))
     {
       for (auto & [node, deps] : filteredDependencyGraph)
         deps.erase(it->first);
@@ -372,35 +379,34 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 
   const auto order = TopologicalSort(filteredDependencyGraph);
 
-  std::vector<const rvsdg::Output *> allVars{};
-  // Add valid IVs to the set (in the correct order)
-  for (const auto & indVarPre : order)
-    allVars.push_back(indVarPre);
-  for (const auto loopVar : nonStateLoopVars)
+  for (const auto output : order)
   {
-    if (std::find(order.begin(), order.end(), loopVar.pre) == order.end())
-      // This is not a valid IV, so it hasn't been added yet
-      allVars.push_back(loopVar.pre);
-  }
-
-  // Process valid induction variables
-  for (auto loopVarPre : order)
-  {
-    const auto loopVar = thetaNode.MapPreLoopVar(*loopVarPre);
-    const auto loopVarPost = loopVar.post;
-    const auto scev = Context_->TryGetSCEVForOutput(*loopVarPost->origin());
+    std::unique_ptr<SCEV> scev{};
+    if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
+        &thetaNode == theta)
+    {
+      // For loop variables, we need to retrieve and use the SCEV saved at the post's origin,
+      // equivalent to a "backedge" which describes how the value at the pre pointer is updated
+      const auto & newOutput = *thetaNode.MapPreLoopVar(*output).post->origin();
+      scev = Context_->TryGetSCEVForOutput(newOutput);
+    }
+    else
+      scev = Context_->TryGetSCEVForOutput(*output);
 
     JLM_ASSERT(scev);
-    Context_->InsertChrec(*loopVarPre, GetOrCreateChainRecurrence(*loopVarPre, *scev, thetaNode));
+
+    auto chrec = GetOrCreateChainRecurrence(*output, *scev, thetaNode);
+    Context_->InsertChrec(*output, chrec);
   }
 
-  // Handle invalid induction variables
-  for (size_t i = order.size(); i < allVars.size(); ++i)
+  for (const auto & [output, scev] : Context_->GetSCEVMap())
   {
-    const auto loopVarPre = allVars[i];
-    auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode);
-    unknownChainRecurrence->AddOperand(SCEVUnknown::Create());
-    Context_->InsertChrec(*loopVarPre, unknownChainRecurrence);
+    if (std::find(order.begin(), order.end(), output) == order.end())
+    {
+      auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode);
+      unknownChainRecurrence->AddOperand(SCEVUnknown::Create());
+      Context_->InsertChrec(*output, unknownChainRecurrence);
+    }
   }
 }
 
@@ -496,31 +502,35 @@ ScalarEvolution::FindDependenciesForSCEV(
   }
 }
 
-ScalarEvolution::IVDependencyGraph
-ScalarEvolution::CreateDependencyGraph(
-    const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars) const
+ScalarEvolution::DependencyGraph
+ScalarEvolution::CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const
 {
-  IVDependencyGraph graph{};
-  for (const auto loopVar : loopVars)
-  {
-    const auto post = loopVar.post;
-    if (const auto scev = Context_->TryGetSCEVForOutput(*post->origin()))
-    {
-      DependencyMap dependencies{};
+  DependencyGraph graph{};
 
+  for (const auto & [output, scev] : Context_->GetSCEVMap())
+  {
+    DependencyMap dependencies{};
+    if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
+        theta == &thetaNode)
+    {
+      // We know this is a pre pointer, so we map it to loop var and use the SCEV for the
+      // post's origin (backedge) instead
+      const auto loopVar = theta->MapPreLoopVar(*output);
+      auto newScev = Context_->TryGetSCEVForOutput(*loopVar.post->origin());
+
+      FindDependenciesForSCEV(*newScev.get(), dependencies);
+    }
+    else
       FindDependenciesForSCEV(*scev.get(), dependencies);
 
-      const auto pre = loopVar.pre;
-      graph[pre] = dependencies;
-    }
+    graph[output] = dependencies;
   }
-
   return graph;
 }
 
 // Implementation of Kahn's algorithm for topological sort
 std::vector<const rvsdg::Output *>
-ScalarEvolution::TopologicalSort(const IVDependencyGraph & dependencyGraph)
+ScalarEvolution::TopologicalSort(const DependencyGraph & dependencyGraph)
 {
   const size_t numVertices = dependencyGraph.size();
   std::unordered_map<const rvsdg::Output *, int> indegree(numVertices);
@@ -738,10 +748,10 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   // For constants and unknowns this is trivial, however it becomes a bit complicated when we
   // factor in SCEVInit nodes. These nodes represent the initial value of an IV in the case where
   // the exact value is unknown at compile time. E.g. function argument or result from a
-  // call-instruction. In the cases where we have to fold one or more of these init-nodes, we create
-  // an n-ary add expression (add expression with an arbitrary number of operands), and add this to
-  // the chrec. Folding two of these n-ary add expressions will result in another n-ary add
-  // expression, which consists of all the operands in both the left and the right expression.
+  // call-instruction. In the cases where we have to fold one or more of these init-nodes, we
+  // create an n-ary add expression (add expression with an arbitrary number of operands), and add
+  // this to the chrec. Folding two of these n-ary add expressions will result in another n-ary
+  // add expression, which consists of all the operands in both the left and the right expression.
 
   // The if-chain below goes through each of the possible combinations of lhs and rhs values
   if (const auto *lhsUnknown = dynamic_cast<const SCEVUnknown *>(lhsOperand),
@@ -826,8 +836,8 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   const auto rhsNAryAddExpr = dynamic_cast<const SCEVNAryAddExpr *>(rhsOperand);
   if ((lhsNAryMulExpr && rhsNAryAddExpr) || (rhsNAryMulExpr && lhsNAryAddExpr))
   {
-    // Multiply expression with add expression - Clone the add expression and add the multiply as a
-    // term
+    // Multiply expression with add expression - Clone the add expression and add the multiply as
+    // a term
     const auto * mulExpr = lhsNAryMulExpr ? lhsNAryMulExpr : rhsNAryMulExpr;
     auto * addExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto newAddExpr = SCEV::CloneAs<SCEVNAryExpr>(*addExpr);
@@ -1217,19 +1227,36 @@ ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
   return false;
 }
 
+/**
+ * Checks the dependencies of the input variable to determine if we can create a chain recurrence
+ * using it's SCEV.
+ *
+ * The requirements are:
+ * - No more than one self-dependency (indicates a self-dependent variable)
+ * - No cyclic dependencies (A depends on B and B depends on A)
+ * - No dependencies via multiplication (results in a geometric update sequence, which we treat as
+ * an invalid induction variable)
+ *
+ * @param output The output to check.
+ * @param dependencyGraph The dependency graph which stores the dependencies of all outputs in the
+ * loop.
+ * @return True if the requirements are fulfilled, false otherwise.
+ */
 bool
-ScalarEvolution::IsValidInductionVariable(
-    const rvsdg::Output & variable,
-    IVDependencyGraph & dependencyGraph)
+ScalarEvolution::CanCreateChainRecurrence(
+    const rvsdg::Output & output,
+    DependencyGraph & dependencyGraph)
 {
-  // First check that variable has only one self-reference,
-  if (dependencyGraph[&variable][&variable].count != 1)
-    return false;
+  auto deps = dependencyGraph[&output];
+  if (deps.find(&output) != deps.end())
+    if (deps[&output].count != 1)
+    {
+      // First check that variable has only one self-reference
+      return false;
+    }
 
   // Check that it has no reference via a mult-operation
-  // (results in a geometric sequence - which we treat as an invalid induction variable)
-  auto deps = dependencyGraph[&variable];
-  for (auto [output, dependencyInfo] : deps)
+  for (auto [out, dependencyInfo] : deps)
   {
     if (dependencyInfo.operation == DependencyOp::Mul)
     {
@@ -1240,41 +1267,41 @@ ScalarEvolution::IsValidInductionVariable(
   // Then check for cycles through other variables
   std::unordered_set<const rvsdg::Output *> visited{};
   std::unordered_set<const rvsdg::Output *> recursionStack{};
-  return !HasCycleThroughOthers(variable, variable, dependencyGraph, visited, recursionStack);
+  return !HasCycleThroughOthers(output, output, dependencyGraph, visited, recursionStack);
 }
 
 bool
 ScalarEvolution::HasCycleThroughOthers(
-    const rvsdg::Output & currentIV,
-    const rvsdg::Output & originalIV,
-    IVDependencyGraph & dependencyGraph,
+    const rvsdg::Output & currentOutput,
+    const rvsdg::Output & originalOutput,
+    DependencyGraph & dependencyGraph,
     std::unordered_set<const rvsdg::Output *> & visited,
     std::unordered_set<const rvsdg::Output *> & recursionStack)
 {
-  visited.insert(&currentIV);
-  recursionStack.insert(&currentIV);
+  visited.insert(&currentOutput);
+  recursionStack.insert(&currentOutput);
 
-  for (const auto & [depPtr, depCount] : dependencyGraph[&currentIV])
+  for (const auto & [depPtr, depCount] : dependencyGraph[&currentOutput])
   {
     // Ignore self-references
-    if (depPtr == &currentIV)
+    if (depPtr == &currentOutput)
       continue;
 
     // Found a cycle back to the ORIGINAL node we started from
-    // This means the original IV is explicitly part of the cycle
-    if (depPtr == &originalIV)
+    // This means the original output is explicitly part of the cycle
+    if (depPtr == &originalOutput)
       return true;
 
-    // Already explored this branch, no cycle containing the original IV
+    // Already explored this branch, no cycle containing the original output
     if (visited.find(depPtr) != visited.end())
       continue;
 
     // Recursively check dependencies, keeping track of the original node
-    if (HasCycleThroughOthers(*depPtr, originalIV, dependencyGraph, visited, recursionStack))
+    if (HasCycleThroughOthers(*depPtr, originalOutput, dependencyGraph, visited, recursionStack))
       return true;
   }
 
-  recursionStack.erase(&currentIV);
+  recursionStack.erase(&currentOutput);
   return false;
 }
 

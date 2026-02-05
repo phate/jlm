@@ -533,7 +533,7 @@ public:
 
   typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
 
-  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> IVDependencyGraph;
+  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> DependencyGraph;
 
   ~ScalarEvolution() noexcept override;
 
@@ -571,14 +571,14 @@ private:
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
-  IVDependencyGraph
-  CreateDependencyGraph(const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars) const;
+  DependencyGraph
+  CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
   static void
   FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
 
   static std::vector<const rvsdg::Output *>
-  TopologicalSort(const IVDependencyGraph & dependencyGraph);
+  TopologicalSort(const DependencyGraph & dependencyGraph);
 
   void
   PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
@@ -608,7 +608,7 @@ private:
   FoldNAryExpression(SCEVNAryExpr & expression);
 
   static bool
-  IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
+  CanCreateChainRecurrence(const rvsdg::Output & output, DependencyGraph & dependencyGraph);
 
   /**
    * Checks the operands of the given \p chrec to see if any of them are unknown.
@@ -621,9 +621,9 @@ private:
 
   static bool
   HasCycleThroughOthers(
-      const rvsdg::Output & currentIV,
-      const rvsdg::Output & originalIV,
-      IVDependencyGraph & dependencyGraph,
+      const rvsdg::Output & currentOutput,
+      const rvsdg::Output & originalOutput,
+      DependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
 
