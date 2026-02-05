@@ -3,6 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/GetElementPtr.hpp"
+#include "jlm/llvm/ir/operators/IOBarrier.hpp"
+#include "jlm/llvm/ir/operators/Load.hpp"
+#include "jlm/llvm/ir/operators/sext.hpp"
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
@@ -425,6 +429,44 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   }
   if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
+    if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
+    {
+      const auto addressInputOrigin = LoadOperation::AddressInput(*simpleNode).origin();
+      result = SCEVLoad::Create(GetOrCreateSCEVForOutput(*addressInputOrigin));
+    }
+    if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
+    {
+      const auto barredInputOrigin = IOBarrierOperation::BarredInput(*simpleNode).origin();
+      result = GetOrCreateSCEVForOutput(*barredInputOrigin);
+    }
+    if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() == 1);
+      result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
+    }
+    if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(simpleNode->ninputs() >= 2);
+      const auto baseIndex = simpleNode->input(0)->origin();
+      JLM_ASSERT(is<PointerType>(baseIndex->Type()));
+
+      const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&simpleNode->GetOperation());
+      const auto & pointeeType = gepOp->GetPointeeType();
+
+      auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
+
+      auto baseOffsetIndex = GetOrCreateSCEVForOutput(*simpleNode->input(1)->origin());
+
+      const auto wholeTypeSize = GetTypeAllocSize(pointeeType);
+      std::unique_ptr<SCEV> offset =
+          SCEVMulExpr::Create(std::move(baseOffsetIndex), SCEVConstant::Create(wholeTypeSize));
+      if (auto innerOffset = ComputeSCEVForGepInnerOffset(*simpleNode, 2, pointeeType))
+        offset = SCEVAddExpr::Create(std::move(offset), std::move(innerOffset));
+
+      result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
+
+      std::cout << result->DebugString() << '\n';
+    }
     if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
     {
       const auto constOp =
@@ -465,6 +507,55 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   Context_->InsertSCEV(output, result);
 
   return result;
+}
+
+std::unique_ptr<SCEV>
+ScalarEvolution::ComputeSCEVForGepInnerOffset(
+    const rvsdg::SimpleNode & gepNode,
+    const size_t inputIndex,
+    const rvsdg::Type & type)
+{
+  JLM_ASSERT(inputIndex >= 2);
+
+  if (inputIndex >= gepNode.ninputs())
+  {
+    return nullptr;
+  }
+
+  const auto gepInput = gepNode.input(inputIndex);
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  {
+    const auto & elementType = *arrayType->GetElementType();
+    auto offset = SCEVMulExpr::Create(
+        GetOrCreateSCEVForOutput(*gepInput->origin()),
+        SCEVConstant::Create(GetTypeAllocSize(elementType)));
+
+    auto subOffset = ComputeSCEVForGepInnerOffset(gepNode, inputIndex + 1, elementType);
+
+    if (!subOffset)
+      return offset;
+
+    return SCEVAddExpr::Create(std::move(offset), std::move(subOffset));
+  }
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
+  {
+    const auto indexingValue = tryGetConstantSignedInteger(*gepInput->origin());
+
+    if (!indexingValue.has_value())
+      return nullptr;
+
+    const auto & fieldType = structType->getElementType(*indexingValue);
+
+    auto offset = SCEVConstant::Create(structType->GetFieldOffset(*indexingValue));
+
+    auto subOffset = ComputeSCEVForGepInnerOffset(gepNode, inputIndex + 1, *fieldType);
+
+    if (!subOffset)
+      return offset;
+
+    return SCEVAddExpr::Create(std::move(offset), std::move(subOffset));
+  }
+  JLM_UNREACHABLE("Unknown GEP type!");
 }
 
 void
@@ -632,6 +723,11 @@ ScalarEvolution::GetOrCreateStepForSCEV(
     // This is a constant, we add it as the only operand
     chrec->AddOperand(scevConstant->Clone());
     return chrec;
+  }
+  if (dynamic_cast<const SCEVLoad *>(&scevTree))
+  {
+    // The load operation relies on memory, which we treat as opaque
+    chrec->AddOperand(SCEVUnknown::Create());
   }
   if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {

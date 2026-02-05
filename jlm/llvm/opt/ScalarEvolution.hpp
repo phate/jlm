@@ -99,6 +99,43 @@ private:
   const rvsdg::Output * PrePointer_;
 };
 
+class SCEVLoad final : public SCEV
+{
+public:
+  explicit SCEVLoad(std::unique_ptr<SCEV> scev)
+      : AddressSCEV_{ std::move(scev) }
+  {}
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "Load" << "(" << AddressSCEV_->DebugString() << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVLoad>(AddressSCEV_->Clone());
+  }
+
+  static std::unique_ptr<SCEVLoad>
+  Create(std::unique_ptr<SCEV> scev)
+  {
+    return std::make_unique<SCEVLoad>(scev->Clone());
+  }
+
+  SCEV *
+  GetAddressSCEV() const
+  {
+    return AddressSCEV_.get();
+  }
+
+private:
+  std::unique_ptr<SCEV> AddressSCEV_;
+};
+
 class SCEVPlaceholder final : public SCEV
 {
 public:
@@ -582,6 +619,12 @@ private:
 
   void
   PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
+
+  std::unique_ptr<SCEV>
+  ComputeSCEVForGepInnerOffset(
+      const rvsdg::SimpleNode & gepNode,
+      size_t inputIndex,
+      const rvsdg::Type & type);
 
   std::optional<std::unique_ptr<SCEV>>
   TryReplaceInitForSCEV(const SCEV & scev);
