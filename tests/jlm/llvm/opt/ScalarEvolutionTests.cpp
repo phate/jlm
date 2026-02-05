@@ -3,6 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/delta.hpp"
+#include "jlm/llvm/ir/operators/GetElementPtr.hpp"
+#include "jlm/llvm/ir/operators/Load.hpp"
+#include "jlm/llvm/ir/operators/operators.hpp"
+#include "jlm/llvm/ir/operators/sext.hpp"
+#include "jlm/rvsdg/delta.hpp"
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -1043,6 +1049,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   // Tests "stitching" of induction variables in outer loops
   using namespace jlm::llvm;
 
+  // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -1113,6 +1120,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
 {
   using namespace jlm::llvm;
 
+  // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -1268,6 +1276,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   // loops"
   using namespace jlm::llvm;
 
+  // Arrange
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -1337,4 +1346,238 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   auto lv3TestChrec = SCEVChainRecurrence(*theta2);
   lv3TestChrec.AddOperand(lv2InnerChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+}
+
+TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+  const auto intArrayType = ArrayType::Create(intType, 5);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          jlm::rvsdg::FunctionType::Create(
+              { pointerType, memoryStateType },
+              { intType, memoryStateType }),
+          "f",
+          Linkage::externalLinkage));
+
+  const auto & delta = jlm::rvsdg::DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(intArrayType, "", Linkage::externalLinkage, "", false));
+
+  const auto & arrayC1 = IntegerConstantOperation::Create(*delta->subregion(), 32, 1);
+  const auto & arrayC2 = IntegerConstantOperation::Create(*delta->subregion(), 32, 2);
+  const auto & arrayC3 = IntegerConstantOperation::Create(*delta->subregion(), 32, 3);
+  const auto & arrayC4 = IntegerConstantOperation::Create(*delta->subregion(), 32, 4);
+  const auto & arrayC5 = IntegerConstantOperation::Create(*delta->subregion(), 32, 5);
+
+  const auto & constantArray = ConstantDataArray::Create({ arrayC1.output(0),
+                                                           arrayC2.output(0),
+                                                           arrayC3.output(0),
+                                                           arrayC4.output(0),
+                                                           arrayC5.output(0) });
+  delta->finalize(constantArray);
+
+  const auto cv1 = lambda->AddContextVar(delta->output());
+
+  const auto & c0_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  const auto & c1_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 1);
+  const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
+
+  const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
+  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(c1_1.output(0)); // sum
+  const auto lv3 = theta->AddLoopVar(cv1.inner);      // arr ptr
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+
+  const auto & addNode1 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  const auto res1 = addNode1.output(0);
+
+  const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
+  const auto & lv1SExt = SExtOperation::create(64, lv1.pre);
+
+  const auto gep = GetElementPtrOperation::Create(
+      lv3.pre,
+      { c0_2.output(0), lv1SExt },
+      intArrayType,
+      pointerType);
+
+  auto loadedValue = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32)[0];
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, loadedValue }, 32);
+  const auto res2 = addNode2.output(0);
+
+  const auto & c4 = IntegerConstantOperation::Create(*theta->subregion(), 32, 4);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c4.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
+
+  // Assert
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(gep), chrecMap.end());
+
+  // lv1 is a simple induction variable with the recurrence {0,+,1}
+  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  lv1TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv1TestChrec.AddOperand(SCEVConstant::Create(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+
+  // lv2 is reliant on the result from a LOAD operation, and should therefore be {1,+,Unknown}
+  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  lv2TestChrec.AddOperand(SCEVConstant::Create(1));
+  lv2TestChrec.AddOperand(SCEVUnknown::Create());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+
+  // lv3 (base pointer in GEP) is unchanged, it's recurrence should be {Init(a3)}
+  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+
+  // The GEP should have the following SCEV: (PH(a3) + ((0 * 20) + (PH(a1) * 4)))
+  // Replacing the placeholders gives us ({Init(a3)} + (0 * 20) + ({0,+,1} * 4)})
+  // Folding constants together gives us ({Init(a3)} + {0,+,4}) = {Init(a3),+,4} which is the
+  // resulting recurrence
+  auto gepTestChrec = SCEVChainRecurrence(*theta);
+  gepTestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
+  gepTestChrec.AddOperand(SCEVConstant::Create(4));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
+}
+
+TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+  const auto intStructType =
+      StructType::CreateLiteral({ intType, intType, intType, intType, intType }, false);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          jlm::rvsdg::FunctionType::Create(
+              { pointerType, memoryStateType },
+              { intType, memoryStateType }),
+          "f",
+          Linkage::externalLinkage));
+
+  const auto & delta = jlm::rvsdg::DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(intStructType, "", Linkage::externalLinkage, "", false));
+
+  const auto & structC1 = IntegerConstantOperation::Create(*delta->subregion(), 32, 1);
+  const auto & structC2 = IntegerConstantOperation::Create(*delta->subregion(), 32, 2);
+  const auto & structC3 = IntegerConstantOperation::Create(*delta->subregion(), 32, 3);
+  const auto & structC4 = IntegerConstantOperation::Create(*delta->subregion(), 32, 4);
+  const auto & structC5 = IntegerConstantOperation::Create(*delta->subregion(), 32, 5);
+
+  auto & constantStruct = ConstantStruct::Create(
+      *delta->subregion(),
+      { structC1.output(0),
+        structC2.output(0),
+        structC3.output(0),
+        structC4.output(0),
+        structC5.output(0) },
+      intStructType);
+  delta->finalize(&constantStruct);
+
+  const auto cv1 = lambda->AddContextVar(delta->output());
+
+  const auto & c0_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  const auto & c1_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 1);
+  const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
+
+  const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
+  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(c1_1.output(0)); // sum
+  const auto lv3 = theta->AddLoopVar(cv1.inner);      // struct ptr
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+
+  const auto & addNode1 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  const auto res1 = addNode1.output(0);
+
+  const auto & lv1SExt = SExtOperation::create(64, lv1.pre);
+  const auto gep = GetElementPtrOperation::Create(lv3.pre, { lv1SExt }, intType, pointerType);
+
+  auto loadedValue = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32)[0];
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, loadedValue }, 32);
+  const auto res2 = addNode2.output(0);
+
+  const auto & c4 = IntegerConstantOperation::Create(*theta->subregion(), 32, 4);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c4.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  auto chrecMap = RunScalarEvolution(rvsdgModule);
+
+  // Assert
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(gep), chrecMap.end());
+
+  // lv1 is a simple induction variable with the recurrence {0,+,1}
+  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  lv1TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv1TestChrec.AddOperand(SCEVConstant::Create(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+
+  // lv2 is reliant on the result from a LOAD operation, and should therefore be {1,+,Unknown}
+  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  lv2TestChrec.AddOperand(SCEVConstant::Create(1));
+  lv2TestChrec.AddOperand(SCEVUnknown::Create());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+
+  // lv3 (base pointer in GEP) is unchanged, it's recurrence should be {Init(a3)}
+  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+
+  // The GEP should have the following SCEV: (PH(a3) + (PH(a1) * 4))
+  // Replacing the placeholders gives us ({Init(a3)} + ({0,+,1} * 4))
+  // Folding constants together gives us ({Init(a3)} + {0,+,4}) = {Init(a3),+,4} which is the
+  // resulting recurrence
+  auto gepTestChrec = SCEVChainRecurrence(*theta);
+  gepTestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
+  gepTestChrec.AddOperand(SCEVConstant::Create(4));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
 }
