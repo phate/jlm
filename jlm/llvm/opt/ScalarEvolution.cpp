@@ -464,8 +464,6 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
         offset = SCEVAddExpr::Create(std::move(offset), std::move(innerOffset));
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
-
-      std::cout << result->DebugString() << '\n';
     }
     if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
     {
