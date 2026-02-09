@@ -3,19 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/GetElementPtr.hpp"
-#include "jlm/llvm/ir/operators/IOBarrier.hpp"
-#include "jlm/llvm/ir/operators/Load.hpp"
-#include "jlm/llvm/ir/operators/sext.hpp"
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
-
-#include <algorithm>
-#include <queue>
 
 namespace jlm::llvm
 {
@@ -81,26 +78,16 @@ public:
     ChrecMap_.insert_or_assign(&output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
-  GetChrecMap() const
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> &
+  GetChrecMap()
   {
-    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> mapCopy{};
-    for (auto & [output, chrec] : ChrecMap_)
-    {
-      mapCopy.emplace(output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
-    }
-    return mapCopy;
+    return ChrecMap_;
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
-  GetSCEVMap() const
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> &
+  GetSCEVMap()
   {
-    std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> mapCopy{};
-    for (auto & [output, scev] : SCEVMap_)
-    {
-      mapCopy.emplace(output, scev->Clone());
-    }
-    return mapCopy;
+    return SCEVMap_;
   }
 
   int
@@ -185,7 +172,12 @@ ScalarEvolution::~ScalarEvolution() noexcept = default;
 std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
 ScalarEvolution::GetChrecMap() const
 {
-  return Context_->GetChrecMap();
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> mapCopy{};
+  for (auto & [output, chrec] : Context_->GetChrecMap())
+  {
+    mapCopy.emplace(output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
+  }
+  return mapCopy;
 }
 
 void
@@ -234,10 +226,6 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
   }
 }
 
-/**
- * Goes through all chain recurrences stored in the context (across different loops), and
- * stitches them together wherever possible.
- */
 void
 ScalarEvolution::CombineChrecsAcrossLoops()
 {
@@ -245,34 +233,34 @@ ScalarEvolution::CombineChrecsAcrossLoops()
   do
   {
     changed = false;
+
+    std::vector<std::pair<const rvsdg::Output *, std::unique_ptr<SCEV>>> pending;
     for (const auto & [output, chrec] : Context_->GetChrecMap())
     {
       if (auto newSCEV = TryReplaceInitForSCEV(*chrec))
       {
-        // Check if the result is actually a chrec
-        if (dynamic_cast<const SCEVChainRecurrence *>(newSCEV->get()))
-        {
-          Context_->InsertChrec(*output, SCEV::CloneAs<SCEVChainRecurrence>(**newSCEV));
-        }
-        else
-        {
-          // The transformation produced a non-chrec SCEV (n-ary expression), store it in the SCEV
-          // map instead
-          Context_->InsertSCEV(*output, std::move(*newSCEV));
-        }
+        pending.emplace_back(output, std::move(*newSCEV));
         changed = true;
+      }
+    }
+
+    for (auto & [output, scev] : pending)
+    {
+      // Check if the result is actually a chrec
+      if (auto * chrec = dynamic_cast<SCEVChainRecurrence *>(scev.get()))
+      {
+        Context_->InsertChrec(*output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
+      }
+      else
+      {
+        // The transformation produced a non-chrec SCEV (n-ary expression), store it in the SCEV
+        // map instead
+        Context_->InsertSCEV(*output, std::move(scev));
       }
     }
   } while (changed);
 }
 
-/**
- * Recursively traverses chain recurrences to find Init nodes that can be replaced with their (now
- * computed) corresponding chain recurrences and replaces them
- *
- * @param scev The SCEV expression to be traversed
- * @return The resulting recurrence, or std::nullopt if no change was made
- */
 std::optional<std::unique_ptr<SCEV>>
 ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
 {
@@ -553,7 +541,7 @@ ScalarEvolution::ComputeSCEVForGepInnerOffset(
 
     return SCEVAddExpr::Create(std::move(offset), std::move(subOffset));
   }
-  JLM_UNREACHABLE("Unknown GEP type!");
+  throw std::logic_error("Unknown GEP type!");
 }
 
 void
@@ -762,11 +750,6 @@ ScalarEvolution::GetOrCreateStepForSCEV(
   return chrec;
 }
 
-/**
- * \brief Try to combine the constants in an n-ary expression (Add or Mul) into themselves.
- * @param expression The expression to be folded
- * @return The unique ptr to the expression
- */
 std::unique_ptr<SCEV>
 ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
 {
@@ -819,12 +802,6 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
   return expression.Clone();
 }
 
-/**
- * \brief Apply folding rules for addition to combine two SCEV operands into one.
- * @param lhsOperand The left-hand side operand of the add operation
- * @param rhsOperand The right-hand side operand of the add operation
- * @return A unique ptr to the new operand
- */
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
@@ -1044,12 +1021,6 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   return SCEVUnknown::Create();
 }
 
-/**
- * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
- * @param lhsOperand The left-hand side operand of the mul operation
- * @param rhsOperand The right-hand side operand of the mul operation
- * @return A unique ptr to the new operand
- */
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
@@ -1321,21 +1292,6 @@ ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
   return false;
 }
 
-/**
- * Checks the dependencies of the input variable to determine if we can create a chain recurrence
- * using it's SCEV.
- *
- * The requirements are:
- * - No more than one self-dependency (indicates a self-dependent variable)
- * - No cyclic dependencies (A depends on B and B depends on A)
- * - No dependencies via multiplication (results in a geometric update sequence, which we treat as
- * an invalid induction variable)
- *
- * @param output The output to check.
- * @param dependencyGraph The dependency graph which stores the dependencies of all outputs in the
- * loop.
- * @return True if the requirements are fulfilled, false otherwise.
- */
 bool
 ScalarEvolution::CanCreateChainRecurrence(
     const rvsdg::Output & output,

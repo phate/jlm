@@ -3,18 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/delta.hpp"
-#include "jlm/llvm/ir/operators/GetElementPtr.hpp"
-#include "jlm/llvm/ir/operators/Load.hpp"
-#include "jlm/llvm/ir/operators/operators.hpp"
-#include "jlm/llvm/ir/operators/sext.hpp"
-#include "jlm/rvsdg/delta.hpp"
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
-#include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <gtest/gtest.h>
@@ -51,7 +48,7 @@ TEST(ScalarEvolutionTests, NonEvolvingVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
 
@@ -92,7 +89,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -151,7 +148,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -206,7 +203,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -264,7 +261,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -334,7 +331,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -385,7 +382,7 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -436,7 +433,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -497,7 +494,7 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -547,7 +544,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -595,7 +592,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -672,7 +669,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -779,7 +776,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -869,7 +866,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -915,7 +912,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -969,7 +966,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1027,7 +1024,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1090,7 +1087,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1193,7 +1190,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1_1.pre), chrecMap.end());
@@ -1318,7 +1315,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1431,7 +1428,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1547,7 +1544,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  auto chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());

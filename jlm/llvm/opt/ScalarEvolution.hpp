@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
-#include <string>
-
 namespace jlm::llvm
 {
 class SCEV
@@ -586,6 +584,10 @@ public:
   ScalarEvolution &
   operator=(ScalarEvolution &&) = delete;
 
+  /**
+   * Returns a copy of the chrec map containing the computed chain recurrences after running
+   * the analysis.
+   */
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
@@ -595,6 +597,10 @@ public:
   void
   AnalyzeRegion(const rvsdg::Region & region);
 
+  /**
+   * Goes through all chain recurrences stored in the context (across different loops), and
+   * stitches them together wherever possible.
+   */
   void
   CombineChrecsAcrossLoops();
 
@@ -626,6 +632,13 @@ private:
       size_t inputIndex,
       const rvsdg::Type & type);
 
+  /**
+   * Recursively traverses chain recurrences to find Init nodes that can be replaced with their (now
+   * computed) corresponding chain recurrences and replaces them
+   *
+   * @param scev The SCEV expression to be traversed
+   * @return The resulting recurrence, or std::nullopt if no change was made
+   */
   std::optional<std::unique_ptr<SCEV>>
   TryReplaceInitForSCEV(const SCEV & scev);
 
@@ -641,15 +654,47 @@ private:
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode);
 
+  /**
+   * \brief Apply folding rules for addition to combine two SCEV operands into one.
+   * @param lhsOperand The left-hand side operand of the add operation
+   * @param rhsOperand The right-hand side operand of the add operation
+   * @return A unique ptr to the new operand
+   */
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
+  /**
+   * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
+   * @param lhsOperand The left-hand side operand of the mul operation
+   * @param rhsOperand The right-hand side operand of the mul operation
+   * @return A unique ptr to the new operand
+   */
   static std::unique_ptr<SCEV>
   ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
+  /**
+   * \brief Try to combine the constants in an n-ary expression (Add or Mul) into themselves.
+   * @param expression The expression to be folded
+   * @return The unique ptr to the expression
+   */
   static std::unique_ptr<SCEV>
   FoldNAryExpression(SCEVNAryExpr & expression);
 
+  /**
+   * Checks the dependencies of the input variable to determine if we can create a chain recurrence
+   * using it's SCEV.
+   *
+   * The requirements are:
+   * - No more than one self-dependency (indicates a self-dependent variable)
+   * - No cyclic dependencies (A depends on B and B depends on A)
+   * - No dependencies via multiplication (results in a geometric update sequence, which we treat as
+   * an invalid induction variable)
+   *
+   * @param output The output to check.
+   * @param dependencyGraph The dependency graph which stores the dependencies of all outputs in the
+   * loop.
+   * @return True if the requirements are fulfilled, false otherwise.
+   */
   static bool
   CanCreateChainRecurrence(const rvsdg::Output & output, DependencyGraph & dependencyGraph);
 
