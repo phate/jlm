@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
-#include <string>
-
 namespace jlm::llvm
 {
 class SCEV
@@ -97,6 +95,43 @@ public:
 
 private:
   const rvsdg::Output * PrePointer_;
+};
+
+class SCEVLoad final : public SCEV
+{
+public:
+  explicit SCEVLoad(std::unique_ptr<SCEV> scev)
+      : AddressSCEV_{ std::move(scev) }
+  {}
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "Load" << "(" << AddressSCEV_->DebugString() << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVLoad>(AddressSCEV_->Clone());
+  }
+
+  static std::unique_ptr<SCEVLoad>
+  Create(std::unique_ptr<SCEV> scev)
+  {
+    return std::make_unique<SCEVLoad>(scev->Clone());
+  }
+
+  SCEV *
+  GetAddressSCEV() const
+  {
+    return AddressSCEV_.get();
+  }
+
+private:
+  std::unique_ptr<SCEV> AddressSCEV_;
 };
 
 class SCEVPlaceholder final : public SCEV
@@ -533,7 +568,7 @@ public:
 
   typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
 
-  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> IVDependencyGraph;
+  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> DependencyGraph;
 
   ~ScalarEvolution() noexcept override;
 
@@ -549,6 +584,10 @@ public:
   ScalarEvolution &
   operator=(ScalarEvolution &&) = delete;
 
+  /**
+   * Returns a copy of the chrec map containing the computed chain recurrences after running
+   * the analysis.
+   */
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
@@ -558,6 +597,10 @@ public:
   void
   AnalyzeRegion(const rvsdg::Region & region);
 
+  /**
+   * Goes through all chain recurrences stored in the context (across different loops), and
+   * stitches them together wherever possible.
+   */
   void
   CombineChrecsAcrossLoops();
 
@@ -571,18 +614,31 @@ private:
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
-  IVDependencyGraph
-  CreateDependencyGraph(const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars) const;
+  DependencyGraph
+  CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
 
   static void
   FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
 
   static std::vector<const rvsdg::Output *>
-  TopologicalSort(const IVDependencyGraph & dependencyGraph);
+  TopologicalSort(const DependencyGraph & dependencyGraph);
 
   void
   PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
 
+  std::unique_ptr<SCEV>
+  ComputeSCEVForGepInnerOffset(
+      const rvsdg::SimpleNode & gepNode,
+      size_t inputIndex,
+      const rvsdg::Type & type);
+
+  /**
+   * Recursively traverses chain recurrences to find Init nodes that can be replaced with their (now
+   * computed) corresponding chain recurrences and replaces them
+   *
+   * @param scev The SCEV expression to be traversed
+   * @return The resulting recurrence, or std::nullopt if no change was made
+   */
   std::optional<std::unique_ptr<SCEV>>
   TryReplaceInitForSCEV(const SCEV & scev);
 
@@ -598,17 +654,49 @@ private:
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode);
 
+  /**
+   * \brief Apply folding rules for addition to combine two SCEV operands into one.
+   * @param lhsOperand The left-hand side operand of the add operation
+   * @param rhsOperand The right-hand side operand of the add operation
+   * @return A unique ptr to the new operand
+   */
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
+  /**
+   * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
+   * @param lhsOperand The left-hand side operand of the mul operation
+   * @param rhsOperand The right-hand side operand of the mul operation
+   * @return A unique ptr to the new operand
+   */
   static std::unique_ptr<SCEV>
   ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
+  /**
+   * \brief Try to combine the constants in an n-ary expression (Add or Mul) into themselves.
+   * @param expression The expression to be folded
+   * @return The unique ptr to the expression
+   */
   static std::unique_ptr<SCEV>
   FoldNAryExpression(SCEVNAryExpr & expression);
 
+  /**
+   * Checks the dependencies of the input variable to determine if we can create a chain recurrence
+   * using it's SCEV.
+   *
+   * The requirements are:
+   * - No more than one self-dependency (indicates a self-dependent variable)
+   * - No cyclic dependencies (A depends on B and B depends on A)
+   * - No dependencies via multiplication (results in a geometric update sequence, which we treat as
+   * an invalid induction variable)
+   *
+   * @param output The output to check.
+   * @param dependencyGraph The dependency graph which stores the dependencies of all outputs in the
+   * loop.
+   * @return True if the requirements are fulfilled, false otherwise.
+   */
   static bool
-  IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
+  CanCreateChainRecurrence(const rvsdg::Output & output, DependencyGraph & dependencyGraph);
 
   /**
    * Checks the operands of the given \p chrec to see if any of them are unknown.
@@ -621,9 +709,9 @@ private:
 
   static bool
   HasCycleThroughOthers(
-      const rvsdg::Output & currentIV,
-      const rvsdg::Output & originalIV,
-      IVDependencyGraph & dependencyGraph,
+      const rvsdg::Output & currentOutput,
+      const rvsdg::Output & originalOutput,
+      DependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
       std::unordered_set<const rvsdg::Output *> & recursionStack);
 
