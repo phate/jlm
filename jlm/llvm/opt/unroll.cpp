@@ -347,9 +347,9 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
       rvsdg::SimpleNode::Create(*region, ui.armoperation().copy(), { ui.init(), mul }).output(0);
   /* FIXME: order of operands */
   auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, end }).output(0);
-  auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & predNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
-  return pred;
+  return predNode.output(0);
 }
 
 static jlm::rvsdg::Output *
@@ -379,9 +379,9 @@ create_unrolled_theta_predicate(
   /* FIXME: order of operands */
   auto cmp =
       SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, iend->origin() }).output(0);
-  auto pred = match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & predNode = MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
-  return pred;
+  return predNode.output(0);
 }
 
 static jlm::rvsdg::Output *
@@ -393,9 +393,9 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopU
 
   /* FIXME: order of operands */
   auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { idv, end }).output(0);
-  auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & predNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
-  return pred;
+  return predNode.output(0);
 }
 
 static void

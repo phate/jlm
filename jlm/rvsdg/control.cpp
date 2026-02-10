@@ -175,21 +175,4 @@ MatchOperation::copy() const
   return std::make_unique<MatchOperation>(*this);
 }
 
-jlm::rvsdg::Output *
-match(
-    size_t nbits,
-    const std::unordered_map<uint64_t, uint64_t> & mapping,
-    uint64_t default_alternative,
-    size_t nalternatives,
-    jlm::rvsdg::Output * operand)
-{
-  return CreateOpNode<MatchOperation>(
-             { operand },
-             nbits,
-             mapping,
-             default_alternative,
-             nalternatives)
-      .output(0);
-}
-
 }

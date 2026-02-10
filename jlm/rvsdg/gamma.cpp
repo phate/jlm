@@ -149,8 +149,8 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
     }
 
     auto origin = matchNode->input(0)->origin();
-    auto m = match(matchOperation->nbits(), new_mapping, defalt, nalternatives, origin);
-    xv.output->divert_users(m);
+    auto & matchNode = MatchOperation::CreateNode(*origin, new_mapping, defalt, nalternatives);
+    xv.output->divert_users(matchNode.output(0));
   }
 }
 

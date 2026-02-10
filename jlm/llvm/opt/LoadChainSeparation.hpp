@@ -59,9 +59,7 @@ private:
   separateReferenceChainsInLambda(rvsdg::LambdaNode & lambdaNode);
 
   void
-  separateRefenceChainsInTheta(
-      rvsdg::ThetaNode & thetaNode,
-      util::HashSet<rvsdg::Output *> & visitedOutputs);
+  separateRefenceChainsInTheta(rvsdg::ThetaNode & thetaNode);
 
   void
   separateRefenceChainsInGamma(rvsdg::GammaNode & gammaNode);
@@ -72,14 +70,10 @@ private:
    *
    * @param startOutput The starting output of the mod/ref chain. Must be of type \ref
    * MemoryStateType.
-   * @param visitedOutputs The set of outputs that were already visited throughout the separation in
-   * the region.
    * @return True, if the separated mod/ref chains had a modifier link, otherwise False.
    */
   bool
-  separateReferenceChains(
-      rvsdg::Output & startOutput,
-      util::HashSet<rvsdg::Output *> & visitedOutputs);
+  separateReferenceChains(rvsdg::Output & startOutput);
 
   /**
    * Represents a single link in a mod/ref chain
@@ -114,11 +108,9 @@ private:
     void
     add(ModRefChainLink modRefChainLink)
     {
-      hasModificationChainLink |= modRefChainLink.type == ModRefChainLink::Type::Modification;
       links.push_back(std::move(modRefChainLink));
     }
 
-    bool hasModificationChainLink = false;
     std::vector<ModRefChainLink> links{};
   };
 
@@ -132,11 +124,8 @@ private:
       {
         modRefChains.push_back(std::move(modRefChain));
       }
-
-      hasModificationChainLink |= modRefChain.hasModificationChainLink;
     }
 
-    bool hasModificationChainLink = false;
     std::vector<ModRefChain> modRefChains{};
   };
 
@@ -145,15 +134,13 @@ private:
    * within a single region.
    *
    * @param startOutput The starting output for the tracing. Must be of type \ref MemoryStateType.
-   * @param visitedOutputs The set of outputs that were already visited throughout the recursive
-   * tracing.
    * @param summary The tracing summary.
+   *
+   * @return True, if there is a ModRefChainLink::Type::Modification happening on any output above
+   * \p startOutput in the region, otherwise false.
    */
-  void
-  traceModRefChains(
-      rvsdg::Output & startOutput,
-      util::HashSet<rvsdg::Output *> & visitedOutputs,
-      ModRefChainSummary & summary);
+  bool
+  traceModRefChains(rvsdg::Output & startOutput, ModRefChainSummary & summary);
 
   /**
    * Extracts all reference subchains of mod/ref chain \p modRefChain. A valid reference subchain

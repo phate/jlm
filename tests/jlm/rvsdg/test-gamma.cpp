@@ -21,9 +21,9 @@ TEST(GammaTests, test_gamma)
   auto v2 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
   auto v3 = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "");
 
-  auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
+  auto & matchNode = MatchOperation::CreateNode(*cmp, { { 0, 0 }, { 1, 1 } }, 2, 3);
 
-  auto gamma = GammaNode::create(pred, 3);
+  auto gamma = GammaNode::create(matchNode.output(0), 3);
   auto ev0 = gamma->AddEntryVar(v0);
   auto ev1 = gamma->AddEntryVar(v1);
   auto ev2 = gamma->AddEntryVar(v2);
@@ -36,8 +36,9 @@ TEST(GammaTests, test_gamma)
 
   /* test gamma copy */
 
-  auto gamma2 =
-      static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
+  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(
+      &graph.GetRootRegion(),
+      { matchNode.output(0), v0, v1, v2 });
   view(&graph.GetRootRegion(), stdout);
   EXPECT_NE(dynamic_cast<const GammaNode *>(gamma2), nullptr);
 
@@ -124,9 +125,9 @@ TEST(GammaTests, test_control_constant_reduction)
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(1), "x");
 
-  auto c = match(1, { { 0, 0 } }, 1, 2, x);
+  auto & matchNode = MatchOperation::CreateNode(*x, { { 0, 0 } }, 1, 2);
 
-  auto gamma = GammaNode::create(c, 2);
+  auto gamma = GammaNode::create(matchNode.output(0), 2);
 
   auto t = &ControlConstantOperation::createTrue(*gamma->subregion(0));
   auto f = &ControlConstantOperation::createFalse(*gamma->subregion(1));
@@ -148,11 +149,13 @@ TEST(GammaTests, test_control_constant_reduction)
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*ex1.origin());
-  EXPECT_TRUE(matchNode && matchOperation);
-  EXPECT_EQ(matchOperation->default_alternative(), 0u);
+  {
+    auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*ex1.origin());
+    EXPECT_TRUE(matchNode && matchOperation);
+    EXPECT_EQ(matchOperation->default_alternative(), 0u);
 
-  EXPECT_EQ(TryGetOwnerNode<Node>(*ex2.origin()), gamma);
+    EXPECT_EQ(TryGetOwnerNode<Node>(*ex2.origin()), gamma);
+  }
 }
 
 TEST(GammaTests, test_control_constant_reduction2)
@@ -164,9 +167,9 @@ TEST(GammaTests, test_control_constant_reduction2)
 
   auto import = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(2), "import");
 
-  auto c = match(2, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4, import);
+  auto & matchNode = MatchOperation::CreateNode(*import, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4);
 
-  auto gamma = GammaNode::create(c, 4);
+  auto gamma = GammaNode::create(matchNode.output(0), 4);
 
   auto t1 = &ControlConstantOperation::createTrue(*gamma->subregion(0));
   auto t2 = &ControlConstantOperation::createTrue(*gamma->subregion(1));

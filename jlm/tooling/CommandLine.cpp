@@ -107,7 +107,8 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::NodeReduction, "NodeReduction" },
     { OptimizationId::PredicateCorrelation, "PredicateCorrelation" },
     { OptimizationId::RvsdgTreePrinter, "RvsdgTreePrinter" },
-    { OptimizationId::ScalarEvolution, "ScalarEvolution" }
+    { OptimizationId::ScalarEvolution, "ScalarEvolution" },
+    { OptimizationId::StoreValueForwarding, "StoreValueForwarding" }
   };
 
   auto firstIndex = static_cast<size_t>(OptimizationId::FirstEnumValue);
@@ -218,6 +219,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
     { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
+    { util::Statistics::Id::StoreValueForwarding, "print-store-value-forwarding" },
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -760,7 +762,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               "Write RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::ScalarEvolution,
-              "Write scalar evolution statistics to file.")),
+              "Write scalar evolution statistics to file."),
+          CreateStatisticsOption(
+              util::Statistics::Id::StoreValueForwarding,
+              "Write store value forwarding statistics to file.")),
       cl::desc("Write statistics"));
 
 #ifdef ENABLE_MLIR
@@ -819,6 +824,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto predicateCorrelation = JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation;
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
   auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
+  auto storeValueForwarding = JlmOptCommandLineOptions::OptimizationId::StoreValueForwarding;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -886,6 +892,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               scalarEvolution,
               JlmOptCommandLineOptions::ToCommandLineArgument(scalarEvolution),
               "Scalar evolution"),
+          ::clEnumValN(
+              storeValueForwarding,
+              JlmOptCommandLineOptions::ToCommandLineArgument(storeValueForwarding),
+              "Store Value Forwarding"),
           ::clEnumValN(
               loopUnswitching,
               "ThetaGammaInversion",

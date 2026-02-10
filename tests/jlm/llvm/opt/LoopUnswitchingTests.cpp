@@ -40,9 +40,9 @@ TEST(LoopUnswitchingTests, Test1)
                { loopVarX.pre, loopVarY.pre },
                { BitType::Create(1) })
                ->output(0);
-  auto predicate = match(1, { { 1, 0 } }, 1, 2, a);
+  auto & predicateNode = MatchOperation::CreateNode(*a, { { 1, 0 } }, 1, 2);
 
-  auto gamma = GammaNode::create(predicate, 2);
+  auto gamma = GammaNode::create(predicateNode.output(0), 2);
 
   auto entryVarX = gamma->AddEntryVar(loopVarX.pre);
   auto entryVarY = gamma->AddEntryVar(loopVarY.pre);
@@ -62,7 +62,7 @@ TEST(LoopUnswitchingTests, Test1)
 
   loopVarY.post->divert_to(exitVarY.output);
 
-  thetaNode->set_predicate(predicate);
+  thetaNode->set_predicate(predicateNode.output(0));
 
   auto & ex1 = GraphExport::Create(*thetaNode->output(0), "x");
   auto & ex2 = GraphExport::Create(*thetaNode->output(1), "y");
@@ -106,9 +106,9 @@ TEST(LoopUnswitchingTests, Test2)
           ->output(0);
   auto n2 =
       TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { valueType })->output(0);
-  auto predicate = match(1, { { 1, 0 } }, 1, 2, n1);
+  auto & predicateNode = MatchOperation::CreateNode(*n1, { { 1, 0 } }, 1, 2);
 
-  auto gammaNode = GammaNode::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicateNode.output(0), 2);
 
   auto ev1 = gammaNode->AddEntryVar(n1);
   auto ev2 = gammaNode->AddEntryVar(loopVarX.pre);
@@ -120,7 +120,7 @@ TEST(LoopUnswitchingTests, Test2)
 
   loopVarX.post->divert_to(gammaNode->output(1));
 
-  thetaNode->set_predicate(predicate);
+  thetaNode->set_predicate(predicateNode.output(0));
 
   auto & ex = GraphExport::Create(*thetaNode->output(0), "x");
 

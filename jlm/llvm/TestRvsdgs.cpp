@@ -1419,9 +1419,9 @@ GammaTest::SetupRvsdg()
 
   auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
   auto biteq = jlm::rvsdg::biteq_op::create(32, fct->GetFunctionArguments()[0], zero);
-  auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, biteq);
+  auto & predicateNode = MatchOperation::CreateNode(*biteq, { { 0, 1 } }, 0, 2);
 
-  auto gammanode = jlm::rvsdg::GammaNode::create(predicate, 2);
+  auto gammanode = GammaNode::create(predicateNode.output(0), 2);
   auto p1ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[1]);
   auto p2ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[2]);
   auto p3ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[3]);
@@ -1545,10 +1545,10 @@ GammaTest2::SetupRvsdg()
 
     auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
     auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
-    auto predicate = rvsdg::match(1, { { 0, 1 } }, 0, 2, bitEq);
+    auto & predicateNode = MatchOperation::CreateNode(*bitEq, { { 0, 1 } }, 0, 2);
 
     auto [gammaOutputA, gammaOutputMemoryState] =
-        SetupGamma(predicate, xArgument, yArgument, allocaZResults[0], memoryState);
+        SetupGamma(predicateNode.output(0), xArgument, yArgument, allocaZResults[0], memoryState);
 
     auto loadZResults = LoadNonVolatileOperation::Create(
         allocaZResults[0],
@@ -1686,11 +1686,11 @@ ThetaTest::SetupRvsdg()
   auto one = &BitConstantOperation::create(*thetanode->subregion(), { 32, 1 });
   auto sum = jlm::rvsdg::bitadd_op::create(32, n.pre, one);
   auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l.pre);
-  auto predicate = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & predicateNode = MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
   n.post->divert_to(sum);
   s.post->divert_to(store[0]);
-  thetanode->set_predicate(predicate);
+  thetanode->set_predicate(predicateNode.output(0));
 
   fct->finalize({ s.output });
   GraphExport::Create(*fct->output(), "f");
@@ -2171,9 +2171,9 @@ PhiTest1::SetupRvsdg()
 
     auto two = &BitConstantOperation::create(*lambda->subregion(), { 64, 2 });
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
-    auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
+    auto & predicateNode = MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
-    auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
+    auto gammaNode = GammaNode::create(predicateNode.output(0), 2);
     auto nev = gammaNode->AddEntryVar(valueArgument);
     auto resultev = gammaNode->AddEntryVar(pointerArgument);
     auto fibev = gammaNode->AddEntryVar(ctxVarFib);

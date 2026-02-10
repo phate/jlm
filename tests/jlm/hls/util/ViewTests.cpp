@@ -74,10 +74,10 @@ TEST(ViewTests, TestDumpDotTheta)
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
   auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
-  auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & matchNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
   idv.post->divert_to(arm);
-  theta->set_predicate(match);
+  theta->set_predicate(matchNode.output(0));
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
   rvsdg::GraphExport::Create(*f, "");

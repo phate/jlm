@@ -25,6 +25,16 @@ public:
 
   virtual std::unique_ptr<SCEV>
   Clone() const = 0;
+
+  template<typename T>
+  static std::unique_ptr<T>
+  CloneAs(const SCEV & scev)
+  {
+    auto cloned = scev.Clone();
+    auto * ptr = dynamic_cast<T *>(cloned.release());
+    JLM_ASSERT(ptr);
+    return std::unique_ptr<T>(ptr);
+  }
 };
 
 class SCEVUnknown final : public SCEV
@@ -41,6 +51,12 @@ public:
 
   std::unique_ptr<SCEV>
   Clone() const override
+  {
+    return std::make_unique<SCEVUnknown>();
+  }
+
+  static std::unique_ptr<SCEVUnknown>
+  Create()
   {
     return std::make_unique<SCEVUnknown>();
   }
@@ -71,6 +87,12 @@ public:
   Clone() const override
   {
     return std::make_unique<SCEVInit>(*PrePointer_);
+  }
+
+  static std::unique_ptr<SCEVInit>
+  Create(const rvsdg::Output & prePointer)
+  {
+    return std::make_unique<SCEVInit>(prePointer);
   }
 
 private:
@@ -104,6 +126,12 @@ public:
     return std::make_unique<SCEVPlaceholder>(*PrePointer_);
   }
 
+  static std::unique_ptr<SCEVPlaceholder>
+  Create(const rvsdg::Output & PrePointer_)
+  {
+    return std::make_unique<SCEVPlaceholder>(PrePointer_);
+  }
+
 private:
   const rvsdg::Output * PrePointer_;
 };
@@ -133,19 +161,31 @@ public:
     return std::make_unique<SCEVConstant>(Value_);
   }
 
+  static std::unique_ptr<SCEVConstant>
+  Create(const int64_t value)
+  {
+    return std::make_unique<SCEVConstant>(value);
+  }
+
+  static bool
+  IsNonZero(const SCEVConstant * c)
+  {
+    return c && c->GetValue() != 0;
+  }
+
 private:
   int64_t Value_;
 };
 
-class SCEVAddExpr final : public SCEV
+class SCEVBinaryExpr : public SCEV
 {
 public:
-  SCEVAddExpr()
+  SCEVBinaryExpr()
       : LeftOperand_{},
         RightOperand_{}
   {}
 
-  SCEVAddExpr(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+  SCEVBinaryExpr(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
       : LeftOperand_{ std::move(left) },
         RightOperand_{ std::move(right) }
   {}
@@ -174,6 +214,18 @@ public:
     RightOperand_ = std::move(op);
   }
 
+protected:
+  std::unique_ptr<SCEV> LeftOperand_;
+  std::unique_ptr<SCEV> RightOperand_;
+};
+
+class SCEVAddExpr final : public SCEVBinaryExpr
+{
+public:
+  SCEVAddExpr(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+      : SCEVBinaryExpr(std::move(left), std::move(right))
+  {}
+
   std::string
   DebugString() const override
   {
@@ -192,26 +244,115 @@ public:
     return std::make_unique<SCEVAddExpr>(std::move(leftClone), std::move(rightClone));
   }
 
-private:
-  std::unique_ptr<SCEV> LeftOperand_;
-  std::unique_ptr<SCEV> RightOperand_;
+  static std::unique_ptr<SCEVAddExpr>
+  Create(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+  {
+    return std::make_unique<SCEVAddExpr>(std::move(left), std::move(right));
+  }
 };
 
-class SCEVChainRecurrence final : public SCEV
+class SCEVMulExpr final : public SCEVBinaryExpr
 {
-  friend class ScalarEvolution;
-
 public:
-  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
-      : Operands_{},
-        Loop_{ &theta }
+  SCEVMulExpr(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+      : SCEVBinaryExpr(std::move(left), std::move(right))
   {}
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    const std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
+    const std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
+    oss << "(" << leftStr << " * " << rightStr << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    std::unique_ptr<SCEV> leftClone = LeftOperand_ ? LeftOperand_->Clone() : nullptr;
+    std::unique_ptr<SCEV> rightClone = RightOperand_ ? RightOperand_->Clone() : nullptr;
+    return std::make_unique<SCEVMulExpr>(std::move(leftClone), std::move(rightClone));
+  }
+
+  static std::unique_ptr<SCEVMulExpr>
+  Create(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+  {
+    return std::make_unique<SCEVMulExpr>(std::move(left), std::move(right));
+  }
+};
+
+class SCEVNAryExpr : public SCEV
+{
+public:
+  explicit SCEVNAryExpr()
+      : Operands_{}
+  {}
+
+  template<typename... Args>
+  explicit SCEVNAryExpr(Args &&... operands)
+      : Operands_{}
+  {
+    (AddOperand(std::forward<Args>(operands)), ...);
+  }
+
+  template<typename... Args>
+  void
+  AddOperands(Args &&... operands)
+  {
+    (AddOperand(std::forward<Args>(operands)), ...);
+  }
 
   void
   AddOperand(std::unique_ptr<SCEV> scev)
   {
     Operands_.push_back(std::move(scev));
   }
+
+  void
+  ReplaceOperand(const size_t index, const std::unique_ptr<SCEV> & operand)
+  {
+    Operands_[index] = operand->Clone();
+  }
+
+  void
+  RemoveOperand(const size_t index)
+  {
+    if (index < Operands_.size())
+    {
+      Operands_.erase(Operands_.begin() + index);
+    }
+  }
+
+  std::vector<const SCEV *>
+  GetOperands() const
+  {
+    std::vector<const SCEV *> operands{};
+    for (auto & op : Operands_)
+    {
+      operands.push_back(op.get());
+    }
+    return operands;
+  }
+
+  SCEV *
+  GetOperand(const size_t index) const
+  {
+    return Operands_.at(index).get();
+  }
+
+protected:
+  std::vector<std::unique_ptr<SCEV>> Operands_;
+};
+
+class SCEVChainRecurrence final : public SCEVNAryExpr
+{
+public:
+  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
+      : SCEVNAryExpr(),
+        Loop_{ &theta }
+  {}
 
   const rvsdg::ThetaNode *
   GetLoop() const
@@ -231,23 +372,6 @@ public:
     Operands_.insert(Operands_.begin(), initScev->Clone());
   }
 
-  std::vector<const SCEV *>
-  GetOperands() const
-  {
-    std::vector<const SCEV *> operands{};
-    for (auto & op : Operands_)
-    {
-      operands.push_back(op.get());
-    }
-    return operands;
-  }
-
-  SCEV *
-  GetOperand(const size_t index) const
-  {
-    return Operands_.at(index).get();
-  }
-
   std::string
   DebugString() const override
   {
@@ -259,7 +383,7 @@ public:
       if (i < Operands_.size() - 1)
         oss << ",+,";
     }
-    oss << "}" << "<" << Loop_->DebugString() << ">";
+    oss << "}" << "<" << Loop_->subregion()->getRegionId() << ">";
     return oss.str();
   }
 
@@ -274,56 +398,29 @@ public:
     return copy;
   }
 
+  static std::unique_ptr<SCEVChainRecurrence>
+  Create(const rvsdg::ThetaNode & loop)
+  {
+    return std::make_unique<SCEVChainRecurrence>(loop);
+  }
+
 protected:
-  std::vector<std::unique_ptr<SCEV>> Operands_;
   const rvsdg::ThetaNode * Loop_;
 };
 
-class SCEVNAryAddExpr final : public SCEV
+class SCEVNAryAddExpr final : public SCEVNAryExpr
 {
   friend class ScalarEvolution;
 
 public:
   explicit SCEVNAryAddExpr()
-      : Operands_{}
+      : SCEVNAryExpr()
   {}
 
   template<typename... Args>
   explicit SCEVNAryAddExpr(Args &&... operands)
-      : Operands_{}
-  {
-    (AddOperand(std::forward<Args>(operands)), ...);
-  }
-
-  template<typename... Args>
-  void
-  AddOperands(Args &&... operands)
-  {
-    (AddOperand(std::forward<Args>(operands)), ...);
-  }
-
-  void
-  AddOperand(std::unique_ptr<SCEV> scev)
-  {
-    Operands_.push_back(std::move(scev));
-  }
-
-  std::vector<const SCEV *>
-  GetOperands() const
-  {
-    std::vector<const SCEV *> operands{};
-    for (auto & op : Operands_)
-    {
-      operands.push_back(op.get());
-    }
-    return operands;
-  }
-
-  SCEV *
-  GetOperand(const size_t index) const
-  {
-    return Operands_.at(index).get();
-  }
+      : SCEVNAryExpr(std::forward<Args>(operands)...)
+  {}
 
   std::string
   DebugString() const override
@@ -351,8 +448,60 @@ public:
     return copy;
   }
 
-protected:
-  std::vector<std::unique_ptr<SCEV>> Operands_;
+  template<typename... Args>
+  static std::unique_ptr<SCEVNAryAddExpr>
+  Create(Args &&... operands)
+  {
+    return std::make_unique<SCEVNAryAddExpr>(std::forward<Args>(operands)...);
+  }
+};
+
+class SCEVNAryMulExpr final : public SCEVNAryExpr
+{
+  friend class ScalarEvolution;
+
+public:
+  explicit SCEVNAryMulExpr()
+      : SCEVNAryExpr()
+  {}
+
+  template<typename... Args>
+  explicit SCEVNAryMulExpr(Args &&... operands)
+      : SCEVNAryExpr(std::forward<Args>(operands)...)
+  {}
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "(";
+    for (size_t i = 0; i < Operands_.size(); ++i)
+    {
+      oss << Operands_.at(i)->DebugString();
+      if (i < Operands_.size() - 1)
+        oss << " * ";
+    }
+    oss << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    auto copy = std::make_unique<SCEVNAryMulExpr>();
+    for (const auto & op : Operands_)
+    {
+      copy->AddOperand(op->Clone());
+    }
+    return copy;
+  }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVNAryMulExpr>
+  Create(Args &&... operands)
+  {
+    return std::make_unique<SCEVNAryMulExpr>(std::forward<Args>(operands)...);
+  }
 };
 
 class ScalarEvolution final : public jlm::rvsdg::Transformation
@@ -361,12 +510,30 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
   class Statistics;
 
 public:
-  typedef util::HashSet<const rvsdg::Output *>
-      InductionVariableSet; // Stores the pointers to the output result from the subregion for the
-                            // induction variables
+  enum class DependencyOp
+  {
+    Add,
+    Mul,
+    None,
+  };
 
-  typedef std::unordered_map<const rvsdg::Output *, std::unordered_map<const rvsdg::Output *, int>>
-      IVDependencyGraph;
+  struct DependencyInfo
+  {
+    // Helper struct to keep track of dependencies between loop variables.
+
+    int count; // How many times the dependency occurs. A variable can be dependent on other
+               // variables (or itself) multiple times.
+    DependencyOp operation; // The operation of the dependency (Add, Mul or None)
+
+    explicit DependencyInfo(const int c = 0, const DependencyOp op = DependencyOp::None)
+        : count(c),
+          operation(op)
+    {}
+  };
+
+  typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
+
+  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> IVDependencyGraph;
 
   ~ScalarEvolution() noexcept override;
 
@@ -382,47 +549,63 @@ public:
   ScalarEvolution &
   operator=(ScalarEvolution &&) = delete;
 
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
+  GetChrecMap() const;
+
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
-  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
+  void
+  AnalyzeRegion(const rvsdg::Region & region);
+
+  void
+  CombineChrecsAcrossLoops();
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
-  std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> UniqueSCEVs_;
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
-      ChainRecurrenceMap_;
-
-  void
-  AnalyzeRegion(const rvsdg::Region & region);
+  static std::unique_ptr<SCEV>
+  GetNegativeSCEV(const SCEV & scev);
 
   std::unique_ptr<SCEV>
   GetOrCreateSCEVForOutput(const rvsdg::Output & output);
 
-  std::optional<const SCEV *>
-  TryGetSCEVForOutput(const rvsdg::Output & output);
-
   IVDependencyGraph
-  CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
+  CreateDependencyGraph(const std::vector<rvsdg::ThetaNode::LoopVar> & loopVars) const;
 
-  static std::unordered_map<const rvsdg::Output *, int>
-  FindDependenciesForSCEV(const SCEV & currentSCEV, const rvsdg::Output & currentIV);
+  static void
+  FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
 
   static std::vector<const rvsdg::Output *>
   TopologicalSort(const IVDependencyGraph & dependencyGraph);
 
+  void
+  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
+
+  std::optional<std::unique_ptr<SCEV>>
+  TryReplaceInitForSCEV(const SCEV & scev);
+
   std::unique_ptr<SCEVChainRecurrence>
-  CreateChainRecurrence(
-      const rvsdg::Output & IV,
+  GetOrCreateChainRecurrence(
+      const rvsdg::Output & output,
+      const SCEV & scev,
+      const rvsdg::ThetaNode & thetaNode);
+
+  std::unique_ptr<SCEVChainRecurrence>
+  GetOrCreateStepForSCEV(
+      const rvsdg::Output & output,
       const SCEV & scevTree,
       const rvsdg::ThetaNode & thetaNode);
 
   static std::unique_ptr<SCEV>
-  ApplyFolding(SCEV * lhsOperand, SCEV * rhsOperand);
+  ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+
+  static std::unique_ptr<SCEV>
+  ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+
+  static std::unique_ptr<SCEV>
+  FoldNAryExpression(SCEVNAryExpr & expression);
 
   static bool
   IsValidInductionVariable(const rvsdg::Output & variable, IVDependencyGraph & dependencyGraph);
