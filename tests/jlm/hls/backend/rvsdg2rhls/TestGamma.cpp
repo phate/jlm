@@ -27,8 +27,12 @@ TEST(GammaConversionTests, TestWithMatch)
       rm.Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->GetFunctionArguments()[0]);
-  auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(
+      *lambda->GetFunctionArguments()[0],
+      { { 0, 0 } },
+      1,
+      2);
+  auto gamma = jlm::rvsdg::GammaNode::create(matchNode.output(0), 2);
   auto ev1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);
   auto ev2 = gamma->AddEntryVar(lambda->GetFunctionArguments()[2]);
   auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });

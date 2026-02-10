@@ -35,8 +35,8 @@ TEST(MemoryQueueTests, TestSingleLoad)
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
-  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
-  theta->set_predicate(match);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*constant, { { 1, 1 } }, 0, 2);
+  theta->set_predicate(matchNode.output(0));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -109,8 +109,8 @@ TEST(MemoryQueueTests, TestLoadStore)
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
-  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
-  theta->set_predicate(match);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*constant, { { 1, 1 } }, 0, 2);
+  theta->set_predicate(matchNode.output(0));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -188,8 +188,8 @@ TEST(MemoryQueueTests, TestAddrQueue)
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto constant = &jlm::rvsdg::BitConstantOperation::create(*theta->subregion(), { 1, 1 });
-  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, constant);
-  theta->set_predicate(match);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*constant, { { 1, 1 } }, 0, 2);
+  theta->set_predicate(matchNode.output(0));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
