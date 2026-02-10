@@ -260,7 +260,7 @@ LoadChainSeparation::separateReferenceChains(rvsdg::Output & startOutput)
   for (auto & modRefChain : summary.modRefChains)
   {
     const auto refSubchains = extractReferenceSubchains(modRefChain);
-    for (const auto & [_, links] : refSubchains)
+    for (const auto & [links] : refSubchains)
     {
       // Divert the operands of the respective inputs for each encountered reference node and
       // collect join operands
@@ -356,6 +356,7 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
   ModRefChain currentModRefChain;
   rvsdg::Output * currentOutput = &startOutput;
   bool doneTracing = false;
+  bool hasModRefChainLinkAboveInRegion = false;
   do
   {
     if (rvsdg::TryGetOwnerRegion(*currentOutput))
@@ -374,12 +375,14 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
           // operations in the gamma on all branches are and which memory state exit variable maps
           // to which memory state entry variable. We need some more machinery for it first before
           // we can do that.
+          hasModRefChainLinkAboveInRegion = true;
           currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
           for (auto [entryVarInput, _] : gammaNode.GetEntryVars())
           {
             if (is<MemoryStateType>(entryVarInput->Type()))
             {
-              traceModRefChains(*entryVarInput->origin(), summary);
+              hasModRefChainLinkAboveInRegion |=
+                  traceModRefChains(*entryVarInput->origin(), summary);
             }
           }
           doneTracing = true;
@@ -387,6 +390,8 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
         [&](const rvsdg::ThetaNode &)
         {
           const auto modRefChainLinkType = Context_->getModRefChainLinkType(*currentOutput);
+          hasModRefChainLinkAboveInRegion |=
+              modRefChainLinkType == ModRefChainLink::Type::Modification;
           currentModRefChain.add({ currentOutput, modRefChainLinkType });
           currentOutput = mapMemoryStateOutputToInput(*currentOutput).origin();
         },
@@ -402,12 +407,14 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               },
               [&](const StoreOperation &)
               {
+                hasModRefChainLinkAboveInRegion = true;
                 currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
                 currentOutput =
                     StoreOperation::MapMemoryStateOutputToInput(*currentOutput).origin();
               },
               [&](const FreeOperation &)
               {
+                hasModRefChainLinkAboveInRegion = true;
                 currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
                 currentOutput = FreeOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
               },
@@ -416,6 +423,7 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
                 // FIXME: We really would like to know here which memory state belongs to the source
                 // and which to the dst address. This would allow us to be more precise in the
                 // separation.
+                hasModRefChainLinkAboveInRegion = true;
                 currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
                 currentOutput =
                     MemCpyOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
@@ -431,7 +439,8 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), summary);
+                  hasModRefChainLinkAboveInRegion |=
+                      traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -446,14 +455,16 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               {
                 // FIXME: I really would like that state edges through calls would be recognized as
                 // either modifying or just referencing.
-                traceModRefChains(*node.input(0)->origin(), summary);
+                hasModRefChainLinkAboveInRegion |=
+                    traceModRefChains(*node.input(0)->origin(), summary);
                 doneTracing = true;
               },
               [&](const CallEntryMemoryStateMergeOperation &)
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), summary);
+                  hasModRefChainLinkAboveInRegion |=
+                      traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -461,7 +472,8 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), summary);
+                  hasModRefChainLinkAboveInRegion |=
+                      traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -469,7 +481,8 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               {
                 for (auto & nodeInput : node.Inputs())
                 {
-                  traceModRefChains(*nodeInput.origin(), summary);
+                  hasModRefChainLinkAboveInRegion |=
+                      traceModRefChains(*nodeInput.origin(), summary);
                 }
                 doneTracing = true;
               },
@@ -498,8 +511,8 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
   } while (!doneTracing);
 
   summary.add(std::move(currentModRefChain));
-  Context_->addModRefChainInformation(startOutput, { summary.hasModificationChainLink });
-  return summary.hasModificationChainLink;
+  Context_->addModRefChainInformation(startOutput, { hasModRefChainLinkAboveInRegion });
+  return hasModRefChainLinkAboveInRegion;
 }
 
 }

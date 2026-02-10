@@ -108,11 +108,9 @@ private:
     void
     add(ModRefChainLink modRefChainLink)
     {
-      hasModificationChainLink |= modRefChainLink.type == ModRefChainLink::Type::Modification;
       links.push_back(std::move(modRefChainLink));
     }
 
-    bool hasModificationChainLink = false;
     std::vector<ModRefChainLink> links{};
   };
 
@@ -126,11 +124,8 @@ private:
       {
         modRefChains.push_back(std::move(modRefChain));
       }
-
-      hasModificationChainLink |= modRefChain.hasModificationChainLink;
     }
 
-    bool hasModificationChainLink = false;
     std::vector<ModRefChain> modRefChains{};
   };
 
