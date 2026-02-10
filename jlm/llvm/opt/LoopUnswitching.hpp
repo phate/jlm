@@ -75,19 +75,6 @@ private:
   allLoopVarsAreRoutedThroughGamma(
       const rvsdg::ThetaNode & thetaNode,
       const rvsdg::GammaNode & gammaNode);
-
-  static rvsdg::SubstitutionMap
-  handleGammaExitRegion(
-      const ThetaGammaPredicateCorrelation & correlation,
-      rvsdg::GammaNode & newGammaNode,
-      const rvsdg::SubstitutionMap & substitutionMap);
-
-  static rvsdg::SubstitutionMap
-  handleGammaRepetitionRegion(
-      const ThetaGammaPredicateCorrelation & correlation,
-      rvsdg::GammaNode & newGammaNode,
-      const std::vector<std::vector<rvsdg::Node *>> & predicateNodes,
-      const rvsdg::SubstitutionMap & substitutionMap);
 };
 
 }
