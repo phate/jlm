@@ -63,13 +63,13 @@ class ThetaGammaPredicateCorrelation;
  *                              *X*
  *
  * where
- * 1. *P* is the predicate subgraph, i.e., all nodes that are responsible for computing the predicate
- * of the theta and gamma node. The theta and gamma node must have the same predicate for the
- * transformation to occur.
+ * 1. *P* is the predicate subgraph, i.e., all nodes that are responsible for computing the
+ * predicate of the theta and gamma node. The theta and gamma node must have the same predicate for
+ * the transformation to occur.
  * 2. *X* is the exit subregion. It denotes the region that is executed once the predicate evaluates
  * to false and the loop is exited.
- * 3. *R* is the repetition subregion. It denotes the region that is executed if the predicate evaluates
- * to true the loop is repeated.
+ * 3. *R* is the repetition subregion. It denotes the region that is executed if the predicate
+ * evaluates to true the loop is repeated.
  *
  * The predicate subgraph *P* is duplicated as part of the transformation.
  */
