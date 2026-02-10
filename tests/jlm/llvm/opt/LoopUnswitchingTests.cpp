@@ -11,6 +11,7 @@
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 TEST(LoopUnswitchingTests, Test1)
@@ -19,16 +20,16 @@ TEST(LoopUnswitchingTests, Test1)
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::rvsdg::TestType::createValueType();
+  const auto valueType = TestType::createValueType();
 
-  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
-  auto z = &jlm::rvsdg::GraphImport::Create(graph, valueType, "z");
+  auto x = &GraphImport::Create(graph, valueType, "x");
+  auto y = &GraphImport::Create(graph, valueType, "y");
+  auto z = &GraphImport::Create(graph, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto thetaNode = ThetaNode::create(&graph.GetRootRegion());
 
   auto loopVarX = thetaNode->AddLoopVar(x);
   auto loopVarY = thetaNode->AddLoopVar(y);
@@ -37,11 +38,11 @@ TEST(LoopUnswitchingTests, Test1)
   auto a = TestOperation::createNode(
                thetaNode->subregion(),
                { loopVarX.pre, loopVarY.pre },
-               { jlm::rvsdg::BitType::Create(1) })
+               { BitType::Create(1) })
                ->output(0);
-  auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
+  auto predicate = match(1, { { 1, 0 } }, 1, 2, a);
 
-  auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
+  auto gamma = GammaNode::create(predicate, 2);
 
   auto entryVarX = gamma->AddEntryVar(loopVarX.pre);
   auto entryVarY = gamma->AddEntryVar(loopVarY.pre);
@@ -63,21 +64,23 @@ TEST(LoopUnswitchingTests, Test1)
 
   thetaNode->set_predicate(predicate);
 
-  auto & ex1 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(0), "x");
-  auto & ex2 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(1), "y");
-  auto & ex3 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(2), "z");
+  auto & ex1 = GraphExport::Create(*thetaNode->output(0), "x");
+  auto & ex2 = GraphExport::Create(*thetaNode->output(1), "y");
+  auto & ex3 = GraphExport::Create(*thetaNode->output(2), "z");
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()), nullptr);
-  EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()), nullptr);
+  auto [testNode, testOperation] = TryGetSimpleNodeAndOptionalOp<TestOperation>(*ex2.origin());
+  EXPECT_NE(testNode, nullptr);
+  EXPECT_NE(testOperation, nullptr);
   EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()), nullptr);
 }
 
@@ -87,27 +90,25 @@ TEST(LoopUnswitchingTests, Test2)
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::rvsdg::TestType::createValueType();
+  const auto valueType = TestType::createValueType();
 
-  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto x = &GraphImport::Create(graph, valueType, "x");
 
-  auto thetaNode = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto thetaNode = ThetaNode::create(&graph.GetRootRegion());
 
   auto loopVarX = thetaNode->AddLoopVar(x);
 
-  auto n1 = TestOperation::createNode(
-                thetaNode->subregion(),
-                { loopVarX.pre },
-                { jlm::rvsdg::BitType::Create(1) })
-                ->output(0);
+  auto n1 =
+      TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { BitType::Create(1) })
+          ->output(0);
   auto n2 =
       TestOperation::createNode(thetaNode->subregion(), { loopVarX.pre }, { valueType })->output(0);
-  auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
+  auto predicate = match(1, { { 1, 0 } }, 1, 2, n1);
 
-  auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
 
   auto ev1 = gammaNode->AddEntryVar(n1);
   auto ev2 = gammaNode->AddEntryVar(loopVarX.pre);
@@ -121,15 +122,15 @@ TEST(LoopUnswitchingTests, Test2)
 
   thetaNode->set_predicate(predicate);
 
-  auto & ex = jlm::rvsdg::GraphExport::Create(*thetaNode->output(0), "x");
+  auto & ex = GraphExport::Create(*thetaNode->output(0), "x");
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   EXPECT_NE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()), nullptr);

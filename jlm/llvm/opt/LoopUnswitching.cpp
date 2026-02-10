@@ -400,7 +400,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
       auto oldExitVar = oldGammaNode->MapOutputExitVar(*oldLoopVar.post->origin());
       auto oldOrigin = oldExitVar.branchResult[repetitionSubregionIndex]->origin();
       auto & newOrigin = stage2SMap.lookup(*oldOrigin);
-      stage3SMap.insert(oldOrigin, &newOrigin);
+      stage3SMap.insert(oldLoopVar.pre, &newOrigin);
     }
 
     auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
@@ -456,6 +456,8 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     auto & newOrigin = stage4SMap.lookup(*oldOrigin);
     oldLoopVar.output->divert_users(&newOrigin);
   }
+
+  return true;
 
 #if 0
   // Copy condition nodes for new gamma node
