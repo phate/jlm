@@ -88,9 +88,10 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
 
   auto caseValue = 24;
-  const auto matchResult = match(32, { { caseValue, 0 } }, 1, 2, conditionValue);
+  auto & matchNode =
+      jlm::rvsdg::MatchOperation::CreateNode(*conditionValue, { { caseValue, 0 } }, 1, 2);
 
-  const auto gammaNode = jlm::rvsdg::GammaNode::create(matchResult, 2);
+  const auto gammaNode = jlm::rvsdg::GammaNode::create(matchNode.output(0), 2);
   auto [inputTrue, branchArgumentTrue] = gammaNode->AddEntryVar(trueValue);
   auto [inputFalse, branchArgumentFalse] = gammaNode->AddEntryVar(falseValue);
   auto [_, gammaOutput] = gammaNode->AddExitVar({ branchArgumentTrue[0], branchArgumentFalse[1] });
@@ -160,9 +161,13 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregions)
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
 
-  const auto matchResult = match(32, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(
+      *lambdaNode->GetFunctionArguments()[0],
+      { { 0, 0 } },
+      1,
+      2);
 
-  const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchResult, 2);
+  const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchNode.output(0), 2);
   const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ControlConstantOperation>(
       *gammaNode0->subregion(0),
       jlm::rvsdg::ControlValueRepresentation(0, 2));
@@ -214,10 +219,13 @@ TEST(IfConversionTests, EmptyGammaWithThreeSubregions)
       rvsdgModule.Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
-  auto match =
-      jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
+  auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(
+      *lambdaNode->GetFunctionArguments()[0],
+      { { 0, 0 }, { 1, 1 } },
+      2,
+      3);
 
-  auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
+  auto gammaNode = jlm::rvsdg::GammaNode::create(matchNode.output(0), 3);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
   auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
@@ -262,8 +270,9 @@ TEST(IfConversionTests, PartialEmptyGamma)
       rvsdgModule.Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
-  auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
+  auto & matchNode =
+      MatchOperation::CreateNode(*lambdaNode->GetFunctionArguments()[0], { { 0, 0 } }, 1, 2);
+  auto gammaNode = GammaNode::create(matchNode.output(0), 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto output = TestOperation::createNode(
                     gammaNode->subregion(1),

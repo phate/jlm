@@ -264,14 +264,6 @@ private:
   std::unordered_map<uint64_t, uint64_t> mapping_;
 };
 
-jlm::rvsdg::Output *
-match(
-    size_t nbits,
-    const std::unordered_map<uint64_t, uint64_t> & mapping,
-    uint64_t default_alternative,
-    size_t nalternatives,
-    jlm::rvsdg::Output * operand);
-
 }
 
 #endif

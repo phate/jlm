@@ -39,9 +39,9 @@ TEST(ForkInsertionTests, ForkInsertion)
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
   auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, lveBuffer }, 32).output(0);
-  auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & matchNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
-  loop->set_predicate(match);
+  loop->set_predicate(matchNode.output(0));
 
   auto lambdaOutput = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
   rvsdg::GraphExport::Create(*lambdaOutput, "");
@@ -97,9 +97,9 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, bitConstant1 }, 32).output(0);
   auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, bitConstant1 }, 32).output(0);
-  auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
+  auto & matchNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
-  loop->set_predicate(match);
+  loop->set_predicate(matchNode.output(0));
 
   auto lambdaOutput = lambda->finalize({ loop->output(0) });
   rvsdg::GraphExport::Create(*lambdaOutput, "");
