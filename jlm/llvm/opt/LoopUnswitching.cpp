@@ -190,18 +190,18 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 
   // The rest of the transformation is now performed in several stages:
   // 1. Copy the predicate subgraph into the parent region of the old theta node.
-  // 2. Create gamma node (using the copied predicate) and the new theta node in its repetition
-  // subregion.
-  // 3. Copy repetition subregion into the new theta node.
+  // 2. Create gamma node (using the copied predicate) and the new theta node in the new gamma
+  // nodes' repetition subregion.
+  // 3. Copy old repetition subregion into the new theta node.
   // 4. Copy predicate subgraph into new theta node.
-  // 5. Adjust the loop variables of the new theta node, effectively finalizing the new theta node.
-  // 6. Add exit variables to the new gamma node, effectively finalizing the new gamma node.
-  // 7. Copy exit subregion into the parent region of the old theta node.
-  // 8. Divert the users of old theta nodes' loop variables, effectively rendering the old theta
+  // 5. Adjust the loop variables of the new theta node, finalizing the new theta node.
+  // 6. Add exit variables to the new gamma node, finalizing the new gamma node.
+  // 7. Copy old exit subregion into the parent region of the old theta node.
+  // 8. Divert the users of old theta nodes' loop variables, rendering the old theta
   // node dead.
   //
   // Along the way, we keep track of replaced variables with substitution maps for some of the
-  // stages. These substitution maps are then utilized the succeeding stages to find the correct
+  // stages. These substitution maps are then utilized by succeeding stages to find the correct
   // replacements for old outputs.
 
   // Stage 1 - Copy predicate subgraph into the old theta nodes' parent region
