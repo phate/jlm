@@ -80,14 +80,14 @@ public:
     ChrecMap_.insert_or_assign(&output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> &
-  GetChrecMap()
+  const std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> &
+  GetChrecMap() const noexcept
   {
     return ChrecMap_;
   }
 
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> &
-  GetSCEVMap()
+  const std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> &
+  GetSCEVMap() const noexcept
   {
     return SCEVMap_;
   }
