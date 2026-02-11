@@ -24,6 +24,54 @@ class ThetaGammaPredicateCorrelation;
 
 /**
  * \brief LoopUnswitching
+ *
+ * Loop unswitching transforms a theta node with a gamma node in its subregion to a gamma node that
+ * contains a theta node in one of its subregions, avoiding the conditional in every loop iteration.
+ *
+ * The pass transforms the following graph:
+ * -----------------------------------------------------------------
+ * | theta                                                         |
+ * |                                                               |
+ * |     *P*                                                       |
+ * |  ----|---                                                     |
+ * |  |      |                                                     |
+ * |  |   ---|--------------------------------------------------   |
+ * |  |   | gamma                   |                          |   |
+ * |  |   |                         |                          |   |
+ * |  |   |         *X*             |        *R*               |   |
+ * |  |   |_________________________|__________________________|   |
+ * |  |                                                            |
+ * |__|____________________________________________________________|
+ *
+ * to the following graph:
+ *    *P*
+ *     |
+ * ----|------------------------------------------------------------
+ * | gamma                |                                        |
+ * |                      |  ------------------------------------- |
+ * |                      |  | theta                             | |
+ * |                      |  |                                   | |
+ * |                      |  |               *R*                 | |
+ * |                      |  |                                   | |
+ * |                      |  |                                   | |
+ * |                      |  |    *P*                            | |
+ * |                      |  |     |                             | |
+ * |                      |  |_____|_____________________________| |
+ * |                      |                                        |
+ * |______________________|________________________________________|
+ *
+ *                              *X*
+ *
+ * where
+ * 1. *P* is the predicate subgraph, i.e., all nodes that are responsible for computing the
+ * predicate of the theta and gamma node. The theta and gamma node must have the same predicate for
+ * the transformation to occur.
+ * 2. *X* is the exit subregion. It denotes the region that is executed once the predicate evaluates
+ * to false and the loop is exited.
+ * 3. *R* is the repetition subregion. It denotes the region that is executed if the predicate
+ * evaluates to true the loop is repeated.
+ *
+ * The predicate subgraph *P* is duplicated as part of the transformation.
  */
 class LoopUnswitching final : public rvsdg::Transformation
 {
@@ -75,19 +123,6 @@ private:
   allLoopVarsAreRoutedThroughGamma(
       const rvsdg::ThetaNode & thetaNode,
       const rvsdg::GammaNode & gammaNode);
-
-  static rvsdg::SubstitutionMap
-  handleGammaExitRegion(
-      const ThetaGammaPredicateCorrelation & correlation,
-      rvsdg::GammaNode & newGammaNode,
-      const rvsdg::SubstitutionMap & substitutionMap);
-
-  static rvsdg::SubstitutionMap
-  handleGammaRepetitionRegion(
-      const ThetaGammaPredicateCorrelation & correlation,
-      rvsdg::GammaNode & newGammaNode,
-      const std::vector<std::vector<rvsdg::Node *>> & predicateNodes,
-      const rvsdg::SubstitutionMap & substitutionMap);
 };
 
 }

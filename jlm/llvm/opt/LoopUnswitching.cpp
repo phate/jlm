@@ -152,166 +152,6 @@ LoopUnswitching::CopyPredicateNodes(
   }
 }
 
-rvsdg::SubstitutionMap
-LoopUnswitching::handleGammaExitRegion(
-    const ThetaGammaPredicateCorrelation & correlation,
-    rvsdg::GammaNode & newGammaNode,
-    const rvsdg::SubstitutionMap & substitutionMap)
-{
-  const auto & oldThetaNode = correlation.thetaNode();
-  const auto & oldGammaNode = correlation.gammaNode();
-  const auto [_, oldExitSubregion] = determineGammaSubregionRoles(correlation).value();
-  const auto newExitSubregion = newGammaNode.subregion(oldExitSubregion->index());
-  const auto exitSubregionIndex = oldExitSubregion->index();
-
-  // Setup substitution map for exit region copying
-  rvsdg::SubstitutionMap exitSubregionMap;
-  for (const auto & [oldInput, oldBranchArgument] : oldGammaNode.GetEntryVars())
-  {
-    rvsdg::Output * newGammaInputOrigin = nullptr;
-    auto & oldGammaInputOrigin = *oldInput->origin();
-
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(oldGammaInputOrigin))
-    {
-      const auto oldLoopVar = oldThetaNode.MapPreLoopVar(oldGammaInputOrigin);
-      newGammaInputOrigin = oldLoopVar.input->origin();
-    }
-    else if (std::holds_alternative<rvsdg::Node *>(oldGammaInputOrigin.GetOwner()))
-    {
-      // The origin is from one of the predicate nodes
-      const auto substitute = &substitutionMap.lookup(oldGammaInputOrigin);
-      newGammaInputOrigin = substitute;
-    }
-    else
-    {
-      throw std::logic_error("This should have never happened!");
-    }
-
-    auto [_, newBranchArgument] = newGammaNode.AddEntryVar(newGammaInputOrigin);
-    exitSubregionMap.insert(
-        oldBranchArgument[exitSubregionIndex],
-        newBranchArgument[exitSubregionIndex]);
-  }
-
-  oldExitSubregion->copy(newExitSubregion, exitSubregionMap);
-
-  // Update substitution map for insertion of exit variables
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-  {
-    const auto output = oldLoopVar.post->origin();
-    auto [oldBranchResult, _] = oldGammaNode.MapOutputExitVar(*output);
-    const auto substitute =
-        &exitSubregionMap.lookup(*oldBranchResult[exitSubregionIndex]->origin());
-    exitSubregionMap.insert(output, substitute);
-  }
-
-  return exitSubregionMap;
-}
-
-rvsdg::SubstitutionMap
-LoopUnswitching::handleGammaRepetitionRegion(
-    const ThetaGammaPredicateCorrelation & correlation,
-    rvsdg::GammaNode & newGammaNode,
-    const std::vector<std::vector<rvsdg::Node *>> & predicateNodes,
-    const rvsdg::SubstitutionMap & substitutionMap)
-{
-  const auto & oldThetaNode = correlation.thetaNode();
-  const auto & oldGammaNode = correlation.gammaNode();
-  const auto [oldRepetitionSubregion, oldExitSubregion] =
-      determineGammaSubregionRoles(correlation).value();
-  const auto & newRepetitionSubregion = newGammaNode.subregion(oldRepetitionSubregion->index());
-  const auto repetitionSubregionIndex = oldRepetitionSubregion->index();
-  const auto exitSubregionIndex = oldExitSubregion->index();
-  const auto newThetaNode = rvsdg::ThetaNode::create(newRepetitionSubregion);
-
-  // Add loop variables to new theta node and setup substitution map
-  rvsdg::SubstitutionMap repetitionSubregionMap;
-  std::unordered_map<rvsdg::Input *, rvsdg::ThetaNode::LoopVar> newLoopVars;
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-  {
-    auto [_, branchArgument] = newGammaNode.AddEntryVar(oldLoopVar.input->origin());
-    auto newLoopVar = newThetaNode->AddLoopVar(branchArgument[repetitionSubregionIndex]);
-    repetitionSubregionMap.insert(oldLoopVar.pre, newLoopVar.pre);
-    newLoopVars[oldLoopVar.input] = newLoopVar;
-  }
-  for (const auto & [oldInput, oldBranchArgument] : oldGammaNode.GetEntryVars())
-  {
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
-    {
-      auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
-      repetitionSubregionMap.insert(
-          oldBranchArgument[repetitionSubregionIndex],
-          newLoopVars[oldLoopVar.input].pre);
-    }
-    else
-    {
-      auto [_, newBranchArgument] =
-          newGammaNode.AddEntryVar(&substitutionMap.lookup(*oldInput->origin()));
-      auto newLoopVar = newThetaNode->AddLoopVar(newBranchArgument[repetitionSubregionIndex]);
-      repetitionSubregionMap.insert(oldBranchArgument[repetitionSubregionIndex], newLoopVar.pre);
-      newLoopVars[oldInput] = newLoopVar;
-    }
-  }
-
-  // Copy repetition region
-  oldRepetitionSubregion->copy(newThetaNode->subregion(), repetitionSubregionMap);
-
-  // Adjust values in substitution map for condition node copying
-  for (const auto & oldLopVar : oldThetaNode.GetLoopVars())
-  {
-    auto output = oldLopVar.post->origin();
-    auto substitute =
-        &repetitionSubregionMap.lookup(*oldRepetitionSubregion->result(output->index())->origin());
-    repetitionSubregionMap.insert(oldLopVar.pre, substitute);
-  }
-
-  // Copy condition nodes
-  CopyPredicateNodes(*newThetaNode->subregion(), repetitionSubregionMap, predicateNodes);
-  auto predicate = &repetitionSubregionMap.lookup(*oldGammaNode.predicate()->origin());
-
-  // Redirect results of loop variables and adjust substitution map for exit region copying
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-  {
-    auto output = oldLoopVar.post->origin();
-    auto substitute =
-        &repetitionSubregionMap.lookup(*oldRepetitionSubregion->result(output->index())->origin());
-    newLoopVars[oldLoopVar.input].post->divert_to(substitute);
-    repetitionSubregionMap.insert(oldLoopVar.post->origin(), newLoopVars[oldLoopVar.input].output);
-  }
-  for (const auto & [input, branchArgument] : oldGammaNode.GetEntryVars())
-  {
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input->origin()))
-    {
-      auto oldLoopVar = oldThetaNode.MapPreLoopVar(*input->origin());
-      repetitionSubregionMap.insert(
-          branchArgument[exitSubregionIndex],
-          newLoopVars[oldLoopVar.input].output);
-    }
-    else
-    {
-      auto substitute = &repetitionSubregionMap.lookup(*input->origin());
-      newLoopVars[input].post->divert_to(substitute);
-      repetitionSubregionMap.insert(branchArgument[exitSubregionIndex], newLoopVars[input].output);
-    }
-  }
-
-  newThetaNode->set_predicate(predicate);
-
-  // Copy exit region
-  oldExitSubregion->copy(newRepetitionSubregion, repetitionSubregionMap);
-
-  // Adjust values in substitution map for exit variable creation
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-  {
-    auto output = oldLoopVar.post->origin();
-    auto substitute =
-        &repetitionSubregionMap.lookup(*oldExitSubregion->result(output->index())->origin());
-    repetitionSubregionMap.insert(oldLoopVar.post->origin(), substitute);
-  }
-
-  return repetitionSubregionMap;
-}
-
 bool
 LoopUnswitching::allLoopVarsAreRoutedThroughGamma(
     const rvsdg::ThetaNode & thetaNode,
@@ -336,6 +176,10 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 
   SinkNodesIntoGamma(*oldGammaNode, oldThetaNode);
 
+  // At this point, we have established the following invariant:
+  // All loop variables of the original theta node are routed through its contained gamma node,
+  // i.e., the origin of a loop variables' post value must be the output of the gamma node. This
+  // helps to simplify the transformation significantly.
   JLM_ASSERT(allLoopVarsAreRoutedThroughGamma(oldThetaNode, *oldGammaNode));
 
   // FIXME: We should get this correlation from the IsUnswitchable() method, if it is possible
@@ -344,35 +188,134 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
   JLM_ASSERT(correlationOpt.has_value());
   auto & correlation = correlationOpt.value();
 
-  // Copy condition nodes for new gamma node
-  rvsdg::SubstitutionMap substitutionMap;
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-    substitutionMap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
+  // The rest of the transformation is now performed in several stages:
+  // 1. Copy the predicate subgraph into the parent region of the old theta node.
+  // 2. Create gamma node (using the copied predicate) and the new theta node in the new gamma
+  // nodes' repetition subregion.
+  // 3. Copy old repetition subregion into the new theta node.
+  // 4. Copy predicate subgraph into new theta node.
+  // 5. Adjust the loop variables of the new theta node, finalizing the new theta node.
+  // 6. Add exit variables to the new gamma node, finalizing the new gamma node.
+  // 7. Copy old exit subregion into the parent region of the old theta node.
+  // 8. Divert the users of old theta nodes' loop variables, rendering the old theta
+  // node dead.
+  //
+  // Along the way, we keep track of replaced variables with substitution maps for some of the
+  // stages. These substitution maps are then utilized by succeeding stages to find the correct
+  // replacements for old outputs.
 
-  auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
-  CopyPredicateNodes(*oldThetaNode.region(), substitutionMap, conditionNodes);
-
-  auto newGammaNode = rvsdg::GammaNode::create(
-      &substitutionMap.lookup(*oldGammaNode->predicate()->origin()),
-      oldGammaNode->nsubregions());
-
-  auto exitSubregionMap = handleGammaExitRegion(*correlation, *newGammaNode, substitutionMap);
-
-  auto repetitionSubstitutionMap =
-      handleGammaRepetitionRegion(*correlation, *newGammaNode, conditionNodes, substitutionMap);
-
-  // Add exit variables to new gamma
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
+  // Stage 1 - Copy predicate subgraph into the old theta nodes' parent region
+  rvsdg::SubstitutionMap stage1SMap;
   {
-    auto o0 = &exitSubregionMap.lookup(*oldLoopVar.post->origin());
-    auto o1 = &repetitionSubstitutionMap.lookup(*oldLoopVar.post->origin());
-    auto [_, output] = newGammaNode->AddExitVar({ o0, o1 });
-    substitutionMap.insert(oldLoopVar.output, output);
+    for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
+      stage1SMap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
+
+    auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
+    CopyPredicateNodes(*oldThetaNode.region(), stage1SMap, conditionNodes);
   }
 
-  // Replace outputs
-  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
-    oldLoopVar.output->divert_users(&substitutionMap.lookup(*oldLoopVar.output));
+  // Stage 2 - Create new gamma and theta node
+  auto newGammaNode = rvsdg::GammaNode::create(
+      &stage1SMap.lookup(*oldGammaNode->predicate()->origin()),
+      oldGammaNode->nsubregions());
+
+  const auto [oldRepetitionSubregion, oldExitSubregion] =
+      determineGammaSubregionRoles(*correlation).value();
+  const auto & newRepetitionSubregion = newGammaNode->subregion(oldRepetitionSubregion->index());
+  const auto repetitionSubregionIndex = oldRepetitionSubregion->index();
+  const auto exitSubregionIndex = oldExitSubregion->index();
+
+  auto newThetaNode = rvsdg::ThetaNode::create(newRepetitionSubregion);
+
+  std::unordered_map<rvsdg::Input *, rvsdg::Input *> oldGammaNewGammaInputMap;
+  std::unordered_map<rvsdg::Input *, rvsdg::Input *> oldGammaNewThetaInputMap;
+  for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
+  {
+    auto & newOrigin = stage1SMap.lookup(*oldInput->origin());
+    auto newEntryVar = newGammaNode->AddEntryVar(&newOrigin);
+    auto newLoopVar =
+        newThetaNode->AddLoopVar(newEntryVar.branchArgument[repetitionSubregionIndex]);
+    oldGammaNewGammaInputMap[oldInput] = newEntryVar.input;
+    oldGammaNewThetaInputMap[oldInput] = newLoopVar.input;
+  }
+
+  // Stage 3 - Copy repetition subregion into new theta node
+  rvsdg::SubstitutionMap stage3SMap;
+  {
+    for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
+    {
+      auto newLoopInput = oldGammaNewThetaInputMap[oldInput];
+      auto newLoopVar = newThetaNode->MapInputLoopVar(*newLoopInput);
+      stage3SMap.insert(oldBranchArgument[repetitionSubregionIndex], newLoopVar.pre);
+    }
+
+    oldRepetitionSubregion->copy(newThetaNode->subregion(), stage3SMap);
+  }
+
+  // Stage 4 - Copy predicate subgraph into new theta node subregion
+  rvsdg::SubstitutionMap stage4SMap;
+  {
+    for (auto oldLoopVar : oldThetaNode.GetLoopVars())
+    {
+      auto oldExitVar = oldGammaNode->MapOutputExitVar(*oldLoopVar.post->origin());
+      auto oldOrigin = oldExitVar.branchResult[repetitionSubregionIndex]->origin();
+      auto & newOrigin = stage3SMap.lookup(*oldOrigin);
+      stage4SMap.insert(oldLoopVar.pre, &newOrigin);
+    }
+
+    auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
+    CopyPredicateNodes(*newThetaNode->subregion(), stage4SMap, conditionNodes);
+  }
+
+  // Stage 5 - Adjust loop variables
+  newThetaNode->set_predicate(&stage4SMap.lookup(*oldThetaNode.predicate()->origin()));
+  for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
+  {
+    auto newLoopVarInput = oldGammaNewThetaInputMap[oldInput];
+    auto newLoopVar = newThetaNode->MapInputLoopVar(*newLoopVarInput);
+    auto & newOrigin = stage4SMap.lookup(*oldInput->origin());
+    newLoopVar.post->divert_to(&newOrigin);
+  }
+
+  // Stage 6 - Add new gamma exit variables
+  std::unordered_map<rvsdg::Input *, rvsdg::Output *> oldGammaNewGammaOutputMap;
+  {
+    for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
+    {
+      auto newGammaInput = oldGammaNewGammaInputMap[oldInput];
+      auto newEntryVar =
+          std::get<rvsdg::GammaNode::EntryVar>(newGammaNode->MapInput(*newGammaInput));
+      auto newLoopVarInput = oldGammaNewThetaInputMap[oldInput];
+      auto newLoopVar = newThetaNode->MapInputLoopVar(*newLoopVarInput);
+
+      std::vector<rvsdg::Output *> values(2);
+      values[exitSubregionIndex] = newEntryVar.branchArgument[exitSubregionIndex];
+      values[repetitionSubregionIndex] = newLoopVar.output;
+      auto newExitVar = newGammaNode->AddExitVar(values);
+      oldGammaNewGammaOutputMap[oldInput] = newExitVar.output;
+    }
+  }
+
+  // Stage 7 - Copy exit subregion into old theta node parent region
+  rvsdg::SubstitutionMap stage7SMap;
+  {
+    for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
+    {
+      auto newOrigin = oldGammaNewGammaOutputMap[oldInput];
+      stage7SMap.insert(oldBranchArgument[exitSubregionIndex], newOrigin);
+    }
+
+    oldExitSubregion->copy(oldThetaNode.region(), stage7SMap);
+  }
+
+  // Stage 8 - Replace old theta node outputs
+  for (auto oldLoopVar : oldThetaNode.GetLoopVars())
+  {
+    auto oldExitVar = oldGammaNode->MapOutputExitVar(*oldLoopVar.post->origin());
+    auto oldOrigin = oldExitVar.branchResult[exitSubregionIndex]->origin();
+    auto & newOrigin = stage7SMap.lookup(*oldOrigin);
+    oldLoopVar.output->divert_users(&newOrigin);
+  }
 
   return true;
 }
