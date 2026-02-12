@@ -1397,8 +1397,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
 
   const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
 
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
   const auto res1 = addNode1.output(0);
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
@@ -1519,8 +1518,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
 
   const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
 
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
   const auto res1 = addNode1.output(0);
 
   const auto & lv1SExt = SExtOperation::create(64, lv1.pre);

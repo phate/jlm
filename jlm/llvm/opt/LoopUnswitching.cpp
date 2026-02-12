@@ -17,6 +17,36 @@
 namespace jlm::llvm
 {
 
+LoopUnswitchingHeuristic::~LoopUnswitchingHeuristic() noexcept = default;
+
+LoopUnswitchingDefaultHeuristic::~LoopUnswitchingDefaultHeuristic() noexcept = default;
+
+bool
+LoopUnswitchingDefaultHeuristic::shouldUnswitchLoop(
+    ThetaGammaPredicateCorrelation & correlation) const noexcept
+{
+  const auto & thetaNode = correlation.thetaNode();
+  const auto & gammaNode = correlation.gammaNode();
+
+  for (const auto node : rvsdg::TopDownConstTraverser(thetaNode.subregion()))
+  {
+    if (node == &gammaNode)
+      continue;
+
+    if (is<rvsdg::StructuralOperation>(node))
+      return false;
+  }
+
+  return true;
+}
+
+std::shared_ptr<const LoopUnswitchingDefaultHeuristic>
+LoopUnswitchingDefaultHeuristic::create()
+{
+  static const LoopUnswitchingDefaultHeuristic instance;
+  return std::shared_ptr<const LoopUnswitchingDefaultHeuristic>(std::shared_ptr<void>(), &instance);
+}
+
 class LoopUnswitching::Statistics final : public util::Statistics
 {
 public:
@@ -187,6 +217,9 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
   const auto correlationOpt = computeThetaGammaPredicateCorrelation(oldThetaNode);
   JLM_ASSERT(correlationOpt.has_value());
   auto & correlation = correlationOpt.value();
+
+  if (!heuristic_->shouldUnswitchLoop(*correlation))
+    return false;
 
   // The rest of the transformation is now performed in several stages:
   // 1. Copy the predicate subgraph into the parent region of the old theta node.
@@ -365,9 +398,10 @@ LoopUnswitching::Run(
 void
 LoopUnswitching::CreateAndRun(
     rvsdg::RvsdgModule & rvsdgModule,
-    util::StatisticsCollector & statisticsCollector)
+    util::StatisticsCollector & statisticsCollector,
+    std::shared_ptr<const LoopUnswitchingHeuristic> heuristic)
 {
-  LoopUnswitching loopUnswitching;
+  LoopUnswitching loopUnswitching(std::move(heuristic));
   loopUnswitching.Run(rvsdgModule, statisticsCollector);
 }
 
