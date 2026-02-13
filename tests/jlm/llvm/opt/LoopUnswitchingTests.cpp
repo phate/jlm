@@ -72,7 +72,10 @@ TEST(LoopUnswitchingTests, Test1)
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
-  LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
+  LoopUnswitching::CreateAndRun(
+      rvsdgModule,
+      statisticsCollector,
+      LoopUnswitchingDefaultHeuristic::create());
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -128,7 +131,10 @@ TEST(LoopUnswitchingTests, Test2)
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
-  LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
+  LoopUnswitching::CreateAndRun(
+      rvsdgModule,
+      statisticsCollector,
+      LoopUnswitchingDefaultHeuristic::create());
 
   view(&graph.GetRootRegion(), stdout);
 
