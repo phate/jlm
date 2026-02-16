@@ -226,6 +226,80 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
       }
     }
   }
+bool
+ScalarEvolution::StepAlwaysNegative(const SCEV * stepSCEV)
+{
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  {
+    return constantStep->GetValue() < 0;
+  }
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  {
+    JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
+
+    const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
+    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+
+    if (!start || !step)
+      throw std::logic_error("Step can only contain constant SCEVs!");
+
+    const auto a = start->GetValue();
+    const auto b = step->GetValue();
+
+    return a <= 0 && b <= 0 && !(a == 0 && b == 0);
+  }
+  throw std::logic_error("Wrong type for step!");
+}
+
+bool
+ScalarEvolution::StepAlwaysPositive(const SCEV * stepSCEV)
+{
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  {
+    return constantStep->GetValue() > 0;
+  }
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  {
+    JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
+
+    const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
+    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+
+    if (!start || !step)
+      throw std::logic_error("Step can only contain constant SCEVs!");
+
+    const auto a = start->GetValue();
+    const auto b = step->GetValue();
+
+    return a >= 0 && b >= 0 && !(a == 0 && b == 0);
+  }
+  throw std::logic_error("Wrong type for step!");
+}
+
+bool
+ScalarEvolution::StepAlwaysZero(const SCEV * stepSCEV)
+{
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  {
+    return constantStep->GetValue() == 0;
+  }
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  {
+    JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
+
+    const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
+    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+
+    if (!start || !step)
+      throw std::logic_error("Step can only contain constant SCEVs!");
+
+    const auto a = start->GetValue();
+    const auto b = step->GetValue();
+
+    return a == 0 && b == 0;
+  }
+  throw std::logic_error("Wrong type for step!");
+}
 }
 
 void

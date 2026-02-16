@@ -401,6 +401,40 @@ public:
     return Operands_[0].get();
   }
 
+  bool static IsInvariant(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 1;
+  }
+
+  bool static IsAffine(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 2;
+  }
+
+  bool static IsQuadratic(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 3;
+  }
+
+  SCEV *
+  GetStep() const
+  {
+    if (Operands_.size() < 2)
+    {
+      return nullptr;
+    }
+    if (Operands_.size() == 2)
+    {
+      return Operands_[1].get();
+    }
+    auto newRec = SCEVChainRecurrence::Create(*Loop_);
+    for (size_t i = 1; i < Operands_.size(); i++)
+    {
+      newRec->AddOperand(Operands_[i]->Clone());
+    }
+    return newRec.release();
+  }
+
   void
   AddOperandToFront(const std::unique_ptr<SCEV> & initScev)
   {
@@ -608,6 +642,15 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
+  static bool
+  StepAlwaysNegative(const SCEV * stepSCEV);
+
+  static bool
+  StepAlwaysPositive(const SCEV * stepSCEV);
+
+  static bool
+  StepAlwaysZero(const SCEV * stepSCEV);
+
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
 
