@@ -124,9 +124,28 @@ public:
     SCEVMap_.insert_or_assign(&output, scev->Clone());
   }
 
+  void
+  SetTripCount(const rvsdg::ThetaNode & thetaNode, const TripCount & tripCount)
+  {
+    TripCountMap_.insert_or_assign(&thetaNode, tripCount);
+  }
+
+  TripCount
+  GetTripCount(const rvsdg::ThetaNode & thetaNode) const
+  {
+    return TripCountMap_.at(&thetaNode);
+  }
+
+  const std::unordered_map<const rvsdg::ThetaNode *, TripCount> &
+  GetTripCountMap() const noexcept
+  {
+    return TripCountMap_;
+  }
+
 private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
+  std::unordered_map<const rvsdg::ThetaNode *, TripCount> TripCountMap_;
   std::vector<const rvsdg::Output *> LoopVars_;
 };
 
@@ -182,6 +201,12 @@ ScalarEvolution::GetChrecMap() const
   return mapCopy;
 }
 
+std::unordered_map<const rvsdg::ThetaNode *, ScalarEvolution::TripCount>
+ScalarEvolution::GetTripCountMap() const noexcept
+{
+  return Context_->GetTripCountMap();
+}
+
 void
 ScalarEvolution::Run(
     rvsdg::RvsdgModule & rvsdgModule,
@@ -223,9 +248,27 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         }
 
         PerformSCEVAnalysis(*thetaNode);
+
+        auto tripCount = GetPredictedTripCount(*thetaNode);
+        Context_->SetTripCount(*thetaNode, tripCount);
+
+        if (tripCount.IsCouldNotCompute())
+        {
+          std::cout << "Unpredictable num of iterations!" << '\n';
+        }
+        else if (tripCount.IsFinite())
+        {
+          std::cout << "Num iterations is: " << tripCount.GetCount() << '\n';
+        }
+        else
+        {
+          std::cout << "Num iterations is: INFINITY" << '\n';
+        }
       }
     }
   }
+}
+
 bool
 ScalarEvolution::StepAlwaysNegative(const SCEV * stepSCEV)
 {
@@ -300,6 +343,384 @@ ScalarEvolution::StepAlwaysZero(const SCEV * stepSCEV)
   }
   throw std::logic_error("Wrong type for step!");
 }
+
+ScalarEvolution::TripCount
+ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
+{
+  const auto pred = thetaNode.predicate();
+  const auto & [node, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*pred->origin());
+  if (!matchOperation)
+    throw std::logic_error("Predicate is not connected to a match node!");
+
+  JLM_ASSERT(node->ninputs() == 1); // Match node only has 1 input
+
+  const auto origin = node->input(0)->origin();
+  const auto comparisonNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
+  if (!comparisonNode)
+    throw std::logic_error("Match node is not connected to a simple node!");
+
+  const auto * comparisonOperation = &comparisonNode->GetOperation();
+  if (!(dynamic_cast<const IntegerSltOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerUltOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerUleOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerSgtOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerUgtOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerNeOperation *>(comparisonOperation)
+        || dynamic_cast<const IntegerEqOperation *>(comparisonOperation)))
+    throw std::logic_error("Parent of match node is not a comparison operation!");
+
+  const auto & lhs = *comparisonNode->input(0)->origin();
+  const auto & rhs = *comparisonNode->input(1)->origin();
+  auto lhsChrec = Context_->TryGetChrecForOutput(lhs);
+  auto rhsChrec = Context_->TryGetChrecForOutput(rhs);
+
+  if (!lhsChrec)
+    lhsChrec = GetOrCreateChainRecurrence(lhs, *GetOrCreateSCEVForOutput(lhs), thetaNode);
+
+  if (!rhsChrec)
+    rhsChrec = GetOrCreateChainRecurrence(rhs, *GetOrCreateSCEVForOutput(rhs), thetaNode);
+
+  int64_t bound = 0;
+  std::unique_ptr<SCEVChainRecurrence> chrec{};
+
+  if (SCEVChainRecurrence::IsInvariant(*lhsChrec))
+  {
+    const auto constantSCEV = dynamic_cast<SCEVConstant *>(lhsChrec->GetOperand(0));
+    if (!constantSCEV)
+      return TripCount::CouldNotCompute();
+
+    bound = constantSCEV->GetValue();
+    chrec = SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
+  }
+  else if (SCEVChainRecurrence::IsInvariant(*rhsChrec))
+  {
+    const auto constantSCEV = dynamic_cast<SCEVConstant *>(rhsChrec->GetOperand(0));
+    if (!constantSCEV)
+      return TripCount::CouldNotCompute();
+
+    bound = constantSCEV->GetValue();
+    chrec = SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
+  }
+  else
+  {
+    // None of them are invariant, we can't reliably compute the backedge taken count
+    return TripCount::CouldNotCompute();
+  }
+
+  std::cout << "The chrec is: " << chrec->DebugString() << '\n';
+
+  if (!(SCEVChainRecurrence::IsAffine(*chrec) || SCEVChainRecurrence::IsQuadratic(*chrec)))
+  {
+    // We can only compute the trip count reliably for affine and quadratic recurrences. In other
+    // cases, return "could not cpmpute"
+    return TripCount::CouldNotCompute();
+  }
+
+  std::cout << "Compare value is " << bound << '\n';
+
+  for (const auto op : chrec->GetOperands())
+  {
+    if (!dynamic_cast<const SCEVConstant *>(op))
+    {
+      // If any of the operands is not a constant, we cannot compute the trip count, and should
+      // return early
+      return TripCount::CouldNotCompute();
+    }
+  }
+
+  const auto start = dynamic_cast<const SCEVConstant *>(chrec->GetStartValue())->GetValue();
+  const auto stepSCEV = chrec->GetStep();
+  if (!stepSCEV)
+  {
+    return TripCount::CouldNotCompute();
+  }
+  std::cout << "Start value is " << start << " and step recurrence is: " << stepSCEV->DebugString()
+            << "\n";
+
+  if (dynamic_cast<const IntegerSltOperation *>(comparisonOperation)
+      || dynamic_cast<const IntegerUltOperation *>(comparisonOperation))
+  {
+    // Trivial case (backedge is not taken and the only iteration is the first one)
+    if (start >= bound)
+      return TripCount::Finite(1);
+    if (start < bound && StepAlwaysPositive(stepSCEV))
+    {
+      const auto backedgeTakenCount =
+          ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+      if (backedgeTakenCount.has_value())
+      {
+        // The trip count for a loop is the backedge taken count plus one
+        return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+    }
+  }
+  if (dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
+      || dynamic_cast<const IntegerUleOperation *>(comparisonOperation))
+  {
+    if (start > bound)
+      return TripCount::Finite(1);
+    if (start <= bound && StepAlwaysPositive(stepSCEV))
+    {
+      const auto backedgeTakenCount =
+          ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+      if (backedgeTakenCount.has_value())
+      {
+        return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+    }
+  }
+
+  if (dynamic_cast<const IntegerSgtOperation *>(comparisonOperation)
+      || dynamic_cast<const IntegerUgtOperation *>(comparisonOperation))
+  {
+    if (start <= bound)
+      return TripCount::Finite(1);
+    if (start > bound && StepAlwaysNegative(stepSCEV))
+    {
+      const auto backedgeTakenCount =
+          ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+      if (backedgeTakenCount.has_value())
+      {
+        return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+    }
+  }
+  if (dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
+      || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation))
+  {
+    if (start < bound)
+      return TripCount::Finite(1);
+    if (start >= bound && StepAlwaysNegative(stepSCEV))
+    {
+      const auto backedgeTakenCount =
+          ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+      if (backedgeTakenCount.has_value())
+      {
+        return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+    }
+  }
+
+  if (dynamic_cast<const IntegerNeOperation *>(comparisonOperation))
+  {
+    if (SCEVChainRecurrence::IsAffine(*chrec))
+    {
+      // With Ne and Eq comparisons, we only compute non-trivial backedge counts for affine
+      // recurrences as there is no general way to compute it for quadratic recurrences.
+      const auto step = dynamic_cast<const SCEVConstant *>(stepSCEV)->GetValue();
+      if (StepAlwaysPositive(stepSCEV))
+      {
+        const auto backedgeTakenCount =
+            ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+        // We need to make sure that it does not pass the bound value (results infinite loop)
+        if (start <= bound && (bound - start) % step == 0)
+          return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+      if (StepAlwaysNegative(stepSCEV))
+      {
+        const auto backedgeTakenCount =
+            ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
+        if (start >= bound && (bound - start) % step == 0)
+          return TripCount::Finite(*backedgeTakenCount + 1);
+      }
+    }
+    if (start == bound)
+      return TripCount::Finite(1);
+  }
+
+  if (dynamic_cast<const IntegerEqOperation *>(comparisonOperation))
+  {
+    if (start == bound)
+    {
+      if (!StepAlwaysZero(stepSCEV))
+        return TripCount::Finite(2); // Backedge taken once
+    }
+    else
+      return TripCount::Finite(1);
+  }
+
+  if (SCEVChainRecurrence::IsQuadratic(*chrec))
+  {
+    // For quadratic recurrences, the value could evolve in an unpredictable way. In these cases,
+    // we should return "could not compute" in order to be safe.
+    if (!(StepAlwaysPositive(stepSCEV) || StepAlwaysNegative(stepSCEV) || StepAlwaysZero(stepSCEV)))
+    {
+      return TripCount::CouldNotCompute();
+    }
+  }
+
+  // Could do some "evaluate at iteration" stuff here to validate. By checking if the recurrence at
+  // the specified iteration satisfies the predicate or not
+
+  // If we have not returned a value at this point, we have an infinite loop.
+  return TripCount::Infinite();
+}
+
+std::optional<size_t>
+ScalarEvolution::ComputeBackedgeTakenCountForChrec(
+    const SCEVChainRecurrence & chrec,
+    const int64_t bound,
+    const rvsdg::SimpleOperation * comparisonOperation)
+{
+  // Figuring out the trip count can be equivalently expressed as:
+  // "At which iteration does the loop condition become false?"
+  // That’s naturally expressed as:
+  // f(i) - k changes sign, where f(i) is the value of the recurrence at iteration i and k is the
+  // bound value
+
+  const auto start = dynamic_cast<const SCEVConstant *>(chrec.GetStartValue())->GetValue();
+  const auto stepSCEV = chrec.GetStep();
+
+  bool isEqualsComparison = dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
+                         || dynamic_cast<const IntegerUleOperation *>(comparisonOperation)
+                         || dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
+                         || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation);
+
+  // Check the size of the step recurrence: 1 -> Affine, 2 -> Quadratic
+  // We can only compute the backedge taken count for these two cases (why?). In other cases, we
+  // return nullopt or something
+  if (SCEVChainRecurrence::IsAffine(chrec))
+  {
+    const auto stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV);
+    const auto step = stepConstant->GetValue();
+
+    // f(i) = a + b * i
+    // f(i) = k => a + b * i = k => i = (k - a)/b
+    size_t result = std::ceil(static_cast<double>(bound - start) / step);
+
+    if (isEqualsComparison)
+    {
+      // If we have an equals comparison and the value of the difference between the bound and the
+      // start is a whole multiple of the step size, we get another backedge taken
+      if ((bound - start) % step == 0)
+        result += 1;
+    }
+    return result;
+  }
+  if (SCEVChainRecurrence::IsQuadratic(chrec))
+  {
+    // Create a quadratic equation for the recurrence {a,+,b,+,c}
+    // The start value is a, and the increments are b, b+c, b+2c, ..., so the accumulated values are
+    //   a+b, (a+b)+(b+c), (a+b)+(b+c)+(b+2c), ..., that is,
+    //   a+b, a+2b+c, a+3b+3c, ...
+    // After i iterations the  value is a + ib + i(i-1)/2 c = f(i).
+    const auto stepRecurrence = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV);
+    const int64_t stepFirst =
+        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStartValue())->GetValue();
+    const int64_t stepSecond =
+        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStep())->GetValue();
+
+    // Let f(i) = a + ib + i(i-1)/2 c
+    //
+    // We want to find out when this polynomial is equal to the compare value, i.e. f(i) = k.
+    // This is equivalent with the expression f(i) - k "switching sign" from positive to negative.
+    // Conversely, this is also when the predicate condition will no longer hold.
+    //
+    // The equation f(i) - k = 0 is written as:
+    //   a + ib + i(i-1)/2 c - k = 0,  or  2(a-k) + 2b i + i(i-1) c = 0.
+    // In a quadratic form it becomes:
+    //   c i^2 + (2b - c) i + 2(a-k) = 0.
+    //
+    // We use the quadratic formula to solve this.
+
+    const int64_t a = stepSecond;
+    const int64_t b = 2 * stepFirst - stepSecond;
+    const int64_t c = 2 * (start - bound);
+
+    const auto quadraticResult = SolveQuadraticEquation(a, b, c);
+    if (!quadraticResult.has_value())
+      return std::nullopt;
+
+    size_t result = *quadraticResult;
+
+    if (isEqualsComparison)
+    {
+      // Same as for affine, but instead of checking using modulo, we evaluate the value at the
+      // result and check
+      const int64_t valueAtResult =
+          start + result * stepFirst + result * (result - 1) / 2 * stepSecond;
+      if (valueAtResult == bound)
+        result += 1;
+    }
+    return result;
+  }
+  return std::nullopt;
+}
+
+std::optional<size_t>
+ScalarEvolution::SolveQuadraticEquation(int64_t a, int64_t b, int64_t c)
+{
+  // If a is negative, negate all the coefficients to simplify the math
+  if (a < 0)
+  {
+    a = -a;
+    b = -b;
+    c = -c;
+  }
+
+  const auto d = b * b - 4 * a * c; // Discriminant
+
+  if (d < 0)
+    return std::nullopt;
+
+  // Integer square root of the discriminant
+  int64_t sq = std::floor(std::sqrt(d));
+
+  // Check if square root is exact
+  const bool inexactSq = (sq * sq != d);
+
+  // Adjust if sq^2 > discriminant (shouldn't happen with floor, but just to be safe)
+  if (sq * sq > d)
+    sq -= 1;
+
+  int64_t x = 0;
+  int64_t rem = 0;
+
+  // The vertex (min/max value) of the parabola f(x) = Ax^2 + Bx + C is at -B/2A. Since A > 0, the
+  // vertex is at a non-positive x location iff B >= 0. In that case the first zero crossing is the
+  // greater root. If B < 0, the vertex is at a positive x location, meaning both roots are positive
+  // and the smaller root is the first crossing.
+  if (b < 0)
+  {
+    // The square root is rounded down, so the roots may be inexact. When using the quadratic
+    // formula, the low root could be greater than the exact one. To make sure this does not happen,
+    // we add 1 if the root is inexact when calculating the low root.
+    x = (-b - (sq + (inexactSq ? 1 : 0))) / (2 * a);
+    rem = (-b - sq) % (2 * a);
+  }
+  else
+  {
+    x = (-b + sq) / (2 * a);
+    rem = (-b + sq) % (2 * a);
+  }
+
+  // Result should be non-negative
+  if (x < 0)
+    x = 0;
+
+  // Check for exact solution
+  if (!inexactSq && rem == 0)
+  {
+    return x;
+  }
+
+  // The exact value of the square root should be between sq and sq + 1
+  // Check for sign change between f(x) and f(x+1)
+  const int64_t valueAtX = (a * x + b) * x + c;
+  const int64_t valueAtXPlusOne = (a * (x + 1) + b) * (x + 1) + c;
+
+  const bool signChange =
+      (valueAtX < 0 != valueAtXPlusOne < 0) || (valueAtX == 0 != valueAtXPlusOne == 0);
+  // Sign did not change, not a valid solution
+  if (!signChange)
+    return std::nullopt;
+
+  x += 1;
+  return x;
 }
 
 void
@@ -342,7 +763,8 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
 {
   if (const auto initSCEV = dynamic_cast<const SCEVInit *>(&scev))
   {
-    // Found an Init node, find the origin of its input value and get or create its chain recurrence
+    // Found an Init node, find the origin of its input value and get or create its chain
+    // recurrence
     const auto initPrePointer = initSCEV->GetPrePointer();
     if (const auto innerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*initPrePointer))
     {
@@ -350,8 +772,8 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
       const auto & inputOrigin = llvm::traceOutput(*correspondingInput->origin());
       if (const auto originSCEV = Context_->TryGetSCEVForOutput(inputOrigin))
       {
-        // We have found a SCEV for the origin of the input, find the corresponding theta node so we
-        // can create a recurrence for it
+        // We have found a SCEV for the origin of the input, find the corresponding theta node so
+        // we can create a recurrence for it
         const auto thetaParent = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(inputOrigin);
         const auto outerTheta =
             thetaParent ? thetaParent
@@ -391,9 +813,9 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
       // Result is a new chain recurrence, return it
       return clone;
     }
-    // If it is an n-ary expression (Add or Mul), we try to fold the operands into themselves, e.g.
-    // if, after replacing Init nodes with recurrences, we have ({0,+,1} + {1,+,2}) in an n-ary add
-    // expression, we can fold this into {1,+,3}.
+    // If it is an n-ary expression (Add or Mul), we try to fold the operands into themselves,
+    // e.g. if, after replacing Init nodes with recurrences, we have ({0,+,1} + {1,+,2}) in an
+    // n-ary add expression, we can fold this into {1,+,3}.
     return FoldNAryExpression(*clone);
   }
   // Default is to just return nothing
