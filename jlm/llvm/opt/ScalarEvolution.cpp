@@ -251,19 +251,6 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 
         auto tripCount = GetPredictedTripCount(*thetaNode);
         Context_->SetTripCount(*thetaNode, tripCount);
-
-        if (tripCount.IsCouldNotCompute())
-        {
-          std::cout << "Unpredictable num of iterations!" << '\n';
-        }
-        else if (tripCount.IsFinite())
-        {
-          std::cout << "Num iterations is: " << tripCount.GetCount() << '\n';
-        }
-        else
-        {
-          std::cout << "Num iterations is: INFINITY" << '\n';
-        }
       }
     }
   }
@@ -411,16 +398,12 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
     return TripCount::CouldNotCompute();
   }
 
-  std::cout << "The chrec is: " << chrec->DebugString() << '\n';
-
   if (!(SCEVChainRecurrence::IsAffine(*chrec) || SCEVChainRecurrence::IsQuadratic(*chrec)))
   {
     // We can only compute the trip count reliably for affine and quadratic recurrences. In other
     // cases, return "could not cpmpute"
     return TripCount::CouldNotCompute();
   }
-
-  std::cout << "Compare value is " << bound << '\n';
 
   for (const auto op : chrec->GetOperands())
   {
@@ -438,8 +421,6 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     return TripCount::CouldNotCompute();
   }
-  std::cout << "Start value is " << start << " and step recurrence is: " << stepSCEV->DebugString()
-            << "\n";
 
   if (dynamic_cast<const IntegerSltOperation *>(comparisonOperation)
       || dynamic_cast<const IntegerUltOperation *>(comparisonOperation))
