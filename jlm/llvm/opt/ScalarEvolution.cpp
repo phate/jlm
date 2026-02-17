@@ -401,7 +401,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   if (!(SCEVChainRecurrence::IsAffine(*chrec) || SCEVChainRecurrence::IsQuadratic(*chrec)))
   {
     // We can only compute the trip count reliably for affine and quadratic recurrences. In other
-    // cases, return "could not cpmpute"
+    // cases, return "could not compute"
     return TripCount::CouldNotCompute();
   }
 
@@ -1193,6 +1193,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
   {
     // The load operation relies on memory, which we treat as opaque
     chrec->AddOperand(SCEVUnknown::Create());
+    return chrec;
   }
   if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {
@@ -1226,7 +1227,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
 
     return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsStep.get(), rhsStep.get()));
   }
-  return chrec;
+  throw std::logic_error("Invalid SCEV type when creating chrec!");
 }
 
 std::unique_ptr<SCEV>
@@ -1316,12 +1317,13 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   const auto rhsChrec = dynamic_cast<const SCEVChainRecurrence *>(rhsOperand);
   if (lhsChrec && rhsChrec)
   {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     if (lhsChrec->GetLoop() != rhsChrec->GetLoop())
     {
-      return SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
+      newChrec->AddOperand(SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
+      return newChrec;
     }
 
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     const auto lhsSize = lhsChrec->GetOperands().size();
     const auto rhsSize = rhsChrec->GetOperands().size();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
