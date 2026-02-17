@@ -1465,7 +1465,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     {
       lhsNewNAryAddExpr->AddOperand(op->Clone());
     }
-    return FoldNAryExpression(*lhsNewNAryAddExpr);
+    return lhsNewNAryAddExpr;
   }
 
   if ((lhsNAryAddExpr && SCEVConstant::IsNonZero(rhsConstant))
@@ -1475,8 +1475,30 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto * nAryAddExpr = lhsNAryAddExpr ? lhsNAryAddExpr : rhsNAryAddExpr;
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
     auto newNAryAddExpr = SCEV::CloneAs<SCEVNAryAddExpr>(*nAryAddExpr);
-    newNAryAddExpr->AddOperand(constant->Clone());
-    return FoldNAryExpression(*newNAryAddExpr);
+
+    // Check if there is already a constant operand in the n-ary expression
+    // If so, fold the new constant with the old one instead of adding it as an operand
+    bool folded = false;
+    for (size_t i = 0; i < newNAryAddExpr->GetOperands().size(); ++i)
+    {
+      if (const auto existingConstant =
+              dynamic_cast<const SCEVConstant *>(newNAryAddExpr->GetOperands()[i]))
+      {
+        // Fold the two constants together directly
+        auto foldedConstant = ApplyAddFolding(existingConstant, constant);
+        newNAryAddExpr->ReplaceOperand(i, foldedConstant);
+        folded = true;
+        break;
+      }
+    }
+
+    if (!folded)
+    {
+      // No existing constant to fold with, just append
+      newNAryAddExpr->AddOperand(constant->Clone());
+    }
+
+    return newNAryAddExpr;
   }
 
   if (lhsNAryAddExpr || rhsNAryAddExpr)
@@ -1689,7 +1711,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     {
       lhsNewNAryMulExpr->AddOperand(op->Clone());
     }
-    return FoldNAryExpression(*lhsNewNAryMulExpr);
+    return lhsNewNAryMulExpr;
   }
 
   if ((lhsNAryMulExpr && rhsConstant && rhsConstant->GetValue() != 1)
@@ -1701,7 +1723,28 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 
     auto newNAryMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*nAryMulExpr);
     newNAryMulExpr->AddOperand(constant->Clone());
-    return FoldNAryExpression(*newNAryMulExpr);
+
+    bool folded = false;
+    for (size_t i = 0; i < newNAryMulExpr->GetOperands().size(); ++i)
+    {
+      if (const auto existingConstant =
+              dynamic_cast<const SCEVConstant *>(newNAryMulExpr->GetOperands()[i]))
+      {
+        // Fold the two constants together directly
+        auto foldedConstant = ApplyMulFolding(existingConstant, constant);
+        newNAryMulExpr->ReplaceOperand(i, foldedConstant);
+        folded = true;
+        break;
+      }
+    }
+
+    if (!folded)
+    {
+      // No existing constant to fold with, just append
+      newNAryMulExpr->AddOperand(constant->Clone());
+    }
+
+    return newNAryMulExpr;
   }
 
   if (lhsNAryMulExpr || rhsNAryMulExpr)
