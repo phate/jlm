@@ -720,7 +720,7 @@ ScalarEvolution::SolveQuadraticEquation(int64_t a, int64_t b, int64_t c)
   const int64_t valueAtXPlusOne = (a * (x + 1) + b) * (x + 1) + c;
 
   const bool signChange =
-      (valueAtX < 0 != valueAtXPlusOne < 0) || (valueAtX == 0 != valueAtXPlusOne == 0);
+      ((valueAtX < 0) != (valueAtXPlusOne < 0)) || ((valueAtX == 0) != (valueAtXPlusOne == 0));
   // Sign did not change, not a valid solution
   if (!signChange)
     return std::nullopt;
