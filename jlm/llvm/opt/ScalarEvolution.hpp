@@ -377,6 +377,12 @@ public:
     return Operands_.at(index).get();
   }
 
+  size_t
+  Size() const
+  {
+    return Operands_.size();
+  }
+
 protected:
   std::vector<std::unique_ptr<SCEV>> Operands_;
 };
@@ -747,6 +753,8 @@ private:
    */
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+  static std::unique_ptr<SCEVChainRecurrence>
+  MultiplyChrecsOfArbitraryLength(const SCEVChainRecurrence * F, const SCEVChainRecurrence * G);
 
   /**
    * \brief Apply folding rules for multiplication to combine two SCEV operands into one.

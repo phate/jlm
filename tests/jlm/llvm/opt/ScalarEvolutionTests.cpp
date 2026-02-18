@@ -835,9 +835,10 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
 
   // Tests that when two n-ary mult expressions are folded together, the operands of the RHS mult is
   // added to the LHS mult
-  // Recurrence: {Init(a3),+,(Init(a0) * Init(a1) * Init(a0) * Init(a1)),+,((Init(a0) * Init(a1) *
-  // Init(a0)) + (Init(a0) * Init(a1) * Init(a0)) + (Init(a0) * Init(a0))),+,(Init(a0) * Init(a0) *
-  // 2)}
+  // Recurrence:
+  // {Init(a3),+,(Init(a0) * Init(a1) * Init(a0) * Init(a1)),+,((Init(a0) * Init(a1) * Init(a0)) +
+  // (Init(a0) * Init(a0)) + (Init(a0) * Init(a1) * Init(a0))),+,((Init(a0) * Init(a0)) + (Init(a0)
+  // * Init(a0)))}
   auto lv4TestChrec = SCEVChainRecurrence(*theta);
   lv4TestChrec.AddOperand(SCEVInit::Create(*lv4.pre));
   lv4TestChrec.AddOperand(SCEVNAryMulExpr::Create(
@@ -850,15 +851,14 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
           SCEVInit::Create(*lv1.pre),
           SCEVInit::Create(*lv2.pre),
           SCEVInit::Create(*lv1.pre)),
+      SCEVNAryMulExpr::Create(SCEVInit::Create(*lv1.pre), SCEVInit::Create(*lv1.pre)),
       SCEVNAryMulExpr::Create(
           SCEVInit::Create(*lv1.pre),
           SCEVInit::Create(*lv2.pre),
-          SCEVInit::Create(*lv1.pre)),
+          SCEVInit::Create(*lv1.pre))));
+  lv4TestChrec.AddOperand(SCEVNAryAddExpr::Create(
+      SCEVNAryMulExpr::Create(SCEVInit::Create(*lv1.pre), SCEVInit::Create(*lv1.pre)),
       SCEVNAryMulExpr::Create(SCEVInit::Create(*lv1.pre), SCEVInit::Create(*lv1.pre))));
-  lv4TestChrec.AddOperand(SCEVNAryMulExpr::Create(
-      SCEVInit::Create(*lv1.pre),
-      SCEVInit::Create(*lv1.pre),
-      SCEVConstant::Create(2)));
 
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
 }
