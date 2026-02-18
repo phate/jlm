@@ -220,6 +220,14 @@ ScalarEvolution::Run(
   AnalyzeRegion(rootRegion);
   CombineChrecsAcrossLoops();
 
+  for (auto & [output, chrec] : GetChrecMap())
+  {
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output))
+    {
+      std::cout << output->debug_string() << ": " << chrec->DebugString() << '\n';
+    }
+  }
+
   statistics->Stop(*Context_);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
@@ -250,6 +258,26 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
         PerformSCEVAnalysis(*thetaNode);
 
         auto tripCount = GetPredictedTripCount(*thetaNode);
+
+        if (tripCount.IsCouldNotCompute())
+        {
+          std::cout << "Could not compute trip count for loop with ID "
+                    << thetaNode->subregion()->getRegionId() << '\n';
+        }
+        else
+        {
+          std::cout << "Trip count for loop with ID " << thetaNode->subregion()->getRegionId()
+                    << ": ";
+          if (tripCount.IsFinite())
+          {
+            std::cout << tripCount.GetCount() << '\n';
+          }
+          else if (tripCount.IsInfinite())
+          {
+            std::cout << "Infinity\n";
+          }
+        }
+
         Context_->SetTripCount(*thetaNode, tripCount);
       }
     }
@@ -1722,7 +1750,6 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto * constant = lhsConstant ? lhsConstant : rhsConstant;
 
     auto newNAryMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*nAryMulExpr);
-    newNAryMulExpr->AddOperand(constant->Clone());
 
     bool folded = false;
     for (size_t i = 0; i < newNAryMulExpr->GetOperands().size(); ++i)
