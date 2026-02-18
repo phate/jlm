@@ -114,6 +114,15 @@ private:
 
   static void
   RedirectCallOutputs(rvsdg::SimpleNode & callNode);
+
+  /**
+   * Redirects the load node's users of the memory state outputs to the origins' of the respective
+   * memory state inputs, if the value output of the load node is dead.
+   *
+   * @param loadNode The load node for which the memory states are redirected.
+   */
+  static void
+  redirectLoadOutputs(rvsdg::SimpleNode & loadNode);
 };
 
 }

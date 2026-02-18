@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
@@ -118,28 +119,38 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
   // it is irrelevant in which order we handle the nodes.
   for (auto & node : region.Nodes())
   {
-    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
-    {
-      // Ensure we redirect invariant values of all nodes in the gamma subregions first, otherwise
-      // we might not be able to redirect some of the gamma outputs.
-      RedirectInSubregions(*gammaNode);
-      RedirectGammaOutputs(*gammaNode);
-    }
-    else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&node))
-    {
-      // Ensure we redirect invariant values of all nodes in the theta subregion first, otherwise we
-      // might not be able to redirect some of the theta outputs.
-      RedirectInSubregions(*thetaNode);
-      RedirectThetaOutputs(*thetaNode);
-    }
-    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(&node))
-    {
-      if (is<CallOperation>(simpleNode))
-      {
-        RedirectCallOutputs(*util::assertedCast<rvsdg::SimpleNode>(&node));
-      }
-    }
+    rvsdg::MatchType(
+        node,
+        [](rvsdg::GammaNode & gammaNode)
+        {
+          // Ensure we redirect invariant values of all nodes in the gamma subregions first,
+          // otherwise we might not be able to redirect some of the gamma outputs.
+          RedirectInSubregions(gammaNode);
+          RedirectGammaOutputs(gammaNode);
+        },
+        [](rvsdg::ThetaNode & thetaNode)
+        {
+          // Ensure we redirect invariant values of all nodes in the theta subregion first,
+          // otherwise we might not be able to redirect some of the theta outputs.
+          RedirectInSubregions(thetaNode);
+          RedirectThetaOutputs(thetaNode);
+        },
+        [](rvsdg::SimpleNode & simpleNode)
+        {
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [&simpleNode](const CallOperation &)
+              {
+                RedirectCallOutputs(simpleNode);
+              },
+              [&simpleNode](const LoadOperation &)
+              {
+                redirectLoadOutputs(simpleNode);
+              });
+        });
   }
+
+  region.prune(false);
 }
 
 void
@@ -158,11 +169,11 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structur
 void
 InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
-  for (auto exitvar : gammaNode.GetExitVars())
+  for (auto exitVar : gammaNode.GetExitVars())
   {
-    if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitvar))
+    if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitVar))
     {
-      exitvar.output->divert_users(*invariantOrigin);
+      exitVar.output->divert_users(*invariantOrigin);
     }
   }
 }
@@ -343,6 +354,19 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       continue;
 
     output->divert_users(input->origin());
+  }
+}
+
+void
+InvariantValueRedirection::redirectLoadOutputs(rvsdg::SimpleNode & loadNode)
+{
+  if (LoadOperation::LoadedValueOutput(loadNode).IsDead())
+  {
+    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(loadNode))
+    {
+      auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput);
+      memoryStateOutput.divert_users(memoryStateInput.origin());
+    }
   }
 }
 
