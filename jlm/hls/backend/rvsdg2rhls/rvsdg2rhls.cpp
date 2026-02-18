@@ -64,10 +64,10 @@ split_opt(llvm::LlvmRvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   CommonNodeElimination cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::LoopUnswitching tgi;
+  llvm::LoopUnswitching loopUnswitching(llvm::LoopUnswitchingDefaultHeuristic::create());
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.Run(rm, statisticsCollector);
+  loopUnswitching.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
   cne.Run(rm, statisticsCollector);
   ivr.Run(rm, statisticsCollector);
@@ -82,9 +82,9 @@ pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   CommonNodeElimination cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::LoopUnswitching tgi;
+  llvm::LoopUnswitching loopUnswitching(llvm::LoopUnswitchingDefaultHeuristic::create());
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.Run(rm, statisticsCollector);
+  loopUnswitching.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
   cne.Run(rm, statisticsCollector);
   ivr.Run(rm, statisticsCollector);
@@ -449,7 +449,8 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
   auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
   auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
-  auto loopUnswitching = std::make_shared<llvm::LoopUnswitching>();
+  auto loopUnswitching =
+      std::make_shared<llvm::LoopUnswitching>(llvm::LoopUnswitchingDefaultHeuristic::create());
   auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();
   auto ioStateElimination = std::make_shared<IOStateElimination>();
   auto memoryStateSeparation = std::make_shared<MemoryStateSeparation>();

@@ -23,6 +23,37 @@ namespace jlm::llvm
 class ThetaGammaPredicateCorrelation;
 
 /**
+ * Determines for a given theta and gamma node, encapsulated in the \ref
+ * ThetaGammaPredicateCorrelation, whether loop unswitching should be performed.
+ */
+class LoopUnswitchingHeuristic
+{
+public:
+  virtual ~LoopUnswitchingHeuristic() noexcept;
+
+  virtual bool
+  shouldUnswitchLoop(ThetaGammaPredicateCorrelation & correlation) const noexcept = 0;
+};
+
+/**
+ * Default heuristic for loop unswitching. The heuristic checks that there are no structural
+ * nodes as part of the shared predicate nodes between the theta and gamma node. The reasoning
+ * is that the predicate nodes are duplicated, which would mean that we would duplicate conditionals
+ * and loops if we would permit structural nodes as part of the predicate nodes.
+ */
+class LoopUnswitchingDefaultHeuristic final : public LoopUnswitchingHeuristic
+{
+public:
+  ~LoopUnswitchingDefaultHeuristic() noexcept override;
+
+  bool
+  shouldUnswitchLoop(ThetaGammaPredicateCorrelation & correlation) const noexcept override;
+
+  static std::shared_ptr<const LoopUnswitchingDefaultHeuristic>
+  create();
+};
+
+/**
  * \brief LoopUnswitching
  *
  * Loop unswitching transforms a theta node with a gamma node in its subregion to a gamma node that
@@ -80,21 +111,25 @@ public:
 
   ~LoopUnswitching() noexcept override;
 
-  LoopUnswitching()
-      : Transformation("LoopUnswitching")
+  explicit LoopUnswitching(std::shared_ptr<const LoopUnswitchingHeuristic> heuristic)
+      : Transformation("LoopUnswitching"),
+        heuristic_(std::move(heuristic))
   {}
 
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
-  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
+  CreateAndRun(
+      rvsdg::RvsdgModule & rvsdgModule,
+      util::StatisticsCollector & statisticsCollector,
+      std::shared_ptr<const LoopUnswitchingHeuristic> heuristic);
 
 private:
-  static void
+  void
   HandleRegion(rvsdg::Region & region);
 
-  static bool
+  bool
   UnswitchLoop(rvsdg::ThetaNode & thetaNode);
 
   static rvsdg::GammaNode *
@@ -123,6 +158,8 @@ private:
   allLoopVarsAreRoutedThroughGamma(
       const rvsdg::ThetaNode & thetaNode,
       const rvsdg::GammaNode & gammaNode);
+
+  std::shared_ptr<const LoopUnswitchingHeuristic> heuristic_;
 };
 
 }
