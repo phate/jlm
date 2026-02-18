@@ -122,7 +122,7 @@ private:
    * @param loadNode The load node for which the memory states are redirected.
    */
   static void
-  redirectLoadOutputs(rvsdg::SimpleNode & loadNode);
+  redirectLoadMemoryStates(rvsdg::SimpleNode & loadNode);
 };
 
 }

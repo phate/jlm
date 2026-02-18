@@ -145,7 +145,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
               },
               [&simpleNode](const LoadOperation &)
               {
-                redirectLoadOutputs(simpleNode);
+                redirectLoadMemoryStates(simpleNode);
               });
         });
   }
@@ -358,7 +358,7 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 }
 
 void
-InvariantValueRedirection::redirectLoadOutputs(rvsdg::SimpleNode & loadNode)
+InvariantValueRedirection::redirectLoadMemoryStates(rvsdg::SimpleNode & loadNode)
 {
   if (LoadOperation::LoadedValueOutput(loadNode).IsDead())
   {
