@@ -1549,15 +1549,49 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
 }
 
 std::unique_ptr<SCEVChainRecurrence>
-ScalarEvolution::MultiplyChrecsOfArbitraryLength(
-    const SCEVChainRecurrence * F,
-    const SCEVChainRecurrence * G)
+ScalarEvolution::ComputeProductOfChrecs(
+    const SCEVChainRecurrence * lhsChrec,
+    const SCEVChainRecurrence * rhsChrec)
 {
-  // An implementation of the algorithm CRProd from Bachmann et al., ‘Chains of recurrences — a
-  // method to expedite the evaluation of closed-form functions’
+  const auto lhsSize = lhsChrec->Size();
+  const auto rhsSize = rhsChrec->Size();
+
+  if (rhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
+  if (lhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
+
+  // Handle G * {e,+,f,...} where G is loop invariant
+  if (lhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // G * {e,+,f,...} = {G * e,+,G * f,...}
+    auto lhs = lhsChrec->GetOperand(0);
+
+    for (auto rhs : rhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+  if (rhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // {e,+,f,...} * G = {e * G,+,f * G,...}
+    auto rhs = rhsChrec->GetOperand(0);
+
+    for (auto lhs : lhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+
+  // Below is an implementation of the algorithm CRProd from Bachmann et al., ‘Chains of recurrences
+  // — a method to expedite the evaluation of closed-form functions’
   // (https://doi.org/10.1145/190347.190423)
   //
-  // Let F, G be simple CR’s of length k and l.
+  // Let lhs = F, rhs = G be CR’s of length k and l.
   //
   // The product of F and G, S = F * G can be constructed using the algorithm CRProd given below
   //
@@ -1574,58 +1608,59 @@ ScalarEvolution::MultiplyChrecsOfArbitraryLength(
   //
   // G' = G + g = {b0 + b1, +, b1 + b2, +, ..., +, bl}
   //
-  // P3 [Recursive Calls] Set
+  // P3 [Recursive calls] Set
   // {x1'', +, x2'', +, ..., +, x(k+l)''} ← CRProd(F, g)
   // {x1',  +, x2',  +, ..., +, x(k+l)'}  ← CRProd(f, G')
   //
   // P4 [Fold the results together and return]
   // return {a0*b0, +, x1' + x1'', +, ..., +, x(k+l)' + x(k+l)''}
 
-  const auto k = F->Size();
-  const auto l = G->Size();
+  if (rhsSize > lhsSize)
+    std::swap(lhsChrec, rhsChrec);
 
-  if (l == 1)
+  if (rhsSize == 1)
   {
-    const auto element = G->GetOperand(0);
+    const auto element = rhsChrec->GetOperand(0);
 
-    return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(F, element));
+    return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsChrec, element));
   }
 
-  assert(k >= 2);
-  assert(l >= 2);
+  JLM_ASSERT(lhsSize >= 2);
+  JLM_ASSERT(rhsSize >= 2);
 
-  std::unique_ptr<SCEVChainRecurrence> f, g;
+  std::unique_ptr<SCEVChainRecurrence> lhsStepRecurrence, rhsStepRecurrence;
 
-  auto phiStep = F->GetStep();
-  if (dynamic_cast<SCEVChainRecurrence *>(phiStep))
+  const auto lhsStep = lhsChrec->GetStep();
+  if (dynamic_cast<SCEVChainRecurrence *>(lhsStep))
   {
-    f = SCEV::CloneAs<SCEVChainRecurrence>(*phiStep);
-  }
-  else
-  {
-    f = SCEVChainRecurrence::Create(*F->GetLoop());
-    f->AddOperand(phiStep->Clone());
-  }
-
-  auto psiStep = G->GetStep();
-  if (dynamic_cast<SCEVChainRecurrence *>(psiStep))
-  {
-    g = SCEV::CloneAs<SCEVChainRecurrence>(*psiStep);
+    lhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*lhsStep);
   }
   else
   {
-    g = SCEVChainRecurrence::Create(*G->GetLoop());
-    g->AddOperand(psiStep->Clone());
+    lhsStepRecurrence = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    lhsStepRecurrence->AddOperand(lhsStep->Clone());
   }
 
-  const auto psiMarked = SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(G, g.get()));
+  const auto rhsStep = rhsChrec->GetStep();
+  if (dynamic_cast<SCEVChainRecurrence *>(rhsStep))
+  {
+    rhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*rhsStep);
+  }
+  else
+  {
+    rhsStepRecurrence = SCEVChainRecurrence::Create(*rhsChrec->GetLoop());
+    rhsStepRecurrence->AddOperand(rhsStep->Clone());
+  }
 
-  const auto res1 = MultiplyChrecsOfArbitraryLength(F, g.get());
-  const auto res2 = MultiplyChrecsOfArbitraryLength(psiMarked.get(), f.get());
+  const auto rhsMarked =
+      SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(rhsChrec, rhsStepRecurrence.get()));
+
+  const auto res1 = ComputeProductOfChrecs(lhsChrec, rhsStepRecurrence.get());
+  const auto res2 = ComputeProductOfChrecs(rhsMarked.get(), lhsStepRecurrence.get());
 
   auto resFolded = SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(res1.get(), res2.get()));
 
-  const auto first = ApplyMulFolding(F->GetOperand(0), G->GetOperand(0));
+  const auto first = ApplyMulFolding(lhsChrec->GetOperand(0), rhsChrec->GetOperand(0));
   resFolded->AddOperandToFront(first);
 
   return resFolded;
@@ -1657,56 +1692,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
     }
 
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
-    const auto lhsSize = lhsChrec->Size();
-    const auto rhsSize = rhsChrec->Size();
-
-    if (lhsSize == 0)
-    {
-      for (auto operand : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    else if (rhsSize == 0)
-    {
-      for (auto operand : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    // Handle G * {e,+,f,...} where G is loop invariant
-    if (lhsSize == 1)
-    {
-      // G * {e,+,f,...} = {G * e,+,G * f,...}
-      auto lhs = lhsChrec->GetOperand(0);
-
-      for (auto rhs : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else if (rhsSize == 1)
-    {
-      // {e,+,f,...} * G = {e * G,+,f * G,...}
-      auto rhs = rhsChrec->GetOperand(0);
-
-      for (auto lhs : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else
-    {
-      std::unique_ptr<SCEVChainRecurrence> res;
-      if (lhsSize >= rhsSize)
-        res = MultiplyChrecsOfArbitraryLength(lhsChrec, rhsChrec);
-      else
-        res = MultiplyChrecsOfArbitraryLength(rhsChrec, lhsChrec);
-
-      return res;
-    }
-    return newChrec;
+    return ComputeProductOfChrecs(lhsChrec, rhsChrec);
   }
 
   // Chrec * any other operand
