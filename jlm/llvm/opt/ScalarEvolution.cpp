@@ -535,9 +535,6 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
     }
   }
 
-  // Could do some "evaluate at iteration" stuff here to validate. By checking if the recurrence at
-  // the specified iteration satisfies the predicate or not
-
   // If we have not returned a value at this point, we have an infinite loop.
   return TripCount::Infinite();
 }
