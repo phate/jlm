@@ -408,7 +408,7 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 }
 
-TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
+TEST(ScalarEvolutionTests, MultiplicationOfTwoAffineChrecs)
 {
   using namespace jlm::llvm;
 
@@ -467,6 +467,82 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+}
+
+TEST(ScalarEvolutionTests, MultiplicationOfTwoQuadraticChrecs)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c1_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+  const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c1_1.output(0));
+  const auto lv3 = theta->AddLoopVar(c2.output(0));
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  auto res1 = addNode1.output(0);
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, lv1.pre }, 32);
+  auto res2 = addNode2.output(0);
+
+  auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2.pre, lv2.pre }, 32);
+  auto & addNode3 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3.pre, mulNode.output(0) }, 32);
+  auto res3 = addNode3.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+  lv3.post->divert_to(res3);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
+
+  // Assert
+  EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
+  EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
+
+  // lv1 is a simple induction variable with the affine recurrence {0,+,1}
+  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  lv1TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv1TestChrec.AddOperand(SCEVConstant::Create(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+
+  // lv2 is a polynomial induction variable with the quadratic recurrence {1,+,0,+,1}
+  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  lv2TestChrec.AddOperand(SCEVConstant::Create(1));
+  lv2TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv2TestChrec.AddOperand(SCEVConstant::Create(1));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+
+  // {1,+,0,+,1} * {1,+,0,+,1} foled together is {1,+,0,+,3,+,6,+,6}, adding that to lv3, we get the
+  // recurrence {2,+,1,+,0,+,3,+,6,+,6}
+  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  lv3TestChrec.AddOperand(SCEVConstant::Create(2));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(1));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(0));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(3));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(6));
+  lv3TestChrec.AddOperand(SCEVConstant::Create(6));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
 
 TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
