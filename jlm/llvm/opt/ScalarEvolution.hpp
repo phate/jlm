@@ -416,7 +416,7 @@ public:
     return chrec.GetOperands().size() == 3;
   }
 
-  SCEV *
+  std::unique_ptr<SCEV>
   GetStep() const
   {
     if (Operands_.size() < 2)
@@ -425,14 +425,14 @@ public:
     }
     if (Operands_.size() == 2)
     {
-      return Operands_[1].get();
+      return SCEV::CloneAs<SCEVConstant>(*Operands_[1]);
     }
     auto newRec = SCEVChainRecurrence::Create(*Loop_);
     for (size_t i = 1; i < Operands_.size(); i++)
     {
       newRec->AddOperand(Operands_[i]->Clone());
     }
-    return newRec.release();
+    return newRec;
   }
 
   void
@@ -714,13 +714,13 @@ private:
   SolveQuadraticEquation(int64_t a, int64_t b, int64_t c);
 
   static bool
-  StepAlwaysNegative(const SCEV * stepSCEV);
+  StepAlwaysNegative(const SCEV & stepSCEV);
 
   static bool
-  StepAlwaysPositive(const SCEV * stepSCEV);
+  StepAlwaysPositive(const SCEV & stepSCEV);
 
   static bool
-  StepAlwaysZero(const SCEV * stepSCEV);
+  StepAlwaysZero(const SCEV & stepSCEV);
 
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);

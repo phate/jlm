@@ -221,14 +221,6 @@ ScalarEvolution::Run(
   AnalyzeRegion(rootRegion);
   CombineChrecsAcrossLoops();
 
-  for (auto & [output, chrec] : GetChrecMap())
-  {
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output))
-    {
-      std::cout << output->debug_string() << ": " << chrec->DebugString() << '\n';
-    }
-  }
-
   statistics->Stop(*Context_);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
@@ -260,25 +252,6 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 
         auto tripCount = GetPredictedTripCount(*thetaNode);
 
-        if (tripCount.IsCouldNotCompute())
-        {
-          std::cout << "Could not compute trip count for loop with ID "
-                    << thetaNode->subregion()->getRegionId() << '\n';
-        }
-        else
-        {
-          std::cout << "Trip count for loop with ID " << thetaNode->subregion()->getRegionId()
-                    << ": ";
-          if (tripCount.IsFinite())
-          {
-            std::cout << tripCount.GetCount() << '\n';
-          }
-          else if (tripCount.IsInfinite())
-          {
-            std::cout << "Infinity\n";
-          }
-        }
-
         Context_->SetTripCount(*thetaNode, tripCount);
       }
     }
@@ -286,18 +259,19 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 }
 
 bool
-ScalarEvolution::StepAlwaysNegative(const SCEV * stepSCEV)
+ScalarEvolution::StepAlwaysNegative(const SCEV & stepSCEV)
 {
-  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
     return constantStep->GetValue() < 0;
   }
-  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(&stepSCEV))
   {
     JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
-    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+    auto stepPtr = recurrenceStep->GetStep();
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -311,18 +285,19 @@ ScalarEvolution::StepAlwaysNegative(const SCEV * stepSCEV)
 }
 
 bool
-ScalarEvolution::StepAlwaysPositive(const SCEV * stepSCEV)
+ScalarEvolution::StepAlwaysPositive(const SCEV & stepSCEV)
 {
-  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
     return constantStep->GetValue() > 0;
   }
-  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(&stepSCEV))
   {
     JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
-    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+    auto stepPtr = recurrenceStep->GetStep();
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -336,18 +311,19 @@ ScalarEvolution::StepAlwaysPositive(const SCEV * stepSCEV)
 }
 
 bool
-ScalarEvolution::StepAlwaysZero(const SCEV * stepSCEV)
+ScalarEvolution::StepAlwaysZero(const SCEV & stepSCEV)
 {
-  if (auto constantStep = dynamic_cast<const SCEVConstant *>(stepSCEV))
+  if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
     return constantStep->GetValue() == 0;
   }
-  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV))
+  if (auto recurrenceStep = dynamic_cast<const SCEVChainRecurrence *>(&stepSCEV))
   {
     JLM_ASSERT(SCEVChainRecurrence::IsAffine(*recurrenceStep));
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
-    const auto step = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStep());
+    auto stepPtr = recurrenceStep->GetStep();
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -457,7 +433,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
     // Trivial case (backedge is not taken and the only iteration is the first one)
     if (start >= bound)
       return TripCount::Finite(1);
-    if (start < bound && StepAlwaysPositive(stepSCEV))
+    if (start < bound && StepAlwaysPositive(*stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -473,7 +449,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     if (start > bound)
       return TripCount::Finite(1);
-    if (start <= bound && StepAlwaysPositive(stepSCEV))
+    if (start <= bound && StepAlwaysPositive(*stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -489,7 +465,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     if (start <= bound)
       return TripCount::Finite(1);
-    if (start > bound && StepAlwaysNegative(stepSCEV))
+    if (start > bound && StepAlwaysNegative(*stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -504,7 +480,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     if (start < bound)
       return TripCount::Finite(1);
-    if (start >= bound && StepAlwaysNegative(stepSCEV))
+    if (start >= bound && StepAlwaysNegative(*stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -521,8 +497,8 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
     {
       // With Ne and Eq comparisons, we only compute non-trivial backedge counts for affine
       // recurrences as there is no general way to compute it for quadratic recurrences.
-      const auto step = dynamic_cast<const SCEVConstant *>(stepSCEV)->GetValue();
-      if (StepAlwaysPositive(stepSCEV))
+      const auto step = dynamic_cast<const SCEVConstant *>(stepSCEV.get())->GetValue();
+      if (StepAlwaysPositive(*stepSCEV))
       {
         const auto backedgeTakenCount =
             ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -530,7 +506,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
         if (start <= bound && (bound - start) % step == 0)
           return TripCount::Finite(*backedgeTakenCount + 1);
       }
-      if (StepAlwaysNegative(stepSCEV))
+      if (StepAlwaysNegative(*stepSCEV))
       {
         const auto backedgeTakenCount =
             ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
@@ -546,7 +522,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     if (start == bound)
     {
-      if (!StepAlwaysZero(stepSCEV))
+      if (!StepAlwaysZero(*stepSCEV))
         return TripCount::Finite(2); // Backedge taken once
     }
     else
@@ -557,7 +533,8 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     // For quadratic recurrences, the value could evolve in an unpredictable way. In these cases,
     // we should return "could not compute" in order to be safe.
-    if (!(StepAlwaysPositive(stepSCEV) || StepAlwaysNegative(stepSCEV) || StepAlwaysZero(stepSCEV)))
+    if (!(StepAlwaysPositive(*stepSCEV) || StepAlwaysNegative(*stepSCEV)
+          || StepAlwaysZero(*stepSCEV)))
     {
       return TripCount::CouldNotCompute();
     }
@@ -591,7 +568,7 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
   // We can only compute the backedge taken count for these two cases
   if (SCEVChainRecurrence::IsAffine(chrec))
   {
-    const auto stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV);
+    const auto stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
     const auto step = stepConstant->GetValue();
 
     // f(i) = a + b * i
@@ -614,11 +591,11 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
     //   a+b, (a+b)+(b+c), (a+b)+(b+c)+(b+2c), ..., that is,
     //   a+b, a+2b+c, a+3b+3c, ...
     // After i iterations the  value is a + ib + i(i-1)/2 c = f(i).
-    const auto stepRecurrence = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV);
+    const auto stepRecurrence = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV.get());
     const int64_t stepFirst =
         dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStartValue())->GetValue();
     const int64_t stepSecond =
-        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStep())->GetValue();
+        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStep().get())->GetValue();
 
     // Let f(i) = a + ib + i(i-1)/2 c
     //
