@@ -401,6 +401,40 @@ public:
     return Operands_[0].get();
   }
 
+  bool static IsInvariant(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 1;
+  }
+
+  bool static IsAffine(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 2;
+  }
+
+  bool static IsQuadratic(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 3;
+  }
+
+  std::unique_ptr<SCEV>
+  GetStep() const
+  {
+    if (Operands_.size() < 2)
+    {
+      return nullptr;
+    }
+    if (Operands_.size() == 2)
+    {
+      return SCEV::CloneAs<SCEVConstant>(*Operands_[1]);
+    }
+    auto newRec = SCEVChainRecurrence::Create(*Loop_);
+    for (size_t i = 1; i < Operands_.size(); i++)
+    {
+      newRec->AddOperand(Operands_[i]->Clone());
+    }
+    return newRec;
+  }
+
   void
   AddOperandToFront(const std::unique_ptr<SCEV> & initScev)
   {
@@ -566,6 +600,62 @@ public:
     {}
   };
 
+  struct TripCount
+  {
+    enum class Kind
+    {
+      Finite,
+      Infinite,
+      CouldNotCompute
+    };
+
+    static TripCount
+    Finite(const size_t n)
+    {
+      return { Kind::Finite, n };
+    }
+
+    static TripCount
+    Infinite()
+    {
+      return { Kind::Infinite, 0 };
+    }
+
+    static TripCount
+    CouldNotCompute()
+    {
+      return { Kind::CouldNotCompute, 0 };
+    }
+
+    bool
+    IsFinite() const
+    {
+      return kind == Kind::Finite;
+    }
+
+    bool
+    IsInfinite() const
+    {
+      return kind == Kind::Infinite;
+    }
+
+    bool
+    IsCouldNotCompute() const
+    {
+      return kind == Kind::CouldNotCompute;
+    }
+
+    size_t
+    GetCount() const
+    {
+      assert(IsFinite() && "TripCount is not finite");
+      return count;
+    }
+
+    Kind kind;
+    size_t count;
+  };
+
   typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
 
   typedef std::unordered_map<const rvsdg::Output *, DependencyMap> DependencyGraph;
@@ -591,8 +681,14 @@ public:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
+  std::unordered_map<const rvsdg::ThetaNode *, TripCount>
+  GetTripCountMap() const noexcept;
+
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  TripCount
+  GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode);
 
   void
   AnalyzeRegion(const rvsdg::Region & region);
@@ -608,6 +704,24 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
+  static std::optional<size_t>
+  ComputeBackedgeTakenCountForChrec(
+      const SCEVChainRecurrence & chrec,
+      int64_t bound,
+      const rvsdg::SimpleOperation * comparisonOperation);
+
+  static std::optional<size_t>
+  SolveQuadraticEquation(int64_t a, int64_t b, int64_t c);
+
+  static bool
+  StepAlwaysNegative(const SCEV & stepSCEV);
+
+  static bool
+  StepAlwaysPositive(const SCEV & stepSCEV);
+
+  static bool
+  StepAlwaysZero(const SCEV & stepSCEV);
+
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
 
