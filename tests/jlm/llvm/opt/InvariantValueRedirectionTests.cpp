@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
@@ -545,4 +546,50 @@ TEST(InvariantValueRedirectionTests, testThetaGammaRedirection)
   // This means we could redirect the loop variable from the gamma to the respective entry
   // variables' origin.
   EXPECT_EQ(loopVars[1].post->origin(), dummyNodeTheta->output(0));
+}
+
+TEST(InvariantValueRedirectionTests, testLoadWithDeadLoadedValue)
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  const auto valueType = TestType::createValueType();
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto functionType = FunctionType::Create(
+      { pointerType, memoryStateType, memoryStateType },
+      { memoryStateType, memoryStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto addressArgument = lambdaNode->GetFunctionArguments()[0];
+  auto memoryStateArgument1 = lambdaNode->GetFunctionArguments()[1];
+  auto memoryStateArgument2 = lambdaNode->GetFunctionArguments()[2];
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *addressArgument,
+      { memoryStateArgument1, memoryStateArgument2 },
+      valueType,
+      4);
+
+  auto lambdaOutput = lambdaNode->finalize({ loadNode.output(1), loadNode.output(2) });
+
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+
+  // Assert
+  // We expect that the users of the memory state outputs of the load node were redirected to the
+  // origins of the respective inputs, which in turn rendered the load node dead. Consequently, it
+  // was pruned from the lambda subregion.
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 0u);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), memoryStateArgument1);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[1]->origin(), memoryStateArgument2);
 }
