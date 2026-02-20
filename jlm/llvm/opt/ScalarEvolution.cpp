@@ -1201,6 +1201,11 @@ ScalarEvolution::GetOrCreateStepForSCEV(
 
   auto chrec = SCEVChainRecurrence::Create(thetaNode);
 
+  if (const auto scevUnknown = dynamic_cast<const SCEVUnknown *>(&scevTree))
+  {
+    chrec->AddOperand(scevUnknown->Clone());
+    return chrec;
+  }
   if (const auto scevConstant = dynamic_cast<const SCEVConstant *>(&scevTree))
   {
     // This is a constant, we add it as the only operand
