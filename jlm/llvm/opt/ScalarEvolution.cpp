@@ -176,6 +176,22 @@ public:
     AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
     AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
     AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
+
+    std::string tripCounts = "";
+    bool first = true;
+    for (auto & [thetaNode, tripCount] : context.GetTripCountMap())
+    {
+      if (!first)
+        tripCounts += ',';
+      first = false;
+
+      const std::string count = tripCount.IsFinite()   ? std::to_string(tripCount.GetCount())
+                              : tripCount.IsInfinite() ? "Infinite"
+                                                       : "CouldNotCompute";
+      tripCounts += "ID(" + std::to_string(thetaNode->subregion()->getRegionId()) + ")=" + count;
+    }
+
+    AddMeasurement(Label::TripCounts, tripCounts);
   }
 
   static std::unique_ptr<Statistics>
