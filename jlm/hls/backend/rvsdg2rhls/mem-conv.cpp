@@ -650,6 +650,9 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   std::unordered_set<rvsdg::Node *> accountedNodes;
   for (auto & portNode : tracedPointerNodesVector)
   {
+    if (portNode.isEmpty())
+      continue;
+
     auto portWidth = CalculatePortWidth(portNode);
     auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
     auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
@@ -733,13 +736,16 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   auto newArgumentsIndex = args.size();
   for (auto & portNode : tracedPointerNodesVector)
   {
-    newResults.push_back(ConnectRequestResponseMemPorts(
-        newLambda,
-        newArgumentsIndex++,
-        smap,
-        portNode.loadNodes,
-        portNode.storeNodes,
-        portNode.decoupleNodes));
+    if (!portNode.isEmpty())
+    {
+      newResults.push_back(ConnectRequestResponseMemPorts(
+          newLambda,
+          newArgumentsIndex++,
+          smap,
+          portNode.loadNodes,
+          portNode.storeNodes,
+          portNode.decoupleNodes));
+    }
   }
   if (!unknownLoadNodes.empty() || !unknownStoreNodes.empty() || !unknownDecoupledNodes.empty())
   {
