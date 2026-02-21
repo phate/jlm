@@ -1,0 +1,43 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-jlm:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          install-benchmark-deps: true
+      - name: "Cache build"
+        id: save-jlm-build
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ github.workspace }}/build-release
+          key: ${{ runner.os }}-jlm-build
+
+  polybench:
+    needs: build-jlm
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Restore build"
+        id: restore-jlm-build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ${{ github.workspace }}/build-release
+          key: ${{ runner.os }}-jlm-build
+      - name: "Add build symlink"
+        run: ln -s build-release build
+      - name: "Run polybench"
+        run: ./scripts/run-benchmarks.sh --benchmark polybench
