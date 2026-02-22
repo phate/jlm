@@ -71,39 +71,6 @@ private:
   void
   processLoadNode(rvsdg::SimpleNode & loadNode);
 
-  /**
-   * Traces from the the given state output until a store node is reached.
-   * Load operations are traced through, but calls and non-invariant structural nodes are not.
-   * @return the memory state output of the store, or nullptr if no store node was reached.
-   */
-  rvsdg::Output *
-  traceStateEdgeToStoreNode(rvsdg::Output & state);
-
-  /**
-   * Performs a simple alias analysis query between a load and store node,
-   * to determine if they read and write from the same exact address,
-   * possibly interfere, or if the operations are guaranteed to be fully independent.
-   * @param loadedAddress the address that is being loaded
-   * @param loadedTypeSize the number of bytes that are loaded from the address
-   * @param storeNode the StoreOperation node
-   */
-  aa::AliasAnalysis::AliasQueryResponse
-  queryAliasAnalysis(
-      rvsdg::Output & loadedAddress,
-      size_t loadedTypeSize,
-      rvsdg::SimpleNode & storeNode);
-
-  /**
-   * Diverts all users of the \p loadNode to instead take the value stored by the \p storeNode.
-   * The store may be in a parent region of the load, in which case the value is routed in.
-   *
-   * @pre the store and load nodes have matching value types, and the store preceeds the load
-   * @param storeNode the StoreOperation node
-   * @param loadNode the LoadOperation node to be replaced
-   */
-  void
-  forwardStoredValue(rvsdg::SimpleNode & storeNode, rvsdg::SimpleNode & loadNode);
-
   std::unique_ptr<Context> context_;
 };
 
