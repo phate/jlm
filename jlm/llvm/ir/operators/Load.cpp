@@ -295,8 +295,6 @@ LoadNonVolatileOperation::NormalizeLoadStore(
     return std::nullopt;
   }
 
-  JLM_ASSERT(operation.GetAlignment() == storeOperation->GetAlignment());
-
   std::vector results(1, storeValueOperand);
   results.insert(results.end(), std::next(operands.begin()), operands.end());
 
