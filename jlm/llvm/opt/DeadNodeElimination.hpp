@@ -68,36 +68,36 @@ public:
 
 private:
   void
-  MarkRegion(const rvsdg::Region & region);
+  markRegion(const rvsdg::Region & region);
 
   void
-  MarkOutput(const jlm::rvsdg::Output & output);
+  markOutput(const rvsdg::Output & output);
 
   void
-  SweepRvsdg(rvsdg::Graph & rvsdg) const;
+  sweepRvsdg(rvsdg::Graph & rvsdg) const;
 
   void
-  SweepRegion(rvsdg::Region & region) const;
+  sweepRegion(rvsdg::Region & region) const;
 
   void
-  SweepStructuralNode(rvsdg::StructuralNode & node) const;
+  sweepStructuralNode(rvsdg::StructuralNode & node) const;
 
   void
-  SweepGamma(rvsdg::GammaNode & gammaNode) const;
+  sweepGamma(rvsdg::GammaNode & gammaNode) const;
 
   void
-  SweepTheta(rvsdg::ThetaNode & thetaNode) const;
+  sweepTheta(rvsdg::ThetaNode & thetaNode) const;
 
   void
-  SweepLambda(rvsdg::LambdaNode & lambdaNode) const;
+  sweepLambda(rvsdg::LambdaNode & lambdaNode) const;
 
   void
-  SweepPhi(rvsdg::PhiNode & phiNode) const;
+  sweepPhi(rvsdg::PhiNode & phiNode) const;
 
   static void
-  SweepDelta(rvsdg::DeltaNode & deltaNode);
+  sweepDelta(rvsdg::DeltaNode & deltaNode);
 
-  std::unique_ptr<Context> Context_;
+  std::unique_ptr<Context> Context_{};
 };
 
 }
