@@ -126,18 +126,18 @@ public:
   }
 
   void
-  SetTripCount(const rvsdg::ThetaNode & thetaNode, const TripCount & tripCount)
+  SetTripCount(const rvsdg::ThetaNode & thetaNode, const size_t tripCount)
   {
     TripCountMap_.insert_or_assign(&thetaNode, tripCount);
   }
 
-  TripCount
+  size_t
   GetTripCount(const rvsdg::ThetaNode & thetaNode) const
   {
     return TripCountMap_.at(&thetaNode);
   }
 
-  const std::unordered_map<const rvsdg::ThetaNode *, TripCount> &
+  const std::unordered_map<const rvsdg::ThetaNode *, size_t> &
   GetTripCountMap() const noexcept
   {
     return TripCountMap_;
@@ -146,7 +146,7 @@ public:
 private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
-  std::unordered_map<const rvsdg::ThetaNode *, TripCount> TripCountMap_;
+  std::unordered_map<const rvsdg::ThetaNode *, size_t> TripCountMap_;
   std::vector<const rvsdg::Output *> LoopVars_;
 };
 
@@ -176,22 +176,24 @@ public:
     AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
     AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
     AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
+    AddMeasurement(Label::TripCounts, GetTripCountString(context.GetTripCountMap()));
+  }
 
-    std::string tripCounts = "";
+  static std::string
+  GetTripCountString(const std::unordered_map<const rvsdg::ThetaNode *, size_t> & tripCountMap)
+  {
+    std::string s = "";
     bool first = true;
-    for (auto & [thetaNode, tripCount] : context.GetTripCountMap())
+    for (auto & [thetaNode, tripCount] : tripCountMap)
     {
       if (!first)
-        tripCounts += ',';
+        s += ',';
       first = false;
 
-      const std::string count = tripCount.IsFinite()   ? std::to_string(tripCount.GetCount())
-                              : tripCount.IsInfinite() ? "Infinite"
-                                                       : "CouldNotCompute";
-      tripCounts += "ID(" + std::to_string(thetaNode->subregion()->getRegionId()) + ")=" + count;
+      s += "ID(" + std::to_string(thetaNode->subregion()->getRegionId())
+         + ")=" + std::to_string(tripCount);
     }
-
-    AddMeasurement(Label::TripCounts, tripCounts);
+    return s;
   }
 
   static std::unique_ptr<Statistics>
@@ -218,7 +220,7 @@ ScalarEvolution::GetChrecMap() const
   return mapCopy;
 }
 
-std::unordered_map<const rvsdg::ThetaNode *, ScalarEvolution::TripCount>
+std::unordered_map<const rvsdg::ThetaNode *, size_t>
 ScalarEvolution::GetTripCountMap() const noexcept
 {
   return Context_->GetTripCountMap();
@@ -268,14 +270,15 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
 
         auto tripCount = GetPredictedTripCount(*thetaNode);
 
-        Context_->SetTripCount(*thetaNode, tripCount);
+        if (tripCount.has_value())
+          Context_->SetTripCount(*thetaNode, *tripCount);
       }
     }
   }
 }
 
 bool
-ScalarEvolution::StepAlwaysNegative(const SCEV & stepSCEV)
+ScalarEvolution::IsStepNegative(const SCEV & stepSCEV)
 {
   if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
@@ -287,7 +290,7 @@ ScalarEvolution::StepAlwaysNegative(const SCEV & stepSCEV)
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
     auto stepPtr = recurrenceStep->GetStep();
-    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr->get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -301,7 +304,7 @@ ScalarEvolution::StepAlwaysNegative(const SCEV & stepSCEV)
 }
 
 bool
-ScalarEvolution::StepAlwaysPositive(const SCEV & stepSCEV)
+ScalarEvolution::IsStepPositive(const SCEV & stepSCEV)
 {
   if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
@@ -313,7 +316,7 @@ ScalarEvolution::StepAlwaysPositive(const SCEV & stepSCEV)
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
     auto stepPtr = recurrenceStep->GetStep();
-    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr->get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -327,7 +330,7 @@ ScalarEvolution::StepAlwaysPositive(const SCEV & stepSCEV)
 }
 
 bool
-ScalarEvolution::StepAlwaysZero(const SCEV & stepSCEV)
+ScalarEvolution::IsStepZero(const SCEV & stepSCEV)
 {
   if (auto constantStep = dynamic_cast<const SCEVConstant *>(&stepSCEV))
   {
@@ -339,7 +342,7 @@ ScalarEvolution::StepAlwaysZero(const SCEV & stepSCEV)
 
     const auto start = dynamic_cast<const SCEVConstant *>(recurrenceStep->GetStartValue());
     auto stepPtr = recurrenceStep->GetStep();
-    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr.get());
+    const auto step = dynamic_cast<const SCEVConstant *>(stepPtr->get());
 
     if (!start || !step)
       throw std::logic_error("Step can only contain constant SCEVs!");
@@ -352,34 +355,34 @@ ScalarEvolution::StepAlwaysZero(const SCEV & stepSCEV)
   throw std::logic_error("Wrong type for step!");
 }
 
-ScalarEvolution::TripCount
+std::optional<size_t>
 ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
 {
   const auto pred = thetaNode.predicate();
   const auto & [node, matchOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*pred->origin());
   if (!matchOperation)
-    throw std::logic_error("Predicate is not connected to a match node!");
+    return std::nullopt;
 
   JLM_ASSERT(node->ninputs() == 1); // Match node only has 1 input
 
   const auto origin = node->input(0)->origin();
   const auto comparisonNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
   if (!comparisonNode)
-    throw std::logic_error("Match node is not connected to a simple node!");
+    return std::nullopt;
 
   const auto * comparisonOperation = &comparisonNode->GetOperation();
-  if (!(dynamic_cast<const IntegerSltOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerUltOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerUleOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerSgtOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerUgtOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerNeOperation *>(comparisonOperation)
-        || dynamic_cast<const IntegerEqOperation *>(comparisonOperation)))
-    throw std::logic_error("Parent of match node is not a comparison operation!");
+  if (!(rvsdg::is<IntegerSltOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerSleOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerUltOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerUleOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerSgtOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerSgeOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerUgtOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerUgeOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerNeOperation>(*comparisonOperation)
+        || rvsdg::is<IntegerEqOperation>(*comparisonOperation)))
+    return std::nullopt;
 
   const auto & lhs = *comparisonNode->input(0)->origin();
   const auto & rhs = *comparisonNode->input(1)->origin();
@@ -399,7 +402,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     const auto constantSCEV = dynamic_cast<SCEVConstant *>(lhsChrec->GetOperand(0));
     if (!constantSCEV)
-      return TripCount::CouldNotCompute();
+      return std::nullopt;
 
     bound = constantSCEV->GetValue();
     chrec = SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
@@ -408,7 +411,7 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   {
     const auto constantSCEV = dynamic_cast<SCEVConstant *>(rhsChrec->GetOperand(0));
     if (!constantSCEV)
-      return TripCount::CouldNotCompute();
+      return std::nullopt;
 
     bound = constantSCEV->GetValue();
     chrec = SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
@@ -416,14 +419,14 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
   else
   {
     // None of them are invariant, we can't reliably compute the backedge taken count
-    return TripCount::CouldNotCompute();
+    return std::nullopt;
   }
 
   if (!(SCEVChainRecurrence::IsAffine(*chrec) || SCEVChainRecurrence::IsQuadratic(*chrec)))
   {
     // We can only compute the trip count reliably for affine and quadratic recurrences. In other
-    // cases, return "could not compute"
-    return TripCount::CouldNotCompute();
+    // cases, we return nullopt
+    return std::nullopt;
   }
 
   for (const auto op : chrec->GetOperands())
@@ -432,132 +435,130 @@ ScalarEvolution::GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode)
     {
       // If any of the operands is not a constant, we cannot compute the trip count, and should
       // return early
-      return TripCount::CouldNotCompute();
+      return std::nullopt;
     }
   }
 
   const auto start = dynamic_cast<const SCEVConstant *>(chrec->GetStartValue())->GetValue();
-  const auto stepSCEV = chrec->GetStep();
-  if (!stepSCEV)
-  {
-    return TripCount::CouldNotCompute();
-  }
+  const auto stepOpt = chrec->GetStep();
+  if (!stepOpt)
+    return std::nullopt;
 
-  if (dynamic_cast<const IntegerSltOperation *>(comparisonOperation)
-      || dynamic_cast<const IntegerUltOperation *>(comparisonOperation))
+  const auto & stepSCEV = **stepOpt;
+
+  if (rvsdg::is<IntegerSltOperation>(*comparisonOperation)
+      || rvsdg::is<IntegerUltOperation>(*comparisonOperation))
   {
     // Trivial case (backedge is not taken and the only iteration is the first one)
     if (start >= bound)
-      return TripCount::Finite(1);
-    if (start < bound && StepAlwaysPositive(*stepSCEV))
+      return 1;
+    if (start < bound && IsStepPositive(stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
       if (backedgeTakenCount.has_value())
       {
         // The trip count for a loop is the backedge taken count plus one
-        return TripCount::Finite(*backedgeTakenCount + 1);
+        return *backedgeTakenCount + 1;
       }
     }
   }
-  if (dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
-      || dynamic_cast<const IntegerUleOperation *>(comparisonOperation))
+  if (rvsdg::is<IntegerSleOperation>(*comparisonOperation)
+      || rvsdg::is<IntegerUleOperation>(*comparisonOperation))
   {
     if (start > bound)
-      return TripCount::Finite(1);
-    if (start <= bound && StepAlwaysPositive(*stepSCEV))
+      return 1;
+    if (start <= bound && IsStepPositive(stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
       if (backedgeTakenCount.has_value())
       {
-        return TripCount::Finite(*backedgeTakenCount + 1);
+        return *backedgeTakenCount + 1;
       }
     }
   }
-
-  if (dynamic_cast<const IntegerSgtOperation *>(comparisonOperation)
-      || dynamic_cast<const IntegerUgtOperation *>(comparisonOperation))
+  if (rvsdg::is<IntegerSgtOperation>(*comparisonOperation)
+      || rvsdg::is<IntegerUgtOperation>(*comparisonOperation))
   {
     if (start <= bound)
-      return TripCount::Finite(1);
-    if (start > bound && StepAlwaysNegative(*stepSCEV))
+      return 1;
+    if (start > bound && IsStepNegative(stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
       if (backedgeTakenCount.has_value())
       {
-        return TripCount::Finite(*backedgeTakenCount + 1);
+        return *backedgeTakenCount + 1;
       }
     }
   }
-  if (dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
-      || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation))
+  if (rvsdg::is<IntegerSgeOperation>(*comparisonOperation)
+      || rvsdg::is<IntegerUgeOperation>(*comparisonOperation))
   {
     if (start < bound)
-      return TripCount::Finite(1);
-    if (start >= bound && StepAlwaysNegative(*stepSCEV))
+      return 1;
+    if (start >= bound && IsStepNegative(stepSCEV))
     {
       const auto backedgeTakenCount =
           ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
       if (backedgeTakenCount.has_value())
       {
-        return TripCount::Finite(*backedgeTakenCount + 1);
+        return *backedgeTakenCount + 1;
       }
     }
   }
 
-  if (dynamic_cast<const IntegerNeOperation *>(comparisonOperation))
+  if (rvsdg::is<IntegerNeOperation>(*comparisonOperation))
   {
     if (SCEVChainRecurrence::IsAffine(*chrec))
     {
       // With Ne and Eq comparisons, we only compute non-trivial backedge counts for affine
       // recurrences as there is no general way to compute it for quadratic recurrences.
-      const auto step = dynamic_cast<const SCEVConstant *>(stepSCEV.get())->GetValue();
-      if (StepAlwaysPositive(*stepSCEV))
+      const auto step = dynamic_cast<const SCEVConstant *>(&stepSCEV)->GetValue();
+      if (IsStepPositive(stepSCEV))
       {
         const auto backedgeTakenCount =
             ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
         // We need to make sure that it does not pass the bound value (results infinite loop)
         if (start <= bound && (bound - start) % step == 0)
-          return TripCount::Finite(*backedgeTakenCount + 1);
+          return *backedgeTakenCount + 1;
       }
-      if (StepAlwaysNegative(*stepSCEV))
+      if (IsStepNegative(stepSCEV))
       {
         const auto backedgeTakenCount =
             ComputeBackedgeTakenCountForChrec(*chrec, bound, comparisonOperation);
         if (start >= bound && (bound - start) % step == 0)
-          return TripCount::Finite(*backedgeTakenCount + 1);
+          return *backedgeTakenCount + 1;
       }
     }
     if (start == bound)
-      return TripCount::Finite(1);
+      return 1;
   }
 
-  if (dynamic_cast<const IntegerEqOperation *>(comparisonOperation))
+  if (rvsdg::is<IntegerEqOperation>(*comparisonOperation))
   {
     if (start == bound)
     {
-      if (!StepAlwaysZero(*stepSCEV))
-        return TripCount::Finite(2); // Backedge taken once
+      if (!IsStepZero(stepSCEV))
+        return 2; // Backedge taken once
     }
     else
-      return TripCount::Finite(1);
+      return 1;
   }
 
   if (SCEVChainRecurrence::IsQuadratic(*chrec))
   {
-    // For quadratic recurrences, the value could evolve in an unpredictable way. In these cases,
-    // we should return "could not compute" in order to be safe.
-    if (!(StepAlwaysPositive(*stepSCEV) || StepAlwaysNegative(*stepSCEV)
-          || StepAlwaysZero(*stepSCEV)))
+    // For quadratic recurrences, if the step is neither positive, negative or zero, we are not able
+    // to accurately compute the trip count.
+    if (!(IsStepPositive(stepSCEV) || IsStepNegative(stepSCEV) || IsStepZero(stepSCEV)))
     {
-      return TripCount::CouldNotCompute();
+      return std::nullopt;
     }
   }
 
   // If we have not returned a value at this point, we have an infinite loop.
-  return TripCount::Infinite();
+  return std::nullopt;
 }
 
 std::optional<size_t>
@@ -573,12 +574,16 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
   // bound value
 
   const auto start = dynamic_cast<const SCEVConstant *>(chrec.GetStartValue())->GetValue();
-  const auto stepSCEV = chrec.GetStep();
+  const auto stepOpt = chrec.GetStep();
+  if (!stepOpt)
+    return std::nullopt;
 
-  bool isEqualsComparison = dynamic_cast<const IntegerSleOperation *>(comparisonOperation)
-                         || dynamic_cast<const IntegerUleOperation *>(comparisonOperation)
-                         || dynamic_cast<const IntegerSgeOperation *>(comparisonOperation)
-                         || dynamic_cast<const IntegerUgeOperation *>(comparisonOperation);
+  const auto & stepSCEV = *stepOpt;
+
+  bool isEqualsComparison = rvsdg::is<IntegerSleOperation>(*comparisonOperation)
+                         || rvsdg::is<IntegerUleOperation>(*comparisonOperation)
+                         || rvsdg::is<IntegerSgeOperation>(*comparisonOperation)
+                         || rvsdg::is<IntegerUgeOperation>(*comparisonOperation);
 
   // Check the size of the step recurrence: 1 -> Affine, 2 -> Quadratic
   // We can only compute the backedge taken count for these two cases
@@ -610,8 +615,9 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
     const auto stepRecurrence = dynamic_cast<const SCEVChainRecurrence *>(stepSCEV.get());
     const int64_t stepFirst =
         dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStartValue())->GetValue();
+
     const int64_t stepSecond =
-        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStep().get())->GetValue();
+        dynamic_cast<const SCEVConstant *>(stepRecurrence->GetStep()->get())->GetValue();
 
     // Let f(i) = a + ib + i(i-1)/2 c
     //

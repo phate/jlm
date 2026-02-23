@@ -416,12 +416,12 @@ public:
     return chrec.GetOperands().size() == 3;
   }
 
-  std::unique_ptr<SCEV>
+  std::optional<std::unique_ptr<SCEV>>
   GetStep() const
   {
     if (Operands_.size() < 2)
     {
-      return nullptr;
+      return std::nullopt;
     }
     if (Operands_.size() == 2)
     {
@@ -600,62 +600,6 @@ public:
     {}
   };
 
-  struct TripCount
-  {
-    enum class Kind
-    {
-      Finite,
-      Infinite,
-      CouldNotCompute
-    };
-
-    static TripCount
-    Finite(const size_t n)
-    {
-      return { Kind::Finite, n };
-    }
-
-    static TripCount
-    Infinite()
-    {
-      return { Kind::Infinite, 0 };
-    }
-
-    static TripCount
-    CouldNotCompute()
-    {
-      return { Kind::CouldNotCompute, 0 };
-    }
-
-    bool
-    IsFinite() const
-    {
-      return kind == Kind::Finite;
-    }
-
-    bool
-    IsInfinite() const
-    {
-      return kind == Kind::Infinite;
-    }
-
-    bool
-    IsCouldNotCompute() const
-    {
-      return kind == Kind::CouldNotCompute;
-    }
-
-    size_t
-    GetCount() const
-    {
-      assert(IsFinite() && "TripCount is not finite");
-      return count;
-    }
-
-    Kind kind;
-    size_t count;
-  };
-
   typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
 
   typedef std::unordered_map<const rvsdg::Output *, DependencyMap> DependencyGraph;
@@ -681,13 +625,13 @@ public:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
-  std::unordered_map<const rvsdg::ThetaNode *, TripCount>
+  std::unordered_map<const rvsdg::ThetaNode *, size_t>
   GetTripCountMap() const noexcept;
 
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  TripCount
+  std::optional<size_t>
   GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode);
 
   void
@@ -714,13 +658,13 @@ private:
   SolveQuadraticEquation(int64_t a, int64_t b, int64_t c);
 
   static bool
-  StepAlwaysNegative(const SCEV & stepSCEV);
+  IsStepNegative(const SCEV & stepSCEV);
 
   static bool
-  StepAlwaysPositive(const SCEV & stepSCEV);
+  IsStepPositive(const SCEV & stepSCEV);
 
   static bool
-  StepAlwaysZero(const SCEV & stepSCEV);
+  IsStepZero(const SCEV & stepSCEV);
 
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);

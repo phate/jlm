@@ -18,7 +18,7 @@
 
 static std::pair<
     std::unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>,
-    std::unordered_map<const jlm::rvsdg::ThetaNode *, jlm::llvm::ScalarEvolution::TripCount>>
+    std::unordered_map<const jlm::rvsdg::ThetaNode *, size_t>>
 RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
   jlm::llvm::ScalarEvolution scalarEvolution;
@@ -1638,8 +1638,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForSLTComparisonWithAffineRecurrence)
   // Assert
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 5);
+  EXPECT_TRUE(tripCount == 5);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForSLEComparisonWithAffineRecurrence)
@@ -1679,8 +1678,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForSLEComparisonWithAffineRecurrence)
   // For equals, we expect an extra iteration compared to strict lesser than
   const auto tripCount = tripCountMap.at(theta);
 
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 6);
+  EXPECT_TRUE(tripCount == 6);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForSGTComparisonWithAffineRecurrence)
@@ -1718,8 +1716,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForSGTComparisonWithAffineRecurrence)
   // Assert
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 5);
+  EXPECT_TRUE(tripCount == 5);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForSGEComparisonWithAffineRecurrence)
@@ -1758,8 +1755,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForSGEComparisonWithAffineRecurrence)
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   // For equals, we expect an extra iteration compared to strict greater than
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 6);
+  EXPECT_TRUE(tripCount == 6);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForNEComparisonWithAffineRecurrence)
@@ -1797,8 +1793,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForNEComparisonWithAffineRecurrence)
   // Assert
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 5);
+  EXPECT_TRUE(tripCount == 5);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForEQComparisonWithAffineRecurrence)
@@ -1836,8 +1831,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForEQComparisonWithAffineRecurrence)
   // Assert
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 2);
+  EXPECT_TRUE(tripCount == 2);
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSLTComparisonWithAffineRecurrence)
@@ -1873,11 +1867,9 @@ TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSLTComparisonWithAffineRec
   const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
 
   // Assert
-  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   // Negative increment. Since the start value of lv1 (0) is already less than the comparison value
   // (5), we get an infinite loop.
-  const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsInfinite());
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSGTComparisonWithAffineRecurrence)
@@ -1913,11 +1905,9 @@ TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSGTComparisonWithAffineRec
   const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
 
   // Assert
-  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   // Positive increment. Since the start value of lv1 (5) is already greater than the comparison
   // value (0), we get an infinite loop.
-  const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsInfinite());
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteNEComparisonWithAffineRecurrence)
@@ -1953,11 +1943,9 @@ TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteNEComparisonWithAffineRecu
   const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
 
   // Assert
-  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   // Start value of 0, increment by 2. This means that lv1 will never have the value of 5, which
   // is the value in the "not equals" comparison. Therefore, we get an infinite loop.
-  const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsInfinite());
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
 }
 
 TEST(ScalarEvolutionTests, ComputeTripCountForSimpleQuadraticRecurrence)
@@ -2001,8 +1989,7 @@ TEST(ScalarEvolutionTests, ComputeTripCountForSimpleQuadraticRecurrence)
   // Assert
   EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
   const auto tripCount = tripCountMap.at(theta);
-  EXPECT_TRUE(tripCount.IsFinite());
-  EXPECT_TRUE(tripCount.GetCount() == 4);
+  EXPECT_TRUE(tripCount == 4);
 }
 
 TEST(ScalarEvolutionTests, TestTripCountCouldNotCompute)
@@ -2050,10 +2037,8 @@ TEST(ScalarEvolutionTests, TestTripCountCouldNotCompute)
   const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
 
   // Assert
-  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
-  const auto tripCount = tripCountMap.at(theta);
   // The recurrence is a third degree polynomial ({a,+,b,+,c,+,d}). For these cases, we return could
   // not compute, as there is no implementation for solving recurrences with an order greater
   // than 2.
-  EXPECT_TRUE(tripCount.IsCouldNotCompute());
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
 }
