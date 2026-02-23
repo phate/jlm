@@ -352,6 +352,12 @@ public:
         Loop_{ &theta }
   {}
 
+  template<typename... Args>
+  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta, Args &&... operands)
+      : SCEVNAryExpr(std::forward<Args>(operands)...),
+        Loop_{ &theta }
+  {}
+
   const rvsdg::ThetaNode *
   GetLoop() const
   {
@@ -400,6 +406,13 @@ public:
   Create(const rvsdg::ThetaNode & loop)
   {
     return std::make_unique<SCEVChainRecurrence>(loop);
+  }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVChainRecurrence>
+  Create(const rvsdg::ThetaNode & loop, Args &&... operands)
+  {
+    return std::make_unique<SCEVChainRecurrence>(loop, std::forward<Args>(operands)...);
   }
 
 protected:
@@ -679,6 +692,8 @@ private:
       std::unordered_set<const rvsdg::Output *> & recursionStack);
 
   std::unique_ptr<Context> Context_;
+
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> StepMap_;
 };
 
 }

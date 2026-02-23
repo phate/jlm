@@ -711,18 +711,10 @@ ScalarEvolution::GetOrCreateStepForSCEV(
     const SCEV & scevTree,
     const rvsdg::ThetaNode & thetaNode)
 {
-  if (const auto existing = Context_->TryGetChrecForOutput(output))
-  {
-    return SCEV::CloneAs<SCEVChainRecurrence>(*existing);
-  }
-
-  auto chrec = SCEVChainRecurrence::Create(thetaNode);
-
   if (const auto scevConstant = dynamic_cast<const SCEVConstant *>(&scevTree))
   {
     // This is a constant, we add it as the only operand
-    chrec->AddOperand(scevConstant->Clone());
-    return chrec;
+    return SCEVChainRecurrence::Create(thetaNode, scevConstant->Clone());
   }
   if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {
@@ -731,7 +723,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
       // Since we are only interested in the step value, and not the initial value, we can ignore
       // ourselves by returning an empty chain recurrence (treated as the identity element - 0 for
       // addition and 1 for multiplication)
-      return chrec;
+      return SCEVChainRecurrence::Create(thetaNode);
     }
     if (auto storedRec = Context_->TryGetChrecForOutput(*scevPlaceholder->GetPrePointer()))
     {
@@ -739,8 +731,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
       // Get it's saved value. This is safe to do due to the topological ordering
       return storedRec;
     }
-    chrec->AddOperand(SCEVUnknown::Create());
-    return chrec;
+    return SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
   }
   if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
@@ -756,7 +747,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
 
     return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsStep.get(), rhsStep.get()));
   }
-  return chrec;
+  return SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
 }
 
 std::unique_ptr<SCEV>
