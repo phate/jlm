@@ -68,12 +68,15 @@ extern "C" )"
   {
     if (rvsdg::is<llvm::PointerType>(*kernel.GetOperation().type().Arguments()[i].get()))
     {
-      const auto res_bundle = util::assertedCast<const BundleType>(mem_resps[m]->Type().get());
-      auto size = JlmSize(&*res_bundle->get_element_type("data")) / 8;
-      cpp << "    memories[" << m << "] = std::make_unique<mm_magic_t>();" << std::endl;
-      cpp << "    memories[" << m << "]->init((uint8_t *) a" << i << ", 1UL << 31, " << size
-          << ", 64, MEMORY_LATENCY);" << std::endl;
-      m++;
+      if (m < mem_reqs.size())
+      {
+        const auto res_bundle = util::assertedCast<const BundleType>(mem_resps[m]->Type().get());
+        auto size = JlmSize(&*res_bundle->get_element_type("data")) / 8;
+        cpp << "    memories[" << m << "] = std::make_unique<mm_magic_t>();" << std::endl;
+        cpp << "    memories[" << m << "]->init((uint8_t *) a" << i << ", 1UL << 31, " << size
+            << ", 64, MEMORY_LATENCY);" << std::endl;
+        m++;
+      }
     }
   }
   // TODO: handle globals/ctxvars and ports without argument

@@ -37,9 +37,9 @@ class DeadNodeElimination::Context final
 {
 public:
   void
-  MarkAlive(const jlm::rvsdg::Output & output)
+  markAlive(const rvsdg::Output & output)
   {
-    if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
       SimpleNodes_.insert(simpleNode);
       return;
@@ -49,9 +49,9 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::Output & output) const noexcept
+  isAlive(const rvsdg::Output & output) const noexcept
   {
-    if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
       return SimpleNodes_.Contains(simpleNode);
     }
@@ -60,16 +60,16 @@ public:
   }
 
   bool
-  IsAlive(const rvsdg::Node & node) const noexcept
+  isAlive(const rvsdg::Node & node) const noexcept
   {
-    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
+    if (const auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
     {
       return SimpleNodes_.Contains(simpleNode);
     }
 
     for (size_t n = 0; n < node.noutputs(); n++)
     {
-      if (IsAlive(*node.output(n)))
+      if (isAlive(*node.output(n)))
       {
         return true;
       }
@@ -79,14 +79,14 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create()
+  create()
   {
     return std::make_unique<Context>();
   }
 
 private:
-  util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
-  util::HashSet<const jlm::rvsdg::Output *> Outputs_;
+  util::HashSet<const rvsdg::SimpleNode *> SimpleNodes_{};
+  util::HashSet<const rvsdg::Output *> Outputs_{};
 };
 
 /** \brief Dead Node Elimination statistics class
@@ -101,11 +101,11 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::FilePath & sourceFile)
-      : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile)
+      : util::Statistics(Id::DeadNodeElimination, sourceFile)
   {}
 
   void
-  StartMarkStatistics(const rvsdg::Graph & graph) noexcept
+  startMarkStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
@@ -113,19 +113,19 @@ public:
   }
 
   void
-  StopMarkStatistics() noexcept
+  stopMarkStatistics() noexcept
   {
     GetTimer(MarkTimerLabel_).stop();
   }
 
   void
-  StartSweepStatistics() noexcept
+  startSweepStatistics() noexcept
   {
     AddTimer(SweepTimerLabel_).start();
   }
 
   void
-  StopSweepStatistics(const rvsdg::Graph & graph) noexcept
+  stopSweepStatistics(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
@@ -133,7 +133,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::FilePath & sourceFile)
+  create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -148,10 +148,10 @@ DeadNodeElimination::DeadNodeElimination()
 void
 DeadNodeElimination::run(rvsdg::Region & region)
 {
-  Context_ = Context::Create();
+  Context_ = Context::create();
 
-  MarkRegion(region);
-  SweepRegion(region);
+  markRegion(region);
+  sweepRegion(region);
 
   // Discard internal state to free up memory after we are done
   Context_.reset();
@@ -162,17 +162,17 @@ DeadNodeElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  Context_ = Context::Create();
+  Context_ = Context::create();
 
   auto & rvsdg = module.Rvsdg();
-  auto statistics = Statistics::Create(module.SourceFilePath().value());
-  statistics->StartMarkStatistics(rvsdg);
-  MarkRegion(rvsdg.GetRootRegion());
-  statistics->StopMarkStatistics();
+  auto statistics = Statistics::create(module.SourceFilePath().value());
+  statistics->startMarkStatistics(rvsdg);
+  markRegion(rvsdg.GetRootRegion());
+  statistics->stopMarkStatistics();
 
-  statistics->StartSweepStatistics();
-  SweepRvsdg(rvsdg);
-  statistics->StopSweepStatistics(rvsdg);
+  statistics->startSweepStatistics();
+  sweepRvsdg(rvsdg);
+  statistics->stopSweepStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -181,155 +181,152 @@ DeadNodeElimination::Run(
 }
 
 void
-DeadNodeElimination::MarkRegion(const rvsdg::Region & region)
+DeadNodeElimination::markRegion(const rvsdg::Region & region)
 {
-  for (size_t n = 0; n < region.nresults(); n++)
+  for (const auto result : region.Results())
   {
-    MarkOutput(*region.result(n)->origin());
+    markOutput(*result->origin());
   }
 }
 
 void
-DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
+DeadNodeElimination::markOutput(const rvsdg::Output & output)
 {
-  if (Context_->IsAlive(output))
+  if (Context_->isAlive(output))
   {
     return;
   }
 
-  Context_->MarkAlive(output);
+  Context_->markAlive(output);
 
   if (is<rvsdg::GraphImport>(&output))
   {
     return;
   }
 
-  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  if (const auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gamma->predicate()->origin());
+    markOutput(*gamma->predicate()->origin());
     for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
     {
-      MarkOutput(*result->origin());
+      markOutput(*result->origin());
     }
     return;
   }
 
-  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  if (const auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    auto external_origin = std::visit(
-        [](const auto & rolevar) -> rvsdg::Output *
+    const auto origin = std::visit(
+        [](const auto & roleVar) -> rvsdg::Output *
         {
-          return rolevar.input->origin();
+          return roleVar.input->origin();
         },
         gamma->MapBranchArgument(output));
-    MarkOutput(*external_origin);
+    markOutput(*origin);
     return;
   }
 
-  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  if (const auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
-    auto loopvar = theta->MapOutputLoopVar(output);
-    MarkOutput(*theta->predicate()->origin());
-    MarkOutput(*loopvar.post->origin());
-    MarkOutput(*loopvar.input->origin());
+    const auto loopVar = theta->MapOutputLoopVar(output);
+    markOutput(*theta->predicate()->origin());
+    markOutput(*loopVar.post->origin());
+    markOutput(*loopVar.input->origin());
     return;
   }
 
-  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    auto loopvar = theta->MapPreLoopVar(output);
-    MarkOutput(*loopvar.output);
-    MarkOutput(*loopvar.input->origin());
+    const auto loopVar = theta->MapPreLoopVar(output);
+    markOutput(*loopVar.output);
+    markOutput(*loopVar.input->origin());
     return;
   }
 
-  if (auto lambda = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(output))
+  if (const auto lambda = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(output))
   {
-    for (auto & result : lambda->GetFunctionResults())
+    for (const auto result : lambda->GetFunctionResults())
     {
-      MarkOutput(*result->origin());
+      markOutput(*result->origin());
     }
     return;
   }
 
-  if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  if (const auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
   {
-    if (auto ctxvar = lambda->MapBinderContextVar(output))
+    if (const auto ctxVar = lambda->MapBinderContextVar(output))
     {
       // Bound context variable.
-      MarkOutput(*ctxvar->input->origin());
+      markOutput(*ctxVar->input->origin());
       return;
     }
-    else
-    {
-      // Function argument.
-      return;
-    }
-  }
 
-  if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
-  {
-    MarkOutput(*phi->MapOutputFixVar(output).result->origin());
+    // Function argument.
     return;
   }
 
-  if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
+  if (const auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
   {
-    auto var = phi->MapArgument(output);
-    if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
+    markOutput(*phi->MapOutputFixVar(output).result->origin());
+    return;
+  }
+
+  if (const auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
+  {
+    const auto var = phi->MapArgument(output);
+    if (const auto fixVar = std::get_if<rvsdg::PhiNode::FixVar>(&var))
     {
       // Recursion argument
-      MarkOutput(*fix->result->origin());
+      markOutput(*fixVar->result->origin());
       return;
     }
-    else if (auto ctx = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
+
+    if (const auto ctxVar = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
     {
       // Bound context variable.
-      MarkOutput(*ctx->input->origin());
+      markOutput(*ctxVar->input->origin());
       return;
     }
-    else
-    {
-      JLM_UNREACHABLE("Phi argument must be either fixpoint or context variable");
-    }
+
+    throw std::logic_error("Phi argument must be either fixpoint or context variable");
   }
 
   if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
   {
     const auto result = deltaNode->subregion()->result(0);
-    MarkOutput(*result->origin());
+    markOutput(*result->origin());
     return;
   }
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
     const auto argument = util::assertedCast<const rvsdg::RegionArgument>(&output);
-    MarkOutput(*argument->input()->origin());
+    markOutput(*argument->input()->origin());
     return;
   }
 
   if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    for (size_t n = 0; n < simpleNode->ninputs(); n++)
+    for (auto & input : simpleNode->Inputs())
     {
-      MarkOutput(*simpleNode->input(n)->origin());
+      markOutput(*input.origin());
     }
     return;
   }
 
-  JLM_UNREACHABLE("We should have never reached this statement.");
+  throw std::logic_error("We should have never reached this statement.");
 }
 
 void
-DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
+DeadNodeElimination::sweepRvsdg(rvsdg::Graph & rvsdg) const
 {
-  SweepRegion(rvsdg.GetRootRegion());
+  sweepRegion(rvsdg.GetRootRegion());
 
   // Remove dead imports
   util::HashSet<size_t> indices;
   for (const auto argument : rvsdg.GetRootRegion().Arguments())
   {
-    if (!Context_->IsAlive(*argument))
+    if (!Context_->isAlive(*argument))
     {
       indices.insert(argument->index());
     }
@@ -339,19 +336,19 @@ DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
 }
 
 void
-DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
+DeadNodeElimination::sweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
   for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    if (!Context_->IsAlive(*node))
+    if (!Context_->isAlive(*node))
     {
       remove(node);
     }
     else if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
-      SweepStructuralNode(*structuralNode);
+      sweepStructuralNode(*structuralNode);
     }
   }
 
@@ -359,82 +356,86 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 }
 
 void
-DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
+DeadNodeElimination::sweepStructuralNode(rvsdg::StructuralNode & node) const
 {
-  rvsdg::MatchTypeOrFail(
+  rvsdg::MatchTypeWithDefault(
       node,
       [this](rvsdg::GammaNode & node)
       {
-        SweepGamma(node);
+        sweepGamma(node);
       },
       [this](rvsdg::ThetaNode & node)
       {
-        SweepTheta(node);
+        sweepTheta(node);
       },
       [this](rvsdg::LambdaNode & node)
       {
-        SweepLambda(node);
+        sweepLambda(node);
       },
       [this](rvsdg::PhiNode & node)
       {
-        SweepPhi(node);
+        sweepPhi(node);
       },
       [](rvsdg::DeltaNode & node)
       {
-        SweepDelta(node);
+        sweepDelta(node);
+      },
+      [&node]()
+      {
+        throw std::logic_error(util::strfmt("Unhandled node type: ", node.DebugString()));
       });
 }
 
 void
-DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
+DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
 {
   // Remove dead exit vars.
   std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
-  for (const auto & exitvar : gammaNode.GetExitVars())
+  for (const auto & exitVar : gammaNode.GetExitVars())
   {
-    if (!Context_->IsAlive(*exitvar.output))
+    if (!Context_->isAlive(*exitVar.output))
     {
-      deadExitVars.push_back(exitvar);
+      deadExitVars.push_back(exitVar);
     }
   }
   gammaNode.RemoveExitVars(deadExitVars);
 
   // Sweep gamma subregions
-  for (size_t r = 0; r < gammaNode.nsubregions(); r++)
+  for (auto & subregion : gammaNode.Subregions())
   {
-    SweepRegion(*gammaNode.subregion(r));
+    sweepRegion(subregion);
   }
 
   // Remove dead entry vars.
   std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
-  for (const auto & entryvar : gammaNode.GetEntryVars())
+  for (const auto & entryVar : gammaNode.GetEntryVars())
   {
-    bool alive = std::any_of(
-        entryvar.branchArgument.begin(),
-        entryvar.branchArgument.end(),
+    const bool isAlive = std::any_of(
+        entryVar.branchArgument.begin(),
+        entryVar.branchArgument.end(),
         [this](const rvsdg::Output * arg)
         {
-          return Context_->IsAlive(*arg);
+          return Context_->isAlive(*arg);
         });
-    if (!alive)
+    if (!isAlive)
     {
-      deadEntryVars.push_back(entryvar);
+      deadEntryVars.push_back(entryVar);
     }
   }
   gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 void
-DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
+DeadNodeElimination::sweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
-  // Determine loop variables to be removed.
-  std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
-  for (const auto & loopvar : thetaNode.GetLoopVars())
+  // Determine dead loop variables.
+  std::vector<rvsdg::ThetaNode::LoopVar> loopVars;
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    if (!Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output))
+    if (!Context_->isAlive(*loopVar.pre) && !Context_->isAlive(*loopVar.output))
     {
-      loopvar.post->divert_to(loopvar.pre);
-      loopvars.push_back(loopvar);
+      loopVar.post->divert_to(loopVar.pre);
+      loopVars.push_back(loopVar);
     }
   }
 
@@ -442,56 +443,55 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
   // their own pre-iteration values, any outputs within the subregion
   // that only contributed to computing the post-iteration values
   // of the variables are unlinked and can be removed as well.
-  SweepRegion(*thetaNode.subregion());
+  sweepRegion(*thetaNode.subregion());
 
   // There are now no other users of the pre-iteration values of the
   // variables to be removed left in the subregion anymore.
   // The variables have become "loop-invariant" and can simply
   // be eliminated from the theta node.
-  thetaNode.RemoveLoopVars(std::move(loopvars));
+  thetaNode.RemoveLoopVars(std::move(loopVars));
 }
 
 void
-DeadNodeElimination::SweepLambda(rvsdg::LambdaNode & lambdaNode) const
+DeadNodeElimination::sweepLambda(rvsdg::LambdaNode & lambdaNode) const
 {
-  SweepRegion(*lambdaNode.subregion());
+  sweepRegion(*lambdaNode.subregion());
   lambdaNode.PruneLambdaInputs();
 }
 
 void
-DeadNodeElimination::SweepPhi(rvsdg::PhiNode & phiNode) const
+DeadNodeElimination::sweepPhi(rvsdg::PhiNode & phiNode) const
 {
-  std::vector<rvsdg::PhiNode::FixVar> deadFixvars;
-  std::vector<rvsdg::PhiNode::ContextVar> deadCtxvars;
+  std::vector<rvsdg::PhiNode::FixVar> deadFixVars;
+  std::vector<rvsdg::PhiNode::ContextVar> deadCtxVars;
 
-  for (const auto & fixvar : phiNode.GetFixVars())
+  for (const auto & fixVar : phiNode.GetFixVars())
   {
-    bool isDead = !Context_->IsAlive(*fixvar.output) && !Context_->IsAlive(*fixvar.recref);
-    if (isDead)
+    if (!Context_->isAlive(*fixVar.output) && !Context_->isAlive(*fixVar.recref))
     {
-      deadFixvars.push_back(fixvar);
+      deadFixVars.push_back(fixVar);
       // Temporarily redirect the variable so it refers to itself
       // (so the object is simply defined to be "itself").
-      fixvar.result->divert_to(fixvar.recref);
+      fixVar.result->divert_to(fixVar.recref);
     }
   }
 
-  SweepRegion(*phiNode.subregion());
+  sweepRegion(*phiNode.subregion());
 
   for (const auto & ctxvar : phiNode.GetContextVars())
   {
     if (ctxvar.inner->IsDead())
     {
-      deadCtxvars.push_back(ctxvar);
+      deadCtxVars.push_back(ctxvar);
     }
   }
 
-  phiNode.RemoveContextVars(std::move(deadCtxvars));
-  phiNode.RemoveFixVars(std::move(deadFixvars));
+  phiNode.RemoveContextVars(std::move(deadCtxVars));
+  phiNode.RemoveFixVars(std::move(deadFixVars));
 }
 
 void
-DeadNodeElimination::SweepDelta(rvsdg::DeltaNode & deltaNode)
+DeadNodeElimination::sweepDelta(rvsdg::DeltaNode & deltaNode)
 {
   // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);
