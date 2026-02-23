@@ -426,8 +426,8 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   {
     if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
     {
-      const auto addressInputOrigin = LoadOperation::AddressInput(*simpleNode).origin();
-      result = SCEVLoad::Create(GetOrCreateSCEVForOutput(*addressInputOrigin));
+      GetOrCreateSCEVForOutput(*LoadOperation::AddressInput(*simpleNode).origin());
+      result = SCEVUnknown::Create();
     }
     if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
     {
@@ -716,11 +716,6 @@ ScalarEvolution::GetOrCreateStepForSCEV(
     // This is a constant, we add it as the only operand
     chrec->AddOperand(scevConstant->Clone());
     return chrec;
-  }
-  if (dynamic_cast<const SCEVLoad *>(&scevTree))
-  {
-    // The load operation relies on memory, which we treat as opaque
-    chrec->AddOperand(SCEVUnknown::Create());
   }
   if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {
