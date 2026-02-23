@@ -692,8 +692,6 @@ private:
       std::unordered_set<const rvsdg::Output *> & recursionStack);
 
   std::unique_ptr<Context> Context_;
-
-  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> StepMap_;
 };
 
 }
