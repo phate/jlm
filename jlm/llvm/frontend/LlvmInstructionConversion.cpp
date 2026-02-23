@@ -633,6 +633,9 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
+  // We currently do not not support atomic load instructions
+  JLM_ASSERT(!instruction->isAtomic());
+
   const ThreeAddressCodeVariable * loadedValue = nullptr;
   const ThreeAddressCodeVariable * memoryState = nullptr;
   const ThreeAddressCodeVariable * ioState = nullptr;
@@ -678,6 +681,9 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context 
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
+
+  // We currently do not not support atomic store instructions
+  JLM_ASSERT(!instruction->isAtomic());
 
   const ThreeAddressCodeVariable * memoryState = nullptr;
   const ThreeAddressCodeVariable * ioState = nullptr;
