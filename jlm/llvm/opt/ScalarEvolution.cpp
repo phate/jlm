@@ -333,7 +333,11 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   std::vector<rvsdg::ThetaNode::LoopVar> nonStateLoopVars;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    if (loopVar.pre->Type()->Kind() != rvsdg::TypeKind::State)
+    // In some cases (e.g. with store operations), we still want to create a SCEV tree for the loop
+    // variable even though it is a state variable. However, we still want to filter out state
+    // variables that are purely for scaffolding as they are uninteresting for the analysis.
+    if (!(loopVar.pre->Type()->Kind() == rvsdg::TypeKind::State
+          && loopVar.post->origin() == loopVar.pre)) // Not used in any operations within the loop
     {
       nonStateLoopVars.push_back(loopVar);
     }
