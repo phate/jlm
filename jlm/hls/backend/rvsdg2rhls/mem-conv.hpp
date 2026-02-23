@@ -15,6 +15,12 @@ namespace jlm::hls
 
 struct TracedPointerNodes
 {
+  [[nodiscard]] bool
+  isEmpty() const noexcept
+  {
+    return loadNodes.empty() && storeNodes.empty() && decoupleNodes.empty();
+  }
+
   std::vector<rvsdg::Node *> loadNodes{};
   std::vector<rvsdg::Node *> storeNodes{};
   std::vector<rvsdg::Node *> decoupleNodes{};
