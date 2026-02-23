@@ -14,11 +14,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
-<<<<<<< loop-trip-count
 #include <cmath>
-=======
-#include <algorithm>
->>>>>>> master
 #include <queue>
 
 namespace jlm::llvm
