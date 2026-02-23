@@ -568,12 +568,6 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
     const int64_t bound,
     const rvsdg::SimpleOperation * comparisonOperation)
 {
-  // Figuring out the trip count can be equivalently expressed as:
-  // "At which iteration does the loop condition become false?"
-  // That’s naturally expressed as:
-  // f(i) - k changes sign, where f(i) is the value of the recurrence at iteration i and k is the
-  // bound value
-
   const auto start = dynamic_cast<const SCEVConstant *>(chrec.GetStartValue())->GetValue();
   const auto stepOpt = chrec.GetStep();
   if (!stepOpt)
@@ -629,7 +623,7 @@ ScalarEvolution::ComputeBackedgeTakenCountForChrec(
     // The equation f(i) - k = 0 is written as:
     //   a + ib + i(i-1)/2 c - k = 0,  or  2(a-k) + 2b i + i(i-1) c = 0.
     // In a quadratic form it becomes:
-    //   c i^2 + (2b - c) i + 2(a-k) = 0.
+    //   c i^2 + (2b - c) i + 2(a - k) = 0.
     //
     // We use the quadratic formula to solve this.
 

@@ -648,6 +648,23 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
+  /**
+   * Tries to compute the number of times the backedge is taken in a loop where the condition for
+   * the predicate checks whether the variable described by chrec satisfies the comparison operation
+   * when compared to the bound.
+   *
+   * Figuring out the number of times the backedge is taken can be equivalently expressed as:
+   * "At which iteration does the loop condition become false?"
+   * That’s naturally expressed as:
+   * f(i) - k changes sign, where f(i) is the value of the recurrence at iteration i and k is the
+   * bound value
+   *
+   * @param chrec The chain recurrence to compare with the bound.
+   * @param bound The compare value for the operation.
+   * @param comparisonOperation The comparison operation that is used in the predicate of the loop.
+   * @return The backedge taken count, or std::nullopt if the count cannot be computed or the loop
+   * does not terminate.
+   */
   static std::optional<size_t>
   ComputeBackedgeTakenCountForChrec(
       const SCEVChainRecurrence & chrec,
