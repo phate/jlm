@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -427,6 +428,12 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
     if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
     {
       GetOrCreateSCEVForOutput(*LoadOperation::AddressInput(*simpleNode).origin());
+      result = SCEVUnknown::Create();
+    }
+    if (rvsdg::is<StoreOperation>(simpleNode->GetOperation()))
+    {
+      GetOrCreateSCEVForOutput(*StoreOperation::AddressInput(*simpleNode).origin());
+      GetOrCreateSCEVForOutput(*StoreOperation::StoredValueInput(*simpleNode).origin());
       result = SCEVUnknown::Create();
     }
     if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
