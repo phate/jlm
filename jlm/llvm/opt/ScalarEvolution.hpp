@@ -654,6 +654,16 @@ private:
       int64_t bound,
       const rvsdg::SimpleOperation * comparisonOperation);
 
+  /**
+   * \brief Tries to find a solution to the quadratic equation a^2 x + b x + c = 0 using integer
+   * arithmetic.
+   *
+   * Credit to the SolveQuadraticEquationWrap() method in the LLVM APInt.cpp file
+   * (https://llvm.org/doxygen/APInt_8cpp_source.html#l02823) for the general approach.
+   *
+   * @return A solution to the equation which is greater than zero, or std::nullopt if none can be
+   * found
+   */
   static std::optional<size_t>
   SolveQuadraticEquation(int64_t a, int64_t b, int64_t c);
 
