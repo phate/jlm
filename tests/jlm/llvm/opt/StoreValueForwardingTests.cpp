@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/DotWriter.hpp"
+#include "jlm/util/GraphWriter.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -109,6 +111,11 @@ TEST(StoreValueForwardingTests, NestedAllocas)
   lambdaNode.finalize({ loadA0Node.output(0), io0, mem0 });
 
   // std::cout << rvsdg::view(&graph.GetRootRegion()) << std::endl;
+
+  LlvmDotWriter writer;
+  jlm::util::graph::Writer gw;
+  writer.WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
+  gw.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
 
   // Act
   RunStoreValueForwarding(rvsdgModule);

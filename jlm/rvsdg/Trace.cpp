@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "delta.hpp"
-#include "gamma.hpp"
-#include "lambda.hpp"
-#include "Phi.hpp"
-#include "theta.hpp"
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::rvsdg
