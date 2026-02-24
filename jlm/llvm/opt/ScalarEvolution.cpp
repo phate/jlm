@@ -41,7 +41,7 @@ public:
   void
   AddLoopVar(const rvsdg::Output & var)
   {
-    LoopVars_.push_back(&var);
+    LoopVars_.insert(&var);
   }
 
   size_t
@@ -95,27 +95,33 @@ public:
   }
 
   int
-  GetNumOfChrecsWithOrder(const size_t n) const
+  GetNumInductionVariablesWithOrder(const size_t n) const
   {
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      // Count chrecs with specific order
-      if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
-        count++;
+      // Count induction variables (loop variables with a computed recurrence) with specific order
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      {
+        if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
+          count++;
+      }
     }
     return count;
   }
 
   size_t
-  GetNumTotalChrecs() const
+  GetNumTotalInductionVariables() const
   {
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      // Only count chrecs that are not unknown
-      if (!IsUnknown(*chrec))
-        count++;
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      {
+        // Only count chrecs that are not unknown
+        if (!IsUnknown(*chrec))
+          count++;
+      }
     }
     return count;
   }
@@ -126,10 +132,25 @@ public:
     SCEVMap_.insert_or_assign(&output, scev->Clone());
   }
 
+  void
+  AddLoopToCount()
+  {
+    NumLoops_++;
+  }
+
+  size_t
+  GetNumLoops() const
+  {
+    return NumLoops_;
+  }
+
 private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
-  std::vector<const rvsdg::Output *> LoopVars_;
+  std::unordered_map<const rvsdg::ThetaNode *, size_t> TripCountMap_;
+  std::unordered_set<const rvsdg::Output *> LoopVars_;
+
+  size_t NumLoops_ = 0;
 };
 
 class ScalarEvolution::Statistics final : public util::Statistics
@@ -152,12 +173,18 @@ public:
   Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumTotalRecurrences, context.GetNumTotalChrecs());
-    AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
-    AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
-    AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
-    AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
+    AddMeasurement(Label::NumTotalInductionVariables, context.GetNumTotalInductionVariables());
+    AddMeasurement(
+        Label::NumConstantInductionVariables,
+        context.GetNumInductionVariablesWithOrder(0));
+    AddMeasurement(
+        Label::NumFirstOrderInductionVariables,
+        context.GetNumInductionVariablesWithOrder(1));
+    AddMeasurement(
+        Label::NumSecondOrderInductionVariables,
+        context.GetNumInductionVariablesWithOrder(2));
     AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
+    AddMeasurement(Label::NumLoops, context.GetNumLoops());
   }
 
   static std::unique_ptr<Statistics>
@@ -214,6 +241,7 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
+        Context_->AddLoopToCount();
         // Add number of loop vars in theta (for statistics)
         for (const auto loopVar : thetaNode->GetLoopVars())
         {
