@@ -229,6 +229,7 @@ public:
   StoreTracer(rvsdg::SimpleNode & loadNode)
       : loadNode_(loadNode)
   {
+    JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress_ = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
     loadedType_ = LoadOperation::LoadedValueOutput(loadNode).Type();
     loadedTypeSize_ = GetTypeStoreSize(*loadedType_);
@@ -246,29 +247,26 @@ public:
   bool
   traceAllMemoryStateInputs()
   {
+    // Forwarding of loads with no memory states is not possible
+    // TODO: We could load values from constant globals
+    if (LoadOperation::NumMemoryStates(loadNode_) == 0)
+      return false;
+
     // First find out what region and nodes may clobber, and which store nodes can be forwarded
     const auto clobbersMarked = markAllClobbers();
     // If the marking phase found clobbering nodes that can not be forwarded, give up early
     if (!clobbersMarked)
       return false;
 
-    bool anyMemoryStates = false;
-
     // Perform tracing from each memory state input to find exactly what store it leads to
-    for (auto & memoryStateInput : LoadNonVolatileOperation::MemoryStateInputs(loadNode_))
+    for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(loadNode_))
     {
-      anyMemoryStates = true;
-
       // If the memory state input can not be traced back to store nodes,
       // or different memory state inputs lead to different store nodes, we give up
       auto lastStoredValue = getLastStoreBeforeInput(memoryStateInput);
       if (!lastStoredValue.isKnown())
         return false;
     }
-
-    // Not possible to to forwarding if there are no memory states
-    if (!anyMemoryStates)
-      return false;
 
     // During tracing, loop back-edges are never followed, but instead added to a list.
     // Go through the list to ensure all back-edges have been traced as well.

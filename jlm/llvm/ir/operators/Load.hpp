@@ -90,6 +90,21 @@ public:
   }
 
   /**
+   * Returns the number of memory states going through a \ref LoadOperation node.
+   *
+   * @param node A \ref LoadOperation node.
+   * @return the number of memory states routed through \p node.
+   *
+   * @pre \p node is expected to be a \ref LoadOperation node.
+   */
+  [[nodiscard]] static size_t
+  NumMemoryStates(const rvsdg::Node & node) noexcept
+  {
+    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
+    return loadOperation->NumMemoryStates_;
+  }
+
+  /**
    * Returns a range over the memory state outputs of a \ref LoadOperation node.
    *
    * @param node A \ref LoadOperation node.
