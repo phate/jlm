@@ -425,7 +425,7 @@ public:
     }
     if (Operands_.size() == 2)
     {
-      return SCEV::CloneAs<SCEVConstant>(*Operands_[1]);
+      return Operands_[1]->Clone();
     }
     auto newRec = SCEVChainRecurrence::Create(*Loop_);
     for (size_t i = 1; i < Operands_.size(); i++)
