@@ -428,9 +428,9 @@ public:
       return Operands_[1]->Clone();
     }
     auto newRec = SCEVChainRecurrence::Create(*Loop_);
-    for (size_t i = 1; i < Operands_.size(); i++)
+    for (auto & operand : util::IteratorRange(std::next(Operands_.begin()), Operands_.end()))
     {
-      newRec->AddOperand(Operands_[i]->Clone());
+      newRec->AddOperand(operand->Clone());
     }
     return newRec;
   }

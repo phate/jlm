@@ -1660,11 +1660,10 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       }
     }
     auto newChrec = SCEVChainRecurrence::Create(*chrec->GetLoop());
-    auto chrecOperands = chrec->GetOperands();
+    const auto chrecOperands = chrec->GetOperands();
 
-    for (size_t i = 0; i < chrecOperands.size(); ++i)
+    for (auto & operand : chrecOperands)
     {
-      auto operand = chrecOperands[i];
       // Recursively fold the start value with the other operand
       newChrec->AddOperand(ApplyMulFolding(operand, otherOperand));
     }
