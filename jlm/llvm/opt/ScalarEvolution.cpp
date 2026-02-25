@@ -1630,8 +1630,20 @@ ScalarEvolution::ComputeProductOfChrecs(
 
   std::unique_ptr<SCEVChainRecurrence> lhsStepRecurrence, rhsStepRecurrence;
 
-  const auto lhsStep = lhsChrec->GetStep();
-  if (dynamic_cast<SCEVChainRecurrence *>(lhsStep))
+  const auto lhsStep = *lhsChrec->GetStep();
+  if (!lhsStep)
+  {
+    // This should not happen since we check size above
+    throw std::logic_error("Could not get step for LHS in ComputeProductOfChrecs!");
+  }
+
+  const auto rhsStep = *rhsChrec->GetStep();
+  if (!lhsStep)
+  {
+    throw std::logic_error("Could not get step for RHS in ComputeProductOfChrecs!");
+  }
+
+  if (dynamic_cast<SCEVChainRecurrence *>(lhsStep.get()))
   {
     lhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*lhsStep);
   }
@@ -1641,8 +1653,7 @@ ScalarEvolution::ComputeProductOfChrecs(
     lhsStepRecurrence->AddOperand(lhsStep->Clone());
   }
 
-  const auto rhsStep = rhsChrec->GetStep();
-  if (dynamic_cast<SCEVChainRecurrence *>(rhsStep))
+  if (dynamic_cast<SCEVChainRecurrence *>(rhsStep.get()))
   {
     rhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*rhsStep);
   }
