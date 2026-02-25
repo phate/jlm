@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
-GIT_COMMIT=5d48e4dffe841f2b2ecbb723d37b5b0b42c19b3c
+GIT_COMMIT=c12be582bcd1d3da1c6d82c26ac76cdfffc84086
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -95,5 +95,5 @@ fi
 CLANG=$(${JLM_ROOT_DIR}/build/jlc a.c "-###" | head -n1 | cut "-d " -f1)
 LLVM_BIN="$(dirname "${CLANG}")"
 
-echo "./run-ci.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}"
-./run-ci.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}
+echo "./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}"
+./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}
