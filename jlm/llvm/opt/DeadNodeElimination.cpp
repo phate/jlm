@@ -39,43 +39,25 @@ public:
   void
   markAlive(const rvsdg::Output & output)
   {
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-    {
-      SimpleNodes_.insert(simpleNode);
-      return;
-    }
-
     Outputs_.insert(&output);
+  }
+
+  void
+  markAlive(const rvsdg::SimpleNode & simpleNode)
+  {
+    SimpleNodes_.insert(&simpleNode);
   }
 
   bool
   isAlive(const rvsdg::Output & output) const noexcept
   {
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-    {
-      return SimpleNodes_.Contains(simpleNode);
-    }
-
     return Outputs_.Contains(&output);
   }
 
   bool
-  isAlive(const rvsdg::Node & node) const noexcept
+  isAlive(const rvsdg::SimpleNode & simpleNode) const noexcept
   {
-    if (const auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
-    {
-      return SimpleNodes_.Contains(simpleNode);
-    }
-
-    for (size_t n = 0; n < node.noutputs(); n++)
-    {
-      if (isAlive(*node.output(n)))
-      {
-        return true;
-      }
-    }
-
-    return false;
+    return SimpleNodes_.Contains(&simpleNode);
   }
 
   static std::unique_ptr<Context>
@@ -192,12 +174,34 @@ DeadNodeElimination::markRegion(const rvsdg::Region & region)
 void
 DeadNodeElimination::markOutput(const rvsdg::Output & output)
 {
-  if (Context_->isAlive(output))
+  auto isAlive = [this](const rvsdg::Output & output)
+  {
+    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+    {
+      return Context_->isAlive(*simpleNode);
+    }
+
+    return Context_->isAlive(output);
+  };
+
+  auto markAlive = [this](const rvsdg::Output & output)
+  {
+    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+    {
+      Context_->markAlive(*simpleNode);
+    }
+    else
+    {
+      Context_->markAlive(output);
+    }
+  };
+
+  if (isAlive(output))
   {
     return;
   }
 
-  Context_->markAlive(output);
+  markAlive(output);
 
   if (is<rvsdg::GraphImport>(&output))
   {
@@ -338,11 +342,29 @@ DeadNodeElimination::sweepRvsdg(rvsdg::Graph & rvsdg) const
 void
 DeadNodeElimination::sweepRegion(rvsdg::Region & region) const
 {
+  auto isAlive = [this](const rvsdg::Node & node)
+  {
+    if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
+    {
+      return Context_->isAlive(*simpleNode);
+    }
+
+    for (auto & output : node.Outputs())
+    {
+      if (Context_->isAlive(output))
+      {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   region.prune(false);
 
   for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    if (!Context_->isAlive(*node))
+    if (!isAlive(*node))
     {
       remove(node);
     }

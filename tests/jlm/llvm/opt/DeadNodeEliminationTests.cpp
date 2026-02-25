@@ -533,5 +533,4 @@ TEST(DeadNodeEliminationTests, LoadNodes)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(1, 0);
 }
