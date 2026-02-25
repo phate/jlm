@@ -324,14 +324,8 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 }
 
 bool
-RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
-    const rvsdg::ThetaNode::LoopVar & loopVar,
-    const Variable & v)
+RvsdgToIpGraphConverter::RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar)
 {
-  // FIXME: solely decide on the input instead of using the variable
-  if (is<GlobalVariable>(&v))
-    return false;
-
   if (ThetaLoopVarIsInvariant(loopVar))
     return false;
 
@@ -357,7 +351,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto variable = Context_->GetVariable(loopVar.input->origin());
-    if (RequiresSsaPhiOperation(loopVar, *variable))
+    if (RequiresSsaPhiOperation(loopVar))
     {
       auto phi = entryBlock->append_last(SsaPhiOperation::create({}, loopVar.pre->Type()));
       phis.push_back(phi);
@@ -372,21 +366,17 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   size_t phiIndex = 0;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto entryVariable = Context_->GetVariable(loopVar.input->origin());
-    if (RequiresSsaPhiOperation(loopVar, *entryVariable))
+    auto resultVariable = Context_->GetVariable(loopVar.post->origin());
+    Context_->InsertVariable(loopVar.output, resultVariable);
+    if (RequiresSsaPhiOperation(loopVar))
     {
-      auto resultVariable = Context_->GetVariable(loopVar.post->origin());
+      auto entryVariable = Context_->GetVariable(loopVar.input->origin());
       const auto phi = phis[phiIndex++];
       phi->replace(
           SsaPhiOperation(
               { preEntryBlock, Context_->GetLastProcessedBasicBlock() },
               resultVariable->Type()),
           { entryVariable, resultVariable });
-      Context_->InsertVariable(loopVar.output, resultVariable);
-    }
-    else
-    {
-      Context_->InsertVariable(loopVar.output, Context_->GetVariable(loopVar.post->origin()));
     }
   }
   JLM_ASSERT(phiIndex == phis.size());
