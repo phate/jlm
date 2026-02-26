@@ -162,6 +162,14 @@ DeadNodeElimination::Run(
   Context_.reset();
 }
 
+static bool
+isLoadNonVolatileMemoryStateOutput(const rvsdg::Output & output)
+{
+  const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+  return simpleNode && is<LoadNonVolatileOperation>(simpleNode)
+      && is<MemoryStateType>(output.Type());
+}
+
 void
 DeadNodeElimination::markRegion(const rvsdg::Region & region)
 {
@@ -186,6 +194,21 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
 
   auto markAlive = [this](const rvsdg::Output & output)
   {
+    // FIXME: Avoiding to mark load nodes as alive via the memory states might lead to performance
+    // issues. If we have multiple load nodes sequentialized after each other, each with several
+    // memory states, then we will visit them multiple times. A solution to this problem might be:
+    //
+    // 1. Separate the memoization of the visited nodes/outputs from the nodes/outputs that are
+    // alive, i.e., introduce an alive and visisted set.
+    //
+    // 2. The additional memoization from above might lead to increased memory consumption, so we
+    // maybe would like to start to interleave the mark and sweep phases. Instead of performing the
+    // marking on the entire module followed by sweeping, we can do mark/sweep on function-level or
+    // even more fine-grained on region level. This would allow us to deallocate the stored
+    // memoization after each region sweep, relaxing the memory footprint of the pass.
+    if (isLoadNonVolatileMemoryStateOutput(output))
+      return;
+
     if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
       Context_->markAlive(*simpleNode);
@@ -311,9 +334,16 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
 
   if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    for (auto & input : simpleNode->Inputs())
+    if (isLoadNonVolatileMemoryStateOutput(output))
     {
-      markOutput(*input.origin());
+      markOutput(*LoadOperation::MapMemoryStateOutputToInput(output).origin());
+    }
+    else
+    {
+      for (auto & input : simpleNode->Inputs())
+      {
+        markOutput(*input.origin());
+      }
     }
     return;
   }
@@ -360,13 +390,11 @@ DeadNodeElimination::sweepRegion(rvsdg::Region & region) const
     return false;
   };
 
-  region.prune(false);
-
   for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
     if (!isAlive(*node))
     {
-      remove(node);
+      removeNode(*node);
     }
     else if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -519,6 +547,22 @@ DeadNodeElimination::sweepDelta(rvsdg::DeltaNode & deltaNode)
   deltaNode.subregion()->prune(false);
 
   deltaNode.PruneDeltaInputs();
+}
+
+void
+DeadNodeElimination::removeNode(rvsdg::Node & node)
+{
+  if (is<LoadNonVolatileOperation>(node.GetOperation()))
+  {
+    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
+    {
+      const auto origin = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput).origin();
+      memoryStateOutput.divert_users(origin);
+    }
+    JLM_ASSERT(LoadOperation::LoadedValueOutput(node).IsDead());
+  }
+
+  remove(&node);
 }
 
 }

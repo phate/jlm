@@ -533,4 +533,8 @@ TEST(DeadNodeEliminationTests, LoadNodes)
   view(rvsdg, stdout);
 
   // Assert
+  // We expect that both load nodes have been removed.
+  EXPECT_FALSE(
+      Region::ContainsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4u);
 }
