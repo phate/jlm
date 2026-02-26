@@ -143,6 +143,9 @@ public:
   GetNumLoops() const
   {
     return NumLoops_;
+  }
+
+  void
   SetTripCount(const rvsdg::ThetaNode & thetaNode, const size_t tripCount)
   {
     TripCountMap_.insert_or_assign(&thetaNode, tripCount);
