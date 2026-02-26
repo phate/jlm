@@ -25,8 +25,10 @@ jobs:
             ${{ github.workspace }}/build-release
           key: ${{ runner.os }}-jlm-build-${{ github.sha }}
 
-  polybench:
-    needs: build-jlm
+  benchmarks:
+    strategy:
+      matrix:
+        benchmark: [polybench, perlbench, gcc, cactuBSSN, x264, blender, imagick, nab, xz, emacs, ghostscript, gdb, sendmail]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -37,211 +39,18 @@ jobs:
           install-clang: true
           install-benchmark-deps: true
       - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark polybench
+        id: restore-jlm-build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ${{ github.workspace }}/build-release
+          key: ${{ runner.os }}-jlm-build-${{ github.sha }}
+      - name: "Add build symlink"
+        run: ln -s ${{ github.workspace }}/build-release ${{ github.workspace }}/build
         shell: bash
-
-  perlbench:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark perlbench
+      - name: "Add executables to PATH"
+        run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
         shell: bash
-
-  gcc:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
       - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark gcc
-        shell: bash
-
-  cactuBSSN:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark cactuBSSN
-        shell: bash
-
-  x264:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark x264
-        shell: bash
-
-  blender:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark blender
-        shell: bash
-
-  imagick:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark imagick
-        shell: bash
-
-  nab:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark nab
-        shell: bash
-
-  xz:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark xz
-        shell: bash
-
-  emacs:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark emacs
-        shell: bash
-
-  ghostscript:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark ghostscript
-        shell: bash
-
-  gdb:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark gdb
-        shell: bash
-
-  sendmail:
-    needs: build-jlm
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Install dependencies"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-llvm: true
-          install-clang: true
-          install-benchmark-deps: true
-      - name: "Restore jlm"
-        uses: ./.github/actions/RestoreJlm
-      - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --benchmark sendmail
+        run: ./scripts/run-benchmarks.sh --benchmark ${{ matrix.benchmark }}
         shell: bash

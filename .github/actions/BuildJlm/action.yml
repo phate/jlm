@@ -37,11 +37,6 @@ inputs:
     default: "true"
     required: false
 
-  install-benchmark-deps:
-    description: "Install dependencies necessary for compiling benchmarks. Default is 'false'."
-    default: "false"
-    required: false
-
 runs:
   using: "composite"
   steps:
@@ -68,7 +63,6 @@ runs:
         install-clang: true
         install-gtest: true # Required for unit tests
         install-valgrind: true  # Required for make target valgrind-check
-        install-benchmark-deps: ${{inputs.install-benchmark-deps}}
 
     - name: "Install HLS dialect dependencies"
       if: ${{inputs.enable-hls == 'true'}}

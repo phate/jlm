@@ -141,24 +141,6 @@ runs:
       run: sudo apt-get install libgtest-dev
       shell: bash
 
-    - name: "Update"
-      if: ${{inputs.install-benchmark-deps == 'true'}}
-      run: |
-        sudo apt-get update
-      shell: bash
-
-    - name: "Search"
-      if: ${{inputs.install-benchmark-deps == 'true'}}
-      run: |
-        sudo apt-cache search just
-      shell: bash
-
-    - name: "Just"
-      if: ${{inputs.install-benchmark-deps == 'true'}}
-      run: |
-        sudo apt-get install just
-      shell: bash
-
     - name: "Install benchmark dependencies"
       if: ${{inputs.install-benchmark-deps == 'true'}}
       run: |
