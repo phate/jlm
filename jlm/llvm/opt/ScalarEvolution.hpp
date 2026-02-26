@@ -370,6 +370,40 @@ public:
     return Operands_[0].get();
   }
 
+  bool static IsInvariant(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 1;
+  }
+
+  bool static IsAffine(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 2;
+  }
+
+  bool static IsQuadratic(const SCEVChainRecurrence & chrec)
+  {
+    return chrec.GetOperands().size() == 3;
+  }
+
+  std::optional<std::unique_ptr<SCEV>>
+  GetStep() const
+  {
+    if (Operands_.size() < 2)
+    {
+      return std::nullopt;
+    }
+    if (Operands_.size() == 2)
+    {
+      return Operands_[1]->Clone();
+    }
+    auto newRec = SCEVChainRecurrence::Create(*Loop_);
+    for (auto & operand : util::IteratorRange(std::next(Operands_.begin()), Operands_.end()))
+    {
+      newRec->AddOperand(operand->Clone());
+    }
+    return newRec;
+  }
+
   void
   AddOperandToFront(const std::unique_ptr<SCEV> & initScev)
   {
@@ -567,8 +601,14 @@ public:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
+  std::unordered_map<const rvsdg::ThetaNode *, size_t>
+  GetTripCountMap() const noexcept;
+
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  std::optional<size_t>
+  GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode);
 
   void
   AnalyzeRegion(const rvsdg::Region & region);
@@ -584,6 +624,51 @@ public:
   StructurallyEqual(const SCEV & a, const SCEV & b);
 
 private:
+  /**
+   * Tries to compute the number of times the backedge is taken in a loop where the condition for
+   * the predicate checks whether the variable described by chrec satisfies the comparison operation
+   * when compared to the bound.
+   *
+   * Figuring out the number of times the backedge is taken can be equivalently expressed as:
+   * "At which iteration does the loop condition become false?"
+   * That’s naturally expressed as:
+   * f(i) - k changes sign, where f(i) is the value of the recurrence at iteration i and k is the
+   * bound value
+   *
+   * @param chrec The chain recurrence to compare with the bound.
+   * @param bound The compare value for the operation.
+   * @param comparisonOperation The comparison operation that is used in the predicate of the loop.
+   * @return The backedge taken count, or std::nullopt if the count cannot be computed or the loop
+   * does not terminate.
+   */
+  static std::optional<size_t>
+  ComputeBackedgeTakenCountForChrec(
+      const SCEVChainRecurrence & chrec,
+      int64_t bound,
+      const rvsdg::SimpleOperation * comparisonOperation);
+
+  /**
+   * \brief Tries to find a solution to the quadratic equation a^2 x + b x + c = 0 using integer
+   * arithmetic.
+   *
+   * Credit to the SolveQuadraticEquationWrap() method in the LLVM APInt.cpp file
+   * (https://llvm.org/doxygen/APInt_8cpp_source.html#l02823) for the general approach.
+   *
+   * @return A solution to the equation which is greater than zero, or std::nullopt if none can be
+   * found
+   */
+  static std::optional<size_t>
+  SolveQuadraticEquation(int64_t a, int64_t b, int64_t c);
+
+  static bool
+  IsStepNegative(const SCEV & stepSCEV);
+
+  static bool
+  IsStepPositive(const SCEV & stepSCEV);
+
+  static bool
+  IsStepZero(const SCEV & stepSCEV);
+
   static std::unique_ptr<SCEV>
   GetNegativeSCEV(const SCEV & scev);
 

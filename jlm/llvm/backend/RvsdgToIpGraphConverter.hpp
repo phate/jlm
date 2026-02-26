@@ -102,7 +102,7 @@ private:
   CreateInitialization(const rvsdg::DeltaNode & deltaNode);
 
   static bool
-  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const Variable & v);
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar);
 
   std::unique_ptr<Context> Context_;
 };

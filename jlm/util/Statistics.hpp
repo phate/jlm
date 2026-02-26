@@ -237,6 +237,7 @@ protected:
     inline static const char * NumFirstOrderInductionVariables = "#FirstOrderRecurrences";
     inline static const char * NumSecondOrderInductionVariables = "#SecondOrderRecurrences";
     inline static const char * NumLoops = "#NumLoops";
+    inline static const char * TripCounts = "#TripCounts";
 
     static inline const char * Timer = "Time";
   };
