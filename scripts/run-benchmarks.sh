@@ -95,5 +95,5 @@ fi
 CLANG=$(${JLM_ROOT_DIR}/build/jlc a.c "-###" | head -n1 | cut "-d " -f1)
 LLVM_BIN="$(dirname "${CLANG}")"
 
-echo "./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}"
+set +x
 ./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}
