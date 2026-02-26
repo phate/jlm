@@ -36,16 +36,24 @@ namespace jlm::llvm
 class DeadNodeElimination::Context final
 {
 public:
-  void
+  /**
+   * Marks the given \p output as alive.
+   * @return true if the output was previously not marked, false otherwise.
+   */
+  bool
   markAlive(const rvsdg::Output & output)
   {
-    Outputs_.insert(&output);
+    return Outputs_.insert(&output);
   }
 
-  void
+  /**
+   * Marks the given \p simpleNode as alive.
+   * @return true if the node was previously not marked, false otherwise.
+   */
+  bool
   markAlive(const rvsdg::SimpleNode & simpleNode)
   {
-    SimpleNodes_.insert(&simpleNode);
+    return SimpleNodes_.insert(&simpleNode);
   }
 
   bool
@@ -182,49 +190,40 @@ DeadNodeElimination::markRegion(const rvsdg::Region & region)
 void
 DeadNodeElimination::markOutput(const rvsdg::Output & output)
 {
-  auto isAlive = [this](const rvsdg::Output & output)
+  if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-    {
-      return Context_->isAlive(*simpleNode);
-    }
-
-    return Context_->isAlive(output);
-  };
-
-  auto markAlive = [this](const rvsdg::Output & output)
-  {
-    // FIXME: Avoiding to mark load nodes as alive via the memory states might lead to performance
-    // issues. If we have multiple load nodes sequentialized after each other, each with several
-    // memory states, then we will visit them multiple times. A solution to this problem might be:
-    //
-    // 1. Separate the memoization of the visited nodes/outputs from the nodes/outputs that are
-    // alive, i.e., introduce an alive and visisted set.
-    //
-    // 2. The additional memoization from above might lead to increased memory consumption, so we
-    // maybe would like to start to interleave the mark and sweep phases. Instead of performing the
-    // marking on the entire module followed by sweeping, we can do mark/sweep on function-level or
-    // even more fine-grained on region level. This would allow us to deallocate the stored
-    // memoization after each region sweep, relaxing the memory footprint of the pass.
-    if (isLoadNonVolatileMemoryStateOutput(output))
+    if (Context_->isAlive(*simpleNode))
       return;
 
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+    // LoadNonVolatile operations get special handling, where the load operation itself
+    // only gets marked as alive if the loaded value is used.
+    if (isLoadNonVolatileMemoryStateOutput(output))
     {
-      Context_->markAlive(*simpleNode);
-    }
-    else
-    {
-      Context_->markAlive(output);
-    }
-  };
+      // Mark the exact memory state output as alive. If it was already marked, return.
+      if (!Context_->markAlive(output))
+        return;
 
-  if (isAlive(output))
-  {
+      // Mark the input of the memory state
+      markOutput(*LoadOperation::MapMemoryStateOutputToInput(output).origin());
+
+      return;
+    }
+
+    Context_->markAlive(*simpleNode);
+    for (auto & input : simpleNode->Inputs())
+    {
+      markOutput(*input.origin());
+    }
+
     return;
   }
 
-  markAlive(output);
+  // The output does not belong to a SimpleNode, so we track liveness of individual outputs.
+  // If the output has already been marked alive, return.
+  if (!Context_->markAlive(output))
+  {
+    return;
+  }
 
   if (is<rvsdg::GraphImport>(&output))
   {
@@ -329,22 +328,6 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
   {
     const auto argument = util::assertedCast<const rvsdg::RegionArgument>(&output);
     markOutput(*argument->input()->origin());
-    return;
-  }
-
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    if (isLoadNonVolatileMemoryStateOutput(output))
-    {
-      markOutput(*LoadOperation::MapMemoryStateOutputToInput(output).origin());
-    }
-    else
-    {
-      for (auto & input : simpleNode->Inputs())
-      {
-        markOutput(*input.origin());
-      }
-    }
     return;
   }
 
