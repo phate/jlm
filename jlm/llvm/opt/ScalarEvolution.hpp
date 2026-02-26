@@ -755,7 +755,9 @@ private:
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
 
   static std::unique_ptr<SCEVChainRecurrence>
-  ComputeProductOfChrecs(const SCEVChainRecurrence * lhsChrec, const SCEVChainRecurrence * rhsChrec);
+  ComputeProductOfChrecs(
+      const SCEVChainRecurrence * lhsChrec,
+      const SCEVChainRecurrence * rhsChrec);
 
   /**
    * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
