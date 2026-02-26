@@ -17,6 +17,7 @@ jobs:
         uses: ./.github/actions/BuildJlm
         with:
           build-mode: release
+          enable-asserts: true
       - name: "Cache build"
         id: save-jlm-build
         uses: actions/cache/save@v5
@@ -26,6 +27,7 @@ jobs:
           key: ${{ runner.os }}-jlm-build-${{ github.sha }}
 
   benchmarks:
+    needs: build-jlm
     strategy:
       matrix:
         benchmark: [polybench, perlbench, gcc, cactuBSSN, x264, blender, imagick, nab, xz, emacs, ghostscript, gdb, sendmail]
