@@ -195,20 +195,22 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
     if (Context_->isAlive(*simpleNode))
       return;
 
-    // LoadNonVolatile operations get special handling, where the load operation itself
-    // only gets marked as alive if the loaded value is used.
+    // LoadNonVolatile operations get special handling,
+    // where memory state outputs are marked as alive individually.
+    // The SimpleNode itself only gets marked as alive if the loaded value is used.
     if (isLoadNonVolatileMemoryStateOutput(output))
     {
-      // Mark the exact memory state output as alive. If it was already marked, return.
+      // Mark the memory state output as alive, or return if it was already marked.
       if (!Context_->markAlive(output))
         return;
 
-      // Mark the input of the memory state
+      // Continue marking only the origin of the corresponding memory state input
       markOutput(*LoadOperation::MapMemoryStateOutputToInput(output).origin());
 
       return;
     }
 
+    // The simple node is alive, mark it along with the origins of all its inputs
     Context_->markAlive(*simpleNode);
     for (auto & input : simpleNode->Inputs())
     {
@@ -218,8 +220,7 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
     return;
   }
 
-  // The output does not belong to a SimpleNode, so we track liveness of individual outputs.
-  // If the output has already been marked alive, return.
+  // Mark the output as alive, or return if it has already been marked
   if (!Context_->markAlive(output))
   {
     return;
