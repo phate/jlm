@@ -237,6 +237,7 @@ protected:
     inline static const char * NumFirstOrderRecurrences = "#FirstOrderRecurrences";
     inline static const char * NumSecondOrderRecurrences = "#SecondOrderRecurrences";
     inline static const char * NumThirdOrderRecurrences = "#ThirdOrderRecurrences";
+    inline static const char * TripCounts = "#TripCounts";
 
     static inline const char * Timer = "Time";
   };

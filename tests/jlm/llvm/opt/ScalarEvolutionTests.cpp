@@ -16,14 +16,15 @@
 
 #include <gtest/gtest.h>
 
-static std::
-    unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>
-    RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
+static std::pair<
+    std::unordered_map<const jlm::rvsdg::Output *, std::unique_ptr<jlm::llvm::SCEVChainRecurrence>>,
+    std::unordered_map<const jlm::rvsdg::ThetaNode *, size_t>>
+RunScalarEvolution(jlm::rvsdg::RvsdgModule & rvsdgModule)
 {
   jlm::llvm::ScalarEvolution scalarEvolution;
   jlm::util::StatisticsCollector statisticsCollector;
   scalarEvolution.Run(rvsdgModule, statisticsCollector);
-  return scalarEvolution.GetChrecMap();
+  return { scalarEvolution.GetChrecMap(), scalarEvolution.GetTripCountMap() };
 }
 
 TEST(ScalarEvolutionTests, NonEvolvingVariable)
@@ -45,10 +46,17 @@ TEST(ScalarEvolutionTests, NonEvolvingVariable)
 
   lv1.post->divert_to(c1.output(0));
 
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ lv1.pre, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
 
@@ -57,7 +65,7 @@ TEST(ScalarEvolutionTests, NonEvolvingVariable)
   EXPECT_EQ(chrecMap.find(lv1.pre), chrecMap.end());
 }
 
-TEST(ScalarEvolutionTests, SimpleInductionVariable)
+TEST(ScalarEvolutionTests, InductionVariable)
 {
   using namespace jlm::llvm;
 
@@ -89,7 +97,7 @@ TEST(ScalarEvolutionTests, SimpleInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -148,7 +156,7 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -203,7 +211,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -254,6 +262,12 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   auto & addNode_3 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3.pre, lv2.pre }, 32);
   const auto result_3 = addNode_3.output(0);
 
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result_1, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
   lv1.post->divert_to(result_1);
   lv2.post->divert_to(result_2);
   lv3.post->divert_to(result_3);
@@ -261,7 +275,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -331,7 +345,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -382,7 +396,7 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -433,7 +447,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -494,7 +508,7 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -544,7 +558,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -592,7 +606,7 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -662,6 +676,12 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   auto & addNode4 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv4.pre, res3 }, 32);
   const auto res4 = addNode4.output(0);
 
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
   lv2.post->divert_to(res1);
   lv3.post->divert_to(res2);
   lv4.post->divert_to(res4);
@@ -669,7 +689,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -769,6 +789,12 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv4.pre, mulNode2.output(0) }, 32);
   const auto res4 = addNode3.output(0);
 
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
   lv2.post->divert_to(res1);
   lv3.post->divert_to(res3);
   lv4.post->divert_to(res4);
@@ -776,7 +802,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -866,7 +892,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -912,7 +938,7 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -966,7 +992,7 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1024,7 +1050,7 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1087,7 +1113,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1190,7 +1216,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1_1.pre), chrecMap.end());
@@ -1315,7 +1341,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1345,7 +1371,7 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
 
-TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
+TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
 {
   using namespace jlm::llvm;
 
@@ -1427,7 +1453,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1462,7 +1488,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleArrayGEP)
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
 }
 
-TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
+TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
 {
   using namespace jlm::llvm;
 
@@ -1542,7 +1568,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  const auto & chrecMap = RunScalarEvolution(rvsdgModule);
+  const auto & chrecMap = RunScalarEvolution(rvsdgModule).first;
 
   // Assert
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
@@ -1575,4 +1601,444 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForSimpleStructGEP)
   gepTestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   gepTestChrec.AddOperand(SCEVConstant::Create(4));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForSLTComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 5);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForSLEComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sleNode = jlm::rvsdg::CreateOpNode<IntegerSleOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sleNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  // For equals, we expect an extra iteration compared to strict lesser than
+  const auto tripCount = tripCountMap.at(theta);
+
+  EXPECT_TRUE(tripCount == 6);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForSGTComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c5 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 5);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c5.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = subNode.output(0);
+
+  const auto & c0 = IntegerConstantOperation::Create(*theta->subregion(), 32, 0);
+  auto & sgtNode = jlm::rvsdg::CreateOpNode<IntegerSgtOperation>({ result, c0.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sgtNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 5);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForSGEComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c5 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 5);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c5.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = subNode.output(0);
+
+  const auto & c0 = IntegerConstantOperation::Create(*theta->subregion(), 32, 0);
+  auto & sgeNode = jlm::rvsdg::CreateOpNode<IntegerSgeOperation>({ result, c0.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sgeNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  // For equals, we expect an extra iteration compared to strict greater than
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 6);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForNEComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & neNode = jlm::rvsdg::CreateOpNode<IntegerNeOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*neNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 5);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForEQComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1_1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & eqNode = jlm::rvsdg::CreateOpNode<IntegerEqOperation>({ result, c1_2.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*eqNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 2);
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSLTComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = subNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  // Negative increment. Since the start value of lv1 (0) is already less than the comparison value
+  // (5), we get an infinite loop.
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteSGTComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c5 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 5);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c5.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c0 = IntegerConstantOperation::Create(*theta->subregion(), 32, 0);
+  auto & sgeNode = jlm::rvsdg::CreateOpNode<IntegerSgeOperation>({ result, c0.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sgeNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  // Positive increment. Since the start value of lv1 (5) is already greater than the comparison
+  // value (0), we get an infinite loop.
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForInfiniteNEComparisonWithAffineRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & neNode = jlm::rvsdg::CreateOpNode<IntegerNeOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*neNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  // Start value of 0, increment by 2. This means that lv1 will never have the value of 5, which
+  // is the value in the "not equals" comparison. Therefore, we get an infinite loop.
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
+}
+
+TEST(ScalarEvolutionTests, ComputeTripCountForSimpleQuadraticRecurrence)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c1_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c1_1.output(0));
+
+  const auto & c1_2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
+  const auto res1 = addNode.output(0);
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, res1 }, 32);
+  const auto res2 = addNode2.output(0);
+
+  const auto & c10 = IntegerConstantOperation::Create(*theta->subregion(), 32, 10);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res2, c10.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  EXPECT_NE(tripCountMap.find(theta), tripCountMap.end());
+  const auto tripCount = tripCountMap.at(theta);
+  EXPECT_TRUE(tripCount == 4);
+}
+
+TEST(ScalarEvolutionTests, TestTripCountCouldNotCompute)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
+  const auto & c3 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 3);
+  const auto & c4 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 4);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c2.output(0));
+  const auto lv2 = theta->AddLoopVar(c3.output(0));
+  const auto lv3 = theta->AddLoopVar(c4.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto res1 = addNode1.output(0);
+
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, res1 }, 32);
+  const auto res2 = addNode2.output(0);
+
+  auto & addNode3 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3.pre, res2 }, 32);
+  const auto res3 = addNode3.output(0);
+
+  const auto & c50 = IntegerConstantOperation::Create(*theta->subregion(), 32, 50);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res3, c50.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+  lv3.post->divert_to(res3);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  const auto & tripCountMap = RunScalarEvolution(rvsdgModule).second;
+
+  // Assert
+  // The recurrence is a third degree polynomial ({a,+,b,+,c,+,d}). For these cases, we return could
+  // not compute, as there is no implementation for solving recurrences with an order greater
+  // than 2.
+  EXPECT_EQ(tripCountMap.find(theta), tripCountMap.end());
 }
