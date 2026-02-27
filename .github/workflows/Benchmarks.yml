@@ -34,6 +34,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - name: "Update apt sources"
+        run: sudo apt-get update
+        shell: bash
       - name: "Install benchmark dependencies"
         run: |
           sudo apt-get install \
