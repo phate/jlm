@@ -101,7 +101,7 @@ public:
     for (auto & [out, chrec] : ChrecMap_)
     {
       // Count chrecs with specific order
-      if (chrec->Size() == n + 1 && !IsUnknown(*chrec))
+      if (chrec->NumOperands() == n + 1 && !IsUnknown(*chrec))
         count++;
     }
     return count;
@@ -1263,12 +1263,12 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
   do
   {
     folded = false;
-    for (size_t i = 0; i < expression.Size(); ++i)
+    for (size_t i = 0; i < expression.NumOperands(); ++i)
     {
       std::vector<const SCEV *> ops = expression.GetOperands();
       if (dynamic_cast<const SCEVInit *>(ops[i]))
         continue; // Cannot fold init
-      for (size_t j = i + 1; j < expression.Size(); ++j)
+      for (size_t j = i + 1; j < expression.NumOperands(); ++j)
       {
         if (dynamic_cast<const SCEVInit *>(ops[j]))
           continue;
@@ -1297,7 +1297,7 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
     }
   } while (folded);
 
-  if (expression.Size() == 1)
+  if (expression.NumOperands() == 1)
   {
     // If there is only one operand in the n-ary expression, we just return the operand
     return expression.GetOperand(0)->Clone();
@@ -1348,8 +1348,8 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return newChrec;
     }
 
-    const auto lhsSize = lhsChrec->Size();
-    const auto rhsSize = rhsChrec->Size();
+    const auto lhsSize = lhsChrec->NumOperands();
+    const auto rhsSize = rhsChrec->NumOperands();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
     {
       const SCEV * lhs{};
@@ -1503,7 +1503,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // Check if there is already a constant operand in the n-ary expression
     // If so, fold the new constant with the old one instead of adding it as an operand
     bool folded = false;
-    for (size_t i = 0; i < newNAryAddExpr->Size(); ++i)
+    for (size_t i = 0; i < newNAryAddExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryAddExpr->GetOperands()[i]))
@@ -1553,8 +1553,8 @@ ScalarEvolution::ComputeProductOfChrecs(
     const SCEVChainRecurrence * lhsChrec,
     const SCEVChainRecurrence * rhsChrec)
 {
-  const auto lhsSize = lhsChrec->Size();
-  const auto rhsSize = rhsChrec->Size();
+  const auto lhsSize = lhsChrec->NumOperands();
+  const auto rhsSize = rhsChrec->NumOperands();
 
   if (rhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
@@ -1809,7 +1809,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto newNAryMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*nAryMulExpr);
 
     bool folded = false;
-    for (size_t i = 0; i < newNAryMulExpr->Size(); ++i)
+    for (size_t i = 0; i < newNAryMulExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryMulExpr->GetOperands()[i]))
@@ -1996,9 +1996,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
     auto * chrecB = dynamic_cast<const SCEVChainRecurrence *>(&b);
     if (chrecA->GetLoop() != chrecB->GetLoop())
       return false;
-    if (chrecA->Size() != chrecB->Size())
+    if (chrecA->NumOperands() != chrecB->NumOperands())
       return false;
-    for (size_t i = 0; i < chrecA->Size(); ++i)
+    for (size_t i = 0; i < chrecA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*chrecA->GetOperands()[i], *chrecB->GetOperands()[i]))
         return false;
@@ -2009,9 +2009,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
   if (auto * nAryExprA = dynamic_cast<const SCEVNAryExpr *>(&a))
   {
     auto * nAryExprB = dynamic_cast<const SCEVNAryExpr *>(&b);
-    if (nAryExprA->Size() != nAryExprB->Size())
+    if (nAryExprA->NumOperands() != nAryExprB->NumOperands())
       return false;
-    for (size_t i = 0; i < nAryExprA->Size(); ++i)
+    for (size_t i = 0; i < nAryExprA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*nAryExprA->GetOperands()[i], *nAryExprB->GetOperands()[i]))
         return false;

@@ -378,7 +378,7 @@ public:
   }
 
   size_t
-  Size() const
+  NumOperands() const
   {
     return Operands_.size();
   }
