@@ -97,6 +97,9 @@ private:
   static void
   sweepDelta(rvsdg::DeltaNode & deltaNode);
 
+  static void
+  removeNode(rvsdg::Node & node);
+
   std::unique_ptr<Context> Context_{};
 };
 
