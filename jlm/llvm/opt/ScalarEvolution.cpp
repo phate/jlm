@@ -1561,30 +1561,15 @@ ScalarEvolution::ComputeProductOfChrecs(
   if (lhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
 
-  // Handle G * {e,+,f,...} where G is loop invariant
-  if (lhsSize == 1)
-  {
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
-    // G * {e,+,f,...} = {G * e,+,G * f,...}
-    auto lhs = lhsChrec->GetOperand(0);
+  if (rhsSize > lhsSize)
+    std::swap(lhsChrec, rhsChrec);
 
-    for (auto rhs : rhsChrec->GetOperands())
-    {
-      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-    }
-    return newChrec;
-  }
   if (rhsSize == 1)
   {
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     // {e,+,f,...} * G = {e * G,+,f * G,...}
-    auto rhs = rhsChrec->GetOperand(0);
+    const auto element = rhsChrec->GetOperand(0);
 
-    for (auto lhs : lhsChrec->GetOperands())
-    {
-      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-    }
-    return newChrec;
+    return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsChrec, element));
   }
 
   // Below is an implementation of the algorithm CRProd from Bachmann et al., ‘Chains of recurrences
@@ -1614,16 +1599,6 @@ ScalarEvolution::ComputeProductOfChrecs(
   //
   // P4 [Fold the results together and return]
   // return {a0*b0, +, x1' + x1'', +, ..., +, x(k+l)' + x(k+l)''}
-
-  if (rhsSize > lhsSize)
-    std::swap(lhsChrec, rhsChrec);
-
-  if (rhsSize == 1)
-  {
-    const auto element = rhsChrec->GetOperand(0);
-
-    return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsChrec, element));
-  }
 
   JLM_ASSERT(lhsSize >= 2);
   JLM_ASSERT(rhsSize >= 2);
