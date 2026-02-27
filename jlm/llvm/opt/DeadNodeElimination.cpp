@@ -36,46 +36,36 @@ namespace jlm::llvm
 class DeadNodeElimination::Context final
 {
 public:
-  void
+  /**
+   * Marks the given \p output as alive.
+   * @return true if the output was previously not marked, false otherwise.
+   */
+  bool
   markAlive(const rvsdg::Output & output)
   {
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-    {
-      SimpleNodes_.insert(simpleNode);
-      return;
-    }
+    return Outputs_.insert(&output);
+  }
 
-    Outputs_.insert(&output);
+  /**
+   * Marks the given \p simpleNode as alive.
+   * @return true if the node was previously not marked, false otherwise.
+   */
+  bool
+  markAlive(const rvsdg::SimpleNode & simpleNode)
+  {
+    return SimpleNodes_.insert(&simpleNode);
   }
 
   bool
   isAlive(const rvsdg::Output & output) const noexcept
   {
-    if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-    {
-      return SimpleNodes_.Contains(simpleNode);
-    }
-
     return Outputs_.Contains(&output);
   }
 
   bool
-  isAlive(const rvsdg::Node & node) const noexcept
+  isAlive(const rvsdg::SimpleNode & simpleNode) const noexcept
   {
-    if (const auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
-    {
-      return SimpleNodes_.Contains(simpleNode);
-    }
-
-    for (size_t n = 0; n < node.noutputs(); n++)
-    {
-      if (isAlive(*node.output(n)))
-      {
-        return true;
-      }
-    }
-
-    return false;
+    return SimpleNodes_.Contains(&simpleNode);
   }
 
   static std::unique_ptr<Context>
@@ -180,6 +170,14 @@ DeadNodeElimination::Run(
   Context_.reset();
 }
 
+static bool
+isLoadNonVolatileMemoryStateOutput(const rvsdg::Output & output)
+{
+  const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+  return simpleNode && is<LoadNonVolatileOperation>(simpleNode)
+      && is<MemoryStateType>(output.Type());
+}
+
 void
 DeadNodeElimination::markRegion(const rvsdg::Region & region)
 {
@@ -192,12 +190,41 @@ DeadNodeElimination::markRegion(const rvsdg::Region & region)
 void
 DeadNodeElimination::markOutput(const rvsdg::Output & output)
 {
-  if (Context_->isAlive(output))
+  if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
+    if (Context_->isAlive(*simpleNode))
+      return;
+
+    // LoadNonVolatile operations get special handling,
+    // where memory state outputs are marked as alive individually.
+    // The SimpleNode itself only gets marked as alive if the loaded value is used.
+    if (isLoadNonVolatileMemoryStateOutput(output))
+    {
+      // Mark the memory state output as alive, or return if it was already marked.
+      if (!Context_->markAlive(output))
+        return;
+
+      // Continue marking only the origin of the corresponding memory state input
+      markOutput(*LoadOperation::MapMemoryStateOutputToInput(output).origin());
+
+      return;
+    }
+
+    // The simple node is alive, mark it along with the origins of all its inputs
+    Context_->markAlive(*simpleNode);
+    for (auto & input : simpleNode->Inputs())
+    {
+      markOutput(*input.origin());
+    }
+
     return;
   }
 
-  Context_->markAlive(output);
+  // Mark the output as alive, or return if it has already been marked
+  if (!Context_->markAlive(output))
+  {
+    return;
+  }
 
   if (is<rvsdg::GraphImport>(&output))
   {
@@ -305,15 +332,6 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
     return;
   }
 
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    for (auto & input : simpleNode->Inputs())
-    {
-      markOutput(*input.origin());
-    }
-    return;
-  }
-
   throw std::logic_error("We should have never reached this statement.");
 }
 
@@ -338,13 +356,29 @@ DeadNodeElimination::sweepRvsdg(rvsdg::Graph & rvsdg) const
 void
 DeadNodeElimination::sweepRegion(rvsdg::Region & region) const
 {
-  region.prune(false);
+  auto isAlive = [this](const rvsdg::Node & node)
+  {
+    if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
+    {
+      return Context_->isAlive(*simpleNode);
+    }
+
+    for (auto & output : node.Outputs())
+    {
+      if (Context_->isAlive(output))
+      {
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    if (!Context_->isAlive(*node))
+    if (!isAlive(*node))
     {
-      remove(node);
+      removeNode(*node);
     }
     else if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -497,6 +531,22 @@ DeadNodeElimination::sweepDelta(rvsdg::DeltaNode & deltaNode)
   deltaNode.subregion()->prune(false);
 
   deltaNode.PruneDeltaInputs();
+}
+
+void
+DeadNodeElimination::removeNode(rvsdg::Node & node)
+{
+  if (is<LoadNonVolatileOperation>(node.GetOperation()))
+  {
+    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
+    {
+      const auto origin = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput).origin();
+      memoryStateOutput.divert_users(origin);
+    }
+    JLM_ASSERT(LoadOperation::LoadedValueOutput(node).IsDead());
+  }
+
+  remove(&node);
 }
 
 }
