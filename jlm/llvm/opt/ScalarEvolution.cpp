@@ -1553,16 +1553,19 @@ ScalarEvolution::ComputeProductOfChrecs(
     const SCEVChainRecurrence * lhsChrec,
     const SCEVChainRecurrence * rhsChrec)
 {
-  const auto lhsSize = lhsChrec->NumOperands();
-  const auto rhsSize = rhsChrec->NumOperands();
+  auto lhsSize = lhsChrec->NumOperands();
+  auto rhsSize = rhsChrec->NumOperands();
+
+  if (rhsSize > lhsSize)
+  {
+    std::swap(lhsChrec, rhsChrec);
+    std::swap(lhsSize, rhsSize);
+  }
 
   if (rhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
   if (lhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
-
-  if (rhsSize > lhsSize)
-    std::swap(lhsChrec, rhsChrec);
 
   if (rhsSize == 1)
   {
@@ -1613,7 +1616,7 @@ ScalarEvolution::ComputeProductOfChrecs(
   }
 
   const auto rhsStep = *rhsChrec->GetStep();
-  if (!lhsStep)
+  if (!rhsStep)
   {
     throw std::logic_error("Could not get step for RHS in ComputeProductOfChrecs!");
   }
