@@ -1553,25 +1553,25 @@ ScalarEvolution::ComputeProductOfChrecs(
     const SCEVChainRecurrence * lhsChrec,
     const SCEVChainRecurrence * rhsChrec)
 {
-  auto lhsSize = lhsChrec->NumOperands();
-  auto rhsSize = rhsChrec->NumOperands();
-
-  if (rhsSize > lhsSize)
-  {
-    std::swap(lhsChrec, rhsChrec);
-    std::swap(lhsSize, rhsSize);
-  }
+  const auto lhsSize = lhsChrec->NumOperands();
+  const auto rhsSize = rhsChrec->NumOperands();
 
   if (rhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
   if (lhsSize == 0)
     return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
 
+  if (lhsSize == 1)
+  {
+    // G * {e,+,f,...} = {G * e,+,G * f,...}
+    const auto element = lhsChrec->GetOperand(0);
+    return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(rhsChrec, element));
+  }
+
   if (rhsSize == 1)
   {
     // {e,+,f,...} * G = {e * G,+,f * G,...}
     const auto element = rhsChrec->GetOperand(0);
-
     return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsChrec, element));
   }
 
@@ -1605,6 +1605,9 @@ ScalarEvolution::ComputeProductOfChrecs(
 
   JLM_ASSERT(lhsSize >= 2);
   JLM_ASSERT(rhsSize >= 2);
+
+  if (rhsSize > lhsSize)
+    std::swap(lhsChrec, rhsChrec);
 
   std::unique_ptr<SCEVChainRecurrence> lhsStepRecurrence, rhsStepRecurrence;
 
