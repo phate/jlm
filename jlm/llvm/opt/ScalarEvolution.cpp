@@ -853,23 +853,18 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
 void
 ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 {
-  std::vector<rvsdg::ThetaNode::LoopVar> nonStateLoopVars;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     // In some cases (e.g. with store operations), we still want to create a SCEV tree for the loop
     // variable even though it is a state variable. However, we still want to filter out state
     // variables that are purely for scaffolding as they are uninteresting for the analysis.
-    if (!(loopVar.pre->Type()->Kind() == rvsdg::TypeKind::State
-          && loopVar.post->origin() == loopVar.pre)) // Not used in any operations within the loop
+    if (loopVar.pre->Type()->Kind() == rvsdg::TypeKind::State
+        && rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      nonStateLoopVars.push_back(loopVar);
+      continue;
     }
-  }
-
-  for (const auto loopVar : nonStateLoopVars)
-  {
     const auto post = loopVar.post;
-    // We compute the SCEV for each non-state loop variable in a recursive bottom up fashion,
+    // We compute the SCEV for each loop variable in a recursive bottom up fashion,
     // starting at the post's origin
     auto scev = GetOrCreateSCEVForOutput(*post->origin());
     Context_->InsertSCEV(*loopVar.output, scev); // Save the SCEV at the theta outputs as well
