@@ -88,8 +88,8 @@ cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 
 if [ ${CLEAN} = true ]; then
-	./run-ci.sh --clean
-	exit 1
+	./run.sh --clean
+	exit  0
 fi
 
 CLANG=$(${JLM_ROOT_DIR}/build/jlc a.c "-###" | head -n1 | cut "-d " -f1)
