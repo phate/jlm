@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -eu +x
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
@@ -95,5 +95,4 @@ fi
 CLANG=$(${JLM_ROOT_DIR}/build/jlc a.c "-###" | head -n1 | cut "-d " -f1)
 LLVM_BIN="$(dirname "${CLANG}")"
 
-set +x
 ./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}
