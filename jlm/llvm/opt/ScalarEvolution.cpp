@@ -101,7 +101,7 @@ public:
     for (auto & [out, chrec] : ChrecMap_)
     {
       // Count chrecs with specific order
-      if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
+      if (chrec->NumOperands() == n + 1 && !IsUnknown(*chrec))
         count++;
     }
     return count;
@@ -1263,12 +1263,12 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
   do
   {
     folded = false;
-    for (size_t i = 0; i < expression.GetOperands().size(); ++i)
+    for (size_t i = 0; i < expression.NumOperands(); ++i)
     {
       std::vector<const SCEV *> ops = expression.GetOperands();
       if (dynamic_cast<const SCEVInit *>(ops[i]))
         continue; // Cannot fold init
-      for (size_t j = i + 1; j < expression.GetOperands().size(); ++j)
+      for (size_t j = i + 1; j < expression.NumOperands(); ++j)
       {
         if (dynamic_cast<const SCEVInit *>(ops[j]))
           continue;
@@ -1297,7 +1297,7 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
     }
   } while (folded);
 
-  if (expression.GetOperands().size() == 1)
+  if (expression.NumOperands() == 1)
   {
     // If there is only one operand in the n-ary expression, we just return the operand
     return expression.GetOperand(0)->Clone();
@@ -1348,8 +1348,8 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return newChrec;
     }
 
-    const auto lhsSize = lhsChrec->GetOperands().size();
-    const auto rhsSize = rhsChrec->GetOperands().size();
+    const auto lhsSize = lhsChrec->NumOperands();
+    const auto rhsSize = rhsChrec->NumOperands();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
     {
       const SCEV * lhs{};
@@ -1503,7 +1503,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // Check if there is already a constant operand in the n-ary expression
     // If so, fold the new constant with the old one instead of adding it as an operand
     bool folded = false;
-    for (size_t i = 0; i < newNAryAddExpr->GetOperands().size(); ++i)
+    for (size_t i = 0; i < newNAryAddExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryAddExpr->GetOperands()[i]))
@@ -1548,6 +1548,128 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   return SCEVUnknown::Create();
 }
 
+std::unique_ptr<SCEVChainRecurrence>
+ScalarEvolution::ComputeProductOfChrecs(
+    const SCEVChainRecurrence * lhsChrec,
+    const SCEVChainRecurrence * rhsChrec)
+{
+  const auto lhsSize = lhsChrec->NumOperands();
+  const auto rhsSize = rhsChrec->NumOperands();
+
+  if (rhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
+  if (lhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
+
+  // Handle G * {e,+,f,...} where G is loop invariant
+  if (lhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // G * {e,+,f,...} = {G * e,+,G * f,...}
+    auto lhs = lhsChrec->GetOperand(0);
+
+    for (auto rhs : rhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+  if (rhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // {e,+,f,...} * G = {e * G,+,f * G,...}
+    auto rhs = rhsChrec->GetOperand(0);
+
+    for (auto lhs : lhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+
+  // Below is an implementation of the algorithm CRProd from Bachmann et al., ‘Chains of recurrences
+  // — a method to expedite the evaluation of closed-form functions’
+  // (https://doi.org/10.1145/190347.190423)
+  //
+  // Let lhs = F, rhs = G be CR’s of length k and l.
+  //
+  // The product of F and G, S = F * G can be constructed using the algorithm CRProd given below
+  //
+  // Algorithm CRProd: Let
+  // F = {a0, +, a1, +, ..., +, ak} and G = {b0, +, b1, +, ..., +, bl}
+  // with k ≥ l. This algorithm returns a simple CR S of length k + l such that F * G = S.
+  //
+  // P1 [Base case]
+  // If l = 1 return {a0*b0, +, a1*b0, +, ..., +, ak*b0}
+  //
+  // P2 [Prepare recursive calls] Let
+  // f = {a1, +, a2, +, ..., +, ak}
+  // g = {b1, +, b2, +, ..., +, bl}
+  //
+  // G' = G + g = {b0 + b1, +, b1 + b2, +, ..., +, bl}
+  //
+  // P3 [Recursive calls] Set
+  // {x1'', +, x2'', +, ..., +, x(k+l)''} ← CRProd(F, g)
+  // {x1',  +, x2',  +, ..., +, x(k+l)'}  ← CRProd(f, G')
+  //
+  // P4 [Fold the results together and return]
+  // return {a0*b0, +, x1' + x1'', +, ..., +, x(k+l)' + x(k+l)''}
+
+  JLM_ASSERT(lhsSize >= 2);
+  JLM_ASSERT(rhsSize >= 2);
+
+  if (rhsSize > lhsSize)
+    std::swap(lhsChrec, rhsChrec);
+
+  std::unique_ptr<SCEVChainRecurrence> lhsStepRecurrence, rhsStepRecurrence;
+
+  const auto lhsStep = *lhsChrec->GetStep();
+  if (!lhsStep)
+  {
+    // This should not happen since we check size above
+    throw std::logic_error("Could not get step for LHS in ComputeProductOfChrecs!");
+  }
+
+  const auto rhsStep = *rhsChrec->GetStep();
+  if (!rhsStep)
+  {
+    throw std::logic_error("Could not get step for RHS in ComputeProductOfChrecs!");
+  }
+
+  if (dynamic_cast<SCEVChainRecurrence *>(lhsStep.get()))
+  {
+    lhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*lhsStep);
+  }
+  else
+  {
+    lhsStepRecurrence = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    lhsStepRecurrence->AddOperand(lhsStep->Clone());
+  }
+
+  if (dynamic_cast<SCEVChainRecurrence *>(rhsStep.get()))
+  {
+    rhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*rhsStep);
+  }
+  else
+  {
+    rhsStepRecurrence = SCEVChainRecurrence::Create(*rhsChrec->GetLoop());
+    rhsStepRecurrence->AddOperand(rhsStep->Clone());
+  }
+
+  const auto rhsMarked =
+      SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(rhsChrec, rhsStepRecurrence.get()));
+
+  const auto res1 = ComputeProductOfChrecs(lhsChrec, rhsStepRecurrence.get());
+  const auto res2 = ComputeProductOfChrecs(rhsMarked.get(), lhsStepRecurrence.get());
+
+  auto resFolded = SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(res1.get(), res2.get()));
+
+  const auto first = ApplyMulFolding(lhsChrec->GetOperand(0), rhsChrec->GetOperand(0));
+  resFolded->AddOperandToFront(first);
+
+  return resFolded;
+}
+
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
@@ -1574,74 +1696,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
     }
 
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
-    const auto lhsSize = lhsChrec->GetOperands().size();
-    const auto rhsSize = rhsChrec->GetOperands().size();
-
-    if (lhsSize == 0)
-    {
-      for (auto operand : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    else if (rhsSize == 0)
-    {
-      for (auto operand : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    // Handle G * {e,+,f,...} where G is loop invariant
-    if (lhsSize == 1)
-    {
-      // G * {e,+,f,...} = {G * e,+,G * f,...}
-      auto lhs = lhsChrec->GetOperand(0);
-
-      for (auto rhs : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else if (rhsSize == 1)
-    {
-      // {e,+,f,...} * G = {e * G,+,f * G,...}
-      auto rhs = rhsChrec->GetOperand(0);
-
-      for (auto lhs : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else if (lhsSize == 2 && rhsSize == 2)
-    {
-      // {e,+,f} * {g,+,h} = {e*g,+,e*h + f*g + f*h,+,2*f*h}
-      const auto e = lhsChrec->GetOperand(0);
-      const auto f = lhsChrec->GetOperand(1);
-      const auto g = rhsChrec->GetOperand(0);
-      const auto h = rhsChrec->GetOperand(1);
-
-      // First step: e * g
-      newChrec->AddOperand(ApplyMulFolding(e, g));
-
-      // Second step: e * h + f * g + f * h
-      const auto eh = ApplyMulFolding(e, h);
-      const auto fg = ApplyMulFolding(f, g);
-      const auto fh = ApplyMulFolding(f, h);
-      const auto sum1 = ApplyAddFolding(eh.get(), fg.get());
-      auto sum2 = ApplyAddFolding(sum1.get(), fh.get());
-      newChrec->AddOperand(std::move(sum2));
-
-      // Third step: 2 * f * h
-      const auto two = SCEVConstant::Create(2);
-      newChrec->AddOperand(ApplyMulFolding(two.get(), fh.get()));
-    }
-    else
-    {
-      // For other cases, return unknown
-      newChrec->AddOperand(SCEVUnknown::Create());
-    }
-    return newChrec;
+    return ComputeProductOfChrecs(lhsChrec, rhsChrec);
   }
 
   // Chrec * any other operand
@@ -1747,7 +1802,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto newNAryMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*nAryMulExpr);
 
     bool folded = false;
-    for (size_t i = 0; i < newNAryMulExpr->GetOperands().size(); ++i)
+    for (size_t i = 0; i < newNAryMulExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryMulExpr->GetOperands()[i]))
@@ -1934,9 +1989,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
     auto * chrecB = dynamic_cast<const SCEVChainRecurrence *>(&b);
     if (chrecA->GetLoop() != chrecB->GetLoop())
       return false;
-    if (chrecA->GetOperands().size() != chrecB->GetOperands().size())
+    if (chrecA->NumOperands() != chrecB->NumOperands())
       return false;
-    for (size_t i = 0; i < chrecA->GetOperands().size(); ++i)
+    for (size_t i = 0; i < chrecA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*chrecA->GetOperands()[i], *chrecB->GetOperands()[i]))
         return false;
@@ -1947,9 +2002,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
   if (auto * nAryExprA = dynamic_cast<const SCEVNAryExpr *>(&a))
   {
     auto * nAryExprB = dynamic_cast<const SCEVNAryExpr *>(&b);
-    if (nAryExprA->GetOperands().size() != nAryExprB->GetOperands().size())
+    if (nAryExprA->NumOperands() != nAryExprB->NumOperands())
       return false;
-    for (size_t i = 0; i < nAryExprA->GetOperands().size(); ++i)
+    for (size_t i = 0; i < nAryExprA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*nAryExprA->GetOperands()[i], *nAryExprB->GetOperands()[i]))
         return false;
