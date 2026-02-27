@@ -35,7 +35,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: "Install benchmark dependencies"
-        if: ${{inputs.install-benchmark-deps == 'true'}}
         run: |
           sudo apt-get install \
           build-essential gcc-multilib gcc-mingw-w64 libasound2-dev libpulse-dev libdbus-1-dev \
