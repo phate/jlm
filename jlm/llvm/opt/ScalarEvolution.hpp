@@ -97,43 +97,6 @@ private:
   const rvsdg::Output * PrePointer_;
 };
 
-class SCEVLoad final : public SCEV
-{
-public:
-  explicit SCEVLoad(std::unique_ptr<SCEV> scev)
-      : AddressSCEV_{ std::move(scev) }
-  {}
-
-  std::string
-  DebugString() const override
-  {
-    std::ostringstream oss;
-    oss << "Load" << "(" << AddressSCEV_->DebugString() << ")";
-    return oss.str();
-  }
-
-  std::unique_ptr<SCEV>
-  Clone() const override
-  {
-    return std::make_unique<SCEVLoad>(AddressSCEV_->Clone());
-  }
-
-  static std::unique_ptr<SCEVLoad>
-  Create(std::unique_ptr<SCEV> scev)
-  {
-    return std::make_unique<SCEVLoad>(scev->Clone());
-  }
-
-  SCEV *
-  GetAddressSCEV() const
-  {
-    return AddressSCEV_.get();
-  }
-
-private:
-  std::unique_ptr<SCEV> AddressSCEV_;
-};
-
 class SCEVPlaceholder final : public SCEV
 {
 public:
@@ -389,6 +352,12 @@ public:
         Loop_{ &theta }
   {}
 
+  template<typename... Args>
+  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta, Args &&... operands)
+      : SCEVNAryExpr(std::forward<Args>(operands)...),
+        Loop_{ &theta }
+  {}
+
   const rvsdg::ThetaNode *
   GetLoop() const
   {
@@ -471,6 +440,13 @@ public:
   Create(const rvsdg::ThetaNode & loop)
   {
     return std::make_unique<SCEVChainRecurrence>(loop);
+  }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVChainRecurrence>
+  Create(const rvsdg::ThetaNode & loop, Args &&... operands)
+  {
+    return std::make_unique<SCEVChainRecurrence>(loop, std::forward<Args>(operands)...);
   }
 
 protected:

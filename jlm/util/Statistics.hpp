@@ -232,11 +232,11 @@ protected:
     inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
 
     inline static const char * NumLoopVariablesTotal = "#LoopVariablesTotal";
-    inline static const char * NumTotalRecurrences = "#TotalRecurrences";
-    inline static const char * NumConstantRecurrences = "#ConstantRecurrences";
-    inline static const char * NumFirstOrderRecurrences = "#FirstOrderRecurrences";
-    inline static const char * NumSecondOrderRecurrences = "#SecondOrderRecurrences";
-    inline static const char * NumThirdOrderRecurrences = "#ThirdOrderRecurrences";
+    inline static const char * NumTotalInductionVariables = "#TotalInductionVariables";
+    inline static const char * NumConstantInductionVariables = "#ConstantInductionVariables";
+    inline static const char * NumFirstOrderInductionVariables = "#FirstOrderInductionVariables";
+    inline static const char * NumSecondOrderInductionVariables = "#SecondOrderInductionVariables";
+    inline static const char * NumLoops = "#NumLoops";
     inline static const char * TripCounts = "#TripCounts";
 
     static inline const char * Timer = "Time";
