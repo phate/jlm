@@ -3,12 +3,11 @@ set -eu +x
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
-GIT_COMMIT=c12be582bcd1d3da1c6d82c26ac76cdfffc84086
+GIT_COMMIT=baa918a014d3176368f8cdb528432a152dd0793f
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
-JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 
 # Set default path for where the benchmark will be cloned and make target for running it
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/benchmarks
@@ -20,6 +19,7 @@ else
 	PARALLEL_THREADS=`nproc`
 fi
 
+APT_INSTALL_DEPS=false
 CLEAN=false
 BENCHMARK=""
 
@@ -34,11 +34,12 @@ function usage()
 	echo ""
 	echo "  --path PATH           The path where to place the benchmarks."
 	echo "                        Default=[${BENCHMARK_DIR}]"
+	echo "  --apt-install-deps    For CI runner or Ubuntu 24. Installs apt package dependencies before running."
  	echo "  --parallel #THREADS   The number of threads to run in parallel."
 	echo "                        Default=[${PARALLEL_THREADS}]"
 	echo "  --benchmark BENCH     Only extract and build a specific benchamrk."
 	echo "                        Default=[ALL]"
-	echo "                        BENCH=[polybench|spec|emacs|ghostscript|gdb|sendmail"
+	echo "                        BENCH=[polybench|spec|emacs|ghostscript|gdb|sendmail]"
 	echo "  --clean               Delete extracted sources and build files."
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
@@ -52,7 +53,11 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--path)
 			shift
-			BENCHMARK_DIR=$(readlink -m "$1")
+			BENCHMARK_DIR="$(readlink -m "$1")"
+			shift
+			;;
+		--apt-install-deps)
+			APT_INSTALL_DEPS=true
 			shift
 			;;
 		--parallel)
@@ -76,23 +81,31 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-if [ ! -d "$BENCHMARK_DIR" ] ;
-then
-	git clone ${GIT_REPOSITORY} ${BENCHMARK_DIR}
-else
-	git -C ${BENCHMARK_DIR} fetch origin
+# Extract LLVM_CONFIG from the Makefile.config used to build jlm-opt
+source <(grep LLVMCONFIG= "${JLM_ROOT_DIR}/Makefile.config" || true)
+if [[ -z "${LLVMCONFIG:-}" ]]; then
+	echo "Unable to extract LLVMCONFIG path from Makefile.config"
+	exit 1
 fi
 
-export PATH=${JLM_BIN_DIR}:${PATH}
-cd ${BENCHMARK_DIR}
+# Clone the benchmark repository
+if [ ! -d "${BENCHMARK_DIR}" ] ;
+then
+	git clone ${GIT_REPOSITORY} "${BENCHMARK_DIR}"
+else
+	git -C "${BENCHMARK_DIR}" fetch origin
+fi
+
+cd "${BENCHMARK_DIR}"
 git checkout ${GIT_COMMIT}
 
-if [ ${CLEAN} = true ]; then
+if [[ "${APT_INSTALL_DEPS}" = true ]]; then
+	./apt-install-dependencies.sh
+fi
+
+if [ "${CLEAN}" = true ]; then
 	./run.sh --clean
 	exit  0
 fi
 
-CLANG=$(${JLM_ROOT_DIR}/build/jlc a.c "-###" | head -n1 | cut "-d " -f1)
-LLVM_BIN="$(dirname "${CLANG}")"
-
-./run.sh --jlm-opt ${JLM_ROOT_DIR}/build/jlm-opt --llvm-bin ${LLVM_BIN} --parallel ${PARALLEL_THREADS} ${BENCHMARK}
+./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${PARALLEL_THREADS}" ${BENCHMARK}
