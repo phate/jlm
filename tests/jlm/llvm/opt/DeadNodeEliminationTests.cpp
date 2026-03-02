@@ -5,8 +5,13 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -468,4 +473,68 @@ TEST(DeadNodeEliminationTests, Delta)
   // Assert
   EXPECT_EQ(deltaNode->subregion()->numNodes(), 1u);
   EXPECT_EQ(deltaNode->ninputs(), 1u);
+}
+
+TEST(DeadNodeEliminationTests, LoadNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto valueType = TestType::createValueType();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          FunctionType::Create({ pointerType, memoryStateType }, { memoryStateType }),
+          "f",
+          Linkage::externalLinkage));
+  auto addressArgument = lambdaNode->GetFunctionArguments()[0];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & oneNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+  auto allocaResults = AllocaOperation::create(pointerType, oneNode.output(0), 4);
+
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *addressArgument,
+      { allocaResults[1] },
+      4);
+
+  auto & allocaLoadNode = LoadNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      { storeNode.output(0) },
+      pointerType,
+      4);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *allocaLoadNode.output(0),
+      { memoryStateArgument },
+      valueType,
+      4);
+
+  auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+      *lambdaNode->subregion(),
+      { allocaLoadNode.output(1), loadNode.output(1) },
+      { 0, 1 });
+
+  auto lambdaOutput = lambdaNode->finalize({ lambdaExitMergeNode.output(0) });
+  GraphExport::Create(*lambdaOutput, "f");
+
+  view(rvsdg, stdout);
+
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  view(rvsdg, stdout);
+
+  // Assert
+  // We expect that both load nodes have been removed.
+  EXPECT_FALSE(
+      Region::ContainsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4u);
 }
