@@ -91,7 +91,18 @@ private:
    * @return the rvsdg output providing the stored value
    */
   rvsdg::Output &
-  routeStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
+  getStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
+
+  /**
+   * Helper for routing outputs that memoizes the routing to avoid creating
+   * duplicate inputs and outputs in structural nodes.
+   * The \p output must be in the \p region, or in an ancestor of the region.
+   * @param output the output to route
+   * @param region the destination of the routing
+   * @return an output inside \p region that provides the same value as \p output
+   */
+  rvsdg::Output &
+  routeOutputToRegion(rvsdg::Output & output, rvsdg::Region & region);
 
   std::unique_ptr<Context> context_;
 };

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/rvsdg/structural-node.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -27,9 +28,9 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <map>
 #include <memory>
 #include <queue>
-#include <unordered_map>
 
 namespace jlm::llvm
 {
@@ -80,6 +81,9 @@ struct StoreValueForwarding::Context final
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
+
+  // Memoization of outputs that have been routed into regions
+  std::map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *> routedOutputs;
 };
 
 StoreValueForwarding::~StoreValueForwarding() noexcept = default;
@@ -699,11 +703,10 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
   // There must be a node providing the last value stored before the load
   const auto lastStoreNode = tracingInfo.lastStoreBeforeNode[&loadNode];
   JLM_ASSERT(lastStoreNode.isKnown());
-  auto & storedValueOutput = routeStoredValueOrigin(lastStoreNode, tracingInfo);
+  auto & storedValueOutput = getStoredValueOrigin(lastStoreNode, tracingInfo);
 
   // Route the stored value to the load's region
-  // TODO: Memoize routed values to prevent duplicated edges
-  auto & routedStoredValue = rvsdg::RouteToRegion(storedValueOutput, loadRegion);
+  auto & routedStoredValue = routeOutputToRegion(storedValueOutput, loadRegion);
 
   // Divert users of the load to the routed stored value
   loadedValueOutput.divert_users(&routedStoredValue);
@@ -719,7 +722,7 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
 
 // Gets an rvsdg output providing the last value stored relative to the storeValueOrigin.
 rvsdg::Output &
-StoreValueForwarding::routeStoredValueOrigin(
+StoreValueForwarding::getStoredValueOrigin(
     StoreValueOrigin storeValueOrigin,
     LoadTracingInfo & tracingInfo)
 {
@@ -744,10 +747,9 @@ StoreValueForwarding::routeStoredValueOrigin(
     for (auto & subregion : gammaNode->Subregions())
     {
       auto lastStoreValue = tracingInfo.lastStoreInRegion[&subregion];
-      auto & storedValueOutput = routeStoredValueOrigin(lastStoreValue, tracingInfo);
+      auto & storedValueOutput = getStoredValueOrigin(lastStoreValue, tracingInfo);
 
-      // TODO: Memoize routing
-      auto & routedStoredValue = rvsdg::RouteToRegion(storedValueOutput, subregion);
+      auto & routedStoredValue = routeOutputToRegion(storedValueOutput, subregion);
       lastStorePerSubregion.push_back(&routedStoredValue);
     }
 
@@ -779,15 +781,15 @@ StoreValueForwarding::routeStoredValueOrigin(
       if (lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end())
       {
         JLM_ASSERT(lastStoreBeforeTheta->second.isKnown());
-        auto & lastStore = routeStoredValueOrigin(lastStoreBeforeTheta->second, tracingInfo);
-        loopVar.input->divert_to(&rvsdg::RouteToRegion(lastStore, *thetaNode->region()));
+        auto & lastStore = getStoredValueOrigin(lastStoreBeforeTheta->second, tracingInfo);
+        loopVar.input->divert_to(&routeOutputToRegion(lastStore, *thetaNode->region()));
       }
 
       // Divert the loop variable post origin to the last store inside the loop
       const auto subregion = thetaNode->subregion();
       const auto lastStoreInRegion = tracingInfo.lastStoreInRegion[subregion];
       JLM_ASSERT(lastStoreInRegion.isKnown() && lastStoreInRegion.node->region() == subregion);
-      auto & storedValueOutput = routeStoredValueOrigin(lastStoreInRegion, tracingInfo);
+      auto & storedValueOutput = getStoredValueOrigin(lastStoreInRegion, tracingInfo);
       loopVar.post->divert_to(&storedValueOutput);
     }
 
@@ -804,6 +806,54 @@ StoreValueForwarding::routeStoredValueOrigin(
   }
 
   JLM_UNREACHABLE("Unknown StoreValueOriginKind");
+}
+
+rvsdg::Output &
+StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region & region)
+{
+  if (output.region() == &region)
+    return output;
+
+  if (region.IsRootRegion())
+    JLM_UNREACHABLE("root region reached during attempt at routing output into region");
+
+  if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(region.node()))
+  {
+    // Route the output all the way to just outside the gamma first
+    auto & outerOutput = routeOutputToRegion(output, *gammaNode->region());
+
+    // If the outer output already has a corresponding EntryVar, return it
+    if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
+        it != context_->routedOutputs.end())
+      return *it->second;
+
+    // Create an EntryVar for the output, add all branch arguments to the cache
+    auto entryVar = gammaNode->AddEntryVar(&outerOutput);
+    for (auto branchArgument : entryVar.branchArgument)
+    {
+      context_->routedOutputs[{&outerOutput, branchArgument->region()}] = branchArgument;
+    }
+
+    return *entryVar.branchArgument[region.index()];
+  }
+
+  if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(region.node()))
+  {
+    // Route the output all the way to just outside the theta first
+    auto & outerOutput = routeOutputToRegion(output, *thetaNode->region());
+
+    // If the outer output already has a corresponding invariant loop variable, return it
+    if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
+        it != context_->routedOutputs.end())
+      return *it->second;
+
+    // Create an invariant LoopVar for the output and add it to the cache
+    auto loopVar = thetaNode->AddLoopVar(&outerOutput);
+    context_->routedOutputs[{&outerOutput, &region}] = loopVar.pre;
+    return *loopVar.pre;
+  }
+
+  JLM_UNREACHABLE("routeOutputToRegion reached unhandled structural node");
 }
 
 void
