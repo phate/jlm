@@ -97,43 +97,6 @@ private:
   const rvsdg::Output * PrePointer_;
 };
 
-class SCEVLoad final : public SCEV
-{
-public:
-  explicit SCEVLoad(std::unique_ptr<SCEV> scev)
-      : AddressSCEV_{ std::move(scev) }
-  {}
-
-  std::string
-  DebugString() const override
-  {
-    std::ostringstream oss;
-    oss << "Load" << "(" << AddressSCEV_->DebugString() << ")";
-    return oss.str();
-  }
-
-  std::unique_ptr<SCEV>
-  Clone() const override
-  {
-    return std::make_unique<SCEVLoad>(AddressSCEV_->Clone());
-  }
-
-  static std::unique_ptr<SCEVLoad>
-  Create(std::unique_ptr<SCEV> scev)
-  {
-    return std::make_unique<SCEVLoad>(scev->Clone());
-  }
-
-  SCEV *
-  GetAddressSCEV() const
-  {
-    return AddressSCEV_.get();
-  }
-
-private:
-  std::unique_ptr<SCEV> AddressSCEV_;
-};
-
 class SCEVPlaceholder final : public SCEV
 {
 public:
@@ -377,6 +340,12 @@ public:
     return Operands_.at(index).get();
   }
 
+  size_t
+  NumOperands() const
+  {
+    return Operands_.size();
+  }
+
 protected:
   std::vector<std::unique_ptr<SCEV>> Operands_;
 };
@@ -386,6 +355,12 @@ class SCEVChainRecurrence final : public SCEVNAryExpr
 public:
   explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
       : SCEVNAryExpr(),
+        Loop_{ &theta }
+  {}
+
+  template<typename... Args>
+  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta, Args &&... operands)
+      : SCEVNAryExpr(std::forward<Args>(operands)...),
         Loop_{ &theta }
   {}
 
@@ -471,6 +446,13 @@ public:
   Create(const rvsdg::ThetaNode & loop)
   {
     return std::make_unique<SCEVChainRecurrence>(loop);
+  }
+
+  template<typename... Args>
+  static std::unique_ptr<SCEVChainRecurrence>
+  Create(const rvsdg::ThetaNode & loop, Args &&... operands)
+  {
+    return std::make_unique<SCEVChainRecurrence>(loop, std::forward<Args>(operands)...);
   }
 
 protected:
@@ -747,6 +729,11 @@ private:
    */
   static std::unique_ptr<SCEV>
   ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+
+  static std::unique_ptr<SCEVChainRecurrence>
+  ComputeProductOfChrecs(
+      const SCEVChainRecurrence * lhsChrec,
+      const SCEVChainRecurrence * rhsChrec);
 
   /**
    * \brief Apply folding rules for multiplication to combine two SCEV operands into one.

@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -41,7 +42,7 @@ public:
   void
   AddLoopVar(const rvsdg::Output & var)
   {
-    LoopVars_.push_back(&var);
+    LoopVars_.insert(&var);
   }
 
   size_t
@@ -95,27 +96,33 @@ public:
   }
 
   int
-  GetNumOfChrecsWithOrder(const size_t n) const
+  GetNumInductionVariablesWithOrder(const size_t n) const
   {
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      // Count chrecs with specific order
-      if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
-        count++;
+      // Count induction variables (loop variables with a computed recurrence) with specific order
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      {
+        if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
+          count++;
+      }
     }
     return count;
   }
 
   size_t
-  GetNumTotalChrecs() const
+  GetNumTotalInductionVariables() const
   {
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      // Only count chrecs that are not unknown
-      if (!IsUnknown(*chrec))
-        count++;
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      {
+        // Only count chrecs that are not unknown
+        if (!IsUnknown(*chrec))
+          count++;
+      }
     }
     return count;
   }
@@ -124,6 +131,18 @@ public:
   InsertSCEV(const rvsdg::Output & output, const std::unique_ptr<SCEV> & scev)
   {
     SCEVMap_.insert_or_assign(&output, scev->Clone());
+  }
+
+  void
+  AddLoopToCount()
+  {
+    NumLoops_++;
+  }
+
+  size_t
+  GetNumLoops() const
+  {
+    return NumLoops_;
   }
 
   void
@@ -148,7 +167,9 @@ private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
   std::unordered_map<const rvsdg::ThetaNode *, size_t> TripCountMap_;
-  std::vector<const rvsdg::Output *> LoopVars_;
+  std::unordered_set<const rvsdg::Output *> LoopVars_;
+
+  size_t NumLoops_ = 0;
 };
 
 class ScalarEvolution::Statistics final : public util::Statistics
@@ -171,12 +192,18 @@ public:
   Stop(const Context & context) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumTotalRecurrences, context.GetNumTotalChrecs());
-    AddMeasurement(Label::NumConstantRecurrences, context.GetNumOfChrecsWithOrder(0));
-    AddMeasurement(Label::NumFirstOrderRecurrences, context.GetNumOfChrecsWithOrder(1));
-    AddMeasurement(Label::NumSecondOrderRecurrences, context.GetNumOfChrecsWithOrder(2));
-    AddMeasurement(Label::NumThirdOrderRecurrences, context.GetNumOfChrecsWithOrder(3));
+    AddMeasurement(Label::NumTotalInductionVariables, context.GetNumTotalInductionVariables());
+    AddMeasurement(
+        Label::NumConstantInductionVariables,
+        context.GetNumInductionVariablesWithOrder(0));
+    AddMeasurement(
+        Label::NumFirstOrderInductionVariables,
+        context.GetNumInductionVariablesWithOrder(1));
+    AddMeasurement(
+        Label::NumSecondOrderInductionVariables,
+        context.GetNumInductionVariablesWithOrder(2));
     AddMeasurement(Label::NumLoopVariablesTotal, context.GetNumTotalLoopVars());
+    AddMeasurement(Label::NumLoops, context.GetNumLoops());
     AddMeasurement(Label::TripCounts, GetTripCountString(context.GetTripCountMap()));
   }
 
@@ -257,6 +284,7 @@ ScalarEvolution::AnalyzeRegion(const rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
       {
+        Context_->AddLoopToCount();
         // Add number of loop vars in theta (for statistics)
         for (const auto loopVar : thetaNode->GetLoopVars())
         {
@@ -825,19 +853,18 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev)
 void
 ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
 {
-  std::vector<rvsdg::ThetaNode::LoopVar> nonStateLoopVars;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    if (loopVar.pre->Type()->Kind() != rvsdg::TypeKind::State)
+    // In some cases (e.g. with store operations), we still want to create a SCEV tree for the loop
+    // variable even though it is a state variable. However, we still want to filter out state
+    // variables that are purely for scaffolding as they are uninteresting for the analysis.
+    if (loopVar.pre->Type()->Kind() == rvsdg::TypeKind::State
+        && rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      nonStateLoopVars.push_back(loopVar);
+      continue;
     }
-  }
-
-  for (const auto loopVar : nonStateLoopVars)
-  {
     const auto post = loopVar.post;
-    // We compute the SCEV for each non-state loop variable in a recursive bottom up fashion,
+    // We compute the SCEV for each loop variable in a recursive bottom up fashion,
     // starting at the post's origin
     auto scev = GetOrCreateSCEVForOutput(*post->origin());
     Context_->InsertSCEV(*loopVar.output, scev); // Save the SCEV at the theta outputs as well
@@ -893,8 +920,7 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   {
     if (std::find(order.begin(), order.end(), output) == order.end())
     {
-      auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode);
-      unknownChainRecurrence->AddOperand(SCEVUnknown::Create());
+      auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
       Context_->InsertChrec(*output, unknownChainRecurrence);
     }
   }
@@ -917,8 +943,14 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   {
     if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
     {
-      const auto addressInputOrigin = LoadOperation::AddressInput(*simpleNode).origin();
-      result = SCEVLoad::Create(GetOrCreateSCEVForOutput(*addressInputOrigin));
+      GetOrCreateSCEVForOutput(*LoadOperation::AddressInput(*simpleNode).origin());
+      result = SCEVUnknown::Create();
+    }
+    if (rvsdg::is<StoreOperation>(simpleNode->GetOperation()))
+    {
+      GetOrCreateSCEVForOutput(*StoreOperation::AddressInput(*simpleNode).origin());
+      GetOrCreateSCEVForOutput(*StoreOperation::StoredValueInput(*simpleNode).origin());
+      result = SCEVUnknown::Create();
     }
     if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
     {
@@ -1195,29 +1227,10 @@ ScalarEvolution::GetOrCreateStepForSCEV(
     const SCEV & scevTree,
     const rvsdg::ThetaNode & thetaNode)
 {
-  if (const auto existing = Context_->TryGetChrecForOutput(output))
-  {
-    return SCEV::CloneAs<SCEVChainRecurrence>(*existing);
-  }
-
-  auto chrec = SCEVChainRecurrence::Create(thetaNode);
-
-  if (const auto scevUnknown = dynamic_cast<const SCEVUnknown *>(&scevTree))
-  {
-    chrec->AddOperand(scevUnknown->Clone());
-    return chrec;
-  }
   if (const auto scevConstant = dynamic_cast<const SCEVConstant *>(&scevTree))
   {
     // This is a constant, we add it as the only operand
-    chrec->AddOperand(scevConstant->Clone());
-    return chrec;
-  }
-  if (dynamic_cast<const SCEVLoad *>(&scevTree))
-  {
-    // The load operation relies on memory, which we treat as opaque
-    chrec->AddOperand(SCEVUnknown::Create());
-    return chrec;
+    return SCEVChainRecurrence::Create(thetaNode, scevConstant->Clone());
   }
   if (const auto scevPlaceholder = dynamic_cast<const SCEVPlaceholder *>(&scevTree))
   {
@@ -1226,7 +1239,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
       // Since we are only interested in the step value, and not the initial value, we can ignore
       // ourselves by returning an empty chain recurrence (treated as the identity element - 0 for
       // addition and 1 for multiplication)
-      return chrec;
+      return SCEVChainRecurrence::Create(thetaNode);
     }
     if (auto storedRec = Context_->TryGetChrecForOutput(*scevPlaceholder->GetPrePointer()))
     {
@@ -1234,8 +1247,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
       // Get it's saved value. This is safe to do due to the topological ordering
       return storedRec;
     }
-    chrec->AddOperand(SCEVUnknown::Create());
-    return chrec;
+    return SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
   }
   if (const auto scevAddExpr = dynamic_cast<const SCEVAddExpr *>(&scevTree))
   {
@@ -1251,7 +1263,7 @@ ScalarEvolution::GetOrCreateStepForSCEV(
 
     return SCEV::CloneAs<SCEVChainRecurrence>(*ApplyMulFolding(lhsStep.get(), rhsStep.get()));
   }
-  throw std::logic_error("Invalid SCEV type when creating chrec!");
+  return SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
 }
 
 std::unique_ptr<SCEV>
@@ -1263,12 +1275,12 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
   do
   {
     folded = false;
-    for (size_t i = 0; i < expression.GetOperands().size(); ++i)
+    for (size_t i = 0; i < expression.NumOperands(); ++i)
     {
       std::vector<const SCEV *> ops = expression.GetOperands();
       if (dynamic_cast<const SCEVInit *>(ops[i]))
         continue; // Cannot fold init
-      for (size_t j = i + 1; j < expression.GetOperands().size(); ++j)
+      for (size_t j = i + 1; j < expression.NumOperands(); ++j)
       {
         if (dynamic_cast<const SCEVInit *>(ops[j]))
           continue;
@@ -1297,7 +1309,7 @@ ScalarEvolution::FoldNAryExpression(SCEVNAryExpr & expression)
     }
   } while (folded);
 
-  if (expression.GetOperands().size() == 1)
+  if (expression.NumOperands() == 1)
   {
     // If there is only one operand in the n-ary expression, we just return the operand
     return expression.GetOperand(0)->Clone();
@@ -1348,8 +1360,8 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return newChrec;
     }
 
-    const auto lhsSize = lhsChrec->GetOperands().size();
-    const auto rhsSize = rhsChrec->GetOperands().size();
+    const auto lhsSize = lhsChrec->NumOperands();
+    const auto rhsSize = rhsChrec->NumOperands();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
     {
       const SCEV * lhs{};
@@ -1503,7 +1515,7 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     // Check if there is already a constant operand in the n-ary expression
     // If so, fold the new constant with the old one instead of adding it as an operand
     bool folded = false;
-    for (size_t i = 0; i < newNAryAddExpr->GetOperands().size(); ++i)
+    for (size_t i = 0; i < newNAryAddExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryAddExpr->GetOperands()[i]))
@@ -1548,6 +1560,118 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   return SCEVUnknown::Create();
 }
 
+std::unique_ptr<SCEVChainRecurrence>
+ScalarEvolution::ComputeProductOfChrecs(
+    const SCEVChainRecurrence * lhsChrec,
+    const SCEVChainRecurrence * rhsChrec)
+{
+  const auto lhsSize = lhsChrec->NumOperands();
+  const auto rhsSize = rhsChrec->NumOperands();
+
+  if (rhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*lhsChrec);
+  if (lhsSize == 0)
+    return SCEV::CloneAs<SCEVChainRecurrence>(*rhsChrec);
+
+  // Handle G * {e,+,f,...} where G is loop invariant
+  if (lhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // G * {e,+,f,...} = {G * e,+,G * f,...}
+    auto lhs = lhsChrec->GetOperand(0);
+
+    for (auto rhs : rhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+  if (rhsSize == 1)
+  {
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
+    // {e,+,f,...} * G = {e * G,+,f * G,...}
+    auto rhs = rhsChrec->GetOperand(0);
+
+    for (auto lhs : lhsChrec->GetOperands())
+    {
+      newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
+    }
+    return newChrec;
+  }
+
+  // Below is an implementation of the algorithm CRProd from Bachmann et al., ‘Chains of recurrences
+  // — a method to expedite the evaluation of closed-form functions’
+  // (https://doi.org/10.1145/190347.190423)
+  //
+  // Let lhs = F, rhs = G be CR’s of length k and l.
+  //
+  // The product of F and G, S = F * G can be constructed using the algorithm CRProd given below
+  //
+  // Algorithm CRProd: Let
+  // F = {a0, +, a1, +, ..., +, ak} and G = {b0, +, b1, +, ..., +, bl}
+  // with k ≥ l. This algorithm returns a simple CR S of length k + l such that F * G = S.
+  //
+  // P1 [Base case]
+  // If l = 1 return {a0*b0, +, a1*b0, +, ..., +, ak*b0}
+  //
+  // P2 [Prepare recursive calls] Let
+  // f = {a1, +, a2, +, ..., +, ak}
+  // g = {b1, +, b2, +, ..., +, bl}
+  //
+  // G' = G + g = {b0 + b1, +, b1 + b2, +, ..., +, bl}
+  //
+  // P3 [Recursive calls] Set
+  // {x1'', +, x2'', +, ..., +, x(k+l)''} ← CRProd(F, g)
+  // {x1',  +, x2',  +, ..., +, x(k+l)'}  ← CRProd(f, G')
+  //
+  // P4 [Fold the results together and return]
+  // return {a0*b0, +, x1' + x1'', +, ..., +, x(k+l)' + x(k+l)''}
+
+  JLM_ASSERT(lhsSize >= 2);
+  JLM_ASSERT(rhsSize >= 2);
+
+  if (rhsSize > lhsSize)
+    std::swap(lhsChrec, rhsChrec);
+
+  std::unique_ptr<SCEVChainRecurrence> lhsStepRecurrence, rhsStepRecurrence;
+
+  const auto lhsStep = *lhsChrec->GetStep();
+  if (!lhsStep)
+  {
+    // This should not happen since we check size above
+    throw std::logic_error("Could not get step for LHS in ComputeProductOfChrecs!");
+  }
+
+  const auto rhsStep = *rhsChrec->GetStep();
+  if (!rhsStep)
+  {
+    throw std::logic_error("Could not get step for RHS in ComputeProductOfChrecs!");
+  }
+
+  if (dynamic_cast<SCEVChainRecurrence *>(lhsStep.get()))
+    lhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*lhsStep);
+  else
+    lhsStepRecurrence = SCEVChainRecurrence::Create(*lhsChrec->GetLoop(), lhsStep->Clone());
+
+  if (dynamic_cast<SCEVChainRecurrence *>(rhsStep.get()))
+    rhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*rhsStep);
+  else
+    rhsStepRecurrence = SCEVChainRecurrence::Create(*rhsChrec->GetLoop(), rhsStep->Clone());
+
+  const auto rhsMarked =
+      SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(rhsChrec, rhsStepRecurrence.get()));
+
+  const auto res1 = ComputeProductOfChrecs(lhsChrec, rhsStepRecurrence.get());
+  const auto res2 = ComputeProductOfChrecs(rhsMarked.get(), lhsStepRecurrence.get());
+
+  auto resFolded = SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(res1.get(), res2.get()));
+
+  const auto first = ApplyMulFolding(lhsChrec->GetOperand(0), rhsChrec->GetOperand(0));
+  resFolded->AddOperandToFront(first);
+
+  return resFolded;
+}
+
 std::unique_ptr<SCEV>
 ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand)
 {
@@ -1574,74 +1698,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
       return SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
     }
 
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
-    const auto lhsSize = lhsChrec->GetOperands().size();
-    const auto rhsSize = rhsChrec->GetOperands().size();
-
-    if (lhsSize == 0)
-    {
-      for (auto operand : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    else if (rhsSize == 0)
-    {
-      for (auto operand : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(operand->Clone());
-      }
-    }
-    // Handle G * {e,+,f,...} where G is loop invariant
-    if (lhsSize == 1)
-    {
-      // G * {e,+,f,...} = {G * e,+,G * f,...}
-      auto lhs = lhsChrec->GetOperand(0);
-
-      for (auto rhs : rhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else if (rhsSize == 1)
-    {
-      // {e,+,f,...} * G = {e * G,+,f * G,...}
-      auto rhs = rhsChrec->GetOperand(0);
-
-      for (auto lhs : lhsChrec->GetOperands())
-      {
-        newChrec->AddOperand(ApplyMulFolding(lhs, rhs));
-      }
-    }
-    else if (lhsSize == 2 && rhsSize == 2)
-    {
-      // {e,+,f} * {g,+,h} = {e*g,+,e*h + f*g + f*h,+,2*f*h}
-      const auto e = lhsChrec->GetOperand(0);
-      const auto f = lhsChrec->GetOperand(1);
-      const auto g = rhsChrec->GetOperand(0);
-      const auto h = rhsChrec->GetOperand(1);
-
-      // First step: e * g
-      newChrec->AddOperand(ApplyMulFolding(e, g));
-
-      // Second step: e * h + f * g + f * h
-      const auto eh = ApplyMulFolding(e, h);
-      const auto fg = ApplyMulFolding(f, g);
-      const auto fh = ApplyMulFolding(f, h);
-      const auto sum1 = ApplyAddFolding(eh.get(), fg.get());
-      auto sum2 = ApplyAddFolding(sum1.get(), fh.get());
-      newChrec->AddOperand(std::move(sum2));
-
-      // Third step: 2 * f * h
-      const auto two = SCEVConstant::Create(2);
-      newChrec->AddOperand(ApplyMulFolding(two.get(), fh.get()));
-    }
-    else
-    {
-      // For other cases, return unknown
-      newChrec->AddOperand(SCEVUnknown::Create());
-    }
-    return newChrec;
+    return ComputeProductOfChrecs(lhsChrec, rhsChrec);
   }
 
   // Chrec * any other operand
@@ -1747,7 +1804,7 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
     auto newNAryMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*nAryMulExpr);
 
     bool folded = false;
-    for (size_t i = 0; i < newNAryMulExpr->GetOperands().size(); ++i)
+    for (size_t i = 0; i < newNAryMulExpr->NumOperands(); ++i)
     {
       if (const auto existingConstant =
               dynamic_cast<const SCEVConstant *>(newNAryMulExpr->GetOperands()[i]))
@@ -1851,12 +1908,13 @@ ScalarEvolution::CanCreateChainRecurrence(
       return false;
     }
 
-  // Check that it has no reference via a mult-operation
-  for (auto [out, dependencyInfo] : deps)
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    if (dependencyInfo.operation == DependencyOp::Mul)
+    // If this is the output of a loop variable, check that it has no reference via a mult-operation
+    for (auto [out, dependencyInfo] : deps)
     {
-      return false;
+      if (dependencyInfo.operation == DependencyOp::Mul)
+        return false;
     }
   }
 
@@ -1934,9 +1992,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
     auto * chrecB = dynamic_cast<const SCEVChainRecurrence *>(&b);
     if (chrecA->GetLoop() != chrecB->GetLoop())
       return false;
-    if (chrecA->GetOperands().size() != chrecB->GetOperands().size())
+    if (chrecA->NumOperands() != chrecB->NumOperands())
       return false;
-    for (size_t i = 0; i < chrecA->GetOperands().size(); ++i)
+    for (size_t i = 0; i < chrecA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*chrecA->GetOperands()[i], *chrecB->GetOperands()[i]))
         return false;
@@ -1947,9 +2005,9 @@ ScalarEvolution::StructurallyEqual(const SCEV & a, const SCEV & b)
   if (auto * nAryExprA = dynamic_cast<const SCEVNAryExpr *>(&a))
   {
     auto * nAryExprB = dynamic_cast<const SCEVNAryExpr *>(&b);
-    if (nAryExprA->GetOperands().size() != nAryExprB->GetOperands().size())
+    if (nAryExprA->NumOperands() != nAryExprB->NumOperands())
       return false;
-    for (size_t i = 0; i < nAryExprA->GetOperands().size(); ++i)
+    for (size_t i = 0; i < nAryExprA->NumOperands(); ++i)
     {
       if (!StructurallyEqual(*nAryExprA->GetOperands()[i], *nAryExprB->GetOperands()[i]))
         return false;
