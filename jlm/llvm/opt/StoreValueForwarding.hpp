@@ -18,6 +18,9 @@ class Region;
 namespace jlm::llvm
 {
 
+struct LoadTracingInfo;
+struct StoreValueOrigin;
+
 /** \brief Store Value Forwarding Optimization
  *
  * Store Value Forwarding is an optimization that forwards store values
@@ -70,6 +73,25 @@ private:
    */
   void
   processLoadNode(rvsdg::SimpleNode & loadNode);
+
+  /**
+   * Performs store value forwarding to the load node represented by the given \p tracingInfo.
+   * Uses the metadata stored during tracing to replace the value output of the load node
+   * with the last value that was stored to the memory loaded by it.
+   * @param tracingInfo the metadata created during store value origin tracing.
+   */
+  void
+  forwardStoredValues(LoadTracingInfo & tracingInfo);
+
+  /**
+   * Gets an output providing the value stored at the given \p storeValueOrigin.
+   * Getting this output may involve routing and creating new structural node inputs and outputs.
+   * @param storeValueOrigin the origin of the last stored value along some memory state.
+   * @param tracingInfo the metdata created during store value origin tracing.
+   * @return the rvsdg output providing the stored value
+   */
+  rvsdg::Output &
+  routeStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
 
   std::unique_ptr<Context> context_;
 };
