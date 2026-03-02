@@ -2,7 +2,7 @@ name: Benchmarks
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -31,10 +31,30 @@ jobs:
     needs: build-jlm
     strategy:
       matrix:
-        benchmark: [polybench, perlbench, gcc, cactuBSSN, x264, blender, imagick, nab, xz, emacs, ghostscript, gdb, sendmail]
+        benchmark:
+          [
+            polybench,
+            perlbench,
+            gcc,
+            cactuBSSN,
+            x264,
+            blender,
+            imagick,
+            nab,
+            xz,
+            emacs,
+            ghostscript,
+            gdb,
+            sendmail,
+          ]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - name: "Install dependencies"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-llvm: true
+          install-clang: true
       - name: "Restore jlm"
         id: restore-jlm-build
         uses: actions/cache/restore@v5

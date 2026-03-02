@@ -81,7 +81,7 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-# Extract LLVM_CONFIG from the Makefile.config used to build jlm-opt
+# Extract LLVMCONFIG from the Makefile.config used to build jlm-opt
 source <(grep LLVMCONFIG= "${JLM_ROOT_DIR}/Makefile.config" || true)
 if [[ -z "${LLVMCONFIG:-}" ]]; then
 	echo "Unable to extract LLVMCONFIG path from Makefile.config"
