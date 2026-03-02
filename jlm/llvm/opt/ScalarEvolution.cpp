@@ -920,8 +920,7 @@ ScalarEvolution::PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode)
   {
     if (std::find(order.begin(), order.end(), output) == order.end())
     {
-      auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode);
-      unknownChainRecurrence->AddOperand(SCEVUnknown::Create());
+      auto unknownChainRecurrence = SCEVChainRecurrence::Create(thetaNode, SCEVUnknown::Create());
       Context_->InsertChrec(*output, unknownChainRecurrence);
     }
   }
@@ -1650,24 +1649,14 @@ ScalarEvolution::ComputeProductOfChrecs(
   }
 
   if (dynamic_cast<SCEVChainRecurrence *>(lhsStep.get()))
-  {
     lhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*lhsStep);
-  }
   else
-  {
-    lhsStepRecurrence = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
-    lhsStepRecurrence->AddOperand(lhsStep->Clone());
-  }
+    lhsStepRecurrence = SCEVChainRecurrence::Create(*lhsChrec->GetLoop(), lhsStep->Clone());
 
   if (dynamic_cast<SCEVChainRecurrence *>(rhsStep.get()))
-  {
     rhsStepRecurrence = SCEV::CloneAs<SCEVChainRecurrence>(*rhsStep);
-  }
   else
-  {
-    rhsStepRecurrence = SCEVChainRecurrence::Create(*rhsChrec->GetLoop());
-    rhsStepRecurrence->AddOperand(rhsStep->Clone());
-  }
+    rhsStepRecurrence = SCEVChainRecurrence::Create(*rhsChrec->GetLoop(), rhsStep->Clone());
 
   const auto rhsMarked =
       SCEV::CloneAs<SCEVChainRecurrence>(*ApplyAddFolding(rhsChrec, rhsStepRecurrence.get()));
