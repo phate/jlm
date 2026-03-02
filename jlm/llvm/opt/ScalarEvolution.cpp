@@ -1908,12 +1908,13 @@ ScalarEvolution::CanCreateChainRecurrence(
       return false;
     }
 
-  // Check that it has no reference via a mult-operation
-  for (auto [out, dependencyInfo] : deps)
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    if (dependencyInfo.operation == DependencyOp::Mul)
+    // If this is the output of a loop variable, check that it has no reference via a mult-operation
+    for (auto [out, dependencyInfo] : deps)
     {
-      return false;
+      if (dependencyInfo.operation == DependencyOp::Mul)
+        return false;
     }
   }
 
