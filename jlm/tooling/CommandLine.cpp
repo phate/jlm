@@ -100,6 +100,7 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::IfConversion, "IfConversion" },
     { OptimizationId::InvariantValueRedirection, "InvariantValueRedirection" },
     { OptimizationId::LoadChainSeparation, "LoadChainSeparation" },
+    { OptimizationId::LoopStrengthReduction, "LoopStrengthReduction" },
     { OptimizationId::LoopUnrolling, "LoopUnrolling" },
     { OptimizationId::LoopUnswitching, "LoopUnswitching" },
     { OptimizationId::NodePullIn, "NodePullIn" },
@@ -819,6 +820,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
+  auto loopStrengthReduction = JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
   auto loopUnswitching = JlmOptCommandLineOptions::OptimizationId::LoopUnswitching;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
@@ -863,6 +865,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               loadChainSeparation,
               JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),
               "Separate chains of load operations"),
+          ::clEnumValN(
+              loopStrengthReduction,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loopStrengthReduction),
+              "Loop strength reduction"),
           ::clEnumValN(
               loopUnrolling,
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),

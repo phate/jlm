@@ -73,6 +73,7 @@ public:
     IfConversion,
     InvariantValueRedirection,
     LoadChainSeparation,
+    LoopStrengthReduction,
     LoopUnrolling,
     LoopUnswitching,
     NodePullIn,
