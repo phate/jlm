@@ -94,6 +94,15 @@ private:
   getStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
 
   /**
+   * In \ref getStoredValueOrigin(), all loop variables are created as invariant,
+   * to avoid recursive function calls looping around the graph.
+   * Instead, the post results of all created loop variables are added to a queue,
+   * and propery diverted to their correct origins by this function.
+   */
+  void
+  connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo);
+
+  /**
    * Helper for routing outputs that memoizes the routing to avoid creating
    * duplicate inputs and outputs in structural nodes.
    * The \p output must be in the \p region, or in an ancestor of the region.
