@@ -3,9 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/DotWriter.hpp"
-#include "jlm/rvsdg/node.hpp"
-#include "jlm/util/GraphWriter.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -112,11 +109,6 @@ TEST(StoreValueForwardingTests, NestedAllocas)
   lambdaNode.finalize({ loadA0Node.output(0), io0, mem0 });
 
   // std::cout << rvsdg::view(&graph.GetRootRegion()) << std::endl;
-
-  LlvmDotWriter writer;
-  jlm::util::graph::Writer gw;
-  writer.WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
-  gw.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
@@ -486,11 +478,8 @@ TEST(StoreValueForwardingTests, RouteOut)
   memLoopVar.post->divert_to(memExitVar.output);
 
   // l1, mem8 = LOAD[bits32] q, mem7
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(
-      *qLoopVar.output,
-      { memLoopVar.output },
-      bits32Type,
-      4);
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*qLoopVar.output, { memLoopVar.output }, bits32Type, 4);
   auto & loadedValue = LoadOperation::LoadedValueOutput(loadNode);
   auto & mem8 = *LoadOperation::MemoryStateOutputs(loadNode).begin();
 
@@ -514,7 +503,8 @@ TEST(StoreValueForwardingTests, RouteOut)
   const auto & postOrigin = *loopVar.post->origin();
   const auto exitVar = gammaNode.MapOutputExitVar(postOrigin);
   // In the 0th subregion, the output should be a constant integer
-  const auto constInteger = jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin());
+  const auto constInteger =
+      jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin());
   EXPECT_EQ(constInteger, 20);
 
   // In the 1st subregion, the output should be traced back to the loop var input

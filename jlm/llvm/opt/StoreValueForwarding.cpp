@@ -689,7 +689,8 @@ StoreValueForwarding::connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo)
 {
   // The process of handling all created loop variables may also create more loop variables,
   // so keep going until the queue is empty.
-  while(!tracingInfo.unroutedLoopVarPosts.empty()) {
+  while (!tracingInfo.unroutedLoopVarPosts.empty())
+  {
     auto post = tracingInfo.unroutedLoopVarPosts.front();
     tracingInfo.unroutedLoopVarPosts.pop();
 
