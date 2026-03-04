@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/structural-node.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -22,6 +21,7 @@
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
@@ -152,13 +152,15 @@ StoreValueForwarding::traverseIntraProceduralRegion(rvsdg::Region & region)
 enum class StoreNodeInfo
 {
   ValueForwarding,  // The store can be forwarded to the load node
-  ClobberNoForward, // The store may clobber the loaded value, but can not be forwarded
+  ClobberNoForward, // The store may clobber the load, but the stored value can not be forwarded.
+                    // This can for example be because the addresses are not MustAlias,
+                    // or that the type of the stored value and the loaded value are not identical.
   NoClobber         // The store is guaranteed to not clobber the loaded value
 };
 
-// When tracing backwards in time from a load node through memory state edges, we store points
+// When tracing backwards from a load node through memory state edges, we store points
 // at which a store writes to the load node, or a structural node causes the loaded value
-// to have multiple possible origins.
+// to have multiple possible origins. These points are known as StoreValueOrigins
 struct StoreValueOrigin
 {
   enum class Kind
@@ -192,43 +194,44 @@ struct StoreValueOrigin
   }
 
   static StoreValueOrigin
-  unknown()
+  createUnknown()
   {
     return StoreValueOrigin{ Kind::Unknown, nullptr };
   }
 
   static StoreValueOrigin
-  storeNode(rvsdg::SimpleNode & storeNode)
+  createStoreNode(rvsdg::SimpleNode & storeNode)
   {
     return StoreValueOrigin{ Kind::StoreNode, &storeNode };
   }
 
   static StoreValueOrigin
-  gammaNodeOutput(rvsdg::GammaNode & gammaNode)
+  createGammaNodeOutput(rvsdg::GammaNode & gammaNode)
   {
     return StoreValueOrigin{ Kind::GammaNodeOutput, &gammaNode };
   }
 
   static StoreValueOrigin
-  thetaNodeOutput(rvsdg::ThetaNode & thetaNode)
+  createThetaNodeOutput(rvsdg::ThetaNode & thetaNode)
   {
     return StoreValueOrigin{ Kind::ThetaNodeOutput, &thetaNode };
   }
 
   static StoreValueOrigin
-  thetaNodePre(rvsdg::ThetaNode & thetaNode)
+  createThetaNodePre(rvsdg::ThetaNode & thetaNode)
   {
     return StoreValueOrigin{ Kind::ThetaNodePre, &thetaNode };
   }
 };
 
 /**
- * Helper struct holding info during tracing of the memory states going to a load node.
+ * Helper class holding info during tracing of the memory states going to a given load node.
  * Can trace into structural nodes, and keep track of separate store nodes for separate regions.
  * If all branches lead to a store that can be forwarded, forwarding can be performed.
  */
-struct LoadTracingInfo
+class LoadTracingInfo
 {
+public:
   LoadTracingInfo(rvsdg::SimpleNode & loadNode)
       : loadNode(loadNode)
   {
@@ -252,7 +255,7 @@ struct LoadTracingInfo
   {
     // Forwarding of loads with no memory states is not possible
     // TODO: We could load values from constant globals
-    if (LoadOperation::NumMemoryStates(loadNode) == 0)
+    if (LoadOperation::numMemoryStates(loadNode) == 0)
       return false;
 
     // Perform tracing from each memory state input to find exactly what store it leads to
@@ -290,6 +293,8 @@ private:
   aa::AliasAnalysis::AliasQueryResponse
   queryAliasAnalysis(rvsdg::SimpleNode & storeNode)
   {
+    JLM_ASSERT(is<StoreOperation>(&storeNode));
+
     // Use the local alias analysis, but limited to a single traced origin.
     // This causes the analysis to give up as soon as a pointer has multiple possible origins,
     // or an unknown offset.
@@ -306,7 +311,7 @@ private:
 
   /**
    * Attempts to trace the given memory state input back to a store node that can be forwarded.
-   * If a store node that "MayAlias" the load is encountered, unknown is returned.
+   * If a store node that may alias the load is encountered, unknown is returned.
    * If structural nodes are encountered, all branches are traced.
    * If any of the branches are not traceable, unknown is returned.
    * If the branches lead to different store nodes, the structural node itself is returned.
@@ -337,7 +342,7 @@ private:
 
       // If the node already had a different last store value, give up
       if (!inserted && it->second != result)
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
     }
 
     // If the input is a region exit, add the result to the region exit map
@@ -348,7 +353,7 @@ private:
 
       // If the region already had a different last store value, give up
       if (!inserted && it->second != result)
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
     }
 
     return result;
@@ -402,10 +407,10 @@ private:
       switch (it->second)
       {
       case StoreNodeInfo::ValueForwarding:
-        return StoreValueOrigin::storeNode(*storeNode);
+        return StoreValueOrigin::createStoreNode(*storeNode);
 
       case StoreNodeInfo::ClobberNoForward:
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
 
       case StoreNodeInfo::NoClobber:
       {
@@ -425,13 +430,13 @@ private:
         joinNode && joinOp)
     {
       if (joinNode->ninputs() == 0)
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
 
       for (auto & input : joinNode->Inputs())
       {
         auto result = getLastStoreBeforeInput(input);
         if (!result.isKnown())
-          return StoreValueOrigin::unknown();
+          return StoreValueOrigin::createUnknown();
       }
 
       // If none of the calls returned nullptr, there must a shared last store before the join
@@ -456,13 +461,13 @@ private:
         // If any of the gamma branches is impossible to trace back to a last store,
         // give up on forwarding entirely
         if (!lastStoreNode.isKnown())
-          return StoreValueOrigin::unknown();
+          return StoreValueOrigin::createUnknown();
 
         // Keep track if there is a single shared last store in all branches
         if (!commonStoreValueOrigin.has_value())
           commonStoreValueOrigin = lastStoreNode;
         else if (commonStoreValueOrigin.value() != lastStoreNode)
-          commonStoreValueOrigin = StoreValueOrigin::unknown();
+          commonStoreValueOrigin = StoreValueOrigin::createUnknown();
       }
 
       JLM_ASSERT(commonStoreValueOrigin.has_value());
@@ -470,7 +475,7 @@ private:
         return *commonStoreValueOrigin;
 
       // If the last store node depends on the branch taken, return the gamma node itself
-      return StoreValueOrigin::gammaNodeOutput(*gammaNode);
+      return StoreValueOrigin::createGammaNodeOutput(*gammaNode);
     }
 
     // If we found an exit variable of a theta node, continue tracing on the inside
@@ -480,11 +485,11 @@ private:
       auto lastStoreNode = getLastStoreBeforeInput(*loopVar.post);
 
       if (!lastStoreNode.isKnown())
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
 
       // if the reached store node is inside the theta, it must be routed out of it
       if (lastStoreNode.node->region() == thetaNode->subregion())
-        return StoreValueOrigin::thetaNodeOutput(*thetaNode);
+        return StoreValueOrigin::createThetaNodeOutput(*thetaNode);
 
       // The last store node is outside the theta, so point to it directly
       return lastStoreNode;
@@ -498,18 +503,18 @@ private:
       // Trace from the theta input first
       auto inputLastStoreNode = getLastStoreBeforeInput(*loopVar.input);
       if (!inputLastStoreNode.isKnown())
-        return StoreValueOrigin::unknown();
+        return StoreValueOrigin::createUnknown();
 
       // If the loop variables' post result is not traced, add it to the list.
       // Using a list prevents visiting the loop body multiple times during recursion.
       if (lastStoreBeforeInput.count(loopVar.post) == 0)
         loopVarPostsToTrace.insert(loopVar.post);
 
-      return StoreValueOrigin::thetaNodePre(*thetaNode);
+      return StoreValueOrigin::createThetaNodePre(*thetaNode);
     }
 
     // Tracing reached something that is not handled, such as a function call
-    return StoreValueOrigin::unknown();
+    return StoreValueOrigin::createUnknown();
   }
 
 public:
@@ -638,6 +643,23 @@ StoreValueForwarding::getStoredValueOrigin(
     auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(storeValueOrigin.node);
     JLM_ASSERT(thetaNode);
 
+    // If the theta output is being requested, and no clobber happens inside the theta,
+    // skip making a loop variable and return the last store before the theta instead
+    if (storeValueOrigin.kind == StoreValueOrigin::Kind::ThetaNodeOutput)
+    {
+      auto lastStoreInRegion = tracingInfo.lastStoreInRegion.find(thetaNode->subregion());
+      JLM_ASSERT(lastStoreInRegion != tracingInfo.lastStoreInRegion.end());
+      JLM_ASSERT(lastStoreInRegion->second.isKnown());
+
+      // If the last store is the theta pre, the loop body never clobbers
+      if (lastStoreInRegion->second.kind == StoreValueOrigin::Kind::ThetaNodePre)
+      {
+        auto lastStoreBeforeTheta = tracingInfo.lastStoreBeforeNode.find(thetaNode);
+        JLM_ASSERT(lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end());
+        return getStoredValueOrigin(lastStoreBeforeTheta->second, tracingInfo);
+      }
+    }
+
     // If the loop variable has not yet been created in this theta, create it now
     auto loopVarSlot = tracingInfo.createdLoopVars.find(thetaNode);
     if (loopVarSlot == tracingInfo.createdLoopVars.end())
@@ -665,7 +687,7 @@ StoreValueForwarding::getStoredValueOrigin(
       loopVarSlot = it;
 
       // To prevent looping during routing, the created loop variable's post is added to a
-      // queue of loop variables to be routed later.
+      // queue of loop variable posts that are routed properly later.
       tracingInfo.unroutedLoopVarPosts.push(loopVar.post);
     }
 

@@ -98,7 +98,7 @@ public:
    * @pre \p node is expected to be a \ref LoadOperation node.
    */
   [[nodiscard]] static size_t
-  NumMemoryStates(const rvsdg::Node & node) noexcept
+  numMemoryStates(const rvsdg::SimpleNode & node) noexcept
   {
     const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
     return loadOperation->NumMemoryStates_;
