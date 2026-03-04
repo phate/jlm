@@ -388,3 +388,232 @@ TEST(StoreValueForwardingTests, RoutingIn)
   auto & resultTraced = jlm::llvm::traceOutput(branch0Result);
   EXPECT_EQ(&resultTraced, constantForty.output(0));
 }
+
+TEST(StoreValueForwardingTests, RouteOut)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Create a function that looks like
+   * int func(q[ptr], io0, mem0) {
+   *   mem1 = STORE[bits32] q, 40, mem0
+   *   _, mem7 = theta q, mem1
+   *     [q1, mem2] {
+   *       pred = CTRL(0)
+   *       mem6 = gamma pred, q1, mem2
+   *         [_, q2, mem3]{
+   *             mem4 = STORE[bits32] q2, 20, mem3
+   *         }[mem4]
+   *         [_, _, mem5]{
+   *             // empty region
+   *         }[mem5]
+   *     }[pred, q1, mem6]
+   *   l1, mem8 = LOAD[bits32] q, mem7
+   *   return l1, io0, mem8
+   * }
+   *
+   * After StoreValueForwarding, the LOAD should be gone.
+   * The function return value should be a loop output, which leads to a gamma output,
+   * which is a constant 20 in the 0th region, and invariant in the 1st region.
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto unitType = rvsdg::UnitType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  // Setup the function "func"
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & q = *lambdaNode.GetFunctionArguments()[0];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[1];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[2];
+
+  // Create constant 40 for the first STORE
+  auto & constantForty = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 40);
+
+  // mem1 = STORE[bits32] q, 40, mem0
+  auto & storeQ40Node =
+      StoreNonVolatileOperation::CreateNode(q, *constantForty.output(0), { &mem0 }, 4);
+  auto & mem1 = *StoreOperation::MemoryStateOutputs(storeQ40Node).begin();
+
+  // Create theta node structure
+  auto & thetaNode = *rvsdg::ThetaNode::create(lambdaNode.subregion());
+
+  auto qLoopVar = thetaNode.AddLoopVar(&q);
+  auto memLoopVar = thetaNode.AddLoopVar(&mem1);
+
+  // Create gamma node inside theta
+  auto & predicate = *thetaNode.predicate()->origin();
+  auto & gammaNode = rvsdg::GammaNode::Create(predicate, 2, { unitType, unitType });
+
+  auto qEntryVar = gammaNode.AddEntryVar(qLoopVar.pre);
+  auto memEntryVar = gammaNode.AddEntryVar(memLoopVar.pre);
+
+  // Create first gamma case: STORE operation
+  auto & gammaSubregion0 = *gammaNode.subregion(0);
+  auto & constantTwenty = IntegerConstantOperation::Create(gammaSubregion0, 32, 20);
+  auto & storeQ20Node = StoreNonVolatileOperation::CreateNode(
+      *qEntryVar.branchArgument[0],
+      *constantTwenty.output(0),
+      { memEntryVar.branchArgument[0] },
+      4);
+  auto & mem4 = *StoreOperation::MemoryStateOutputs(storeQ20Node).begin();
+
+  // Create gamma exit variables
+  auto memExitVar = gammaNode.AddExitVar({ &mem4, memEntryVar.branchArgument[1] });
+
+  // route theta results
+  memLoopVar.post->divert_to(memExitVar.output);
+
+  // l1, mem8 = LOAD[bits32] q, mem7
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*qLoopVar.output, { memLoopVar.output }, bits32Type, 4);
+  auto & loadedValue = LoadOperation::LoadedValueOutput(loadNode);
+  auto & mem8 = *LoadOperation::MemoryStateOutputs(loadNode).begin();
+
+  // Finalize lambda node
+  lambdaNode.finalize({ &loadedValue, &io0, &mem8 });
+
+  // std::cout << rvsdg::view(&graph.GetRootRegion()) << std::endl;
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // std::cout << rvsdg::view(&graph.GetRootRegion()) << std::endl;
+
+  // Assert
+
+  // The LOAD should be gone, and the result should be routed through the gamma
+  const auto & resultOrigin = *lambdaNode.GetFunctionResults()[0]->origin();
+  const auto loopVar = thetaNode.MapOutputLoopVar(resultOrigin);
+
+  // Inside the theta, the loop variable should come straight from the gamma
+  const auto & postOrigin = *loopVar.post->origin();
+  const auto exitVar = gammaNode.MapOutputExitVar(postOrigin);
+  // In the 0th subregion, the output should be a constant integer
+  const auto constInteger =
+      jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin());
+  EXPECT_EQ(constInteger, 20);
+
+  // In the 1st subregion, the output should be traced back to the loop var input
+  const auto & traced1stRegionOrigin = jlm::llvm::traceOutput(*exitVar.branchResult[1]->origin());
+  const auto loopVar2 = thetaNode.MapPreLoopVar(traced1stRegionOrigin);
+  EXPECT_EQ(loopVar.pre, loopVar2.pre);
+
+  const auto constInputInteger = jlm::llvm::tryGetConstantSignedInteger(*loopVar.input->origin());
+  EXPECT_EQ(constInputInteger, 40);
+}
+
+TEST(StoreValueForwardingTests, RouteAroundLoadLoop)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Checks that StoreValueForwarding avoid routing values through loops with no stores.
+   * The inner LOAD needs to have a loop variable created to provide the value,
+   * but the outer LOAD should be directly replaced by the constant 40.
+   *
+   * Create a function that looks like
+   * int func(q[ptr], io0, mem0) {
+   *   mem1 = STORE[bits32] q, 40, mem0
+   *   u1 = undef[bits32]
+   *   _, mem4, l2 = theta q, mem1, u1
+   *     [q1, mem2, _] {
+   *       pred = CTRL(0)
+   *       l1, mem3 = LOAD[bits32], q1, mem2
+   *     }[pred, q1, mem3, l1]
+   *   l3, mem5 = LOAD[bits32] q, mem4
+   *   add1 = ADD l2, l3
+   *   return add1, io0, mem5
+   * }
+   */
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  // Setup the function "func"
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & q = *lambdaNode.GetFunctionArguments()[0];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[1];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[2];
+
+  // mem1 = STORE[bits32] q, 40, mem0
+  auto & constantForty = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 40);
+  auto & storeQ40Node =
+      StoreNonVolatileOperation::CreateNode(q, *constantForty.output(0), { &mem0 }, 4);
+  auto & mem1 = *StoreOperation::MemoryStateOutputs(storeQ40Node).begin();
+
+  // _, mem4, l2 = theta q, mem1, undef
+  auto & thetaNode = *rvsdg::ThetaNode::create(lambdaNode.subregion());
+  auto qLoopVar = thetaNode.AddLoopVar(&q);
+  auto memLoopVar = thetaNode.AddLoopVar(&mem1);
+  auto undefL = UndefValueOperation::Create(*lambdaNode.subregion(), bits32Type);
+  auto lLoopVar = thetaNode.AddLoopVar(undefL);
+
+  auto & loadInLoopNode =
+      LoadNonVolatileOperation::CreateNode(*qLoopVar.pre, { memLoopVar.pre }, bits32Type, 4);
+  auto & l1 = LoadOperation::LoadedValueOutput(loadInLoopNode);
+  auto & mem3 = *LoadOperation::MemoryStateOutputs(loadInLoopNode).begin();
+
+  lLoopVar.post->divert_to(&l1);
+  memLoopVar.post->divert_to(&mem3);
+
+  // l3, mem5 = LOAD[bits32] q, mem4
+  auto & loadAfterLoopNode =
+      LoadNonVolatileOperation::CreateNode(q, { memLoopVar.output }, bits32Type, 4);
+  auto & l3 = LoadOperation::LoadedValueOutput(loadAfterLoopNode);
+  auto & mem5 = *LoadOperation::MemoryStateOutputs(loadAfterLoopNode).begin();
+
+  // add1 = ADD l2, l3
+  auto & addNode = rvsdg::CreateOpNode<IntegerAddOperation>({ lLoopVar.output, &l3 }, 32);
+  auto & add1 = *addNode.output(0);
+
+  // return add1, io0, mem5
+  lambdaNode.finalize({ &add1, &io0, &mem5 });
+
+  std::cout << rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion()) << std::endl;
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  std::cout << rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion()) << std::endl;
+
+  // Assert
+
+  // The value replacing l2 should lead to a loop output variable,
+  // whose post origin is an invariant loop variable
+  const auto & addLhsOrigin = *addNode.input(0)->origin();
+  const auto loopVar1 = thetaNode.MapOutputLoopVar(addLhsOrigin);
+  const auto loopVar2 = thetaNode.MapPreLoopVar(*loopVar1.post->origin());
+  EXPECT_TRUE(rvsdg::ThetaLoopVarIsInvariant(loopVar2));
+  EXPECT_EQ(tryGetConstantSignedInteger(*loopVar2.input->origin()), 40);
+
+  // The value replacing l3 should come from the constant directly, not a theta output.
+  const auto & addRhsOrigin = *addNode.input(1)->origin();
+  EXPECT_EQ(tryGetConstantSignedInteger(addRhsOrigin), 40);
+  EXPECT_EQ(rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(addRhsOrigin), nullptr);
+}
