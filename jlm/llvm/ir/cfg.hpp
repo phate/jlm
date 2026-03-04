@@ -272,9 +272,21 @@ public:
   static std::string
   ToAscii(const ControlFlowGraph & controlFlowGraph);
 
+  /**
+   * Converts the control flow graph to a DOT graph.
+   *
+   * @param writer A graph writer for converting the \p controlFlowGraph to DOT.
+   * @param controlFlowGraph Control flow graph that is converted.
+   * @return A DOT graph
+   */
   static util::graph::Graph &
   toDot(util::graph::Writer & writer, const ControlFlowGraph & controlFlowGraph);
 
+  /**
+   * This function is meant to be used from the debugger. You can just
+   * invoke it and a xdot window should pop up with a DOT visualization of the control flow graph.
+   * This depends on xdot being in the PATH.
+   */
   void
   view() const;
 
