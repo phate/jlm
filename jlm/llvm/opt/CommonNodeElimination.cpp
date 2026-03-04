@@ -733,9 +733,6 @@ markGamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & conte
 {
   markSubregionsFromInputs(gamma, context);
 
-  if (tryGetLeaderNode(gamma, context))
-    return;
-
   // Go through the outputs of the gamma node and create congruence sets for them.
   // By default, each exit variable output gets a distinct congruence set.
   // Only if an exit variable is a copy of an entry variable in each region,
