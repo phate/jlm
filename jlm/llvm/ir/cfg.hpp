@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/variable.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 namespace jlm::llvm
 {
@@ -270,6 +271,12 @@ public:
 
   static std::string
   ToAscii(const ControlFlowGraph & controlFlowGraph);
+
+  static util::graph::Graph &
+  toDot(util::graph::Writer & writer, const ControlFlowGraph & controlFlowGraph);
+
+  void
+  view() const;
 
 private:
   static std::string
