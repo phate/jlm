@@ -158,9 +158,9 @@ tryRerouteMemoryStateMergeAndSplit(
     rvsdg::SimpleNode & callExitSplit)
 {
   const auto callEntryMergeOp =
-      rvsdg::tryGetOperation<CallEntryMemoryStateMergeOperation>(callEntryMerge);
+      dynamic_cast<const CallEntryMemoryStateMergeOperation *>(&callEntryMerge.GetOperation());
   const auto callExitSplitOp =
-      rvsdg::tryGetOperation<CallExitMemoryStateSplitOperation>(callExitSplit);
+      dynamic_cast<const CallExitMemoryStateSplitOperation *>(&callExitSplit.GetOperation());
   JLM_ASSERT(callEntryMergeOp);
   JLM_ASSERT(callExitSplitOp);
 
@@ -243,7 +243,8 @@ hoistInlinedAllocas(
 
   for (auto & node : callee.subregion()->Nodes())
   {
-    if (!is<AllocaOperation>(&node))
+    auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(&node);
+    if (!simple_node || !is<AllocaOperation>(simple_node->GetOperation()))
       continue;
 
     // Find the same alloca in the caller
@@ -280,7 +281,7 @@ FunctionInlining::inlineCall(
     rvsdg::LambdaNode & caller,
     const rvsdg::LambdaNode & callee)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   // Make note of the call's entry and exit memory state nodes, if they exist
   auto callEntryMemoryStateMerge = CallOperation::tryGetMemoryStateEntryMerge(callNode);
@@ -353,37 +354,39 @@ FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
           return false;
       }
     }
-    else if (is<AllocaOperation>(&node))
+    else if (const auto simple = dynamic_cast<rvsdg::SimpleNode *>(&node))
     {
-      // Having allocas that are not on the top level of the function disqualifies from inlining
-      if (!topLevelRegion)
-        return false;
-
-      // Having allocation sizes that are not compile time constants also disqualifies from inlining
-      auto countOutput = AllocaOperation::getCountInput(node).origin();
-      countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput);
-      auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOutput);
-
-      // The count must come from a node, and it must be nullary
-      if (!countNode || countNode->ninputs() != 0)
-        return false;
-    }
-    else if (const auto [simple, callOp] =
-                 rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(node);
-             simple && callOp)
-    {
-      const auto classification = CallOperation::ClassifyCall(*simple);
-      if (classification->isSetjmpCall())
+      if (is<AllocaOperation>(simple->GetOperation()))
       {
-        // Calling setjmp weakens guarantees about local variables in the caller,
-        // but not local variables in the caller's caller. Inlining would mix them up.
-        return false;
+        // Having allocas that are not on the top level of the function disqualifies from inlining
+        if (!topLevelRegion)
+          return false;
+
+        // Having allocation sizes that are not compile time constants also disqualifies from
+        // inlining
+        auto countOutput = AllocaOperation::getCountInput(node).origin();
+        countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput);
+        auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOutput);
+
+        // The count must come from a node, and it must be nullary
+        if (!countNode || countNode->ninputs() != 0)
+          return false;
       }
-      if (classification->isVaStartCall())
+      else if (dynamic_cast<const CallOperation *>(&simple->GetOperation()))
       {
-        // Calling va_start requires parameters to be passed in as expected by the ABI.
-        // This gets broken if we start inlining.
-        return false;
+        const auto classification = CallOperation::ClassifyCall(*simple);
+        if (classification->isSetjmpCall())
+        {
+          // Calling setjmp weakens guarantees about local variables in the caller,
+          // but not local variables in the caller's caller. Inlining would mix them up.
+          return false;
+        }
+        if (classification->isVaStartCall())
+        {
+          // Calling va_start requires parameters to be passed in as expected by the ABI.
+          // This gets broken if we start inlining.
+          return false;
+        }
       }
     }
   }
@@ -455,7 +458,7 @@ FunctionInlining::visitIntraProceduralRegion(rvsdg::Region & region, rvsdg::Lamb
         },
         [&](rvsdg::SimpleNode & simple)
         {
-          if (is<CallOperation>(&simple))
+          if (is<CallOperation>(simple.GetOperation()))
           {
             considerCallForInlining(simple, lambda);
           }

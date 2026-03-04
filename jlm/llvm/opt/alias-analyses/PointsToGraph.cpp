@@ -168,7 +168,7 @@ PointsToGraph::addNodeForMalloc(const rvsdg::SimpleNode & mallocNode, bool exter
   if (!added)
     throw std::logic_error("Malloc node already exists in the graph.");
 
-  const auto tryGetMemorySize = [](const rvsdg::Node & mallocNode) -> std::optional<size_t>
+  const auto tryGetMemorySize = [](const rvsdg::SimpleNode & mallocNode) -> std::optional<size_t>
   {
     // If the size parameter of the malloc node is a constant, that is our size
     auto size = tryGetConstantSignedInteger(*MallocOperation::sizeInput(mallocNode).origin());
