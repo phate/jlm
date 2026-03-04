@@ -8,9 +8,11 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/util/Program.hpp>
 
 #include <algorithm>
 #include <deque>
+#include <fstream>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -56,6 +58,93 @@ ControlFlowGraph::remove_node(BasicBlock * bb)
 
   auto it = cfg.find_node(bb);
   return remove_node(it);
+}
+
+util::graph::Graph &
+ControlFlowGraph::toDot(util::graph::Writer & writer, const ControlFlowGraph & controlFlowGraph)
+{
+  util::graph::Graph & dotGraph = writer.CreateGraph();
+  dotGraph.SetProgramObject(controlFlowGraph);
+
+  // Handle entry node
+  const auto entryNode = controlFlowGraph.entry();
+  auto & dotEntryNode = dotGraph.CreateInOutNode(0, entryNode->NumOutEdges());
+  dotEntryNode.SetProgramObject(*entryNode);
+
+  std::string label = "Entry\n";
+  for (const auto argument : entryNode->arguments())
+  {
+    label += argument->name() + " <" + argument->type().debug_string() + ">\n";
+  }
+  dotEntryNode.SetLabel(label);
+
+  // Handle exit node
+  const auto exitNode = controlFlowGraph.exit();
+  auto & dotExitNode = dotGraph.CreateInOutNode(exitNode->NumInEdges(), 0);
+  dotExitNode.SetProgramObject(*exitNode);
+
+  label = "Exit\n";
+  for (const auto result : exitNode->results())
+  {
+    label += result->name() + " <" + result->type().debug_string() + ">\n";
+  }
+  dotExitNode.SetLabel(label);
+
+  // Handle basic blocks
+  for (auto & basicBlock : controlFlowGraph)
+  {
+    auto & dotBasicBlock =
+        dotGraph.CreateInOutNode(basicBlock.NumInEdges(), basicBlock.NumOutEdges());
+    dotBasicBlock.SetProgramObject(basicBlock);
+
+    label = util::strfmt("BasicBlock ", &basicBlock, "\n");
+    for (const auto & tac : basicBlock.tacs())
+      label += ThreeAddressCode::ToAscii(*tac) + "\n";
+    dotBasicBlock.SetLabel(label);
+  }
+
+  // Handle edges
+  auto createEdge = [&dotGraph](const ControlFlowGraphEdge & edge, const size_t index)
+  {
+    auto & dotSourceNode = dotGraph.GetFromProgramObject<util::graph::InOutNode>(*edge.source());
+    auto & dotSinkNode = dotGraph.GetFromProgramObject<util::graph::InOutNode>(*edge.sink());
+    auto & sourcePort = dotSourceNode.GetOutputPort(edge.index());
+    sourcePort.SetLabel(util::strfmt(edge.index()));
+    auto & sinkPort = dotSinkNode.GetInputPort(index);
+    dotGraph.CreateDirectedEdge(sourcePort, sinkPort);
+  };
+
+  auto createEdges = [&createEdge](const ControlFlowGraphNode & node)
+  {
+    size_t index = 0;
+    for (auto & edge : node.InEdges())
+    {
+      createEdge(edge, index++);
+    }
+  };
+
+  for (auto & basicBlock : controlFlowGraph)
+  {
+    createEdges(basicBlock);
+  }
+  createEdges(*exitNode);
+
+  return dotGraph;
+}
+
+void
+ControlFlowGraph::view() const
+{
+  util::graph::Writer graphWriter;
+  toDot(graphWriter, *this);
+
+  const util::FilePath outputFilePath =
+      util::FilePath::createUniqueFileName(util::FilePath::TempDirectoryPath(), "cfg-", ".dot");
+
+  std::ofstream outputFile(outputFilePath.to_str());
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+
+  util::executeProgramAndWait(util::getDotViewer(), { outputFilePath.to_str() });
 }
 
 std::string
