@@ -5,10 +5,11 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP
 
-#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
-#include <deque>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+
+#include <deque>
 
 namespace jlm::hls
 {
