@@ -18,6 +18,9 @@ class Region;
 namespace jlm::llvm
 {
 
+struct StoreValueOrigin;
+class LoadTracingInfo;
+
 /** \brief Store Value Forwarding Optimization
  *
  * Store Value Forwarding is an optimization that forwards store values
@@ -72,37 +75,43 @@ private:
   processLoadNode(rvsdg::SimpleNode & loadNode);
 
   /**
-   * Traces from the the given state output until a store node is reached.
-   * Load operations are traced through, but calls and non-invariant structural nodes are not.
-   * @return the memory state output of the store, or nullptr if no store node was reached.
-   */
-  rvsdg::Output *
-  traceStateEdgeToStoreNode(rvsdg::Output & state);
-
-  /**
-   * Performs a simple alias analysis query between a load and store node,
-   * to determine if they read and write from the same exact address,
-   * possibly interfere, or if the operations are guaranteed to be fully independent.
-   * @param loadedAddress the address that is being loaded
-   * @param loadedTypeSize the number of bytes that are loaded from the address
-   * @param storeNode the StoreOperation node
-   */
-  aa::AliasAnalysis::AliasQueryResponse
-  queryAliasAnalysis(
-      rvsdg::Output & loadedAddress,
-      size_t loadedTypeSize,
-      rvsdg::SimpleNode & storeNode);
-
-  /**
-   * Diverts all users of the \p loadNode to instead take the value stored by the \p storeNode.
-   * The store may be in a parent region of the load, in which case the value is routed in.
-   *
-   * @pre the store and load nodes have matching value types, and the store preceeds the load
-   * @param storeNode the StoreOperation node
-   * @param loadNode the LoadOperation node to be replaced
+   * Performs store value forwarding to the load node represented by the given \p tracingInfo.
+   * Uses the metadata stored during tracing to replace the value output of the load node
+   * with the last value that was stored to the memory loaded by it.
+   * @param tracingInfo the metadata created during store value origin tracing.
    */
   void
-  forwardStoredValue(rvsdg::SimpleNode & storeNode, rvsdg::SimpleNode & loadNode);
+  forwardStoredValues(LoadTracingInfo & tracingInfo);
+
+  /**
+   * Gets an output providing the value stored at the given \p storeValueOrigin.
+   * Getting this output may involve routing and creating new structural node inputs and outputs.
+   * @param storeValueOrigin the origin of the last stored value along some memory state.
+   * @param tracingInfo the metadata created during store value origin tracing.
+   * @return the rvsdg output providing the stored value
+   */
+  rvsdg::Output &
+  getStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
+
+  /**
+   * In \ref getStoredValueOrigin(), all loop variables are created as invariant,
+   * to avoid recursive function calls looping around the graph.
+   * Instead, the post results of all created loop variables are added to a queue,
+   * and properly diverted to their correct origins by this function.
+   */
+  void
+  connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo);
+
+  /**
+   * Helper for routing outputs that memoizes the routing to avoid creating
+   * duplicate inputs and outputs in structural nodes.
+   * The \p output must be in the \p region, or in an ancestor of the region.
+   * @param output the output to route
+   * @param region the destination of the routing
+   * @return an output inside \p region that provides the same value as \p output
+   */
+  rvsdg::Output &
+  routeOutputToRegion(rvsdg::Output & output, rvsdg::Region & region);
 
   std::unique_ptr<Context> context_;
 };
