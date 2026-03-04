@@ -5,8 +5,8 @@
 #ifndef JLM_UTIL_WORKLIST_HPP
 #define JLM_UTIL_WORKLIST_HPP
 
-#include "common.hpp"
-#include "HashSet.hpp"
+#include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 
 #include <algorithm>
 #include <limits>
