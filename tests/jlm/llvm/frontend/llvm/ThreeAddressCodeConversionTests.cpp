@@ -101,7 +101,8 @@ TEST(ThreeAddressCodeConversionTests, LoadVolatileConversion)
   auto lambda = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutput);
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  EXPECT_TRUE(is<LoadVolatileOperation>(loadVolatileNode));
+  EXPECT_TRUE(is<LoadVolatileOperation>(
+      static_cast<const jlm::rvsdg::SimpleNode &>(*loadVolatileNode).GetOperation()));
 }
 
 TEST(ThreeAddressCodeConversionTests, StoreVolatileConversion)
@@ -123,5 +124,6 @@ TEST(ThreeAddressCodeConversionTests, StoreVolatileConversion)
   auto lambda = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutput);
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  EXPECT_TRUE(is<StoreVolatileOperation>(storeVolatileNode));
+  EXPECT_TRUE(is<StoreVolatileOperation>(
+      static_cast<const jlm::rvsdg::SimpleNode &>(*storeVolatileNode).GetOperation()));
 }

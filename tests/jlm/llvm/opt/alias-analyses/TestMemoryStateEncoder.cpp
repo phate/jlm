@@ -48,9 +48,10 @@ encodeStates(jlm::rvsdg::RvsdgModule & rvsdgModule)
 
 template<class OP>
 static bool
-is(const jlm::rvsdg::Node & node, size_t numInputs, size_t numOutputs)
+is(const jlm::rvsdg::SimpleNode & node, size_t numInputs, size_t numOutputs)
 {
-  return jlm::rvsdg::is<OP>(&node) && node.ninputs() == numInputs && node.noutputs() == numOutputs;
+  return jlm::rvsdg::is<OP>(node.GetOperation()) && node.ninputs() == numInputs
+      && node.noutputs() == numOutputs;
 }
 
 TEST(MemoryStateEncoderTests, storeTest1AndersenAgnostic)
@@ -62,7 +63,7 @@ TEST(MemoryStateEncoderTests, storeTest1AndersenAgnostic)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 14u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
 
@@ -82,20 +83,23 @@ TEST(MemoryStateEncoderTests, storeTest1AndersenAgnostic)
 
   // the d alloca is not used by any operation, and goes straight to the call exit
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(dJoinNode->output(0)->SingleUser()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(dJoinNode->output(0)->SingleUser()),
       lambdaExitMerge);
 
-  auto storeD = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(cJoinNode->output(0)->SingleUser());
+  auto storeD =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(cJoinNode->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD, 3, 1));
   EXPECT_EQ(storeD->input(0)->origin(), test.alloca_c->output(0));
   EXPECT_EQ(storeD->input(1)->origin(), test.alloca_d->output(0));
 
-  auto storeC = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser());
+  auto storeC =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(bJoinNode->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeC, 3, 1));
   EXPECT_EQ(storeC->input(0)->origin(), test.alloca_b->output(0));
   EXPECT_EQ(storeC->input(1)->origin(), test.alloca_c->output(0));
 
-  auto storeB = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser());
+  auto storeB =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(aJoinNode->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   EXPECT_EQ(storeB->input(0)->origin(), test.alloca_a->output(0));
   EXPECT_EQ(storeB->input(1)->origin(), test.alloca_b->output(0));
@@ -110,7 +114,7 @@ TEST(MemoryStateEncoderTests, storeTest1AndersenRegionAware)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
@@ -124,7 +128,7 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenAgnostic)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 17u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
 
@@ -146,14 +150,14 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenAgnostic)
   EXPECT_TRUE(pJoinOp && pJoinNode->output(0)->nusers() == 1);
 
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(aJoinNode->output(0)->SingleUser()),
       lambdaExitMerge);
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(bJoinNode->output(0)->SingleUser()),
       lambdaExitMerge);
 
   auto storeA =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeA, 3, 1));
   EXPECT_EQ(storeA->input(0)->origin(), test.alloca_x->output(0));
   EXPECT_EQ(storeA->input(1)->origin(), test.alloca_a->output(0));
@@ -161,21 +165,23 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenAgnostic)
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_b->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   EXPECT_EQ(storeB->input(0)->origin(), test.alloca_y->output(0));
   EXPECT_EQ(storeB->input(1)->origin(), test.alloca_b->output(0));
   EXPECT_TRUE(
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
-  auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
+  auto storeX =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(pJoinNode->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   EXPECT_EQ(storeX->input(0)->origin(), test.alloca_p->output(0));
   EXPECT_EQ(storeX->input(1)->origin(), test.alloca_x->output(0));
   EXPECT_TRUE(
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
-  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
+  auto storeY =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(storeX->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   EXPECT_EQ(storeY->input(0)->origin(), test.alloca_p->output(0));
   EXPECT_EQ(storeY->input(1)->origin(), test.alloca_y->output(0));
@@ -191,7 +197,7 @@ TEST(MemoryStateEncoderTests, storeTest2AndersenRegionAware)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
@@ -205,25 +211,25 @@ TEST(MemoryStateEncoderTests, loadTest1AndersenAgnostic)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-  auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(0)->origin());
+  auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadA->input(0)->origin());
 
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadA, 3, 3));
-  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()), loadX);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadA->input(1)->origin()), loadX);
 
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 3, 3));
   EXPECT_EQ(loadX->input(0)->origin(), test.lambda->GetFunctionArguments()[0]);
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
       lambdaEntrySplit);
 }
 
@@ -236,25 +242,25 @@ TEST(MemoryStateEncoderTests, loadTest1AndersenRegionAware)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
-  auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
-  auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(0)->origin());
+  auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadA->input(0)->origin());
 
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadA, 2, 2));
-  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadA->input(1)->origin()), loadX);
+  EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadA->input(1)->origin()), loadX);
 
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
   EXPECT_EQ(loadX->input(0)->origin(), test.lambda->GetFunctionArguments()[0]);
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
       lambdaEntrySplit);
 }
 
@@ -266,7 +272,7 @@ TEST(MemoryStateEncoderTests, loadTest2AndersenAgnostic)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 19u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
 
@@ -288,43 +294,44 @@ TEST(MemoryStateEncoderTests, loadTest2AndersenAgnostic)
   EXPECT_TRUE(pJoinOp && pJoinNode->output(0)->nusers() == 1);
 
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(aJoinNode->output(0)->SingleUser()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(aJoinNode->output(0)->SingleUser()),
       lambdaExitMerge);
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(bJoinNode->output(0)->SingleUser()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(bJoinNode->output(0)->SingleUser()),
       lambdaExitMerge);
 
   auto storeA =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_a->output(0)->SingleUser());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeA, 3, 1));
   EXPECT_EQ(storeA->input(0)->origin(), test.alloca_x->output(0));
   EXPECT_TRUE(
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeA->input(2)->origin()));
 
   auto storeB =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.alloca_b->output(0)->SingleUser());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_b->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   EXPECT_EQ(storeB->input(0)->origin(), test.alloca_y->output(0));
   EXPECT_TRUE(
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeB->input(2)->origin()));
 
-  auto storeX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(pJoinNode->output(0)->SingleUser());
+  auto storeX =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(pJoinNode->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   EXPECT_EQ(storeX->input(0)->origin(), test.alloca_p->output(0));
   EXPECT_EQ(storeX->input(1)->origin(), test.alloca_x->output(0));
   EXPECT_TRUE(
       jlm::rvsdg::IsOwnerNodeOperation<MemoryStateJoinOperation>(*storeX->input(2)->origin()));
 
-  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeX->output(0)->SingleUser());
+  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(storeX->output(0)->SingleUser());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load1, 2, 2));
   EXPECT_EQ(load1->input(0)->origin(), test.alloca_p->output(0));
   EXPECT_EQ(load1->input(1)->origin(), storeX->output(0));
 
-  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load1->output(0)->SingleUser());
+  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(load1->output(0)->SingleUser());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load2, 2, 2));
   EXPECT_EQ(load2->input(1)->origin(), storeA->output(0));
 
-  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(load2->output(0)->SingleUser());
+  auto storeY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(load2->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   EXPECT_EQ(storeY->input(0)->origin(), test.alloca_y->output(0));
   EXPECT_EQ(storeY->input(2)->origin(), storeB->output(0));
@@ -339,7 +346,7 @@ TEST(MemoryStateEncoderTests, loadTest2AndersenRegionAware)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 1u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 }
@@ -352,15 +359,15 @@ TEST(MemoryStateEncoderTests, loadFromUndefAndersenAgnostic)
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
   EXPECT_EQ(test.Lambda().subregion()->numNodes(), 4u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.Lambda().GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.Lambda().GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 1, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.Lambda().GetFunctionArguments()[0]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
@@ -374,11 +381,11 @@ TEST(MemoryStateEncoderTests, loadFromUndefAndersenRegionAware)
 
   EXPECT_EQ(test.Lambda().subregion()->numNodes(), 3u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.Lambda().GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
-  auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.Lambda().GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 1, 1));
 }
@@ -392,13 +399,13 @@ TEST(MemoryStateEncoderTests, callTest1AndersenAgnostic)
 
   /* validate f */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f->GetFunctionArguments()[3]->Users().begin());
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f->GetFunctionResults()[2]->origin());
-    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f->GetFunctionArguments()[0]->Users().begin());
-    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f->GetFunctionArguments()[1]->Users().begin());
 
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
@@ -406,24 +413,24 @@ TEST(MemoryStateEncoderTests, callTest1AndersenAgnostic)
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
         lambdaEntrySplit);
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadY->input(1)->origin()),
         lambdaEntrySplit);
   }
 
   /* validate g */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_g->GetFunctionArguments()[3]->Users().begin());
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_g->GetFunctionResults()[2]->origin());
-    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_g->GetFunctionArguments()[0]->Users().begin());
-    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_g->GetFunctionArguments()[1]->Users().begin());
 
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
@@ -431,27 +438,29 @@ TEST(MemoryStateEncoderTests, callTest1AndersenAgnostic)
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
         lambdaEntrySplit);
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    EXPECT_TRUE(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()) == loadX);
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadY->input(1)->origin()),
+        loadX);
   }
 
   /* validate h */
   {
     auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallF().input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*test.CallF().input(4)->origin());
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallF().output(2)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.CallF().output(2)->SingleUser());
 
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
 
     callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*test.CallG().input(4)->origin());
     callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.CallG().output(2)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.CallG().output(2)->SingleUser());
 
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
@@ -467,13 +476,13 @@ TEST(MemoryStateEncoderTests, callTest1AndersenRegionAware)
 
   /* validate f */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f->GetFunctionArguments()[3]->SingleUser());
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f->GetFunctionResults()[2]->origin());
-    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f->GetFunctionArguments()[0]->SingleUser());
-    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f->GetFunctionArguments()[1]->SingleUser());
 
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
@@ -481,24 +490,24 @@ TEST(MemoryStateEncoderTests, callTest1AndersenRegionAware)
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
         lambdaEntrySplit);
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadY->input(1)->origin()),
         lambdaEntrySplit);
   }
 
   /* validate g */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_g->GetFunctionArguments()[3]->SingleUser());
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_g->GetFunctionResults()[2]->origin());
-    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_g->GetFunctionArguments()[0]->SingleUser());
-    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_g->GetFunctionArguments()[1]->SingleUser());
 
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
@@ -506,25 +515,27 @@ TEST(MemoryStateEncoderTests, callTest1AndersenRegionAware)
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadX, 2, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadX->input(1)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadX->input(1)->origin()),
         lambdaEntrySplit);
 
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadY, 2, 2));
-    EXPECT_EQ(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadY->input(1)->origin()), loadX);
+    EXPECT_EQ(
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadY->input(1)->origin()),
+        loadX);
   }
 
   /* validate h */
   {
     auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallF().input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*test.CallF().input(4)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
     // There is no call exit split, as it has been removed by dead node elimination
     EXPECT_EQ(test.CallF().output(2)->nusers(), 0u);
 
     callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.CallG().input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*test.CallG().input(4)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
-    EXPECT_EQ(test.CallG().output(2)->nusers(), 0u);
+    EXPECT_EQ(test.CallG().output(2)->nusers(), 0);
   }
 }
 
@@ -538,16 +549,16 @@ TEST(MemoryStateEncoderTests, callTest2AndersenAgnostic)
   {
     EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
     EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*stateJoin->input(1)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateJoin->input(1)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
     auto lambdaExitMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(stateJoin->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(stateJoin->output(0)->SingleUser());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto mallocStateLambdaEntryIndex = stateJoin->input(1)->origin()->index();
@@ -577,16 +588,16 @@ TEST(MemoryStateEncoderTests, callTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_create->subregion()->numNodes(), 7u);
 
-    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto stateJoin = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         MallocOperation::memoryStateOutput(*test.malloc).SingleUser());
     EXPECT_TRUE(is<MemoryStateJoinOperation>(*stateJoin, 2, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*stateJoin->input(1)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateJoin->input(1)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
     auto lambdaExitMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(stateJoin->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(stateJoin->output(0)->SingleUser());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto mallocStateLambdaEntryIndex = stateJoin->input(1)->origin()->index();
@@ -616,22 +627,24 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenAgnostic)
   {
     EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 6u);
 
-    auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambda_exit_mux->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambda_exit_mux->input(0)->origin());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
-    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
+    auto call =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_exit_mux->input(0)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
-    auto call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
+    auto call_entry_mux =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     auto lambda_entry_mux =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_entry_mux->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
   }
 
@@ -639,32 +652,34 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenAgnostic)
   {
     EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 9u);
 
-    auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambda_exit_mux->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambda_exit_mux->input(0)->origin());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
-    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
+    auto call =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_exit_mux->input(0)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
-    auto call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
+    auto call_entry_mux =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     call_exit_mux =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_entry_mux->input(0)->origin());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
-    call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_exit_mux->input(0)->origin());
+    call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_exit_mux->input(0)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
-    call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
+    call_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     auto lambda_entry_mux =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call_entry_mux->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call_entry_mux->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 5));
   }
 }
@@ -680,15 +695,16 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaIndcall().subregion()->numNodes(), 4u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
-    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaIndcall().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
-    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
+    auto callEntryMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
@@ -696,24 +712,25 @@ TEST(MemoryStateEncoderTests, indirectCallTest1AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 6u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
-    auto add = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto add = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaTest().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<jlm::rvsdg::BinaryOperation>(*add, 2, 1));
 
-    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*add->input(0)->origin());
+    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*add->input(0)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
-    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
+    auto callEntryMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
 
-    call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*add->input(1)->origin());
+    call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*add->input(1)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 4, 3));
 
-    callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(3)->origin());
+    callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 }
@@ -729,11 +746,11 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
   {
     EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 3u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.GetLambdaThree().GetFunctionArguments()[1]->SingleUser());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
@@ -742,11 +759,11 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
   {
     EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 3u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.GetLambdaFour().GetFunctionArguments()[1]->SingleUser());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
@@ -755,20 +772,20 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenAgnostic)
   {
     EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 6u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
-    auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetIndirectCall().input(2)->origin());
+    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        *test.GetIndirectCall().input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callEntryMerge->input(0)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
 }
@@ -784,7 +801,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaThree().subregion()->numNodes(), 2u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
   }
@@ -793,7 +810,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaFour().subregion()->numNodes(), 2u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
   }
@@ -802,12 +819,12 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaI().subregion()->numNodes(), 4u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
-    auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetIndirectCall().input(2)->origin());
+    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        *test.GetIndirectCall().input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
@@ -815,12 +832,12 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaX().subregion()->numNodes(), 7u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaX().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-    auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetCallIWithThree().input(3)->origin());
+    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        *test.GetCallIWithThree().input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
@@ -828,12 +845,12 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaY().subregion()->numNodes(), 7u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaY().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-    auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetCallIWithFour().input(3)->origin());
+    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        *test.GetCallIWithFour().input(3)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 0, 1));
   }
 
@@ -841,19 +858,19 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 14u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-    auto loadG1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadG1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.GetLambdaTest().GetContextVars()[2].inner->SingleUser());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1, 2, 2));
 
-    auto loadG2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto loadG2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.GetLambdaTest().GetContextVars()[3].inner->SingleUser());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2, 2, 2));
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.GetLambdaTest().GetFunctionArguments()[1]->SingleUser());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
   }
@@ -862,7 +879,7 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
@@ -878,19 +895,20 @@ TEST(MemoryStateEncoderTests, gammaTestAndersenAgnostic)
   GammaTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto loadTmp2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp2, 3, 3));
 
-  auto loadTmp1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp2->input(1)->origin());
+  auto loadTmp1 =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadTmp2->input(1)->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp1, 3, 3));
 
-  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp1->input(1)->origin());
-  EXPECT_EQ(gamma, test.gamma);
+  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*loadTmp1->input(1)->origin());
+  EXPECT_TRUE(gamma == test.gamma);
 }
 
 TEST(MemoryStateEncoderTests, gammaTestAndersenRegionAware)
@@ -900,19 +918,20 @@ TEST(MemoryStateEncoderTests, gammaTestAndersenRegionAware)
   GammaTest test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
   auto loadTmp2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp2, 2, 2));
 
-  auto loadTmp1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp2->input(1)->origin());
+  auto loadTmp1 =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadTmp2->input(1)->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadTmp1, 2, 2));
 
   auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadTmp1->input(1)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadTmp1->input(1)->origin());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
@@ -925,7 +944,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
-  auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
@@ -935,11 +954,12 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
 
   auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
   auto storeStateOutput = loopvar.post->origin();
-  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeStateOutput);
+  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeStateOutput);
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 4, 2));
   EXPECT_EQ(store->input(storeStateOutput->index() + 2)->origin(), loopvar.pre);
 
-  auto lambda_entry_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loopvar.input->origin());
+  auto lambda_entry_mux =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loopvar.input->origin());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
 }
 
@@ -952,7 +972,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda->GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
@@ -962,11 +982,12 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
   auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
 
   auto storeStateOutput = loopvar.post->origin();
-  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeStateOutput);
+  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeStateOutput);
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
   EXPECT_EQ(store->input(storeStateOutput->index() + 2)->origin(), loopvar.pre);
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loopvar.input->origin());
+  auto lambdaEntrySplit =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loopvar.input->origin());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 }
 
@@ -979,20 +1000,20 @@ TEST(MemoryStateEncoderTests, deltaTest1AndersenAgnostic)
 
   EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 4));
 
-  auto storeF =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.constantFive->output(0)->SingleUser());
+  auto storeF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+      test.constantFive->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeF->input(2)->origin()),
       lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
-  auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_g->GetFunctionArguments()[0]->SingleUser());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadF, 2, 2));
   EXPECT_EQ(loadF->input(1)->origin()->index(), deltaStateIndex);
@@ -1007,20 +1028,20 @@ TEST(MemoryStateEncoderTests, deltaTest1AndersenRegionAware)
 
   EXPECT_EQ(test.lambda_h->subregion()->numNodes(), 7u);
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
-  auto storeF =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.constantFive->output(0)->SingleUser());
+  auto storeF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+      test.constantFive->output(0)->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeF->input(2)->origin()),
       lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
-  auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto loadF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_g->GetFunctionArguments()[0]->SingleUser());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadF, 2, 2));
   EXPECT_EQ(loadF->input(1)->origin()->index(), deltaStateIndex);
@@ -1035,26 +1056,26 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenAgnostic)
 
   EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetContextVars()[0].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD1InF2->input(2)->origin()),
       lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
-  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f1->GetContextVars()[0].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   EXPECT_EQ(d1StateIndex, storeD1InF1->input(2)->origin()->index());
 
-  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetContextVars()[1].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
@@ -1072,16 +1093,16 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto storeNode =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeNode->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeNode->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -1089,38 +1110,38 @@ TEST(MemoryStateEncoderTests, deltaTest2AndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetContextVars()[0].inner->SingleUser());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD1->input(2)->origin()),
         lambdaEntrySplit);
 
-    auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetContextVars()[1].inner->SingleUser());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD2->input(2)->origin()),
         lambdaEntrySplit);
 
     auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeD1->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(storeD1->output(0)->SingleUser());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
-    auto callF1 =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callEntryMerge->output(0)->SingleUser());
+    auto callF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        callEntryMerge->output(0)->SingleUser());
     EXPECT_TRUE(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callF1->output(1)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callF1->output(1)->SingleUser());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callExitSplit->output(0)->SingleUser());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
@@ -1136,27 +1157,28 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenAgnostic)
   {
     EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
-    auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<TruncOperation>(*truncNode, 1, 1));
 
-    auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
+    auto loadG1Node =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*truncNode->input(0)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadG1Node->input(1)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
     {
       auto input = lambdaExitMerge->input(n);
-      auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*input->origin());
-      if (is<StoreNonVolatileOperation>(node))
+      auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*input->origin());
+      if (node && is<StoreNonVolatileOperation>(node->GetOperation()))
       {
         storeG2Node = node;
         break;
@@ -1165,10 +1187,11 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenAgnostic)
     EXPECT_NE(storeG2Node, nullptr);
 
     auto loadG2Node =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeG2Node->input(2)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
-    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
+    auto node =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadG2Node->input(1)->origin());
     EXPECT_EQ(node, lambdaEntrySplit);
   }
 }
@@ -1184,27 +1207,28 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
   {
     EXPECT_EQ(test.LambdaF().subregion()->numNodes(), 6u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-    auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<TruncOperation>(*truncNode, 1, 1));
 
-    auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
+    auto loadG1Node =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*truncNode->input(0)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadG1Node->input(1)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
     {
       auto input = lambdaExitMerge->input(n);
-      auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*input->origin());
-      if (is<StoreNonVolatileOperation>(node))
+      auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*input->origin());
+      if (node && is<StoreNonVolatileOperation>(node->GetOperation()))
       {
         storeG2Node = node;
         break;
@@ -1213,10 +1237,11 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
     EXPECT_NE(storeG2Node, nullptr);
 
     auto loadG2Node =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeG2Node->input(2)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
-    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
+    auto node =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadG2Node->input(1)->origin());
     EXPECT_EQ(node, lambdaEntrySplit);
   }
 }
@@ -1230,26 +1255,26 @@ TEST(MemoryStateEncoderTests, importTestAndersenAgnostic)
 
   EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetContextVars()[0].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   EXPECT_EQ(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin()),
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD1InF2->input(2)->origin()),
       lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
-  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f1->GetContextVars()[0].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   EXPECT_EQ(d1StateIndex, storeD1InF1->input(2)->origin()->index());
 
-  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       test.lambda_f2->GetContextVars()[1].inner->SingleUser());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
@@ -1267,16 +1292,16 @@ TEST(MemoryStateEncoderTests, importTestAndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_f1->subregion()->numNodes(), 4u);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto storeNode =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeNode->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeNode->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -1284,38 +1309,38 @@ TEST(MemoryStateEncoderTests, importTestAndersenRegionAware)
   {
     EXPECT_EQ(test.lambda_f2->subregion()->numNodes(), 9u);
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetContextVars()[0].inner->SingleUser());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD1->input(2)->origin()),
         lambdaEntrySplit);
 
-    auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto storeD2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.lambda_f2->GetContextVars()[1].inner->SingleUser());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeD2->input(2)->origin()),
         lambdaEntrySplit);
 
     auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(storeD1->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(storeD1->output(0)->SingleUser());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
-    auto callF1 =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callEntryMerge->output(0)->SingleUser());
+    auto callF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+        callEntryMerge->output(0)->SingleUser());
     EXPECT_TRUE(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callF1->output(1)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callF1->output(1)->SingleUser());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callExitSplit->output(0)->SingleUser());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
@@ -1332,24 +1357,24 @@ TEST(MemoryStateEncoderTests, phiTest1AndersenAgnostic)
   EXPECT_TRUE(joinNode && joinOp);
   auto arrayStateIndex = joinNode->output(0)->SingleUser().index();
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 4, 1));
 
-  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *lambdaExitMerge->input(arrayStateIndex)->origin());
   EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
-  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
+  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*store->input(2)->origin());
   EXPECT_EQ(gamma, test.gamma);
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
-  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto load1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load1, 2, 2));
 
-  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load1->input(1)->origin());
+  auto load2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*load1->input(1)->origin());
   EXPECT_TRUE(is<LoadNonVolatileOperation>(*load2, 2, 2));
 
   EXPECT_EQ(load2->input(1)->origin()->index(), arrayStateIndex);
@@ -1362,11 +1387,11 @@ TEST(MemoryStateEncoderTests, phiTest1AndersenRegionAware)
   PhiTest1 test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.lambda_fib->GetFunctionResults()[1]->origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto gamma = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(
       *test.lambda_fib->GetFunctionResults()[0]->origin());
   EXPECT_EQ(gamma, test.gamma);
 
@@ -1387,19 +1412,19 @@ TEST(MemoryStateEncoderTests, memCpyTestAndersenAgnostic)
    * Validate function f
    */
   {
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
-    auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 2, 2));
 
-    auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
+    auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*load->input(1)->origin());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*store->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
   }
 
@@ -1407,33 +1432,35 @@ TEST(MemoryStateEncoderTests, memCpyTestAndersenAgnostic)
    * Validate function g
    */
   {
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaG().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 5));
 
-    auto call = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callExitSplit->input(0)->origin());
+    auto call =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callExitSplit->input(0)->origin());
     EXPECT_TRUE(is<CallOperation>(*call, 3, 3));
 
-    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*call->input(2)->origin());
+    auto callEntryMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*call->input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 5, 1));
 
-    jlm::rvsdg::Node * memcpy = nullptr;
+    jlm::rvsdg::SimpleNode * memcpy = nullptr;
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node =
-          jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(n)->origin());
-      if (is<MemCpyNonVolatileOperation>(node))
+          jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callEntryMerge->input(n)->origin());
+      if (node && is<MemCpyNonVolatileOperation>(node->GetOperation()))
         memcpy = node;
     }
     EXPECT_NE(memcpy, nullptr);
     EXPECT_TRUE(is<MemCpyNonVolatileOperation>(*memcpy, 5, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpy->input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*memcpy->input(4)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
   }
 }
@@ -1449,19 +1476,19 @@ TEST(MemoryStateEncoderTests, memCpyAndersenRegionAware)
    * Validate function f
    */
   {
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
-    auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto load = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*load, 2, 2));
 
-    auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*load->input(1)->origin());
+    auto store = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*load->input(1)->origin());
     EXPECT_TRUE(is<StoreNonVolatileOperation>(*store, 3, 1));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*store->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*store->input(2)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -1469,31 +1496,31 @@ TEST(MemoryStateEncoderTests, memCpyAndersenRegionAware)
    * Validate function g
    */
   {
-    auto callNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+    auto callNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
         test.LambdaG().GetContextVars()[2].inner->SingleUser());
     EXPECT_TRUE(is<CallOperation>(*callNode, 3, 3));
 
     auto callEntryMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callNode->input(2)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callNode->input(2)->origin());
     EXPECT_TRUE(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     auto callExitSplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callNode->output(2)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callNode->output(2)->SingleUser());
     EXPECT_TRUE(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto memcpyNode =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callEntryMerge->input(0)->origin());
     EXPECT_TRUE(is<MemCpyNonVolatileOperation>(*memcpyNode, 5, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(3)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*memcpyNode->input(3)->origin());
     EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
     EXPECT_EQ(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(4)->origin()),
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*memcpyNode->input(4)->origin()),
         lambdaEntrySplit);
 
     auto lambdaExitMerge =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(callExitSplit->output(0)->SingleUser());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(callExitSplit->output(0)->SingleUser());
     EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
@@ -1506,16 +1533,16 @@ TEST(MemoryStateEncoderTests, freeNullTestAndersenAgnostic)
   FreeNullTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *GetMemoryStateRegionResult(test.LambdaMain()).origin());
   EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto free = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto free = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
       *test.LambdaMain().GetFunctionResults()[0]->origin());
   EXPECT_TRUE(is<FreeOperation>(*free, 2, 1));
 
   auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaExitMerge->input(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaExitMerge->input(0)->origin());
   EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
