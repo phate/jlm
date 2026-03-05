@@ -15,21 +15,8 @@
 namespace jlm::llvm
 {
 
-class ControlFlowGraph;
 class InterProceduralGraph;
 class InterProceduralGraphModule;
-
-/* control flow graph */
-
-std::string
-to_dot(const ControlFlowGraph & cfg);
-
-static inline void
-print_dot(const ControlFlowGraph & cfg, FILE * out)
-{
-  fputs(to_dot(cfg).c_str(), out);
-  fflush(out);
-}
 
 /* inter-procedural graph */
 
