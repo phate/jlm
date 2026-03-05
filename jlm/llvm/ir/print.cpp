@@ -4,7 +4,6 @@
  */
 
 #include <jlm/llvm/ir/aggregation.hpp>
-#include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
