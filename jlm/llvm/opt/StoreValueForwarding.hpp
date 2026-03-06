@@ -85,13 +85,16 @@ private:
 
   /**
    * Gets an output providing the value stored at the given \p storeValueOrigin.
-   * Getting this output may involve routing and creating new structural node inputs and outputs.
+   * The returned output is in the specified \p targetRegion. It must be the same region
+   * as the \p storeValueOrigin itself, or a parent region.
+   * Getting it may involve routing and creating new structural node inputs and outputs.
    * @param storeValueOrigin the origin of the last stored value along some memory state.
+   * @param targetRegion the region the returned output should be in.
    * @param tracingInfo the metadata created during store value origin tracing.
-   * @return the rvsdg output providing the stored value
+   * @return the rvsdg output providing the stored value in the given region.
    */
   rvsdg::Output &
-  getStoredValueOrigin(StoreValueOrigin storeValueOrigin, LoadTracingInfo & tracingInfo);
+  getStoredValueOrigin(StoreValueOrigin storeValueOrigin, rvsdg::Region & targetRegion, LoadTracingInfo & tracingInfo);
 
   /**
    * In \ref getStoredValueOrigin(), all loop variables are created as invariant,

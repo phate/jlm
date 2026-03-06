@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/alloca.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -166,6 +167,7 @@ struct StoreValueOrigin
   enum class Kind
   {
     Unknown,         // Tracing does not lead to known stored values in all branches
+    Uninitialized,   // Tracing leads to uninitialized memory, like an alloca
     StoreNode,       // Tracing leads to exactly one store node, and it is not inside a subregion
     GammaNodeOutput, // Tracing leads to the output of a gamma, but all branches trace to stores
     ThetaNodeOutput, // Tracing leads to the output of a theta, with a store inside
@@ -197,6 +199,12 @@ struct StoreValueOrigin
   createUnknown()
   {
     return StoreValueOrigin{ Kind::Unknown, nullptr };
+  }
+
+  static StoreValueOrigin
+  createUninitialized()
+  {
+    return StoreValueOrigin{ Kind::Uninitialized, nullptr };
   }
 
   static StoreValueOrigin
@@ -445,6 +453,14 @@ private:
       return sharedLastStore;
     }
 
+    // if tracing reaches an alloca, the value is uninitialized, so we can pick our own value
+    if (auto [allocaNode, allocaOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(tracedOutput);
+        allocaNode && allocaOp)
+    {
+      return StoreValueOrigin::createUninitialized();
+    }
+
     // If we found an exit variable of a gamma node, trace each of its subregions
     if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(tracedOutput))
     {
@@ -575,16 +591,13 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
   // There must be a node providing the last value stored before the load
   const auto lastStoreNode = tracingInfo.lastStoreBeforeNode[&loadNode];
   JLM_ASSERT(lastStoreNode.isKnown());
-  auto & storedValueOutput = getStoredValueOrigin(lastStoreNode, tracingInfo);
+  auto & storedValueOutput = getStoredValueOrigin(lastStoreNode, loadRegion, tracingInfo);
 
   // Fixup all loop variables that were created during the above routing
   connectUnroutedLoopPosts(tracingInfo);
 
-  // Route the stored value to the load's region
-  auto & routedStoredValue = routeOutputToRegion(storedValueOutput, loadRegion);
-
   // Divert users of the load to the routed stored value
-  loadedValueOutput.divert_users(&routedStoredValue);
+  loadedValueOutput.divert_users(&storedValueOutput);
 
   // Make the load node dead by routing all memory state users around it
   for (auto & memoryStateOutput : LoadNonVolatileOperation::MemoryStateOutputs(loadNode))
@@ -599,14 +612,22 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
 rvsdg::Output &
 StoreValueForwarding::getStoredValueOrigin(
     StoreValueOrigin storeValueOrigin,
+    rvsdg::Region & targetRegion,
     LoadTracingInfo & tracingInfo)
 {
   JLM_ASSERT(storeValueOrigin.isKnown());
 
+  if (storeValueOrigin.kind == StoreValueOrigin::Kind::Uninitialized)
+  {
+    // When forwarding uninitialized memory, create an undef node
+    return *UndefValueOperation::Create(targetRegion, tracingInfo.loadedType);
+  }
+
   if (storeValueOrigin.kind == StoreValueOrigin::Kind::StoreNode)
   {
     // For store nodes, the stored value is the origin of the node's value input
-    return *StoreOperation::StoredValueInput(*storeValueOrigin.node).origin();
+    auto & storedValue = *StoreOperation::StoredValueInput(*storeValueOrigin.node).origin();
+    return routeOutputToRegion(storedValue, targetRegion);
   }
 
   // For gamma nodes, create an exit variable by finding the stored value in each of its regions
@@ -623,17 +644,15 @@ StoreValueForwarding::getStoredValueOrigin(
       for (auto & subregion : gammaNode->Subregions())
       {
         auto lastStoreValue = tracingInfo.lastStoreInRegion[&subregion];
-        auto & storedValueOutput = getStoredValueOrigin(lastStoreValue, tracingInfo);
-
-        auto & routedStoredValue = routeOutputToRegion(storedValueOutput, subregion);
-        lastStorePerSubregion.push_back(&routedStoredValue);
+        auto & storedValueOutput = getStoredValueOrigin(lastStoreValue, subregion, tracingInfo);
+        lastStorePerSubregion.push_back(&storedValueOutput);
       }
 
       auto exitVar = gammaNode->AddExitVar(lastStorePerSubregion);
       it->second = exitVar.output;
     }
     JLM_ASSERT(it->second);
-    return *it->second;
+    return routeOutputToRegion(*it->second, targetRegion);
   }
 
   // For theta nodes, create a loop variable
@@ -656,7 +675,7 @@ StoreValueForwarding::getStoredValueOrigin(
       {
         auto lastStoreBeforeTheta = tracingInfo.lastStoreBeforeNode.find(thetaNode);
         JLM_ASSERT(lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end());
-        return getStoredValueOrigin(lastStoreBeforeTheta->second, tracingInfo);
+        return getStoredValueOrigin(lastStoreBeforeTheta->second, targetRegion, tracingInfo);
       }
     }
 
@@ -670,8 +689,9 @@ StoreValueForwarding::getStoredValueOrigin(
           lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end())
       {
         JLM_ASSERT(lastStoreBeforeTheta->second.isKnown());
-        auto & lastStore = getStoredValueOrigin(lastStoreBeforeTheta->second, tracingInfo);
-        initialValue = &routeOutputToRegion(lastStore, *thetaNode->region());
+        auto & outerRegion = *thetaNode->region();
+        initialValue =
+            &getStoredValueOrigin(lastStoreBeforeTheta->second, outerRegion, tracingInfo);
       }
       else
       {
@@ -695,9 +715,9 @@ StoreValueForwarding::getStoredValueOrigin(
     switch (storeValueOrigin.kind)
     {
     case StoreValueOrigin::Kind::ThetaNodePre:
-      return *loopVarSlot->second.pre;
+      return routeOutputToRegion(*loopVarSlot->second.pre, targetRegion);
     case StoreValueOrigin::Kind::ThetaNodeOutput:
-      return *loopVarSlot->second.output;
+      return routeOutputToRegion(*loopVarSlot->second.output, targetRegion);
     default:
       JLM_UNREACHABLE("Unknown StoreValueOrigin kind");
     }
@@ -718,7 +738,7 @@ StoreValueForwarding::connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo)
 
     auto lastStore = tracingInfo.lastStoreInRegion.find(post->region());
     JLM_ASSERT(lastStore != tracingInfo.lastStoreInRegion.end());
-    auto & origin = getStoredValueOrigin(lastStore->second, tracingInfo);
+    auto & origin = getStoredValueOrigin(lastStore->second, *post->region(), tracingInfo);
     post->divert_to(&origin);
   }
 }
