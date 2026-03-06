@@ -43,7 +43,7 @@ class ThetaGammaPredicateCorrelation;
  * value. All the users of the loop variables' output are diverted to the origin of the
  * corresponding input. See rvsdg::ThetaLoopVarIsInvariant() for more details.
  *
- * ### Theta nodes with a predicate that correlates with a gamma node
+ * ### Theta/gamma correlation redirection
  * If the theta node has a gamma node in its subregion and for both nodes the predicates correlate,
  * then the theta node's loop variables can be redirected under certain conditions. The
  * correlation of predicates means that either:
@@ -66,14 +66,14 @@ class ThetaGammaPredicateCorrelation;
  * interest. This means that we can redirect the value from the respective entry variable of the
  * gamma node's exit subregion to the post value.
  *
- * ### Call nodes
+ * ### Call output redirection
  * The output of a call node is considered invariant if the respective result of the corresponding
  * lambda is connected to an argument of the lambda. All the users of a call output are diverted to
  * the origin of the call input corresponding to the lambda argument. Invariant Value Redirection
  * for call nodes works only on non-recursive direct calls as IVR needs to inspect the lambda body
  * in order to determine whether a value is simply routed through the lambda.
  *
- * ### Load nodes
+ * ### Load memory state redirection
  * The memory states of a load node can be diverted to their respective input's origin if the loaded
  * value output of the load node is dead.
  *
