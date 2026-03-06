@@ -113,7 +113,7 @@ following articles:
 H. R. Krogstie, H. Bahmann, M. Själander, and N. Reissmann
 *"PIP: Making Andersen's Points-to Analysis Sound and Practical for Incomplete C Programs"*
 Proceedings of the ACM/IEEE International Conference on Code Generation and Optimization (CGO), Feb. 2026.
-https://www.arxiv.org/pdf/2512.07299
+https://doi.org/10.1109/CGO68049.2026.11395202
 
 D. Metz, N. Reissmann, and M. Själander
 *"R-HLS: An IR for Dynamic High-Level Synthesis and Memory Disambiguation based on Regions and State Edges"*
