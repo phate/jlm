@@ -28,7 +28,8 @@ RunInvariantValueRedirection(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
-  jlm::llvm::InvariantValueRedirection invariantValueRedirection;
+  jlm::llvm::InvariantValueRedirection::Configuration configuration;
+  jlm::llvm::InvariantValueRedirection invariantValueRedirection(std::move(configuration));
   invariantValueRedirection.Run(rvsdgModule, statisticsCollector);
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
