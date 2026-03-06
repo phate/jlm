@@ -94,7 +94,10 @@ private:
    * @return the rvsdg output providing the stored value in the given region.
    */
   rvsdg::Output &
-  getStoredValueOrigin(StoreValueOrigin storeValueOrigin, rvsdg::Region & targetRegion, LoadTracingInfo & tracingInfo);
+  getStoredValueOrigin(
+      StoreValueOrigin storeValueOrigin,
+      rvsdg::Region & targetRegion,
+      LoadTracingInfo & tracingInfo);
 
   /**
    * In \ref getStoredValueOrigin(), all loop variables are created as invariant,

@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/alloca.hpp"
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>

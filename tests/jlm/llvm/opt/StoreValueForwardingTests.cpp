@@ -708,6 +708,7 @@ TEST(StoreValueForwardingTests, RouteUninitialized)
 
   const auto exitVar = gammaNode.MapOutputExitVar(resultOrigin);
   EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin()), 20);
-  const auto [undefNode, undefOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*exitVar.branchResult[1]->origin());
+  const auto [undefNode, undefOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*exitVar.branchResult[1]->origin());
   EXPECT_TRUE(undefNode && undefOperation);
 }
