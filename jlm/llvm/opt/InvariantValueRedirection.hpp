@@ -25,13 +25,13 @@ class ThetaGammaPredicateCorrelation;
 
 /** \brief Invariant Value Redirection
  *
- * Invariant Value Redirection (IVR) redirects invariant edges around gamma, theta, call, and load nodes.
- * It does this by diverting all users of invariant outputs to the origin of the
- * respective inputs. In case of nested nodes, the transformation
- * processes the innermost nodes first to ensure that the outputs of outer nodes are correctly
- * identified as invariant. Moreover, IVR processes a lambda node before all the lambda's call nodes
- * to ensure that the outputs of call nodes are correctly identified as invariant. Nodes that become
- * dead throughout the transformation are pruned from a region.
+ * Invariant Value Redirection (IVR) redirects invariant edges around gamma, theta, call, and load
+ * nodes. It does this by diverting all users of invariant outputs to the origin of the respective
+ * inputs. In case of nested nodes, the transformation processes the innermost nodes first to ensure
+ * that the outputs of outer nodes are correctly identified as invariant. Moreover, IVR processes a
+ * lambda node before all the lambda's call nodes to ensure that the outputs of call nodes are
+ * correctly identified as invariant. Nodes that become dead throughout the transformation are
+ * pruned from a region.
  *
  * ### Gamma output redirection
  * The output of a gamma node is considered invariant if all the corresponding region results are
