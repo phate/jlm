@@ -65,6 +65,16 @@ InvariantValueRedirection::Run(
 }
 
 void
+InvariantValueRedirection::createAndRun(
+    rvsdg::RvsdgModule & rvsdgModule,
+    Configuration configuration)
+{
+  util::StatisticsCollector statisticsCollector;
+  InvariantValueRedirection invariantValueRedirection(std::move(configuration));
+  invariantValueRedirection.Run(rvsdgModule, statisticsCollector);
+}
+
+void
 InvariantValueRedirection::redirectInRootRegion(rvsdg::Graph & rvsdg)
 {
   // We require a topdown traversal in the root region to ensure that a lambda node is visited

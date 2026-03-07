@@ -102,6 +102,15 @@ public:
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
+  /**
+   * Creates an instance of \ref InvariantValueRedirection and invokes its \ref Run() method.
+   *
+   * @param rvsdgModule The RVSDG on which invariant value redirection is invoked on.
+   * @param configuration The configuration for the instance.
+   */
+  static void
+  createAndRun(rvsdg::RvsdgModule & rvsdgModule, Configuration configuration);
+
 private:
   void
   redirectInRootRegion(rvsdg::Graph & rvsdg);
