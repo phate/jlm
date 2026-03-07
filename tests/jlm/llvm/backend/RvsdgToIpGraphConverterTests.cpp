@@ -311,48 +311,48 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = jlm::rvsdg::TestType::createValueType();
+  auto vt = TestType::createValueType();
   auto pt = PointerType::Create();
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &jlm::llvm::LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
+  auto imp = &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage);
 
-  jlm::rvsdg::PhiBuilder pb;
-  pb.begin(&rm.Rvsdg().GetRootRegion());
-  auto region = pb.subregion();
-  auto r1 = pb.AddFixVar(pt);
-  auto r2 = pb.AddFixVar(pt);
-  auto dep = pb.AddContextVar(*imp);
+  PhiBuilder phiBuilder;
+  phiBuilder.begin(&rm.Rvsdg().GetRootRegion());
+  auto region = phiBuilder.subregion();
+  auto fixVar1 = phiBuilder.AddFixVar(pt);
+  auto fixVar2 = phiBuilder.AddFixVar(pt);
+  auto dep = phiBuilder.AddContextVar(*imp);
 
-  jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
+  Output *delta1 = nullptr, *delta2 = nullptr;
   {
-    auto delta = jlm::rvsdg::DeltaNode::Create(
+    auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "test-delta1", Linkage::externalLinkage, "", false));
-    auto dep1 = delta->AddContextVar(*r2.recref).inner;
+        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false));
+    auto dep1 = delta->AddContextVar(*fixVar2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
         TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   {
-    auto delta = jlm::rvsdg::DeltaNode::Create(
+    auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "test-delta2", Linkage::externalLinkage, "", false));
-    auto dep1 = delta->AddContextVar(*r1.recref).inner;
+        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false));
+    auto dep1 = delta->AddContextVar(*fixVar1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
         TestOperation::createNode(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
-  r1.result->divert_to(delta1);
-  r2.result->divert_to(delta2);
+  fixVar1.result->divert_to(delta1);
+  fixVar2.result->divert_to(delta2);
 
-  auto phi = pb.end();
+  auto phi = phiBuilder.end();
   GraphExport::Create(*phi->output(0), "");
 
-  jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  view(rm.Rvsdg(), stdout);
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
@@ -360,8 +360,25 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   print(*module, stdout);
 
   // Assert
-  auto & ipg = module->ipgraph();
-  EXPECT_EQ(ipg.nnodes(), 3u);
+  auto & ipGraph = module->ipgraph();
+  EXPECT_EQ(ipGraph.nnodes(), 3u);
+
+  auto delta1Node = ipGraph.find("delta1");
+  auto delta2Node = ipGraph.find("delta2");
+  auto importNode = ipGraph.find("import");
+  EXPECT_EQ(delta1Node->numDependencies(), 2);
+  for (auto depNode : *delta1Node)
+  {
+    EXPECT_TRUE(depNode == delta2Node || depNode == importNode);
+  }
+
+  EXPECT_EQ(delta2Node->numDependencies(), 2);
+  for (auto depNode : *delta2Node)
+  {
+    EXPECT_TRUE(depNode == delta1Node || depNode == importNode);
+  }
+
+  EXPECT_EQ(importNode->numDependencies(), 0);
 }
 
 static size_t
@@ -452,6 +469,12 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
   // should either have zero or two SSA phi operations.
   auto & ipGraph = ipGraphModule->ipgraph();
   EXPECT_EQ(ipGraph.nnodes(), 2u);
+
+  auto functionNode = ipGraph.find("f");
+  auto importNode = ipGraph.find("opaque");
+  EXPECT_EQ(functionNode->numDependencies(), 1);
+  EXPECT_EQ(importNode->numDependencies(), 0);
+  EXPECT_EQ(*functionNode->begin(), importNode);
 
   auto controlFlowGraph = dynamic_cast<const FunctionNode *>(ipGraph.find("f"))->cfg();
   EXPECT_EQ(controlFlowGraph->nnodes(), 5u);

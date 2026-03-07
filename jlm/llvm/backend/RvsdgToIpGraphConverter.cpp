@@ -134,6 +134,23 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
+InterProceduralGraphNode &
+RvsdgToIpGraphConverter::getInterProceduralGraphNode(const rvsdg::Output & output) const
+{
+  const auto variable = Context_->GetVariable(&output);
+  if (const auto functionVariable = dynamic_cast<const FunctionVariable *>(variable))
+  {
+    return *functionVariable->function();
+  }
+
+  if (const auto globalValue = dynamic_cast<const GlobalValue *>(variable))
+  {
+    return *globalValue->node();
+  }
+
+  throw std::logic_error("Unhandled variable type.");
+}
+
 std::unique_ptr<DataNodeInit>
 RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode)
 {
@@ -403,9 +420,15 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
       operation.Type(),
       operation.linkage(),
       operation.attributes());
-  const auto variable = ipGraphModule.create_variable(functionNode);
-
   functionNode->add_cfg(CreateControlFlowGraph(lambdaNode));
+
+  for (auto [input, _] : lambdaNode.GetContextVars())
+  {
+    auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+    functionNode->add_dependency(&ipGraphNode);
+  }
+
+  const auto variable = ipGraphModule.create_variable(functionNode);
   Context_->InsertVariable(lambdaNode.output(), variable);
 }
 
@@ -475,6 +498,12 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           util::assertedCast<const FunctionVariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->InsertVariable(lambdaNode->output(), variable);
+
+      for (auto [input, _] : lambdaNode->GetContextVars())
+      {
+        auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+        variable->function()->add_dependency(&ipGraphNode);
+      }
     }
     else if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(origin))
     {
@@ -482,6 +511,12 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           util::assertedCast<const GlobalValue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
       Context_->InsertVariable(&deltaNode->output(), variable);
+
+      for (auto & [input, _] : deltaNode->GetContextVars())
+      {
+        auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+        variable->node()->add_dependency(&ipGraphNode);
+      }
     }
     else
     {
@@ -515,6 +550,13 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const rvsdg::DeltaNode & deltaNode)
       op->Section(),
       op->constant());
   dataNode->set_initialization(CreateInitialization(deltaNode));
+
+  for (auto & [input, _] : deltaNode.GetContextVars())
+  {
+    auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+    dataNode->add_dependency(&ipGraphNode);
+  }
+
   const auto variable = ipGraphModule.create_global_value(dataNode);
   Context_->InsertVariable(&deltaNode.output(), variable);
 }
