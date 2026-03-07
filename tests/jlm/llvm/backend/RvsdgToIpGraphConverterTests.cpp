@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-TEST(ViewTests, GammaWithMatch)
+TEST(RvsdgToIpGraphConverterTests, GammaWithMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -61,7 +61,7 @@ TEST(ViewTests, GammaWithMatch)
   EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
-TEST(ViewTests, GammaWithoutMatch)
+TEST(RvsdgToIpGraphConverterTests, GammaWithoutMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -103,7 +103,7 @@ TEST(ViewTests, GammaWithoutMatch)
   EXPECT_EQ(cfg->nnodes(), 4u);
 }
 
-TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
+TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregionsAndMatch)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -151,7 +151,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregionsAndMatch)
   EXPECT_TRUE(is_closed(*controlFlowGraph));
 }
 
-TEST(ViewTests, EmptyGammaWithTwoSubregions)
+TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregions)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -207,7 +207,7 @@ TEST(ViewTests, EmptyGammaWithTwoSubregions)
   EXPECT_TRUE(is_closed(*controlFlowGraph));
 }
 
-TEST(ViewTests, EmptyGammaWithThreeSubregions)
+TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithThreeSubregions)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -256,7 +256,7 @@ TEST(ViewTests, EmptyGammaWithThreeSubregions)
   EXPECT_TRUE(is_closed(*cfg));
 }
 
-TEST(ViewTests, PartialEmptyGamma)
+TEST(RvsdgToIpGraphConverterTests, PartialEmptyGamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -305,7 +305,7 @@ TEST(ViewTests, PartialEmptyGamma)
   EXPECT_TRUE(is_proper_structured(*cfg));
 }
 
-TEST(ViewTests, RecursiveData)
+TEST(RvsdgToIpGraphConverterTests, RecursiveData)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -362,4 +362,103 @@ TEST(ViewTests, RecursiveData)
   // Assert
   auto & ipg = module->ipgraph();
   EXPECT_EQ(ipg.nnodes(), 3u);
+}
+
+static size_t
+numSsaPhiOperations(const jlm::llvm::BasicBlock & basicBlock)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  size_t numSsaPhiOperations = 0;
+  for (const auto tac : basicBlock.tacs())
+  {
+    if (is<SsaPhiOperation>(tac))
+      numSsaPhiOperations++;
+  }
+
+  return numSsaPhiOperations;
+}
+
+TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto pointerType = PointerType::Create();
+  auto functionType =
+      FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & opaque = LlvmGraphImport::Create(
+      rvsdg,
+      functionType,
+      functionType,
+      "opaque",
+      Linkage::externalLinkage);
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[0];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
+  auto opaqueCtxVar = lambdaNode->AddContextVar(opaque);
+
+  auto outerThetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto outerIOStateLoopVar = outerThetaNode->AddLoopVar(ioStateArgument);
+  auto outerMemoryStateLoopVar = outerThetaNode->AddLoopVar(memoryStateArgument);
+  auto outerOpaque = outerThetaNode->AddLoopVar(opaqueCtxVar.inner);
+
+  auto innerThetaNode = ThetaNode::create(outerThetaNode->subregion());
+  auto innerIOStateLoopVar = innerThetaNode->AddLoopVar(outerIOStateLoopVar.pre);
+  auto innerMemoryStateLoopVar = innerThetaNode->AddLoopVar(outerMemoryStateLoopVar.pre);
+  auto innerOpaque = innerThetaNode->AddLoopVar(outerOpaque.pre);
+
+  auto & callNode = CallOperation::CreateNode(
+      innerOpaque.pre,
+      functionType,
+      { innerIOStateLoopVar.pre, innerMemoryStateLoopVar.pre });
+
+  innerIOStateLoopVar.post->divert_to(callNode.output(0));
+  innerMemoryStateLoopVar.post->divert_to(callNode.output(1));
+
+  outerIOStateLoopVar.post->divert_to(innerIOStateLoopVar.output);
+  outerMemoryStateLoopVar.post->divert_to(innerMemoryStateLoopVar.output);
+  outerOpaque.post->divert_to(innerOpaque.output);
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ outerIOStateLoopVar.output, outerMemoryStateLoopVar.output });
+
+  GraphExport::Create(*lambdaOutput, "f");
+
+  view(rvsdgModule.Rvsdg(), stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  auto ipGraphModule =
+      RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+
+  print(*ipGraphModule, stdout);
+
+  // Assert
+  // We expect that we only create SSA phi operations for the IO and memory state edges, but NOT
+  // for the context variable in the inner loop. Ultimately, this means that every basic block
+  // should either have zero or two SSA phi operations.
+  auto & ipGraph = ipGraphModule->ipgraph();
+  EXPECT_EQ(ipGraph.nnodes(), 2u);
+
+  auto controlFlowGraph = dynamic_cast<const FunctionNode *>(ipGraph.find("f"))->cfg();
+  EXPECT_EQ(controlFlowGraph->nnodes(), 5u);
+
+  for (auto & basicBlock : *controlFlowGraph)
+  {
+    auto numSsaPhis = numSsaPhiOperations(basicBlock);
+    EXPECT_TRUE(numSsaPhis == 2 || numSsaPhis == 0);
+  }
 }
