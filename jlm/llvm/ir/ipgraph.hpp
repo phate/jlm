@@ -134,6 +134,12 @@ public:
   virtual bool
   hasBody() const noexcept = 0;
 
+  [[nodiscard]] size_t
+  numDependencies() const noexcept
+  {
+    return dependencies_.size();
+  }
+
 private:
   InterProceduralGraph & clg_;
   std::unordered_set<const InterProceduralGraphNode *> dependencies_;
