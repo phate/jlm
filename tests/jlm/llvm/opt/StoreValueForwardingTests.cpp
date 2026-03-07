@@ -522,7 +522,7 @@ TEST(StoreValueForwardingTests, RouteAroundLoadLoop)
   using namespace jlm::llvm;
 
   /**
-   * Checks that StoreValueForwarding avoid routing values through loops with no stores.
+   * Checks that StoreValueForwarding avoids routing values through loops with no stores.
    * The inner LOAD needs to have a loop variable created to provide the value,
    * but the outer LOAD should be directly replaced by the constant 40.
    *
@@ -616,4 +616,99 @@ TEST(StoreValueForwardingTests, RouteAroundLoadLoop)
   const auto & addRhsOrigin = *addNode.input(1)->origin();
   EXPECT_EQ(tryGetConstantSignedInteger(addRhsOrigin), 40);
   EXPECT_EQ(rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(addRhsOrigin), nullptr);
+}
+
+TEST(StoreValueForwardingTests, RouteUninitialized)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Checks that StoreValueForwarding creates Undef nodes when forwarding from memory
+   * that has not been stored to since it was allocated.
+   *
+   * Create a function that looks like
+   * int func(io0, mem0) {
+   *   a, mem1 = ALLOCA[bits32], 1
+   *   pred = CTRL(0)
+   *   mem5 = gamma prec, a, mem1
+   *     [_, a1, mem2] {
+   *       mem3 = STORE a1, 20, mem2
+   *     }[mem3]
+   *     [_, a2, mem4] {
+   *       // Nothing happens in this gamma branch
+   *     }[mem4]
+   *   ld, mem6 = LOAD[bits32] a, mem5
+   *   return ld, io0, mem0
+   * }
+   *
+   * After StoreValueForwarding, the returned value should originate from a gamma output,
+   * which provides a constant integer 20 in the left region, and an undef node in the right branch.
+   */
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto unitType = rvsdg::UnitType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & io0 = *lambdaNode.GetFunctionArguments()[0];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[1];
+
+  // a, mem1 = ALLOCA[bits32], 1
+  auto & constantOne = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
+  auto allocaAOutputs = AllocaOperation::create(bits32Type, constantOne.output(0), 4);
+
+  // pred = CTRL(0)
+  auto & predicate = rvsdg::ControlConstantOperation::create(*lambdaNode.subregion(), 2, 0);
+
+  // mem5 = gamma pred, a, mem1
+  auto & gammaNode = rvsdg::GammaNode::Create(predicate, 2, { unitType, unitType });
+  auto aEntryVar = gammaNode.AddEntryVar(allocaAOutputs[0]);
+  auto memEntryVar = gammaNode.AddEntryVar(allocaAOutputs[1]);
+
+  // [_, a1, mem2] { mem3 = STORE a1, 20, mem2 }[mem3]
+  auto & gammaSubregion0 = *gammaNode.subregion(0);
+  auto & constantTwenty = IntegerConstantOperation::Create(gammaSubregion0, 32, 20);
+  auto & storeA20Node = StoreNonVolatileOperation::CreateNode(
+      *aEntryVar.branchArgument[0],
+      *constantTwenty.output(0),
+      { memEntryVar.branchArgument[0] },
+      4);
+  auto & mem3 = *StoreOperation::MemoryStateOutputs(storeA20Node).begin();
+
+  // [_, a2, mem4] { }[mem4]
+  auto memExitVar = gammaNode.AddExitVar({ &mem3, memEntryVar.branchArgument[1] });
+
+  // ld, mem6 = LOAD[bits32] a, mem5
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *allocaAOutputs[0],
+      { memExitVar.output },
+      bits32Type,
+      4);
+  auto & ld = LoadOperation::LoadedValueOutput(loadNode);
+
+  lambdaNode.finalize({ &ld, &io0, &mem0 });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  const auto & resultOrigin = *lambdaNode.GetFunctionResults()[0]->origin();
+  EXPECT_NE(rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(resultOrigin), nullptr);
+
+  const auto exitVar = gammaNode.MapOutputExitVar(resultOrigin);
+  EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin()), 20);
+  const auto [undefNode, undefOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*exitVar.branchResult[1]->origin());
+  EXPECT_TRUE(undefNode && undefOperation);
 }
