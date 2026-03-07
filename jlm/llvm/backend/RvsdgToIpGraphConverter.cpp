@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -599,6 +600,22 @@ RvsdgToIpGraphConverter::ConvertModule(
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
+
+  // LLVM expects that we do not create any phi instructions for invariant values
+  // through theta and gamma nodes. This leads otherwise to compilation problems (and not just
+  // performance issues). For example, a direct call in a nested loop would all in a sudden be
+  // considered an indirect call as it would take as its function input the phi instruction, but
+  // not the function itself. See the NestedLoopWithCall test in the RvsdgToIpGraphConverterTests
+  // suite. We simply avoid this problem by removing all invariant theta/gamma values from the RVSDG
+  // using invariant value redirection before converting it to a control flow graph.
+  constexpr InvariantValueRedirection::Configuration configuration{
+    true,  // enableGammaOutputRedirection
+    true,  // enableThetaOutputRedirection
+    false, // enableThetaGammaCorrelationRedirection
+    false, // enableCallOutputRedirection
+    false  // enableLoadMemoryStateRedirection
+  };
+  InvariantValueRedirection::createAndRun(rvsdgModule, std::move(configuration));
 
   auto ipGraphModule = InterProceduralGraphModule::create(
       rvsdgModule.SourceFileName(),
