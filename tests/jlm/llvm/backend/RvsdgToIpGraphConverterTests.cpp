@@ -448,7 +448,7 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
 
   // Assert
   // We expect that we only create SSA phi operations for the IO and memory state edges, but NOT
-  // for the context variables in the inner loop. Ultimately, this means that every basic block
+  // for the context variable in the inner loop. Ultimately, this means that every basic block
   // should either have zero or two SSA phi operations.
   auto & ipGraph = ipGraphModule->ipgraph();
   EXPECT_EQ(ipGraph.nnodes(), 2u);
