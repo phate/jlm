@@ -67,6 +67,24 @@ public:
   [[nodiscard]] const InterProceduralGraphNode *
   find(const std::string & name) const noexcept;
 
+  /**
+   * Converts the inter-procedural graph to a DOT graph.
+   *
+   * @param writer A graph writer for converting the \p interProceduralGraph to DOT.
+   * @param interProceduralGraph Inter-procedural graph that is converted.
+   * @return A DOT graph
+   */
+  static util::graph::Graph &
+  toDot(util::graph::Writer & writer, const InterProceduralGraph & interProceduralGraph);
+
+  /**
+   * This function is meant to be used from the debugger. You can just
+   * invoke it and a xdot window should pop up with a DOT visualization of the control flow graph.
+   * This depends on xdot being in the PATH.
+   */
+  void
+  view() const;
+
 private:
   std::vector<std::unique_ptr<InterProceduralGraphNode>> nodes_;
 };

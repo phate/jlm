@@ -33,7 +33,7 @@ TEST(RvsdgToIpGraphConverterTests, GammaWithMatch)
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto & matchNode =
       MatchOperation::CreateNode(*lambdaNode->GetFunctionArguments()[0], { { 0, 0 } }, 1, 2);
@@ -77,7 +77,7 @@ TEST(RvsdgToIpGraphConverterTests, GammaWithoutMatch)
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->GetFunctionArguments()[0], 2);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
@@ -119,7 +119,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregionsAndMatch)
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   const auto conditionValue = lambdaNode->GetFunctionArguments()[0];
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
@@ -167,7 +167,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregions)
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
 
@@ -223,7 +223,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithThreeSubregions)
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto & matchNode = MatchOperation::CreateNode(
       *lambdaNode->GetFunctionArguments()[0],
@@ -272,7 +272,7 @@ TEST(RvsdgToIpGraphConverterTests, PartialEmptyGamma)
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto & matchNode =
       MatchOperation::CreateNode(*lambdaNode->GetFunctionArguments()[0], { { 0, 0 } }, 1, 2);

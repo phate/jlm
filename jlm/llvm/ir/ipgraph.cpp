@@ -4,8 +4,11 @@
  */
 
 #include <jlm/llvm/ir/ipgraph.hpp>
+#include <jlm/util/file.hpp>
+#include <jlm/util/Program.hpp>
 
 #include <algorithm>
+#include <fstream>
 
 /* Tarjan's SCC algorithm */
 
@@ -92,6 +95,53 @@ InterProceduralGraph::find(const std::string & name) const noexcept
 }
 
 InterProceduralGraphNode::~InterProceduralGraphNode() noexcept = default;
+
+util::graph::Graph &
+InterProceduralGraph::toDot(
+    util::graph::Writer & writer,
+    const InterProceduralGraph & interProceduralGraph)
+{
+  util::graph::Graph & dotGraph = writer.CreateGraph();
+  dotGraph.SetProgramObject(interProceduralGraph);
+
+  // Create nodes
+  for (auto & node : interProceduralGraph)
+  {
+    auto & dotNode = dotGraph.CreateInOutNode(0, 0);
+    dotNode.SetProgramObject(node);
+    dotNode.SetLabel(node.name());
+  }
+
+  // Create edges
+  for (auto & node : interProceduralGraph)
+  {
+    auto & dotNode = dotGraph.GetFromProgramObject<util::graph::InOutNode>(node);
+    for (auto & depNode : node)
+    {
+      auto & dotDepNode = dotGraph.GetFromProgramObject<util::graph::InOutNode>(*depNode);
+      auto & outputPort = dotDepNode.CreateOutputPort();
+      auto & inputPort = dotNode.CreateInputPort();
+      dotGraph.CreateEdge(inputPort, outputPort, false);
+    }
+  }
+
+  return dotGraph;
+}
+
+void
+InterProceduralGraph::view() const
+{
+  util::graph::Writer graphWriter;
+  toDot(graphWriter, *this);
+
+  const util::FilePath outputFilePath =
+      util::FilePath::createUniqueFileName(util::FilePath::TempDirectoryPath(), "ipgraph-", ".dot");
+
+  std::ofstream outputFile(outputFilePath.to_str());
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+
+  util::executeProgramAndWait(util::getDotViewer(), { outputFilePath.to_str() });
+}
 
 FunctionNode::~FunctionNode() noexcept = default;
 
