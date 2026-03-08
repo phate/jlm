@@ -93,25 +93,6 @@ to_str(const InterProceduralGraph & clg)
   return str;
 }
 
-/* dot converters */
-
-std::string
-to_dot(const InterProceduralGraph & clg)
-{
-  std::string dot("digraph clg {\n");
-  for (const auto & node : clg)
-  {
-    dot += util::strfmt((intptr_t)&node);
-    dot += util::strfmt("[label = \"", node.name(), "\"];\n");
-
-    for (const auto & call : node)
-      dot += util::strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
-  }
-  dot += "}\n";
-
-  return dot;
-}
-
 /* aggregation node */
 
 std::string
