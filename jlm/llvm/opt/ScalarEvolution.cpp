@@ -6,9 +6,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -104,7 +102,7 @@ public:
       // Count induction variables (loop variables with a computed recurrence) with specific order
       if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
-        if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
+        if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
       }
     }
@@ -120,7 +118,7 @@ public:
       if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
         // Only count chrecs that are not unknown
-        if (!IsUnknown(*chrec))
+        if (!SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
       }
     }
@@ -1880,19 +1878,6 @@ ScalarEvolution::GetNegativeSCEV(const SCEV & scev)
   }
   // General case: -(x) -> (-1) * x
   return SCEVMulExpr::Create(SCEVConstant::Create(-1), scev.Clone());
-}
-
-bool
-ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
-{
-  for (const auto operand : chrec.GetOperands())
-  {
-    if (dynamic_cast<const SCEVUnknown *>(operand))
-    {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool

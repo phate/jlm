@@ -391,6 +391,24 @@ public:
     return chrec.GetOperands().size() == 3;
   }
 
+  /**
+   * Checks the operands of the given \p chrec to see if any of them are unknown.
+   *
+   * @param chrec the chain recurrence to be checked
+   * @return true if the recurrence contains an unknown, false otherwise
+   */
+  bool static IsUnknown(const SCEVChainRecurrence & chrec)
+  {
+    for (const auto operand : chrec.GetOperands())
+    {
+      if (dynamic_cast<const SCEVUnknown *>(operand))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   std::optional<std::unique_ptr<SCEV>>
   GetStep() const
   {
@@ -769,15 +787,6 @@ private:
    */
   static bool
   CanCreateChainRecurrence(const rvsdg::Output & output, DependencyGraph & dependencyGraph);
-
-  /**
-   * Checks the operands of the given \p chrec to see if any of them are unknown.
-   *
-   * @param chrec the chain recurrence to be checked
-   * @return true if the recurrence contains an unknown, false otherwise
-   */
-  static bool
-  IsUnknown(const SCEVChainRecurrence & chrec);
 
   static bool
   HasCycleThroughOthers(
