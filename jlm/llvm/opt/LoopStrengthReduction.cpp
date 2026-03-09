@@ -71,7 +71,8 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   //   1. Add a new loop variable s with input value a
   //   2. Create a new constant operation with value b
   //   3. Insert an add-node which takes as inputs the pre value of s and the constant b
-  //   4. Divert all the users of j to use the output of the new add-node
+  //   4. Divert all the users of j to use the pre value of s
+  //   5. Set the post value of s to the output of the new add-node
   //
   // Dead node elimination handles the removal of the dangling node
 
