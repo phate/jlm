@@ -175,7 +175,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
     // This is determined by tracing from the loop variable's post result,
     // and seeing if it leads to the same input origin as the loop variable's own input.
 
-    // The loop variable tracing is currently starting from
+    // The loop variable whose pre argument is being traced from
     const auto loopVar = thetaNode->MapPreLoopVar(output);
 
     // The origin of the loop variable's input.
