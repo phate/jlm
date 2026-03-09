@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -207,4 +208,120 @@ TEST(TraceTests, TestTraceNestedStructuralNodes)
     EXPECT_EQ(&traceLoopVar1Pre, loopVar1.pre);
     EXPECT_EQ(&traceLoopVar2Pre, &i2);
   }
+}
+
+/**
+ * Tests tracing through and out of theta nodes where a loop variable is not invariant,
+ * but takes its post value from an invariant loop variable.
+ * The two variables do not share input origin.
+ */
+TEST(TraceTests, TestIndirectLoopInvariantOutput)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates a graph with a single theta node that looks like
+   *
+   *      20 40
+   *      |  |
+   *      |  |
+   *      V  V
+   *  +------------+
+   *  |   |  V     |
+   *  |   | USER1  |
+   *  |   |\       |
+   *  |   | \      |
+   *  |   V  V     |
+   *  +------------+
+   *         V
+   *        USER2
+   *
+   * Tracing from USER1 should stop at the theta pre argument,
+   * while tracing from USER2 should lead to the constant 20.
+   */
+  Graph rvsdg;
+  auto & c20 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 20 });
+  auto & c40 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 40 });
+
+  const auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto invariantLoopVar = thetaNode->AddLoopVar(&c20);
+  auto indirectLoopVar = thetaNode->AddLoopVar(&c40);
+
+  // USER1 uses the pre-iteration value of the non-invariant loop variable.
+  auto user1 = TestOperation::createNode(thetaNode->subregion(), { indirectLoopVar.pre }, {});
+
+  // Make the post value of indirectLoopVar come from the trivially invariant loop var.
+  indirectLoopVar.post->divert_to(invariantLoopVar.pre);
+
+  // USER2 uses the loop ouput value of the non-trivially invariant loop variable.
+  auto user2 = TestOperation::createNode(&rvsdg.GetRootRegion(), { indirectLoopVar.output }, {});
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin());
+  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin());
+
+  // Assert
+  EXPECT_TRUE(ThetaLoopVarIsInvariant(invariantLoopVar));
+  EXPECT_FALSE(ThetaLoopVarIsInvariant(indirectLoopVar));
+  EXPECT_EQ(&tracedUser1, indirectLoopVar.pre);
+  EXPECT_EQ(&tracedUser2, &c20);
+}
+
+/**
+ * Tests tracing through and out of theta nodes where a loop variable is not invariant,
+ * but takes its post value from an invariant loop variable, with whom it shares input.
+ */
+TEST(TraceTests, TestIndirectLoopInvariance)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates a graph with a single theta node that looks like
+   *
+   *      20
+   *      |\
+   *      | \
+   *      V  V
+   *  +------------+
+   *  |   |  V     |
+   *  |   | USER1  |
+   *  |   |\       |
+   *  |   | \      |
+   *  |   V  V     |
+   *  +------------+
+   *         V
+   *        USER2
+   *
+   * Tracing from either USER1 and USER2 should lead to the constant integer 20,
+   * despite the loop variable not appearing to be invariant on first glance.
+   */
+  Graph rvsdg;
+  auto & c20 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 20 });
+
+  const auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto invariantLoopVar = thetaNode->AddLoopVar(&c20);
+  auto indirectLoopVar = thetaNode->AddLoopVar(&c20);
+
+  // USER1 uses the pre-iteration value of the non-trivially invariant loop variable.
+  auto user1 = TestOperation::createNode(thetaNode->subregion(), { indirectLoopVar.pre }, {});
+
+  // Make the post value of indirectLoopVar come from the trivially invariant loop var.
+  indirectLoopVar.post->divert_to(invariantLoopVar.pre);
+
+  // USER2 uses the loop ouput value of the indirectly invariant loop variable.
+  auto user2 = TestOperation::createNode(&rvsdg.GetRootRegion(), { indirectLoopVar.output }, {});
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin());
+  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin());
+
+  // Assert
+  EXPECT_TRUE(ThetaLoopVarIsInvariant(invariantLoopVar));
+  EXPECT_FALSE(ThetaLoopVarIsInvariant(indirectLoopVar));
+  EXPECT_EQ(&tracedUser1, &c20);
+  EXPECT_EQ(&tracedUser2, &c20);
 }

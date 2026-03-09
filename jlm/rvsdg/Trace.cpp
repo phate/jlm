@@ -101,7 +101,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 }
 
 Output *
-OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
+OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, rvsdg::Output & output)
 {
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
 
@@ -113,10 +113,23 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     tracedInner = &trace(*tracedInner, false);
   }
 
+  // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
     return loopVar.input->origin();
   }
+
+  // If tracing inside the theta lead to the pre argument of a different loop variable,
+  // check if that loop variable is trivially invariant, and if it is, return its input origin.
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*tracedInner) == &thetaNode)
+  {
+    auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
+    if (rvsdg::ThetaLoopVarIsInvariant(originLoopVar))
+    {
+      return originLoopVar.input->origin();
+    }
+  }
+
   return nullptr;
 }
 
@@ -158,11 +171,25 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   // Handle theta node arguments
   if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
   {
-    // Tracing from inside a theta to outside it is only valid if the loop variable is invariant
+    // Tracing from inside a theta to outside it is only valid if the loop variable is invariant.
+    // This is determined by tracing from the loop variable's post result,
+    // and seeing if it leads to the same input origin as the loop variable's own input.
+
+    // The loop variable tracing is currently starting from
     const auto loopVar = thetaNode->MapPreLoopVar(output);
-    if (const auto traced = tryTraceThroughTheta(*thetaNode, *loopVar.output))
+
+    // The origin of the loop variable's input.
+    const auto inputOrigin = loopVar.input->origin();
+
+    // The origin reached when tracing from the loop variable's post result,
+    // if it reaches an invariant loop variable and "escapes" the theta.
+    // The invariant loop variable found does not have to be the same as the above loopVar.
+    // See TraceTests' TestIndirectLoopInvariance.
+    const auto postOrigin = tryTraceThroughTheta(*thetaNode, *loopVar.output);
+
+    if (postOrigin == inputOrigin)
     {
-      return *traced;
+      return *inputOrigin;
     }
 
     return output;
