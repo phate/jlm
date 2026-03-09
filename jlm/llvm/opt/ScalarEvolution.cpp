@@ -950,28 +950,17 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   }
   if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
-    {
-      GetOrCreateSCEVForOutput(*LoadOperation::AddressInput(*simpleNode).origin());
-      result = SCEVUnknown::Create();
-    }
-    if (rvsdg::is<StoreOperation>(simpleNode->GetOperation()))
-    {
-      GetOrCreateSCEVForOutput(*StoreOperation::AddressInput(*simpleNode).origin());
-      GetOrCreateSCEVForOutput(*StoreOperation::StoredValueInput(*simpleNode).origin());
-      result = SCEVUnknown::Create();
-    }
     if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
     {
       const auto barredInputOrigin = IOBarrierOperation::BarredInput(*simpleNode).origin();
       result = GetOrCreateSCEVForOutput(*barredInputOrigin);
     }
-    if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() == 1);
       result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
     }
-    if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() >= 2);
       const auto baseIndex = simpleNode->input(0)->origin();
@@ -992,14 +981,14 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
     }
-    if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
     {
       const auto constOp =
           dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
       const auto value = constOp->Representation().to_int();
       result = SCEVConstant::Create(value);
     }
-    if (rvsdg::is<IntegerBinaryOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<IntegerBinaryOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
@@ -1020,6 +1009,14 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
       {
         result = SCEVMulExpr::Create(std::move(lhsScev), std::move(rhsScev));
+      }
+    }
+    else
+    {
+      // Unknown operation, we traverse through to it's inputs
+      for (auto & input : simpleNode->Inputs())
+      {
+        GetOrCreateSCEVForOutput(*input.origin());
       }
     }
   }
