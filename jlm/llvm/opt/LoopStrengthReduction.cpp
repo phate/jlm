@@ -121,7 +121,7 @@ LoopStrengthReduction::ProcessOutput(
     if (IsValidCandidateOperation(*scev))
     {
       candidateOperations.push_back(&output);
-      // return; // Return early to not create unnecessary induction variables for nested operations
+      return; // Return early to not create unnecessary induction variables for nested operations
     }
   }
 
