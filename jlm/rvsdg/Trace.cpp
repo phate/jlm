@@ -113,10 +113,23 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     tracedInner = &trace(*tracedInner, false);
   }
 
+  // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
     return loopVar.input->origin();
   }
+
+  // If tracing from the post result lead to the pre argument of a different loop variable,
+  // check if that loop variable is trivially invariant, and if it is, return its input origin.
+  if (TryGetRegionParentNode<ThetaNode>(*tracedInner) == &thetaNode)
+  {
+    auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
+    if (ThetaLoopVarIsInvariant(originLoopVar))
+    {
+      return originLoopVar.input->origin();
+    }
+  }
+
   return nullptr;
 }
 
@@ -158,11 +171,25 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   // Handle theta node arguments
   if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
   {
-    // Tracing from inside a theta to outside it is only valid if the loop variable is invariant
+    // Tracing from inside a theta to outside it is only valid if the loop variable is invariant.
+    // This is determined by tracing from the loop variable's post result,
+    // and seeing if it leads to the same input origin as the loop variable's own input.
+
+    // The loop variable whose pre argument is being traced from
     const auto loopVar = thetaNode->MapPreLoopVar(output);
-    if (const auto traced = tryTraceThroughTheta(*thetaNode, *loopVar.output))
+
+    // The origin of the loop variable's input.
+    const auto inputOrigin = loopVar.input->origin();
+
+    // The origin reached when tracing from the loop variable's post result,
+    // if it reaches an invariant loop variable and "escapes" the theta.
+    // The invariant loop variable found does not have to be the same as the above loopVar.
+    // See TraceTests' TestIndirectLoopInvariance.
+    const auto postOrigin = tryTraceThroughTheta(*thetaNode, *loopVar.output);
+
+    if (postOrigin == inputOrigin)
     {
-      return *traced;
+      return *inputOrigin;
     }
 
     return output;
@@ -173,7 +200,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
     return output;
 
   // Handle lambda context variables
-  if (const auto lambda = rvsdg::TryGetRegionParentNode<LambdaNode>(output))
+  if (const auto lambda = TryGetRegionParentNode<LambdaNode>(output))
   {
     // If the argument is a contex variable, continue tracing
     if (const auto ctxVar = lambda->MapBinderContextVar(output))
@@ -183,7 +210,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   }
 
   // Handle delta context variables
-  if (const auto delta = rvsdg::TryGetRegionParentNode<DeltaNode>(output))
+  if (const auto delta = TryGetRegionParentNode<DeltaNode>(output))
   {
     // If the argument is a contex variable, continue tracing
     const auto ctxVar = delta->MapBinderContextVar(output);
@@ -191,7 +218,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   }
 
   // Handle phi outputs
-  if (const auto phiNode = rvsdg::TryGetOwnerNode<PhiNode>(output))
+  if (const auto phiNode = TryGetOwnerNode<PhiNode>(output))
   {
     if (enterPhiNodes_)
     {
@@ -202,7 +229,7 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   }
 
   // Handle phi region arguments
-  if (const auto phiNode = rvsdg::TryGetRegionParentNode<PhiNode>(output))
+  if (const auto phiNode = TryGetRegionParentNode<PhiNode>(output))
   {
     // Wo only trace through contex variables.
     // Going through recursion variables would hide the fact that recursion is happening,
