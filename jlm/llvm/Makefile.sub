@@ -233,6 +233,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/IfConversionTests.cpp \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
     tests/jlm/llvm/opt/LoadChainSeparationTests.cpp \
+    tests/jlm/llvm/opt/LoopStrengthReductionTests.cpp \
     tests/jlm/llvm/opt/LoopUnswitchingTests.cpp \
     tests/jlm/llvm/opt/NodeReductionTests.cpp \
     tests/jlm/llvm/opt/PredicateCorrelationTests.cpp \
