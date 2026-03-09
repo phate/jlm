@@ -295,7 +295,7 @@ TEST(TraceTests, TestIndirectLoopInvariance)
    *        USER2
    *
    * Tracing from either USER1 and USER2 should lead to the constant integer 20,
-   * despite the loop variable not appearing to be invariant on first glance.
+   * despite the loop variable not being directly invariant.
    */
   Graph rvsdg;
   auto & c20 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 20 });
