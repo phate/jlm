@@ -246,6 +246,17 @@ ScalarEvolution::GetChrecMap() const
   return mapCopy;
 }
 
+std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+ScalarEvolution::GetSCEVMap() const
+{
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> mapCopy{};
+  for (auto & [output, scev] : Context_->GetSCEVMap())
+  {
+    mapCopy.emplace(output, scev->Clone());
+  }
+  return mapCopy;
+}
+
 std::unordered_map<const rvsdg::ThetaNode *, size_t>
 ScalarEvolution::GetTripCountMap() const noexcept
 {

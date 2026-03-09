@@ -625,6 +625,13 @@ public:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>>
   GetChrecMap() const;
 
+  /**
+   * Returns a copy of the scev map containing the computed scev trees after running
+   * the analysis.
+   */
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+  GetSCEVMap() const;
+
   std::unordered_map<const rvsdg::ThetaNode *, size_t>
   GetTripCountMap() const noexcept;
 
