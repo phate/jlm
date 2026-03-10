@@ -229,6 +229,12 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
+    // The memcpy() standard C library call has as return type void*, but LLVM models the
+    // function call nevertheless as:
+    // call void @llvm.memcpy.p0.p0.i64(ptr align 4 %7, ptr align 4 %8, i64 %9, i1 false)
+    //
+    // LLVM simply hands in register %7 (dest pointer) to all users of the return type of memcpy().
+    // Thus, we only need state types as result types of the operation here.
     return { numMemoryStates, MemoryStateType::Create() };
   }
 };
@@ -315,6 +321,12 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
+    // The memcpy() standard C library call has as return type void*, but LLVM models the
+    // function call nevertheless as:
+    // call void @llvm.memcpy.p0.p0.i64(ptr align 4 %7, ptr align 4 %8, i64 %9, i1 false)
+    //
+    // LLVM simply hands in register %7 (dest pointer) to all users of the return type of memcpy().
+    // Thus, we only need state types as result types of the operation here.
     std::vector<std::shared_ptr<const rvsdg::Type>> types(1, IOStateType::Create());
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
