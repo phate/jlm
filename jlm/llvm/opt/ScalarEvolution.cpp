@@ -1202,7 +1202,8 @@ ScalarEvolution::GetOrCreateChainRecurrence(
 
   auto stepRecurrence = GetOrCreateStepForSCEV(output, scev, thetaNode);
 
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output);
+      theta == &thetaNode)
   {
     // Find the start value for the recurrence
     const auto inputOrigin = thetaNode.MapPreLoopVar(output).input->origin();
