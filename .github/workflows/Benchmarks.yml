@@ -1,0 +1,72 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-jlm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: release
+          enable-asserts: true
+      - name: "Cache build"
+        id: save-jlm-build
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ github.workspace }}/build-release
+            ${{ github.workspace }}/Makefile.config
+          key: ${{ runner.os }}-jlm-build-${{ github.sha }}
+
+  benchmarks:
+    needs: build-jlm
+    strategy:
+      matrix:
+        benchmark:
+          [
+            polybench,
+            perlbench,
+            gcc,
+            cactuBSSN,
+            x264,
+            blender,
+            imagick,
+            nab,
+            xz,
+            emacs,
+            ghostscript,
+            gdb,
+            sendmail,
+          ]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Install dependencies"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-llvm: true
+          install-clang: true
+      - name: "Restore jlm"
+        id: restore-jlm-build
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ${{ github.workspace }}/build-release
+            ${{ github.workspace }}/Makefile.config
+          key: ${{ runner.os }}-jlm-build-${{ github.sha }}
+          fail-on-cache-miss: true
+      - name: "Add build symlink"
+        run: ln -s ${{ github.workspace }}/build-release ${{ github.workspace }}/build
+        shell: bash
+      - name: "Run benchmark"
+        run: ./scripts/run-benchmarks.sh --apt-install-deps --benchmark ${{ matrix.benchmark }}
+        shell: bash
