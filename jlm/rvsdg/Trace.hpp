@@ -123,8 +123,10 @@ public:
   tryTraceThroughGamma(GammaNode & gammaNode, Output & output);
 
   /**
-   * Attempts to trace the output of a theta node through the node.
-   * This is only possible if the output is invariant within the theta node.
+   * Attempts to trace the the given loop output through the theta node,
+   * resulting in the origin of one of the theta node's inputs if successful.
+   * This is only possible if the output belongs to an invariant loop variable,
+   * or if the loop variable's post result takes its value from another invariant loop variable.
    *
    * @pre the \p output is an output of the given \p thetaNode
    *

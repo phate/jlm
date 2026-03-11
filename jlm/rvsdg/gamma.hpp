@@ -259,7 +259,7 @@ public:
    * output of the gamma node.
    */
   ExitVar
-  AddExitVar(std::vector<rvsdg::Output *> values);
+  AddExitVar(const std::vector<rvsdg::Output *> & values);
 
   /**
    * \brief Gets all exit variables for this gamma.
