@@ -1202,7 +1202,8 @@ ScalarEvolution::GetOrCreateChainRecurrence(
 
   auto stepRecurrence = GetOrCreateStepForSCEV(output, scev, thetaNode);
 
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output);
+      theta == &thetaNode)
   {
     // Find the start value for the recurrence
     const auto inputOrigin = thetaNode.MapPreLoopVar(output).input->origin();
@@ -1353,13 +1354,14 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   const auto rhsChrec = dynamic_cast<const SCEVChainRecurrence *>(rhsOperand);
   if (lhsChrec && rhsChrec)
   {
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     if (lhsChrec->GetLoop() != rhsChrec->GetLoop())
     {
-      newChrec->AddOperand(SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
-      return newChrec;
+      return SCEVChainRecurrence::Create(
+          *lhsChrec->GetLoop(),
+          SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
     }
 
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     const auto lhsSize = lhsChrec->NumOperands();
     const auto rhsSize = rhsChrec->NumOperands();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
@@ -1695,7 +1697,9 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   {
     if (lhsChrec->GetLoop() != rhsChrec->GetLoop())
     {
-      return SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
+      return SCEVChainRecurrence::Create(
+          *lhsChrec->GetLoop(),
+          SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
     }
 
     return ComputeProductOfChrecs(lhsChrec, rhsChrec);
