@@ -1421,7 +1421,8 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         functionType,
         functionType,
         "test",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1496,7 +1497,8 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
         "test",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

@@ -2110,13 +2110,15 @@ ImportTest::SetupRvsdg()
       jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d1",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
   auto d2 = &llvm::LlvmGraphImport::Create(
       *graph,
       jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d2",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);

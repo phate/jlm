@@ -118,7 +118,8 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
@@ -148,7 +149,8 @@ private:
         pointerType,
         pointerType,
         "imported",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Setup the function "func"
     {
@@ -388,14 +390,16 @@ private:
         int32Type,
         pointerType,
         "globalInt",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     Outputs_.GlobalLong = &LlvmGraphImport::Create(
         rvsdg,
         int64Type,
         pointerType,
         "globalLong",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Setup the function "func"
     {

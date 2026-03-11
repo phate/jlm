@@ -26,7 +26,7 @@ class LlvmGraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      bool isConstant)
+      const bool isConstant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
         ValueType_(std::move(valueType)),
         ImportedType_(std::move(importedType)),
@@ -84,7 +84,7 @@ public:
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      bool isConstant = false)
+      const bool isConstant)
   {
     auto graphImport = new LlvmGraphImport(
         graph,
