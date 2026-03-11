@@ -366,19 +366,19 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   auto delta1Node = ipGraph.find("delta1");
   auto delta2Node = ipGraph.find("delta2");
   auto importNode = ipGraph.find("import");
-  EXPECT_EQ(delta1Node->numDependencies(), 2);
+  EXPECT_EQ(delta1Node->numDependencies(), 2u);
   for (auto depNode : *delta1Node)
   {
     EXPECT_TRUE(depNode == delta2Node || depNode == importNode);
   }
 
-  EXPECT_EQ(delta2Node->numDependencies(), 2);
+  EXPECT_EQ(delta2Node->numDependencies(), 2u);
   for (auto depNode : *delta2Node)
   {
     EXPECT_TRUE(depNode == delta1Node || depNode == importNode);
   }
 
-  EXPECT_EQ(importNode->numDependencies(), 0);
+  EXPECT_EQ(importNode->numDependencies(), 0u);
 }
 
 static size_t
@@ -472,8 +472,8 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
 
   auto functionNode = ipGraph.find("f");
   auto importNode = ipGraph.find("opaque");
-  EXPECT_EQ(functionNode->numDependencies(), 1);
-  EXPECT_EQ(importNode->numDependencies(), 0);
+  EXPECT_EQ(functionNode->numDependencies(), 1u);
+  EXPECT_EQ(importNode->numDependencies(), 0u);
   EXPECT_EQ(*functionNode->begin(), importNode);
 
   auto controlFlowGraph = dynamic_cast<const FunctionNode *>(ipGraph.find("f"))->cfg();
