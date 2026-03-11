@@ -339,7 +339,7 @@ GammaNode::MapBranchArgument(const rvsdg::Output & output) const
 }
 
 GammaNode::ExitVar
-GammaNode::AddExitVar(std::vector<jlm::rvsdg::Output *> values)
+GammaNode::AddExitVar(const std::vector<jlm::rvsdg::Output *> & values)
 {
   if (values.size() != nsubregions())
     throw util::Error("Incorrect number of values.");

@@ -420,7 +420,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_shared<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
-    return std::make_shared<llvm::InvariantValueRedirection>();
+    return std::make_shared<llvm::InvariantValueRedirection>(
+        llvm::InvariantValueRedirection::Configuration());
   case JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation:
     return std::make_shared<llvm::LoadChainSeparation>();
   case JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction:

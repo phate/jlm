@@ -33,6 +33,7 @@ namespace jlm::llvm
 class ControlFlowGraph;
 class DataNodeInit;
 class InterProceduralGraphModule;
+class InterProceduralGraphNode;
 class LlvmRvsdgModule;
 class Variable;
 
@@ -103,6 +104,9 @@ private:
 
   static bool
   RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar);
+
+  InterProceduralGraphNode &
+  getInterProceduralGraphNode(const rvsdg::Output & output) const;
 
   std::unique_ptr<Context> Context_;
 };

@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -132,6 +133,23 @@ public:
 RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
+
+InterProceduralGraphNode &
+RvsdgToIpGraphConverter::getInterProceduralGraphNode(const rvsdg::Output & output) const
+{
+  const auto variable = Context_->GetVariable(&output);
+  if (const auto functionVariable = dynamic_cast<const FunctionVariable *>(variable))
+  {
+    return *functionVariable->function();
+  }
+
+  if (const auto globalValue = dynamic_cast<const GlobalValue *>(variable))
+  {
+    return *globalValue->node();
+  }
+
+  throw std::logic_error("Unhandled variable type.");
+}
 
 std::unique_ptr<DataNodeInit>
 RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode)
@@ -402,9 +420,15 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
       operation.Type(),
       operation.linkage(),
       operation.attributes());
-  const auto variable = ipGraphModule.create_variable(functionNode);
-
   functionNode->add_cfg(CreateControlFlowGraph(lambdaNode));
+
+  for (auto [input, _] : lambdaNode.GetContextVars())
+  {
+    auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+    functionNode->add_dependency(&ipGraphNode);
+  }
+
+  const auto variable = ipGraphModule.create_variable(functionNode);
   Context_->InsertVariable(lambdaNode.output(), variable);
 }
 
@@ -474,6 +498,12 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           util::assertedCast<const FunctionVariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->InsertVariable(lambdaNode->output(), variable);
+
+      for (auto [input, _] : lambdaNode->GetContextVars())
+      {
+        auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+        variable->function()->add_dependency(&ipGraphNode);
+      }
     }
     else if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(origin))
     {
@@ -481,6 +511,12 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           util::assertedCast<const GlobalValue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
       Context_->InsertVariable(&deltaNode->output(), variable);
+
+      for (auto & [input, _] : deltaNode->GetContextVars())
+      {
+        auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+        variable->node()->add_dependency(&ipGraphNode);
+      }
     }
     else
     {
@@ -514,6 +550,13 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const rvsdg::DeltaNode & deltaNode)
       op->Section(),
       op->constant());
   dataNode->set_initialization(CreateInitialization(deltaNode));
+
+  for (auto & [input, _] : deltaNode.GetContextVars())
+  {
+    auto & ipGraphNode = getInterProceduralGraphNode(*input->origin());
+    dataNode->add_dependency(&ipGraphNode);
+  }
+
   const auto variable = ipGraphModule.create_global_value(dataNode);
   Context_->InsertVariable(&deltaNode.output(), variable);
 }
@@ -599,6 +642,22 @@ RvsdgToIpGraphConverter::ConvertModule(
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
+
+  // LLVM expects that we do not create any phi instructions for invariant values
+  // through theta and gamma nodes. This leads otherwise to compilation problems (and not just
+  // performance issues). For example, a direct call in a nested loop would all in a sudden be
+  // considered an indirect call as it would take as its function input the phi instruction, but
+  // not the function itself. See the NestedLoopWithCall test in the RvsdgToIpGraphConverterTests
+  // suite. We simply avoid this problem by removing all invariant theta/gamma values from the RVSDG
+  // using invariant value redirection before converting it to a control flow graph.
+  constexpr InvariantValueRedirection::Configuration configuration{
+    true,  // enableGammaOutputRedirection
+    true,  // enableThetaOutputRedirection
+    false, // enableThetaGammaCorrelationRedirection
+    false, // enableCallOutputRedirection
+    false  // enableLoadMemoryStateRedirection
+  };
+  InvariantValueRedirection::createAndRun(rvsdgModule, std::move(configuration));
 
   auto ipGraphModule = InterProceduralGraphModule::create(
       rvsdgModule.SourceFileName(),

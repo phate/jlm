@@ -168,17 +168,19 @@ endif
 ################################################################################
 # Documentation rules
 
+.PHONY: docclean docs
+
 docclean:
 	rm -rf doc
 
-docs: .PHONY
+docs:
 	mkdir -p docs
 	doxygen doxygen.conf
 
-.PHONY:
-
 #################################################################################
 # Clang format rules
+
+.PHONY: format format-dry-run
 
 format:
 	clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
@@ -187,10 +189,21 @@ format-dry-run:
 	clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
 
 #################################################################################
-# Clang tidy rules
+# Linting rules
+
+.PHONY: tidy check-includes
 
 tidy: $(COMMANDPATHSFILE)
 # Run clang-tidy in parallel on all source files and headers, halt on first error
 	parallel --halt now,fail=1 \
 	    clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy {} -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX) \
 	    ::: $(HEADERS) $(SOURCES)
+
+
+check-includes:
+# Check that no #include statements use regular "-quoutes
+# Ignore files in rhls2firrtl as it contains strings used in code harness generation
+	@if ( git --no-pager grep -E "^#include \"" -- ":!jlm/hls/backend/rhls2firrtl" ); then \
+	  echo "error: failed due to the above #include directives using \"-style quotes"; \
+	  exit 1; \
+	fi
