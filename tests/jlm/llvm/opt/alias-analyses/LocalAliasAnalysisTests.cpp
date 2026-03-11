@@ -136,22 +136,30 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
-    Outputs_.Global =
-        &LlvmGraphImport::Create(rvsdg, intType, pointerType, "global", Linkage::externalLinkage);
+    Outputs_.Global = &LlvmGraphImport::Create(
+        rvsdg,
+        intType,
+        pointerType,
+        "global",
+        Linkage::externalLinkage,
+        false);
     Outputs_.GlobalShort = &LlvmGraphImport::Create(
         rvsdg,
         shortType,
         pointerType,
         "globalShort",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
     Outputs_.Array = &LlvmGraphImport::Create(
         rvsdg,
         intArrayType,
         pointerType,
         "array",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false);
 
     // Setup the function "func"
     {

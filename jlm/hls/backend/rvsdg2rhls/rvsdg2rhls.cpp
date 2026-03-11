@@ -305,7 +305,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               oldGraphImport->ValueType(),
               oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
-              oldGraphImport->linkage());
+              oldGraphImport->linkage(),
+              oldGraphImport->isConstant());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
@@ -333,7 +334,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               op->Type(),
               llvm::PointerType::Create(),
               op->name(),
-              llvm::Linkage::externalLinkage);
+              llvm::Linkage::externalLinkage,
+              op->constant());
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
@@ -356,7 +358,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           op.Type(),
           op.Type(),
           op.name(),
-          llvm::Linkage::externalLinkage); // TODO: change linkage?
+          llvm::Linkage::externalLinkage, // TODO: change linkage?
+          true);
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "

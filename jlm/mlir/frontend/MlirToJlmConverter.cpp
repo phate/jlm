@@ -125,7 +125,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
-          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
+          false);
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);

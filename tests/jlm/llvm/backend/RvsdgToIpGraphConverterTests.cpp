@@ -316,7 +316,8 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
 
   LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage);
+  auto imp =
+      &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage, false);
 
   PhiBuilder phiBuilder;
   phiBuilder.begin(&rm.Rvsdg().GetRootRegion());
@@ -418,7 +419,8 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
       functionType,
       functionType,
       "opaque",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),

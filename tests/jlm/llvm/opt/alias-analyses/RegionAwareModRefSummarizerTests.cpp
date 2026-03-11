@@ -1357,14 +1357,16 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
       unitFunctionType,
       unitFunctionType,
       "opaque",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
 
   auto & setjmpImport = LlvmGraphImport::Create(
       graph,
       setjmpFunctionType,
       setjmpFunctionType,
       "_setjmp",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false);
 
   auto & bufGlobal = *rvsdg::DeltaNode::Create(
       &rootRegion,
