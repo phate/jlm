@@ -5,16 +5,16 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
-
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -596,4 +596,69 @@ TEST(CommonNodeEliminationTests, EmptyTheta)
   // Assert
   // We expect that node2 and node3 are unified in the theta subregion
   EXPECT_EQ(thetaNode->subregion()->numNodes(), 3u);
+}
+
+TEST(CommonNodeEliminationTests, GammaInTheta)
+{
+  /**
+   * Creates a graph with a gamma node inside a theta node, that looks like:
+   *
+   *              10
+   *              /\
+   *             V  V
+   * +--------------------+
+   * | CTRL(0)   |   |    |
+   * |    V      V   V    |
+   * | +-------+-------+  |
+   * | |  \    |    /  |  |
+   * | |   V   |   V   |  |
+   * | +-------+-------+  |
+   * |         V          |
+   * |       USER1        |
+   * |                    |
+   * | CTRL(0)  6   7     |
+   * |   V      V   V     |
+   * +--------------------+
+   *
+   * After performing CNE, the USER1 should still take its value from the gamma node,
+   * and not be re-routed to one of the loop variables, despite the loop variables appearing
+   * congruent in the first iteration.
+   */
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = TestType::createValueType();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & constant10 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 10 });
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar1 = thetaNode->AddLoopVar(&constant10);
+  auto loopVar2 = thetaNode->AddLoopVar(&constant10);
+  auto & thetaRegion = *thetaNode->subregion();
+
+  auto & control0 = ControlConstantOperation::create(thetaRegion, 2, 0);
+  auto gammaNode = GammaNode::create(&control0, 2);
+  auto entryVar1 = gammaNode->AddEntryVar(loopVar1.pre);
+  auto entryVar2 = gammaNode->AddEntryVar(loopVar2.pre);
+  auto gammaOutput =
+      gammaNode->AddExitVar({ entryVar1.branchArgument[0], entryVar2.branchArgument[1] }).output;
+
+  auto user1 = TestOperation::createNode(&thetaRegion, { gammaOutput }, {});
+
+  auto & constant6 = BitConstantOperation::create(thetaRegion, { 32, 6 });
+  auto & constant7 = BitConstantOperation::create(thetaRegion, { 32, 7 });
+  loopVar1.post->divert_to(&constant6);
+  loopVar2.post->divert_to(&constant7);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  const auto & user1Origin = *user1->input(0)->origin();
+  EXPECT_EQ(TryGetOwnerNode<GammaNode>(user1Origin), gammaNode);
 }
