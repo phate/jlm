@@ -199,12 +199,19 @@ LoopStrengthReduction::IsLinearCombination(const SCEV & scev)
     return true;
   if (dynamic_cast<const SCEVPlaceholder *>(&scev))
     return true;
-  if (IsLinearMul(scev))
-    return true;
 
+  // Adding together two linear combinations results in a new linear combination
   if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
     return IsLinearCombination(*add->GetLeftOperand())
         && IsLinearCombination(*add->GetRightOperand());
+
+  // Check for linear multiplication (constant multiplied by a linear combination)
+  // Multiplying a linear combination with a constant creates a new linear combination
+  if (const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev))
+    return (dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand())
+            && IsLinearCombination(*mul->GetRightOperand()))
+        || (dynamic_cast<const SCEVConstant *>(mul->GetRightOperand())
+            && IsLinearCombination(*mul->GetLeftOperand()));
 
   return false;
 }
@@ -223,20 +230,5 @@ LoopStrengthReduction::ContainsMul(const SCEV & scev)
     return ContainsMul(*add->GetLeftOperand()) || ContainsMul(*add->GetRightOperand());
 
   return false;
-}
-
-bool
-LoopStrengthReduction::IsLinearMul(const SCEV & scev)
-{
-  // A linear multiplication is one where a loop variable is only ever multiplied by constants, not
-  // other loop variables
-  const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev);
-  if (!mul)
-    return false;
-
-  return (dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand())
-          && IsLinearCombination(*mul->GetRightOperand()))
-      || (dynamic_cast<const SCEVConstant *>(mul->GetRightOperand())
-          && IsLinearCombination(*mul->GetLeftOperand()));
 }
 }
