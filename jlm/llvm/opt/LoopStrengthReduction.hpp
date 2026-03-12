@@ -40,11 +40,14 @@ private:
   void
   ReduceStrength(rvsdg::ThetaNode & thetaNode);
 
+  /**
+   * Checks if the SCEV contains a SCEVMulExpr somewhere in the tree.
+   *
+   * @param scev The SCEV tree to be checked
+   * @return true if the scev contains a multiplication operation, otherwise false.
+   */
   static bool
   ContainsMul(const SCEV & scev);
-
-  static bool
-  IsLinearMul(const SCEV & scev);
 
   static bool
   IsValidCandidateOperation(const SCEV & scevTree);
@@ -64,8 +67,8 @@ private:
   ProcessOutput(
       rvsdg::Output & output,
       rvsdg::ThetaNode & thetaNode,
-      std::vector<rvsdg::Output *> & candidateOperations,
-      std::unordered_set<rvsdg::Output *> & visited);
+      util::HashSet<rvsdg::Output *> & candidateOperations,
+      util::HashSet<rvsdg::Output *> & visited);
 
   void
   ReplaceCandidateOperation(rvsdg::Output & output, rvsdg::ThetaNode & thetaNode);

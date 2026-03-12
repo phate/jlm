@@ -52,6 +52,7 @@ LoopStrengthReduction::ProcessRegion(rvsdg::Region & region)
       }
     }
   }
+  region.prune(false);
 }
 
 void
@@ -79,18 +80,16 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   // We traverse the nodes in the theta node in a bottom-up manner starting at the origin output of
   // the post values for the loop variables. We look for candidate operations and add them to the
   // stack of operations to be reduced.
-  std::vector<rvsdg::Output *> candidateOperations_;
-  std::unordered_set<rvsdg::Output *> visited;
+  util::HashSet<rvsdg::Output *> candidateOperations;
+  util::HashSet<rvsdg::Output *> visited;
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
-    ProcessOutput(*loopVar.post->origin(), thetaNode, candidateOperations_, visited);
+    ProcessOutput(*loopVar.post->origin(), thetaNode, candidateOperations, visited);
   }
 
-  while (!candidateOperations_.empty())
+  for (auto & output : candidateOperations.Items())
   {
-    const auto candidateOutput = candidateOperations_.back();
-    candidateOperations_.pop_back();
-    ReplaceCandidateOperation(*candidateOutput, thetaNode);
+    ReplaceCandidateOperation(*output, thetaNode);
   }
 }
 
@@ -98,30 +97,28 @@ void
 LoopStrengthReduction::ProcessOutput(
     rvsdg::Output & output,
     rvsdg::ThetaNode & thetaNode,
-    std::vector<rvsdg::Output *> & candidateOperations,
-    std::unordered_set<rvsdg::Output *> & visited)
+    util::HashSet<rvsdg::Output *> & candidateOperations,
+    util::HashSet<rvsdg::Output *> & visited)
 {
-  if (visited.find(&output) != visited.end())
+  if (!visited.insert(&output))
     return;
 
-  visited.insert(&output);
+  const auto & [simpleNode, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerBinaryOperation>(output);
 
-  const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
-  if (!node)
+  if (!simpleNode)
     return;
 
   // Multiplication, addition and subtraction are candidates for strength reduction
-  if (const auto & operation = node->GetOperation(); rvsdg::is<IntegerMulOperation>(operation)
-                                                     || rvsdg::is<IntegerAddOperation>(operation)
-                                                     || rvsdg::is<IntegerSubOperation>(operation))
+  if (rvsdg::is<IntegerMulOperation>(*operation) || rvsdg::is<IntegerAddOperation>(*operation)
+      || rvsdg::is<IntegerSubOperation>(*operation))
   {
     if (SCEVMap_.find(&output) == SCEVMap_.end())
       return;
 
-    const auto & scev = SCEVMap_.at(&output);
-    if (IsValidCandidateOperation(*scev))
+    if (IsValidCandidateOperation(*SCEVMap_.at(&output)))
     {
-      candidateOperations.push_back(&output);
+      candidateOperations.insert(&output);
       return; // Return early to not create unnecessary induction variables for nested operations
     }
   }
@@ -219,10 +216,6 @@ LoopStrengthReduction::IsLinearCombination(const SCEV & scev)
 bool
 LoopStrengthReduction::ContainsMul(const SCEV & scev)
 {
-  // We only want to reduce operations that involve a multiplication in some way, in order to avoid
-  // creating new loop variables for simple additions or subtractions.
-  // In our case, checking if the definition involves multiplication is the same as seeing if the
-  // SCEV tree contains a SCEVMulExpr node
   if (dynamic_cast<const SCEVMulExpr *>(&scev))
     return true;
 
