@@ -14,6 +14,8 @@ namespace jlm::llvm
 {
 class LoopStrengthReduction final : public jlm::rvsdg::Transformation
 {
+  class Statistics;
+  class Context;
 
 public:
   ~LoopStrengthReduction() noexcept override;
@@ -75,6 +77,8 @@ private:
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
+
+  std::unique_ptr<Context> Context_;
 };
 
 }

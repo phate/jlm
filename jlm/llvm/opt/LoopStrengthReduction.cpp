@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -11,6 +12,104 @@
 
 namespace jlm::llvm
 {
+class LoopStrengthReduction::Context final
+{
+public:
+  ~Context() = default;
+
+  Context() = default;
+
+  Context(const Context &) = delete;
+
+  Context(Context &&) = delete;
+
+  Context &
+  operator=(const Context &) = delete;
+
+  Context &
+  operator=(Context &&) = delete;
+
+  static std::unique_ptr<Context>
+  Create()
+  {
+    return std::make_unique<Context>();
+  }
+
+  void
+  IncrementOperationsReducedCount(const rvsdg::ThetaNode & theta)
+  {
+    JLM_ASSERT(OperationsReducedMap_.find(&theta) != OperationsReducedMap_.end());
+    OperationsReducedMap_[&theta]++;
+  }
+
+  void
+  InsertIntoOperationsReducedMap(const rvsdg::ThetaNode & theta)
+  {
+    OperationsReducedMap_.insert({ &theta, 0 });
+  }
+
+  const std::unordered_map<const rvsdg::ThetaNode *, size_t> &
+  GetOperationsReducedMap() const
+  {
+    return OperationsReducedMap_;
+  }
+
+private:
+  std::unordered_map<const rvsdg::ThetaNode *, size_t> OperationsReducedMap_;
+};
+
+class LoopStrengthReduction::Statistics final : public util::Statistics
+{
+
+public:
+  ~Statistics() noexcept override = default;
+
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Id::LoopStrengthReduction, sourceFile)
+  {}
+
+  void
+  Start() noexcept
+  {
+    AddTimer(Label::Timer).start();
+  }
+
+  void
+  Stop(const Context & context) noexcept
+  {
+    GetTimer(Label::Timer).stop();
+    AddMeasurement(
+        Label::NumOperationsReduced,
+        GetStatisticsString(context.GetOperationsReducedMap()));
+  }
+
+  static std::string
+  GetStatisticsString(
+      const std::unordered_map<const rvsdg::ThetaNode *, size_t> & operationsReducedMap)
+  {
+    std::string s = "";
+    bool first = true;
+    size_t totalCount = 0;
+    for (auto & [thetaNode, operationsReduced] : operationsReducedMap)
+    {
+      totalCount += operationsReduced;
+      if (!first)
+        s += ',';
+      first = false;
+
+      s += "ID(" + std::to_string(thetaNode->subregion()->getRegionId())
+         + ")=" + std::to_string(operationsReduced);
+    }
+    s += ",Total=" + std::to_string(totalCount);
+    return s;
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const util::FilePath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+};
 
 LoopStrengthReduction::LoopStrengthReduction()
     : Transformation("LoopStrengthReduction")
@@ -23,16 +122,21 @@ LoopStrengthReduction::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
+  statistics->Start();
+
   ScalarEvolution scalarEvolution;
   scalarEvolution.Run(rvsdgModule, statisticsCollector);
 
-  auto chrecMap = scalarEvolution.GetChrecMap();
-  auto scevMap = scalarEvolution.GetSCEVMap();
+  Context_ = Context::Create();
 
-  ChrecMap_ = std::move(chrecMap);
-  SCEVMap_ = std::move(scevMap);
+  ChrecMap_ = scalarEvolution.GetChrecMap();
+  SCEVMap_ = scalarEvolution.GetSCEVMap();
 
   ProcessRegion(rvsdgModule.Rvsdg().GetRootRegion());
+
+  statistics->Stop(*Context_);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
@@ -48,6 +152,7 @@ LoopStrengthReduction::ProcessRegion(rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(structuralNode))
       {
+        Context_->InsertIntoOperationsReducedMap(*thetaNode);
         ReduceStrength(*thetaNode);
       }
     }

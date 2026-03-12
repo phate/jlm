@@ -208,6 +208,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::IfConversion, "print-if-conversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
+    { util::Statistics::Id::LoopStrengthReduction, "print-loop-strength-reduction" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
     { util::Statistics::Id::LoopUnswitching, "print-ivt-stat" },
     { util::Statistics::Id::MemoryStateEncoder, "print-basicencoder-encoding" },
@@ -324,6 +325,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::IfConversion,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction,
       });
     }
 
@@ -500,6 +502,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           CreateStatisticsOption(
               util::Statistics::Id::JlmToRvsdgConversion,
               "Collect Jlm to RVSDG conversion pass statistics."),
+          CreateStatisticsOption(
+              util::Statistics::Id::LoopStrengthReduction,
+              "Collect loop strength reduction pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::LoopUnrolling,
               "Collect loop unrolling pass statistics."),
@@ -734,6 +739,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateStatisticsOption(
               util::Statistics::Id::JlmToRvsdgConversion,
               "Write Jlm to RVSDG conversion statistics to file."),
+          CreateStatisticsOption(
+              util::Statistics::Id::LoopStrengthReduction,
+              "Write loop strength reduction statistics to file."),
           CreateStatisticsOption(
               util::Statistics::Id::LoopUnrolling,
               "Write loop unrolling statistics to file."),
