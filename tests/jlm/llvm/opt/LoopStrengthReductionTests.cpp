@@ -148,7 +148,9 @@ TEST(LoopStrengthReductionTests, SimpleCandidateOperation)
   for (auto & user : oldMulNodeUsers)
   {
     if (user.origin())
+    {
       EXPECT_EQ(user.origin(), newIV.pre);
+    }
   }
 }
 
@@ -243,7 +245,9 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   for (auto & user : oldMulNodeUsers)
   {
     if (user.origin())
+    {
       EXPECT_EQ(user.origin(), mulNode2.output(0));
+    }
   }
 }
 
@@ -377,7 +381,9 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   for (auto & user : oldAddNodeUsers)
   {
     if (user.origin())
+    {
       EXPECT_EQ(user.origin(), newIV.pre);
+    }
   }
 }
 
@@ -542,13 +548,17 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
   for (auto & user : oldAddNodeUsers)
   {
     if (user.origin())
+    {
       EXPECT_EQ(user.origin(), newIV1.pre);
+    }
   }
 
   // Check that all users of the old MUL node now use the new induction variable
   for (auto & user : oldMulNodeUsers)
   {
     if (user.origin())
+    {
       EXPECT_EQ(user.origin(), newIV2.pre);
+    }
   }
 }
