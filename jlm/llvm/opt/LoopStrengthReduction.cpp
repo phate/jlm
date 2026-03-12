@@ -124,7 +124,7 @@ LoopStrengthReduction::ProcessOutput(
   }
 
   // For non-candidate operations, we traverse through to the node's inputs
-  for (auto & input : node->Inputs())
+  for (auto & input : simpleNode->Inputs())
     ProcessOutput(*input.origin(), thetaNode, candidateOperations, visited);
 }
 
@@ -133,59 +133,65 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     rvsdg::Output & output,
     rvsdg::ThetaNode & thetaNode)
 {
-  const auto it = ChrecMap_.find(&output);
-  if (it == ChrecMap_.end() || !it->second)
+  JLM_ASSERT(ChrecMap_.find(&output) != ChrecMap_.end());
+  auto & chrec = ChrecMap_.at(&output);
+
+  // We only support invariant and affine recurrences (1-2 operands) that are not unknown
+  if (SCEVChainRecurrence::IsUnknown(*chrec) || chrec->NumOperands() > 2)
     return;
 
-  auto & chrec = it->second;
-
-  if (SCEVChainRecurrence::IsUnknown(*chrec))
-    return;
-
-  // For now, we only support affine recurrences. Maybe down the line we can look into supporting
-  // quadratic ones
-  if (!SCEVChainRecurrence::IsAffine(*chrec))
+  const auto * intType = dynamic_cast<const rvsdg::BitType *>(output.Type().get());
+  if (!intType)
     return;
 
   const auto & startSCEV = chrec->GetStartValue();
-
-  const auto & stepPtr = chrec->GetStep();
-  if (!stepPtr.has_value())
-    return;
-  const auto & stepSCEV = *stepPtr;
-
   const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
-  const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
-
-  if (!startConstant || !stepConstant)
+  if (!startConstant)
     return;
 
-  const auto initialValue = startConstant->GetValue();
-  const auto stepValue = stepConstant->GetValue();
+  const auto numBits = intType->nbits();
+  const auto startValue = startConstant->GetValue();
+  const auto & startValueNode =
+      IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
+  auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
 
-  const auto & initialValueNode =
-      IntegerConstantOperation::Create(*thetaNode.region(), 32, initialValue);
-  auto newIV = thetaNode.AddLoopVar(initialValueNode.output(0));
+  if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    const auto & stepPtr = chrec->GetStep();
+    if (!stepPtr.has_value())
+      return;
 
-  const auto & stepValueNode =
-      IntegerConstantOperation::Create(*thetaNode.subregion(), 32, stepValue);
-  const auto & newAddNode =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ newIV.pre, stepValueNode.output(0) }, 32);
+    const auto & stepSCEV = *stepPtr;
+    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
 
-  newIV.post->divert_to(newAddNode.output(0));
+    if (!stepConstant)
+      return;
+
+    const auto stepValue = stepConstant->GetValue();
+    const auto & stepValueNode =
+        IntegerConstantOperation::Create(*thetaNode.subregion(), numBits, stepValue);
+    const auto & newAddNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>(
+        { newIV.pre, stepValueNode.output(0) },
+        numBits);
+
+    newIV.post->divert_to(newAddNode.output(0));
+  }
+
   output.divert_users(newIV.pre);
 
   // Insert the chrec for the new induction variable
-  // NOTE: This only updates the copy of the original chrec map from the scalar evolution analysis.
-  // In the future, we would want to insert this into the "global" chrec map so other analyses and
-  // passes can use it as well.
+  // NOTE: This only updates the copy of the original chrec map from the scalar evolution
+  // analysis. In the future, we would want to insert this into the "global" chrec map so other
+  // analyses and passes can use it as well.
   ChrecMap_[newIV.pre] = std::move(chrec);
+
+  Context_->IncrementOperationsReducedCount(thetaNode);
 }
 
 bool
 LoopStrengthReduction::IsValidCandidateOperation(const SCEV & scevTree)
 {
-  // Accept any linear combination that involves multiplication somewhere
+  // Accept any linear combination that involves multiplication somewhere in the tree
   return IsLinearCombination(scevTree) && ContainsMul(scevTree);
 }
 
