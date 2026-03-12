@@ -41,14 +41,16 @@ MemoryStateSplitConversion::ConvertMemoryStateSplitsInRegion(rvsdg::Region & reg
         ConvertMemoryStateSplitsInRegion(subregion);
       }
     }
-
-    // Replace split nodes with fork nodes
-    if (rvsdg::is<llvm::LambdaEntryMemoryStateSplitOperation>(&node)
-        || rvsdg::is<llvm::MemoryStateSplitOperation>(&node))
+    else if (const auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(&node))
     {
-      JLM_ASSERT(node.ninputs() == 1);
-      auto results = ForkOperation::create(node.noutputs(), *node.input(0)->origin());
-      divert_users(&node, results);
+      // Replace split nodes with fork nodes
+      if (rvsdg::is<llvm::LambdaEntryMemoryStateSplitOperation>(simpleNode->GetOperation())
+          || rvsdg::is<llvm::MemoryStateSplitOperation>(simpleNode->GetOperation()))
+      {
+        JLM_ASSERT(node.ninputs() == 1);
+        auto results = ForkOperation::create(node.noutputs(), *node.input(0)->origin());
+        divert_users(&node, results);
+      }
     }
   }
 

@@ -16,6 +16,7 @@
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -124,12 +125,25 @@ TEST(StoreValueForwardingTests, NestedAllocas)
 
   for (auto & node : lambdaNode.subregion()->Nodes())
   {
-    if (is<AllocaOperation>(&node))
-      allocaCount++;
-    else if (is<StoreOperation>(&node))
-      storeCount++;
-    else if (is<LoadOperation>(&node))
-      loadCount++;
+    rvsdg::MatchType(
+        node,
+        [&](const rvsdg::SimpleNode & node)
+        {
+          rvsdg::MatchType(
+              node.GetOperation(),
+              [&](const AllocaOperation &)
+              {
+                allocaCount++;
+              },
+              [&](const StoreOperation &)
+              {
+                storeCount++;
+              },
+              [&](const LoadOperation &)
+              {
+                loadCount++;
+              });
+        });
   }
   EXPECT_EQ(allocaCount, 0u);
   EXPECT_EQ(storeCount, 0u);
@@ -257,10 +271,21 @@ TEST(StoreValueForwardingTests, GetElementPointerOffsets)
 
   for (auto & node : lambdaNode.subregion()->Nodes())
   {
-    if (is<StoreOperation>(&node))
-      storeCount++;
-    else if (is<LoadOperation>(&node))
-      loadCount++;
+    MatchType(
+        node,
+        [&](const rvsdg::SimpleNode & node)
+        {
+          MatchType(
+              node.GetOperation(),
+              [&](const StoreOperation &)
+              {
+                storeCount++;
+              },
+              [&](const LoadOperation &)
+              {
+                loadCount++;
+              });
+        });
   }
   EXPECT_EQ(storeCount, 2u);
   EXPECT_EQ(loadCount, 1u);

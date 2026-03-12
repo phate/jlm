@@ -278,7 +278,7 @@ public:
   [[nodiscard]] static size_t
   NumArguments(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     return node.ninputs() - 1;
   }
 
@@ -290,7 +290,7 @@ public:
   [[nodiscard]] static rvsdg::Input *
   Argument(const rvsdg::Node & node, const size_t n)
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     JLM_ASSERT(n < CallOperation::NumArguments(node));
     return node.input(n + 1);
   }
@@ -301,7 +301,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   GetFunctionInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto functionInput = node.input(0);
     JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->Type()));
     return *functionInput;
@@ -313,7 +313,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   GetIOStateInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto ioState = node.input(node.ninputs() - 2);
     JLM_ASSERT(is<IOStateType>(ioState->Type()));
     return *ioState;
@@ -325,7 +325,7 @@ public:
   [[nodiscard]] static rvsdg::Output &
   GetIOStateOutput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto ioState = node.output(node.noutputs() - 2);
     JLM_ASSERT(is<IOStateType>(ioState->Type()));
     return *ioState;
@@ -337,7 +337,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   GetMemoryStateInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto memoryState = node.input(node.ninputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
@@ -349,7 +349,7 @@ public:
   [[nodiscard]] static rvsdg::Output &
   GetMemoryStateOutput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto memoryState = node.output(node.noutputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
@@ -368,10 +368,10 @@ public:
   [[nodiscard]] static rvsdg::SimpleNode *
   tryGetMemoryStateEntryMerge(const rvsdg::Node & callNode) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&callNode));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(callNode).GetOperation()));
     const auto node =
         rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*GetMemoryStateInput(callNode).origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? node : nullptr;
+    return node && is<CallEntryMemoryStateMergeOperation>(node->GetOperation()) ? node : nullptr;
   }
 
   /**
@@ -386,7 +386,7 @@ public:
   [[nodiscard]] static rvsdg::SimpleNode *
   tryGetMemoryStateExitSplit(const rvsdg::Node & callNode) noexcept
   {
-    JLM_ASSERT(is<CallOperation>(&callNode));
+    JLM_ASSERT(is<CallOperation>(static_cast<const rvsdg::SimpleNode &>(callNode).GetOperation()));
 
     // If a memory state exit split node is present, then we would expect the node to be the only
     // user of the memory state output.
@@ -395,7 +395,7 @@ public:
 
     const auto node =
         rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(GetMemoryStateOutput(callNode).SingleUser());
-    return is<CallExitMemoryStateSplitOperation>(node) ? node : nullptr;
+    return node && is<CallExitMemoryStateSplitOperation>(node->GetOperation()) ? node : nullptr;
   }
 
   /**

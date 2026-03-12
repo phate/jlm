@@ -166,93 +166,93 @@ instrument_ref(
             allocaFunctionType);
       }
     }
-    else if (
-        auto loadOp =
-            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
+    else if (auto simplenode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
-      auto addr = node->input(0)->origin();
-      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
-      size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
-      int log2Bytes = log2(bitWidth / 8);
-      auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
+      const auto & op = simplenode->GetOperation();
+      if (auto loadOp = dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&op))
+      {
+        auto addr = node->input(0)->origin();
+        JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
+        size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
+        int log2Bytes = log2(bitWidth / 8);
+        auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
-      // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (*addr->Type() != *void_ptr)
-      {
-        addr = llvm::BitCastOperation::create(addr, void_ptr);
-      }
-      auto memstate = node->input(1)->origin();
-      auto callOp = jlm::llvm::CallOperation::Create(
-          load_func,
-          loadFunctionType,
-          { addr, widthNode.output(0), ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call operation
-      node->input(1)->divert_to(callOp[1]);
-    }
-    else if (auto ao = dynamic_cast<const jlm::llvm::AllocaOperation *>(&(node->GetOperation())))
-    {
-      // ensure that the size is one
-      JLM_ASSERT(node->ninputs() == 1);
-      auto constant_output = dynamic_cast<rvsdg::NodeOutput *>(node->input(0)->origin());
-      JLM_ASSERT(constant_output);
-      auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
-          &constant_output->node()->GetOperation());
-      JLM_ASSERT(constant_operation);
-      JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
-      jlm::rvsdg::Output * addr = node->output(0);
-      // ensure that the alloca is an array type
-      JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
-      auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
-      JLM_ASSERT(at);
-      auto & sizeNode =
-          llvm::IntegerConstantOperation::Create(*region, 64, BaseHLS::JlmSize(at) / 8);
-
-      // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (*addr->Type() != *void_ptr)
-      {
-        addr = llvm::BitCastOperation::create(addr, void_ptr);
-      }
-      std::vector<jlm::rvsdg::Input *> old_users;
-      for (auto & user : node->output(1)->Users())
-        old_users.push_back(&user);
-      auto memstate = node->output(1);
-      auto callOp = jlm::llvm::CallOperation::Create(
-          alloca_func,
-          allocaFunctionType,
-          { addr, sizeNode.output(0), ioState, memstate });
-      for (auto ou : old_users)
-      {
+        // Does this IF make sense now when the void_ptr doesn't have a type?
+        if (*addr->Type() != *void_ptr)
+        {
+          addr = llvm::BitCastOperation::create(addr, void_ptr);
+        }
+        auto memstate = node->input(1)->origin();
+        auto callOp = jlm::llvm::CallOperation::Create(
+            load_func,
+            loadFunctionType,
+            { addr, widthNode.output(0), ioState, memstate });
         // Divert the memory state of the load to the new memstate from the call operation
-        ou->divert_to(callOp[1]);
+        node->input(1)->divert_to(callOp[1]);
       }
-    }
-    else if (
-        auto so =
-            dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
-    {
-      auto addr = node->input(0)->origin();
-      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
-      auto bitWidth = JlmSize(&so->GetStoredType());
-      int log2Bytes = log2(bitWidth / 8);
-      auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
+      else if (auto ao = dynamic_cast<const jlm::llvm::AllocaOperation *>(&op))
+      {
+        // ensure that the size is one
+        JLM_ASSERT(node->ninputs() == 1);
+        auto constant_node =
+            &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*node->input(0)->origin());
+        auto constant_operation =
+            dynamic_cast<const llvm::IntegerConstantOperation *>(&constant_node->GetOperation());
+        JLM_ASSERT(constant_operation);
+        JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
+        jlm::rvsdg::Output * addr = node->output(0);
+        // ensure that the alloca is an array type
+        JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
+        auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
+        JLM_ASSERT(at);
+        auto & sizeNode =
+            llvm::IntegerConstantOperation::Create(*region, 64, BaseHLS::JlmSize(at) / 8);
 
-      // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (*addr->Type() != *void_ptr)
-      {
-        addr = llvm::BitCastOperation::create(addr, void_ptr);
+        // Does this IF make sense now when the void_ptr doesn't have a type?
+        if (*addr->Type() != *void_ptr)
+        {
+          addr = llvm::BitCastOperation::create(addr, void_ptr);
+        }
+        std::vector<jlm::rvsdg::Input *> old_users;
+        for (auto & user : node->output(1)->Users())
+          old_users.push_back(&user);
+        auto memstate = node->output(1);
+        auto callOp = jlm::llvm::CallOperation::Create(
+            alloca_func,
+            allocaFunctionType,
+            { addr, sizeNode.output(0), ioState, memstate });
+        for (auto ou : old_users)
+        {
+          // Divert the memory state of the load to the new memstate from the call operation
+          ou->divert_to(callOp[1]);
+        }
       }
-      auto memstate = node->output(0);
-      std::vector<jlm::rvsdg::Input *> oldUsers;
-      for (auto & user : memstate->Users())
-        oldUsers.push_back(&user);
-      auto callOp = jlm::llvm::CallOperation::Create(
-          store_func,
-          storeFunctionType,
-          { addr, widthNode.output(0), ioState, memstate });
-      // Divert the memory state after the store to the new memstate from the call operation
-      for (auto user : oldUsers)
+      else if (auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&op))
       {
-        user->divert_to(callOp[1]);
+        auto addr = node->input(0)->origin();
+        JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
+        auto bitWidth = JlmSize(&so->GetStoredType());
+        int log2Bytes = log2(bitWidth / 8);
+        auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
+
+        // Does this IF make sense now when the void_ptr doesn't have a type?
+        if (*addr->Type() != *void_ptr)
+        {
+          addr = llvm::BitCastOperation::create(addr, void_ptr);
+        }
+        auto memstate = node->output(0);
+        std::vector<jlm::rvsdg::Input *> oldUsers;
+        for (auto & user : memstate->Users())
+          oldUsers.push_back(&user);
+        auto callOp = jlm::llvm::CallOperation::Create(
+            store_func,
+            storeFunctionType,
+            { addr, widthNode.output(0), ioState, memstate });
+        // Divert the memory state after the store to the new memstate from the call operation
+        for (auto user : oldUsers)
+        {
+          user->divert_to(callOp[1]);
+        }
       }
     }
   }

@@ -39,7 +39,8 @@ TEST(SExtOperationTests, test_bitunary_reduction)
   view(graph, stdout);
 
   // Assert
-  EXPECT_TRUE(is<bitnot_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
+  EXPECT_TRUE(is<bitnot_op>(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin())->GetOperation()));
 }
 
 TEST(SExtOperationTests, test_bitbinary_reduction)
@@ -70,7 +71,8 @@ TEST(SExtOperationTests, test_bitbinary_reduction)
   view(graph, stdout);
 
   // Assert
-  EXPECT_TRUE(is<bitadd_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
+  EXPECT_TRUE(is<bitadd_op>(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin())->GetOperation()));
 }
 
 TEST(SExtOperationTests, test_inverse_reduction)

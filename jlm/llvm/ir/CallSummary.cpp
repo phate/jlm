@@ -119,7 +119,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
     }
 
     auto inputNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input);
-    if (is<CallOperation>(inputNode) && input == inputNode->input(0))
+    if (inputNode && is<CallOperation>(inputNode->GetOperation()) && input == inputNode->input(0))
     {
       directCalls.emplace_back(inputNode);
       continue;

@@ -122,23 +122,23 @@ TEST(MemoryConverterTests, TestLoad)
 
   // Load Address
   auto loadNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode->GetOperation()));
 
   // Load Data
   loadNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode->GetOperation()));
 
   // Request Node
   auto requestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(2)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode->GetOperation()));
 
   // Response Node
   auto responseNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
-  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(2)->origin());
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode->GetOperation()));
 
   // Response source
   auto responseSource = responseNode->input(0)->origin();
@@ -196,18 +196,18 @@ TEST(MemoryConverterTests, TestStore)
 
   EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
   auto storeNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*bufferNode->input(0)->origin());
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode->GetOperation()));
   auto requestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode->GetOperation()));
 
   // Request source
   auto requestSource = requestNode->input(0)->origin();
-  storeNode = jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(requestSource)->node();
-  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
+  storeNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*requestSource);
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode->GetOperation()));
 }
 
 TEST(MemoryConverterTests, TestLoadStore)
@@ -266,22 +266,22 @@ TEST(MemoryConverterTests, TestLoadStore)
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
   auto storeNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*bufferNode->input(0)->origin());
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode->GetOperation()));
   auto firstRequestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(firstRequestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(firstRequestNode->GetOperation()));
   auto secondRequestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(secondRequestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(2)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(secondRequestNode->GetOperation()));
   auto loadNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(storeNode->input(0)->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeNode->input(0)->origin());
+  EXPECT_TRUE(is<jlm::hls::LoadOperation>(loadNode->GetOperation()));
   auto responseNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
-  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(2)->origin());
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode->GetOperation()));
 }
 
 TEST(MemoryConverterTests, TestThetaLoad)
@@ -343,10 +343,10 @@ TEST(MemoryConverterTests, TestThetaLoad)
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(4)->SingleUser();
   auto * entryMemoryStateSplitNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
-  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode->GetOperation()));
   auto exitMemoryStateMergeNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode->GetOperation()));
 
   // Act
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -382,8 +382,8 @@ TEST(MemoryConverterTests, TestThetaLoad)
 
   // Request Node
   auto requestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(2)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode->GetOperation()));
 
   // HLS_LOOP Node
   auto loopOutput =
@@ -395,8 +395,8 @@ TEST(MemoryConverterTests, TestThetaLoad)
   EXPECT_EQ(thetaResult.size(), 1);
   // Load Node
   auto loadNode =
-      jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
-  EXPECT_TRUE(is<DecoupledLoadOperation>(loadNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*thetaResult.first()->origin());
+  EXPECT_TRUE(is<DecoupledLoadOperation>(loadNode->GetOperation()));
   // Loop Argument
   auto thetaArgument =
       jlm::util::assertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
@@ -404,8 +404,8 @@ TEST(MemoryConverterTests, TestThetaLoad)
 
   // Response Node
   auto responseNode =
-      jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaInput->origin())->node();
-  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*thetaInput->origin());
+  EXPECT_TRUE(is<MemoryResponseOperation>(responseNode->GetOperation()));
 
   // Lambda argument
   EXPECT_TRUE(is<jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin()));
@@ -471,10 +471,10 @@ TEST(MemoryConverterTests, TestThetaStore)
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(5)->SingleUser();
   auto * entryMemoryStateSplitNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
-  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
+  EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode->GetOperation()));
   auto exitMemoryStateMergeNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
-  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
+  EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode->GetOperation()));
 
   // Act
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -508,8 +508,8 @@ TEST(MemoryConverterTests, TestThetaStore)
 
   // Request Node
   auto requestNode =
-      jlm::util::assertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
-  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
+  EXPECT_TRUE(is<MemoryRequestOperation>(requestNode->GetOperation()));
 
   // HLS_LOOP Node
   auto loopOutput =
@@ -521,12 +521,12 @@ TEST(MemoryConverterTests, TestThetaStore)
   EXPECT_EQ(thetaResult.size(), 1);
   // Load Node
   auto storeNode =
-      jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
-  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*thetaResult.first()->origin());
+  EXPECT_TRUE(is<jlm::hls::StoreOperation>(storeNode->GetOperation()));
   // NDMux Node
   auto ndMuxNode =
-      jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(storeNode->input(2)->origin())->node();
-  EXPECT_TRUE(is<MuxOperation>(ndMuxNode));
+      &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeNode->input(2)->origin());
+  EXPECT_TRUE(is<MuxOperation>(ndMuxNode->GetOperation()));
   // Loop Argument
   EXPECT_TRUE(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
 }

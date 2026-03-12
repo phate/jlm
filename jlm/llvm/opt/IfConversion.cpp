@@ -79,7 +79,7 @@ IfConversion::HandleRegion(rvsdg::Region & region)
         HandleRegion(*subregion);
       }
     }
-    else if (is<rvsdg::SimpleOperation>(&node))
+    else if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
     {
       // Nothing needs to be done
     }
@@ -122,7 +122,7 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
     }
 
     const auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*gammaPredicate);
-    if (is<rvsdg::MatchOperation>(matchNode))
+    if (matchNode && is<rvsdg::MatchOperation>(matchNode->GetOperation()))
     {
       const auto matchOperation =
           util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());

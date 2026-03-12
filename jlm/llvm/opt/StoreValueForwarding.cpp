@@ -136,7 +136,7 @@ StoreValueForwarding::traverseIntraProceduralRegion(rvsdg::Region & region)
         },
         [&](rvsdg::SimpleNode & simpleNode)
         {
-          if (is<LoadNonVolatileOperation>(&simpleNode))
+          if (is<LoadNonVolatileOperation>(simpleNode.GetOperation()))
           {
             processLoadNode(simpleNode);
           }
@@ -569,7 +569,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   context_->numTotalLoads++;
 
   // Only non-volatile loads are candidates for being forwarded to
-  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(is<LoadNonVolatileOperation>(loadNode.GetOperation()));
 
   LoadTracingInfo loadTracingInfo(loadNode);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();

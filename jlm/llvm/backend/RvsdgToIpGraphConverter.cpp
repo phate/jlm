@@ -173,6 +173,8 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
   for (const auto & node : rvsdg::TopDownTraverser(deltaNode.subregion()))
   {
     JLM_ASSERT(node->noutputs() == 1);
+    auto simplenode = util::assertedCast<rvsdg::SimpleNode>(node);
+
     const auto output = node->output(0);
 
     // collect operand variables
@@ -181,7 +183,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
     // convert node to tac
-    auto op = node->GetOperation().copy();
+    auto op = simplenode->GetOperation().copy();
     tacs.push_back(ThreeAddressCode::create(
         std::unique_ptr<rvsdg::SimpleOperation>(
             util::assertedCast<rvsdg::SimpleOperation>(op.release())),

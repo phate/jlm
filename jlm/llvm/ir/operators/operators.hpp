@@ -2433,7 +2433,7 @@ public:
   }
 
   static rvsdg::Input &
-  sizeInput(const rvsdg::Node & node)
+  sizeInput(const rvsdg::SimpleNode & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
     auto & size = *node.input(0);
@@ -2442,7 +2442,7 @@ public:
   }
 
   static rvsdg::Input &
-  ioStateInput(const rvsdg::Node & node)
+  ioStateInput(const rvsdg::SimpleNode & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
     auto & ioState = *node.input(1);
@@ -2451,7 +2451,7 @@ public:
   }
 
   static rvsdg::Output &
-  addressOutput(const rvsdg::Node & node)
+  addressOutput(const rvsdg::SimpleNode & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
     auto & address = *node.output(0);
@@ -2460,7 +2460,7 @@ public:
   }
 
   static rvsdg::Output &
-  ioStateOutput(const rvsdg::Node & node)
+  ioStateOutput(const rvsdg::SimpleNode & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
     auto & ioState = *node.output(1);
@@ -2469,7 +2469,7 @@ public:
   }
 
   static rvsdg::Output &
-  memoryStateOutput(const rvsdg::Node & node)
+  memoryStateOutput(const rvsdg::SimpleNode & node)
   {
     JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
     auto & memoryState = *node.output(2);
@@ -2533,7 +2533,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   addressInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<FreeOperation>(&node));
+    JLM_ASSERT(is<FreeOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(0);
     JLM_ASSERT(is<PointerType>(input->Type()));
     return *input;

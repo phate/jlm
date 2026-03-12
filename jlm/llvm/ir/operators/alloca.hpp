@@ -68,21 +68,21 @@ public:
   static rvsdg::Input &
   getCountInput(rvsdg::Node & node)
   {
-    JLM_ASSERT(is<AllocaOperation>(&node));
+    JLM_ASSERT(is<AllocaOperation>(static_cast<rvsdg::SimpleNode &>(node).GetOperation()));
     return *node.input(0);
   }
 
   static rvsdg::Output &
   getPointerOutput(rvsdg::Node & node)
   {
-    JLM_ASSERT(is<AllocaOperation>(&node));
+    JLM_ASSERT(is<AllocaOperation>(static_cast<rvsdg::SimpleNode &>(node).GetOperation()));
     return *node.output(0);
   }
 
   static rvsdg::Output &
   getMemoryStateOutput(rvsdg::Node & node)
   {
-    JLM_ASSERT(is<AllocaOperation>(&node));
+    JLM_ASSERT(is<AllocaOperation>(static_cast<rvsdg::SimpleNode &>(node).GetOperation()));
     return *node.output(1);
   }
 

@@ -42,7 +42,7 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
   JLM_ASSERT(operands.size() > 2);
 
   const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
-  if (!is<MemoryStateMergeOperation>(memStateMergeNode))
+  if (!memStateMergeNode || !is<MemoryStateMergeOperation>(memStateMergeNode->GetOperation()))
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
@@ -62,7 +62,7 @@ is_store_store_reducible(
   JLM_ASSERT(operands.size() > 2);
 
   const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
-  if (!is<StoreNonVolatileOperation>(storeNode))
+  if (!storeNode || !is<StoreNonVolatileOperation>(storeNode->GetOperation()))
     return false;
 
   if (op.NumMemoryStates() != storeNode->noutputs())
@@ -91,7 +91,7 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
     return false;
 
   const auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[0]);
-  if (!is<AllocaOperation>(allocaNode))
+  if (!allocaNode || !is<AllocaOperation>(allocaNode->GetOperation()))
     return false;
 
   std::unordered_set states(std::next(std::next(operands.begin())), operands.end());

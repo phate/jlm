@@ -127,7 +127,8 @@ remove_unused_loop_inputs(LoopNode * ln)
 static bool
 dead_spec_gamma(rvsdg::Node * dmux_node)
 {
-  const auto mux_op = util::assertedCast<const MuxOperation>(&dmux_node->GetOperation());
+  const auto mux_op = util::assertedCast<const MuxOperation>(
+      &static_cast<const rvsdg::SimpleNode &>(*dmux_node).GetOperation());
   JLM_ASSERT(mux_op->discarding);
   // check if all inputs have the same origin
   bool all_inputs_same = true;
@@ -152,7 +153,8 @@ dead_spec_gamma(rvsdg::Node * dmux_node)
 static bool
 dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 {
-  auto mux_op = util::assertedCast<const MuxOperation>(&ndmux_node->GetOperation());
+  auto mux_op = util::assertedCast<const MuxOperation>(
+      &static_cast<const rvsdg::SimpleNode &>(*ndmux_node).GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // check if all inputs go to outputs of same branch
   bool all_inputs_same_branch = true;
@@ -193,7 +195,8 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 static bool
 dead_loop(rvsdg::Node * ndmux_node)
 {
-  const auto mux_op = util::assertedCast<const MuxOperation>(&ndmux_node->GetOperation());
+  const auto mux_op = util::assertedCast<const MuxOperation>(
+      &static_cast<const rvsdg::SimpleNode &>(*ndmux_node).GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
   auto backedge_arg = dynamic_cast<BackEdgeArgument *>(ndmux_node->input(2)->origin());
@@ -271,7 +274,8 @@ dead_loop(rvsdg::Node * ndmux_node)
 static bool
 dead_loop_lcb(rvsdg::Node * lcb_node)
 {
-  JLM_ASSERT(jlm::rvsdg::is<LoopConstantBufferOperation>(lcb_node));
+  JLM_ASSERT(jlm::rvsdg::is<LoopConstantBufferOperation>(
+      static_cast<const rvsdg::SimpleNode &>(*lcb_node).GetOperation()));
 
   // one branch
   if (lcb_node->output(0)->nusers() != 1)
@@ -291,21 +295,20 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   // depend on same control
   auto branch_cond_origin = branchNode->input(0)->origin();
-  auto pred_buf_out = dynamic_cast<rvsdg::NodeOutput *>(lcb_node->input(0)->origin());
-  if (!pred_buf_out
-      || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
+  auto pred_buf_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lcb_node->input(0)->origin());
+  if (!pred_buf_node
+      || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_node->GetOperation()))
   {
     return false;
   }
-  auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
+  auto pred_buf_cond_origin = pred_buf_node->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
-  auto extra_buf_out = dynamic_cast<rvsdg::NodeOutput *>(pred_buf_cond_origin);
-  if (!extra_buf_out
-      || !dynamic_cast<const BufferOperation *>(&extra_buf_out->node()->GetOperation()))
+  auto extra_buf_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pred_buf_cond_origin);
+  if (!extra_buf_node || !dynamic_cast<const BufferOperation *>(&extra_buf_node->GetOperation()))
   {
     return false;
   }
-  auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
+  auto extra_buf_cond_origin = extra_buf_node->input(0)->origin();
 
   if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
   {
@@ -436,22 +439,26 @@ RhlsDeadNodeElimination::Run(
     {
       if (node->IsDead())
       {
-        if (rvsdg::is<MemoryRequestOperation>(node))
+        if (auto simplenode = dynamic_cast<rvsdg::SimpleNode *>(node))
         {
-          // TODO: fix this once memory connections are explicit
-          continue;
+          if (rvsdg::is<MemoryRequestOperation>(simplenode->GetOperation()))
+          {
+            // TODO: fix this once memory connections are explicit
+            continue;
+          }
+          if (rvsdg::is<LocalMemoryRequestOperation>(simplenode->GetOperation()))
+          {
+            continue;
+          }
+          if (rvsdg::is<LocalMemoryResponseOperation>(simplenode->GetOperation()))
+          {
+            // TODO: fix - this scenario has only stores and should just be optimized away
+            // completely
+            continue;
+          }
+          remove(node);
+          changed = true;
         }
-        if (rvsdg::is<LocalMemoryRequestOperation>(node))
-        {
-          continue;
-        }
-        if (rvsdg::is<LocalMemoryResponseOperation>(node))
-        {
-          // TODO: fix - this scenario has only stores and should just be optimized away completely
-          continue;
-        }
-        remove(node);
-        changed = true;
       }
       else if (dynamic_cast<rvsdg::LambdaNode *>(node))
       {
@@ -465,39 +472,42 @@ RhlsDeadNodeElimination::Run(
         changed |= remove_loop_passthrough(ln);
         changed |= Run(*ln->subregion(), statisticsCollector);
       }
-      else if (const auto mux = dynamic_cast<const MuxOperation *>(&node->GetOperation()))
+      else if (auto simplenode = dynamic_cast<const rvsdg::SimpleNode *>(node))
       {
-        if (mux->discarding)
+        if (const auto mux = dynamic_cast<const MuxOperation *>(&simplenode->GetOperation()))
         {
-          changed |= dead_spec_gamma(node);
+          if (mux->discarding)
+          {
+            changed |= dead_spec_gamma(node);
+          }
+          else
+          {
+            changed |= dead_nonspec_gamma(node) || dead_loop(node);
+          }
         }
-        else
+        else if (rvsdg::is<LoopConstantBufferOperation>(simplenode->GetOperation()))
         {
-          changed |= dead_nonspec_gamma(node) || dead_loop(node);
+          changed |= dead_loop_lcb(node);
         }
-      }
-      else if (rvsdg::is<LoopConstantBufferOperation>(node))
-      {
-        changed |= dead_loop_lcb(node);
-      }
-      else if (dynamic_cast<const llvm::MemoryStateSplitOperation *>(&node->GetOperation()))
-      {
-        if (fix_mem_split(node))
+        else if (dynamic_cast<const llvm::MemoryStateSplitOperation *>(&simplenode->GetOperation()))
         {
-          changed = true;
+          if (fix_mem_split(node))
+          {
+            changed = true;
+          }
         }
-      }
-      else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&node->GetOperation()))
-      {
-        if (fix_mem_merge(node))
+        else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&simplenode->GetOperation()))
         {
-          changed = true;
+          if (fix_mem_merge(node))
+          {
+            changed = true;
+          }
         }
-      }
-      if (changed)
-      {
-        // Changes might break bottom up traversal
-        break;
+        if (changed)
+        {
+          // Changes might break bottom up traversal
+          break;
+        }
       }
     }
     any_changed |= changed;

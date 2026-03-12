@@ -19,9 +19,14 @@ namespace jlm::hls
 static inline bool
 is_constant(const rvsdg::Node * node)
 {
-  return jlm::rvsdg::is<llvm::IntegerConstantOperation>(node)
-      || jlm::rvsdg::is<llvm::UndefValueOperation>(node) || jlm::rvsdg::is<llvm::ConstantFP>(node)
-      || jlm::rvsdg::is<rvsdg::ControlConstantOperation>(node);
+  auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(node);
+  if (!simple_node)
+    return false;
+
+  const auto & op = simple_node->GetOperation();
+  return jlm::rvsdg::is<llvm::IntegerConstantOperation>(op)
+      || jlm::rvsdg::is<llvm::UndefValueOperation>(op) || jlm::rvsdg::is<llvm::ConstantFP>(op)
+      || jlm::rvsdg::is<rvsdg::ControlConstantOperation>(op);
 }
 
 std::unique_ptr<rvsdg::TransformationSequence>

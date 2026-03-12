@@ -161,13 +161,15 @@ MemoryStateSeparation::gatherNonDecoupleCalls(rvsdg::Region & region)
           gatherCalls(subregion, calls);
         }
       }
-
-      if (rvsdg::is<llvm::CallOperation>(node))
+      else if (const auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
       {
-        auto functionName = get_function_name(node->input(0));
-        if (functionName.rfind("decouple") == functionName.npos)
+        if (rvsdg::is<llvm::CallOperation>(simpleNode->GetOperation()))
         {
-          calls.push_back(node);
+          auto functionName = get_function_name(node->input(0));
+          if (functionName.rfind("decouple") == functionName.npos)
+          {
+            calls.push_back(node);
+          }
         }
       }
     }

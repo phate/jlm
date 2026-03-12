@@ -248,8 +248,8 @@ determineGammaSubregionRoles(const ThetaGammaPredicateCorrelation & correlation)
     }
 
     GammaSubregionRoles roles;
-    const auto matchOperation =
-        util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+    const auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(*matchNode).GetOperation());
     if (matchOperation->alternative(alternatives[0]) == 0)
     {
       roles.exitSubregion = correlation.gammaNode().subregion(0);
@@ -390,8 +390,8 @@ PredicateCorrelation::handleMatchConstantCorrelation(
     return false;
   }
 
-  const auto matchOperation =
-      util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
+  const auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(
+      &static_cast<const rvsdg::SimpleNode &>(*matchNode).GetOperation());
   if (matchOperation->alternative(alternatives[0]) != 0
       || matchOperation->alternative(alternatives[1]) != 1)
   {

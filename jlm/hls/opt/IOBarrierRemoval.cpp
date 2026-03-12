@@ -33,11 +33,13 @@ IOBarrierRemoval::RemoveIOBarrierFromRegion(rvsdg::Region & region)
         RemoveIOBarrierFromRegion(*structuralNode->subregion(n));
       }
     }
-
-    // Render all IOBarrier nodes dead
-    if (rvsdg::is<llvm::IOBarrierOperation>(&node))
+    else if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
     {
-      node.output(0)->divert_users(node.input(0)->origin());
+      // Render all IOBarrier nodes dead
+      if (rvsdg::is<llvm::IOBarrierOperation>(simpleNode->GetOperation()))
+      {
+        node.output(0)->divert_users(node.input(0)->origin());
+      }
     }
   }
 

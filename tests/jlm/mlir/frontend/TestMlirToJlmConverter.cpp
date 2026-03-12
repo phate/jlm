@@ -113,11 +113,12 @@ TEST(MlirToJlmConverterTests, TestLambda)
       EXPECT_EQ(region->numNodes(), 1);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
       EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(
-          convertedLambda->subregion()->Nodes().begin().ptr()));
+          static_cast<jlm::rvsdg::SimpleNode &>(
+              *convertedLambda->subregion()->Nodes().begin().ptr())
+              .GetOperation()));
     }
   }
 }
@@ -263,16 +264,13 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      NodeOutput * lambdaResultOriginNodeOutput =
-          dynamic_cast<jlm::rvsdg::NodeOutput *>(convertedLambda->subregion()->result(0)->origin());
-      EXPECT_NE(lambdaResultOriginNodeOutput, nullptr);
-      Node * lambdaResultOriginNode = lambdaResultOriginNodeOutput->node();
+      auto lambdaResultOriginNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(
+          *convertedLambda->subregion()->result(0)->origin());
       EXPECT_TRUE(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
       EXPECT_EQ(lambdaResultOriginNode->ninputs(), 2);
 
@@ -435,7 +433,8 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      EXPECT_TRUE(
+          dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&convertedLambda->GetOperation()));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
       EXPECT_EQ(convertedLambda->subregion()->numNodes(), 5);
@@ -639,7 +638,6 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
 
@@ -806,7 +804,6 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 
@@ -930,7 +927,6 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
       // Get the lambda block
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 

@@ -55,16 +55,16 @@ TEST(IfConversionTests, GammaWithoutMatch)
   // Assert
 
   EXPECT_TRUE(gammaNode->IsDead());
-  const auto selectNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  const auto selectNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+      *lambdaNode->subregion()->result(0)->origin());
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode->GetOperation()));
   EXPECT_EQ(selectNode->input(1)->origin(), falseValue);
   EXPECT_EQ(selectNode->input(2)->origin(), trueValue);
 
   const auto controlToBitsNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
-  EXPECT_TRUE(controlToBitsNode && is<ControlToIntOperation>(controlToBitsNode));
-  EXPECT_EQ(controlToBitsNode->input(0)->origin(), conditionValue);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*selectNode->input(0)->origin());
+  EXPECT_TRUE(controlToBitsNode && is<ControlToIntOperation>(controlToBitsNode->GetOperation()));
+  EXPECT_TRUE(controlToBitsNode->input(0)->origin() == conditionValue);
 }
 
 TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
@@ -111,15 +111,15 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
   // Assert
 
   EXPECT_TRUE(gammaNode->IsDead());
-  const auto selectNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  const auto selectNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+      *lambdaNode->subregion()->result(0)->origin());
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode->GetOperation()));
   EXPECT_EQ(selectNode->input(1)->origin(), trueValue);
   EXPECT_EQ(selectNode->input(2)->origin(), falseValue);
 
   const auto eqNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*selectNode->input(0)->origin());
-  EXPECT_TRUE(eqNode && is<IntegerEqOperation>(eqNode));
+  EXPECT_TRUE(eqNode && is<IntegerEqOperation>(eqNode->GetOperation()));
 
   auto constantNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(0)->origin());
@@ -195,9 +195,9 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregions)
 
   // Assert
   EXPECT_TRUE(gammaNode1->IsDead());
-  const auto selectNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
-  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode));
+  const auto selectNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+      *lambdaNode->subregion()->result(0)->origin());
+  EXPECT_TRUE(selectNode && is<SelectOperation>(selectNode->GetOperation()));
   EXPECT_EQ(selectNode->input(1)->origin(), trueValue);
   EXPECT_EQ(selectNode->input(2)->origin(), falseValue);
 }

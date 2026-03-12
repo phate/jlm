@@ -147,37 +147,37 @@ NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
 bool
 NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
 {
-  if (is<LoadNonVolatileOperation>(&simpleNode))
+  if (is<LoadNonVolatileOperation>(simpleNode.GetOperation()))
   {
     return ReduceLoadNode(simpleNode);
   }
-  if (is<StoreNonVolatileOperation>(&simpleNode))
+  if (is<StoreNonVolatileOperation>(simpleNode.GetOperation()))
   {
     return ReduceStoreNode(simpleNode);
   }
-  if (is<MemoryStateMergeOperation>(&simpleNode))
+  if (is<MemoryStateMergeOperation>(simpleNode.GetOperation()))
   {
     return ReduceMemoryStateMergeNode(simpleNode);
   }
-  if (is<MemoryStateJoinOperation>(&simpleNode))
+  if (is<MemoryStateJoinOperation>(simpleNode.GetOperation()))
   {
     return rvsdg::ReduceNode<MemoryStateJoinOperation>(NormalizeMemoryStateJoinNode, simpleNode);
   }
-  if (is<MemoryStateSplitOperation>(&simpleNode))
+  if (is<MemoryStateSplitOperation>(simpleNode.GetOperation()))
   {
     return ReduceMemoryStateSplitNode(simpleNode);
   }
-  if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
+  if (is<LambdaExitMemoryStateMergeOperation>(simpleNode.GetOperation()))
   {
     return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
   }
-  if (is<rvsdg::UnaryOperation>(&simpleNode))
+  if (is<rvsdg::UnaryOperation>(simpleNode.GetOperation()))
   {
     // FIXME: handle the unary node
     // See github issue #304
     return false;
   }
-  if (is<rvsdg::BinaryOperation>(&simpleNode))
+  if (is<rvsdg::BinaryOperation>(simpleNode.GetOperation()))
   {
     return ReduceBinaryNode(simpleNode);
   }
@@ -188,7 +188,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceLoadNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<LoadNonVolatileOperation>(&simpleNode));
+  JLM_ASSERT(is<LoadNonVolatileOperation>(simpleNode.GetOperation()));
 
   return rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadNode, simpleNode);
 }
@@ -196,7 +196,7 @@ NodeReduction::ReduceLoadNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceStoreNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<StoreNonVolatileOperation>(&simpleNode));
+  JLM_ASSERT(is<StoreNonVolatileOperation>(simpleNode.GetOperation()));
 
   return rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreNode, simpleNode);
 }
@@ -204,7 +204,7 @@ NodeReduction::ReduceStoreNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceBinaryNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(simpleNode.GetOperation()));
 
   return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
 }
@@ -212,7 +212,7 @@ NodeReduction::ReduceBinaryNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<MemoryStateMergeOperation>(&simpleNode));
+  JLM_ASSERT(is<MemoryStateMergeOperation>(simpleNode.GetOperation()));
 
   return rvsdg::ReduceNode<MemoryStateMergeOperation>(NormalizeMemoryStateMergeNode, simpleNode);
 }
@@ -220,7 +220,7 @@ NodeReduction::ReduceMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceMemoryStateSplitNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<MemoryStateSplitOperation>(&simpleNode));
+  JLM_ASSERT(is<MemoryStateSplitOperation>(simpleNode.GetOperation()));
 
   return rvsdg::ReduceNode<MemoryStateSplitOperation>(NormalizeMemoryStateSplitNode, simpleNode);
 }
@@ -228,7 +228,7 @@ NodeReduction::ReduceMemoryStateSplitNode(rvsdg::SimpleNode & simpleNode)
 bool
 NodeReduction::ReduceLambdaExitMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(is<LambdaExitMemoryStateMergeOperation>(&simpleNode));
+  JLM_ASSERT(is<LambdaExitMemoryStateMergeOperation>(simpleNode.GetOperation()));
   return rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       NormalizeLambdaExitMemoryStateMergeNode,
       simpleNode);

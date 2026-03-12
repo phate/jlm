@@ -16,13 +16,15 @@ static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
 static bool
 is_bitunary_reducible(const rvsdg::Output * operand)
 {
-  return rvsdg::is<rvsdg::BitUnaryOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
+  auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
+  return node && rvsdg::is<rvsdg::BitUnaryOperation>(node->GetOperation());
 }
 
 static bool
 is_bitbinary_reducible(const rvsdg::Output * operand)
 {
-  return rvsdg::is<rvsdg::BitBinaryOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
+  auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
+  return node && rvsdg::is<rvsdg::BitBinaryOperation>(node->GetOperation());
 }
 
 static bool

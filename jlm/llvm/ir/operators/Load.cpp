@@ -62,7 +62,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::Output *> & operands)
   for (size_t n = 1; n < operands.size(); n++)
   {
     const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
-    if (is<AllocaOperation>(node) && node != allocaNode)
+    if (node && is<AllocaOperation>(node->GetOperation()) && node != allocaNode)
       return true;
   }
 
@@ -148,7 +148,7 @@ perform_load_alloca_reduction(
   for (size_t n = 1; n < operands.size(); n++)
   {
     const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
-    if (!is<AllocaOperation>(node) || node == allocaNode)
+    if (!node || !is<AllocaOperation>(node->GetOperation()) || node == allocaNode)
       loadstates.push_back(operands[n]);
     else
       otherstates.push_back(operands[n]);
