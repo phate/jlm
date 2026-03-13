@@ -628,7 +628,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
           graphImport->ValueType(),
           graphImport->linkage(),
           "",
-          false);
+          graphImport->isConstant());
       const auto variable = ipGraphModule.create_global_value(dataNode);
       Context_->InsertVariable(graphImport, variable);
     }
