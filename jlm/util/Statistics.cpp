@@ -30,6 +30,7 @@ GetStatisticsIdNames()
     { Statistics::Id::FunctionInlining, "ILN" },
     { Statistics::Id::IfConversion, "IfConversion" },
     { Statistics::Id::JlmToRvsdgConversion, "ControlFlowGraphToLambda" },
+    { Statistics::Id::LoopStrengthReduction, "LoopStrengthReduction" },
     { Statistics::Id::LoopUnrolling, "UNROLL" },
     { Statistics::Id::LoopUnswitching, "LoopUnswitching" },
     { Statistics::Id::InvariantValueRedirection, "InvariantValueRedirection" },
