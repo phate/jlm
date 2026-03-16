@@ -10,12 +10,12 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <gtest/gtest.h>
-#include <jlm/llvm/ir/operators/Store.hpp>
 
 void
 RunLoopStrengthReduction(jlm::rvsdg::RvsdgModule & rvsdgModule)

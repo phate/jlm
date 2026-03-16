@@ -15,7 +15,7 @@ namespace jlm::llvm
 class LoopStrengthReduction::Context final
 {
 public:
-  ~Context() = default;
+  ~Context() noexcept = default;
 
   Context() = default;
 
@@ -38,14 +38,7 @@ public:
   void
   IncrementOperationsReducedCount(const rvsdg::ThetaNode & theta)
   {
-    JLM_ASSERT(OperationsReducedMap_.find(&theta) != OperationsReducedMap_.end());
     OperationsReducedMap_[&theta]++;
-  }
-
-  void
-  InsertIntoOperationsReducedMap(const rvsdg::ThetaNode & theta)
-  {
-    OperationsReducedMap_.insert({ &theta, 0 });
   }
 
   const std::unordered_map<const rvsdg::ThetaNode *, size_t> &
@@ -152,7 +145,6 @@ LoopStrengthReduction::ProcessRegion(rvsdg::Region & region)
       }
       if (const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(structuralNode))
       {
-        Context_->InsertIntoOperationsReducedMap(*thetaNode);
         ReduceStrength(*thetaNode);
       }
     }
@@ -253,23 +245,40 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   if (SCEVChainRecurrence::IsUnknown(*chrec) || chrec->NumOperands() > 2)
     return;
 
-  const auto * intType = dynamic_cast<const rvsdg::BitType *>(output.Type().get());
+  const auto & intType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type());
   if (!intType)
     return;
 
+  const auto numBits = intType->nbits();
+
   const auto & startSCEV = chrec->GetStartValue();
   const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
+
   if (!startConstant)
     return;
 
-  const auto numBits = intType->nbits();
   const auto startValue = startConstant->GetValue();
-  const auto & startValueNode =
-      IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
-  auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
 
-  if (SCEVChainRecurrence::IsAffine(*chrec))
+  if (SCEVChainRecurrence::IsInvariant(*chrec))
   {
+    // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable)
+    const auto & startValueNode =
+        IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
+    const auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
+
+    output.divert_users(newIV.pre);
+
+    // Insert the chrec for the new induction variable
+    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
+    // analysis. In the future, we would want to insert this into the "global" chrec map so other
+    // analyses and transformations can use it as well.
+    ChrecMap_[newIV.pre] = std::move(chrec);
+
+    Context_->IncrementOperationsReducedCount(thetaNode);
+  }
+  else if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    // Chrec has the form {a,+,b} which is a basic induction variable
     const auto & stepPtr = chrec->GetStep();
     if (!stepPtr.has_value())
       return;
@@ -280,6 +289,10 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     if (!stepConstant)
       return;
 
+    const auto & startValueNode =
+        IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
+    auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
+
     const auto stepValue = stepConstant->GetValue();
     const auto & stepValueNode =
         IntegerConstantOperation::Create(*thetaNode.subregion(), numBits, stepValue);
@@ -288,17 +301,12 @@ LoopStrengthReduction::ReplaceCandidateOperation(
         numBits);
 
     newIV.post->divert_to(newAddNode.output(0));
+    output.divert_users(newIV.pre);
+
+    ChrecMap_[newIV.pre] = std::move(chrec);
+
+    Context_->IncrementOperationsReducedCount(thetaNode);
   }
-
-  output.divert_users(newIV.pre);
-
-  // Insert the chrec for the new induction variable
-  // NOTE: This only updates the copy of the original chrec map from the scalar evolution
-  // analysis. In the future, we would want to insert this into the "global" chrec map so other
-  // analyses and passes can use it as well.
-  ChrecMap_[newIV.pre] = std::move(chrec);
-
-  Context_->IncrementOperationsReducedCount(thetaNode);
 }
 
 bool
