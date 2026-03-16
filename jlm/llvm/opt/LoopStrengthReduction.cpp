@@ -81,19 +81,16 @@ public:
       const std::unordered_map<const rvsdg::ThetaNode *, size_t> & operationsReducedMap)
   {
     std::string s = "";
-    bool first = true;
     size_t totalCount = 0;
     for (auto & [thetaNode, operationsReduced] : operationsReducedMap)
     {
       totalCount += operationsReduced;
-      if (!first)
-        s += ',';
-      first = false;
 
       s += "ID(" + std::to_string(thetaNode->subregion()->getRegionId())
          + ")=" + std::to_string(operationsReduced);
+      s += ",";
     }
-    s += ",Total=" + std::to_string(totalCount);
+    s += "Total=" + std::to_string(totalCount);
     return s;
   }
 
