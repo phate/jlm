@@ -4,7 +4,6 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
