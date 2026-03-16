@@ -24,15 +24,17 @@ public:
   ~DeltaOperation() noexcept override;
 
   DeltaOperation(
-      std::shared_ptr<const rvsdg::Type> type,
+      const std::shared_ptr<const rvsdg::Type> & type,
       const std::string & name,
-      const llvm::Linkage & linkage,
+      const Linkage & linkage,
       std::string section,
-      bool constant)
+      const bool constant,
+      const size_t alignment)
       : rvsdg::DeltaOperation(type, constant, PointerType::Create()),
         name_(name),
         Section_(std::move(section)),
-        linkage_(linkage)
+        linkage_(linkage),
+        alignment_(alignment)
   {}
 
   DeltaOperation(const DeltaOperation & other) = default;
@@ -72,26 +74,35 @@ public:
     return linkage_;
   }
 
-  static inline std::unique_ptr<DeltaOperation>
+  [[nodiscard]] size_t
+  getAlignment() const noexcept
+  {
+    return alignment_;
+  }
+
+  static std::unique_ptr<DeltaOperation>
   Create(
       std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
-      const llvm::Linkage & linkage,
+      const Linkage & linkage,
       std::string section,
-      bool constant)
+      bool constant,
+      const size_t alignment)
   {
     return std::make_unique<DeltaOperation>(
         std::move(type),
         name,
         linkage,
         std::move(section),
-        constant);
+        constant,
+        alignment);
   }
 
 private:
   std::string name_;
   std::string Section_;
-  llvm::Linkage linkage_;
+  Linkage linkage_;
+  size_t alignment_;
 };
 
 }

@@ -65,7 +65,8 @@ convert_prints(llvm::LlvmRvsdgModule & rm)
       fct,
       "printnode",
       llvm::Linkage::externalLinkage,
-      false);
+      false,
+      1);
   convert_prints(root, &printf, fct);
 }
 

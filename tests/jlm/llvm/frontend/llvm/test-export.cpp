@@ -22,7 +22,7 @@ TEST(ExportTests, test)
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  auto d = DataNode::Create(im.ipgraph(), "d", vt, Linkage::externalLinkage, "", false);
+  auto d = DataNode::Create(im.ipgraph(), "d", vt, Linkage::externalLinkage, "", false, 4);
   auto f = FunctionNode::create(im.ipgraph(), "f", ft, Linkage::externalLinkage);
 
   im.create_global_value(d);

@@ -209,7 +209,8 @@ rename_delta(rvsdg::DeltaNode * odn)
           name,
           llvm::Linkage::externalLinkage,
           "",
-          op->constant()));
+          op->constant(),
+          op->getAlignment()));
   /* add dependencies */
   rvsdg::SubstitutionMap rmap;
   for (auto ctxVar : odn->GetContextVars())
@@ -306,7 +307,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
               oldGraphImport->linkage(),
-              oldGraphImport->isConstant());
+              oldGraphImport->isConstant(),
+              oldGraphImport->getAlignment());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
@@ -335,7 +337,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               llvm::PointerType::Create(),
               op->name(),
               llvm::Linkage::externalLinkage,
-              op->constant());
+              op->constant(),
+              op->getAlignment());
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
@@ -359,7 +362,8 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           op.Type(),
           op.name(),
           llvm::Linkage::externalLinkage, // TODO: change linkage?
-          true);
+          false,
+          1);
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "

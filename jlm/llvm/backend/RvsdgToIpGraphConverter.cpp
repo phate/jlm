@@ -473,7 +473,8 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           op->Type(),
           op->linkage(),
           op->Section(),
-          op->constant());
+          op->constant(),
+          op->getAlignment());
       Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_global_value(dataNode));
     }
     else
@@ -548,7 +549,8 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const rvsdg::DeltaNode & deltaNode)
       op->Type(),
       op->linkage(),
       op->Section(),
-      op->constant());
+      op->constant(),
+      op->getAlignment());
   dataNode->set_initialization(CreateInitialization(deltaNode));
 
   for (auto & [input, _] : deltaNode.GetContextVars())
@@ -628,7 +630,8 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
           graphImport->ValueType(),
           graphImport->linkage(),
           "",
-          graphImport->isConstant());
+          graphImport->isConstant(),
+          graphImport->getAlignment());
       const auto variable = ipGraphModule.create_global_value(dataNode);
       Context_->InsertVariable(graphImport, variable);
     }
