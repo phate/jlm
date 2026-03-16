@@ -50,7 +50,7 @@ TEST(RegionAwareModRefSummarizerTests, TestStore1)
 
     auto storeANode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
-    EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode));
+    EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode->GetOperation()));
 
     auto & storeANodes = modRefSummary.GetSimpleNodeModRef(*storeANode);
     EXPECT_TRUE(setsEqual(storeANodes, { allocaAMemoryNode }));

@@ -61,7 +61,7 @@ TEST(LoadOperationTests, TestCopy)
 
   // Act
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadResults[0]);
-  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node->GetOperation()));
   auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
@@ -100,11 +100,11 @@ TEST(LoadOperationTests, TestLoadAllocaReduction)
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
-  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 3u);
-  EXPECT_EQ(node->input(1)->origin(), alloca1[1]);
-  EXPECT_EQ(node->input(2)->origin(), mux);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin());
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node->GetOperation()));
+  EXPECT_TRUE(node->ninputs() == 3);
+  EXPECT_TRUE(node->input(1)->origin() == alloca1[1]);
+  EXPECT_TRUE(node->input(2)->origin() == mux);
 }
 
 TEST(LoadOperationTests, TestDuplicateStateReduction)
@@ -142,10 +142,10 @@ TEST(LoadOperationTests, TestDuplicateStateReduction)
 
   // Assert
   EXPECT_TRUE(success);
-  const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exA.origin());
-  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 4u);  // 1 address + 3 states
-  EXPECT_EQ(node->noutputs(), 4u); // 1 loaded value + 3 states
+  const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*exA.origin());
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node->GetOperation()));
+  EXPECT_EQ(node->ninputs(), 4);  // 1 address + 3 states
+  EXPECT_EQ(node->noutputs(), 4); // 1 loaded value + 3 states
 
   EXPECT_EQ(exA.origin(), node->output(0));
   EXPECT_EQ(exS1.origin(), node->output(1));
@@ -192,14 +192,14 @@ TEST(LoadOperationTests, TestLoadStoreStateReduction)
 
   // Assert
   EXPECT_TRUE(success1);
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
-  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 2u);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex1.origin());
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node->GetOperation()));
+  EXPECT_EQ(node->ninputs(), 2);
 
-  EXPECT_FALSE(success2);
-  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
-  EXPECT_TRUE(is<LoadNonVolatileOperation>(node));
-  EXPECT_EQ(node->ninputs(), 2u);
+  EXPECT_EQ(success2, false);
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex2.origin());
+  EXPECT_TRUE(is<LoadNonVolatileOperation>(node->GetOperation()));
+  EXPECT_EQ(node->ninputs(), 2);
 }
 
 TEST(LoadOperationTests, TestLoadStoreReduction_Success)

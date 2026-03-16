@@ -180,13 +180,13 @@ public:
   inline bool
   is_additive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(armnode());
+    return jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(armnode()->GetOperation());
   }
 
   inline bool
   is_subtractive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitsub_op>(armnode());
+    return jlm::rvsdg::is<jlm::rvsdg::bitsub_op>(armnode()->GetOperation());
   }
 
   inline size_t

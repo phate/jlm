@@ -60,8 +60,8 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
-  if (jlm::rvsdg::is<rvsdg::BitConstantOperation>(
-          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
+  auto simple_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
+  if (simple_node && jlm::rvsdg::is<rvsdg::BitConstantOperation>(simple_node->GetOperation()))
     return true;
 
   auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
@@ -80,7 +80,7 @@ push_from_theta(jlm::rvsdg::Output * output)
     return argument;
 
   auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp));
+  JLM_ASSERT(tmp && jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp->GetOperation()));
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
 
@@ -97,7 +97,7 @@ is_idv(jlm::rvsdg::Input * input)
   using namespace jlm::rvsdg;
 
   auto node = TryGetOwnerNode<SimpleNode>(*input);
-  JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
+  JLM_ASSERT(node && (is<bitadd_op>(node->GetOperation()) || is<bitsub_op>(node->GetOperation())));
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))
   {
@@ -137,11 +137,11 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
   using namespace jlm::rvsdg;
 
   const auto matchNode = rvsdg::TryGetOwnerNode<SimpleNode>(*theta->predicate()->origin());
-  if (!is<MatchOperation>(matchNode))
+  if (!matchNode || !is<MatchOperation>(matchNode->GetOperation()))
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<BitCompareOperation>(cmpnode))
+  if (cmpnode && !is<BitCompareOperation>(cmpnode->GetOperation()))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();
@@ -151,7 +151,8 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto armnode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == o0 ? o1 : o0));
-  if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
+  if (!armnode
+      || (!is<bitadd_op>(armnode->GetOperation()) && !is<bitsub_op>(armnode->GetOperation())))
     return nullptr;
   if (armnode->ninputs() != 2)
     return nullptr;

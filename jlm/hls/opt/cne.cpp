@@ -273,8 +273,11 @@ congruent(Output * o1, Output * o2, VisitorSet & vs, Context & ctx)
     }
   }
 
-  if (jlm::rvsdg::is<SimpleOperation>(n1) && jlm::rvsdg::is<SimpleOperation>(n2)
-      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
+  auto s1 = dynamic_cast<const rvsdg::SimpleNode *>(n1);
+  auto s2 = dynamic_cast<const rvsdg::SimpleNode *>(n2);
+  if (s1 && s2 && jlm::rvsdg::is<SimpleOperation>(s1->GetOperation())
+      && jlm::rvsdg::is<SimpleOperation>(s2->GetOperation())
+      && s1->GetOperation() == s2->GetOperation() && n1->ninputs() == n2->ninputs()
       && o1->index() == o2->index())
   {
     for (size_t n = 0; n < n1->ninputs(); n++)
@@ -455,9 +458,11 @@ mark(const jlm::rvsdg::SimpleNode * node, Context & ctx)
   {
     for (const auto & other : node->region()->TopNodes())
     {
-      if (&other != node && node->GetOperation() == other.GetOperation())
+      auto other_simple = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&other);
+      if (other_simple && other_simple != node
+          && node->GetOperation() == other_simple->GetOperation())
       {
-        ctx.mark(node, &other);
+        ctx.mark(node, other_simple);
         break;
       }
     }
@@ -469,7 +474,7 @@ mark(const jlm::rvsdg::SimpleNode * node, Context & ctx)
   {
     for (const auto & user : origin->Users())
     {
-      const auto other = TryGetOwnerNode<rvsdg::Node>(user);
+      const auto other = TryGetOwnerNode<rvsdg::SimpleNode>(user);
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;

@@ -52,21 +52,26 @@ private:
 
     for (auto & node : region.Nodes())
     {
-      if (jlm::rvsdg::is<AllocaOperation>(&node))
+      if (auto simplenode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
       {
-        auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
-        auto ptgAllocaNode = pointsToGraph_->addNodeForAlloca(*simpleNode, false);
-        auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
-        pointsToGraph_->mapRegisterToNode(*node.output(0), ptgRegisterNode);
-        pointsToGraph_->addTarget(ptgRegisterNode, ptgAllocaNode);
-      }
-      else if (jlm::rvsdg::is<MallocOperation>(&node))
-      {
-        auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
-        auto ptgMallocNode = pointsToGraph_->addNodeForMalloc(*simpleNode, true);
-        auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
-        pointsToGraph_->mapRegisterToNode(MallocOperation::addressOutput(node), ptgRegisterNode);
-        pointsToGraph_->addTarget(ptgRegisterNode, ptgMallocNode);
+        if (jlm::rvsdg::is<AllocaOperation>(simplenode->GetOperation()))
+        {
+          auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
+          auto ptgAllocaNode = pointsToGraph_->addNodeForAlloca(*simpleNode, false);
+          auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
+          pointsToGraph_->mapRegisterToNode(*node.output(0), ptgRegisterNode);
+          pointsToGraph_->addTarget(ptgRegisterNode, ptgAllocaNode);
+        }
+        else if (jlm::rvsdg::is<MallocOperation>(simplenode->GetOperation()))
+        {
+          auto simpleNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(&node);
+          auto ptgMallocNode = pointsToGraph_->addNodeForMalloc(*simpleNode, true);
+          auto ptgRegisterNode = pointsToGraph_->addNodeForRegisters();
+          pointsToGraph_->mapRegisterToNode(
+              MallocOperation::addressOutput(*simplenode),
+              ptgRegisterNode);
+          pointsToGraph_->addTarget(ptgRegisterNode, ptgMallocNode);
+        }
       }
       else if (auto deltaNode = dynamic_cast<const jlm::rvsdg::DeltaNode *>(&node))
       {

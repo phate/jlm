@@ -120,7 +120,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
           return false;
         }
       }
-      else if (rvsdg::is<rvsdg::StructuralOperation>(&node))
+      else if (dynamic_cast<rvsdg::StructuralNode *>(&node))
       {
         throw util::Error("Unexpected structural node: " + node.DebugString());
       }

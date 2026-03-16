@@ -124,7 +124,7 @@ static void
 OptimizeLoop(LoopNode * loopNode)
 {
   // TODO: should this be changed?
-  bool outerLoop = !rvsdg::is<LoopOperation>(loopNode->region()->node());
+  bool outerLoop = !dynamic_cast<LoopNode *>(loopNode->region()->node());
   if (outerLoop)
   {
     // push buffers above branches, so they also act as output buffers
@@ -214,23 +214,23 @@ AddBuffers(rvsdg::Region * region)
     }
     else if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (jlm::rvsdg::is<BufferOperation>(node))
+      if (jlm::rvsdg::is<BufferOperation>(simple->GetOperation()))
       {
         OptimizeBuffer(simple);
       }
-      else if (jlm::rvsdg::is<ForkOperation>(node))
+      else if (jlm::rvsdg::is<ForkOperation>(simple->GetOperation()))
       {
         //        OptimizeFork(simple);
       }
-      else if (jlm::rvsdg::is<BranchOperation>(node))
+      else if (jlm::rvsdg::is<BranchOperation>(simple->GetOperation()))
       {
         //        OptimizeBranch(simple);
       }
-      else if (jlm::rvsdg::is<StateGateOperation>(node))
+      else if (jlm::rvsdg::is<StateGateOperation>(simple->GetOperation()))
       {
         //        OptimizeStateGate(simple);
       }
-      else if (jlm::rvsdg::is<AddressQueueOperation>(node))
+      else if (jlm::rvsdg::is<AddressQueueOperation>(simple->GetOperation()))
       {
         OptimizeAddrQ(simple);
       }
@@ -270,15 +270,15 @@ MaximizeBuffers(rvsdg::Region * region)
         MaximizeBuffers(structnode->subregion(n));
       }
     }
-    else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (rvsdg::is<BufferOperation>(node))
+      if (rvsdg::is<BufferOperation>(simplenode->GetOperation()))
       {
-        nodes.push_back(sn);
+        nodes.push_back(simplenode);
       }
-      else if (rvsdg::is<DecoupledLoadOperation>(node))
+      else if (rvsdg::is<DecoupledLoadOperation>(simplenode->GetOperation()))
       {
-        nodes.push_back(sn);
+        nodes.push_back(simplenode);
       }
     }
   }
@@ -324,11 +324,11 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     return { input_cycles[0] };
   }
-  else if (rvsdg::is<DecoupledLoadOperation>(node))
+  else if (rvsdg::is<DecoupledLoadOperation>(node->GetOperation()))
   {
     return { max_cycles + MemoryLatency, 0 };
   }
-  else if (rvsdg::is<StateGateOperation>(node))
+  else if (rvsdg::is<StateGateOperation>(node->GetOperation()))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = &node->output(0)->SingleUser();
@@ -338,7 +338,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
       return { 0, MemoryLatency };
     }
   }
-  else if (rvsdg::is<StoreOperation>(node))
+  else if (rvsdg::is<StoreOperation>(node->GetOperation()))
   {
     JLM_ASSERT(node->noutputs() == 3);
     return { max_cycles + MemoryLatency, 0, 0 };
@@ -371,7 +371,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { min_capacity + op->capacity, 0 };
   }
-  else if (rvsdg::is<StateGateOperation>(node))
+  else if (rvsdg::is<StateGateOperation>(node->GetOperation()))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = &node->output(0)->SingleUser();
@@ -381,7 +381,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
       return { 0, MemoryLatency };
     }
   }
-  else if (rvsdg::is<StoreOperation>(node))
+  else if (rvsdg::is<StoreOperation>(node->GetOperation()))
   {
     return { min_capacity + MemoryLatency, 0, 0 };
   }
@@ -667,7 +667,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ForkOperation>(*out);
   JLM_ASSERT(!(forkOperation && forkOperation->IsConstant()));
 
-  if (rvsdg::is<rvsdg::LambdaOperation>(out->region()->node()))
+  if (dynamic_cast<const rvsdg::LambdaNode *>(out->region()->node()))
   {
     // don't place buffers outside loops
     return min_capacity;
@@ -802,7 +802,7 @@ AdjustLoopBuffers(
         for (size_t i = 0; i < simpleNode->ninputs(); ++i)
         {
           auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
-          if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(simpleNode))
+          if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(simpleNode->GetOperation()))
               && capacity < max_cycles)
           {
             size_t capacity_diff = max_cycles - capacity;

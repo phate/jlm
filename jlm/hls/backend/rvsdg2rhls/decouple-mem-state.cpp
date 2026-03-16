@@ -219,7 +219,7 @@ handle_structural(
   }
   for (auto op : mem_ops)
   {
-    if (rvsdg::is<const llvm::StoreNonVolatileOperation>(op))
+    if (rvsdg::is<const llvm::StoreNonVolatileOperation>(op->GetOperation()))
     {
       // can't handle things if there is a store on the edge in the same loop/gamma
       return;
@@ -265,8 +265,8 @@ optimize_single_mem_op_loop(
   // that have a response.
   // TODO: should this also be enabled for just memory state gates?
   if (mem_ops.size() == 1
-      && (rvsdg::is<const llvm::StoreNonVolatileOperation>(mem_ops[0])
-          || rvsdg::is<const llvm::LoadNonVolatileOperation>(mem_ops[0])))
+      && (rvsdg::is<const llvm::StoreNonVolatileOperation>(mem_ops[0]->GetOperation())
+          || rvsdg::is<const llvm::LoadNonVolatileOperation>(mem_ops[0]->GetOperation())))
   {
     // before and after belong to same loop node
     JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*state_edge_before));

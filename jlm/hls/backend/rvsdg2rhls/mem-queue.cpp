@@ -508,8 +508,9 @@ mem_queue(rvsdg::RvsdgModule & rvsdgModule)
   // Check if there exists a memory state splitter
   if (state_arg->nusers() == 1)
   {
-    auto entryNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*state_arg->Users().begin());
-    if (jlm::rvsdg::is<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
+    auto entryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_arg->Users().begin());
+    if (entryNode
+        && jlm::rvsdg::is<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
             entryNode->GetOperation()))
     {
       for (size_t i = 0; i < entryNode->noutputs(); ++i)

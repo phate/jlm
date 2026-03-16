@@ -88,7 +88,8 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
     {
       const auto matchAlloca = [](const rvsdg::Node & node)
       {
-        return rvsdg::is<AllocaOperation>(&node);
+        auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(&node);
+        return simple_node && rvsdg::is<AllocaOperation>(simple_node->GetOperation());
       };
       AnnotateNumNodes(rvsdg, matchAlloca, "NumAllocaNodes", annotationMap);
       break;
@@ -97,7 +98,8 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
     {
       const auto matchLoad = [](const rvsdg::Node & node)
       {
-        return rvsdg::is<LoadOperation>(&node);
+        auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(&node);
+        return simple_node && rvsdg::is<LoadOperation>(simple_node->GetOperation());
       };
       AnnotateNumNodes(rvsdg, matchLoad, "NumLoadNodes", annotationMap);
       break;
@@ -106,7 +108,8 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
     {
       const auto matchStore = [](const rvsdg::Node & node)
       {
-        return rvsdg::is<StoreOperation>(&node);
+        auto simple_node = dynamic_cast<const rvsdg::SimpleNode *>(&node);
+        return simple_node && rvsdg::is<StoreOperation>(simple_node->GetOperation());
       };
       AnnotateNumNodes(rvsdg, matchStore, "NumStoreNodes", annotationMap);
       break;

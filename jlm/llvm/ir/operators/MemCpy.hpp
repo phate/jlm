@@ -68,7 +68,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   destinationInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<MemCpyOperation>(&node));
+    JLM_ASSERT(is<MemCpyOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(0);
     JLM_ASSERT(is<PointerType>(input->Type()));
     return *input;
@@ -81,7 +81,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   sourceInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<MemCpyOperation>(&node));
+    JLM_ASSERT(is<MemCpyOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(1);
     JLM_ASSERT(is<PointerType>(input->Type()));
     return *input;
@@ -94,7 +94,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   countInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<MemCpyOperation>(&node));
+    JLM_ASSERT(is<MemCpyOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(2);
     JLM_ASSERT(is<rvsdg::BitType>(input->Type()));
     return *input;

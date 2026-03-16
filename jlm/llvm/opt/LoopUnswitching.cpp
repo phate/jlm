@@ -33,7 +33,7 @@ LoopUnswitchingDefaultHeuristic::shouldUnswitchLoop(
     if (node == &gammaNode)
       continue;
 
-    if (is<rvsdg::StructuralOperation>(node))
+    if (dynamic_cast<const rvsdg::StructuralNode *>(node))
       return false;
   }
 

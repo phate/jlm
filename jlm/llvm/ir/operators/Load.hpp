@@ -74,7 +74,7 @@ public:
   [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<LoadOperation>(&node));
+    JLM_ASSERT(is<LoadOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(0);
     JLM_ASSERT(is<PointerType>(input->Type()));
     return *input;
@@ -83,7 +83,7 @@ public:
   [[nodiscard]] static rvsdg::Output &
   LoadedValueOutput(const rvsdg::Node & node)
   {
-    JLM_ASSERT(is<LoadOperation>(&node));
+    JLM_ASSERT(is<LoadOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto output = node.output(0);
     JLM_ASSERT(output->Type()->Kind() == rvsdg::TypeKind::Value);
     return *output;
@@ -115,7 +115,8 @@ public:
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(node).GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
@@ -138,7 +139,8 @@ public:
   [[nodiscard]] static rvsdg::Node::InputIteratorRange
   MemoryStateInputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(
+        &static_cast<const rvsdg::SimpleNode &>(node).GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };
@@ -224,7 +226,8 @@ public:
   [[nodiscard]] static rvsdg::Input &
   IOStateInput(const rvsdg::Node & node) noexcept
   {
-    JLM_ASSERT(is<LoadVolatileOperation>(&node));
+    JLM_ASSERT(
+        is<LoadVolatileOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto input = node.input(1);
     JLM_ASSERT(is<IOStateType>(input->Type()));
     return *input;
@@ -233,7 +236,8 @@ public:
   [[nodiscard]] static rvsdg::Output &
   IOStateOutput(const rvsdg::Node & node)
   {
-    JLM_ASSERT(is<LoadVolatileOperation>(&node));
+    JLM_ASSERT(
+        is<LoadVolatileOperation>(static_cast<const rvsdg::SimpleNode &>(node).GetOperation()));
     const auto output = node.output(1);
     JLM_ASSERT(is<IOStateType>(output->Type()));
     return *output;
