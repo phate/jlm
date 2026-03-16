@@ -157,13 +157,13 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   // Adapted to work with RVSDG and to make use of the computed recurrences from the scalar
   // evolution analysis.
   //
-  // We look for statements that are linear combinations of loop variables and constants
-  // that involve multiplication in some way, and replace them with a simple addition.
+  // In short, we look for candidate operations and replace them with a new induction variable.
   //
-  // More precisely, a candidate operation must satisfy two conditions:
-  //   1. Its SCEV tree contains at least one multiplication node (SCEVMulExpr),
+  // A candidate operation must satisfy three conditions:
+  //   1. The statement is a linear combinations of loop variables and constants
+  //   2. Its RVSDG subtree contains at least one multiplication node (IntegerMulOperation),
   //      ensuring we only reduce operations that actually benefit from strength reduction.
-  //   2. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
+  //   3. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
   //      can be expressed as a start value plus a constant step per iteration. This is what
   //      makes it a valid induction variable candidate.
   //
