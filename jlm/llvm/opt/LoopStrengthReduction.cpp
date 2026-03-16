@@ -221,7 +221,7 @@ LoopStrengthReduction::ProcessOutput(
     if (SCEVMap_.find(&output) == SCEVMap_.end())
       return;
 
-    if (IsValidCandidateOperation(*SCEVMap_.at(&output)))
+    if (IsValidCandidateOperation(output))
     {
       candidateOperations.insert(&output);
       return; // Return early to not create unnecessary induction variables for nested operations
@@ -310,10 +310,11 @@ LoopStrengthReduction::ReplaceCandidateOperation(
 }
 
 bool
-LoopStrengthReduction::IsValidCandidateOperation(const SCEV & scevTree)
+LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output) const
 {
+  const auto & scevTree = *SCEVMap_.at(&output);
   // Accept any linear combination that involves multiplication somewhere in the tree
-  return IsLinearCombination(scevTree) && ContainsMul(scevTree);
+  return IsLinearCombination(scevTree) && ContainsMul(output);
 }
 
 bool
@@ -341,13 +342,22 @@ LoopStrengthReduction::IsLinearCombination(const SCEV & scev)
 }
 
 bool
-LoopStrengthReduction::ContainsMul(const SCEV & scev)
+LoopStrengthReduction::ContainsMul(const rvsdg::Output & output)
 {
-  if (dynamic_cast<const SCEVMulExpr *>(&scev))
+  const auto & [simpleNode, mulOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerMulOperation>(output);
+
+  if (!simpleNode)
+    return false;
+
+  if (mulOperation)
     return true;
 
-  if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
-    return ContainsMul(*add->GetLeftOperand()) || ContainsMul(*add->GetRightOperand());
+  for (const auto & input : simpleNode->Inputs())
+  {
+    if (ContainsMul(*input.origin()))
+      return true;
+  }
 
   return false;
 }

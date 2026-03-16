@@ -43,16 +43,16 @@ private:
   ReduceStrength(rvsdg::ThetaNode & thetaNode);
 
   /**
-   * Checks if the SCEV contains a SCEVMulExpr somewhere in the tree.
+   * Checks if the RVSDG subtree of the output contains an IntegerMulExpr somewhere in the tree.
    *
-   * @param scev The SCEV tree to be checked
-   * @return true if the scev contains a multiplication operation, otherwise false.
+   * @param output The output to be checked
+   * @return true if the subtree contains a multiplication operation, otherwise false.
    */
   static bool
-  ContainsMul(const SCEV & scev);
+  ContainsMul(const rvsdg::Output & output);
 
-  static bool
-  IsValidCandidateOperation(const SCEV & scevTree);
+  bool
+  IsValidCandidateOperation(const rvsdg::Output & output) const;
 
   /**
    * Checks if the SCEV tree is a valid linear combination of placeholders and constants,
