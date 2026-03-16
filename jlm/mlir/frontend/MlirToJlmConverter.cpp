@@ -126,7 +126,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
-          false);
+          false, // FIXME: Currently not supported in MLIR dialect
+          1);    // FIXME: Currently not supported in MLIR dialect
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
@@ -921,7 +922,8 @@ MlirToJlmConverter::ConvertOperation(
             mlirDeltaNode.getName().str(),
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
-            mlirDeltaNode.getConstant()));
+            mlirDeltaNode.getConstant(),
+            4)); // FIXME: the MLIR delta node does not support the alignment attribute
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 

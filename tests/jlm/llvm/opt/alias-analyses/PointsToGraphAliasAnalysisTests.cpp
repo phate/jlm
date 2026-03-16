@@ -119,12 +119,13 @@ private:
         getPtrFuncType,
         "getPtr",
         Linkage::externalLinkage,
-        false);
+        false,
+        1);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false));
+        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(globalDelta.subregion(), pointerType);
@@ -136,7 +137,7 @@ private:
     // Create the global variable "local", that is not exported
     auto & localDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false));
+        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(localDelta.subregion(), pointerType);
@@ -150,7 +151,8 @@ private:
         pointerType,
         "imported",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
 
     // Setup the function "func"
     {
@@ -391,7 +393,8 @@ private:
         pointerType,
         "globalInt",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
 
     Outputs_.GlobalLong = &LlvmGraphImport::Create(
         rvsdg,
@@ -399,7 +402,8 @@ private:
         pointerType,
         "globalLong",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
 
     // Setup the function "func"
     {

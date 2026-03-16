@@ -317,7 +317,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto imp =
-      &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage, false);
+      &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage, false, 4);
 
   PhiBuilder phiBuilder;
   phiBuilder.begin(&rm.Rvsdg().GetRootRegion());
@@ -330,7 +330,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
@@ -340,7 +340,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
@@ -420,7 +420,8 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
       functionType,
       "opaque",
       Linkage::externalLinkage,
-      false);
+      false,
+      1);
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -488,10 +489,12 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
   }
 }
 
-class DataImportConversionTest
-    : public testing::TestWithParam<
-          std::
-              tuple<std::shared_ptr<const jlm::rvsdg::Type>, std::string, jlm::llvm::Linkage, bool>>
+class DataImportConversionTest : public testing::TestWithParam<std::tuple<
+                                     std::shared_ptr<const jlm::rvsdg::Type>,
+                                     std::string,
+                                     jlm::llvm::Linkage,
+                                     bool,
+                                     size_t>>
 {
 };
 
@@ -502,12 +505,19 @@ TEST_P(DataImportConversionTest, Test)
   using namespace jlm::util;
 
   // Arrange
-  auto [valueType, name, linkage, isConstant] = GetParam();
+  auto [valueType, name, linkage, isConstant, alignment] = GetParam();
 
   const auto pointerType = PointerType::Create();
 
   LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
-  LlvmGraphImport::Create(rvsdgModule.Rvsdg(), valueType, pointerType, name, linkage, isConstant);
+  LlvmGraphImport::Create(
+      rvsdgModule.Rvsdg(),
+      valueType,
+      pointerType,
+      name,
+      linkage,
+      isConstant,
+      alignment);
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -529,6 +539,7 @@ TEST_P(DataImportConversionTest, Test)
   EXPECT_EQ(dataNode->name(), name);
   EXPECT_EQ(dataNode->linkage(), linkage);
   EXPECT_EQ(dataNode->constant(), isConstant);
+  EXPECT_EQ(dataNode->getAlignment(), alignment);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -538,7 +549,8 @@ INSTANTIATE_TEST_SUITE_P(
         jlm::rvsdg::TestType::createValueType(),
         "name",
         jlm::llvm::Linkage::externalLinkage,
-        false)));
+        false,
+        4)));
 INSTANTIATE_TEST_SUITE_P(
     Test2,
     DataImportConversionTest,
@@ -546,7 +558,8 @@ INSTANTIATE_TEST_SUITE_P(
         jlm::rvsdg::TestType::createValueType(),
         "name",
         jlm::llvm::Linkage::externalLinkage,
-        true)));
+        true,
+        8)));
 INSTANTIATE_TEST_SUITE_P(
     Test3,
     DataImportConversionTest,
@@ -554,4 +567,5 @@ INSTANTIATE_TEST_SUITE_P(
         jlm::rvsdg::TestType::createValueType(),
         "foo",
         jlm::llvm::Linkage::privateLinkage,
-        false)));
+        false,
+        1)));

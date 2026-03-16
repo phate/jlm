@@ -26,9 +26,9 @@ DeltaOperation::copy() const
 bool
 DeltaOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const DeltaOperation *>(&other);
+  const auto op = dynamic_cast<const DeltaOperation *>(&other);
   return op && op->name_ == name_ && op->linkage_ == linkage_ && op->constant() == constant()
-      && op->Section_ == Section_ && *op->Type() == *Type();
+      && op->Section_ == Section_ && op->alignment_ == alignment_ && *op->Type() == *Type();
 }
 
 }

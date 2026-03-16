@@ -344,13 +344,15 @@ private:
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::Linkage & linkage,
       std::string section,
-      bool constant)
+      const bool constant,
+      const size_t alignment)
       : InterProceduralGraphNode(clg),
         constant_(constant),
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
-        ValueType_(std::move(valueType))
+        ValueType_(std::move(valueType)),
+        alignment_(alignment)
   {}
 
 public:
@@ -374,6 +376,12 @@ public:
 
   [[nodiscard]] bool
   hasBody() const noexcept override;
+
+  [[nodiscard]] size_t
+  getAlignment() const noexcept
+  {
+    return alignment_;
+  }
 
   inline bool
   constant() const noexcept
@@ -412,11 +420,18 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::Linkage & linkage,
       std::string section,
-      bool constant)
+      const bool constant,
+      const size_t alignment)
   {
-    std::unique_ptr<DataNode> node(
-        new DataNode(clg, name, std::move(valueType), linkage, std::move(section), constant));
-    auto ptr = node.get();
+    std::unique_ptr<DataNode> node(new DataNode(
+        clg,
+        name,
+        std::move(valueType),
+        linkage,
+        std::move(section),
+        constant,
+        alignment));
+    const auto ptr = node.get();
     clg.add_node(std::move(node));
     return ptr;
   }
@@ -428,6 +443,7 @@ private:
   llvm::Linkage linkage_;
   std::shared_ptr<const jlm::rvsdg::Type> ValueType_;
   std::unique_ptr<DataNodeInit> init_;
+  size_t alignment_;
 };
 
 }

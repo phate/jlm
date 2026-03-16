@@ -263,7 +263,13 @@ TEST(CallSummaryTests, TestCallSummaryComputationFunctionPointerInDelta)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(functionType, "fp", Linkage::externalLinkage, "", false));
+      jlm::llvm::DeltaOperation::Create(
+          functionType,
+          "fp",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
   auto argument = deltaNode->AddContextVar(*lambdaNode->output()).inner;
   deltaNode->finalize(argument);
 

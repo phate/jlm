@@ -137,7 +137,8 @@ private:
         getPtrFuncType,
         "getPtr",
         Linkage::externalLinkage,
-        false);
+        false,
+        1);
 
     Outputs_.Global = &LlvmGraphImport::Create(
         rvsdg,
@@ -145,21 +146,24 @@ private:
         pointerType,
         "global",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
     Outputs_.GlobalShort = &LlvmGraphImport::Create(
         rvsdg,
         shortType,
         pointerType,
         "globalShort",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
     Outputs_.Array = &LlvmGraphImport::Create(
         rvsdg,
         intArrayType,
         pointerType,
         "array",
         Linkage::externalLinkage,
-        false);
+        false,
+        4);
 
     // Setup the function "func"
     {

@@ -11,7 +11,14 @@ namespace jlm::llvm
 LlvmGraphImport &
 LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
 {
-  return Create(*region.graph(), ValueType(), ImportedType(), Name(), linkage(), isConstant());
+  return Create(
+      *region.graph(),
+      ValueType(),
+      ImportedType(),
+      Name(),
+      linkage(),
+      isConstant(),
+      getAlignment());
 }
 
 std::unique_ptr<rvsdg::RvsdgModule>
