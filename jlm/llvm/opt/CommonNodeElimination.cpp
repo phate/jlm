@@ -368,15 +368,15 @@ markNodesAsCongruent(
 }
 
 /**
- * Checks if the given \p node has been visited already during the mark phase.
+ * Checks if the given simple \p node has been visited already during the mark phase.
  * If so, it returns the leader it is congruent with.
  * All outputs of \p node are congruent with the respective output of the leader.
- * @param node the node in question.
+ * @param node the simple node in question.
  * @param context the current context of the mark phase.
  * @return the leader of this node's congruence sets, or nullptr if this node has not been marked.
  */
-[[nodiscard]] const rvsdg::Node *
-tryGetLeaderNode(const rvsdg::Node & node, CommonNodeElimination::Context & context)
+[[nodiscard]] const rvsdg::SimpleNode *
+tryGetLeaderNode(const rvsdg::SimpleNode & node, CommonNodeElimination::Context & context)
 {
   // Nodes with 0 outputs are never congruent with anything, so let the node be its own leader.
   if (node.noutputs() == 0)
@@ -387,11 +387,6 @@ tryGetLeaderNode(const rvsdg::Node & node, CommonNodeElimination::Context & cont
   // If the output has not gotten a congruence set yet, the node has yet to be marked
   if (output0Set == CommonNodeElimination::Context::NoCongruenceSetIndex)
     return nullptr;
-
-  // Structural nodes can have outputs that are congruent with completely different nodes
-  // due to invariant values. Structural nodes are always considered their own leaders.
-  if (dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    return &node;
 
   // A simple node can only be congruent with other simple nodes
   const auto & output0Leader = context.getLeader(output0Set);

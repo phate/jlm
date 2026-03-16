@@ -30,7 +30,8 @@ TEST(DeltaTests, TestDeltaCreation)
           "test-delta1",
           Linkage::externalLinkage,
           "",
-          true));
+          true,
+          4));
   auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 = &delta1->finalize(
       TestOperation::createNode(delta1->subregion(), { dep }, { valueType })->output(0));
@@ -42,7 +43,8 @@ TEST(DeltaTests, TestDeltaCreation)
           "test-delta2",
           Linkage::internalLinkage,
           "",
-          false));
+          false,
+          4));
   auto d2 = &delta2->finalize(
       TestOperation::createNode(delta2->subregion(), {}, { valueType })->output(0));
 
@@ -74,7 +76,7 @@ TEST(DeltaTests, TestRemoveDeltaInputsWhere)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", true));
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", true, 4));
   auto deltaInput0 = deltaNode->AddContextVar(*x).input;
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;
   deltaNode->AddContextVar(*x);
@@ -137,7 +139,7 @@ TEST(DeltaTests, TestPruneDeltaInputs)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", true));
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", true, 4));
 
   deltaNode->AddContextVar(*x);
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;

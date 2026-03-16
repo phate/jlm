@@ -1975,6 +1975,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
           nullptr,
           dataNode->name());
       gv->setSection(dataNode->Section());
+      gv->setAlignment(::llvm::Align(dataNode->getAlignment()));
       Context_->insert(v, gv);
     }
     else if (auto n = dynamic_cast<const FunctionNode *>(&node))

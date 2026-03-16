@@ -924,7 +924,8 @@ IndirectCallTest2::SetupRvsdg()
             "g1",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
 
@@ -940,7 +941,8 @@ IndirectCallTest2::SetupRvsdg()
             "g2",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 2 });
 
@@ -1192,13 +1194,14 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return &llvm::LlvmGraphImport::Create(
+    return &LlvmGraphImport::Create(
         *rvsdg,
         functionGType,
         functionGType,
         "g",
         Linkage::externalLinkage,
-        true);
+        true,
+        1);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::RegionArgument * functionG)
@@ -1306,21 +1309,24 @@ ExternalCallTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
   auto llvmLifetimeEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
   ExternalFArgument_ = &LlvmGraphImport::Create(
       rvsdg,
       lambdaFType,
       lambdaFType,
       "f",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
 
   // Setup function g()
   LambdaG_ = rvsdg::LambdaNode::Create(
@@ -1723,7 +1729,8 @@ DeltaTest1::SetupRvsdg()
             "f",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*dfNode->subregion(), { 32, 0 });
 
@@ -1821,7 +1828,8 @@ DeltaTest2::SetupRvsdg()
             "d1",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
 
@@ -1837,7 +1845,8 @@ DeltaTest2::SetupRvsdg()
             "d2",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
 
@@ -1937,7 +1946,8 @@ DeltaTest3::SetupRvsdg()
             "g1",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
 
@@ -1950,7 +1960,13 @@ DeltaTest3::SetupRvsdg()
 
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(pointerType, "g2", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(
+            pointerType,
+            "g2",
+            Linkage::externalLinkage,
+            "",
+            false,
+            4));
 
     auto ctxVar = delta->AddContextVar(g1);
 
@@ -2107,16 +2123,20 @@ ImportTest::SetupRvsdg()
 
   auto d1 = &llvm::LlvmGraphImport::Create(
       *graph,
-      jlm::rvsdg::BitType::Create(32),
+      BitType::Create(32),
       PointerType::Create(),
       "d1",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false,
+      4);
   auto d2 = &llvm::LlvmGraphImport::Create(
       *graph,
       jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d2",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false,
+      4);
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -2702,7 +2722,13 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto delta = jlm::rvsdg::DeltaNode::Create(
       pb.subregion(),
-      jlm::llvm::DeltaOperation::Create(arrayType, "myArray", Linkage::externalLinkage, "", false));
+      jlm::llvm::DeltaOperation::Create(
+          arrayType,
+          "myArray",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
   auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
@@ -2775,7 +2801,8 @@ EscapedMemoryTest1::SetupRvsdg()
             "a",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*deltaNode->subregion(), { 32, 1 });
 
@@ -2791,7 +2818,8 @@ EscapedMemoryTest1::SetupRvsdg()
             "b",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*deltaNode->subregion(), { 32, 2 });
 
@@ -2804,7 +2832,13 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(pointerType, "x", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(
+            pointerType,
+            "x",
+            Linkage::externalLinkage,
+            "",
+            false,
+            4));
 
     auto contextVariableA = deltaNode->AddContextVar(deltaA).inner;
 
@@ -2817,7 +2851,13 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(pointerType, "y", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(
+            pointerType,
+            "y",
+            Linkage::externalLinkage,
+            "",
+            false,
+            4));
 
     auto contextVariableX = deltaNode->AddContextVar(deltaX).inner;
 
@@ -2917,7 +2957,8 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction1Type,
         "ExternalFunction1",
         Linkage::externalLinkage,
-        true);
+        true,
+        1);
   };
 
   auto SetupExternalFunction2Declaration = [&]()
@@ -2928,7 +2969,8 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction2Type,
         "ExternalFunction2",
         Linkage::externalLinkage,
-        true);
+        true,
+        1);
   };
 
   auto SetupReturnAddressFunction = [&]()
@@ -3092,13 +3134,14 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return &llvm::LlvmGraphImport::Create(
+    return &LlvmGraphImport::Create(
         *rvsdg,
         externalFunctionType,
         externalFunctionType,
         "externalFunction",
         Linkage::externalLinkage,
-        true);
+        true,
+        1);
   };
 
   auto SetupGlobal = [&]()
@@ -3110,7 +3153,8 @@ EscapedMemoryTest3::SetupRvsdg()
             "global",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 4 });
 
@@ -3194,7 +3238,8 @@ MemcpyTest::SetupRvsdg()
             "localArray",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto zero = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
     auto one = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
@@ -3220,7 +3265,8 @@ MemcpyTest::SetupRvsdg()
             "globalArray",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constantAggregateZero =
         ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
@@ -3516,7 +3562,8 @@ LinkedListTest::SetupRvsdg()
             "MyList",
             Linkage::externalLinkage,
             "",
-            false));
+            false,
+            4));
 
     auto constantPointerNullResult =
         ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
@@ -3598,13 +3645,14 @@ AllMemoryNodesTest::SetupRvsdg()
   auto graph = &module->Rvsdg();
 
   // Create imported symbol "imported"
-  Import_ = &llvm::LlvmGraphImport::Create(
+  Import_ = &LlvmGraphImport::Create(
       *graph,
-      rvsdg::BitType::Create(32),
+      BitType::Create(32),
       PointerType::Create(),
       "imported",
       Linkage::externalLinkage,
-      false);
+      false,
+      4);
 
   // Create global variable "global"
   Delta_ = jlm::rvsdg::DeltaNode::Create(
@@ -3614,7 +3662,8 @@ AllMemoryNodesTest::SetupRvsdg()
           "global",
           Linkage::externalLinkage,
           "",
-          false));
+          false,
+          4));
   auto constantPointerNullResult =
       ConstantPointerNullOperation::Create(Delta_->subregion(), pointerType);
   Delta_->finalize(constantPointerNullResult);
@@ -3746,7 +3795,13 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   Global_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(uint32Type, "global", Linkage::internalLinkage, "", false));
+      jlm::llvm::DeltaOperation::Create(
+          uint32Type,
+          "global",
+          Linkage::internalLinkage,
+          "",
+          false,
+          4));
   const auto constantZero = &BitConstantOperation::create(*Global_->subregion(), { 32, 0 });
   const auto deltaOutput = &Global_->finalize(constantZero);
 
@@ -3962,7 +4017,8 @@ VariadicFunctionTest1::SetupRvsdg()
       lambdaHType,
       "h",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
 
   // Setup f()
   {
@@ -4074,28 +4130,32 @@ VariadicFunctionTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
   auto llvmLifetimeEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
   auto llvmVaStart = &LlvmGraphImport::Create(
       rvsdg,
       lambdaVaStartType,
       lambdaVaStartType,
       "llvm.va_start",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
   auto llvmVaEnd = &LlvmGraphImport::Create(
       rvsdg,
       lambdaVaEndType,
       lambdaVaEndType,
       "llvm.va_end",
       Linkage::externalLinkage,
-      true);
+      true,
+      1);
 
   // Setup function fst()
   {

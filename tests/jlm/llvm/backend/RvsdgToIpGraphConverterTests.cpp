@@ -316,7 +316,8 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
 
   LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage);
+  auto imp =
+      &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage, false, 4);
 
   PhiBuilder phiBuilder;
   phiBuilder.begin(&rm.Rvsdg().GetRootRegion());
@@ -329,7 +330,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
@@ -339,7 +340,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
@@ -418,7 +419,9 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
       functionType,
       functionType,
       "opaque",
-      Linkage::externalLinkage);
+      Linkage::externalLinkage,
+      false,
+      1);
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -485,3 +488,84 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
     EXPECT_TRUE(numSsaPhis == 2 || numSsaPhis == 0);
   }
 }
+
+class DataImportConversionTest : public testing::TestWithParam<std::tuple<
+                                     std::shared_ptr<const jlm::rvsdg::Type>,
+                                     std::string,
+                                     jlm::llvm::Linkage,
+                                     bool,
+                                     size_t>>
+{
+};
+
+TEST_P(DataImportConversionTest, Test)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto [valueType, name, linkage, isConstant, alignment] = GetParam();
+
+  const auto pointerType = PointerType::Create();
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  LlvmGraphImport::Create(
+      rvsdgModule.Rvsdg(),
+      valueType,
+      pointerType,
+      name,
+      linkage,
+      isConstant,
+      alignment);
+
+  view(rvsdgModule.Rvsdg(), stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  const auto ipGraphModule =
+      RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+
+  print(*ipGraphModule, stdout);
+
+  // Assert
+  const auto & ipGraph = ipGraphModule->ipgraph();
+  EXPECT_EQ(ipGraph.nnodes(), 1u);
+
+  const auto dataNode = dynamic_cast<const DataNode *>(&*ipGraph.begin());
+  EXPECT_NE(dataNode, nullptr);
+
+  EXPECT_EQ(dataNode->GetValueType(), valueType);
+  EXPECT_EQ(dataNode->name(), name);
+  EXPECT_EQ(dataNode->linkage(), linkage);
+  EXPECT_EQ(dataNode->constant(), isConstant);
+  EXPECT_EQ(dataNode->getAlignment(), alignment);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Test1,
+    DataImportConversionTest,
+    ::testing::Values(std::make_tuple(
+        jlm::rvsdg::TestType::createValueType(),
+        "name",
+        jlm::llvm::Linkage::externalLinkage,
+        false,
+        4)));
+INSTANTIATE_TEST_SUITE_P(
+    Test2,
+    DataImportConversionTest,
+    ::testing::Values(std::make_tuple(
+        jlm::rvsdg::TestType::createValueType(),
+        "name",
+        jlm::llvm::Linkage::externalLinkage,
+        true,
+        8)));
+INSTANTIATE_TEST_SUITE_P(
+    Test3,
+    DataImportConversionTest,
+    ::testing::Values(std::make_tuple(
+        jlm::rvsdg::TestType::createValueType(),
+        "foo",
+        jlm::llvm::Linkage::privateLinkage,
+        false,
+        1)));

@@ -481,6 +481,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
     auto type = ctx.GetTypeConverter().ConvertLlvmType(*gv.getValueType());
     auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
+    const auto alignment = gv.getAlign().valueOrOne().value();
 
     return DataNode::Create(
         ctx.module().ipgraph(),
@@ -488,7 +489,8 @@ declare_globals(::llvm::Module & lm, Context & ctx)
         type,
         linkage,
         std::move(section),
-        constant);
+        constant,
+        alignment);
   };
 
   auto create_function_node = [](const ::llvm::Function & f, Context & ctx)
