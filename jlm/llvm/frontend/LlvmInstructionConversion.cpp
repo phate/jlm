@@ -139,7 +139,7 @@ convert_constantExpr(
   /* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
   /* FIXME: The invocation of getAsInstruction() introduces a memory leak. */
   auto instruction = c->getAsInstruction();
-  auto v = ConvertInstruction(instruction, tacs, ctx);
+  auto v = convertInstruction(instruction, tacs, ctx);
   instruction->dropAllReferences();
   return v;
 }
@@ -862,6 +862,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Call);
   auto i = ::llvm::cast<::llvm::CallInst>(instruction);
+  JLM_ASSERT(i->getCallingConv() == ::llvm::CallingConv::C);
 
   auto create_arguments = [](const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
   {
@@ -1265,60 +1266,84 @@ convert(::llvm::Instruction * instruction, tacsvector_t & tacs, Context & ctx)
 }
 
 const Variable *
-ConvertInstruction(
-    ::llvm::Instruction * i,
-    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
-    Context & ctx)
+convertInstruction(
+    ::llvm::Instruction * instruction,
+    std::vector<std::unique_ptr<ThreeAddressCode>> & threeAddressCodes,
+    Context & context)
 {
-  if (i->isCast())
-    return convert_cast_instruction(i, tacs, ctx);
-
-  static std::unordered_map<
-      unsigned,
-      const Variable * (*)(::llvm::Instruction *,
-                           std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
-                           Context &)>
-      map({ { ::llvm::Instruction::Ret, convert_return_instruction },
-            { ::llvm::Instruction::Br, ConvertBranchInstruction },
-            { ::llvm::Instruction::Switch, ConvertSwitchInstruction },
-            { ::llvm::Instruction::Unreachable, convert_unreachable_instruction },
-            { ::llvm::Instruction::Add, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::And, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::AShr, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::Sub, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::UDiv, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::SDiv, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::URem, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::SRem, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::Shl, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::LShr, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::Or, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::Xor, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::Mul, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FAdd, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FSub, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FMul, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FDiv, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FRem, convert<::llvm::BinaryOperator> },
-            { ::llvm::Instruction::FNeg, convert<::llvm::UnaryOperator> },
-            { ::llvm::Instruction::ICmp, convert<::llvm::ICmpInst> },
-            { ::llvm::Instruction::FCmp, convert_fcmp_instruction },
-            { ::llvm::Instruction::Load, convert_load_instruction },
-            { ::llvm::Instruction::Store, convert_store_instruction },
-            { ::llvm::Instruction::PHI, ConvertPhiInstruction },
-            { ::llvm::Instruction::GetElementPtr, convert_getelementptr_instruction },
-            { ::llvm::Instruction::Call, convert_call_instruction },
-            { ::llvm::Instruction::Select, convert_select_instruction },
-            { ::llvm::Instruction::Alloca, convert_alloca_instruction },
-            { ::llvm::Instruction::ExtractValue, convert_extractvalue },
-            { ::llvm::Instruction::ExtractElement, convert_extractelement_instruction },
-            { ::llvm::Instruction::ShuffleVector, convert<::llvm::ShuffleVectorInst> },
-            { ::llvm::Instruction::InsertElement, convert_insertelement_instruction } });
-
-  if (map.find(i->getOpcode()) == map.end())
-    JLM_UNREACHABLE(util::strfmt(i->getOpcodeName(), " is not supported.").c_str());
-
-  return map[i->getOpcode()](i, tacs, ctx);
+  switch (instruction->getOpcode())
+  {
+  case ::llvm::Instruction::Trunc:
+  case ::llvm::Instruction::ZExt:
+  case ::llvm::Instruction::UIToFP:
+  case ::llvm::Instruction::SIToFP:
+  case ::llvm::Instruction::SExt:
+  case ::llvm::Instruction::PtrToInt:
+  case ::llvm::Instruction::IntToPtr:
+  case ::llvm::Instruction::FPTrunc:
+  case ::llvm::Instruction::FPToSI:
+  case ::llvm::Instruction::FPToUI:
+  case ::llvm::Instruction::FPExt:
+  case ::llvm::Instruction::BitCast:
+    return convert_cast_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Add:
+  case ::llvm::Instruction::And:
+  case ::llvm::Instruction::AShr:
+  case ::llvm::Instruction::Sub:
+  case ::llvm::Instruction::UDiv:
+  case ::llvm::Instruction::SDiv:
+  case ::llvm::Instruction::URem:
+  case ::llvm::Instruction::SRem:
+  case ::llvm::Instruction::Shl:
+  case ::llvm::Instruction::LShr:
+  case ::llvm::Instruction::Or:
+  case ::llvm::Instruction::Xor:
+  case ::llvm::Instruction::Mul:
+  case ::llvm::Instruction::FAdd:
+  case ::llvm::Instruction::FSub:
+  case ::llvm::Instruction::FMul:
+  case ::llvm::Instruction::FDiv:
+  case ::llvm::Instruction::FRem:
+    return convert<::llvm::BinaryOperator>(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Ret:
+    return convert_return_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Br:
+    return ConvertBranchInstruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Switch:
+    return ConvertSwitchInstruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Unreachable:
+    return convert_unreachable_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::FNeg:
+    return convert<::llvm::UnaryOperator>(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::ICmp:
+    return convert<::llvm::ICmpInst>(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::FCmp:
+    return convert_fcmp_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Load:
+    return convert_load_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Store:
+    return convert_store_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::PHI:
+    return ConvertPhiInstruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::GetElementPtr:
+    return convert_getelementptr_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Call:
+    return convert_call_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Select:
+    return convert_select_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Alloca:
+    return convert_alloca_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::ExtractValue:
+    return convert_extractvalue(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::ExtractElement:
+    return convert_extractelement_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::ShuffleVector:
+    return convert<::llvm::ShuffleVectorInst>(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::InsertElement:
+    return convert_insertelement_instruction(instruction, threeAddressCodes, context);
+  default:
+    throw std::runtime_error(util::strfmt(instruction->getOpcodeName(), " is not supported."));
+  }
 }
 
 }
