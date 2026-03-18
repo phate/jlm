@@ -25,10 +25,10 @@ const Variable *
 ConvertValue(::llvm::Value * v, tacsvector_t & tacs, Context & ctx);
 
 const Variable *
-ConvertInstruction(
-    ::llvm::Instruction * i,
-    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
-    Context & ctx);
+convertInstruction(
+    ::llvm::Instruction * instruction,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & threeAddressCodes,
+    Context & context);
 
 std::vector<std::unique_ptr<llvm::ThreeAddressCode>>
 ConvertConstant(::llvm::Constant * constant, Context & ctx);
