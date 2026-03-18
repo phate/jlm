@@ -750,39 +750,48 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
 }
 
 static const Variable *
-convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
+convertMallocCall(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
 {
-  auto globalMemoryState = ctx.memory_state();
-  auto globalIOState = ctx.iostate();
+  auto globalMemoryState = context.memory_state();
+  const auto globalIOState = context.iostate();
 
-  auto size = ConvertValue(i->getArgOperand(0), tacs, ctx);
+  const auto size = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
 
-  tacs.push_back(MallocOperation::createTac(size, globalIOState));
-  auto mallocAddress = tacs.back()->result(0);
-  auto mallocIOState = tacs.back()->result(1);
-  auto mallocMemoryState = tacs.back()->result(2);
+  threeAddressCodes.push_back(MallocOperation::createTac(size, globalIOState));
+  const auto mallocAddress = threeAddressCodes.back()->result(0);
+  const auto mallocIOState = threeAddressCodes.back()->result(1);
+  auto mallocMemoryState = threeAddressCodes.back()->result(2);
 
-  tacs.push_back(AssignmentOperation::create(mallocIOState, globalIOState));
+  threeAddressCodes.push_back(AssignmentOperation::create(mallocIOState, globalIOState));
 
-  tacs.push_back(MemoryStateMergeOperation::Create({ mallocMemoryState, globalMemoryState }));
-  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), globalMemoryState));
+  threeAddressCodes.push_back(
+      MemoryStateMergeOperation::Create({ mallocMemoryState, globalMemoryState }));
+  threeAddressCodes.push_back(
+      AssignmentOperation::create(threeAddressCodes.back()->result(0), globalMemoryState));
 
   return mallocAddress;
 }
 
 static const Variable *
-convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
+convertFreeCall(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
 {
-  auto iostate = ctx.iostate();
-  auto memstate = ctx.memory_state();
+  const auto ioState = context.iostate();
+  auto memstate = context.memory_state();
 
-  auto pointer = ConvertValue(i->getArgOperand(0), tacs, ctx);
+  const auto pointer = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
 
-  tacs.push_back(FreeOperation::Create(pointer, { memstate }, iostate));
-  auto & freeThreeAddressCode = *tacs.back().get();
+  threeAddressCodes.push_back(FreeOperation::Create(pointer, { memstate }, ioState));
+  const auto & freeThreeAddressCode = *threeAddressCodes.back().get();
 
-  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
-  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), iostate));
+  threeAddressCodes.push_back(
+      AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
+  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), ioState));
 
   return nullptr;
 }
@@ -798,56 +807,69 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx
 static bool
 IsVolatile(const ::llvm::Value & value)
 {
-  auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
+  const auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
   JLM_ASSERT(constant != nullptr && constant->getType()->getIntegerBitWidth() == 1);
 
-  auto apInt = constant->getValue();
+  const auto apInt = constant->getValue();
   JLM_ASSERT(apInt.isZero() || apInt.isOne());
 
   return apInt.isOne();
 }
 
 static const Variable *
-convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, Context & ctx)
+convertMemCpyCall(
+    const ::llvm::IntrinsicInst * instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
 {
-  auto ioState = ctx.iostate();
-  auto memoryState = ctx.memory_state();
+  const auto ioState = context.iostate();
+  auto memoryState = context.memory_state();
 
-  auto destination = ConvertValue(instruction->getArgOperand(0), tacs, ctx);
-  auto source = ConvertValue(instruction->getArgOperand(1), tacs, ctx);
-  auto length = ConvertValue(instruction->getArgOperand(2), tacs, ctx);
+  const auto destination = ConvertValue(instruction->getArgOperand(0), threeAddressCodes, context);
+  const auto source = ConvertValue(instruction->getArgOperand(1), threeAddressCodes, context);
+  const auto length = ConvertValue(instruction->getArgOperand(2), threeAddressCodes, context);
 
   if (IsVolatile(*instruction->getArgOperand(3)))
   {
-    tacs.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
-        *destination,
-        *source,
-        *length,
-        *ioState,
-        { memoryState }));
-    auto & memCpyVolatileTac = *tacs.back();
-    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
-    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(1), memoryState));
+    threeAddressCodes.push_back(
+        MemCpyVolatileOperation::CreateThreeAddressCode(
+            *destination,
+            *source,
+            *length,
+            *ioState,
+            { memoryState }));
+    const auto & memCpyVolatileTac = *threeAddressCodes.back();
+    threeAddressCodes.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
+    threeAddressCodes.push_back(
+        AssignmentOperation::create(memCpyVolatileTac.result(1), memoryState));
   }
   else
   {
-    tacs.push_back(
+    threeAddressCodes.push_back(
         MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
-    tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memoryState));
+    threeAddressCodes.push_back(
+        AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
   }
 
   return nullptr;
 }
 
 static bool
-IsFMulAddIntrinsic(const ::llvm::Instruction & instruction)
+isMallocCall(const ::llvm::CallInst & callInstruction)
 {
-  const auto intrinsic = ::llvm::dyn_cast<::llvm::IntrinsicInst>(&instruction);
-  return intrinsic && intrinsic->getIntrinsicID() == ::llvm::Intrinsic::fmuladd;
+  const auto function = callInstruction.getCalledFunction();
+  return function && function->getName() == "malloc";
+}
+
+static bool
+isFreeCall(const ::llvm::CallInst & callInstruction)
+{
+  const auto function = callInstruction.getCalledFunction();
+  return function && function->getName() == "free";
 }
 
 static const Variable *
-ConvertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & ctx)
+convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & ctx)
 {
   const auto multiplier = ConvertValue(instruction.getArgOperand(0), tacs, ctx);
   const auto multiplicand = ConvertValue(instruction.getArgOperand(1), tacs, ctx);
@@ -857,101 +879,79 @@ ConvertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
   return tacs.back()->result(0);
 }
 
-static const Variable *
-convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, Context & ctx)
+std::vector<const Variable *>
+convertCallArguments(
+    const ::llvm::CallInst & callInstruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
 {
-  JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Call);
-  auto i = ::llvm::cast<::llvm::CallInst>(instruction);
-  JLM_ASSERT(i->getCallingConv() == ::llvm::CallingConv::C);
+  const auto functionType = callInstruction.getFunctionType();
 
-  auto create_arguments = [](const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
+  std::vector<const Variable *> arguments;
+  for (size_t n = 0; n < functionType->getNumParams(); n++)
+    arguments.push_back(ConvertValue(callInstruction.getArgOperand(n), threeAddressCodes, context));
+
+  if (functionType->isVarArg())
   {
-    auto functionType = i->getFunctionType();
-    std::vector<const llvm::Variable *> arguments;
-    for (size_t n = 0; n < functionType->getNumParams(); n++)
-      arguments.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
+    std::vector<const Variable *> variableArguments;
+    for (size_t n = functionType->getNumParams(); n < callInstruction.getNumOperands() - 1; n++)
+      variableArguments.push_back(
+          ConvertValue(callInstruction.getArgOperand(n), threeAddressCodes, context));
 
-    return arguments;
-  };
+    threeAddressCodes.push_back(VariadicArgumentListOperation::create(variableArguments));
+    arguments.push_back(threeAddressCodes.back()->result(0));
+  }
 
-  auto create_varargs = [](const ::llvm::CallInst * i, tacsvector_t & tacs, Context & ctx)
-  {
-    auto functionType = i->getFunctionType();
-    std::vector<const llvm::Variable *> varargs;
-    for (size_t n = functionType->getNumParams(); n < i->getNumOperands() - 1; n++)
-      varargs.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
+  arguments.push_back(context.iostate());
+  arguments.push_back(context.memory_state());
 
-    tacs.push_back(VariadicArgumentListOperation::create(varargs));
-    return tacs.back()->result(0);
-  };
+  return arguments;
+}
 
-  auto is_malloc_call = [](const ::llvm::CallInst * i)
-  {
-    auto f = i->getCalledFunction();
-    return f && f->getName() == "malloc";
-  };
+static const Variable *
+createCall(
+    const ::llvm::CallInst & callInstruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  const auto functionType = callInstruction.getFunctionType();
 
-  auto is_free_call = [](const ::llvm::CallInst * i)
-  {
-    auto f = i->getCalledFunction();
-    return f && f->getName() == "free";
-  };
+  auto convertedFunctionType = context.GetTypeConverter().ConvertFunctionType(*functionType);
+  const auto arguments = convertCallArguments(callInstruction, threeAddressCodes, context);
 
-  auto IsMemcpyCall = [](const ::llvm::CallInst * i)
-  {
-    return ::llvm::dyn_cast<::llvm::MemCpyInst>(i) != nullptr;
-  };
-
-  if (is_malloc_call(i))
-    return convert_malloc_call(i, tacs, ctx);
-  if (is_free_call(i))
-    return convert_free_call(i, tacs, ctx);
-  if (IsMemcpyCall(i))
-    return convert_memcpy_call(i, tacs, ctx);
-  if (IsFMulAddIntrinsic(*instruction))
-    return ConvertFMulAddIntrinsic(*i, tacs, ctx);
-
-  auto ftype = i->getFunctionType();
-  auto convertedFType = ctx.GetTypeConverter().ConvertFunctionType(*ftype);
-
-  auto arguments = create_arguments(i, tacs, ctx);
-  if (ftype->isVarArg())
-    arguments.push_back(create_varargs(i, tacs, ctx));
-  arguments.push_back(ctx.iostate());
-  arguments.push_back(ctx.memory_state());
-
-  const Variable * callee = ConvertValueOrFunction(i->getCalledOperand(), tacs, ctx);
+  const Variable * callee =
+      ConvertValueOrFunction(callInstruction.getCalledOperand(), threeAddressCodes, context);
   // Llvm does not distinguish between "function objects" and
-  // "pointers to functions" while we need to be precise in modelling.
+  // "pointers to functions" while we need to be precise in modeling.
   // If the called object is a function object, then we can just
   // feed it to the call operator directly, otherwise we have
   // to cast it into a function object.
   if (is<PointerType>(*callee->Type()))
   {
     std::unique_ptr<ThreeAddressCode> callee_cast = ThreeAddressCode::create(
-        std::make_unique<PointerToFunctionOperation>(convertedFType),
+        std::make_unique<PointerToFunctionOperation>(convertedFunctionType),
         { callee });
     callee = callee_cast->result(0);
-    tacs.push_back(std::move(callee_cast));
+    threeAddressCodes.push_back(std::move(callee_cast));
   }
   else if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(callee->Type()))
   {
     // Llvm also allows argument type mismatches if the function
     // features varargs. The code here could be made more precise by
     // validating and accepting only vararg-related mismatches.
-    if (*convertedFType != *fntype)
+    if (*convertedFunctionType != *fntype)
     {
-      // Since vararg passing is not modelled explicitly, simply hide the
-      // argument mismtach via pointer casts.
+      // Since vararg passing is not modeled explicitly, simply hide the
+      // argument mismatch via pointer casts.
       std::unique_ptr<ThreeAddressCode> ptrCast = ThreeAddressCode::create(
           std::make_unique<FunctionToPointerOperation>(fntype),
           { callee });
       std::unique_ptr<ThreeAddressCode> fnCast = ThreeAddressCode::create(
-          std::make_unique<PointerToFunctionOperation>(convertedFType),
+          std::make_unique<PointerToFunctionOperation>(convertedFunctionType),
           { ptrCast->result(0) });
       callee = fnCast->result(0);
-      tacs.push_back(std::move(ptrCast));
-      tacs.push_back(std::move(fnCast));
+      threeAddressCodes.push_back(std::move(ptrCast));
+      threeAddressCodes.push_back(std::move(fnCast));
     }
   }
   else
@@ -959,17 +959,54 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
   }
 
-  auto call = CallOperation::create(callee, convertedFType, arguments);
+  auto call = CallOperation::create(callee, convertedFunctionType, arguments);
 
-  auto result = call->result(0);
-  auto iostate = call->result(call->nresults() - 2);
-  auto memstate = call->result(call->nresults() - 1);
+  const auto result = call->result(0);
+  const auto ioState = call->result(call->nresults() - 2);
+  const auto memoryState = call->result(call->nresults() - 1);
 
-  tacs.push_back(std::move(call));
-  tacs.push_back(AssignmentOperation::create(iostate, ctx.iostate()));
-  tacs.push_back(AssignmentOperation::create(memstate, ctx.memory_state()));
+  threeAddressCodes.push_back(std::move(call));
+  threeAddressCodes.push_back(AssignmentOperation::create(ioState, context.iostate()));
+  threeAddressCodes.push_back(AssignmentOperation::create(memoryState, context.memory_state()));
 
   return result;
+}
+
+static const Variable *
+convertIntrinsicInstruction(
+    const ::llvm::IntrinsicInst & intrinsicInstruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  switch (intrinsicInstruction.getIntrinsicID())
+  {
+  case ::llvm::Intrinsic::fmuladd:
+    return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memcpy:
+    return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
+  default:
+    return createCall(intrinsicInstruction, threeAddressCodes, context);
+  }
+}
+
+static const Variable *
+convertCallInstruction(
+    const ::llvm::CallInst & callInstruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  JLM_ASSERT(callInstruction.getCallingConv() == ::llvm::CallingConv::C);
+
+  if (const auto intrinsicInstruction = ::llvm::dyn_cast<::llvm::IntrinsicInst>(&callInstruction))
+    return convertIntrinsicInstruction(*intrinsicInstruction, threeAddressCodes, context);
+
+  if (isMallocCall(callInstruction))
+    return convertMallocCall(callInstruction, threeAddressCodes, context);
+
+  if (isFreeCall(callInstruction))
+    return convertFreeCall(callInstruction, threeAddressCodes, context);
+
+  return createCall(callInstruction, threeAddressCodes, context);
 }
 
 static inline const Variable *
@@ -1328,7 +1365,10 @@ convertInstruction(
   case ::llvm::Instruction::GetElementPtr:
     return convert_getelementptr_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::Call:
-    return convert_call_instruction(instruction, threeAddressCodes, context);
+    return convertCallInstruction(
+        *::llvm::dyn_cast<::llvm::CallInst>(instruction),
+        threeAddressCodes,
+        context);
   case ::llvm::Instruction::Select:
     return convert_select_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::Alloca:
