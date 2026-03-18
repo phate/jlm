@@ -47,6 +47,7 @@ public:
     IfConversion,
     InvariantValueRedirection,
     JlmToRvsdgConversion,
+    LoopStrengthReduction,
     LoopUnrolling,
     LoopUnswitching,
     MemoryStateEncoder,
@@ -238,6 +239,8 @@ protected:
     inline static const char * NumSecondOrderInductionVariables = "#SecondOrderInductionVariables";
     inline static const char * NumLoops = "#NumLoops";
     inline static const char * TripCounts = "#TripCounts";
+
+    inline static const char * NumOperationsReduced = "#NumOperationsReduced";
 
     static inline const char * Timer = "Time";
   };
