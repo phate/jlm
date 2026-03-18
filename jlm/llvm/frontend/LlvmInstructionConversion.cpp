@@ -1344,4 +1344,5 @@ convertInstruction(
     throw std::runtime_error(util::strfmt(instruction->getOpcodeName(), " is not supported."));
   }
 }
+
 }
