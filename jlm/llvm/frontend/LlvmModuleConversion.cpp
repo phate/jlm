@@ -29,7 +29,7 @@ convert_instructions(::llvm::Function & function, Context & ctx)
     for (auto & instruction : *bb)
     {
       tacsvector_t tacs;
-      if (auto result = ConvertInstruction(&instruction, tacs, ctx))
+      if (auto result = convertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
       // When an LLVM PhiNode is converted to a jlm SsaPhiOperation, some of its operands may not be
