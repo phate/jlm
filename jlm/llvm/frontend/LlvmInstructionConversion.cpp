@@ -831,13 +831,12 @@ convertMemCpyCall(
 
   if (IsVolatile(*instruction->getArgOperand(3)))
   {
-    threeAddressCodes.push_back(
-        MemCpyVolatileOperation::CreateThreeAddressCode(
-            *destination,
-            *source,
-            *length,
-            *ioState,
-            { memoryState }));
+    threeAddressCodes.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
+        *destination,
+        *source,
+        *length,
+        *ioState,
+        { memoryState }));
     const auto & memCpyVolatileTac = *threeAddressCodes.back();
     threeAddressCodes.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
     threeAddressCodes.push_back(
