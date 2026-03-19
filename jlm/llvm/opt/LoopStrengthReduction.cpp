@@ -292,7 +292,7 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     const auto stepValue = stepConstant->GetValue();
     const auto & stepValueNode =
         IntegerConstantOperation::Create(*thetaNode.subregion(), numBits, stepValue);
-    const auto & newAddNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>(
+    auto & newAddNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>(
         { newIV.pre, stepValueNode.output(0) },
         numBits);
 

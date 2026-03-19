@@ -61,8 +61,7 @@ TEST(LoopStrengthReductionTests, SimpleCandidateOperation)
   const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
@@ -189,8 +188,7 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   const auto lv2 = theta->AddLoopVar(cv1);          // arr ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & mulNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & mulNode1 = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode2 = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
@@ -290,14 +288,13 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode2 =
+  auto & addNode2 =
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c1.output(0) }, 32);
 
   const auto & sExtNode = SExtOperation::create(64, addNode2.output(0));
@@ -424,14 +421,13 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
   const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode2 =
+  auto & addNode2 =
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c1.output(0) }, 32);
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
