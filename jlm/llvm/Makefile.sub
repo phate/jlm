@@ -10,7 +10,6 @@ libllvm_SOURCES = \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
-    jlm/llvm/frontend/LlvmInstructionConversion.cpp \
     jlm/llvm/frontend/LlvmModuleConversion.cpp \
     \
     jlm/llvm/ir/aggregation.cpp \
@@ -122,8 +121,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/StoreValueForwarding.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
-    jlm/llvm/frontend/LlvmConversionContext.hpp \
-    jlm/llvm/frontend/LlvmInstructionConversion.hpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
     jlm/llvm/ir/operators.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
