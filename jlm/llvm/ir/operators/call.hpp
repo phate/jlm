@@ -250,8 +250,11 @@ class CallOperation final : public jlm::rvsdg::SimpleOperation
 public:
   ~CallOperation() override;
 
-  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
+  explicit CallOperation(
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      AttributeList attributes)
       : SimpleOperation(create_srctypes(functionType), functionType->Results()),
+        attributes_(std::move(attributes)),
         FunctionType_(std::move(functionType))
   {}
 
@@ -265,6 +268,12 @@ public:
   GetFunctionType() const noexcept
   {
     return FunctionType_;
+  }
+
+  [[nodiscard]] const AttributeList &
+  getAttributes() const noexcept
+  {
+    return attributes_;
   }
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -426,11 +435,12 @@ public:
   create(
       const Variable * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      AttributeList attributes,
       const std::vector<const Variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    auto op = std::make_unique<CallOperation>(std::move(functionType));
+    auto op = std::make_unique<CallOperation>(std::move(functionType), std::move(attributes));
     std::vector<const Variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
     return ThreeAddressCode::create(std::move(op), operands);
@@ -440,9 +450,11 @@ public:
   Create(
       rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      AttributeList attributes,
       const std::vector<rvsdg::Output *> & arguments)
   {
-    return outputs(&CreateNode(function, std::move(functionType), arguments));
+    return outputs(
+        &CreateNode(function, std::move(functionType), std::move(attributes), arguments));
   }
 
   static std::vector<rvsdg::Output *>
@@ -469,11 +481,13 @@ public:
   CreateNode(
       rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      AttributeList attributes,
       const std::vector<rvsdg::Output *> & arguments)
   {
     CheckFunctionInputType(*function->Type());
 
-    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
+    auto callOperation =
+        std::make_unique<CallOperation>(std::move(functionType), std::move(attributes));
     std::vector operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 
@@ -535,6 +549,7 @@ private:
     CheckResultTypes(functionType);
   }
 
+  AttributeList attributes_;
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 

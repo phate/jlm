@@ -19,8 +19,9 @@ CallOperation::~CallOperation() = default;
 bool
 CallOperation::operator==(const Operation & other) const noexcept
 {
-  auto callOperation = dynamic_cast<const CallOperation *>(&other);
-  return callOperation && FunctionType_ == callOperation->FunctionType_;
+  const auto callOperation = dynamic_cast<const CallOperation *>(&other);
+  return callOperation && attributes_ == callOperation->attributes_
+      && FunctionType_ == callOperation->FunctionType_;
 }
 
 std::string

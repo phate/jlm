@@ -21,9 +21,16 @@ namespace jlm::llvm
 {
 
 class InterProceduralGraphModule;
+class TypeConverter;
 
 Attribute::kind
 ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind);
+
+AttributeList
+convertAttributeList(
+    const ::llvm::AttributeList & attributeList,
+    size_t numParameters,
+    TypeConverter & typeConverter);
 
 std::unique_ptr<InterProceduralGraphModule>
 ConvertLlvmModule(::llvm::Module & module);
