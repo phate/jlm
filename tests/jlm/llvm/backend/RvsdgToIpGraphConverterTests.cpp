@@ -443,6 +443,7 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
   auto & callNode = CallOperation::CreateNode(
       innerOpaque.pre,
       functionType,
+      AttributeList::createEmptyList(),
       { innerIOStateLoopVar.pre, innerMemoryStateLoopVar.pre });
 
   innerIOStateLoopVar.post->divert_to(callNode.output(0));

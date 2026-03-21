@@ -37,8 +37,11 @@ TEST(CallOperationTests, TestCopy)
   auto iOState2 = &jlm::rvsdg::GraphImport::Create(rvsdg, iOStateType, "iOState2");
   auto memoryState2 = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
 
-  auto callResults =
-      CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
+  auto callResults = CallOperation::Create(
+      function1,
+      functionType,
+      AttributeList::createEmptyList(),
+      { value1, iOState1, memoryState1 });
 
   // Act
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callResults[0]);
@@ -71,7 +74,8 @@ TEST(CallOperationTests, TestCallNodeAccessors)
   auto m = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
 
   // Act
-  auto results = CallOperation::Create(f, functionType, { v, i, m });
+  auto results =
+      CallOperation::Create(f, functionType, AttributeList::createEmptyList(), { v, i, m });
   auto & callNode =
       *jlm::util::assertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
@@ -134,8 +138,11 @@ TEST(CallOperationTests, TestCallTypeClassifierIndirectCall)
     auto load = LoadNonVolatileOperation::Create(alloca[0], store, PointerType::Create(), 8);
     auto fn = jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ load[0] }, fcttype1).output(0);
 
-    auto callResults =
-        CallOperation::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
+    auto callResults = CallOperation::Create(
+        fn,
+        fcttype1,
+        AttributeList::createEmptyList(),
+        { iOStateArgument, memoryStateArgument });
 
     lambda->finalize(callResults);
 
@@ -231,6 +238,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCall)
     auto callResults = CallOperation::Create(
         functionG.output,
         functionTypeG,
+        AttributeList::createEmptyList(),
         { iOStateArgument, memoryStateArgument });
 
     lambda->finalize(callResults);
@@ -313,6 +321,7 @@ TEST(CallOperationTests, TestCallTypeClassifierNonRecursiveDirectCallTheta)
       auto callResults = CallOperation::Create(
           functionG.output,
           functionTypeG,
+          AttributeList::createEmptyList(),
           { thetaOutputIoState.pre, thetaOutputMemoryState.pre });
 
       thetaOutputG.post->divert_to(functionG.output);
@@ -422,6 +431,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto callfibm1Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
+        AttributeList::createEmptyList(),
         { nm1,
           resultev.branchArgument[0],
           gIIoState.branchArgument[0],
@@ -432,6 +442,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto callfibm2Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
+        AttributeList::createEmptyList(),
         { nm2, resultev.branchArgument[0], callfibm1Results[0], callfibm1Results[1] });
 
     auto gepnm1 = GetElementPtrOperation::Create(

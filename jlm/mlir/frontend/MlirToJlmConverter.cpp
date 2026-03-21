@@ -506,7 +506,9 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::CallOperation>(
         std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
-        std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes)));
+        std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes),
+        llvm::AttributeList::createEmptyList())); // FIXME: MLIR dialect does not support attribute
+                                                  // lists
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {

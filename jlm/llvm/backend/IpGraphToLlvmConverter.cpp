@@ -278,7 +278,9 @@ IpGraphToLlvmConverter::convert(
   }
 
   auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
-  return builder.CreateCall(ftype, function, operands);
+  auto callInstruction = builder.CreateCall(ftype, function, operands);
+  callInstruction->setAttributes(convertAttributeList(op.getAttributes()));
+  return callInstruction;
 }
 
 static bool
@@ -1804,6 +1806,23 @@ IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
   }
 
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
+}
+
+::llvm::AttributeList
+IpGraphToLlvmConverter::convertAttributeList(const AttributeList & attributeList)
+{
+  const auto functionAttributes = convert_attributes(attributeList.getFunctionAttributes());
+  const auto returnAttributes = convert_attributes(attributeList.getReturnAttributes());
+
+  std::vector<::llvm::AttributeSet> parameterAttributes;
+  for (auto & attributes : attributeList.getParameterAttributes())
+    parameterAttributes.emplace_back(convert_attributes(attributes));
+
+  return ::llvm::AttributeList::get(
+      Context_->llvm_module().getContext(),
+      std::move(functionAttributes),
+      std::move(returnAttributes),
+      std::move(parameterAttributes));
 }
 
 std::vector<ControlFlowGraphNode *>

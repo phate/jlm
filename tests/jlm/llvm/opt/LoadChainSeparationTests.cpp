@@ -676,6 +676,7 @@ TEST(LoadChainSeparationTests, ExternalCall)
   auto & callNode = CallOperation::CreateNode(
       externalFunctionCtxVar.inner,
       externalFunctionType,
+      AttributeList::createEmptyList(),
       { &ioStateArgument, callEntryMergeNode.output(0) });
 
   auto & callExitSplitNode =

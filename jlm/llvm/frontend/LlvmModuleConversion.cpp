@@ -231,6 +231,209 @@ convert_apint(const ::llvm::APInt & value)
   return vr;
 }
 
+Attribute::kind
+ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
+{
+  typedef ::llvm::Attribute::AttrKind ak;
+
+  static std::unordered_map<::llvm::Attribute::AttrKind, Attribute::kind> map(
+      { { ak::None, Attribute::kind::None },
+        { ak::FirstEnumAttr, Attribute::kind::FirstEnumAttr },
+        { ak::AllocAlign, Attribute::kind::AllocAlign },
+        { ak::AllocatedPointer, Attribute::kind::AllocatedPointer },
+        { ak::AlwaysInline, Attribute::kind::AlwaysInline },
+        { ak::Builtin, Attribute::kind::Builtin },
+        { ak::Cold, Attribute::kind::Cold },
+        { ak::Convergent, Attribute::kind::Convergent },
+        { ak::CoroDestroyOnlyWhenComplete, Attribute::kind::CoroDestroyOnlyWhenComplete },
+        { ak::DeadOnUnwind, Attribute::kind::DeadOnUnwind },
+        { ak::DisableSanitizerInstrumentation, Attribute::kind::DisableSanitizerInstrumentation },
+        { ak::FnRetThunkExtern, Attribute::kind::FnRetThunkExtern },
+        { ak::Hot, Attribute::kind::Hot },
+        { ak::ImmArg, Attribute::kind::ImmArg },
+        { ak::InReg, Attribute::kind::InReg },
+        { ak::InlineHint, Attribute::kind::InlineHint },
+        { ak::JumpTable, Attribute::kind::JumpTable },
+        { ak::Memory, Attribute::kind::Memory },
+        { ak::MinSize, Attribute::kind::MinSize },
+        { ak::MustProgress, Attribute::kind::MustProgress },
+        { ak::Naked, Attribute::kind::Naked },
+        { ak::Nest, Attribute::kind::Nest },
+        { ak::NoAlias, Attribute::kind::NoAlias },
+        { ak::NoBuiltin, Attribute::kind::NoBuiltin },
+        { ak::NoCallback, Attribute::kind::NoCallback },
+        { ak::NoCapture, Attribute::kind::NoCapture },
+        { ak::NoCfCheck, Attribute::kind::NoCfCheck },
+        { ak::NoDuplicate, Attribute::kind::NoDuplicate },
+        { ak::NoFree, Attribute::kind::NoFree },
+        { ak::NoImplicitFloat, Attribute::kind::NoImplicitFloat },
+        { ak::NoInline, Attribute::kind::NoInline },
+        { ak::NoMerge, Attribute::kind::NoMerge },
+        { ak::NoProfile, Attribute::kind::NoProfile },
+        { ak::NoRecurse, Attribute::kind::NoRecurse },
+        { ak::NoRedZone, Attribute::kind::NoRedZone },
+        { ak::NoReturn, Attribute::kind::NoReturn },
+        { ak::NoSanitizeBounds, Attribute::kind::NoSanitizeBounds },
+        { ak::NoSanitizeCoverage, Attribute::kind::NoSanitizeCoverage },
+        { ak::NoSync, Attribute::kind::NoSync },
+        { ak::NoUndef, Attribute::kind::NoUndef },
+        { ak::NoUnwind, Attribute::kind::NoUnwind },
+        { ak::NonLazyBind, Attribute::kind::NonLazyBind },
+        { ak::NonNull, Attribute::kind::NonNull },
+        { ak::NullPointerIsValid, Attribute::kind::NullPointerIsValid },
+        { ak::OptForFuzzing, Attribute::kind::OptForFuzzing },
+        { ak::OptimizeForDebugging, Attribute::kind::OptimizeForDebugging },
+        { ak::OptimizeForSize, Attribute::kind::OptimizeForSize },
+        { ak::OptimizeNone, Attribute::kind::OptimizeNone },
+        { ak::PresplitCoroutine, Attribute::kind::PresplitCoroutine },
+        { ak::ReadNone, Attribute::kind::ReadNone },
+        { ak::ReadOnly, Attribute::kind::ReadOnly },
+        { ak::Returned, Attribute::kind::Returned },
+        { ak::ReturnsTwice, Attribute::kind::ReturnsTwice },
+        { ak::SExt, Attribute::kind::SExt },
+        { ak::SafeStack, Attribute::kind::SafeStack },
+        { ak::SanitizeAddress, Attribute::kind::SanitizeAddress },
+        { ak::SanitizeHWAddress, Attribute::kind::SanitizeHWAddress },
+        { ak::SanitizeMemTag, Attribute::kind::SanitizeMemTag },
+        { ak::SanitizeMemory, Attribute::kind::SanitizeMemory },
+        { ak::SanitizeThread, Attribute::kind::SanitizeThread },
+        { ak::ShadowCallStack, Attribute::kind::ShadowCallStack },
+        { ak::SkipProfile, Attribute::kind::SkipProfile },
+        { ak::Speculatable, Attribute::kind::Speculatable },
+        { ak::SpeculativeLoadHardening, Attribute::kind::SpeculativeLoadHardening },
+        { ak::StackProtect, Attribute::kind::StackProtect },
+        { ak::StackProtectReq, Attribute::kind::StackProtectReq },
+        { ak::StackProtectStrong, Attribute::kind::StackProtectStrong },
+        { ak::StrictFP, Attribute::kind::StrictFP },
+        { ak::SwiftAsync, Attribute::kind::SwiftAsync },
+        { ak::SwiftError, Attribute::kind::SwiftError },
+        { ak::SwiftSelf, Attribute::kind::SwiftSelf },
+        { ak::WillReturn, Attribute::kind::WillReturn },
+        { ak::Writable, Attribute::kind::Writable },
+        { ak::WriteOnly, Attribute::kind::WriteOnly },
+        { ak::ZExt, Attribute::kind::ZExt },
+        { ak::LastEnumAttr, Attribute::kind::LastEnumAttr },
+        { ak::FirstTypeAttr, Attribute::kind::FirstTypeAttr },
+        { ak::ByRef, Attribute::kind::ByRef },
+        { ak::ByVal, Attribute::kind::ByVal },
+        { ak::ElementType, Attribute::kind::ElementType },
+        { ak::InAlloca, Attribute::kind::InAlloca },
+        { ak::Preallocated, Attribute::kind::Preallocated },
+        { ak::StructRet, Attribute::kind::StructRet },
+        { ak::LastTypeAttr, Attribute::kind::LastTypeAttr },
+        { ak::FirstIntAttr, Attribute::kind::FirstIntAttr },
+        { ak::Alignment, Attribute::kind::Alignment },
+        { ak::AllocKind, Attribute::kind::AllocKind },
+        { ak::AllocSize, Attribute::kind::AllocSize },
+        { ak::Dereferenceable, Attribute::kind::Dereferenceable },
+        { ak::DereferenceableOrNull, Attribute::kind::DereferenceableOrNull },
+        { ak::NoFPClass, Attribute::kind::NoFPClass },
+        { ak::StackAlignment, Attribute::kind::StackAlignment },
+        { ak::UWTable, Attribute::kind::UWTable },
+        { ak::VScaleRange, Attribute::kind::VScaleRange },
+        { ak::LastIntAttr, Attribute::kind::LastIntAttr },
+        { ak::EndAttrKinds, Attribute::kind::EndAttrKinds } });
+
+  JLM_ASSERT(map.find(kind) != map.end());
+  return map[kind];
+}
+
+static EnumAttribute
+ConvertEnumAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isEnumAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return EnumAttribute(kind);
+}
+
+static IntAttribute
+ConvertIntAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isIntAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return { kind, attribute.getValueAsInt() };
+}
+
+static TypeAttribute
+ConvertTypeAttribute(const ::llvm::Attribute & attribute, TypeConverter & typeConverter)
+{
+  JLM_ASSERT(attribute.isTypeAttribute());
+
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
+  {
+    auto type = typeConverter.ConvertLlvmType(*attribute.getValueAsType());
+    return { Attribute::kind::ByVal, std::move(type) };
+  }
+
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
+  {
+    auto type = typeConverter.ConvertLlvmType(*attribute.getValueAsType());
+    return { Attribute::kind::StructRet, std::move(type) };
+  }
+
+  JLM_UNREACHABLE("Unhandled attribute");
+}
+
+static StringAttribute
+ConvertStringAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isStringAttribute());
+  return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
+}
+
+static AttributeSet
+convert_attributes(const ::llvm::AttributeSet & as, TypeConverter & typeConverter)
+{
+  AttributeSet attributeSet;
+  for (auto & attribute : as)
+  {
+    if (attribute.isEnumAttribute())
+    {
+      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute));
+    }
+    else if (attribute.isIntAttribute())
+    {
+      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute));
+    }
+    else if (attribute.isTypeAttribute())
+    {
+      attributeSet.InsertTypeAttribute(ConvertTypeAttribute(attribute, typeConverter));
+    }
+    else if (attribute.isStringAttribute())
+    {
+      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled attribute");
+    }
+  }
+
+  return attributeSet;
+}
+
+AttributeList
+convertAttributeList(
+    const ::llvm::AttributeList & attributeList,
+    const size_t numParameters,
+    TypeConverter & typeConverter)
+{
+  auto returnAttributes = convert_attributes(attributeList.getRetAttrs(), typeConverter);
+  auto functionAttributes = convert_attributes(attributeList.getFnAttrs(), typeConverter);
+
+  std::vector<AttributeSet> parameterAttributes;
+  for (size_t n = 0; n < numParameters; n++)
+  {
+    parameterAttributes.emplace_back(
+        convert_attributes(attributeList.getParamAttrs(n), typeConverter));
+  }
+
+  return AttributeList(
+      std::move(functionAttributes),
+      std::move(returnAttributes),
+      std::move(parameterAttributes));
+}
+
 static const Variable *
 convert_int_constant(
     ::llvm::Constant * c,
@@ -1057,6 +1260,10 @@ createCall(
 
   auto convertedFunctionType = context.GetTypeConverter().ConvertFunctionType(*functionType);
   const auto arguments = convertCallArguments(callInstruction, threeAddressCodes, context);
+  auto attributes = convertAttributeList(
+      callInstruction.getAttributes(),
+      callInstruction.arg_size(),
+      context.GetTypeConverter());
 
   const Variable * callee =
       ConvertValueOrFunction(callInstruction.getCalledOperand(), threeAddressCodes, context);
@@ -1098,7 +1305,8 @@ createCall(
     throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
   }
 
-  auto call = CallOperation::create(callee, convertedFunctionType, arguments);
+  auto call =
+      CallOperation::create(callee, convertedFunctionType, std::move(attributes), arguments);
 
   const auto result = call->result(0);
   const auto ioState = call->result(call->nresults() - 2);
@@ -1609,195 +1817,15 @@ convert_basic_blocks(::llvm::Function & f, ControlFlowGraph & cfg)
   return bbmap;
 }
 
-Attribute::kind
-ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
-{
-  typedef ::llvm::Attribute::AttrKind ak;
-
-  static std::unordered_map<::llvm::Attribute::AttrKind, Attribute::kind> map(
-      { { ak::None, Attribute::kind::None },
-        { ak::FirstEnumAttr, Attribute::kind::FirstEnumAttr },
-        { ak::AllocAlign, Attribute::kind::AllocAlign },
-        { ak::AllocatedPointer, Attribute::kind::AllocatedPointer },
-        { ak::AlwaysInline, Attribute::kind::AlwaysInline },
-        { ak::Builtin, Attribute::kind::Builtin },
-        { ak::Cold, Attribute::kind::Cold },
-        { ak::Convergent, Attribute::kind::Convergent },
-        { ak::CoroDestroyOnlyWhenComplete, Attribute::kind::CoroDestroyOnlyWhenComplete },
-        { ak::DeadOnUnwind, Attribute::kind::DeadOnUnwind },
-        { ak::DisableSanitizerInstrumentation, Attribute::kind::DisableSanitizerInstrumentation },
-        { ak::FnRetThunkExtern, Attribute::kind::FnRetThunkExtern },
-        { ak::Hot, Attribute::kind::Hot },
-        { ak::ImmArg, Attribute::kind::ImmArg },
-        { ak::InReg, Attribute::kind::InReg },
-        { ak::InlineHint, Attribute::kind::InlineHint },
-        { ak::JumpTable, Attribute::kind::JumpTable },
-        { ak::Memory, Attribute::kind::Memory },
-        { ak::MinSize, Attribute::kind::MinSize },
-        { ak::MustProgress, Attribute::kind::MustProgress },
-        { ak::Naked, Attribute::kind::Naked },
-        { ak::Nest, Attribute::kind::Nest },
-        { ak::NoAlias, Attribute::kind::NoAlias },
-        { ak::NoBuiltin, Attribute::kind::NoBuiltin },
-        { ak::NoCallback, Attribute::kind::NoCallback },
-        { ak::NoCapture, Attribute::kind::NoCapture },
-        { ak::NoCfCheck, Attribute::kind::NoCfCheck },
-        { ak::NoDuplicate, Attribute::kind::NoDuplicate },
-        { ak::NoFree, Attribute::kind::NoFree },
-        { ak::NoImplicitFloat, Attribute::kind::NoImplicitFloat },
-        { ak::NoInline, Attribute::kind::NoInline },
-        { ak::NoMerge, Attribute::kind::NoMerge },
-        { ak::NoProfile, Attribute::kind::NoProfile },
-        { ak::NoRecurse, Attribute::kind::NoRecurse },
-        { ak::NoRedZone, Attribute::kind::NoRedZone },
-        { ak::NoReturn, Attribute::kind::NoReturn },
-        { ak::NoSanitizeBounds, Attribute::kind::NoSanitizeBounds },
-        { ak::NoSanitizeCoverage, Attribute::kind::NoSanitizeCoverage },
-        { ak::NoSync, Attribute::kind::NoSync },
-        { ak::NoUndef, Attribute::kind::NoUndef },
-        { ak::NoUnwind, Attribute::kind::NoUnwind },
-        { ak::NonLazyBind, Attribute::kind::NonLazyBind },
-        { ak::NonNull, Attribute::kind::NonNull },
-        { ak::NullPointerIsValid, Attribute::kind::NullPointerIsValid },
-        { ak::OptForFuzzing, Attribute::kind::OptForFuzzing },
-        { ak::OptimizeForDebugging, Attribute::kind::OptimizeForDebugging },
-        { ak::OptimizeForSize, Attribute::kind::OptimizeForSize },
-        { ak::OptimizeNone, Attribute::kind::OptimizeNone },
-        { ak::PresplitCoroutine, Attribute::kind::PresplitCoroutine },
-        { ak::ReadNone, Attribute::kind::ReadNone },
-        { ak::ReadOnly, Attribute::kind::ReadOnly },
-        { ak::Returned, Attribute::kind::Returned },
-        { ak::ReturnsTwice, Attribute::kind::ReturnsTwice },
-        { ak::SExt, Attribute::kind::SExt },
-        { ak::SafeStack, Attribute::kind::SafeStack },
-        { ak::SanitizeAddress, Attribute::kind::SanitizeAddress },
-        { ak::SanitizeHWAddress, Attribute::kind::SanitizeHWAddress },
-        { ak::SanitizeMemTag, Attribute::kind::SanitizeMemTag },
-        { ak::SanitizeMemory, Attribute::kind::SanitizeMemory },
-        { ak::SanitizeThread, Attribute::kind::SanitizeThread },
-        { ak::ShadowCallStack, Attribute::kind::ShadowCallStack },
-        { ak::SkipProfile, Attribute::kind::SkipProfile },
-        { ak::Speculatable, Attribute::kind::Speculatable },
-        { ak::SpeculativeLoadHardening, Attribute::kind::SpeculativeLoadHardening },
-        { ak::StackProtect, Attribute::kind::StackProtect },
-        { ak::StackProtectReq, Attribute::kind::StackProtectReq },
-        { ak::StackProtectStrong, Attribute::kind::StackProtectStrong },
-        { ak::StrictFP, Attribute::kind::StrictFP },
-        { ak::SwiftAsync, Attribute::kind::SwiftAsync },
-        { ak::SwiftError, Attribute::kind::SwiftError },
-        { ak::SwiftSelf, Attribute::kind::SwiftSelf },
-        { ak::WillReturn, Attribute::kind::WillReturn },
-        { ak::Writable, Attribute::kind::Writable },
-        { ak::WriteOnly, Attribute::kind::WriteOnly },
-        { ak::ZExt, Attribute::kind::ZExt },
-        { ak::LastEnumAttr, Attribute::kind::LastEnumAttr },
-        { ak::FirstTypeAttr, Attribute::kind::FirstTypeAttr },
-        { ak::ByRef, Attribute::kind::ByRef },
-        { ak::ByVal, Attribute::kind::ByVal },
-        { ak::ElementType, Attribute::kind::ElementType },
-        { ak::InAlloca, Attribute::kind::InAlloca },
-        { ak::Preallocated, Attribute::kind::Preallocated },
-        { ak::StructRet, Attribute::kind::StructRet },
-        { ak::LastTypeAttr, Attribute::kind::LastTypeAttr },
-        { ak::FirstIntAttr, Attribute::kind::FirstIntAttr },
-        { ak::Alignment, Attribute::kind::Alignment },
-        { ak::AllocKind, Attribute::kind::AllocKind },
-        { ak::AllocSize, Attribute::kind::AllocSize },
-        { ak::Dereferenceable, Attribute::kind::Dereferenceable },
-        { ak::DereferenceableOrNull, Attribute::kind::DereferenceableOrNull },
-        { ak::NoFPClass, Attribute::kind::NoFPClass },
-        { ak::StackAlignment, Attribute::kind::StackAlignment },
-        { ak::UWTable, Attribute::kind::UWTable },
-        { ak::VScaleRange, Attribute::kind::VScaleRange },
-        { ak::LastIntAttr, Attribute::kind::LastIntAttr },
-        { ak::EndAttrKinds, Attribute::kind::EndAttrKinds } });
-
-  JLM_ASSERT(map.find(kind) != map.end());
-  return map[kind];
-}
-
-static EnumAttribute
-ConvertEnumAttribute(const ::llvm::Attribute & attribute)
-{
-  JLM_ASSERT(attribute.isEnumAttribute());
-  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-  return EnumAttribute(kind);
-}
-
-static IntAttribute
-ConvertIntAttribute(const ::llvm::Attribute & attribute)
-{
-  JLM_ASSERT(attribute.isIntAttribute());
-  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-  return { kind, attribute.getValueAsInt() };
-}
-
-static TypeAttribute
-ConvertTypeAttribute(const ::llvm::Attribute & attribute, Context & ctx)
-{
-  JLM_ASSERT(attribute.isTypeAttribute());
-
-  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
-  {
-    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
-    return { Attribute::kind::ByVal, std::move(type) };
-  }
-
-  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
-  {
-    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
-    return { Attribute::kind::StructRet, std::move(type) };
-  }
-
-  JLM_UNREACHABLE("Unhandled attribute");
-}
-
-static StringAttribute
-ConvertStringAttribute(const ::llvm::Attribute & attribute)
-{
-  JLM_ASSERT(attribute.isStringAttribute());
-  return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
-}
-
-static AttributeSet
-convert_attributes(const ::llvm::AttributeSet & as, Context & ctx)
-{
-  AttributeSet attributeSet;
-  for (auto & attribute : as)
-  {
-    if (attribute.isEnumAttribute())
-    {
-      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute));
-    }
-    else if (attribute.isIntAttribute())
-    {
-      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute));
-    }
-    else if (attribute.isTypeAttribute())
-    {
-      attributeSet.InsertTypeAttribute(ConvertTypeAttribute(attribute, ctx));
-    }
-    else if (attribute.isStringAttribute())
-    {
-      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute));
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled attribute");
-    }
-  }
-
-  return attributeSet;
-}
-
 static std::unique_ptr<llvm::Argument>
 convert_argument(const ::llvm::Argument & argument, Context & ctx)
 {
   auto function = argument.getParent();
   auto name = argument.getName().str();
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*argument.getType());
-  auto attributes =
-      convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
+  auto attributes = convert_attributes(
+      function->getAttributes().getParamAttrs(argument.getArgNo()),
+      ctx.GetTypeConverter());
 
   return llvm::Argument::create(name, type, attributes);
 }
@@ -2004,7 +2032,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
     auto name = f.getName().str();
     auto linkage = convert_linkage(f.getLinkage());
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
-    auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
+    auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx.GetTypeConverter());
 
     return FunctionNode::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };

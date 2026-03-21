@@ -229,8 +229,11 @@ private:
       memoryState = storeImported[0];
 
       // Get r by calling getPtr()
-      const auto callOutputs =
-          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
+      const auto callOutputs = CallOperation::Create(
+          getPtrCtxVar,
+          getPtrFuncType,
+          AttributeList::createEmptyList(),
+          { ioState, memoryState });
       Outputs_.R = callOutputs[0];
       ioState = callOutputs[1];
       memoryState = callOutputs[2];

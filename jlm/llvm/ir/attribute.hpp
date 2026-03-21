@@ -365,11 +365,74 @@ public:
     return !(*this == other);
   }
 
+  [[nodiscard]] size_t
+  numAttributes() const noexcept
+  {
+    return EnumAttributes_.Size() + TypeAttributes_.Size() + StringAttributes_.Size()
+         + IntAttributes_.Size();
+  }
+
 private:
   EnumAttributeHashSet EnumAttributes_{};
   IntAttributeHashSet IntAttributes_{};
   TypeAttributeHashSet TypeAttributes_{};
   StringAttributeHashSet StringAttributes_{};
+};
+
+class AttributeList final
+{
+public:
+  AttributeList(
+      AttributeSet functionAttributes,
+      AttributeSet returnAttributes,
+      std::vector<AttributeSet> parameterAttributes)
+      : returnAttributes_(std::move(returnAttributes)),
+        functionAttributes_(std::move(functionAttributes)),
+        parameterAttributes_(std::move(parameterAttributes))
+  {}
+
+  [[nodiscard]] const AttributeSet &
+  getFunctionAttributes() const noexcept
+  {
+    return functionAttributes_;
+  }
+
+  [[nodiscard]] const AttributeSet &
+  getReturnAttributes() const noexcept
+  {
+    return returnAttributes_;
+  }
+
+  [[nodiscard]] const std::vector<AttributeSet> &
+  getParameterAttributes() const noexcept
+  {
+    return parameterAttributes_;
+  }
+
+  bool
+  operator==(const AttributeList & other) const noexcept
+  {
+    return returnAttributes_ == other.returnAttributes_
+        && functionAttributes_ == other.functionAttributes_
+        && parameterAttributes_ == other.parameterAttributes_;
+  }
+
+  bool
+  operator!=(const AttributeList & other) const noexcept
+  {
+    return !(*this == other);
+  }
+
+  static AttributeList
+  createEmptyList()
+  {
+    return AttributeList(AttributeSet(), AttributeSet(), std::vector<AttributeSet>());
+  }
+
+private:
+  AttributeSet returnAttributes_{};
+  AttributeSet functionAttributes_{};
+  std::vector<AttributeSet> parameterAttributes_{};
 };
 
 }
