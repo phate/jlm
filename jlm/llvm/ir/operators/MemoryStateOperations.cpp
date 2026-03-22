@@ -40,7 +40,7 @@ MemoryStateMergeOperation::NormalizeSingleOperand(
     const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.size() == 1)
-    return operands;
+    return { { operands[0] } };
 
   return std::nullopt;
 }
@@ -158,7 +158,7 @@ MemoryStateJoinOperation::NormalizeSingleOperand(
     const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.size() == 1)
-    return operands;
+    return { { operands[0] } };
 
   return std::nullopt;
 }
