@@ -92,8 +92,16 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
+#
+# The -Wno-array-bounds and -Wno-stringop-overflow flags are necessary as we are hitting a false positive in gcc 13.3.0 in release build:
+#
+# /usr/include/c++/13/bits/stl_algobase.h:437:30: error: ‘void* __builtin_memmove(void*, const void*, long unsigned int)’ forming offset 8 is out of the bounds [0, 8] [-Werror=array-bounds=]
+#  437 |             __builtin_memmove(__result, __first, sizeof(_Tp) * _Num);
+#
+# /usr/include/c++/13/bits/stl_algobase.h:437:30: error: ‘void* __builtin_memmove(void*, const void*, long unsigned int)’ writing between 9 and 9223372036854775807 bytes into a region of size 8 overflows the destination [-Werror=stringop-overflow=]
+#  437 |             __builtin_memmove(__result, __first, sizeof(_Tp) * _Num);
+#
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wno-array-bounds -Wno-stringop-overflow -Werror -Wfatal-errors -gdwarf-4 -g"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
