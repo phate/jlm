@@ -896,20 +896,6 @@ IpGraphToLlvmConverter::convert_cast(
   auto dsttype = op.result(0);
   auto operand = operands[0];
 
-  if (const auto vt = dynamic_cast<const FixedVectorType *>(&operand->type()))
-  {
-    const auto type =
-        typeConverter.ConvertJlmType(FixedVectorType(dsttype, vt->size()), llvmContext);
-    return builder.CreateCast(OPCODE, Context_->value(operand), type);
-  }
-
-  if (const auto vt = dynamic_cast<const ScalableVectorType *>(&operand->type()))
-  {
-    const auto type =
-        typeConverter.ConvertJlmType(ScalableVectorType(dsttype, vt->size()), llvmContext);
-    return builder.CreateCast(OPCODE, Context_->value(operand), type);
-  }
-
   auto type = typeConverter.ConvertJlmType(*dsttype, llvmContext);
   return builder.CreateCast(OPCODE, Context_->value(operand), type);
 }
