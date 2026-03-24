@@ -1606,10 +1606,10 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
 
   // Most cast operations can be performed on vector types, with the cast done per value.
   // Bit casts are an exception, as they can cast between different vector sizes.
-  bool isLaneWise = false;
+  bool isLaneWiseCast = false;
   if (i->getOpcode() != ::llvm::Instruction::BitCast)
   {
-    isLaneWise = st->isVectorTy();
+    isLaneWiseCast = st->isVectorTy();
     JLM_ASSERT(st->isVectorTy() == dt->isVectorTy());
   }
 
@@ -1634,14 +1634,14 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 
   auto op = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto srctype = typeConverter.ConvertLlvmType(*(isLaneWise ? st->getScalarType() : st));
-  auto dsttype = typeConverter.ConvertLlvmType(*(isLaneWise ? dt->getScalarType() : dt));
+  auto srctype = typeConverter.ConvertLlvmType(*(isLaneWiseCast ? st->getScalarType() : st));
+  auto dsttype = typeConverter.ConvertLlvmType(*(isLaneWiseCast ? dt->getScalarType() : dt));
 
   JLM_ASSERT(map.find(i->getOpcode()) != map.end());
   auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));
   JLM_ASSERT(is<rvsdg::UnaryOperation>(*unop));
 
-  if (isLaneWise)
+  if (isLaneWiseCast)
     tacs.push_back(
         VectorUnaryOperation::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else

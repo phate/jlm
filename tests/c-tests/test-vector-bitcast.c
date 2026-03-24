@@ -1,29 +1,26 @@
 #include <assert.h>
+#include <stdint.h>
 
-typedef unsigned long long bit64;
-typedef unsigned int bit32;
-
-typedef bit64 bit64x2 __attribute__((__vector_size__(16), __aligned__(16)));
-typedef bit32 bit32x4 __attribute__((__vector_size__(16)));
-
-typedef bit32 bit32x2 __attribute__((__vector_size__(8)));
+typedef int64_t int64x2 __attribute__((__vector_size__(16), __aligned__(16)));
+typedef int32_t int32x4 __attribute__((__vector_size__(16)));
+typedef int32_t int32x2 __attribute__((__vector_size__(8)));
 
 // Converts two longs into four ints
-bit32x4 splitLongsToInts(bit64x2 value)
+int32x4 splitLongsToInts(int64x2 value)
 {
-    return (bit32x4) value;
+    return (int32x4) value;
 }
 
 // Combines two ints to a single long
-bit64 combineIntsToLong(bit32x2 value)
+int64_t combineIntsToLong(int32x2 value)
 {
-    return (bit64) value;
+    return (int64_t) value;
 }
 
 int main() {
-  bit64x2 longs = {0x1100000022, 0xAA000000BB};
+  int64x2 longs = {0x1100000022, 0xAA000000BB};
 
-  bit32x4 ints = splitLongsToInts(longs);
+  int32x4 ints = splitLongsToInts(longs);
 
   // This assumes we are on a little-endian system
   assert(ints[0] == 0x22);
@@ -31,8 +28,8 @@ int main() {
   assert(ints[2] == 0xBB);
   assert(ints[3] == 0xAA);
 
-  bit32x2 intPair = {0x45, 0x78};
-  bit64 combined = combineIntsToLong(intPair);
+  int32x2 intPair = {0x45, 0x78};
+  int64_t combined = combineIntsToLong(intPair);
 
   assert(combined == 0x7800000045);
 }
