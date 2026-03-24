@@ -168,6 +168,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests.cpp \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests.cpp \
     \
+    tests/jlm/llvm/frontend/llvm/CastingTests.cpp \
     tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests.cpp \
     tests/jlm/llvm/frontend/llvm/LoadTests.cpp \
     tests/jlm/llvm/frontend/llvm/MemCpyTests.cpp \
