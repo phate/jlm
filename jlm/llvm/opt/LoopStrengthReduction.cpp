@@ -490,21 +490,24 @@ LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
 bool
 LoopStrengthReduction::ContainsMul(const rvsdg::Output & output)
 {
+  if (const auto it = ContainsMulMemo_.find(&output); it != ContainsMulMemo_.end())
+    return it->second;
+
   const auto & [simpleNode, mulOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerMulOperation>(output);
 
   if (!simpleNode)
-    return false;
+    return ContainsMulMemo_[&output] = false;
 
   if (mulOperation)
-    return true;
+    return ContainsMulMemo_[&output] = true;
 
   for (const auto & input : simpleNode->Inputs())
   {
     if (ContainsMul(*input.origin()))
-      return true;
+      return ContainsMulMemo_[&output] = true;
   }
 
-  return false;
+  return ContainsMulMemo_[&output] = false;
 }
 }
