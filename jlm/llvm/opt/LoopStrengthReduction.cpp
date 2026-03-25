@@ -159,7 +159,7 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   //
   // In short, we look for candidate operations and replace them with a new induction variable.
   //
-  // A candidate operation must satisfy three conditions:
+  // A candidate operation must satisfy four conditions:
   //   1. The operation is either arithmetic (+, * or -) or a GEP operation
   //   2. The SCEV tree of the operation is a linear combination of loop variables and constants
   //   3. For arithmetic operations, the subtree must contain at least one multiplication node
