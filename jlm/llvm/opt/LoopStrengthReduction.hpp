@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_OPT_LOOP_STRENGTH_REDUCTION_HPP
 #define JLM_LLVM_OPT_LOOP_STRENGTH_REDUCTION_HPP
 
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -44,13 +43,12 @@ private:
   ReduceStrength(rvsdg::ThetaNode & thetaNode);
 
   /**
-   * Checks if the RVSDG subtree of the output contains an IntegerMulOperation or
-   * IntegerShlOperation (which we treat as multiplication by 2) somewhere in the tree.
+   * Checks if the RVSDG subtree of the output contains an IntegerMulExpr somewhere in the tree.
    *
    * @param output The output to be checked
    * @return true if the subtree contains a multiplication operation, otherwise false.
    */
-  bool
+  static bool
   ContainsMul(const rvsdg::Output & output);
 
   /**
@@ -94,7 +92,6 @@ private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
   std::unordered_map<const rvsdg::Output *, bool> DependsOnIVMemo_;
-  std::unordered_map<const rvsdg::Output *, bool> ContainsMulMemo_;
 
   std::unique_ptr<Context> Context_;
 };
