@@ -274,33 +274,26 @@ LoopStrengthReduction::ReplaceArithmeticOperation(
 
   if (SCEVChainRecurrence::IsInvariant(*chrec))
   {
-    // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable)
+    // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable).
+    // We can hoist this out of the loop.
     const auto & startValueNode =
         IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
-    const auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
+    const auto hoistedValue = thetaNode.AddLoopVar(startValueNode.output(0));
 
-    output.divert_users(newIV.pre);
-
-    // Insert the chrec for the new induction variable
-    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
-    // analysis. In the future, we would want to insert this into the "global" chrec map so other
-    // analyses and transformations can use it as well.
-    ChrecMap_[newIV.pre] = std::move(chrec);
-
-    Context_->IncrementOperationsReducedCount(thetaNode);
+    output.divert_users(hoistedValue.pre);
+    ChrecMap_[hoistedValue.pre] = std::move(chrec);
   }
   else if (SCEVChainRecurrence::IsAffine(*chrec))
   {
     // Chrec has the form {a,+,b} which is a basic induction variable
     const auto & stepPtr = chrec->GetStep();
-    if (!stepPtr.has_value())
-      return;
+
+    JLM_ASSERT(stepPtr.has_value());
 
     const auto & stepSCEV = *stepPtr;
     const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
 
-    if (!stepConstant)
-      return;
+    JLM_ASSERT(stepConstant);
 
     const auto & startValueNode =
         IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
@@ -315,6 +308,21 @@ LoopStrengthReduction::ReplaceArithmeticOperation(
 
     newIV.post->divert_to(newAddNode.output(0));
     output.divert_users(newIV.pre);
+
+    // Insert the chrec for the new induction variable
+    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
+    // analysis. In the future, we would want to insert this into the "global" chrec map so other
+    // analyses and transformations can use it as well.
+    ChrecMap_[newIV.pre] = std::move(chrec);
+  }
+  else
+  {
+    throw std::logic_error("Invalid chrec size in ReplaceArithmeticOperation!");
+  }
+
+  Context_->IncrementOperationsReducedCount(thetaNode);
+}
+
 void
 LoopStrengthReduction::ReplaceGEPOperation(
     std::unique_ptr<SCEVChainRecurrence> & chrec,
