@@ -75,6 +75,20 @@ private:
   void
   ReplaceCandidateOperation(rvsdg::Output & output, rvsdg::ThetaNode & thetaNode);
 
+  void
+  ReplaceGEPOperation(
+      std::unique_ptr<SCEVChainRecurrence> & chrec,
+      rvsdg::Output & output,
+      rvsdg::ThetaNode & thetaNode,
+      const std::shared_ptr<const PointerType> & pointerType);
+
+  void
+  ReplaceArithmeticOperation(
+      std::unique_ptr<SCEVChainRecurrence> & chrec,
+      rvsdg::Output & output,
+      rvsdg::ThetaNode & thetaNode,
+      const std::shared_ptr<const rvsdg::BitType> & bitType);
+
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
 

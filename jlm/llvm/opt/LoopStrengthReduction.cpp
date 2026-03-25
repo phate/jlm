@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
@@ -205,14 +206,16 @@ LoopStrengthReduction::ProcessOutput(
     return;
 
   const auto & [simpleNode, operation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerBinaryOperation>(output);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::SimpleOperation>(output);
 
   if (!simpleNode)
     return;
 
-  // Multiplication, addition and subtraction are candidates for strength reduction
+  // Multiplication, addition, subtraction and GEP operations are candidates for strength
+  // reduction
   if (rvsdg::is<IntegerMulOperation>(*operation) || rvsdg::is<IntegerAddOperation>(*operation)
-      || rvsdg::is<IntegerSubOperation>(*operation))
+      || rvsdg::is<IntegerSubOperation>(*operation)
+      || rvsdg::is<GetElementPtrOperation>(*operation))
   {
     if (SCEVMap_.find(&output) == SCEVMap_.end())
       return;
@@ -237,21 +240,35 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   JLM_ASSERT(ChrecMap_.find(&output) != ChrecMap_.end());
   auto & chrec = ChrecMap_.at(&output);
 
-  // We only support invariant and affine recurrences (1-2 operands) that are not unknown
-  if (SCEVChainRecurrence::IsUnknown(*chrec) || chrec->NumOperands() > 2)
-    return;
+  if (const auto & bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type()))
+  {
+    ReplaceArithmeticOperation(chrec, output, thetaNode, bitType);
+  }
+  else if (const auto & pointerType = std::dynamic_pointer_cast<const PointerType>(output.Type()))
+  {
+    ReplaceGEPOperation(chrec, output, thetaNode, pointerType);
+  }
+  else
+  {
+    throw std::logic_error("Invalid output type in ReplaceCandidateOperation!");
+  }
+}
 
-  const auto & intType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type());
-  if (!intType)
-    return;
+void
+LoopStrengthReduction::ReplaceArithmeticOperation(
+    std::unique_ptr<SCEVChainRecurrence> & chrec,
+    rvsdg::Output & output,
+    rvsdg::ThetaNode & thetaNode,
+    const std::shared_ptr<const rvsdg::BitType> & bitType)
+{
+  JLM_ASSERT(chrec->NumOperands() <= 2);
 
-  const auto numBits = intType->nbits();
+  const auto numBits = bitType->nbits();
 
   const auto & startSCEV = chrec->GetStartValue();
   const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
 
-  if (!startConstant)
-    return;
+  JLM_ASSERT(startConstant);
 
   const auto startValue = startConstant->GetValue();
 
@@ -298,11 +315,65 @@ LoopStrengthReduction::ReplaceCandidateOperation(
 
     newIV.post->divert_to(newAddNode.output(0));
     output.divert_users(newIV.pre);
+void
+LoopStrengthReduction::ReplaceGEPOperation(
+    std::unique_ptr<SCEVChainRecurrence> & chrec,
+    rvsdg::Output & output,
+    rvsdg::ThetaNode & thetaNode,
+    const std::shared_ptr<const PointerType> & pointerType)
+{
+  JLM_ASSERT(chrec->NumOperands() <= 2);
+
+  const auto & baseAddressSCEV = chrec->GetStartValue();
+  const auto & baseAddressInit = dynamic_cast<const SCEVInit *>(baseAddressSCEV);
+
+  JLM_ASSERT(baseAddressInit);
+
+  const auto baseAddressPointer = baseAddressInit->GetPrePointer();
+  const auto baseAddressLoopVar = thetaNode.MapPreLoopVar(*baseAddressPointer);
+
+  if (SCEVChainRecurrence::IsInvariant(*chrec))
+  {
+    // The offset for the address computed by the GEP is always zero. We can replace the GEP
+    // operation with just the base address
+    output.divert_users(baseAddressLoopVar.pre);
+  }
+  else if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    // Chrec has the form {Init(a),+,b} where Init(a) is the (initial) value of the base address
+    // and b is the offset (in bytes).
+    const auto & stepPtr = chrec->GetStep();
+
+    JLM_ASSERT(stepPtr.has_value());
+
+    const auto & stepSCEV = *stepPtr;
+    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+
+    JLM_ASSERT(stepConstant);
+
+    const auto newIV = thetaNode.AddLoopVar(baseAddressLoopVar.input->origin());
+
+    const auto stepValue = stepConstant->GetValue();
+    const auto & stepValueNode =
+        IntegerConstantOperation::Create(*thetaNode.subregion(), 64, stepValue);
+
+    auto newGep = GetElementPtrOperation::Create(
+        newIV.pre,
+        { stepValueNode.output(0) },
+        rvsdg::BitType::Create(8), // Byte
+        pointerType);
+
+    newIV.post->divert_to(newGep);
+    output.divert_users(newIV.pre);
 
     ChrecMap_[newIV.pre] = std::move(chrec);
-
-    Context_->IncrementOperationsReducedCount(thetaNode);
   }
+  else
+  {
+    throw std::logic_error("Invalid chrec size in ReplaceGepOperation!");
+  }
+
+  Context_->IncrementOperationsReducedCount(thetaNode);
 }
 
 bool
