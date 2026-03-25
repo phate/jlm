@@ -101,8 +101,7 @@ public:
     for (auto & [out, chrec] : ChrecMap_)
     {
       // Count induction variables (loop variables with a computed recurrence) with specific order
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
-          && out->Type()->Kind() != rvsdg::TypeKind::State)
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
         if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
@@ -117,8 +116,7 @@ public:
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
-          && out->Type()->Kind() != rvsdg::TypeKind::State)
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
         // Only count chrecs that are not unknown
         if (!SCEVChainRecurrence::IsUnknown(*chrec))
@@ -968,12 +966,13 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       JLM_ASSERT(simpleNode->ninputs() == 1);
       result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
     }
-    else if (const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&*simpleOperation))
+    else if (rvsdg::is<GetElementPtrOperation>(*simpleOperation))
     {
       JLM_ASSERT(simpleNode->ninputs() >= 2);
       const auto baseIndex = simpleNode->input(0)->origin();
       JLM_ASSERT(is<PointerType>(baseIndex->Type()));
 
+      const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&*simpleOperation);
       const auto & pointeeType = gepOp->GetPointeeType();
 
       auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
@@ -988,8 +987,9 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
     }
-    else if (const auto constOp = dynamic_cast<const IntegerConstantOperation *>(&*simpleOperation))
+    else if (rvsdg::is<IntegerConstantOperation>(*simpleOperation))
     {
+      const auto constOp = dynamic_cast<const IntegerConstantOperation *>(&*simpleOperation);
       const auto value = constOp->Representation().to_int();
       result = SCEVConstant::Create(value);
     }
