@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -37,6 +38,7 @@ TEST(LoopStrengthReductionTests, SimpleCandidateOperation)
   const auto intArrayType = ArrayType::Create(intType, 5);
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -45,59 +47,65 @@ TEST(LoopStrengthReductionTests, SimpleCandidateOperation)
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create(
-              { pointerType, memoryStateType },
-              { pointerType, memoryStateType }),
-          "f",
+              { ioStateType, memoryStateType },
+              { ioStateType, memoryStateType }),
+          "main",
           Linkage::externalLinkage));
 
-  auto arrPtr = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "arrPtr");
-  const auto cv1 = lambda->AddContextVar(*arrPtr).inner;
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { VariableArgumentType::Create(), ioStateType, memoryStateType },
+      { intType, ioStateType, memoryStateType });
 
-  const auto & c0_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  auto func = &jlm::rvsdg::GraphImport::Create(graph, functionType, "func");
+
+  auto cv1 = lambda->AddContextVar(*func).inner;
+
+  const auto & c0 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
   const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
 
+  const auto ioState = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
-  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
-  const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
+  const auto lv1 = theta->AddLoopVar(c0.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(cv1);          // func ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
+  const auto & varArgs =
+      VariadicArgumentListOperation::Create(*theta->subregion(), { mulNode.output(0) });
 
-  const auto & sExtNode = SExtOperation::create(64, mulNode.output(0));
-
-  const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(
+  const auto & callNode = CallOperation::Create(
       lv2.pre,
-      { c0_2.output(0), sExtNode },
-      intArrayType,
-      pointerType);
+      functionType,
+      AttributeList::createEmptyList(),
+      { varArgs, ioState.pre, memoryState.pre });
 
-  auto loadNode = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
-  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadNode[0], c2.output(0) }, 32);
-
-  auto storeNode = StoreNonVolatileOperation::Create(gep, subNode.output(0), { loadNode[1] }, 4);
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
 
   auto & sltNode =
-      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode1.output(0), c5.output(0) }, 32);
+      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode.output(0), c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
-  lv1.post->divert_to(addNode1.output(0));
-  memoryState.post->divert_to(storeNode[0]);
   theta->set_predicate(matchResult);
+  lv1.post->divert_to(addNode.output(0));
+  memoryState.post->divert_to(callNode[2]);
+  ioState.post->divert_to(callNode[1]);
 
-  auto lambdaOutput = lambda->finalize({ lv2.output, memoryState.output });
-  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "arrPtr");
+  auto lambdaOutput = lambda->finalize({ ioState.output, memoryState.output });
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "main");
 
   // std::cout << "Before: \n";
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  const auto oldMulNodeUsers = mulNode.output(0)->Users();
+  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
+  for (auto & user : mulNode.output(0)->Users())
+  {
+    oldMulNodeUsers.push_back(&user);
+  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -146,9 +154,9 @@ TEST(LoopStrengthReductionTests, SimpleCandidateOperation)
   // Check that all users of the old MUL node now use the new induction variable
   for (auto & user : oldMulNodeUsers)
   {
-    if (user.origin())
+    if (user->origin())
     {
-      EXPECT_EQ(user.origin(), newIV.pre);
+      EXPECT_EQ(user->origin(), newIV.pre);
     }
   }
 }
@@ -164,6 +172,7 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   const auto intArrayType = ArrayType::Create(intType, 5);
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -172,40 +181,41 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create(
-              { pointerType, memoryStateType },
-              { pointerType, memoryStateType }),
-          "f",
+              { ioStateType, memoryStateType },
+              { ioStateType, memoryStateType }),
+          "main",
           Linkage::externalLinkage));
 
-  auto arrPtr = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "arrPtr");
-  const auto cv1 = lambda->AddContextVar(*arrPtr).inner;
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { VariableArgumentType::Create(), ioStateType, memoryStateType },
+      { intType, ioStateType, memoryStateType });
 
-  const auto & c1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  auto func = &jlm::rvsdg::GraphImport::Create(graph, functionType, "func");
+
+  auto cv1 = lambda->AddContextVar(*func).inner;
+
+  const auto & c0 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
   const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
 
+  const auto ioState = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
-  const auto lv1 = theta->AddLoopVar(c1.output(0)); // i
-  const auto lv2 = theta->AddLoopVar(cv1);          // arr ptr
+  const auto lv1 = theta->AddLoopVar(c0.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(cv1);          // func ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
   auto & mulNode1 = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode2 = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
+  const auto & varArgs =
+      VariadicArgumentListOperation::Create(*theta->subregion(), { mulNode2.output(0) });
 
-  const auto & sExtNode = SExtOperation::create(64, mulNode2.output(0));
-
-  const auto & c0 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(
+  const auto & callNode = CallOperation::Create(
       lv2.pre,
-      { c0.output(0), sExtNode },
-      intArrayType,
-      pointerType);
+      functionType,
+      AttributeList::createEmptyList(),
+      { varArgs, ioState.pre, memoryState.pre });
 
-  auto loadNode = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
-  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadNode[0], c2.output(0) }, 32);
-
-  auto storeNode = StoreNonVolatileOperation::Create(gep, subNode.output(0), { loadNode[1] }, 4);
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
 
   auto & sltNode =
@@ -213,18 +223,23 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
-  lv1.post->divert_to(mulNode1.output(0));
-  memoryState.post->divert_to(storeNode[0]);
   theta->set_predicate(matchResult);
+  lv1.post->divert_to(mulNode1.output(0));
+  memoryState.post->divert_to(callNode[2]);
+  ioState.post->divert_to(callNode[1]);
 
-  auto lambdaOutput = lambda->finalize({ lv2.output, memoryState.output });
-  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "arrPtr");
+  auto lambdaOutput = lambda->finalize({ ioState.output, memoryState.output });
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "main");
 
   // std::cout << "Before: \n";
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  const auto oldMulNodeUsers = mulNode2.output(0)->Users();
+  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
+  for (auto & user : mulNode2.output(0)->Users())
+  {
+    oldMulNodeUsers.push_back(&user);
+  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -242,9 +257,9 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   // Check that all users of the MUL node still use the MUL node
   for (auto & user : oldMulNodeUsers)
   {
-    if (user.origin())
+    if (user->origin())
     {
-      EXPECT_EQ(user.origin(), mulNode2.output(0));
+      EXPECT_EQ(user->origin(), mulNode2.output(0));
     }
   }
 }
@@ -264,6 +279,7 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   const auto intArrayType = ArrayType::Create(intType, 5);
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -272,20 +288,26 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create(
-              { pointerType, memoryStateType },
-              { pointerType, memoryStateType }),
-          "f",
+              { ioStateType, memoryStateType },
+              { ioStateType, memoryStateType }),
+          "main",
           Linkage::externalLinkage));
 
-  auto arrPtr = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "arrPtr");
-  const auto cv1 = lambda->AddContextVar(*arrPtr).inner;
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { VariableArgumentType::Create(), ioStateType, memoryStateType },
+      { intType, ioStateType, memoryStateType });
 
-  const auto & c0_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  auto func = &jlm::rvsdg::GraphImport::Create(graph, functionType, "func");
+
+  auto cv1 = lambda->AddContextVar(*func).inner;
+
+  const auto & c0 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
   const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
 
+  const auto ioState = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
-  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
-  const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
+  const auto lv1 = theta->AddLoopVar(c0.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(cv1);          // func ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
   auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
@@ -296,20 +318,15 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
   auto & addNode2 =
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c1.output(0) }, 32);
+  const auto & varArgs =
+      VariadicArgumentListOperation::Create(*theta->subregion(), { addNode2.output(0) });
 
-  const auto & sExtNode = SExtOperation::create(64, addNode2.output(0));
-
-  const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(
+  const auto & callNode = CallOperation::Create(
       lv2.pre,
-      { c0_2.output(0), sExtNode },
-      intArrayType,
-      pointerType);
+      functionType,
+      AttributeList::createEmptyList(),
+      { varArgs, ioState.pre, memoryState.pre });
 
-  auto loadNode = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
-  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadNode[0], c2.output(0) }, 32);
-
-  auto storeNode = StoreNonVolatileOperation::Create(gep, subNode.output(0), { loadNode[1] }, 4);
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
 
   auto & sltNode =
@@ -317,18 +334,23 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
-  lv1.post->divert_to(addNode1.output(0));
-  memoryState.post->divert_to(storeNode[0]);
   theta->set_predicate(matchResult);
+  lv1.post->divert_to(addNode1.output(0));
+  memoryState.post->divert_to(callNode[2]);
+  ioState.post->divert_to(callNode[1]);
 
-  auto lambdaOutput = lambda->finalize({ lv2.output, memoryState.output });
-  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "arrPtr");
+  auto lambdaOutput = lambda->finalize({ ioState.output, memoryState.output });
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "main");
 
   // std::cout << "Before: \n";
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  const auto oldAddNodeUsers = addNode2.output(0)->Users();
+  std::vector<jlm::rvsdg::Input *> oldAddNodeUsers;
+  for (auto & user : addNode2.output(0)->Users())
+  {
+    oldAddNodeUsers.push_back(&user);
+  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -377,9 +399,9 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperation)
   // Check that all users of the old ADD node now use the new induction variable
   for (auto & user : oldAddNodeUsers)
   {
-    if (user.origin())
+    if (user->origin())
     {
-      EXPECT_EQ(user.origin(), newIV.pre);
+      EXPECT_EQ(user->origin(), newIV.pre);
     }
   }
 }
@@ -397,6 +419,7 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
   const auto intArrayType = ArrayType::Create(intType, 5);
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
+  const auto ioStateType = IOStateType::Create();
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -405,20 +428,26 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create(
-              { pointerType, memoryStateType },
-              { pointerType, memoryStateType }),
-          "f",
+              { ioStateType, memoryStateType },
+              { ioStateType, memoryStateType }),
+          "main",
           Linkage::externalLinkage));
 
-  auto arrPtr = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "arrPtr");
-  const auto cv1 = lambda->AddContextVar(*arrPtr).inner;
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { VariableArgumentType::Create(), ioStateType, memoryStateType },
+      { intType, ioStateType, memoryStateType });
 
-  const auto & c0_1 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  auto func = &jlm::rvsdg::GraphImport::Create(graph, functionType, "func");
+
+  auto cv1 = lambda->AddContextVar(*func).inner;
+
+  const auto & c0 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
   const auto & theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
 
+  const auto ioState = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   const auto memoryState = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
-  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
-  const auto lv2 = theta->AddLoopVar(cv1);            // arr ptr
+  const auto lv1 = theta->AddLoopVar(c0.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(cv1);          // func ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
   auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
@@ -430,43 +459,54 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
   auto & addNode2 =
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c1.output(0) }, 32);
 
-  const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto & sExtNode1 = SExtOperation::create(64, mulNode.output(0));
-  const auto gep1 = GetElementPtrOperation::Create(
-      lv2.pre,
-      { c0_2.output(0), sExtNode1 },
-      intArrayType,
-      pointerType);
-  auto loadNode = LoadNonVolatileOperation::Create(gep1, { memoryState.pre }, intType, 32);
+  const auto & varArgs1 =
+      VariadicArgumentListOperation::Create(*theta->subregion(), { mulNode.output(0) });
 
-  const auto & sExtNode2 = SExtOperation::create(64, addNode2.output(0));
-  const auto gep2 = GetElementPtrOperation::Create(
+  const auto & varArgs2 =
+      VariadicArgumentListOperation::Create(*theta->subregion(), { addNode2.output(0) });
+
+  const auto & callNode1 = CallOperation::Create(
       lv2.pre,
-      { c0_2.output(0), sExtNode2 },
-      intArrayType,
-      pointerType);
-  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadNode[0], c2.output(0) }, 32);
-  auto storeNode = StoreNonVolatileOperation::Create(gep2, subNode.output(0), { loadNode[1] }, 4);
+      functionType,
+      AttributeList::createEmptyList(),
+      { varArgs1, ioState.pre, memoryState.pre });
+
+  const auto & callNode2 = CallOperation::Create(
+      lv2.pre,
+      functionType,
+      AttributeList::createEmptyList(),
+      { varArgs2, callNode1[1], callNode1[2] });
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+
   auto & sltNode =
       jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode1.output(0), c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
-  lv1.post->divert_to(addNode1.output(0));
-  memoryState.post->divert_to(storeNode[0]);
   theta->set_predicate(matchResult);
+  lv1.post->divert_to(addNode1.output(0));
+  ioState.post->divert_to(callNode2[1]);
+  memoryState.post->divert_to(callNode2[2]);
 
-  auto lambdaOutput = lambda->finalize({ lv2.output, memoryState.output });
-  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "arrPtr");
+  auto lambdaOutput = lambda->finalize({ ioState.output, memoryState.output });
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "main");
 
   // std::cout << "Before: \n";
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  const auto oldMulNodeUsers = mulNode.output(0)->Users();
-  const auto oldAddNodeUsers = addNode2.output(0)->Users();
+
+  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
+  for (auto & user : mulNode.output(0)->Users())
+  {
+    oldMulNodeUsers.push_back(&user);
+  }
+  std::vector<jlm::rvsdg::Input *> oldAddNodeUsers;
+  for (auto & user : addNode2.output(0)->Users())
+  {
+    oldAddNodeUsers.push_back(&user);
+  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -543,18 +583,18 @@ TEST(LoopStrengthReductionTests, NestedCandidateOperationWithUsersForBoth)
   // Check that all users of the old ADD node now use the new induction variable
   for (auto & user : oldAddNodeUsers)
   {
-    if (user.origin())
+    if (user->origin())
     {
-      EXPECT_EQ(user.origin(), newIV1.pre);
+      EXPECT_EQ(user->origin(), newIV1.pre);
     }
   }
 
   // Check that all users of the old MUL node now use the new induction variable
   for (auto & user : oldMulNodeUsers)
   {
-    if (user.origin())
+    if (user->origin())
     {
-      EXPECT_EQ(user.origin(), newIV2.pre);
+      EXPECT_EQ(user->origin(), newIV2.pre);
     }
   }
 }
