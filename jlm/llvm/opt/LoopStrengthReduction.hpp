@@ -51,19 +51,19 @@ private:
   static bool
   ContainsMul(const rvsdg::Output & output);
 
-  bool
-  IsValidCandidateOperation(const rvsdg::Output & output) const;
-
   /**
-   * Checks if the SCEV tree is a valid linear combination of placeholders and constants,
-   * i.e. sums of terms where each term is either: a constant, a placeholder (loop variable), a
-   * linear multiplication (constant * placeholder)
+   * Checks if the operation depends on an induction variable. By induction variable we mean a loop
+   * variable that evolves in a predictable way, which is the same as checking if its chrec does not
+   * contain any SCEVUnknown or SCEVInit elements.
    *
-   * @param scev The SCEV tree to be checked
-   * @return True if the scev tree is a linear combination, otherwise false.
+   * @param output The output to be checked
+   * @return true if the output depends on an induction variable, otherwise false.
    */
-  static bool
-  IsLinearCombination(const SCEV & scev);
+  bool
+  DependsOnInductionVariable(const rvsdg::Output & output);
+
+  bool
+  IsValidCandidateOperation(const rvsdg::Output & output);
 
   void
   ProcessOutput(
@@ -91,6 +91,7 @@ private:
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
+  std::unordered_map<const rvsdg::Output *, bool> DependsOnIVMemo_;
 
   std::unique_ptr<Context> Context_;
 };

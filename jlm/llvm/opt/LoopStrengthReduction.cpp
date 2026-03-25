@@ -385,35 +385,106 @@ LoopStrengthReduction::ReplaceGEPOperation(
 }
 
 bool
-LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output) const
+LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
 {
-  const auto & scevTree = *SCEVMap_.at(&output);
-  // Accept any linear combination that involves multiplication somewhere in the tree
-  return IsLinearCombination(scevTree) && ContainsMul(output);
+  if (!DependsOnInductionVariable(output))
+    return false;
+
+  const auto & [simpleNode, simpleOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::SimpleOperation>(output);
+
+  JLM_ASSERT(simpleOperation);
+
+  // We only reduce arithmetic operations if they contain a multiplication somewhere
+  if (rvsdg::is<IntegerBinaryOperation>(*simpleOperation) && !ContainsMul(output))
+    return false;
+
+  const auto & chrec = ChrecMap_.at(&output);
+
+  // We only support invariant and affine recurrences (1-2 operands) that are not unknown
+  if (SCEVChainRecurrence::IsUnknown(*chrec))
+    return false;
+
+  if (chrec->NumOperands() > 2)
+    return false;
+
+  for (const auto operand : chrec->GetOperands())
+  {
+    if (dynamic_cast<const SCEVNAryExpr *>(operand))
+      return false;
+  }
+
+  const auto & startSCEV = chrec->GetStartValue();
+
+  if (rvsdg::is<GetElementPtrOperation>(*simpleOperation))
+  {
+    const auto & startInit = dynamic_cast<const SCEVInit *>(startSCEV);
+    if (!startInit)
+      return false;
+  }
+  else
+  {
+    const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
+    if (!startConstant)
+      return false;
+  }
+
+  if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    const auto & stepPtr = chrec->GetStep();
+
+    JLM_ASSERT(stepPtr.has_value());
+
+    const auto & stepSCEV = *stepPtr;
+    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+    if (!stepConstant)
+      return false;
+  }
+
+  return true;
 }
 
 bool
-LoopStrengthReduction::IsLinearCombination(const SCEV & scev)
+LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
 {
-  if (dynamic_cast<const SCEVConstant *>(&scev))
-    return true;
-  if (dynamic_cast<const SCEVPlaceholder *>(&scev))
-    return true;
+  if (const auto it = DependsOnIVMemo_.find(&output); it != DependsOnIVMemo_.end())
+    return it->second;
 
-  // Adding together two linear combinations results in a new linear combination
-  if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
-    return IsLinearCombination(*add->GetLeftOperand())
-        && IsLinearCombination(*add->GetRightOperand());
+  // Check if the current output is an induction variable (loop variable with predictable evolution)
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    const auto it = ChrecMap_.find(&output);
+    if (it == ChrecMap_.end())
+      return DependsOnIVMemo_[&output] = false;
 
-  // Check for linear multiplication (constant multiplied by a linear combination)
-  // Multiplying a linear combination with a constant creates a new linear combination
-  if (const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev))
-    return (dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand())
-            && IsLinearCombination(*mul->GetRightOperand()))
-        || (dynamic_cast<const SCEVConstant *>(mul->GetRightOperand())
-            && IsLinearCombination(*mul->GetLeftOperand()));
+    const auto & chrec = it->second;
 
-  return false;
+    if (SCEVChainRecurrence::IsUnknown(*chrec))
+      return DependsOnIVMemo_[&output] = false;
+
+    for (const auto operand : chrec->GetOperands())
+    {
+      if (dynamic_cast<const SCEVInit *>(operand))
+      {
+        return DependsOnIVMemo_[&output] = false;
+      }
+    }
+
+    return DependsOnIVMemo_[&output] = true;
+  }
+
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+
+  if (!simpleNode)
+    return DependsOnIVMemo_[&output] = false;
+
+  for (const auto & input : simpleNode->Inputs())
+  {
+    if (DependsOnInductionVariable(*input.origin()))
+      return DependsOnIVMemo_[&output] = true;
+  }
+
+  return DependsOnIVMemo_[&output] = false;
 }
 
 bool
