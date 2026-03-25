@@ -101,7 +101,8 @@ public:
     for (auto & [out, chrec] : ChrecMap_)
     {
       // Count induction variables (loop variables with a computed recurrence) with specific order
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
+          && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
         if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
@@ -116,7 +117,8 @@ public:
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
+          && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
         // Only count chrecs that are not unknown
         if (!SCEVChainRecurrence::IsUnknown(*chrec))
