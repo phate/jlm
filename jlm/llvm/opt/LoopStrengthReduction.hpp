@@ -43,12 +43,13 @@ private:
   ReduceStrength(rvsdg::ThetaNode & thetaNode);
 
   /**
-   * Checks if the RVSDG subtree of the output contains an IntegerMulExpr somewhere in the tree.
+   * Checks if the RVSDG subtree of the output contains an IntegerMulOperation somewhere in the
+   * tree.
    *
    * @param output The output to be checked
    * @return true if the subtree contains a multiplication operation, otherwise false.
    */
-  static bool
+  bool
   ContainsMul(const rvsdg::Output & output);
 
   /**
@@ -92,6 +93,7 @@ private:
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
   std::unordered_map<const rvsdg::Output *, bool> DependsOnIVMemo_;
+  std::unordered_map<const rvsdg::Output *, bool> ContainsMulMemo_;
 
   std::unique_ptr<Context> Context_;
 };
