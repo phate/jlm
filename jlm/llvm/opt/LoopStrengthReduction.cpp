@@ -160,30 +160,41 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   // In short, we look for candidate operations and replace them with a new induction variable.
   //
   // A candidate operation must satisfy three conditions:
-  //   1. The statement is a linear combinations of loop variables and constants
-  //   2. Its RVSDG subtree contains at least one multiplication node (IntegerMulOperation),
-  //      ensuring we only reduce operations that actually benefit from strength reduction.
-  //   3. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
-  //      can be expressed as a start value plus a constant step per iteration. This is what
-  //      makes it a valid induction variable candidate.
+  //   1. The operation is either arithmetic (+, * or -) or a GEP operation
+  //   2. The SCEV tree of the operation is a linear combination of loop variables and constants
+  //   3. For arithmetic operations, the subtree must contain at least one multiplication node
+  //      (IntegerMulOperation), ensuring we only reduce operations that actually benefit from
+  //      strength
+  //       reduction.
+  //   4. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
+  //      can be expressed as a start value plus a constant step per iteration. This is what makes
+  //      it a alid induction variable candidate. For GEP operations, a, is the base
+  //      address of the array we are indexing into.
   //
   // Modifying the RVSDG is done as follows:
-  // For a variable j defined as a linear combination of loop variables and constants with
-  // chain recurrence {a,+,b} where b can also be 0 (invariant):
-  //   1. Add a new loop variable s with input value a
-  //   2. Divert all the users of j to use the pre value of s
-  // If b is not 0:
-  //   3. Create a new constant operation with value b
-  //   4. Insert an add-node which takes as inputs the pre value of s and the constant b
-  //   5. Set the post value of s to the output of the new add-node
   //
-  // Dead node elimination handles the removal of the dangling node
+  // For an arithmetic candidate operation j with recurrence {a,+,b}:
+  //   1. Introduce a new loop variable initialized to the base value a
+  //   2. Replace all uses of j with the new loop variable
+  // If b is not 0:
+  //   3. Update the new loop variable each iteration by incrementing it by b
+  //
+  // For a GEP which has the recurrence {Init(a),+,b}, where Init(a) is the SCEV for the base
+  // address loop variable:
+  //   1. Introduce a new loop variable initialized to the base address
+  //   2. Replace all uses of the original GEP with the new loop variable
+  //   3. Update the new loop variable each iteration by advancing it by offset b using a new GEP
+  // In the case where b is invariant, the GEP can be eliminated entirely.
+
+  // Dead node elimination handles the removal of the dangling node(s)
 
   // We traverse the nodes in the theta node in a bottom-up manner starting at the origin output of
   // the post values for the loop variables. We look for candidate operations and add them to the
   // stack of operations to be reduced.
   util::HashSet<rvsdg::Output *> candidateOperations;
   util::HashSet<rvsdg::Output *> visited;
+  DependsOnIVMemo_.clear();
+  ContainsMulMemo_.clear();
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     ProcessOutput(*loopVar.post->origin(), thetaNode, candidateOperations, visited);
