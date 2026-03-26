@@ -164,11 +164,10 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   //   2. The SCEV tree of the operation is a linear combination of loop variables and constants
   //   3. For arithmetic operations, the subtree must contain at least one multiplication node
   //      (IntegerMulOperation), ensuring we only reduce operations that actually benefit from
-  //      strength
-  //       reduction.
+  //      strength reduction.
   //   4. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
   //      can be expressed as a start value plus a constant step per iteration. This is what makes
-  //      it a alid induction variable candidate. For GEP operations, a, is the base
+  //      it a valid induction variable candidate. For GEP operations, a, is the base
   //      address of the array we are indexing into.
   //
   // Modifying the RVSDG is done as follows:
@@ -185,8 +184,6 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   //   2. Replace all uses of the original GEP with the new loop variable
   //   3. Update the new loop variable each iteration by advancing it by offset b using a new GEP
   // In the case where b is invariant, the GEP can be eliminated entirely.
-
-  // Dead node elimination handles the removal of the dangling node(s)
 
   // We traverse the nodes in the theta node in a bottom-up manner starting at the origin output of
   // the post values for the loop variables. We look for candidate operations and add them to the
@@ -216,17 +213,17 @@ LoopStrengthReduction::ProcessOutput(
   if (!visited.insert(&output))
     return;
 
-  const auto & [simpleNode, operation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::SimpleOperation>(output);
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
 
   if (!simpleNode)
     return;
 
-  // Multiplication, addition, subtraction and GEP operations are candidates for strength
+  // Multiplication, addition, subtraction, shl and GEP operations are candidates for strength
   // reduction
-  if (rvsdg::is<IntegerMulOperation>(*operation) || rvsdg::is<IntegerAddOperation>(*operation)
-      || rvsdg::is<IntegerSubOperation>(*operation)
-      || rvsdg::is<GetElementPtrOperation>(*operation))
+  if (const auto & operation = simpleNode->GetOperation();
+      rvsdg::is<IntegerMulOperation>(operation) || rvsdg::is<IntegerAddOperation>(operation)
+      || rvsdg::is<IntegerSubOperation>(operation) || rvsdg::is<IntegerShlOperation>(operation)
+      || rvsdg::is<GetElementPtrOperation>(operation))
   {
     if (SCEVMap_.find(&output) == SCEVMap_.end())
       return;
@@ -401,13 +398,14 @@ LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
   if (!DependsOnInductionVariable(output))
     return false;
 
-  const auto & [simpleNode, simpleOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::SimpleOperation>(output);
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
 
-  JLM_ASSERT(simpleOperation);
+  JLM_ASSERT(simpleNode);
+
+  const auto & simpleOperation = simpleNode->GetOperation();
 
   // We only reduce arithmetic operations if they contain a multiplication somewhere
-  if (rvsdg::is<IntegerBinaryOperation>(*simpleOperation) && !ContainsMul(output))
+  if (rvsdg::is<IntegerBinaryOperation>(simpleOperation) && !ContainsMul(output))
     return false;
 
   const auto & chrec = ChrecMap_.at(&output);
@@ -427,7 +425,7 @@ LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
 
   const auto & startSCEV = chrec->GetStartValue();
 
-  if (rvsdg::is<GetElementPtrOperation>(*simpleOperation))
+  if (rvsdg::is<GetElementPtrOperation>(simpleOperation))
   {
     const auto & startInit = dynamic_cast<const SCEVInit *>(startSCEV);
     if (!startInit)
@@ -504,13 +502,15 @@ LoopStrengthReduction::ContainsMul(const rvsdg::Output & output)
   if (const auto it = ContainsMulMemo_.find(&output); it != ContainsMulMemo_.end())
     return it->second;
 
-  const auto & [simpleNode, mulOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerMulOperation>(output);
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
 
   if (!simpleNode)
     return ContainsMulMemo_[&output] = false;
 
-  if (mulOperation)
+  const auto & simpleOperation = simpleNode->GetOperation();
+
+  if (rvsdg::is<IntegerMulOperation>(simpleOperation)
+      || rvsdg::is<IntegerShlOperation>(simpleOperation))
     return ContainsMulMemo_[&output] = true;
 
   for (const auto & input : simpleNode->Inputs())

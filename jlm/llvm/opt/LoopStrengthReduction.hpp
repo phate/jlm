@@ -43,8 +43,8 @@ private:
   ReduceStrength(rvsdg::ThetaNode & thetaNode);
 
   /**
-   * Checks if the RVSDG subtree of the output contains an IntegerMulOperation somewhere in the
-   * tree.
+   * Checks if the RVSDG subtree of the output contains an IntegerMulOperation or
+   * IntegerShlOperation (which we treat as multiplication by 2) somewhere in the tree.
    *
    * @param output The output to be checked
    * @return true if the subtree contains a multiplication operation, otherwise false.
