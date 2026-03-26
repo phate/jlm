@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
@@ -100,7 +101,8 @@ public:
     for (auto & [out, chrec] : ChrecMap_)
     {
       // Count induction variables (loop variables with a computed recurrence) with specific order
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
+          && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
         if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
@@ -115,7 +117,8 @@ public:
     int count = 0;
     for (auto & [out, chrec] : ChrecMap_)
     {
-      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
+          && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
         // Only count chrecs that are not unknown
         if (!SCEVChainRecurrence::IsUnknown(*chrec))
@@ -948,47 +951,49 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
     // expression later
     result = SCEVPlaceholder::Create(output);
   }
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+
+  const auto & [simpleNode, simpleOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::SimpleOperation>(output);
+
+  if (simpleNode)
   {
-    if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
+    if (rvsdg::is<IOBarrierOperation>(*simpleOperation))
     {
       const auto barredInputOrigin = IOBarrierOperation::BarredInput(*simpleNode).origin();
       result = GetOrCreateSCEVForOutput(*barredInputOrigin);
     }
-    else if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
+    else if (
+        rvsdg::is<SExtOperation>(*simpleOperation) || rvsdg::is<ZExtOperation>(*simpleOperation))
     {
       JLM_ASSERT(simpleNode->ninputs() == 1);
       result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
     }
-    else if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
+    else if (const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&*simpleOperation))
     {
       JLM_ASSERT(simpleNode->ninputs() >= 2);
       const auto baseIndex = simpleNode->input(0)->origin();
       JLM_ASSERT(is<PointerType>(baseIndex->Type()));
 
-      const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&simpleNode->GetOperation());
       const auto & pointeeType = gepOp->GetPointeeType();
 
       auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
 
-      auto baseOffsetIndex = GetOrCreateSCEVForOutput(*simpleNode->input(1)->origin());
-
+      auto wholeTypeIndex = GetOrCreateSCEVForOutput(*simpleNode->input(1)->origin());
       const auto wholeTypeSize = GetTypeAllocSize(pointeeType);
+
       std::unique_ptr<SCEV> offset =
-          SCEVMulExpr::Create(std::move(baseOffsetIndex), SCEVConstant::Create(wholeTypeSize));
+          SCEVMulExpr::Create(std::move(wholeTypeIndex), SCEVConstant::Create(wholeTypeSize));
       if (auto innerOffset = ComputeSCEVForGepInnerOffset(*simpleNode, 2, pointeeType))
         offset = SCEVAddExpr::Create(std::move(offset), std::move(innerOffset));
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
     }
-    else if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+    else if (const auto constOp = dynamic_cast<const IntegerConstantOperation *>(&*simpleOperation))
     {
-      const auto constOp =
-          dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
       const auto value = constOp->Representation().to_int();
       result = SCEVConstant::Create(value);
     }
-    else if (rvsdg::is<IntegerBinaryOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<IntegerBinaryOperation>(*simpleOperation))
     {
       JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
@@ -996,19 +1001,28 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       auto lhsScev = GetOrCreateSCEVForOutput(*lhs);
       auto rhsScev = GetOrCreateSCEVForOutput(*rhs);
-      if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation()))
+      if (rvsdg::is<IntegerAddOperation>(*simpleOperation))
       {
         result = SCEVAddExpr::Create(std::move(lhsScev), std::move(rhsScev));
       }
-      if (rvsdg::is<IntegerSubOperation>(simpleNode->GetOperation()))
+      else if (rvsdg::is<IntegerSubOperation>(*simpleOperation))
       {
         auto rhsNegativeScev = GetNegativeSCEV(*rhsScev);
 
         result = SCEVAddExpr::Create(std::move(lhsScev), std::move(rhsNegativeScev));
       }
-      if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
+      else if (rvsdg::is<IntegerMulOperation>(*simpleOperation))
       {
         result = SCEVMulExpr::Create(std::move(lhsScev), std::move(rhsScev));
+      }
+      else if (rvsdg::is<IntegerShlOperation>(*simpleOperation))
+      {
+        if (const auto * rhsConst = dynamic_cast<SCEVConstant *>(rhsScev.get()))
+        {
+          const auto shiftAmount = rhsConst->GetValue();
+          auto factor = SCEVConstant::Create(1ULL << shiftAmount);
+          result = SCEVMulExpr::Create(std::move(lhsScev), std::move(factor));
+        }
       }
     }
     else
