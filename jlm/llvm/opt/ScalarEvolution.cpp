@@ -968,13 +968,12 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       JLM_ASSERT(simpleNode->ninputs() == 1);
       result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
     }
-    else if (rvsdg::is<GetElementPtrOperation>(*simpleOperation))
+    else if (const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&*simpleOperation))
     {
       JLM_ASSERT(simpleNode->ninputs() >= 2);
       const auto baseIndex = simpleNode->input(0)->origin();
       JLM_ASSERT(is<PointerType>(baseIndex->Type()));
 
-      const auto gepOp = dynamic_cast<const GetElementPtrOperation *>(&*simpleOperation);
       const auto & pointeeType = gepOp->GetPointeeType();
 
       auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
@@ -989,9 +988,8 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
     }
-    else if (rvsdg::is<IntegerConstantOperation>(*simpleOperation))
+    else if (const auto constOp = dynamic_cast<const IntegerConstantOperation *>(&*simpleOperation))
     {
-      const auto constOp = dynamic_cast<const IntegerConstantOperation *>(&*simpleOperation);
       const auto value = constOp->Representation().to_int();
       result = SCEVConstant::Create(value);
     }
