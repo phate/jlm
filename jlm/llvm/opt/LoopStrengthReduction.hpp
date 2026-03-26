@@ -81,7 +81,7 @@ private:
       std::unique_ptr<SCEVChainRecurrence> & chrec,
       rvsdg::Output & output,
       rvsdg::ThetaNode & thetaNode,
-      const std::shared_ptr<const PointerType> & pointerType);
+      const std::shared_ptr<const llvm::PointerType> & pointerType);
 
   void
   ReplaceArithmeticOperation(
