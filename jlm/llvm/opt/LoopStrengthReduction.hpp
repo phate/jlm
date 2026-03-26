@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_LOOP_STRENGTH_REDUCTION_HPP
 #define JLM_LLVM_OPT_LOOP_STRENGTH_REDUCTION_HPP
 
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -81,7 +82,7 @@ private:
       std::unique_ptr<SCEVChainRecurrence> & chrec,
       rvsdg::Output & output,
       rvsdg::ThetaNode & thetaNode,
-      const std::shared_ptr<const llvm::PointerType> & pointerType);
+      const std::shared_ptr<const PointerType> & pointerType);
 
   void
   ReplaceArithmeticOperation(
