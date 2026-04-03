@@ -156,9 +156,17 @@ private:
   void
   convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::ControlFlowGraphNode * node);
 
+  /**
+   * Converts the given operation, with the given arguments, to an LLVM instruction.
+   * If the operation is wrapped in a surrounding operation, the surrounding operation
+   * is given as the \p originalOp.
+   * @param op the operation being converted
+   * @param originalOp the
+   */
   ::llvm::Value *
   convert_operation(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & arguments,
       ::llvm::IRBuilder<> & builder);
 
@@ -251,6 +259,7 @@ private:
   ::llvm::Value *
   convert_cast(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
@@ -263,12 +272,14 @@ private:
   ::llvm::Value *
   convert_vectorbinary(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
   ::llvm::Value *
   convert_vectorunary(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
