@@ -118,12 +118,14 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        1);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false));
+        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(globalDelta.subregion(), pointerType);
@@ -135,7 +137,7 @@ private:
     // Create the global variable "local", that is not exported
     auto & localDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false));
+        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::Create(localDelta.subregion(), pointerType);
@@ -148,7 +150,9 @@ private:
         pointerType,
         pointerType,
         "imported",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
 
     // Setup the function "func"
     {
@@ -225,8 +229,11 @@ private:
       memoryState = storeImported[0];
 
       // Get r by calling getPtr()
-      const auto callOutputs =
-          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
+      const auto callOutputs = CallOperation::Create(
+          getPtrCtxVar,
+          getPtrFuncType,
+          AttributeList::createEmptyList(),
+          { ioState, memoryState });
       Outputs_.R = callOutputs[0];
       ioState = callOutputs[1];
       memoryState = callOutputs[2];
@@ -388,14 +395,18 @@ private:
         int32Type,
         pointerType,
         "globalInt",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
 
     Outputs_.GlobalLong = &LlvmGraphImport::Create(
         rvsdg,
         int64Type,
         pointerType,
         "globalLong",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
 
     // Setup the function "func"
     {

@@ -125,7 +125,9 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
-          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
+          false, // FIXME: Currently not supported in MLIR dialect
+          1);    // FIXME: Currently not supported in MLIR dialect
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
@@ -504,7 +506,9 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::CallOperation>(
         std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
-        std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes)));
+        std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes),
+        llvm::AttributeList::createEmptyList())); // FIXME: MLIR dialect does not support attribute
+                                                  // lists
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {
@@ -920,7 +924,8 @@ MlirToJlmConverter::ConvertOperation(
             mlirDeltaNode.getName().str(),
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
-            mlirDeltaNode.getConstant()));
+            mlirDeltaNode.getConstant(),
+            4)); // FIXME: the MLIR delta node does not support the alignment attribute
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 

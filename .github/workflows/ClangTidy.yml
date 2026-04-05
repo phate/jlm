@@ -31,3 +31,6 @@ jobs:
 
       - name: "Run clang tidy"
         run: make tidy
+
+      - name: "Run check-includes"
+        run: make check-includes

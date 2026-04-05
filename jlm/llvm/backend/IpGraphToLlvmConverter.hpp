@@ -120,6 +120,9 @@ private:
   ::llvm::AttributeSet
   convert_attributes(const AttributeSet & attributeSet);
 
+  ::llvm::AttributeList
+  convertAttributeList(const AttributeList & attributeList);
+
   ::llvm::Attribute
   ConvertStringAttribute(const llvm::StringAttribute & attribute);
 

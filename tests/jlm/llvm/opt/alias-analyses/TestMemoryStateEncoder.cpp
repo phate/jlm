@@ -1566,6 +1566,7 @@ TEST(MemoryStateEncoderTests, LambdaMemoryStateArgumentMultipleUsers)
     auto callResults = CallOperation::Create(
         ctxVarOne.inner,
         functionTypeOne,
+        AttributeList::createEmptyList(),
         { ioStateArgument, memoryStateArgument });
 
     auto & loadNode = LoadNonVolatileOperation::CreateNode(

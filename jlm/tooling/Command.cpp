@@ -20,6 +20,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
+#include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/llvm/opt/pull.hpp>
@@ -419,9 +420,12 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_shared<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
-    return std::make_shared<llvm::InvariantValueRedirection>();
+    return std::make_shared<llvm::InvariantValueRedirection>(
+        llvm::InvariantValueRedirection::Configuration());
   case JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation:
     return std::make_shared<llvm::LoadChainSeparation>();
+  case JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction:
+    return std::make_shared<llvm::LoopStrengthReduction>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
     return std::make_shared<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::LoopUnswitching:

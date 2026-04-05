@@ -278,7 +278,9 @@ IpGraphToLlvmConverter::convert(
   }
 
   auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
-  return builder.CreateCall(ftype, function, operands);
+  auto callInstruction = builder.CreateCall(ftype, function, operands);
+  callInstruction->setAttributes(convertAttributeList(op.getAttributes()));
+  return callInstruction;
 }
 
 static bool
@@ -893,20 +895,6 @@ IpGraphToLlvmConverter::convert_cast(
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto dsttype = op.result(0);
   auto operand = operands[0];
-
-  if (const auto vt = dynamic_cast<const FixedVectorType *>(&operand->type()))
-  {
-    const auto type =
-        typeConverter.ConvertJlmType(FixedVectorType(dsttype, vt->size()), llvmContext);
-    return builder.CreateCast(OPCODE, Context_->value(operand), type);
-  }
-
-  if (const auto vt = dynamic_cast<const ScalableVectorType *>(&operand->type()))
-  {
-    const auto type =
-        typeConverter.ConvertJlmType(ScalableVectorType(dsttype, vt->size()), llvmContext);
-    return builder.CreateCast(OPCODE, Context_->value(operand), type);
-  }
 
   auto type = typeConverter.ConvertJlmType(*dsttype, llvmContext);
   return builder.CreateCast(OPCODE, Context_->value(operand), type);
@@ -1806,6 +1794,23 @@ IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
 }
 
+::llvm::AttributeList
+IpGraphToLlvmConverter::convertAttributeList(const AttributeList & attributeList)
+{
+  const auto functionAttributes = convert_attributes(attributeList.getFunctionAttributes());
+  const auto returnAttributes = convert_attributes(attributeList.getReturnAttributes());
+
+  std::vector<::llvm::AttributeSet> parameterAttributes;
+  for (auto & attributes : attributeList.getParameterAttributes())
+    parameterAttributes.emplace_back(convert_attributes(attributes));
+
+  return ::llvm::AttributeList::get(
+      Context_->llvm_module().getContext(),
+      std::move(functionAttributes),
+      std::move(returnAttributes),
+      std::move(parameterAttributes));
+}
+
 std::vector<ControlFlowGraphNode *>
 IpGraphToLlvmConverter::ConvertBasicBlocks(
     const ControlFlowGraph & controlFlowGraph,
@@ -1975,6 +1980,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
           nullptr,
           dataNode->name());
       gv->setSection(dataNode->Section());
+      gv->setAlignment(::llvm::Align(dataNode->getAlignment()));
       Context_->insert(v, gv);
     }
     else if (auto n = dynamic_cast<const FunctionNode *>(&node))

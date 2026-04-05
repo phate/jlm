@@ -51,6 +51,7 @@ TEST(PhiTests, TestPhiCreation)
     auto callResults = CallOperation::Create(
         ctxVarF2,
         f1type,
+        AttributeList::createEmptyList(),
         { valueArgument, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);

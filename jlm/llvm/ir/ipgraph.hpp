@@ -67,6 +67,24 @@ public:
   [[nodiscard]] const InterProceduralGraphNode *
   find(const std::string & name) const noexcept;
 
+  /**
+   * Converts the inter-procedural graph to a DOT graph.
+   *
+   * @param writer A graph writer for converting the \p interProceduralGraph to DOT.
+   * @param interProceduralGraph Inter-procedural graph that is converted.
+   * @return A DOT graph
+   */
+  static util::graph::Graph &
+  toDot(util::graph::Writer & writer, const InterProceduralGraph & interProceduralGraph);
+
+  /**
+   * This function is meant to be used from the debugger. You can just
+   * invoke it and a xdot window should pop up with a DOT visualization of the control flow graph.
+   * This depends on xdot being in the PATH.
+   */
+  void
+  view() const;
+
 private:
   std::vector<std::unique_ptr<InterProceduralGraphNode>> nodes_;
 };
@@ -133,6 +151,12 @@ public:
 
   virtual bool
   hasBody() const noexcept = 0;
+
+  [[nodiscard]] size_t
+  numDependencies() const noexcept
+  {
+    return dependencies_.size();
+  }
 
 private:
   InterProceduralGraph & clg_;
@@ -320,13 +344,15 @@ private:
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::Linkage & linkage,
       std::string section,
-      bool constant)
+      const bool constant,
+      const size_t alignment)
       : InterProceduralGraphNode(clg),
         constant_(constant),
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
-        ValueType_(std::move(valueType))
+        ValueType_(std::move(valueType)),
+        alignment_(alignment)
   {}
 
 public:
@@ -350,6 +376,12 @@ public:
 
   [[nodiscard]] bool
   hasBody() const noexcept override;
+
+  [[nodiscard]] size_t
+  getAlignment() const noexcept
+  {
+    return alignment_;
+  }
 
   inline bool
   constant() const noexcept
@@ -388,11 +420,18 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::Linkage & linkage,
       std::string section,
-      bool constant)
+      const bool constant,
+      const size_t alignment)
   {
-    std::unique_ptr<DataNode> node(
-        new DataNode(clg, name, std::move(valueType), linkage, std::move(section), constant));
-    auto ptr = node.get();
+    std::unique_ptr<DataNode> node(new DataNode(
+        clg,
+        name,
+        std::move(valueType),
+        linkage,
+        std::move(section),
+        constant,
+        alignment));
+    const auto ptr = node.get();
     clg.add_node(std::move(node));
     return ptr;
   }
@@ -404,6 +443,7 @@ private:
   llvm::Linkage linkage_;
   std::shared_ptr<const jlm::rvsdg::Type> ValueType_;
   std::unique_ptr<DataNodeInit> init_;
+  size_t alignment_;
 };
 
 }

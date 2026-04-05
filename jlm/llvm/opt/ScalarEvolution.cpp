@@ -6,9 +6,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -104,7 +102,7 @@ public:
       // Count induction variables (loop variables with a computed recurrence) with specific order
       if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
-        if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
+        if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
       }
     }
@@ -120,7 +118,7 @@ public:
       if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out))
       {
         // Only count chrecs that are not unknown
-        if (!IsUnknown(*chrec))
+        if (!SCEVChainRecurrence::IsUnknown(*chrec))
           count++;
       }
     }
@@ -244,6 +242,17 @@ ScalarEvolution::GetChrecMap() const
   for (auto & [output, chrec] : Context_->GetChrecMap())
   {
     mapCopy.emplace(output, SCEV::CloneAs<SCEVChainRecurrence>(*chrec));
+  }
+  return mapCopy;
+}
+
+std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>>
+ScalarEvolution::GetSCEVMap() const
+{
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> mapCopy{};
+  for (auto & [output, scev] : Context_->GetSCEVMap())
+  {
+    mapCopy.emplace(output, scev->Clone());
   }
   return mapCopy;
 }
@@ -941,28 +950,17 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
   }
   if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    if (rvsdg::is<LoadOperation>(simpleNode->GetOperation()))
-    {
-      GetOrCreateSCEVForOutput(*LoadOperation::AddressInput(*simpleNode).origin());
-      result = SCEVUnknown::Create();
-    }
-    if (rvsdg::is<StoreOperation>(simpleNode->GetOperation()))
-    {
-      GetOrCreateSCEVForOutput(*StoreOperation::AddressInput(*simpleNode).origin());
-      GetOrCreateSCEVForOutput(*StoreOperation::StoredValueInput(*simpleNode).origin());
-      result = SCEVUnknown::Create();
-    }
     if (rvsdg::is<IOBarrierOperation>(simpleNode->GetOperation()))
     {
       const auto barredInputOrigin = IOBarrierOperation::BarredInput(*simpleNode).origin();
       result = GetOrCreateSCEVForOutput(*barredInputOrigin);
     }
-    if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<SExtOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() == 1);
       result = GetOrCreateSCEVForOutput(*simpleNode->input(0)->origin());
     }
-    if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<GetElementPtrOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() >= 2);
       const auto baseIndex = simpleNode->input(0)->origin();
@@ -983,14 +981,14 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));
     }
-    if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
     {
       const auto constOp =
           dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
       const auto value = constOp->Representation().to_int();
       result = SCEVConstant::Create(value);
     }
-    if (rvsdg::is<IntegerBinaryOperation>(simpleNode->GetOperation()))
+    else if (rvsdg::is<IntegerBinaryOperation>(simpleNode->GetOperation()))
     {
       JLM_ASSERT(simpleNode->ninputs() == 2);
       const auto lhs = simpleNode->input(0)->origin();
@@ -1011,6 +1009,14 @@ ScalarEvolution::GetOrCreateSCEVForOutput(const rvsdg::Output & output)
       if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation()))
       {
         result = SCEVMulExpr::Create(std::move(lhsScev), std::move(rhsScev));
+      }
+    }
+    else
+    {
+      // Unknown operation, we traverse through to it's inputs
+      for (auto & input : simpleNode->Inputs())
+      {
+        GetOrCreateSCEVForOutput(*input.origin());
       }
     }
   }
@@ -1202,7 +1208,8 @@ ScalarEvolution::GetOrCreateChainRecurrence(
 
   auto stepRecurrence = GetOrCreateStepForSCEV(output, scev, thetaNode);
 
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output);
+      theta == &thetaNode)
   {
     // Find the start value for the recurrence
     const auto inputOrigin = thetaNode.MapPreLoopVar(output).input->origin();
@@ -1353,13 +1360,14 @@ ScalarEvolution::ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   const auto rhsChrec = dynamic_cast<const SCEVChainRecurrence *>(rhsOperand);
   if (lhsChrec && rhsChrec)
   {
-    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     if (lhsChrec->GetLoop() != rhsChrec->GetLoop())
     {
-      newChrec->AddOperand(SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
-      return newChrec;
+      return SCEVChainRecurrence::Create(
+          *lhsChrec->GetLoop(),
+          SCEVNAryAddExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
     }
 
+    auto newChrec = SCEVChainRecurrence::Create(*lhsChrec->GetLoop());
     const auto lhsSize = lhsChrec->NumOperands();
     const auto rhsSize = rhsChrec->NumOperands();
     for (size_t i = 0; i < std::max(lhsSize, rhsSize); ++i)
@@ -1695,7 +1703,9 @@ ScalarEvolution::ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperan
   {
     if (lhsChrec->GetLoop() != rhsChrec->GetLoop())
     {
-      return SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone());
+      return SCEVChainRecurrence::Create(
+          *lhsChrec->GetLoop(),
+          SCEVNAryMulExpr::Create(lhsChrec->Clone(), rhsChrec->Clone()));
     }
 
     return ComputeProductOfChrecs(lhsChrec, rhsChrec);
@@ -1880,19 +1890,6 @@ ScalarEvolution::GetNegativeSCEV(const SCEV & scev)
   }
   // General case: -(x) -> (-1) * x
   return SCEVMulExpr::Create(SCEVConstant::Create(-1), scev.Clone());
-}
-
-bool
-ScalarEvolution::IsUnknown(const SCEVChainRecurrence & chrec)
-{
-  for (const auto operand : chrec.GetOperands())
-  {
-    if (dynamic_cast<const SCEVUnknown *>(operand))
-    {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool

@@ -63,14 +63,15 @@ split_opt(llvm::LlvmRvsdgModule & rm)
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
   CommonNodeElimination cne;
-  jlm::llvm::InvariantValueRedirection ivr;
+  constexpr llvm::InvariantValueRedirection::Configuration ivrConfiguration;
+  llvm::InvariantValueRedirection invariantValueRedirection(std::move(ivrConfiguration));
   llvm::LoopUnswitching loopUnswitching(llvm::LoopUnswitchingDefaultHeuristic::create());
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
   loopUnswitching.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
   cne.Run(rm, statisticsCollector);
-  ivr.Run(rm, statisticsCollector);
+  invariantValueRedirection.Run(rm, statisticsCollector);
   red.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
 }
@@ -81,13 +82,14 @@ pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
   CommonNodeElimination cne;
-  jlm::llvm::InvariantValueRedirection ivr;
+  constexpr llvm::InvariantValueRedirection::Configuration ivrConfiguration;
+  llvm::InvariantValueRedirection invariantValueRedirection(std::move(ivrConfiguration));
   llvm::LoopUnswitching loopUnswitching(llvm::LoopUnswitchingDefaultHeuristic::create());
   jlm::util::StatisticsCollector statisticsCollector;
   loopUnswitching.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
   cne.Run(rm, statisticsCollector);
-  ivr.Run(rm, statisticsCollector);
+  invariantValueRedirection.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
   cne.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
@@ -207,7 +209,8 @@ rename_delta(rvsdg::DeltaNode * odn)
           name,
           llvm::Linkage::externalLinkage,
           "",
-          op->constant()));
+          op->constant(),
+          op->getAlignment()));
   /* add dependencies */
   rvsdg::SubstitutionMap rmap;
   for (auto ctxVar : odn->GetContextVars())
@@ -303,7 +306,9 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               oldGraphImport->ValueType(),
               oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
-              oldGraphImport->linkage());
+              oldGraphImport->linkage(),
+              oldGraphImport->isConstant(),
+              oldGraphImport->getAlignment());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
@@ -331,7 +336,9 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
               op->Type(),
               llvm::PointerType::Create(),
               op->name(),
-              llvm::Linkage::externalLinkage);
+              llvm::Linkage::externalLinkage,
+              op->constant(),
+              op->getAlignment());
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
@@ -354,7 +361,9 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           op.Type(),
           op.Type(),
           op.name(),
-          llvm::Linkage::externalLinkage); // TODO: change linkage?
+          llvm::Linkage::externalLinkage, // TODO: change linkage?
+          false,
+          1);
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "
@@ -378,7 +387,8 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   auto predicateCorrelation = std::make_shared<llvm::PredicateCorrelation>();
   auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
   auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
-  auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
+  auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>(
+      llvm::InvariantValueRedirection::Configuration());
   auto loopUnswitching =
       std::make_shared<llvm::LoopUnswitching>(llvm::LoopUnswitchingDefaultHeuristic::create());
   auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();

@@ -136,22 +136,34 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        1);
 
-    Outputs_.Global =
-        &LlvmGraphImport::Create(rvsdg, intType, pointerType, "global", Linkage::externalLinkage);
+    Outputs_.Global = &LlvmGraphImport::Create(
+        rvsdg,
+        intType,
+        pointerType,
+        "global",
+        Linkage::externalLinkage,
+        false,
+        4);
     Outputs_.GlobalShort = &LlvmGraphImport::Create(
         rvsdg,
         shortType,
         pointerType,
         "globalShort",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
     Outputs_.Array = &LlvmGraphImport::Create(
         rvsdg,
         intArrayType,
         pointerType,
         "array",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
 
     // Setup the function "func"
     {
@@ -222,8 +234,11 @@ private:
       memoryState = storeOutputs[0];
 
       // Get bytePtr by calling getPtr()
-      const auto callOutputs =
-          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
+      const auto callOutputs = CallOperation::Create(
+          getPtrCtxVar,
+          getPtrFuncType,
+          AttributeList::createEmptyList(),
+          { ioState, memoryState });
       Outputs_.BytePtr = callOutputs[0];
       ioState = callOutputs[1];
       memoryState = callOutputs[2];

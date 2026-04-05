@@ -97,13 +97,17 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
       loadFunctionType,
       loadFunctionType,
       "reference_load",
-      llvm::Linkage::externalLinkage);
+      llvm::Linkage::externalLinkage,
+      false,
+      1);
   auto & reference_store = llvm::LlvmGraphImport::Create(
       graph,
       loadFunctionType,
       loadFunctionType,
       "reference_store",
-      llvm::Linkage::externalLinkage);
+      llvm::Linkage::externalLinkage,
+      false,
+      1);
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -116,7 +120,9 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
       allocaFunctionType,
       allocaFunctionType,
       "reference_alloca",
-      llvm::Linkage::externalLinkage);
+      llvm::Linkage::externalLinkage,
+      false,
+      1);
 
   instrument_ref(
       root,
@@ -182,6 +188,7 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           load_func,
           loadFunctionType,
+          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
@@ -216,6 +223,7 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           alloca_func,
           allocaFunctionType,
+          llvm::AttributeList::createEmptyList(),
           { addr, sizeNode.output(0), ioState, memstate });
       for (auto ou : old_users)
       {
@@ -245,6 +253,7 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           store_func,
           storeFunctionType,
+          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state after the store to the new memstate from the call operation
       for (auto user : oldUsers)

@@ -10,7 +10,6 @@ libllvm_SOURCES = \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
-    jlm/llvm/frontend/LlvmInstructionConversion.cpp \
     jlm/llvm/frontend/LlvmModuleConversion.cpp \
     \
     jlm/llvm/ir/aggregation.cpp \
@@ -67,6 +66,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
+    jlm/llvm/opt/LoopStrengthReduction.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
@@ -113,6 +113,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
+    jlm/llvm/opt/LoopStrengthReduction.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
@@ -120,8 +121,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/StoreValueForwarding.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
-    jlm/llvm/frontend/LlvmConversionContext.hpp \
-    jlm/llvm/frontend/LlvmInstructionConversion.hpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
     jlm/llvm/ir/operators.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
@@ -169,6 +168,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests.cpp \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests.cpp \
     \
+    tests/jlm/llvm/frontend/llvm/CastingTests.cpp \
     tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests.cpp \
     tests/jlm/llvm/frontend/llvm/LoadTests.cpp \
     tests/jlm/llvm/frontend/llvm/MemCpyTests.cpp \
@@ -231,6 +231,7 @@ tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/opt/IfConversionTests.cpp \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
     tests/jlm/llvm/opt/LoadChainSeparationTests.cpp \
+    tests/jlm/llvm/opt/LoopStrengthReductionTests.cpp \
     tests/jlm/llvm/opt/LoopUnswitchingTests.cpp \
     tests/jlm/llvm/opt/NodeReductionTests.cpp \
     tests/jlm/llvm/opt/PredicateCorrelationTests.cpp \

@@ -28,7 +28,8 @@ RunInvariantValueRedirection(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
-  jlm::llvm::InvariantValueRedirection invariantValueRedirection;
+  jlm::llvm::InvariantValueRedirection::Configuration configuration;
+  jlm::llvm::InvariantValueRedirection invariantValueRedirection(std::move(configuration));
   invariantValueRedirection.Run(rvsdgModule, statisticsCollector);
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
@@ -202,6 +203,7 @@ TEST(InvariantValueRedirectionTests, TestCall)
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
+        AttributeList::createEmptyList(),
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
 
     lambdaOutputTest2 = lambdaNode->finalize(outputs(&callNode));
@@ -297,6 +299,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
+        AttributeList::createEmptyList(),
         { controlResult, xArgument, ioStateArgument, callEntryMergeNode.output(0) });
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
@@ -399,6 +402,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest,
         functionType,
+        AttributeList::createEmptyList(),
         { xArgument, ioStateArgument, callEntryMergeNode.output(0) });
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(

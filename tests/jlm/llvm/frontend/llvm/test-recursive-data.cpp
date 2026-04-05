@@ -22,10 +22,10 @@ TEST(RecursiveDataTests, test)
   auto pointerType = PointerType::Create();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  auto d0 = DataNode::Create(im.ipgraph(), "d0", vt, Linkage::externalLinkage, "", false);
+  auto d0 = DataNode::Create(im.ipgraph(), "d0", vt, Linkage::externalLinkage, "", false, 4);
 
-  auto d1 = DataNode::Create(im.ipgraph(), "d1", vt, Linkage::externalLinkage, "", false);
-  auto d2 = DataNode::Create(im.ipgraph(), "d2", vt, Linkage::externalLinkage, "", false);
+  auto d1 = DataNode::Create(im.ipgraph(), "d1", vt, Linkage::externalLinkage, "", false, 4);
+  auto d2 = DataNode::Create(im.ipgraph(), "d2", vt, Linkage::externalLinkage, "", false, 4);
 
   auto v0 = im.create_global_value(d0);
   auto v1 = im.create_global_value(d1);

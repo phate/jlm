@@ -795,7 +795,8 @@ TEST(JlmToMlirToJlmTests, TestDelta)
             "non-constant-delta",
             Linkage::externalLinkage,
             "section",
-            false));
+            false,
+            4));
 
     auto bitConstant = &jlm::rvsdg::BitConstantOperation::create(*delta1->subregion(), { 32, 1 });
     delta1->finalize(bitConstant);
@@ -807,7 +808,8 @@ TEST(JlmToMlirToJlmTests, TestDelta)
             "constant-delta",
             Linkage::externalLinkage,
             "section",
-            true));
+            true,
+            4));
     auto bitConstant2 = &jlm::rvsdg::BitConstantOperation::create(*delta2->subregion(), { 32, 1 });
     delta2->finalize(bitConstant2);
 
@@ -1421,7 +1423,9 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         functionType,
         functionType,
         "test",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        1);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1496,7 +1500,9 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
         "test",
-        Linkage::externalLinkage);
+        Linkage::externalLinkage,
+        false,
+        4);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

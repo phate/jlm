@@ -40,6 +40,7 @@ TEST(IOStateEliminationTests, testCall)
   auto & callNode = CallOperation::CreateNode(
       functionCv.inner,
       functionType,
+      AttributeList::createEmptyList(),
       { ioStateArgument, memoryStateArgument });
 
   const auto lambdaOutput = lambdaNode->finalize({ callNode.output(0), callNode.output(1) });

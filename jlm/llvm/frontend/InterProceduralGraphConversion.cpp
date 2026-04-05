@@ -988,8 +988,8 @@ ConvertFunctionNode(
         functionNode.GetFunctionType(),
         functionNode.name(),
         functionNode.linkage(),
-        true // Function imports are regarded as constant
-    );
+        true, // Function imports are regarded as constant
+        1);
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1032,7 +1032,8 @@ ConvertDataNode(
           PointerType::Create(),
           dataNode.name(),
           dataNode.linkage(),
-          dataNode.constant());
+          dataNode.constant(),
+          dataNode.getAlignment());
     }
 
     /*
@@ -1040,12 +1041,13 @@ ConvertDataNode(
      */
     auto deltaNode = rvsdg::DeltaNode::Create(
         &region,
-        llvm::DeltaOperation::Create(
+        DeltaOperation::Create(
             dataNode.GetValueType(),
             dataNode.name(),
             dataNode.linkage(),
             dataNode.Section(),
-            dataNode.constant()));
+            dataNode.constant(),
+            dataNode.getAlignment()));
     auto & outerVariableMap = regionalizedVariableMap.GetTopVariableMap();
     regionalizedVariableMap.PushRegion(*deltaNode->subregion());
 

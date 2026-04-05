@@ -1471,7 +1471,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
 
   const auto & delta = jlm::rvsdg::DeltaNode::Create(
       &graph.GetRootRegion(),
-      DeltaOperation::Create(intArrayType, "", Linkage::externalLinkage, "", false));
+      DeltaOperation::Create(intArrayType, "", Linkage::externalLinkage, "", false, 4));
 
   const auto & arrayC1 = IntegerConstantOperation::Create(*delta->subregion(), 32, 1);
   const auto & arrayC2 = IntegerConstantOperation::Create(*delta->subregion(), 32, 2);
@@ -1589,7 +1589,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
 
   const auto & delta = jlm::rvsdg::DeltaNode::Create(
       &graph.GetRootRegion(),
-      DeltaOperation::Create(intStructType, "", Linkage::externalLinkage, "", false));
+      DeltaOperation::Create(intStructType, "", Linkage::externalLinkage, "", false, 4));
 
   const auto & structC1 = IntegerConstantOperation::Create(*delta->subregion(), 32, 1);
   const auto & structC2 = IntegerConstantOperation::Create(*delta->subregion(), 32, 2);

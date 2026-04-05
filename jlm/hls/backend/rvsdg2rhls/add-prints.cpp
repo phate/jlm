@@ -59,8 +59,14 @@ convert_prints(llvm::LlvmRvsdgModule & rm)
   // TODO: make this less hacky by using the correct state types
   auto fct =
       rvsdg::FunctionType::Create({ rvsdg::BitType::Create(64), rvsdg::BitType::Create(64) }, {});
-  auto & printf =
-      llvm::LlvmGraphImport::Create(graph, fct, fct, "printnode", llvm::Linkage::externalLinkage);
+  auto & printf = llvm::LlvmGraphImport::Create(
+      graph,
+      fct,
+      fct,
+      "printnode",
+      llvm::Linkage::externalLinkage,
+      false,
+      1);
   convert_prints(root, &printf, fct);
 }
 
@@ -91,7 +97,11 @@ convert_prints(
         JLM_ASSERT(bt);
         val = &llvm::ZExtOperation::Create(*val, rvsdg::BitType::Create(64));
       }
-      llvm::CallOperation::Create(printf_local, functionType, { constantNode.output(0), val });
+      llvm::CallOperation::Create(
+          printf_local,
+          functionType,
+          llvm::AttributeList::createEmptyList(),
+          { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());
       jlm::rvsdg::remove(node);
     }
