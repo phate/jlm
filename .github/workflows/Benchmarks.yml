@@ -39,7 +39,6 @@ jobs:
             cactuBSSN,
             x264,
             blender,
-            imagick,
             nab,
             xz,
             emacs,
