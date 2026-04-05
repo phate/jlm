@@ -100,7 +100,7 @@ cd "${BENCHMARK_DIR}"
 git checkout ${GIT_COMMIT}
 
 if [[ "${APT_INSTALL_DEPS}" = true ]]; then
-	./apt-install-dependencies.sh
+	sudo ./apt-install-dependencies.sh
 fi
 
 if [ "${CLEAN}" = true ]; then
