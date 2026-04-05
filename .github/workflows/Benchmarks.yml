@@ -45,7 +45,6 @@ jobs:
             emacs,
             ghostscript,
             gdb,
-            sendmail,
           ]
     runs-on: ubuntu-24.04
     steps:
