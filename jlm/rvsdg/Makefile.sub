@@ -83,26 +83,26 @@ librvsdg_HEADERS = \
 $(eval $(call common_library,librvsdg))
 
 tests/jlm/rvsdg/run-librvsdg-tests_SOURCES = \
-    tests/jlm/rvsdg/bitstring/bitstring.cpp \
+    tests/jlm/rvsdg/bitstring/BitstringTests.cpp \
     tests/jlm/rvsdg/ArgumentTests.cpp \
+    tests/jlm/rvsdg/BinaryTests.cpp \
+    tests/jlm/rvsdg/BottomUpTests.cpp \
+    tests/jlm/rvsdg/CseTests.cpp \
+    tests/jlm/rvsdg/GammaTests.cpp \
+    tests/jlm/rvsdg/GraphTests.cpp \
     tests/jlm/rvsdg/InputTests.cpp \
     tests/jlm/rvsdg/MatchTypeTests.cpp \
+    tests/jlm/rvsdg/NodeTests.cpp \
     tests/jlm/rvsdg/OutputTests.cpp \
     tests/jlm/rvsdg/RegionTests.cpp \
     tests/jlm/rvsdg/ResultTests.cpp \
     tests/jlm/rvsdg/SimpleOperationTests.cpp \
-    tests/jlm/rvsdg/test-binary.cpp \
-    tests/jlm/rvsdg/test-bottomup.cpp \
-    tests/jlm/rvsdg/test-cse.cpp \
-    tests/jlm/rvsdg/test-gamma.cpp \
-    tests/jlm/rvsdg/test-graph.cpp \
-    tests/jlm/rvsdg/test-nodes.cpp \
-    tests/jlm/rvsdg/test-theta.cpp \
-    tests/jlm/rvsdg/test-topdown.cpp \
-    tests/jlm/rvsdg/test-typemismatch.cpp \
-    tests/jlm/rvsdg/TestStructuralNode.cpp \
+    tests/jlm/rvsdg/StructuralNodeTests.cpp \
+    tests/jlm/rvsdg/ThetaTests.cpp \
+    tests/jlm/rvsdg/TopDownTests.cpp \
     tests/jlm/rvsdg/TraceTests.cpp \
     tests/jlm/rvsdg/TransformationSequenceTests.cpp \
+    tests/jlm/rvsdg/TypeMismatchTests.cpp \
     tests/jlm/rvsdg/UnaryOperationTests.cpp \
 
 tests/jlm/rvsdg/run-librvsdg-tests_LIBS = librvsdg libutil
