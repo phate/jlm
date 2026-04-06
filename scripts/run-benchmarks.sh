@@ -14,9 +14,9 @@ BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/benchmarks
 
 # Execute benchmarks in parallel by default
 if [[ "$OSTYPE" == "darwin"* ]]; then
-	PARALLEL_THREADS=`sysctl -n hw.ncpu`
+	NUM_PARALLEL_THREADS=`sysctl -n hw.ncpu`
 else
-	PARALLEL_THREADS=`nproc`
+	NUM_PARALLEL_THREADS=`nproc`
 fi
 
 APT_INSTALL_DEPS=false
@@ -36,7 +36,7 @@ function usage()
 	echo "                        Default=[${BENCHMARK_DIR}]"
 	echo "  --apt-install-deps    For CI runner or Ubuntu 24. Installs apt package dependencies before running."
  	echo "  --parallel #THREADS   The number of threads to run in parallel."
-	echo "                        Default=[${PARALLEL_THREADS}]"
+	echo "                        Default=[${NUM_PARALLEL_THREADS}]"
 	echo "  --benchmark BENCH     Only extract and build a specific benchamrk."
 	echo "                        Default=[ALL]"
 	echo "                        BENCH=[polybench|spec|emacs|ghostscript|gdb|sendmail]"
@@ -62,7 +62,7 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--parallel)
 			shift
-			PARALLEL_THREADS=$1
+			NUM_PARALLEL_THREADS=$1
 			shift
 			;;
 		--benchmark)
@@ -108,4 +108,4 @@ if [ "${CLEAN}" = true ]; then
 	exit  0
 fi
 
-./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${PARALLEL_THREADS}" ${BENCHMARK}
+./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${BENCHMARK}
