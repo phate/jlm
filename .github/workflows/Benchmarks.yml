@@ -41,7 +41,6 @@ jobs:
             blender,
             nab,
             xz,
-            emacs,
             ghostscript,
             gdb,
           ]
