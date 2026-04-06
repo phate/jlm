@@ -94,15 +94,15 @@ $(eval $(call common_library,libhls))
 tests/jlm/hls/run-libhls-tests_SOURCES = \
     tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/ForkTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/GammaTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/LoopPassthroughTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/SinkInsertionTests.cpp \
-    tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough.cpp \
-    tests/jlm/hls/backend/rvsdg2rhls/TestFork.cpp \
-    tests/jlm/hls/backend/rvsdg2rhls/TestGamma.cpp \
-    tests/jlm/hls/backend/rvsdg2rhls/TestTheta.cpp \
+    tests/jlm/hls/backend/rvsdg2rhls/ThetaTests.cpp \
     tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests.cpp \
     tests/jlm/hls/opt/IOBarrierRemovalTests.cpp \
     tests/jlm/hls/opt/IOStateEliminationTests.cpp \
