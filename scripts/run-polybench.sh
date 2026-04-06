@@ -78,7 +78,7 @@ fi
 
 export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
-#git checkout ${GIT_COMMIT}
+git checkout ${GIT_COMMIT}
 make clean
 echo "make ${JLC} -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}"
 make ${JLC} -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}
