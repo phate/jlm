@@ -52,10 +52,10 @@ libtooling_HEADERS = \
 $(eval $(call common_library,libtooling))
 
 tests/jlm/tooling/run-libtooling-tests_SOURCES = \
-    tests/jlm/tooling/TestJlcCommandGraphGenerator.cpp \
-    tests/jlm/tooling/TestJlcCommandLineParser.cpp \
-    tests/jlm/tooling/TestJlmOptCommand.cpp \
-    tests/jlm/tooling/TestJlmOptCommandLineParser.cpp
+    tests/jlm/tooling/JlcCommandGraphGeneratorTests.cpp \
+    tests/jlm/tooling/JlcCommandLineParserTests.cpp \
+    tests/jlm/tooling/JlmOptCommandLineParserTests.cpp \
+    tests/jlm/tooling/JlmOptCommandTests.cpp \
 
 tests/jlm/tooling/run-libtooling-tests_LIBS = \
     libtooling \
