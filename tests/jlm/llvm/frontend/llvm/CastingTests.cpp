@@ -20,14 +20,14 @@
 
 #include <algorithm>
 
-class VectorizedFixture : public testing::TestWithParam<int>
+class LlvmFrontendCastingFixture : public testing::TestWithParam<int>
 {
 };
 
-TEST_P(VectorizedFixture, AllIntegerCasts)
+TEST_P(LlvmFrontendCastingFixture, AllIntegerCasts)
 {
   /**
-   * Creates a function equivalent to the following C code:
+   * Creates a function equivalent to the following C code in LLVM IR:
    *
    * <SIZE x i8> f(uint32_t x) {
    *   uint64_t zext = x;
@@ -196,4 +196,7 @@ TEST_P(VectorizedFixture, AllIntegerCasts)
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(CastingTests, VectorizedFixture, testing::Values(0, 1, 2, 4, 8));
+INSTANTIATE_TEST_SUITE_P(
+    LlvmFrontendCastingTests,
+    LlvmFrontendCastingFixture,
+    testing::Values(0, 1, 2, 4, 8));
