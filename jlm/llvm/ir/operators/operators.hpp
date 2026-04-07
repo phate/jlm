@@ -2090,6 +2090,10 @@ public:
       : SimpleOperation({ operand }, { result }),
         op_(op.copy())
   {
+    // Bit casts can convert between vectors of different length, or between scalars and vectors,
+    // so it should not be seen as a vector operation performed lane-wise.
+    JLM_ASSERT(!is<BitCastOperation>(op));
+
     if (operand->type() != *op.argument(0))
     {
       auto received = operand->type().debug_string();

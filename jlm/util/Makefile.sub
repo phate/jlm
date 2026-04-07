@@ -30,20 +30,20 @@ $(eval $(call common_library,libutil))
 
 tests/jlm/util/run-libutil-tests_SOURCES = \
     tests/jlm/util/AnnotationMapTests.cpp \
+    tests/jlm/util/BijectiveMapTests.cpp \
+    tests/jlm/util/DisjointSetTests.cpp \
+    tests/jlm/util/FileTests.cpp \
+    tests/jlm/util/GraphWriterTests.cpp \
+    tests/jlm/util/HashSetTests.cpp \
+    tests/jlm/util/IntrusiveHashTests.cpp \
+    tests/jlm/util/IntrusiveListTests.cpp \
     tests/jlm/util/IteratorWrapperTests.cpp \
+    tests/jlm/util/MathTests.cpp \
     tests/jlm/util/ProgramTests.cpp \
-    tests/jlm/util/test-disjointset.cpp \
-    tests/jlm/util/test-intrusive-hash.cpp \
-    tests/jlm/util/test-intrusive-list.cpp \
-    tests/jlm/util/TestBijectiveMap.cpp \
-    tests/jlm/util/TestFile.cpp \
-    tests/jlm/util/TestGraphWriter.cpp \
-    tests/jlm/util/TestHashSet.cpp \
-    tests/jlm/util/TestMath.cpp \
-    tests/jlm/util/TestStatistics.cpp \
-    tests/jlm/util/TestTarjanScc.cpp \
-    tests/jlm/util/TestTimer.cpp \
-    tests/jlm/util/TestWorklist.cpp \
+    tests/jlm/util/StatisticsTests.cpp \
+    tests/jlm/util/TarjanSccTests.cpp \
+    tests/jlm/util/TimerTests.cpp \
+    tests/jlm/util/WorklistTests.cpp \
 
 tests/jlm/util/run-libutil-tests_LIBS = libutil
 $(eval $(call common_test,tests/jlm/util/run-libutil-tests))
