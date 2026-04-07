@@ -158,10 +158,13 @@ private:
 
   /**
    * Converts the given operation, with the given arguments, to an LLVM instruction.
-   * If the operation is wrapped in a surrounding operation, the surrounding operation
-   * is given as the \p originalOp.
-   * @param op the operation being converted
-   * @param originalOp the
+   * If the operation is wrapped in surrounding operations, it also takes the original operation,
+   * for example when converting an addition operation wrapped in a lane-wise vector operation.
+   * @param op the operation to convert.
+   * @param originalOp the top-level operation containing \p op. Otherwise \p op itself.
+   * @param arguments the variables representing each argument of the operation.
+   * @param builder the LLVM IR builder to append the created instructions to.
+   * @return the LLVM Value representing the output of the created instruction.
    */
   ::llvm::Value *
   convert_operation(

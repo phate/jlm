@@ -888,7 +888,7 @@ IpGraphToLlvmConverter::convert(
 template<::llvm::Instruction::CastOps OPCODE>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_cast(
-    const rvsdg::SimpleOperation & op,
+    [[maybe_unused]] const rvsdg::SimpleOperation & op,
     const rvsdg::SimpleOperation & originalOp,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
