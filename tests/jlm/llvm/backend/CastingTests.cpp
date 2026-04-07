@@ -3,8 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/simple-node.hpp"
-#include "jlm/util/common.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
@@ -18,12 +16,14 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/Statistics.hpp>
 
-#include <algorithm>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
+
+#include <algorithm>
 
 class LlvmBackendCastingFixture : public testing::TestWithParam<int>
 {
