@@ -154,10 +154,10 @@ LoopStrengthReduction::ProcessRegion(rvsdg::Region & region)
       if (const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(structuralNode))
       {
         ReduceStrength(*thetaNode);
+        thetaNode->subregion()->prune(false);
       }
     }
   }
-  region.prune(false);
 }
 
 void
