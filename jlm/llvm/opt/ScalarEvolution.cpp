@@ -1745,8 +1745,14 @@ ScalarEvolution::ApplyMulFolding(SCEV * lhsOperand, SCEV * rhsOperand, rvsdg::Ou
       {
         return chrec->Clone();
       }
+
+      if (constant->GetValue() == 0)
+      {
+        // Fold to zero
+        return SCEVConstant::Create(0);
+      }
     }
-    auto newChrec = SCEVChainRecurrence::Create(*chrec->GetLoop());
+    auto newChrec = SCEVChainRecurrence::Create(*chrec->GetLoop(), output);
     const auto chrecOperands = chrec->GetOperands();
 
     for (auto & operand : chrecOperands)
