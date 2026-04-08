@@ -54,27 +54,27 @@ TEST(AttributeConversionTests, TestAttributeListConversion)
 
   // Assert
   auto jlmFunctionAttributes = jlmAttributeList.getFunctionAttributes();
-  EXPECT_EQ(jlmFunctionAttributes.numAttributes(), 1);
+  EXPECT_EQ(jlmFunctionAttributes.numAttributes(), 1u);
   EXPECT_EQ(
       *jlmFunctionAttributes.EnumAttributes().begin(),
       jlm::llvm::EnumAttribute(jlm::llvm::Attribute::kind::NoUnwind));
 
   auto jlmReturnAttributes = jlmAttributeList.getReturnAttributes();
-  EXPECT_EQ(jlmReturnAttributes.numAttributes(), 1);
+  EXPECT_EQ(jlmReturnAttributes.numAttributes(), 1u);
   EXPECT_EQ(
       *jlmReturnAttributes.EnumAttributes().begin(),
       jlm::llvm::EnumAttribute(jlm::llvm::Attribute::kind::NoReturn));
 
-  EXPECT_EQ(jlmAttributeList.getParameterAttributes().size(), 2);
+  EXPECT_EQ(jlmAttributeList.getParameterAttributes().size(), 2u);
   auto jlmParameter0Attributes = jlmAttributeList.getParameterAttributes()[0];
   auto jlmParameter1Attributes = jlmAttributeList.getParameterAttributes()[1];
 
-  EXPECT_EQ(jlmParameter0Attributes.numAttributes(), 1);
+  EXPECT_EQ(jlmParameter0Attributes.numAttributes(), 1u);
   EXPECT_EQ(
       *jlmParameter0Attributes.EnumAttributes().begin(),
       jlm::llvm::EnumAttribute(jlm::llvm::Attribute::kind::ZExt));
 
-  EXPECT_EQ(jlmParameter1Attributes.numAttributes(), 1);
+  EXPECT_EQ(jlmParameter1Attributes.numAttributes(), 1u);
   EXPECT_EQ(
       *jlmParameter1Attributes.EnumAttributes().begin(),
       jlm::llvm::EnumAttribute(jlm::llvm::Attribute::kind::NoUndef));

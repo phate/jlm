@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
@@ -158,31 +159,39 @@ LoopStrengthReduction::ReduceStrength(rvsdg::ThetaNode & thetaNode)
   //
   // In short, we look for candidate operations and replace them with a new induction variable.
   //
-  // A candidate operation must satisfy three conditions:
-  //   1. The statement is a linear combinations of loop variables and constants
-  //   2. Its RVSDG subtree contains at least one multiplication node (IntegerMulOperation),
-  //      ensuring we only reduce operations that actually benefit from strength reduction.
-  //   3. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
-  //      can be expressed as a start value plus a constant step per iteration. This is what
-  //      makes it a valid induction variable candidate.
+  // A candidate operation must satisfy four conditions:
+  //   1. The operation is either arithmetic (+, * or -) or a GEP operation
+  //   2. The SCEV tree of the operation is a linear combination of loop variables and constants
+  //   3. For arithmetic operations, the subtree must contain at least one multiplication node
+  //      (IntegerMulOperation), ensuring we only reduce operations that actually benefit from
+  //      strength reduction.
+  //   4. Its SCEV evaluates to a chain recurrence of the form {a,+,b}, meaning the value
+  //      can be expressed as a start value plus a constant step per iteration. This is what makes
+  //      it a valid induction variable candidate. For GEP operations, a, is the base
+  //      address of the array we are indexing into.
   //
   // Modifying the RVSDG is done as follows:
-  // For a variable j defined as a linear combination of loop variables and constants with
-  // chain recurrence {a,+,b} where b can also be 0 (invariant):
-  //   1. Add a new loop variable s with input value a
-  //   2. Divert all the users of j to use the pre value of s
-  // If b is not 0:
-  //   3. Create a new constant operation with value b
-  //   4. Insert an add-node which takes as inputs the pre value of s and the constant b
-  //   5. Set the post value of s to the output of the new add-node
   //
-  // Dead node elimination handles the removal of the dangling node
+  // For an arithmetic candidate operation j with recurrence {a,+,b}:
+  //   1. Introduce a new loop variable initialized to the base value a
+  //   2. Replace all uses of j with the new loop variable
+  // If b is not 0:
+  //   3. Update the new loop variable each iteration by incrementing it by b
+  //
+  // For a GEP which has the recurrence {Init(a),+,b}, where Init(a) is the SCEV for the base
+  // address loop variable:
+  //   1. Introduce a new loop variable initialized to the base address
+  //   2. Replace all uses of the original GEP with the new loop variable
+  //   3. Update the new loop variable each iteration by advancing it by offset b using a new GEP
+  // In the case where b is invariant, the GEP can be eliminated entirely.
 
   // We traverse the nodes in the theta node in a bottom-up manner starting at the origin output of
   // the post values for the loop variables. We look for candidate operations and add them to the
   // stack of operations to be reduced.
   util::HashSet<rvsdg::Output *> candidateOperations;
   util::HashSet<rvsdg::Output *> visited;
+  DependsOnIVMemo_.clear();
+  ContainsMulMemo_.clear();
   for (const auto loopVar : thetaNode.GetLoopVars())
   {
     ProcessOutput(*loopVar.post->origin(), thetaNode, candidateOperations, visited);
@@ -204,15 +213,17 @@ LoopStrengthReduction::ProcessOutput(
   if (!visited.insert(&output))
     return;
 
-  const auto & [simpleNode, operation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerBinaryOperation>(output);
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
 
   if (!simpleNode)
     return;
 
-  // Multiplication, addition and subtraction are candidates for strength reduction
-  if (rvsdg::is<IntegerMulOperation>(*operation) || rvsdg::is<IntegerAddOperation>(*operation)
-      || rvsdg::is<IntegerSubOperation>(*operation))
+  // Multiplication, addition, subtraction, shl and GEP operations are candidates for strength
+  // reduction
+  if (const auto & operation = simpleNode->GetOperation();
+      rvsdg::is<IntegerMulOperation>(operation) || rvsdg::is<IntegerAddOperation>(operation)
+      || rvsdg::is<IntegerSubOperation>(operation) || rvsdg::is<IntegerShlOperation>(operation)
+      || rvsdg::is<GetElementPtrOperation>(operation))
   {
     if (SCEVMap_.find(&output) == SCEVMap_.end())
       return;
@@ -237,53 +248,60 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   JLM_ASSERT(ChrecMap_.find(&output) != ChrecMap_.end());
   auto & chrec = ChrecMap_.at(&output);
 
-  // We only support invariant and affine recurrences (1-2 operands) that are not unknown
-  if (SCEVChainRecurrence::IsUnknown(*chrec) || chrec->NumOperands() > 2)
-    return;
+  if (const auto & bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type()))
+  {
+    ReplaceArithmeticOperation(chrec, output, thetaNode, bitType);
+  }
+  else if (const auto & pointerType = std::dynamic_pointer_cast<const PointerType>(output.Type()))
+  {
+    ReplaceGEPOperation(chrec, output, thetaNode, pointerType);
+  }
+  else
+  {
+    throw std::logic_error("Invalid output type in ReplaceCandidateOperation!");
+  }
+}
 
-  const auto & intType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type());
-  if (!intType)
-    return;
+void
+LoopStrengthReduction::ReplaceArithmeticOperation(
+    std::unique_ptr<SCEVChainRecurrence> & chrec,
+    rvsdg::Output & output,
+    rvsdg::ThetaNode & thetaNode,
+    const std::shared_ptr<const rvsdg::BitType> & bitType)
+{
+  JLM_ASSERT(chrec->NumOperands() <= 2);
 
-  const auto numBits = intType->nbits();
+  const auto numBits = bitType->nbits();
 
   const auto & startSCEV = chrec->GetStartValue();
   const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
 
-  if (!startConstant)
-    return;
+  JLM_ASSERT(startConstant);
 
   const auto startValue = startConstant->GetValue();
 
   if (SCEVChainRecurrence::IsInvariant(*chrec))
   {
-    // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable)
+    // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable).
+    // We can hoist this out of the loop.
     const auto & startValueNode =
         IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
-    const auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
+    const auto hoistedValue = thetaNode.AddLoopVar(startValueNode.output(0));
 
-    output.divert_users(newIV.pre);
-
-    // Insert the chrec for the new induction variable
-    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
-    // analysis. In the future, we would want to insert this into the "global" chrec map so other
-    // analyses and transformations can use it as well.
-    ChrecMap_[newIV.pre] = std::move(chrec);
-
-    Context_->IncrementOperationsReducedCount(thetaNode);
+    output.divert_users(hoistedValue.pre);
+    ChrecMap_[hoistedValue.pre] = std::move(chrec);
   }
   else if (SCEVChainRecurrence::IsAffine(*chrec))
   {
     // Chrec has the form {a,+,b} which is a basic induction variable
     const auto & stepPtr = chrec->GetStep();
-    if (!stepPtr.has_value())
-      return;
+
+    JLM_ASSERT(stepPtr.has_value());
 
     const auto & stepSCEV = *stepPtr;
     const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
 
-    if (!stepConstant)
-      return;
+    JLM_ASSERT(stepConstant);
 
     const auto & startValueNode =
         IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
@@ -299,62 +317,208 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     newIV.post->divert_to(newAddNode.output(0));
     output.divert_users(newIV.pre);
 
+    // Insert the chrec for the new induction variable
+    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
+    // analysis. In the future, we would want to insert this into the "global" chrec map so other
+    // analyses and transformations can use it as well.
     ChrecMap_[newIV.pre] = std::move(chrec);
-
-    Context_->IncrementOperationsReducedCount(thetaNode);
   }
+  else
+  {
+    throw std::logic_error("Invalid chrec size in ReplaceArithmeticOperation!");
+  }
+
+  Context_->IncrementOperationsReducedCount(thetaNode);
+}
+
+void
+LoopStrengthReduction::ReplaceGEPOperation(
+    std::unique_ptr<SCEVChainRecurrence> & chrec,
+    rvsdg::Output & output,
+    rvsdg::ThetaNode & thetaNode,
+    const std::shared_ptr<const PointerType> & pointerType)
+{
+  JLM_ASSERT(chrec->NumOperands() <= 2);
+
+  const auto & baseAddressSCEV = chrec->GetStartValue();
+  const auto & baseAddressInit = dynamic_cast<const SCEVInit *>(baseAddressSCEV);
+
+  JLM_ASSERT(baseAddressInit);
+
+  const auto baseAddressPointer = baseAddressInit->GetPrePointer();
+  const auto baseAddressLoopVar = thetaNode.MapPreLoopVar(*baseAddressPointer);
+
+  if (SCEVChainRecurrence::IsInvariant(*chrec))
+  {
+    // The offset for the address computed by the GEP is always zero. We can replace the GEP
+    // operation with just the base address
+    output.divert_users(baseAddressLoopVar.pre);
+  }
+  else if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    // Chrec has the form {Init(a),+,b} where Init(a) is the (initial) value of the base address
+    // and b is the offset (in bytes).
+    const auto & stepPtr = chrec->GetStep();
+
+    JLM_ASSERT(stepPtr.has_value());
+
+    const auto & stepSCEV = *stepPtr;
+    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+
+    JLM_ASSERT(stepConstant);
+
+    const auto newIV = thetaNode.AddLoopVar(baseAddressLoopVar.input->origin());
+
+    const auto stepValue = stepConstant->GetValue();
+    const auto & stepValueNode =
+        IntegerConstantOperation::Create(*thetaNode.subregion(), 64, stepValue);
+
+    auto newGep = GetElementPtrOperation::Create(
+        newIV.pre,
+        { stepValueNode.output(0) },
+        rvsdg::BitType::Create(8), // Byte
+        pointerType);
+
+    newIV.post->divert_to(newGep);
+    output.divert_users(newIV.pre);
+
+    ChrecMap_[newIV.pre] = std::move(chrec);
+  }
+  else
+  {
+    throw std::logic_error("Invalid chrec size in ReplaceGepOperation!");
+  }
+
+  Context_->IncrementOperationsReducedCount(thetaNode);
 }
 
 bool
-LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output) const
+LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
 {
-  const auto & scevTree = *SCEVMap_.at(&output);
-  // Accept any linear combination that involves multiplication somewhere in the tree
-  return IsLinearCombination(scevTree) && ContainsMul(output);
+  if (!DependsOnInductionVariable(output))
+    return false;
+
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+
+  JLM_ASSERT(simpleNode);
+
+  const auto & simpleOperation = simpleNode->GetOperation();
+
+  // We only reduce arithmetic operations if they contain a multiplication somewhere
+  if (rvsdg::is<IntegerBinaryOperation>(simpleOperation) && !ContainsMul(output))
+    return false;
+
+  const auto & chrec = ChrecMap_.at(&output);
+
+  // We only support invariant and affine recurrences (1-2 operands) that are not unknown
+  if (SCEVChainRecurrence::IsUnknown(*chrec))
+    return false;
+
+  if (chrec->NumOperands() > 2)
+    return false;
+
+  for (const auto operand : chrec->GetOperands())
+  {
+    if (dynamic_cast<const SCEVNAryExpr *>(operand))
+      return false;
+  }
+
+  const auto & startSCEV = chrec->GetStartValue();
+
+  if (rvsdg::is<GetElementPtrOperation>(simpleOperation))
+  {
+    const auto & startInit = dynamic_cast<const SCEVInit *>(startSCEV);
+    if (!startInit)
+      return false;
+  }
+  else
+  {
+    const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
+    if (!startConstant)
+      return false;
+  }
+
+  if (SCEVChainRecurrence::IsAffine(*chrec))
+  {
+    const auto & stepPtr = chrec->GetStep();
+
+    JLM_ASSERT(stepPtr.has_value());
+
+    const auto & stepSCEV = *stepPtr;
+    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+    if (!stepConstant)
+      return false;
+  }
+
+  return true;
 }
 
 bool
-LoopStrengthReduction::IsLinearCombination(const SCEV & scev)
+LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
 {
-  if (dynamic_cast<const SCEVConstant *>(&scev))
-    return true;
-  if (dynamic_cast<const SCEVPlaceholder *>(&scev))
-    return true;
+  if (const auto it = DependsOnIVMemo_.find(&output); it != DependsOnIVMemo_.end())
+    return it->second;
 
-  // Adding together two linear combinations results in a new linear combination
-  if (const auto add = dynamic_cast<const SCEVAddExpr *>(&scev))
-    return IsLinearCombination(*add->GetLeftOperand())
-        && IsLinearCombination(*add->GetRightOperand());
+  // Check if the current output is an induction variable (loop variable with predictable evolution)
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    const auto it = ChrecMap_.find(&output);
+    if (it == ChrecMap_.end())
+      return DependsOnIVMemo_[&output] = false;
 
-  // Check for linear multiplication (constant multiplied by a linear combination)
-  // Multiplying a linear combination with a constant creates a new linear combination
-  if (const auto mul = dynamic_cast<const SCEVMulExpr *>(&scev))
-    return (dynamic_cast<const SCEVConstant *>(mul->GetLeftOperand())
-            && IsLinearCombination(*mul->GetRightOperand()))
-        || (dynamic_cast<const SCEVConstant *>(mul->GetRightOperand())
-            && IsLinearCombination(*mul->GetLeftOperand()));
+    const auto & chrec = it->second;
 
-  return false;
+    if (SCEVChainRecurrence::IsUnknown(*chrec))
+      return DependsOnIVMemo_[&output] = false;
+
+    for (const auto operand : chrec->GetOperands())
+    {
+      if (dynamic_cast<const SCEVInit *>(operand))
+      {
+        return DependsOnIVMemo_[&output] = false;
+      }
+    }
+
+    return DependsOnIVMemo_[&output] = true;
+  }
+
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+
+  if (!simpleNode)
+    return DependsOnIVMemo_[&output] = false;
+
+  for (const auto & input : simpleNode->Inputs())
+  {
+    if (DependsOnInductionVariable(*input.origin()))
+      return DependsOnIVMemo_[&output] = true;
+  }
+
+  return DependsOnIVMemo_[&output] = false;
 }
 
 bool
 LoopStrengthReduction::ContainsMul(const rvsdg::Output & output)
 {
-  const auto & [simpleNode, mulOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerMulOperation>(output);
+  if (const auto it = ContainsMulMemo_.find(&output); it != ContainsMulMemo_.end())
+    return it->second;
+
+  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
 
   if (!simpleNode)
-    return false;
+    return ContainsMulMemo_[&output] = false;
 
-  if (mulOperation)
-    return true;
+  const auto & simpleOperation = simpleNode->GetOperation();
+
+  if (rvsdg::is<IntegerMulOperation>(simpleOperation)
+      || rvsdg::is<IntegerShlOperation>(simpleOperation))
+    return ContainsMulMemo_[&output] = true;
 
   for (const auto & input : simpleNode->Inputs())
   {
     if (ContainsMul(*input.origin()))
-      return true;
+      return ContainsMulMemo_[&output] = true;
   }
 
-  return false;
+  return ContainsMulMemo_[&output] = false;
 }
 }
