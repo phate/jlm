@@ -165,6 +165,7 @@ $(eval $(call common_library,libllvm))
 tests/jlm/llvm/run-libllvm-tests_SOURCES = \
     tests/jlm/llvm/DotWriterTests.cpp \
     \
+    tests/jlm/llvm/backend/CastingTests.cpp \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests.cpp \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests.cpp \
     \

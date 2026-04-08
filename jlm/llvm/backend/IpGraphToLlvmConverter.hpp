@@ -156,9 +156,20 @@ private:
   void
   convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::ControlFlowGraphNode * node);
 
+  /**
+   * Converts the given operation, with the given arguments, to an LLVM instruction.
+   * If the operation is wrapped in surrounding operations, it also takes the original operation,
+   * for example when converting an addition operation wrapped in a lane-wise vector operation.
+   * @param op the operation to convert.
+   * @param originalOp the top-level operation containing \p op. Otherwise \p op itself.
+   * @param arguments the variables representing each argument of the operation.
+   * @param builder the LLVM IR builder to append the created instructions to.
+   * @return the LLVM Value representing the output of the created instruction.
+   */
   ::llvm::Value *
   convert_operation(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & arguments,
       ::llvm::IRBuilder<> & builder);
 
@@ -251,6 +262,7 @@ private:
   ::llvm::Value *
   convert_cast(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
@@ -263,12 +275,14 @@ private:
   ::llvm::Value *
   convert_vectorbinary(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
   ::llvm::Value *
   convert_vectorunary(
       const rvsdg::SimpleOperation & op,
+      const rvsdg::SimpleOperation & originalOp,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
