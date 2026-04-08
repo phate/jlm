@@ -82,28 +82,28 @@ librvsdg_HEADERS = \
 
 $(eval $(call common_library,librvsdg))
 
-tests/jlm/rvsdg/run-librvsdg-tests_SOURCES = \
-    tests/jlm/rvsdg/bitstring/BitstringTests.cpp \
-    tests/jlm/rvsdg/ArgumentTests.cpp \
-    tests/jlm/rvsdg/BinaryTests.cpp \
-    tests/jlm/rvsdg/BottomUpTests.cpp \
-    tests/jlm/rvsdg/CseTests.cpp \
-    tests/jlm/rvsdg/GammaTests.cpp \
-    tests/jlm/rvsdg/GraphTests.cpp \
-    tests/jlm/rvsdg/InputTests.cpp \
-    tests/jlm/rvsdg/MatchTypeTests.cpp \
-    tests/jlm/rvsdg/NodeTests.cpp \
-    tests/jlm/rvsdg/OutputTests.cpp \
-    tests/jlm/rvsdg/RegionTests.cpp \
-    tests/jlm/rvsdg/ResultTests.cpp \
-    tests/jlm/rvsdg/SimpleOperationTests.cpp \
-    tests/jlm/rvsdg/StructuralNodeTests.cpp \
-    tests/jlm/rvsdg/ThetaTests.cpp \
-    tests/jlm/rvsdg/TopDownTests.cpp \
-    tests/jlm/rvsdg/TraceTests.cpp \
-    tests/jlm/rvsdg/TransformationSequenceTests.cpp \
-    tests/jlm/rvsdg/TypeMismatchTests.cpp \
-    tests/jlm/rvsdg/UnaryOperationTests.cpp \
+run-librvsdg-tests_SOURCES = \
+    jlm/rvsdg/bitstring/BitstringTests.cpp \
+    jlm/rvsdg/ArgumentTests.cpp \
+    jlm/rvsdg/BinaryTests.cpp \
+    jlm/rvsdg/BottomUpTests.cpp \
+    jlm/rvsdg/CseTests.cpp \
+    jlm/rvsdg/GammaTests.cpp \
+    jlm/rvsdg/GraphTests.cpp \
+    jlm/rvsdg/InputTests.cpp \
+    jlm/rvsdg/MatchTypeTests.cpp \
+    jlm/rvsdg/NodeTests.cpp \
+    jlm/rvsdg/OutputTests.cpp \
+    jlm/rvsdg/RegionTests.cpp \
+    jlm/rvsdg/ResultTests.cpp \
+    jlm/rvsdg/SimpleOperationTests.cpp \
+    jlm/rvsdg/StructuralNodeTests.cpp \
+    jlm/rvsdg/ThetaTests.cpp \
+    jlm/rvsdg/TopDownTests.cpp \
+    jlm/rvsdg/TraceTests.cpp \
+    jlm/rvsdg/TransformationSequenceTests.cpp \
+    jlm/rvsdg/TypeMismatchTests.cpp \
+    jlm/rvsdg/UnaryOperationTests.cpp \
 
-tests/jlm/rvsdg/run-librvsdg-tests_LIBS = librvsdg libutil
-$(eval $(call common_test,tests/jlm/rvsdg/run-librvsdg-tests))
+run-librvsdg-tests_LIBS = librvsdg libutil
+$(eval $(call common_test,run-librvsdg-tests))
