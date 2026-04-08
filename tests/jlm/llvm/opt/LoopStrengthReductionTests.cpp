@@ -3,21 +3,17 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
-#include <jlm/rvsdg/view.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 
 #include <gtest/gtest.h>
-#include <jlm/rvsdg/TestOperations.hpp>
 
 void
 RunLoopStrengthReduction(jlm::rvsdg::RvsdgModule & rvsdgModule)
