@@ -102,14 +102,14 @@ TEST(InvariantValueRedirectionTests, TestTheta)
       rvsdg.GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
-  auto c = lambdaNode->GetFunctionArguments()[0];
-  auto x = lambdaNode->GetFunctionArguments()[1];
-  auto l = lambdaNode->GetFunctionArguments()[2];
+  const auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  const auto valueArgument = lambdaNode->GetFunctionArguments()[1];
+  const auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
 
   auto thetaNode1 = jlm::rvsdg::ThetaNode::create(lambdaNode->subregion());
-  auto thetaVar1 = thetaNode1->AddLoopVar(c);
-  auto thetaVar2 = thetaNode1->AddLoopVar(x);
-  auto thetaVar3 = thetaNode1->AddLoopVar(l);
+  auto thetaVar1 = thetaNode1->AddLoopVar(controlArgument);
+  auto thetaVar2 = thetaNode1->AddLoopVar(valueArgument);
+  auto thetaVar3 = thetaNode1->AddLoopVar(ioStateArgument);
 
   auto thetaNode2 = jlm::rvsdg::ThetaNode::create(thetaNode1->subregion());
   auto thetaVar4 = thetaNode2->AddLoopVar(thetaVar1.pre);
@@ -129,9 +129,9 @@ TEST(InvariantValueRedirectionTests, TestTheta)
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), c);
-  EXPECT_EQ(lambdaNode->GetFunctionResults()[1]->origin(), x);
-  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), thetaVar3.output);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), controlArgument);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[1]->origin(), valueArgument);
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), ioStateArgument);
 }
 
 TEST(InvariantValueRedirectionTests, TestCall)
