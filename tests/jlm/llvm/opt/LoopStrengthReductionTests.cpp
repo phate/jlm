@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <gtest/gtest.h>
 
