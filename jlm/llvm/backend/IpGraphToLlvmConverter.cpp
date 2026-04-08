@@ -852,23 +852,25 @@ IpGraphToLlvmConverter::convert_insertelement(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorunary(
     const rvsdg::SimpleOperation & op,
+    const rvsdg::SimpleOperation & originalOp,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<VectorUnaryOperation>(op));
   auto vop = static_cast<const VectorUnaryOperation *>(&op);
-  return convert_operation(vop->operation(), operands, builder);
+  return convert_operation(vop->operation(), originalOp, operands, builder);
 }
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorbinary(
     const rvsdg::SimpleOperation & op,
+    const rvsdg::SimpleOperation & originalOp,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<VectorBinaryOperation>(op));
   auto vop = static_cast<const VectorBinaryOperation *>(&op);
-  return convert_operation(vop->operation(), operands, builder);
+  return convert_operation(vop->operation(), originalOp, operands, builder);
 }
 
 ::llvm::Value *
@@ -886,14 +888,15 @@ IpGraphToLlvmConverter::convert(
 template<::llvm::Instruction::CastOps OPCODE>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_cast(
-    const rvsdg::SimpleOperation & op,
+    [[maybe_unused]] const rvsdg::SimpleOperation & op,
+    const rvsdg::SimpleOperation & originalOp,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
   auto & typeConverter = Context_->GetTypeConverter();
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
-  auto dsttype = op.result(0);
+  auto dsttype = originalOp.result(0);
   auto operand = operands[0];
 
   auto type = typeConverter.ConvertJlmType(*dsttype, llvmContext);
@@ -1068,6 +1071,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_operation(
     const rvsdg::SimpleOperation & op,
+    const rvsdg::SimpleOperation & originalOp,
     const std::vector<const Variable *> & arguments,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1293,11 +1297,11 @@ IpGraphToLlvmConverter::convert_operation(
   }
   if (is<VectorUnaryOperation>(op))
   {
-    return convert_vectorunary(op, arguments, builder);
+    return convert_vectorunary(op, originalOp, arguments, builder);
   }
   if (is<VectorBinaryOperation>(op))
   {
-    return convert_vectorbinary(op, arguments, builder);
+    return convert_vectorbinary(op, originalOp, arguments, builder);
   }
   if (is<VectorSelectOperation>(op))
   {
@@ -1333,51 +1337,51 @@ IpGraphToLlvmConverter::convert_operation(
   }
   if (is<BitCastOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::BitCast>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::BitCast>(op, originalOp, arguments, builder);
   }
   if (is<FPExtOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::FPExt>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::FPExt>(op, originalOp, arguments, builder);
   }
   if (is<FloatingPointToSignedIntegerOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::FPToSI>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::FPToSI>(op, originalOp, arguments, builder);
   }
   if (is<FloatingPointToUnsignedIntegerOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::FPToUI>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::FPToUI>(op, originalOp, arguments, builder);
   }
   if (is<FPTruncOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::FPTrunc>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::FPTrunc>(op, originalOp, arguments, builder);
   }
   if (is<IntegerToPointerOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::IntToPtr>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::IntToPtr>(op, originalOp, arguments, builder);
   }
   if (is<PtrToIntOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::PtrToInt>(op, originalOp, arguments, builder);
   }
   if (is<SExtOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::SExt>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::SExt>(op, originalOp, arguments, builder);
   }
   if (is<SIToFPOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::SIToFP>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::SIToFP>(op, originalOp, arguments, builder);
   }
   if (is<TruncOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::Trunc>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::Trunc>(op, originalOp, arguments, builder);
   }
   if (is<UIToFPOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::UIToFP>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::UIToFP>(op, originalOp, arguments, builder);
   }
   if (is<ZExtOperation>(op))
   {
-    return convert_cast<::llvm::Instruction::ZExt>(op, arguments, builder);
+    return convert_cast<::llvm::Instruction::ZExt>(op, originalOp, arguments, builder);
   }
   if (is<MemoryStateMergeOperation>(op))
   {
@@ -1444,7 +1448,8 @@ IpGraphToLlvmConverter::convert_instruction(
     operands.push_back(tac.operand(n));
 
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
-  auto r = convert_operation(tac.operation(), operands, builder);
+  const auto & op = tac.operation();
+  auto r = convert_operation(op, op, operands, builder);
   if (r != nullptr)
     Context_->insert(tac.result(0), r);
 }
@@ -1460,7 +1465,8 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
       operands.push_back(tac->operand(n));
 
     JLM_ASSERT(tac->nresults() == 1);
-    auto r = convert_operation(tac->operation(), operands, builder);
+    const auto & op = tac->operation();
+    auto r = convert_operation(op, op, operands, builder);
     Context_->insert(tac->result(0), r);
   }
 }

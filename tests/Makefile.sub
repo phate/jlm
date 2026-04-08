@@ -36,6 +36,7 @@ JLC_COMPILE_TESTS = \
 	tests/c-tests/test-switch \
 	tests/c-tests/test-valist \
 	tests/c-tests/test-vector-bitcast \
+	tests/c-tests/test-vector-signextend \
 	tests/c-tests/test-zeroinitialization
 
 $(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS)): $(BUILD_OUT_PREFIX)%.jlm : %.c $(BUILD_OUT_PREFIX)jlc
