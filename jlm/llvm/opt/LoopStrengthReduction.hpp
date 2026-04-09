@@ -110,15 +110,11 @@ private:
       const rvsdg::ThetaNode & from,
       const rvsdg::ThetaNode & to);
 
-  std::optional<rvsdg::ThetaNode::LoopVar>
-  CreateLoopVarForStart(const SCEV & startSCEV, rvsdg::ThetaNode & thetaNode, size_t numBits);
+  std::optional<rvsdg::Output *>
+  HoistChrec(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & thetaNode, size_t numBits);
 
   std::optional<rvsdg::Output *>
-  HoistChrec(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & thetaNode, size_t numBits)
-      const;
-
-  std::optional<rvsdg::Output *>
-  HoistNAryExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
+  HoistSCEVExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
 
   void
   ReplaceGEPOperation(
@@ -133,6 +129,12 @@ private:
       rvsdg::Output & output,
       rvsdg::ThetaNode & thetaNode,
       const std::shared_ptr<const rvsdg::BitType> & bitType);
+
+  std::optional<rvsdg::ThetaNode::LoopVar>
+  CreateNewArithmeticInductionVariable(
+      const SCEVChainRecurrence & chrec,
+      rvsdg::ThetaNode & thetaNode,
+      size_t numBits);
 
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEVChainRecurrence>> ChrecMap_;
   std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> SCEVMap_;
