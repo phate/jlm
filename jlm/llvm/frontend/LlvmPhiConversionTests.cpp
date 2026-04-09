@@ -13,14 +13,13 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IRReader/IRReader.h>
 
 #include <string>
 
 /**
- * Tests converting instances of ::llvm::PHINode.
+ * Tests converting instances of llvm::PHINode.
  * Some of the operands have constant values, and some are results from the predecessors.
  * One of the phi node has its own result as one of its operands.
  *
