@@ -763,7 +763,7 @@ private:
    * computed) corresponding chain recurrences and replaces them
    *
    * @param scev The SCEV expression to be traversed
-   * @param output
+   * @param output The output of the operation the SCEV represents
    * @return The resulting recurrence, or std::nullopt if no change was made
    */
   std::optional<std::unique_ptr<SCEV>>
@@ -785,8 +785,7 @@ private:
    * \brief Apply folding rules for addition to combine two SCEV operands into one.
    * @param lhsOperand The left-hand side operand of the add operation
    * @param rhsOperand The right-hand side operand of the add operation
-   * @param output
-   * @param output
+   * @param output The output of the addition operation we are folding.
    * @return A unique ptr to the new operand
    */
   static std::unique_ptr<SCEV>
@@ -802,7 +801,7 @@ private:
    * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
    * @param lhsOperand The left-hand side operand of the mul operation
    * @param rhsOperand The right-hand side operand of the mul operation
-   * @param output
+   * @param output The output of the multiplication operation we are folding
    * @return A unique ptr to the new operand
    */
   static std::unique_ptr<SCEV>
@@ -811,7 +810,7 @@ private:
   /**
    * \brief Try to combine the constants in an n-ary expression (Add or Mul) into themselves.
    * @param expression The expression to be folded
-   * @param output
+   * @param output The output of the operation the n-ary expression represents
    * @return The unique ptr to the expression
    */
   static std::unique_ptr<SCEV>
