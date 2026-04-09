@@ -1237,7 +1237,7 @@ ScalarEvolution::GetOrCreateChainRecurrence(
     else
     {
       // If not, create a SCEVInit node representing the start value
-      stepRecurrence->AddOperandToFront(SCEVInit::Create(output));
+      stepRecurrence->AddOperandToFront(SCEVInit::Create(output, thetaNode));
     }
   }
   return stepRecurrence;
@@ -1738,11 +1738,11 @@ ScalarEvolution::ApplyMulFolding(SCEV * lhsOperand, SCEV * rhsOperand, rvsdg::Ou
     auto * chrec = lhsChrec ? lhsChrec : rhsChrec;
     auto * otherOperand = lhsChrec ? rhsOperand : lhsOperand;
 
-    // Skip if other operand is constant one (identity for multiplication)
     if (auto constant = dynamic_cast<const SCEVConstant *>(otherOperand))
     {
       if (constant->GetValue() == 1)
       {
+        // Dont fold if operand is constant one (identity for multiplication)
         return chrec->Clone();
       }
 
