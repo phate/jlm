@@ -13,6 +13,7 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IRReader/IRReader.h>
 
