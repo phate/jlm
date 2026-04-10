@@ -31,7 +31,7 @@ class LlvmBackendCastingFixture : public testing::TestWithParam<int>
 
 TEST_P(LlvmBackendCastingFixture, AllIntegerCasts)
 {
-  /**
+  /*
    * Creates a function equivalent to the following C code in RVSDG:
    *
    * <SIZE x i8> f(uint32_t x) {
