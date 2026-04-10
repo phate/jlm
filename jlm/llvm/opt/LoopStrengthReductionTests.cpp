@@ -520,8 +520,7 @@ TEST(LoopStrengthReductionTests, SimpleGEPOperation)
   const auto lv2 = theta->AddLoopVar(arrPtr);         // arr ptr
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & addNode1 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
