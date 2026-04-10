@@ -299,8 +299,24 @@ LoopStrengthReduction::FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::
   return reversed;
 }
 
+bool
+LoopStrengthReduction::IsAncestorRegion(
+    const rvsdg::Region & candidateAncestor,
+    const rvsdg::Region & region)
+{
+  if (region.IsRootRegion())
+    return false;
+
+  const auto parentRegion = region.node()->region();
+
+  if (&candidateAncestor == parentRegion)
+    return true;
+
+  return IsAncestorRegion(candidateAncestor, *parentRegion);
+}
+
 std::optional<rvsdg::Output *>
-LoopStrengthReduction::RouteValueThroughLoops(
+LoopStrengthReduction::TryRouteValueThroughLoops(
     rvsdg::Output & origin,
     const rvsdg::ThetaNode & from,
     const rvsdg::ThetaNode & to)
@@ -364,8 +380,47 @@ LoopStrengthReduction::HoistChrec(
   }
 
   const auto routed = RouteValueThroughLoops(*chrecOutput, *chrec.GetLoop(), thetaNode);
+  if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+  {
+    const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
+    if (!traced.has_value())
+      return std::nullopt;
+
+    return *traced;
+  }
+
+  const auto routed = TryRouteValueThroughLoops(*chrecOutput, *targetLoop, thetaNode);
   if (routed.has_value())
     return *routed;
+
+  return std::nullopt;
+}
+
+std::optional<rvsdg::Output *>
+LoopStrengthReduction::TryTraceValueUpwards(rvsdg::Output & origin, rvsdg::Region & targetRegion)
+{
+  if (origin.region() == &targetRegion)
+  {
+    return &origin;
+  }
+
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(origin))
+  {
+    const auto loopVar = theta->MapPreLoopVar(origin);
+    auto traced = TryTraceValueUpwards(*loopVar.input->origin(), targetRegion);
+    if (traced.has_value())
+      return *traced;
+  }
+  else if (const auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(origin))
+  {
+    const auto roleVar = gamma->MapBranchArgument(origin);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      auto traced = TryTraceValueUpwards(*entryVar->input->origin(), targetRegion);
+      if (traced.has_value())
+        return *traced;
+    }
+  }
 
   return std::nullopt;
 }
@@ -387,7 +442,7 @@ LoopStrengthReduction::HoistSCEVExpresssion(
   if (const auto init = dynamic_cast<const SCEVInit *>(&scev))
   {
     const auto prePointer = init->GetPrePointer();
-    const auto targetLoop = init->GetLoop();
+    const auto targetLoop = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*prePointer);
     if (targetLoop == nullptr)
       return std::nullopt;
 
@@ -399,6 +454,16 @@ LoopStrengthReduction::HoistSCEVExpresssion(
     }
 
     const auto routed = RouteValueThroughLoops(*initLoopVar.pre, *targetLoop, thetaNode);
+    if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+    {
+      const auto traced = TryTraceValueUpwards(*initLoopVar.pre, *thetaNode.region());
+      if (!traced.has_value())
+        return std::nullopt;
+
+      return *traced;
+    }
+
+    const auto routed = TryRouteValueThroughLoops(*initLoopVar.pre, *targetLoop, thetaNode);
     if (!routed.has_value())
       return std::nullopt;
 
@@ -465,9 +530,12 @@ LoopStrengthReduction::HoistSCEVExpresssion(
   }
   if (const auto chrec = dynamic_cast<const SCEVChainRecurrence *>(&scev))
   {
+    if (!SCEVChainRecurrence::IsAffine(*chrec))
+      return std::nullopt;
+
     return HoistChrec(*chrec, thetaNode, numBits);
   }
-  throw std::logic_error("Unknown SCEV type in HoistNAryExpression\n");
+  throw std::logic_error("Unknown SCEV type in HoistSCEVExpression\n");
 }
 
 void
@@ -484,10 +552,6 @@ LoopStrengthReduction::ReplaceArithmeticOperation(
   if (!newIV.has_value())
     return;
 
-    output.divert_users(newIV->pre);
-    ChrecMap_[newIV->pre] = std::move(chrec);
-  }
-  else if (SCEVChainRecurrence::IsAffine(*chrec))
   output.divert_users(newIV->pre);
 
   // Insert the chrec for the new induction variable
@@ -579,6 +643,8 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 
       return newIV;
     }
+
+    return std::nullopt;
   }
   throw std::logic_error("Invalid chrec size in CreateNewInductionVariable!");
 }
