@@ -63,9 +63,8 @@ public:
 class SCEVInit final : public SCEV
 {
 public:
-  explicit SCEVInit(rvsdg::Output & pre, rvsdg::ThetaNode & loop)
-      : PrePointer_{ &pre },
-        Loop_{ &loop }
+  explicit SCEVInit(rvsdg::Output & pre)
+      : PrePointer_{ &pre }
   {}
 
   rvsdg::Output *
@@ -85,26 +84,17 @@ public:
   std::unique_ptr<SCEV>
   Clone() const override
   {
-    return std::make_unique<SCEVInit>(*PrePointer_, *Loop_);
+    return std::make_unique<SCEVInit>(*PrePointer_);
   }
 
   static std::unique_ptr<SCEVInit>
-  Create(rvsdg::Output & prePointer, rvsdg::ThetaNode & loop)
+  Create(rvsdg::Output & prePointer)
   {
-    return std::make_unique<SCEVInit>(prePointer, loop);
-  }
-
-  rvsdg::ThetaNode *
-  GetLoop() const
-  {
-    return Loop_;
+    return std::make_unique<SCEVInit>(prePointer);
   }
 
 private:
   rvsdg::Output * PrePointer_;
-
-protected:
-  rvsdg::ThetaNode * Loop_;
 };
 
 class SCEVPlaceholder final : public SCEV
