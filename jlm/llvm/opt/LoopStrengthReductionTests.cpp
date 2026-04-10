@@ -78,11 +78,6 @@ TEST(LoopStrengthReductionTests, SimpleArithmeticCandidateOperation)
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -125,14 +120,8 @@ TEST(LoopStrengthReductionTests, SimpleArithmeticCandidateOperation)
   EXPECT_NE(rhsConstantOperation, nullptr);
   EXPECT_EQ(rhsConstantOperation->Representation().to_uint(), 6u);
 
-  // Check that all users of the old MUL node now use the new induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), newIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVariable)
@@ -184,11 +173,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode2.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -203,14 +187,8 @@ TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVa
   // Check that no loop variables were added
   EXPECT_EQ(numLoopVarsAfter, numLoopVarsBefore);
 
-  // Check that all users of the MUL node still use the MUL node
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), mulNode2.output(0));
-    }
-  }
+  // Check that the test operation still uses the MUL node (no change)
+  EXPECT_EQ(testOperation->input(0)->origin(), mulNode2.output(0));
 }
 
 TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperation)
@@ -270,11 +248,6 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperation)
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldAddNodeUsers;
-  for (auto & user : addNode2.output(0)->Users())
-  {
-    oldAddNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -315,14 +288,8 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperation)
   EXPECT_NE(rhsConstantOperation, nullptr);
   EXPECT_EQ(rhsConstantOperation->Representation().to_uint(), 6u);
 
-  // Check that all users of the old ADD node now use the new induction variable
-  for (auto & user : oldAddNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), newIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperationWithUsersForBoth)
@@ -386,17 +353,6 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperationWithUsersForB
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
 
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
-  std::vector<jlm::rvsdg::Input *> oldAddNodeUsers;
-  for (auto & user : addNode2.output(0)->Users())
-  {
-    oldAddNodeUsers.push_back(&user);
-  }
-
   // Act
   RunLoopStrengthReduction(rvsdgModule);
 
@@ -459,23 +415,9 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperationWithUsersForB
   EXPECT_NE(rhsConstantOperation2, nullptr);
   EXPECT_EQ(rhsConstantOperation2->Representation().to_uint(), 6u);
 
-  // Check that all users of the old ADD node now use the new induction variable
-  for (auto & user : oldAddNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV1.pre);
-    }
-  }
-
-  // Check that all users of the old MUL node now use the new induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV2.pre);
-    }
-  }
+  // Check that the test operations now use their respective new induction variables
+  EXPECT_EQ(testOperation1->input(0)->origin(), newIV2.pre);
+  EXPECT_EQ(testOperation2->input(0)->origin(), newIV1.pre);
 }
 
 TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
@@ -521,10 +463,12 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
       intArrayType,
       pointerType);
 
-  auto loadNode = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
-  auto & subNode = jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadNode[0], c2.output(0) }, 32);
+  auto loadOutputs = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
+  auto & subNode =
+      jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ loadOutputs[0], c2.output(0) }, 32);
 
-  auto storeNode = StoreNonVolatileOperation::Create(gep, subNode.output(0), { loadNode[1] }, 4);
+  auto storeOutputs =
+      StoreNonVolatileOperation::Create(gep, subNode.output(0), { loadOutputs[1] }, 4);
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
 
   auto & sltNode =
@@ -533,7 +477,7 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
   lv1.post->divert_to(addNode1.output(0));
-  memoryState.post->divert_to(storeNode[0]);
+  memoryState.post->divert_to(storeOutputs[0]);
   theta->set_predicate(matchResult);
 
   jlm::rvsdg::GraphExport::Create(*memoryState.output, "");
@@ -544,10 +488,6 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
 
   std::vector<jlm::rvsdg::Input *> oldGepNodeUsers;
-  for (auto & user : gep->Users())
-  {
-    oldGepNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -584,14 +524,16 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   EXPECT_EQ(constantOperation->Representation().nbits(), 64u);
   EXPECT_EQ(constantOperation->Representation().to_uint(), 24u);
 
-  // Check that all users of the old GEP node now use the new induction variable
-  for (auto & user : oldGepNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV.pre);
-    }
-  }
+  // Check that the both the load and store nodes use the new induction variable as address
+  auto loadNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadOutputs[0]);
+  EXPECT_NE(loadNode, nullptr);
+  EXPECT_TRUE(jlm::rvsdg::is<LoadNonVolatileOperation>(loadNode->GetOperation()));
+  EXPECT_EQ(LoadOperation::AddressInput(*loadNode).origin(), newIV.pre);
+
+  auto storeNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeOutputs[0]);
+  EXPECT_NE(storeNode, nullptr);
+  EXPECT_TRUE(jlm::rvsdg::is<StoreNonVolatileOperation>(storeNode->GetOperation()));
+  EXPECT_EQ(StoreOperation::AddressInput(*storeNode).origin(), newIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopTest)
@@ -663,11 +605,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopTest)
 
   const auto outerNumLoopVarsBefore = theta1->GetLoopVars().size();
   const auto innerNumLoopVarsBefore = theta2->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -716,14 +653,8 @@ TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopTest)
   // And that it is not modified in the inner loop
   EXPECT_EQ(innerNewIV.post->origin(), innerNewIV.pre);
 
-  // Check that all users of the old MUL node now use the new induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), innerNewIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new inner induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), innerNewIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopWithGammaTest)
@@ -819,12 +750,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopWithGammaTest)
   const auto outerNumEntryVarsBefore = gamma1->GetEntryVars().size();
   const auto innerNumEntryVarsBefore = gamma2->GetEntryVars().size();
 
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
-
   // Act
   RunLoopStrengthReduction(rvsdgModule);
 
@@ -885,14 +810,8 @@ TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopWithGammaTest)
   // Check that the new inner IV is not modified in the inner loop
   EXPECT_EQ(innerNewIV.post->origin(), innerNewIV.pre);
 
-  // Check that all users of the old MUL node now use the new inner induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), innerNewIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new inner induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), innerNewIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationInThreeLevelNestedLoopTest)
@@ -985,11 +904,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationInThreeLevelNestedLoopTest)
   const auto outerNumLoopVarsBefore = theta1->GetLoopVars().size();
   const auto middleNumLoopVarsBefore = theta2->GetLoopVars().size();
   const auto innerNumLoopVarsBefore = theta3->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -1046,14 +960,8 @@ TEST(LoopStrengthReductionTests, CandidateOperationInThreeLevelNestedLoopTest)
   // And that it is not modified in the inner loop
   EXPECT_EQ(innerNewIV.post->origin(), innerNewIV.pre);
 
-  // Check that all users of the old MUL node now use the new induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), innerNewIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new inner induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), innerNewIV.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationWithInitTest)
@@ -1120,11 +1028,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationWithInitTest)
   // jlm::rvsdg::view(graph, stdout);
 
   const auto numLoopVarsBefore = theta->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -1156,7 +1059,7 @@ TEST(LoopStrengthReductionTests, CandidateOperationWithInitTest)
   EXPECT_NE(constantOperation, nullptr);
   EXPECT_EQ(constantOperation->Representation().to_uint(), 3u);
 
-  // We are checking that the input value of the new outermost IV is the value of k times 3.
+  // We are checking that the input value of the second IV is the value of k times 3.
   // This corresponds with the start value of the chrec being (Init(a2) * 3)
   const auto & IV2InputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV2.input->origin());
@@ -1180,14 +1083,8 @@ TEST(LoopStrengthReductionTests, CandidateOperationWithInitTest)
   // Check that RHS of the ADD is the pre value of the new IV2
   EXPECT_EQ(IV1PostOrigin->input(1)->origin(), newIV2.pre);
 
-  // Check that all users of the old MUL node now use the new innermost induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), newIV1.pre);
-    }
-  }
+  // Check that the test operation now uses the new induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), newIV1.pre);
 }
 
 TEST(LoopStrengthReductionTests, CandidateOperationWithInitAndTracingTest)
@@ -1281,11 +1178,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationWithInitAndTracingTest)
 
   const auto outerNumLoopVarsBefore = theta1->GetLoopVars().size();
   const auto innerNumLoopVarsBefore = theta2->GetLoopVars().size();
-  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
-  for (auto & user : mulNode.output(0)->Users())
-  {
-    oldMulNodeUsers.push_back(&user);
-  }
 
   // Act
   RunLoopStrengthReduction(rvsdgModule);
@@ -1338,12 +1230,6 @@ TEST(LoopStrengthReductionTests, CandidateOperationWithInitAndTracingTest)
   // And that it is not modified in the inner loop
   EXPECT_EQ(innerNewIV.post->origin(), innerNewIV.pre);
 
-  // Check that all users of the old MUL node now use the new inner induction variable
-  for (auto & user : oldMulNodeUsers)
-  {
-    if (user->origin())
-    {
-      EXPECT_EQ(user->origin(), innerNewIV.pre);
-    }
-  }
+  // Check that the test operation now uses the new inner induction variable
+  EXPECT_EQ(testOperation->input(0)->origin(), innerNewIV.pre);
 }
