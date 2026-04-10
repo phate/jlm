@@ -151,7 +151,7 @@ TEST(LlvmPhiConversionTests, TestPhiConversion)
 }
 
 /**
- * Tests converting instances of ::llvm::PHINode where some of the predecessors are "dead".
+ * Tests converting instances of llvm::PHINode where some of the predecessors are "dead".
  * A dead predecessor is a basic block that is not reachable from the function's entry.
  * This test has one phi node with 4 operands, where two of them are dead.
  */
