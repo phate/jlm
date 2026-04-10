@@ -379,7 +379,6 @@ LoopStrengthReduction::HoistChrec(
     return chrecOutput;
   }
 
-  const auto routed = RouteValueThroughLoops(*chrecOutput, *chrec.GetLoop(), thetaNode);
   if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
   {
     const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
@@ -453,7 +452,6 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       return initLoopVar.input->origin();
     }
 
-    const auto routed = RouteValueThroughLoops(*initLoopVar.pre, *targetLoop, thetaNode);
     if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
     {
       const auto traced = TryTraceValueUpwards(*initLoopVar.pre, *thetaNode.region());
