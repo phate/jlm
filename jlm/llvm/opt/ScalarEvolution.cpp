@@ -1237,7 +1237,7 @@ ScalarEvolution::GetOrCreateChainRecurrence(
     else
     {
       // If not, create a SCEVInit node representing the start value
-      stepRecurrence->AddOperandToFront(SCEVInit::Create(output, thetaNode));
+      stepRecurrence->AddOperandToFront(SCEVInit::Create(output));
     }
   }
   return stepRecurrence;
