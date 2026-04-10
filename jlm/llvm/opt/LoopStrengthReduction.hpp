@@ -92,6 +92,9 @@ private:
   static std::optional<std::vector<rvsdg::StructuralNode *>>
   FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::ThetaNode & to);
 
+  static bool
+  IsAncestorRegion(const rvsdg::Region & candidateAncestor, const rvsdg::Region & region);
+
   /**
    * Tries to route a value down from an outer loop to an inner loop.
    *
@@ -102,16 +105,27 @@ private:
    * @param from The outermost loop (tne loop which contains origin).
    * @param to The innermost loop.
    * @return the output of the routed value in the parent region of the innermost loop if a path
-   * exists, otherwise std::nullopt;
+   * exists, otherwise std::nullopt.
    */
   static std::optional<rvsdg::Output *>
-  RouteValueThroughLoops(
+  TryRouteValueThroughLoops(
       rvsdg::Output & origin,
       const rvsdg::ThetaNode & from,
       const rvsdg::ThetaNode & to);
 
   std::optional<rvsdg::Output *>
   HoistChrec(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & thetaNode, size_t numBits);
+
+  /**
+   * Tries to trace a value upwards to the corresponding output in a target region.
+   *
+   * @param origin The output of the value we want to trace.
+   * @param targetRegion The region we want to reach.
+   * @return the output of the traced value in the target region if it can be found, otherwise
+   * std::nullopt.
+   */
+  static std::optional<rvsdg::Output *>
+  TryTraceValueUpwards(rvsdg::Output & origin, rvsdg::Region & targetRegion);
 
   std::optional<rvsdg::Output *>
   HoistSCEVExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
