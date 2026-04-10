@@ -186,7 +186,7 @@ TEST_P(LlvmFrontendCastingFixture, AllIntegerCasts)
           });
     }
 
-    EXPECT_EQ(numUnaryVector, vectorization ? 5 : 0);
+    EXPECT_EQ(numUnaryVector, vectorization ? 5 : 0u);
     EXPECT_EQ(numZext, 1u);
     EXPECT_EQ(numTrunc, 1u);
     EXPECT_EQ(numSext, 1u);

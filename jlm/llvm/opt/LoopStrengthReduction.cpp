@@ -7,8 +7,11 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
+
+#include <algorithm>
 
 namespace jlm::llvm
 {
@@ -143,10 +146,10 @@ LoopStrengthReduction::ProcessRegion(rvsdg::Region & region)
       if (const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(structuralNode))
       {
         ReduceStrength(*thetaNode);
+        thetaNode->subregion()->prune(false);
       }
     }
   }
-  region.prune(false);
 }
 
 void
@@ -262,6 +265,277 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   }
 }
 
+std::optional<std::vector<rvsdg::StructuralNode *>>
+LoopStrengthReduction::FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::ThetaNode & to)
+{
+  std::vector<rvsdg::StructuralNode *> reversed;
+
+  const auto * cursor = to.region();
+  const auto * target = from.subregion();
+
+  while (cursor != target)
+  {
+    auto * owner = cursor->node();
+    if (!owner)
+      return std::nullopt; // hit top without reaching `from`
+
+    if (auto * theta = dynamic_cast<rvsdg::ThetaNode *>(owner))
+    {
+      reversed.push_back(theta);
+      cursor = theta->region();
+    }
+    else if (auto * gamma = dynamic_cast<rvsdg::GammaNode *>(owner))
+    {
+      reversed.push_back(gamma);
+      cursor = gamma->region();
+    }
+    else
+    {
+      return std::nullopt;
+    }
+  }
+
+  std::reverse(reversed.begin(), reversed.end());
+  return reversed;
+}
+
+bool
+LoopStrengthReduction::IsAncestorRegion(
+    const rvsdg::Region & candidateAncestor,
+    const rvsdg::Region & region)
+{
+  if (region.IsRootRegion())
+    return false;
+
+  const auto parentRegion = region.node()->region();
+
+  if (&candidateAncestor == parentRegion)
+    return true;
+
+  return IsAncestorRegion(candidateAncestor, *parentRegion);
+}
+
+std::optional<rvsdg::Output *>
+LoopStrengthReduction::TryRouteValueThroughLoops(
+    rvsdg::Output & origin,
+    const rvsdg::ThetaNode & from,
+    const rvsdg::ThetaNode & to)
+{
+  JLM_ASSERT(origin.region() == from.subregion());
+
+  const auto loopPath = FindLoopPath(from, to);
+  if (!loopPath.has_value())
+    return std::nullopt;
+
+  auto current = &origin;
+  for (const auto intermediateNode : *loopPath)
+  {
+    if (const auto intermediateTheta = dynamic_cast<rvsdg::ThetaNode *>(intermediateNode))
+    {
+      const auto loopVar = intermediateTheta->AddLoopVar(current);
+      current = loopVar.pre;
+    }
+    else if (const auto intermediateGamma = dynamic_cast<rvsdg::GammaNode *>(intermediateNode))
+    {
+      const auto [input, branchArgument] = intermediateGamma->AddEntryVar(current);
+      current = branchArgument[1];
+    }
+  }
+  return current;
+}
+
+std::optional<rvsdg::Output *>
+LoopStrengthReduction::HoistChrec(
+    const SCEVChainRecurrence & chrec,
+    const rvsdg::ThetaNode & thetaNode,
+    const size_t numBits)
+{
+  if (!SCEVChainRecurrence::IsInvariantInLoop(chrec, thetaNode))
+    return std::nullopt;
+
+  const auto targetLoop = chrec.GetLoop();
+
+  rvsdg::Output * chrecOutput = nullptr;
+  if (ScalarEvolution::StructurallyEqual(*ChrecMap_.at(chrec.GetOutput()), chrec))
+  {
+    // The chrec stored in the chrec map corresponds with the chrec we are processing (it is an
+    // induction variable). This means that the chrec has a corresponding output which we can use.
+    chrecOutput = chrec.GetOutput();
+  }
+  else
+  {
+    // The chrec doesn't have a corresponding output. This can happen in cases where we have folded
+    // some constant into the chrec of an induction variable, either with addition or
+    // multiplication. In this case, we need to create a new induction variable for the chrec.
+    auto newIV = CreateNewArithmeticInductionVariable(chrec, *targetLoop, numBits);
+    if (!newIV.has_value())
+      return std::nullopt;
+
+    chrecOutput = newIV->pre;
+  }
+
+  if (targetLoop->subregion() == thetaNode.region())
+  {
+    return chrecOutput;
+  }
+
+  if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+  {
+    const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
+    if (!traced.has_value())
+      return std::nullopt;
+
+    return *traced;
+  }
+
+  const auto routed = TryRouteValueThroughLoops(*chrecOutput, *targetLoop, thetaNode);
+  if (routed.has_value())
+    return *routed;
+
+  return std::nullopt;
+}
+
+std::optional<rvsdg::Output *>
+LoopStrengthReduction::TryTraceValueUpwards(rvsdg::Output & origin, rvsdg::Region & targetRegion)
+{
+  if (origin.region() == &targetRegion)
+  {
+    return &origin;
+  }
+
+  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(origin))
+  {
+    const auto loopVar = theta->MapPreLoopVar(origin);
+    auto traced = TryTraceValueUpwards(*loopVar.input->origin(), targetRegion);
+    if (traced.has_value())
+      return *traced;
+  }
+  else if (const auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(origin))
+  {
+    const auto roleVar = gamma->MapBranchArgument(origin);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      auto traced = TryTraceValueUpwards(*entryVar->input->origin(), targetRegion);
+      if (traced.has_value())
+        return *traced;
+    }
+  }
+
+  return std::nullopt;
+}
+
+std::optional<rvsdg::Output *>
+LoopStrengthReduction::HoistSCEVExpresssion(
+    const SCEV & scev,
+    rvsdg::ThetaNode & thetaNode,
+    const size_t numBits)
+{
+  if (const auto constant = dynamic_cast<const SCEVConstant *>(&scev))
+  {
+    const auto value = constant->GetValue();
+    const auto & constantNode =
+        IntegerConstantOperation::Create(*thetaNode.region(), numBits, value);
+
+    return constantNode.output(0);
+  }
+  if (const auto init = dynamic_cast<const SCEVInit *>(&scev))
+  {
+    const auto prePointer = init->GetPrePointer();
+    const auto targetLoop = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*prePointer);
+    if (targetLoop == nullptr)
+      return std::nullopt;
+
+    const auto initLoopVar = targetLoop->MapPreLoopVar(*prePointer);
+
+    if (targetLoop->subregion() == thetaNode.subregion())
+    {
+      return initLoopVar.input->origin();
+    }
+
+    if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+    {
+      const auto traced = TryTraceValueUpwards(*initLoopVar.pre, *thetaNode.region());
+      if (!traced.has_value())
+        return std::nullopt;
+
+      return *traced;
+    }
+
+    const auto routed = TryRouteValueThroughLoops(*initLoopVar.pre, *targetLoop, thetaNode);
+    if (!routed.has_value())
+      return std::nullopt;
+
+    return *routed;
+  }
+  if (const auto addExpr = dynamic_cast<const SCEVNAryAddExpr *>(&scev))
+  {
+    auto rightMost = addExpr->GetOperand(addExpr->NumOperands() - 1);
+    auto rightSide = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
+    if (!rightSide.has_value())
+      return std::nullopt;
+
+    auto newAddExpr = SCEV::CloneAs<SCEVNAryAddExpr>(*addExpr);
+    newAddExpr->RemoveOperand(addExpr->NumOperands() - 1);
+
+    std::optional<rvsdg::Output *> leftSide;
+    if (newAddExpr->NumOperands() == 1)
+    {
+      // Only a constant
+      const auto constantElement = newAddExpr->GetOperand(0);
+      leftSide = HoistSCEVExpresssion(*constantElement, thetaNode, numBits);
+    }
+    else
+    {
+      leftSide = HoistSCEVExpresssion(*newAddExpr, thetaNode, numBits);
+    }
+
+    if (!leftSide.has_value())
+      return std::nullopt;
+
+    auto & newAddNode =
+        jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ *leftSide, *rightSide }, numBits);
+
+    return newAddNode.output(0);
+  }
+  if (const auto mulExpr = dynamic_cast<const SCEVNAryMulExpr *>(&scev))
+  {
+    auto rightMost = mulExpr->GetOperand(mulExpr->NumOperands() - 1);
+    auto rightSide = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
+    if (!rightSide.has_value())
+      return std::nullopt;
+
+    auto newMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*mulExpr);
+    newMulExpr->RemoveOperand(mulExpr->NumOperands() - 1);
+
+    std::optional<rvsdg::Output *> leftSide;
+    if (newMulExpr->NumOperands() == 1)
+    {
+      const auto constantElement = newMulExpr->GetOperand(0);
+      leftSide = HoistSCEVExpresssion(*constantElement, thetaNode, numBits);
+    }
+    else
+    {
+      leftSide = HoistSCEVExpresssion(*newMulExpr, thetaNode, numBits);
+    }
+
+    if (!leftSide.has_value())
+      return std::nullopt;
+
+    auto & newMulNode =
+        jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ *leftSide, *rightSide }, numBits);
+
+    return newMulNode.output(0);
+  }
+  if (const auto chrec = dynamic_cast<const SCEVChainRecurrence *>(&scev))
+  {
+    if (!SCEVChainRecurrence::IsAffine(*chrec))
+      return std::nullopt;
+
+    return HoistChrec(*chrec, thetaNode, numBits);
+  }
+  throw std::logic_error("Unknown SCEV type in HoistSCEVExpression\n");
+}
+
 void
 LoopStrengthReduction::ReplaceArithmeticOperation(
     std::unique_ptr<SCEVChainRecurrence> & chrec,
@@ -272,63 +546,105 @@ LoopStrengthReduction::ReplaceArithmeticOperation(
   JLM_ASSERT(chrec->NumOperands() <= 2);
 
   const auto numBits = bitType->nbits();
+  auto newIV = CreateNewArithmeticInductionVariable(*chrec, thetaNode, numBits);
+  if (!newIV.has_value())
+    return;
 
-  const auto & startSCEV = chrec->GetStartValue();
-  const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
+  output.divert_users(newIV->pre);
 
-  JLM_ASSERT(startConstant);
+  // Insert the chrec for the new induction variable
+  // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
+  // analysis. In the future, we would want to insert this into the "global" chrec map so other
+  // analyses and transformations can use it as well.
+  ChrecMap_[newIV->pre] = std::move(chrec);
+  Context_->IncrementOperationsReducedCount(thetaNode);
+}
 
-  const auto startValue = startConstant->GetValue();
+std::optional<rvsdg::ThetaNode::LoopVar>
+LoopStrengthReduction::CreateNewArithmeticInductionVariable(
+    const SCEVChainRecurrence & chrec,
+    rvsdg::ThetaNode & thetaNode,
+    const size_t numBits)
+{
+  const auto & startSCEV = chrec.GetStartValue();
 
-  if (SCEVChainRecurrence::IsInvariant(*chrec))
+  if (SCEVChainRecurrence::IsConstant(chrec))
   {
     // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable).
-    // We can hoist this out of the loop.
-    const auto & startValueNode =
-        IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
-    const auto hoistedValue = thetaNode.AddLoopVar(startValueNode.output(0));
+    // We can hoist this out of the loop by creating a new loop variable.
+    auto hoistedConstant = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
+    if (!hoistedConstant.has_value())
+      return std::nullopt;
 
-    output.divert_users(hoistedValue.pre);
-    ChrecMap_[hoistedValue.pre] = std::move(chrec);
+    return thetaNode.AddLoopVar(*hoistedConstant);
   }
-  else if (SCEVChainRecurrence::IsAffine(*chrec))
+  if (SCEVChainRecurrence::IsAffine(chrec))
   {
     // Chrec has the form {a,+,b} which is a basic induction variable
-    const auto & stepPtr = chrec->GetStep();
+    const auto & stepPtr = chrec.GetStep();
 
     JLM_ASSERT(stepPtr.has_value());
 
     const auto & stepSCEV = *stepPtr;
     const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+    const auto & stepInit = dynamic_cast<const SCEVInit *>(stepSCEV.get());
+    const auto & stepNAryExpr = dynamic_cast<const SCEVNAryExpr *>(stepSCEV.get());
 
-    JLM_ASSERT(stepConstant);
+    if (stepConstant)
+    {
+      auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
 
-    const auto & startValueNode =
-        IntegerConstantOperation::Create(*thetaNode.region(), numBits, startValue);
-    auto newIV = thetaNode.AddLoopVar(startValueNode.output(0));
+      if (!hoistedStart.has_value())
+        return std::nullopt;
 
-    const auto stepValue = stepConstant->GetValue();
-    const auto & stepValueNode =
-        IntegerConstantOperation::Create(*thetaNode.subregion(), numBits, stepValue);
-    auto & newAddNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>(
-        { newIV.pre, stepValueNode.output(0) },
-        numBits);
+      auto newIV = thetaNode.AddLoopVar(*hoistedStart);
+      const auto stepValue = stepConstant->GetValue();
+      const auto & stepValueNode =
+          IntegerConstantOperation::Create(*thetaNode.subregion(), numBits, stepValue);
+      auto & newAddNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>(
+          { newIV.pre, stepValueNode.output(0) },
+          numBits);
+      newIV.post->divert_to(newAddNode.output(0));
 
-    newIV.post->divert_to(newAddNode.output(0));
-    output.divert_users(newIV.pre);
+      return newIV;
+    }
+    if (stepInit)
+    {
+      auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
+      if (!hoistedStart.has_value())
+        return std::nullopt;
 
-    // Insert the chrec for the new induction variable
-    // NOTE: This only updates the *copy* of the original chrec map from the scalar evolution
-    // analysis. In the future, we would want to insert this into the "global" chrec map so other
-    // analyses and transformations can use it as well.
-    ChrecMap_[newIV.pre] = std::move(chrec);
+      auto newIV = thetaNode.AddLoopVar(*hoistedStart);
+      auto stepPrePointer = stepInit->GetPrePointer();
+      auto & newAddNode =
+          jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ newIV.pre, stepPrePointer }, numBits);
+      newIV.post->divert_to(newAddNode.output(0));
+
+      return newIV;
+    }
+    if (stepNAryExpr)
+    {
+      const auto hoistedStep = HoistSCEVExpresssion(*stepNAryExpr, thetaNode, numBits);
+      if (!hoistedStep.has_value())
+        return std::nullopt;
+
+      auto newStepIV = thetaNode.AddLoopVar(*hoistedStep);
+
+      auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
+      if (!hoistedStart.has_value())
+        return std::nullopt;
+
+      auto newIV = thetaNode.AddLoopVar(*hoistedStart);
+      auto & newAddNode =
+          jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ newIV.pre, newStepIV.pre }, numBits);
+      newIV.post->divert_to(newAddNode.output(0));
+
+      return newIV;
+    }
+
+    return std::nullopt;
   }
-  else
-  {
-    throw std::logic_error("Invalid chrec size in ReplaceArithmeticOperation!");
-  }
-
-  Context_->IncrementOperationsReducedCount(thetaNode);
+  throw std::logic_error("Invalid chrec size in CreateNewInductionVariable!");
 }
 
 void
@@ -348,7 +664,7 @@ LoopStrengthReduction::ReplaceGEPOperation(
   const auto baseAddressPointer = baseAddressInit->GetPrePointer();
   const auto baseAddressLoopVar = thetaNode.MapPreLoopVar(*baseAddressPointer);
 
-  if (SCEVChainRecurrence::IsInvariant(*chrec))
+  if (SCEVChainRecurrence::IsConstant(*chrec))
   {
     // The offset for the address computed by the GEP is always zero. We can replace the GEP
     // operation with just the base address
@@ -417,12 +733,6 @@ LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
   if (chrec->NumOperands() > 2)
     return false;
 
-  for (const auto operand : chrec->GetOperands())
-  {
-    if (dynamic_cast<const SCEVNAryExpr *>(operand))
-      return false;
-  }
-
   const auto & startSCEV = chrec->GetStartValue();
 
   if (rvsdg::is<GetElementPtrOperation>(simpleOperation))
@@ -430,24 +740,18 @@ LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
     const auto & startInit = dynamic_cast<const SCEVInit *>(startSCEV);
     if (!startInit)
       return false;
-  }
-  else
-  {
-    const auto & startConstant = dynamic_cast<const SCEVConstant *>(startSCEV);
-    if (!startConstant)
-      return false;
-  }
 
-  if (SCEVChainRecurrence::IsAffine(*chrec))
-  {
-    const auto & stepPtr = chrec->GetStep();
+    if (SCEVChainRecurrence::IsAffine(*chrec))
+    {
+      const auto & stepPtr = chrec->GetStep();
 
-    JLM_ASSERT(stepPtr.has_value());
+      JLM_ASSERT(stepPtr.has_value());
 
-    const auto & stepSCEV = *stepPtr;
-    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
-    if (!stepConstant)
-      return false;
+      const auto & stepSCEV = *stepPtr;
+      const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
+      if (!stepConstant)
+        return false;
+    }
   }
 
   return true;
@@ -459,7 +763,8 @@ LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
   if (const auto it = DependsOnIVMemo_.find(&output); it != DependsOnIVMemo_.end())
     return it->second;
 
-  // Check if the current output is an induction variable (loop variable with predictable evolution)
+  // Check if the current output is an induction variable (loop variable with predictable
+  // evolution)
   if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
     const auto it = ChrecMap_.find(&output);
@@ -470,14 +775,6 @@ LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
 
     if (SCEVChainRecurrence::IsUnknown(*chrec))
       return DependsOnIVMemo_[&output] = false;
-
-    for (const auto operand : chrec->GetOperands())
-    {
-      if (dynamic_cast<const SCEVInit *>(operand))
-      {
-        return DependsOnIVMemo_[&output] = false;
-      }
-    }
 
     return DependsOnIVMemo_[&output] = true;
   }
