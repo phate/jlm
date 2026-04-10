@@ -112,9 +112,6 @@ TEST(LoopStrengthReductionTests, SimpleArithmeticCandidateOperation)
   const auto & IVPostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(IVPostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&IVPostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
 
   // Check that LHS of the ADD is the pre value of the new IV
   EXPECT_EQ(IVPostOrigin->input(0)->origin(), newIV.pre);
@@ -138,7 +135,7 @@ TEST(LoopStrengthReductionTests, SimpleArithmeticCandidateOperation)
   }
 }
 
-TEST(LoopStrengthReductionTests, ArithmeticCandidateOperationDependentOnInvalidInductionVariable)
+TEST(LoopStrengthReductionTests, CandidateOperationDependentOnInvalidInductionVariable)
 {
   // Tests that applying strength reduction on a loop with candidate operation j = 3 * i, where i is
   // an invalid (geometric) induction variable i, results in no change
@@ -295,7 +292,6 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperation)
   auto newIV = theta->GetLoopVars()[numLoopVarsAfter - 1];
 
   // Check the start value
-  // TODO: This can probably be changed to TryGetSimpleNodeAndOptionalOp
   const auto & IVInputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV.input->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerConstantOperation>(IVInputNode->GetOperation()));
@@ -308,13 +304,8 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperation)
   const auto & IVPostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(IVPostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&IVPostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV
   EXPECT_EQ(IVPostOrigin->input(0)->origin(), newIV.pre);
-
   // Check that RHS of the ADD is an integer constant with the step value (6)
   const auto & addRhsInputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*IVPostOrigin->input(1)->origin());
@@ -443,13 +434,8 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperationWithUsersForB
   const auto & IV1PostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV1.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(IV1PostOrigin->GetOperation()));
-  const auto & addOperation1 =
-      dynamic_cast<const IntegerAddOperation *>(&IV1PostOrigin->GetOperation());
-  EXPECT_NE(addOperation1, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV1
   EXPECT_EQ(IV1PostOrigin->input(0)->origin(), newIV1.pre);
-
   // Check that RHS of the ADD is an integer constant with the step value (6)
   const auto & addRhsInputNode1 =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*IV1PostOrigin->input(1)->origin());
@@ -462,13 +448,8 @@ TEST(LoopStrengthReductionTests, NestedArithmeticCandidateOperationWithUsersForB
   const auto & IV2PostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV2.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(IV2PostOrigin->GetOperation()));
-  const auto & addOperation2 =
-      dynamic_cast<const IntegerAddOperation *>(&IV2PostOrigin->GetOperation());
-  EXPECT_NE(addOperation2, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV2
   EXPECT_EQ(IV2PostOrigin->input(0)->origin(), newIV2.pre);
-
   // Check that RHS of the ADD is an integer constant with the step value (6)
   const auto & addRhsInputNode2 =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*IV2PostOrigin->input(1)->origin());
@@ -589,13 +570,10 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   const auto & gepOperation =
       dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
   EXPECT_NE(gepOperation, nullptr);
-
   // Check that it has the right type
   EXPECT_EQ(gepOperation->GetPointeeType(), *jlm::rvsdg::BitType::Create(8));
-
   // Check that base address of the GEP is the pre value of the new IV
   EXPECT_EQ(IVPostOrigin->input(0)->origin(), newIV.pre);
-
   // Check that index of the GEP is an integer constant with the step value
   const auto & gepIndexInputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*IVPostOrigin->input(1)->origin());
@@ -616,12 +594,11 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   }
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-
-TEST(LoopStrengthReductionTests, PlaceholderNestedLoopTest)
+TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopTest)
 {
-  // TODO
+  // Tests strength reduction of a variable with the recurrence {{0,+,3}<1>}<2>. Since {0,+,3}<1> is
+  // invariant in the loop with ID 2, this is treated as a constant, and is hoisted into the loop
+  // "preheader", and used as the input value of a new loop variable.
   using namespace jlm::llvm;
 
   // Arrange
@@ -723,10 +700,6 @@ TEST(LoopStrengthReductionTests, PlaceholderNestedLoopTest)
   const auto & outerIVPostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerNewIV.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(outerIVPostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&outerIVPostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV
   EXPECT_EQ(outerIVPostOrigin->input(0)->origin(), outerNewIV.pre);
   // Check that RHS of the ADD is an integer constant with the step value (3)
@@ -753,9 +726,11 @@ TEST(LoopStrengthReductionTests, PlaceholderNestedLoopTest)
   }
 }
 
-TEST(LoopStrengthReductionTests, PlaceholderNestedLoopWithGammaTest)
+TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopWithGammaTest)
 {
-  // TODO
+  // Does essentially the same as CandidateOperationInNestedLoopTest, but simulating the structure
+  // of a head-controlled loop. Meaning we have interchanging theta and gamma nodes. This means that
+  // the hoisted value must be routed down through from the outer loop to the inner loop.
   using namespace jlm::llvm;
 
   // Arrange
@@ -791,7 +766,6 @@ TEST(LoopStrengthReductionTests, PlaceholderNestedLoopWithGammaTest)
   theta1->set_predicate(matchResult1);
   lv1_1.post->divert_to(addNode1.output(0));
 
-  // TODO: Probably a way to just use some graph import or something here
   const auto & c10 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 10);
   auto & sltNode2 =
       jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ c1.output(0), c10.output(0) }, 32);
@@ -889,10 +863,6 @@ TEST(LoopStrengthReductionTests, PlaceholderNestedLoopWithGammaTest)
   const auto & outerIVPostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerNewIV.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(outerIVPostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&outerIVPostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV
   EXPECT_EQ(outerIVPostOrigin->input(0)->origin(), outerNewIV.pre);
   // Check that RHS of the ADD is an integer constant with the step value (3)
@@ -925,9 +895,10 @@ TEST(LoopStrengthReductionTests, PlaceholderNestedLoopWithGammaTest)
   }
 }
 
-TEST(LoopStrengthReductionTests, NestedThreeLoopTest)
+TEST(LoopStrengthReductionTests, CandidateOperationInThreeLevelNestedLoopTest)
 {
-  // TODO
+  // Similar to the previous two tests, but with one layer deeper of nesting. This test exists to
+  // ensure that the routing of hoisted variables functions correctly.
   using namespace jlm::llvm;
 
   // Arrange
@@ -1054,10 +1025,6 @@ TEST(LoopStrengthReductionTests, NestedThreeLoopTest)
   const auto & outerIVPostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerNewIV.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(outerIVPostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&outerIVPostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
-
   // Check that LHS of the ADD is the pre value of the new IV
   EXPECT_EQ(outerIVPostOrigin->input(0)->origin(), outerNewIV.pre);
   // Check that RHS of the ADD is an integer constant with the step value (3)
@@ -1089,9 +1056,12 @@ TEST(LoopStrengthReductionTests, NestedThreeLoopTest)
   }
 }
 
-TEST(LoopStrengthReductionTests, PlaceholderInitTest)
+TEST(LoopStrengthReductionTests, CandidateOperationWithInitTest)
 {
-  // TODO
+  // Tests strength reduction of an operation with the following chrec:
+  // {(Init(a1) * 3),+,(Init(a2) * 3)}<2>. In this example, we need to create new loop variables for
+  // both the start value and the chrec, and add them together in the loop's subregion. This test
+  // verifies that the hoisting of SCEV expressions functions correctly.
   using namespace jlm::llvm;
 
   // Arrange
@@ -1171,14 +1141,11 @@ TEST(LoopStrengthReductionTests, PlaceholderInitTest)
   auto newIV1 = theta->GetLoopVars()[numLoopVarsAfter - 1];
   auto newIV2 = theta->GetLoopVars()[numLoopVarsAfter - 2];
 
-  // TODO
+  // We are checking that the input value of the first IV is the value of i times 3.
+  // This corresponds with the start value of the chrec being (Init(a1) * 3)
   const auto & IV1InputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV1.input->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerMulOperation>(IV1InputNode->GetOperation()));
-  const auto & mulOperation =
-      dynamic_cast<const IntegerMulOperation *>(&IV1InputNode->GetOperation());
-  EXPECT_NE(mulOperation, nullptr);
-
   auto lhs1 = IV1InputNode->input(0)->origin();
   auto rhs1 = IV1InputNode->input(1)->origin();
   EXPECT_EQ(lhs1, cv2);
@@ -1189,14 +1156,11 @@ TEST(LoopStrengthReductionTests, PlaceholderInitTest)
   EXPECT_NE(constantOperation, nullptr);
   EXPECT_EQ(constantOperation->Representation().to_uint(), 3u);
 
-  // TODO
+  // We are checking that the input value of the new outermost IV is the value of k times 3.
+  // This corresponds with the start value of the chrec being (Init(a2) * 3)
   const auto & IV2InputNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV2.input->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerMulOperation>(IV2InputNode->GetOperation()));
-  const auto & mulOperation2 =
-      dynamic_cast<const IntegerMulOperation *>(&IV2InputNode->GetOperation());
-  EXPECT_NE(mulOperation2, nullptr);
-
   auto lhs2 = IV2InputNode->input(0)->origin();
   auto rhs2 = IV2InputNode->input(1)->origin();
   EXPECT_EQ(lhs2, cv3);
@@ -1211,15 +1175,12 @@ TEST(LoopStrengthReductionTests, PlaceholderInitTest)
   const auto & IV1PostOrigin =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV1.post->origin());
   EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(IV1PostOrigin->GetOperation()));
-  const auto & addOperation =
-      dynamic_cast<const IntegerAddOperation *>(&IV1PostOrigin->GetOperation());
-  EXPECT_NE(addOperation, nullptr);
   // Check that LHS of the ADD is the pre value of the new IV1
   EXPECT_EQ(IV1PostOrigin->input(0)->origin(), newIV1.pre);
-  // Check that LHS of the ADD is the pre value of the new IV2
+  // Check that RHS of the ADD is the pre value of the new IV2
   EXPECT_EQ(IV1PostOrigin->input(1)->origin(), newIV2.pre);
 
-  // Check that all users of the old MUL node now use the new induction variable
+  // Check that all users of the old MUL node now use the new innermost induction variable
   for (auto & user : oldMulNodeUsers)
   {
     if (user->origin())
@@ -1229,4 +1190,160 @@ TEST(LoopStrengthReductionTests, PlaceholderInitTest)
   }
 }
 
-#pragma GCC diagnostic pop
+TEST(LoopStrengthReductionTests, CandidateOperationWithInitAndTracingTest)
+{
+  // In some cases, a recurrence from a higher level loop can be add-/mul-folded with a SCEV in
+  // a loop that is at a lower level. In those cases, when hoisting the value, we need to trace the
+  // output of the SCEV up to the corresponding output in the outermost loop's region.
+
+  // Tests strength reduction of an operation with the following chrec:
+  // {{(Init(a1) * 3),+,-1}<2>}<3>, where Init(a1) is in the loop with ID 3, which is at a lower
+  // level than the recurrence it is in (loop with ID 2). In this example, we need to hoist the
+  // recurrence {(Init(a1) * 3),+,-1}<2> which is invariant in the loop with ID 3. This is done by
+  // creating a new induction variable in the outermost loop with (Init(a1) * 3) as the start value,
+  // and which is decremented by 1 each iteration.
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+  const auto memoryStateType = MemoryStateType::Create();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  auto mem = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "");
+  auto a = &jlm::rvsdg::GraphImport::Create(graph, intType, "a");
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          jlm::rvsdg::FunctionType::Create({ intType }, { memoryStateType }),
+          "f",
+          Linkage::externalLinkage));
+  auto cv1 = lambda->AddContextVar(*mem).inner;
+  auto cv2 = lambda->AddContextVar(*a).inner;
+
+  const auto & c0 = IntegerConstantOperation::Create(*lambda->subregion(), 32, 0);
+  const auto & theta1 = jlm::rvsdg::ThetaNode::create(lambda->subregion());
+
+  const auto memoryState1 = theta1->AddLoopVar(cv1);
+  const auto lv1_1 = theta1->AddLoopVar(c0.output(0)); // i
+  const auto lv2_1 = theta1->AddLoopVar(cv2);          // a
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 1);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1_1.pre, c1.output(0) }, 32);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta1->subregion(), 32, 5);
+  auto & sltNode1 =
+      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode1.output(0), c5.output(0) }, 32);
+  const auto matchResult1 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode1.output(0), { { 1, 1 } }, 0, 2);
+
+  theta1->set_predicate(matchResult1);
+  lv1_1.post->divert_to(addNode1.output(0));
+
+  const auto & theta2 = jlm::rvsdg::ThetaNode::create(theta1->subregion());
+
+  const auto lv1_2 = theta2->AddLoopVar(lv1_1.pre);  // i (but in inner loop)
+  const auto lv2_2 = theta2->AddLoopVar(lv2_1.pre);  // a (but in inner loop)
+  const auto lv3 = theta2->AddLoopVar(c1.output(0)); // k
+  const auto memoryState2 = theta2->AddLoopVar(memoryState1.pre);
+
+  const auto & c2 = IntegerConstantOperation::Create(*theta2->subregion(), 32, 2);
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv3.pre, c2.output(0) }, 32);
+
+  const auto & c3 = IntegerConstantOperation::Create(*theta2->subregion(), 32, 3);
+  auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2_2.pre, c3.output(0) }, 32);
+
+  auto & subNode =
+      jlm::rvsdg::CreateOpNode<IntegerSubOperation>({ mulNode.output(0), lv1_2.pre }, 32);
+
+  const auto & c10 = IntegerConstantOperation::Create(*theta2->subregion(), 32, 10);
+  auto & sltNode2 =
+      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode2.output(0), c10.output(0) }, 32);
+  const auto matchResult2 =
+      jlm::rvsdg::MatchOperation::Create(*sltNode2.output(0), { { 1, 1 } }, 0, 2);
+
+  auto testOperation = jlm::rvsdg::TestOperation::createNode(
+      theta2->subregion(),
+      { subNode.output(0), memoryState2.pre },
+      { memoryStateType });
+
+  theta2->set_predicate(matchResult2);
+  lv3.post->divert_to(addNode2.output(0));
+  memoryState2.post->divert_to(testOperation->output(0));
+
+  memoryState1.post->divert_to(memoryState2.output);
+  auto res = lambda->finalize({ memoryState1.output });
+  jlm::rvsdg::GraphExport::Create(*res, "");
+
+  // std::cout << "Before: \n";
+  // jlm::rvsdg::view(graph, stdout);
+
+  const auto outerNumLoopVarsBefore = theta1->GetLoopVars().size();
+  const auto innerNumLoopVarsBefore = theta2->GetLoopVars().size();
+  std::vector<jlm::rvsdg::Input *> oldMulNodeUsers;
+  for (auto & user : mulNode.output(0)->Users())
+  {
+    oldMulNodeUsers.push_back(&user);
+  }
+
+  // Act
+  RunLoopStrengthReduction(rvsdgModule);
+
+  // std::cout << "After: \n";
+  // jlm::rvsdg::view(graph, stdout);
+
+  const auto outerNumLoopVarsAfter = theta1->GetLoopVars().size();
+  const auto innerNumLoopVarsAfter = theta2->GetLoopVars().size();
+
+  // Assert
+
+  // Check that a new loop variable was added in both the inner and outer loop
+  EXPECT_EQ(outerNumLoopVarsAfter, outerNumLoopVarsBefore + 1);
+  EXPECT_EQ(innerNumLoopVarsAfter, innerNumLoopVarsBefore + 1);
+
+  auto outerNewIV = theta1->GetLoopVars()[outerNumLoopVarsAfter - 1];
+  auto innerNewIV = theta2->GetLoopVars()[innerNumLoopVarsAfter - 1];
+
+  // We are checking that the input value of the outer new IV is the value of a times 3.
+  // This corresponds with the start value of the chrec being (Init(a1) * 3)
+  const auto & outerIVInputNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerNewIV.input->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerMulOperation>(outerIVInputNode->GetOperation()));
+  auto lhs = outerIVInputNode->input(0)->origin();
+  auto rhs = outerIVInputNode->input(1)->origin();
+  EXPECT_EQ(lhs, cv2);
+  const auto rhsNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*rhs);
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerConstantOperation>(rhsNode->GetOperation()));
+  const auto & constantOperation =
+      dynamic_cast<const IntegerConstantOperation *>(&rhsNode->GetOperation());
+  EXPECT_EQ(constantOperation->Representation().to_uint(), 3u);
+
+  // Check that the post value of the new IV comes from a new ADD node
+  const auto & outerIVPostOrigin =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerNewIV.post->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerAddOperation>(outerIVPostOrigin->GetOperation()));
+  // Check that LHS of the ADD is the pre value of the new IV
+  EXPECT_EQ(outerIVPostOrigin->input(0)->origin(), outerNewIV.pre);
+  // Check that RHS of the ADD is an integer constant with the step value (-1)
+  const auto & addRhsInputNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*outerIVPostOrigin->input(1)->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerConstantOperation>(addRhsInputNode));
+  const auto & rhsConstantOperation =
+      dynamic_cast<const IntegerConstantOperation *>(&addRhsInputNode->GetOperation());
+  EXPECT_EQ(rhsConstantOperation->Representation().to_int(), -1);
+
+  // Check that the new inner induction variable uses the pre value of the outer IV as start value
+  EXPECT_EQ(innerNewIV.input->origin(), outerNewIV.pre);
+  // And that it is not modified in the inner loop
+  EXPECT_EQ(innerNewIV.post->origin(), innerNewIV.pre);
+
+  // Check that all users of the old MUL node now use the new inner induction variable
+  for (auto & user : oldMulNodeUsers)
+  {
+    if (user->origin())
+    {
+      EXPECT_EQ(user->origin(), innerNewIV.pre);
+    }
+  }
+}
