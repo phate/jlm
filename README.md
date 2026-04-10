@@ -5,7 +5,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 
 ## Dependencies
 * Clang/LLVM 18
-* Doxygen 1.9.1
+* Doxygen 1.9.8
 * `lit` 18
 
 ### HLS dependencies
