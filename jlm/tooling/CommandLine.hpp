@@ -53,6 +53,7 @@ public:
 
     Ascii,
     Dot,
+    Json,
     Llvm,
     Mlir,
     Tree,

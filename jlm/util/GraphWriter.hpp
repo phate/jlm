@@ -20,14 +20,16 @@ namespace jlm::util::graph
 
 enum class OutputFormat
 {
-  Dot,   // prints
-  ASCII, // output format that makes edges implicit when possible
+  Dot,   // prints the graphs in the GraphViz dot format
+  Json,  // prints a json object containing all the graphs
+  ASCII, // Textual output format that makes edges implicit when possible
 };
 
 enum class AttributeOutputFormat
 {
   SpaceSeparatedList, // printed on the form attr=value other="value 2"
-  HTMLAttributes      // adds extra restrictions on attribute names
+  HTMLAttributes,     // adds extra restrictions on attribute names
+  JSON                // outputs a comma separated list of "name": "value" pairs
 };
 
 class Writer;
@@ -65,9 +67,18 @@ public:
   GetIdPrefix() const = 0;
 
   /**
+   * Prints the final unique ID of the GraphElement, such as "node3".
+   * Requires the GraphElement to be finalized.
+   * @param out the output stream to print to.
+   */
+  void
+  PrintFullId(std::ostream & out) const;
+
+  /**
    * Gives the final unique ID of the GraphElement, such as "node3".
    * Requires the GraphElement to be finalized.
    * @return the full id of the GraphElement, including unique suffix
+   * @see PrintFullId
    */
   [[nodiscard]] std::string
   GetFullId() const;
@@ -251,9 +262,35 @@ public:
   void
   OutputAttributes(std::ostream & out, AttributeOutputFormat format) const;
 
+  /**
+   * Outputs the id and common fields of the graph element.
+   * For example, for a graph element with id node0:
+   *
+   *   "node0": {
+   *     "label": "Its Label",
+   *     "object": "0x7fff5623",
+   *     "attr": {"key": "value", "key2": "value2"}
+   *
+   * The output ends without a comma or newline.
+   * Use the resulting firstField boolean when adding additional fields.
+   *
+   * @param out the output stream to write to
+   * @param indent the level of indentation for the key
+   * @param firstField set to true if the object is still waiting for its first field
+   */
+  void
+  outputJsonObjectOpening(std::ostream & out, size_t indent, bool & firstField) const;
+
 private:
+  // The types an attribute can have. Its value can be a string, a reference to a
+  // GraphElement, or a reference to a program object.
+  using AttributeValue = std::variant<std::string, const GraphElement *, uintptr_t>;
+
   void
   SetProgramObjectUintptr(uintptr_t object);
+
+  void
+  OutputAttribute(std::ostream & out, const std::string & name, AttributeOutputFormat format) const;
 
   // A human-readable piece of text that should be rendered with the element
   std::string Label_;
@@ -264,9 +301,7 @@ private:
   // The object in the program this graph object corresponds to, or 0 if none
   uintptr_t ProgramObject_;
 
-  // Arbitrary collection of other attributes. The value can be a string, a reference to a
-  // GraphElement, or a reference to a program object.
-  using AttributeValue = std::variant<std::string, const GraphElement *, uintptr_t>;
+  // All other attributes
   std::unordered_map<std::string, AttributeValue> AttributeMap_;
 };
 
@@ -329,7 +364,7 @@ public:
 
   /**
    * Outputs the fully qualified port name, such as node8:i6:n
-   * Only used by the Dot printer.
+   * Used by the Dot and Json outputs when defining edges.
    */
   virtual void
   OutputDotPortId(std::ostream & out) const = 0;
@@ -410,22 +445,13 @@ public:
   OutputDotPortId(std::ostream & out) const override;
 
   /**
-   * Output the node to the ostream \p out, in the specified \p format.
-   * Lines printed while outputting are indented by at least \p indent levels.
-   * Depending on output format, this function may also recurse and print sub graphs.
-   */
-  void
-  Output(std::ostream & out, OutputFormat format, size_t indent) const;
-
-  /**
    * Prints all sub graphs of the node, to the given ostream \p out, in the given \p format.
-   * * All lines printed by this function are indented by at least \p indent levels.
+   * All lines printed by this function are indented by at least \p indent levels.
    * This function is recursive, as sub graphs may have nodes with sub graphs of their own.
    */
   virtual void
   OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const;
 
-protected:
   /**
    * Outputs the node in ASCII format to the ostream \p out, indented by \p indent levels.
    * In this format, attributes are ignored, and edges are only included implicitly,
@@ -436,10 +462,17 @@ protected:
 
   /**
    * Outputs the node in Dot format to the ostream \p out, indented by \p indent levels.
-   * This format includes all attributes. Edges are output
+   * This format includes all attributes.
    */
   virtual void
   OutputDot(std::ostream & out, size_t indent) const;
+
+  /**
+   * Outputs the node in JSON format to the ostream \p out, indented by \p indent levels.
+   * This format includes all attributes.
+   */
+  virtual void
+  outputJson(std::ostream & out, size_t indent) const;
 
 private:
   Graph & Graph_;
@@ -476,6 +509,9 @@ public:
   void
   OutputDotPortId(std::ostream & out) const override;
 
+  void
+  outputJson(std::ostream & out, size_t indent) const;
+
 private:
   InOutNode & Node_;
 };
@@ -506,6 +542,9 @@ public:
 
   void
   OutputDotPortId(std::ostream & out) const override;
+
+  void
+  outputJson(std::ostream & out, size_t indent) const;
 
 private:
   InOutNode & Node_;
@@ -593,6 +632,9 @@ protected:
 
   void
   OutputDot(std::ostream & out, size_t indent) const override;
+
+  void
+  outputJson(std::ostream & out, size_t indent) const override;
 
 private:
   // Attributes that need to be placed on the HTML table in the dot output, and not on the node.
@@ -754,10 +796,25 @@ public:
   SetArrowTail(std::string arrow);
 
   /**
-   * Outputs the edge in dot format. In ASCII, edges are not implicitly encoded by nodes/ports.
+   * Determines which sides on the edge should have arrow styling.
+   * A directed edge always has an arrow head.
+   * If arrow head or arrow tail styling is given, the direction reflects that.
+   * @return the direction value, as expected by the GraphViz "dir" attribute.
+   */
+  std::string_view
+  getDirection() const;
+
+  /**
+   * Outputs the edge in dot format.
    */
   void
   OutputDot(std::ostream & out, size_t indent) const;
+
+  /**
+   * Outputs the edge as an "id": key and json object.
+   */
+  void
+  outputJson(std::ostream & out, size_t indent) const;
 
 private:
   Port & From_;
@@ -973,7 +1030,7 @@ public:
    * @param indent the amount of indentation levels the graph should be printed with
    */
   void
-  Output(std::ostream & out, OutputFormat format, size_t indent = 0) const;
+  Output(std::ostream & out, OutputFormat format, size_t indent) const;
 
 private:
   void
@@ -981,6 +1038,9 @@ private:
 
   void
   OutputDot(std::ostream & out, size_t indent) const;
+
+  void
+  outputJson(std::ostream & out, size_t indent) const;
 
   /**
    * Creates a mapping from a GraphElement's assigned program object to the GraphElement.

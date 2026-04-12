@@ -6,6 +6,7 @@
 #ifndef JLM_TOOLING_COMMAND_HPP
 #define JLM_TOOLING_COMMAND_HPP
 
+#include "jlm/util/GraphWriter.hpp"
 #include <jlm/tooling/CommandGraph.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
@@ -416,9 +417,10 @@ private:
       util::StatisticsCollector & statisticsCollector);
 
   static void
-  PrintAsDot(
+  PrintAsGraphs(
       const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
+      jlm::util::graph::OutputFormat format,
       util::StatisticsCollector & statisticsCollector);
 
   [[nodiscard]] std::vector<std::shared_ptr<rvsdg::Transformation>>
