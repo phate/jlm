@@ -26,7 +26,7 @@ class LlvmFrontendCastingFixture : public testing::TestWithParam<int>
 
 TEST_P(LlvmFrontendCastingFixture, AllIntegerCasts)
 {
-  /**
+  /*
    * Creates a function equivalent to the following C code in LLVM IR:
    *
    * <SIZE x i8> f(uint32_t x) {
