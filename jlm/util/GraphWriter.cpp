@@ -12,9 +12,32 @@
 namespace jlm::util::graph
 {
 // All GraphElements with an associated ProgramObject get this attribute added
-static const char * const TOOLTIP_ATTRIBUTE = "tooltip";
+static const char * const DOT_TOOLTIP_ATTRIBUTE = "tooltip";
 // Edges are not named in dot, so use an attribute to assign id instead
-static const char * const EDGE_ID_ATTRIBUTE = "id";
+static const char * const DOT_EDGE_ID_ATTRIBUTE = "id";
+
+// The json field containing the label of a graph element
+static const char * const JSON_LABEL_FIELD = "label";
+// The map of attributes in a graph element json object
+static const char * const JSON_ATTRIBUTE_FIELD = "attr";
+// The address of the program object represented by a graph element json object
+static const char * const JSON_OBJECT_POINTER_FIELD = "obj";
+// Field specifying the type of node, for special nodes like InOutNodes
+static const char * const JSON_NODE_TYPE_FIELD = "type";
+
+// Fields in json objects representing InOutNodes
+static const char * const JSON_IN_PORTS_FIELD = "ins";
+static const char * const JSON_OUT_PORTS_FIELD = "outs";
+static const char * const JSON_SUBGRAPHS_FIELD = "subgraphs";
+static const char * const JSON_HTML_TABLE_ATTRIBUTES_FIELD = "htmlTableAttr";
+
+// Fields in Graph objects
+static const char * const JSON_PARENT_NODE_FIELD = "parentNode";
+static const char * const JSON_PARENT_GRAPH_FIELD = "parentGraph";
+static const char * const JSON_ARGUMENTS_FIELD = "arguments";
+static const char * const JSON_NODES_FIELD = "nodes";
+static const char * const JSON_RESULTS_FIELD = "results";
+static const char * const JSON_EDGES_FIELD = "edges";
 
 /**
  * Checks if the provided \p string looks like a regular C identifier.
@@ -419,7 +442,7 @@ GraphElement::OutputAttribute(
   }
   else if (auto object = GetAttributeObject(name))
   {
-    outputKeyValuePair(out, name, strfmt("ptr", std::hex, *object), format);
+    outputKeyValuePair(out, name, strfmt("ptr", reinterpret_cast<void *>(*object)), format);
   }
   else
   {
@@ -431,24 +454,33 @@ void
 GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format) const
 {
   bool first = true;
-  std::string_view separator = " ";
-  if (format == AttributeOutputFormat::JSON)
+  const auto next = [&]()
   {
-    separator = ", ";
-  }
+    if (first)
+      first = false;
+    else if (format == AttributeOutputFormat::JSON)
+      out << ", ";
+    else
+      out << ' ';
+  };
 
   for (const auto & [name, _] : AttributeMap_)
   {
-    if (first)
-    {
-      first = false;
-    }
-    else
-    {
-      out << separator;
-    }
-
+    next();
     OutputAttribute(out, name, format);
+  }
+
+  // If no tooltip attribute is specified, use the program object pointer.
+  // This is not done in JSON, as the program object is included in a separate field.
+  if (format != AttributeOutputFormat::JSON && !HasAttribute(DOT_TOOLTIP_ATTRIBUTE)
+      && HasProgramObject())
+  {
+    next();
+    outputKeyValuePair(
+        out,
+        DOT_TOOLTIP_ATTRIBUTE,
+        strfmt(reinterpret_cast<void *>(GetProgramObject())),
+        format);
   }
 }
 
@@ -505,19 +537,19 @@ GraphElement::outputJsonObjectOpening(std::ostream & out, size_t indent, bool & 
   indent++;
   if (HasLabel())
   {
-    printNextJsonField(out, "label", indent, firstField);
+    printNextJsonField(out, JSON_LABEL_FIELD, indent, firstField);
     printJsonString(out, GetLabel());
   }
 
   if (HasProgramObject())
   {
-    printNextJsonField(out, "obj", indent, firstField);
+    printNextJsonField(out, JSON_OBJECT_POINTER_FIELD, indent, firstField);
     out << '"' << reinterpret_cast<void *>(GetProgramObject()) << '"';
   }
 
   if (!AttributeMap_.empty())
   {
-    printNextJsonField(out, "attr", indent, firstField);
+    printNextJsonField(out, JSON_ATTRIBUTE_FIELD, indent, firstField);
     out << '{';
     OutputAttributes(out, AttributeOutputFormat::JSON);
     out << '}';
@@ -1063,26 +1095,26 @@ InOutNode::outputJson(std::ostream & out, size_t indent) const
   outputJsonObjectOpening(out, indent, firstField);
   indent++;
 
-  printNextJsonField(out, "type", indent, firstField) << "\"inout\"";
+  printNextJsonField(out, JSON_NODE_TYPE_FIELD, indent, firstField) << "\"inout\"";
 
   // Input ports
   if (NumInputPorts())
   {
-    printNextJsonField(out, "ins", indent, firstField);
+    printNextJsonField(out, JSON_IN_PORTS_FIELD, indent, firstField);
     printJsonElementMap(out, indent + 1, InputPorts_);
   }
 
   // Output ports
   if (NumOutputPorts())
   {
-    printNextJsonField(out, "outs", indent, firstField);
+    printNextJsonField(out, JSON_OUT_PORTS_FIELD, indent, firstField);
     printJsonElementMap(out, indent + 1, OutputPorts_);
   }
 
   // Subgraphs
   if (NumSubgraphs())
   {
-    printNextJsonField(out, "subgraphs", indent, firstField) << "[" << std::endl;
+    printNextJsonField(out, JSON_SUBGRAPHS_FIELD, indent, firstField) << "[" << std::endl;
     bool first = true;
     for (const auto & subgraph : SubGraphs_)
     {
@@ -1100,7 +1132,7 @@ InOutNode::outputJson(std::ostream & out, size_t indent) const
   // HTML Table attributes
   if (!HtmlTableAttributes_.empty())
   {
-    printNextJsonField(out, "htmlTableAttr", indent, firstField) << "{";
+    printNextJsonField(out, JSON_HTML_TABLE_ATTRIBUTES_FIELD, indent, firstField) << "{";
     bool first = true;
     for (const auto & [key, value] : HtmlTableAttributes_)
     {
@@ -1300,9 +1332,9 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
   }
 
   // Edges are not normally named, so use the id attribute to include the edge's id
-  if (!HasAttribute(EDGE_ID_ATTRIBUTE))
+  if (!HasAttribute(DOT_EDGE_ID_ATTRIBUTE))
   {
-    out << EDGE_ID_ATTRIBUTE << "=";
+    out << DOT_EDGE_ID_ATTRIBUTE << "=";
     printIdentifierSafe(out, GetFullId());
     out << " ";
   }
@@ -1645,12 +1677,12 @@ Graph::outputJson(std::ostream & out, size_t indent) const
   // If we are a subgraph, list both the node and its parent graph
   if (IsSubgraph())
   {
-    printNextJsonField(out, "parentNode", indent, firstField);
+    printNextJsonField(out, JSON_PARENT_NODE_FIELD, indent, firstField);
     out << '"';
     ParentNode_->PrintFullId(out);
     out << '"';
 
-    printNextJsonField(out, "parentGraph", indent, firstField);
+    printNextJsonField(out, JSON_PARENT_GRAPH_FIELD, indent, firstField);
     out << '"';
     ParentNode_->GetGraph().PrintFullId(out);
     out << '"';
@@ -1659,28 +1691,28 @@ Graph::outputJson(std::ostream & out, size_t indent) const
   // Arguments
   if (!ArgumentNodes_.empty())
   {
-    printNextJsonField(out, "arguments", indent, firstField);
+    printNextJsonField(out, JSON_ARGUMENTS_FIELD, indent, firstField);
     printJsonElementMap(out, indent, ArgumentNodes_);
   }
 
   // Nodes
   if (!Nodes_.empty())
   {
-    printNextJsonField(out, "nodes", indent, firstField);
+    printNextJsonField(out, JSON_NODES_FIELD, indent, firstField);
     printJsonElementMap(out, indent, Nodes_);
   }
 
   // Results
   if (!ResultNodes_.empty())
   {
-    printNextJsonField(out, "results", indent, firstField);
+    printNextJsonField(out, JSON_RESULTS_FIELD, indent, firstField);
     printJsonElementMap(out, indent, ResultNodes_);
   }
 
   // Edges
   if (!Edges_.empty())
   {
-    printNextJsonField(out, "edges", indent, firstField);
+    printNextJsonField(out, JSON_EDGES_FIELD, indent, firstField);
     printJsonElementMap(out, indent, Edges_);
   }
 

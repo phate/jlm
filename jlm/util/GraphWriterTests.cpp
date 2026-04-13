@@ -105,12 +105,12 @@ TEST(GraphWriterTests, TestNode)
   node.Finalize();
 
   std::ostringstream out;
-  node.Output(out, OutputFormat::ASCII, 0);
+  node.OutputASCII(out, 0);
   auto string = out.str();
   EXPECT_TRUE(StringContains(string, "MyNode"));
 
   std::ostringstream out2;
-  node.Output(out2, OutputFormat::Dot, 0);
+  node.OutputDot(out2, 0);
   auto string2 = out2.str();
   EXPECT_TRUE(StringContains(string2, "label=MyNode"));
   EXPECT_TRUE(StringContains(string2, "shape=rect"));
@@ -138,9 +138,9 @@ TEST(GraphWriterTests, TestASCIIEdges)
   graph.Finalize();
 
   std::ostringstream out;
-  node0.Output(out, OutputFormat::ASCII, 0);
-  node1.Output(out, OutputFormat::ASCII, 0);
-  node2.Output(out, OutputFormat::ASCII, 0);
+  node0.OutputASCII(out, 0);
+  node1.OutputASCII(out, 0);
+  node2.OutputASCII(out, 0);
 
   auto string = out.str();
   EXPECT_TRUE(StringContains(string, "node0:NODE0"));
@@ -181,7 +181,7 @@ TEST(GraphWriterTests, TestInOutNode)
   EXPECT_TRUE(subgraph.IsFinalized());
 
   std::ostringstream out;
-  node.Output(out, OutputFormat::ASCII, 0);
+  node.OutputASCII(out, 0);
   auto string = out.str();
   EXPECT_TRUE(StringContains(string, "out0, out1, out2 := \"My\\nInOutNode\" out2, []"));
 
@@ -191,7 +191,7 @@ TEST(GraphWriterTests, TestInOutNode)
 
   // Check that HTML labels with newlines turn into <BR/>
   std::ostringstream out2;
-  node.Output(out2, OutputFormat::Dot, 0);
+  node.OutputDot(out2, 0);
   auto string0 = out2.str();
   EXPECT_TRUE(StringContains(string0, "My<BR/>InOutNode"));
 }

@@ -626,7 +626,6 @@ public:
   void
   OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const override;
 
-protected:
   void
   OutputASCII(std::ostream & out, size_t indent) const override;
 
