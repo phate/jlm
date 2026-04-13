@@ -5,6 +5,8 @@ BUILD_OUT_PREFIX = build/
 
 default_target: all
 
+INSTALL ?= install
+
 ifeq ($(shell if [ -e Makefile.config ] ; then echo yes ; else echo no; fi),no)
 $(error No build configuration set. Please run ./configure.sh before building.)
 endif
