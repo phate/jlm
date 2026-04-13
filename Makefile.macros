@@ -41,21 +41,6 @@ ifeq ($$(ENABLE_SHARED), yes)
 SHARED_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.so
 endif
 
-### test rules
-
-# list of test binaries within the target build directory
-$1_TESTBINARIES = $$(patsubst %, $$(BUILD_OUT_PREFIX)%, $$($1_TESTS))
-
-# add to global list of tests
-TESTS += $$(patsubst %, $$(BUILD_OUT_PREFIX)%, $$($1_TESTS))
-
-# linking of test binaries
-$$($1_TESTBINARIES): $$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_TEST_LIBS)) $$(BUILD_OUT_PREFIX)$1.a
-$$($1_TESTBINARIES): LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_TEST_LIBS)) $$($1_TEST_EXTRA_LDFLAGS)
-
-# add test source files to list of sources
-SOURCES += $$(patsubst %, %.cpp, $$($1_TESTS))
-
 ### test coverage rules
 
 ifeq ($$(ENABLE_COVERAGE), yes)
@@ -67,18 +52,6 @@ $$(BUILD_OUT_PREFIX)$1.coverage.a: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.cove
 
 # add to clobal list of test coverage libraries
 COVERAGE_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.coverage.a
-
-## rules to build the tests for this library with coverage support
-
-# list of test coverage binaries for this library, within the target build directory
-$1_COVERAGEBINARIES = $$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage, $$($1_TESTS))
-
-# add to global list of test coverage binaries
-COVERAGE_TESTS += $$($1_COVERAGEBINARIES)
-
-# linking of coverage binaries; we need to link the "coverage" version of dependent libraries, transitively
-$$($1_COVERAGEBINARIES): $$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_TEST_LIBS)) $$(BUILD_OUT_PREFIX)$1.coverage.a
-$$($1_COVERAGEBINARIES): LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_TEST_LIBS)) $$($1_TEST_EXTRA_LDFLAGS)
 
 STATIC_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.coverage.a
 
@@ -145,4 +118,11 @@ GTESTS += $$(BUILD_OUT_PREFIX)$1
 ifndef ($$(BUILD_OUT_PREFIX),)
 $1: $$(BUILD_OUT_PREFIX)$1
 endif
+
+ifeq ($$(ENABLE_COVERAGE), yes)
+$$(BUILD_OUT_PREFIX)$1.coverage: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.la, $$($1_SOURCES)) $$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_LIBS))
+$$(BUILD_OUT_PREFIX)$1.coverage: LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_LIBS)) $$($1_EXTRA_LDFLAGS)
+COVERAGE_TESTS += $$(BUILD_OUT_PREFIX)$1.coverage
+endif
+
 endef
