@@ -104,16 +104,25 @@ TEST(GraphWriterTests, TestNode)
 
   node.Finalize();
 
+  // Assert ASCII output
   std::ostringstream out;
   node.OutputASCII(out, 0);
   auto string = out.str();
   EXPECT_TRUE(StringContains(string, "MyNode"));
 
+  // Assert dot output
   std::ostringstream out2;
   node.OutputDot(out2, 0);
   auto string2 = out2.str();
   EXPECT_TRUE(StringContains(string2, "label=MyNode"));
   EXPECT_TRUE(StringContains(string2, "shape=rect"));
+
+  // Assert json output
+  std::ostringstream jsonOut;
+  node.outputJson(jsonOut, 0);
+  auto jsonString = jsonOut.str();
+  EXPECT_TRUE(StringContains(jsonString, "\"label\": \"MyNode\""));
+  EXPECT_TRUE(StringContains(jsonString, "\"attr\": {\"shape\":\"rect\"}"));
 }
 
 TEST(GraphWriterTests, TestASCIIEdges)
@@ -175,8 +184,9 @@ TEST(GraphWriterTests, TestInOutNode)
   resultNode.SetOutsideDestination(node.GetOutputPort(0));
 
   subgraph.CreateDirectedEdge(argumentNode, resultNode);
-
   graph.Finalize();
+
+  // Assert
   EXPECT_TRUE(node.IsFinalized());
   EXPECT_TRUE(subgraph.IsFinalized());
 
@@ -194,6 +204,22 @@ TEST(GraphWriterTests, TestInOutNode)
   node.OutputDot(out2, 0);
   auto string0 = out2.str();
   EXPECT_TRUE(StringContains(string0, "My<BR/>InOutNode"));
+
+  // Assert json output
+  std::ostringstream jsonOut;
+  node.outputJson(jsonOut, 0);
+  auto jsonString = jsonOut.str();
+  EXPECT_TRUE(StringContains(jsonString, "\"label\": \"My\\nInOutNode\""));
+  EXPECT_TRUE(StringContains(jsonString, "\"type\": \"inout"));
+  // All input ports and output ports have corresponding json objects
+  EXPECT_TRUE(StringContains(jsonString, strfmt('"', node.GetInputPort(0).GetFullId(), "\": {")));
+  EXPECT_TRUE(StringContains(jsonString, strfmt('"', node.GetInputPort(1).GetFullId(), "\": {")));
+  EXPECT_TRUE(StringContains(jsonString, strfmt('"', node.GetOutputPort(0).GetFullId(), "\": {")));
+  EXPECT_TRUE(StringContains(jsonString, strfmt('"', node.GetOutputPort(1).GetFullId(), "\": {")));
+  EXPECT_TRUE(StringContains(jsonString, strfmt('"', node.GetOutputPort(2).GetFullId(), "\": {")));
+  // Assert that the InOutNode contains a list of subgraphs, holding the id of the subgraph
+  EXPECT_TRUE(
+      StringContains(jsonString, strfmt("\"subgraphs\": [\"", subgraph.GetFullId(), "\"]")));
 }
 
 TEST(GraphWriterTests, TestEdge)
@@ -318,16 +344,27 @@ TEST(GraphWriterTests, TestGraphAttributes)
 
   graph.Finalize();
 
-  // Test that the Dot output of the graph contains everything specified
+  // Assert that the Dot output of the graph contains everything specified
   std::ostringstream out;
   graph.Output(out, OutputFormat::Dot, 0);
   auto string = out.str();
-
   EXPECT_TRUE(StringContains(string, "label=\"My Graph\""));
-
   // Nodes referred to in attributes
   EXPECT_TRUE(StringContains(string, "friend=node0"));
   EXPECT_TRUE(StringContains(string, "foe=graph0"));
+
+  // Assert that the json output contains the attributes
+  std::ostringstream jsonOut;
+  graph.Output(jsonOut, OutputFormat::Json, 0);
+  auto jsonString = jsonOut.str();
+  // Check that the graph has its label
+  EXPECT_TRUE(StringContains(jsonString, "\"label\": \"My Graph\""));
+  // Check that the graph has the address of its program object
+  EXPECT_TRUE(
+      StringContains(jsonString, strfmt("\"obj\": \"", reinterpret_cast<void *>(&myInt), "\"")));
+  // Check that attributes are printed, and refer to graph elements by id
+  EXPECT_TRUE(StringContains(jsonString, "\"friend\":\"node0\""));
+  EXPECT_TRUE(StringContains(jsonString, "\"foe\":\"graph0\""));
 }
 
 TEST(GraphWriterTests, TestGraphWriterClass)

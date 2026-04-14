@@ -15,6 +15,8 @@ namespace jlm::util::graph
 static const char * const DOT_TOOLTIP_ATTRIBUTE = "tooltip";
 // Edges are not named in dot, so use an attribute to assign id instead
 static const char * const DOT_EDGE_ID_ATTRIBUTE = "id";
+// For setting the background color of cells in dot html tables
+static const char * const DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE = "BGCOLOR";
 
 // The json field containing the label of a graph element
 static const char * const JSON_LABEL_FIELD = "label";
@@ -152,7 +154,7 @@ printStringAsHtmlAttributeName(std::ostream & out, std::string_view string)
 
 /**
  * Prints the given \p string as a JSON string to the \p out stream.
- * The result is always quoted. qoutes, backslashes and newlines get escaped.
+ * The result is always quoted. quotes, backslashes and newlines get escaped.
  */
 static void
 printJsonString(std::ostream & out, std::string_view string)
@@ -750,9 +752,7 @@ Node::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) co
 
 InputPort::InputPort(InOutNode & node)
     : Node_(node)
-{
-  SetFillColor(Colors::White);
-}
+{}
 
 const char *
 InputPort::GetIdPrefix() const
@@ -776,7 +776,7 @@ void
 InputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("BGCOLOR", std::move(color));
+  SetAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
@@ -795,9 +795,7 @@ InputPort::outputJson(std::ostream & out, size_t indent) const
 
 OutputPort::OutputPort(InOutNode & node)
     : Node_(node)
-{
-  SetFillColor(Colors::White);
-}
+{}
 
 const char *
 OutputPort::GetIdPrefix() const
@@ -821,7 +819,7 @@ void
 OutputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("BGCOLOR", std::move(color));
+  SetAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
@@ -846,8 +844,6 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 
   for (size_t i = 0; i < outputPorts; i++)
     CreateOutputPort();
-
-  SetFillColor(Colors::White);
 }
 
 void
@@ -928,7 +924,7 @@ InOutNode::SetHtmlTableAttribute(std::string name, std::string value)
 void
 InOutNode::SetFillColor(std::string color)
 {
-  SetHtmlTableAttribute("BGCOLOR", std::move(color));
+  SetHtmlTableAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
@@ -1023,6 +1019,11 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
       out << "PORT=\"" << port.GetFullId() << "\" ";
       port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      // Unless a different color is specified, fill the port cell with white
+      if (!port.HasAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE))
+      {
+        out << DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE << "=\"white\" ";
+      }
       if (port.HasLabel())
       {
         out << "><FONT POINT-SIZE=\"10\">";
@@ -1054,6 +1055,11 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     out << "=\"";
     printStringAsHtmlText(out, value, false);
     out << "\" ";
+  }
+  // Unless a different color is specified, fill the table cell with white
+  if (HtmlTableAttributes_.find(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE) == HtmlTableAttributes_.end())
+  {
+    out << DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE << "=\"white\" ";
   }
   out << ">" << std::endl;
   out << "\t\t\t<TR><TD CELLPADDING=\"1\">";
@@ -1114,7 +1120,7 @@ InOutNode::outputJson(std::ostream & out, size_t indent) const
   // Subgraphs
   if (NumSubgraphs())
   {
-    printNextJsonField(out, JSON_SUBGRAPHS_FIELD, indent, firstField) << "[" << std::endl;
+    printNextJsonField(out, JSON_SUBGRAPHS_FIELD, indent, firstField) << "[";
     bool first = true;
     for (const auto & subgraph : SubGraphs_)
     {
