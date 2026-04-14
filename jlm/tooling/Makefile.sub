@@ -51,13 +51,13 @@ libtooling_HEADERS = \
 
 $(eval $(call common_library,libtooling))
 
-tests/jlm/tooling/run-libtooling-tests_SOURCES = \
-    tests/jlm/tooling/JlcCommandGraphGeneratorTests.cpp \
-    tests/jlm/tooling/JlcCommandLineParserTests.cpp \
-    tests/jlm/tooling/JlmOptCommandLineParserTests.cpp \
-    tests/jlm/tooling/JlmOptCommandTests.cpp \
+run-libtooling-tests_SOURCES = \
+    jlm/tooling/JlcCommandGraphGeneratorTests.cpp \
+    jlm/tooling/JlcCommandLineParserTests.cpp \
+    jlm/tooling/JlmOptCommandLineParserTests.cpp \
+    jlm/tooling/JlmOptCommandTests.cpp \
 
-tests/jlm/tooling/run-libtooling-tests_LIBS = \
+run-libtooling-tests_LIBS = \
     libtooling \
     $(if $(ENABLE_HLS),libhls) \
     $(if $(ENABLE_MLIR),libmlir) \
@@ -65,8 +65,8 @@ tests/jlm/tooling/run-libtooling-tests_LIBS = \
     librvsdg \
     libutil
 
-tests/jlm/tooling/run-libtooling-tests_EXTRA_LDFLAGS = \
+run-libtooling-tests_EXTRA_LDFLAGS = \
     $(MLIR_LDFLAGS) \
     $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 
-$(eval $(call common_test,tests/jlm/tooling/run-libtooling-tests))
+$(eval $(call common_test,run-libtooling-tests))
