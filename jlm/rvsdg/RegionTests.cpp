@@ -460,6 +460,98 @@ TEST(RegionTests, ToTree_RvsdgWithStructuralNodesAndAnnotations)
   EXPECT_EQ(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine), 0);
 }
 
+TEST(RegionTests, toJson_EmptyRvsdg)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph rvsdg;
+
+  // Act
+  const auto json = Region::toJson(rvsdg.GetRootRegion());
+  std::cout << json << std::flush;
+
+  // Assert
+  EXPECT_EQ(json, "{}");
+}
+
+TEST(RegionTests, toJson_EmptyRvsdgWithAnnotations)
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  Graph rvsdg;
+
+  AnnotationMap annotationMap;
+  annotationMap.AddAnnotation(
+      &rvsdg.GetRootRegion(),
+      Annotation("NumNodes", static_cast<uint64_t>(rvsdg.GetRootRegion().numNodes())));
+
+  // Act
+  const auto json = Region::toJson(rvsdg.GetRootRegion(), annotationMap);
+  std::cout << json << std::flush;
+
+  // Assert
+  EXPECT_EQ(json, "{\"NumNodes\": 0}");
+}
+
+TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph rvsdg;
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  TestStructuralNode::create(structuralNode->subregion(0), 1);
+  TestStructuralNode::create(structuralNode->subregion(1), 1);
+  TestStructuralNode::create(structuralNode->subregion(1), 3);
+
+  // Act
+  const auto json = Region::toJson(rvsdg.GetRootRegion());
+  std::cout << json << std::flush;
+
+  // Assert
+  EXPECT_EQ(
+      json,
+      "{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
+      "[{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
+      "[{}]}]}, {\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", "
+      "\"Subregions\" : [{}]}, {\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
+      "[{}, {}, {}]}]}]}]}");
+}
+
+TEST(RegionTests, toJson_RvsdgWithStructuralNodesAndAnnotations)
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  Graph rvsdg;
+  auto structuralNode1 = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode2 = TestStructuralNode::create(structuralNode1->subregion(1), 3);
+  auto subregion2 = structuralNode2->subregion(2);
+
+  AnnotationMap annotationMap;
+  annotationMap.AddAnnotation(
+      subregion2,
+      Annotation("NumNodes", static_cast<uint64_t>(subregion2->numNodes())));
+  annotationMap.AddAnnotation(
+      subregion2,
+      Annotation("NumArguments", static_cast<uint64_t>(subregion2->narguments())));
+
+  // Act
+  const auto json = Region::toJson(rvsdg.GetRootRegion(), annotationMap);
+  std::cout << json << std::flush;
+
+  // Assert
+  EXPECT_EQ(
+      json,
+      "{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
+      "[{}, {\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" "
+      ": [{}, {}, {\"NumNodes\": 0,\"NumArguments\": 0}]}]}]}]}");
+}
+
 TEST(RegionTests, BottomNodeTests)
 {
   using namespace jlm::rvsdg;
