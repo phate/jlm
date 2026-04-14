@@ -155,15 +155,16 @@ $(BUILD_OUT_PREFIX)%.coverage.la: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(COVERAGEFLAGS) -o $@ $<
 
-$(COVERAGE_TESTS): $(BUILD_OUT_PREFIX)%.coverage : $(BUILD_OUT_PREFIX)%.coverage.la
-$(COVERAGE_TESTS): LDFLAGS += -pthread $(COVERAGEFLAGS)
+$(COVERAGE_TESTS): LDFLAGS += -pthread $(COVERAGEFLAGS) $(GTEST_LDFLAGS)
 
-coverage: $(COVERAGE_TESTS) .PHONY
+coverage: $(COVERAGE_TESTS)
 	for CTEST in $(COVERAGE_TESTS) ; do $$CTEST ; done
 	mkdir -p $(BUILD_OUT_PREFIX)coverage
 	gcovr $(BUILD_OUT_PREFIX) --html-details -o $(BUILD_OUT_PREFIX)coverage/coverage.html
 
 endif
+
+.PHONY: coverage
 
 ################################################################################
 # Documentation rules
