@@ -720,6 +720,26 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a JSON string.
+   *
+   * @param region The top-level region that is converted.
+   * @param annotationMap A map with annotations for instances of \ref Region%s or
+   * StructuralNode%s.
+   * @return A string containing the JSON of \p region.
+   */
+  [[nodiscard]] static std::string
+  toJson(const Region & region, const util::AnnotationMap & annotationMap) noexcept;
+
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a JSON string.
+   *
+   * @param region The top-level region that is converted.
+   * @return A string containing the JSON of \p region.
+   */
+  [[nodiscard]] static std::string
+  toJson(const Region & region) noexcept;
+
 private:
   static void
   ToTree(
@@ -727,6 +747,21 @@ private:
       const util::AnnotationMap & annotationMap,
       size_t indentationDepth,
       std::stringstream & stream) noexcept;
+
+  static void
+  toJson(
+      const Region & region,
+      const util::AnnotationMap & annotationMap,
+      std::stringstream & stream) noexcept;
+
+  static void
+  toJson(
+      const StructuralNode & structuralNode,
+      const util::AnnotationMap & annotationMap,
+      std::stringstream & stream) noexcept;
+
+  [[nodiscard]] static std::string
+  toJsonKeyValue(const util::Annotation & annotation) noexcept;
 
   [[nodiscard]] static std::string
   GetAnnotationString(
