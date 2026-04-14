@@ -260,6 +260,28 @@ private:
   VerifyBlocklists() const;
 
   /**
+   * Goes through all ModRefSets in all functions, and keeps track of memory nodes that always
+   * appear alongside the external memory node. These memory nodes are compactable,
+   * and can be removed from all ModRefSets in the function.
+   */
+  void
+  doExternalCompression();
+
+  /**
+   * Performs external compation in the given function.
+   */
+  void
+  compressExternalInFunction(const rvsdg::LambdaNode & lambda);
+
+  /**
+   * Helper function for recursively finding all ModRefSets in the given node.
+   * @param node the node to traverse, including any subregions.
+   * @param modRefSets the hash set in which all found ModRefSets are placed.
+   */
+  void
+  findAllModRefSets(const rvsdg::Node & node, util::HashSet<ModRefSetIndex> & modRefSets);
+
+  /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   static std::string
