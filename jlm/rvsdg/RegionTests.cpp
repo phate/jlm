@@ -499,6 +499,7 @@ TEST(RegionTests, toJson_EmptyRvsdgWithAnnotations)
 TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::util;
 
   // Arrange
   Graph rvsdg;
@@ -507,8 +508,13 @@ TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
   TestStructuralNode::create(structuralNode->subregion(1), 1);
   TestStructuralNode::create(structuralNode->subregion(1), 3);
 
+  AnnotationMap annotationMap;
+  annotationMap.AddAnnotation(
+      structuralNode->subregion(1),
+      { "RegionId", structuralNode->subregion(1)->getRegionId() });
+
   // Act
-  const auto json = Region::toJson(rvsdg.GetRootRegion());
+  const auto json = Region::toJson(rvsdg.GetRootRegion(), annotationMap);
   std::cout << json << std::flush;
 
   // Assert
@@ -516,9 +522,9 @@ TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
       json,
       "{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
       "[{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
-      "[{}]}]}, {\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", "
-      "\"Subregions\" : [{}]}, {\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
-      "[{}, {}, {}]}]}]}]}");
+      "[{}]}]}, {\"RegionId\": 2,\"StructuralNodes\" : [{\"DebugString\": "
+      "\"TestStructuralOperation\", \"Subregions\" : [{}]}, {\"DebugString\": "
+      "\"TestStructuralOperation\", \"Subregions\" : [{}, {}, {}]}]}]}]}");
 }
 
 TEST(RegionTests, toJson_RvsdgWithStructuralNodesAndAnnotations)
