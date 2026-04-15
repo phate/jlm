@@ -493,7 +493,7 @@ TEST(RegionTests, toJson_EmptyRvsdgWithAnnotations)
   std::cout << json << std::flush;
 
   // Assert
-  EXPECT_EQ(json, "{\"NumNodes\": 0}");
+  EXPECT_EQ(json, "{\"NumNodes\":0}");
 }
 
 TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
@@ -520,11 +520,11 @@ TEST(RegionTests, toJson_RvsdgWithStructuralNodes)
   // Assert
   EXPECT_EQ(
       json,
-      "{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
-      "[{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
-      "[{}]}]}, {\"RegionId\": 2,\"StructuralNodes\" : [{\"DebugString\": "
-      "\"TestStructuralOperation\", \"Subregions\" : [{}]}, {\"DebugString\": "
-      "\"TestStructuralOperation\", \"Subregions\" : [{}, {}, {}]}]}]}]}");
+      "{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\":"
+      "[{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\":"
+      "[{}]}]},{\"RegionId\":2,\"StructuralNodes\":[{\"DebugString\":"
+      "\"TestStructuralOperation\",\"Subregions\":[{}]},{\"DebugString\":"
+      "\"TestStructuralOperation\",\"Subregions\":[{},{},{}]}]}]}]}");
 }
 
 TEST(RegionTests, toJson_RvsdgWithStructuralNodesAndAnnotations)
@@ -553,9 +553,9 @@ TEST(RegionTests, toJson_RvsdgWithStructuralNodesAndAnnotations)
   // Assert
   EXPECT_EQ(
       json,
-      "{\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" : "
-      "[{}, {\"StructuralNodes\" : [{\"DebugString\": \"TestStructuralOperation\", \"Subregions\" "
-      ": [{}, {}, {\"NumNodes\": 0,\"NumArguments\": 0}]}]}]}]}");
+      "{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\":"
+      "[{},{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\""
+      ":[{},{},{\"NumNodes\":0,\"NumArguments\":0}]}]}]}]}");
 }
 
 TEST(RegionTests, BottomNodeTests)
