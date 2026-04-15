@@ -73,9 +73,8 @@ TEST(RvsdgTreePrinterTests, PrintRvsdgTree)
   std::cout << tree;
 
   // Assert
-  auto expectedTree = "RootRegion\n"
-                      "-LAMBDA[f]\n"
-                      "--Region[0]\n\n";
+  auto expectedTree =
+      "{\"StructuralNodes\":[{\"DebugString\":\"LAMBDA[f]\",\"Subregions\":[{}]}]}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
@@ -105,10 +104,9 @@ TEST(RvsdgTreePrinterTests, PrintNumRvsdgNodesAnnotation)
   std::cout << tree;
 
   // Assert
-  auto expectedTree = "RootRegion NumRvsdgNodes:2\n"
-                      "-TestStructuralOperation NumRvsdgNodes:2\n"
-                      "--Region[0] NumRvsdgNodes:1\n"
-                      "--Region[1] NumRvsdgNodes:1\n\n";
+  auto expectedTree =
+      "{\"NumRvsdgNodes\":2,\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\","
+      "\"NumRvsdgNodes\":2,\"Subregions\":[{\"NumRvsdgNodes\":1},{\"NumRvsdgNodes\":1}]}]}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
@@ -157,11 +155,9 @@ TEST(RvsdgTreePrinterTests, PrintNumLoadNodesAnnotation)
   std::cout << tree;
 
   // Assert
-  auto expectedTree = "RootRegion NumLoadNodes:0\n"
-                      "-TestStructuralOperation NumLoadNodes:2\n"
-                      "--Region[0] NumLoadNodes:1\n"
-                      "--Region[1] NumLoadNodes:0\n"
-                      "--Region[2] NumLoadNodes:1\n\n";
+  auto expectedTree = "{\"NumLoadNodes\":0,\"StructuralNodes\":[{\"DebugString\":"
+                      "\"TestStructuralOperation\",\"NumLoadNodes\":2,\"Subregions\":"
+                      "[{\"NumLoadNodes\":1},{\"NumLoadNodes\":0},{\"NumLoadNodes\":1}]}]}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
@@ -204,10 +200,11 @@ TEST(RvsdgTreePrinterTests, PrintNumMemoryStateInputsOutputsAnnotation)
 
   // Assert
   auto expectedTree =
-      "RootRegion NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
-      "-TestStructuralOperation NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"
-      "--Region[0] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
-      "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
+      "{\"NumMemoryStateTypeArguments\":1,\"NumMemoryStateTypeResults\":1,\"StructuralNodes\":"
+      "[{\"DebugString\":\"TestStructuralOperation\",\"NumMemoryStateTypeInputs\":1,"
+      "\"NumMemoryStateTypeOutputs\":1,\"Subregions\":[{\"NumMemoryStateTypeArguments\":"
+      "1,\"NumMemoryStateTypeResults\":1},{\"NumMemoryStateTypeArguments\":"
+      "1,\"NumMemoryStateTypeResults\":1}]}]}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
@@ -235,10 +232,9 @@ TEST(RvsdgTreePrinterTests, printDebugIds)
   std::cout << tree;
 
   // Assert
-  const auto expectedTree = "RootRegion RegionId:0\n"
-                            "-TestStructuralOperation NodeId:0\n"
-                            "--Region[0] RegionId:1\n"
-                            "--Region[1] RegionId:2\n\n";
+  const auto expectedTree =
+      "{\"RegionId\":0,\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\","
+      "\"NodeId\":0,\"Subregions\":[{\"RegionId\":1},{\"RegionId\":2}]}]}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
