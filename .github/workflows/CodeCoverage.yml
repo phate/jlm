@@ -1,0 +1,20 @@
+name: CodeCoverage
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm with clang++ for all dialects in debug mode with code coverage."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: debug
+          cxx: clang++
+          enable-hls: 'true'
+          enable-mlir: 'true'
+          make-target: all
+          enable-asserts: 'true'
+          enable-coverage: 'true'
