@@ -517,6 +517,9 @@ Region::toJson(
 
   if (!structuralNodes.empty())
   {
+    if (annotationMap.HasAnnotations(&region))
+      stream << ",";
+    
     bool firstNode = true;
     stream << "\"StructuralNodes\" : [";
     for (const auto & structuralNode : structuralNodes)
