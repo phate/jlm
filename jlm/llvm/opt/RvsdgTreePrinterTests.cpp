@@ -211,3 +211,34 @@ TEST(RvsdgTreePrinterTests, PrintNumMemoryStateInputsOutputsAnnotation)
 
   EXPECT_EQ(tree, expectedTree);
 }
+
+TEST(RvsdgTreePrinterTests, printDebugIds)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto valueType = TestType::createValueType();
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+
+  const RvsdgTreePrinter::Configuration configuration(
+      { RvsdgTreePrinter::Configuration::Annotation::DebugIds });
+  RvsdgTreePrinter printer(configuration);
+
+  // Act
+  auto tree = RunAndExtractFile(*rvsdgModule, printer);
+  std::cout << tree;
+
+  // Assert
+  const auto expectedTree = "RootRegion RegionId:0\n"
+                            "-TestStructuralOperation NodeId:0\n"
+                            "--Region[0] RegionId:1\n"
+                            "--Region[1] RegionId:2\n\n";
+
+  EXPECT_EQ(tree, expectedTree);
+}
