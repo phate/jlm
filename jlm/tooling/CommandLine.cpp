@@ -235,8 +235,8 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
 {
   static std::unordered_map<OutputFormat, std::string_view> mapping = {
     { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
-    { OutputFormat::Json, "json" },   {OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
-    { OutputFormat::Tree, "tree" },
+    { OutputFormat::Json, "json" },   { OutputFormat::Llvm, "llvm" },
+    { OutputFormat::Mlir, "mlir" },   { OutputFormat::Tree, "tree" },
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
