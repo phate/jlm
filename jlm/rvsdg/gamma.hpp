@@ -235,7 +235,7 @@ public:
    *   The entry variable description corresponding to this input
    *
    * \pre
-   *   \p output must be the entry argument to a subregion of this gamma nade.
+   *   \p output must be the entry argument to a subregion of this gamma node.
    *
    * Maps the subregion entry argument to the variable description
    * corresponding to it (the predicate + pattern matches, or an entry variable
@@ -244,6 +244,25 @@ public:
    */
   std::variant<MatchVar, EntryVar>
   MapBranchArgument(const rvsdg::Output & output) const;
+
+  /**
+   * \brief Maps branch subregion entry argument to its correspodning gamma input.
+   *
+   * \param output
+   *   The branch argument to be mapped.
+   *
+   * \returns
+   *   The gamma node input correspodning to the given branch argument.
+   *
+   * \pre
+   *   \p output must be the entry argument to a subregion of this gamma node.
+   *
+   * This function is a more direct alternative to calling
+   *     MapBranchArgument(x).input
+   * for situations when the sibling branch arguments are not needed.
+   */
+  const rvsdg::Input &
+  mapBranchArgumentToInput(const rvsdg::Output & output) const;
 
   /**
    * \brief Routes per-branch result of gamma to output
