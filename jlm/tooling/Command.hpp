@@ -9,6 +9,7 @@
 #include <jlm/tooling/CommandGraph.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 #include <memory>
 #include <string>
@@ -392,12 +393,6 @@ private:
       util::StatisticsCollector & statisticsCollector);
 
   static void
-  PrintAsXml(
-      const llvm::LlvmRvsdgModule & rvsdgModule,
-      const util::FilePath & outputFile,
-      util::StatisticsCollector & statisticsCollector);
-
-  static void
   PrintAsLlvm(
       llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
@@ -416,9 +411,10 @@ private:
       util::StatisticsCollector & statisticsCollector);
 
   static void
-  PrintAsDot(
+  PrintAsGraphs(
       const llvm::LlvmRvsdgModule & rvsdgModule,
       const util::FilePath & outputFile,
+      jlm::util::graph::OutputFormat format,
       util::StatisticsCollector & statisticsCollector);
 
   static void

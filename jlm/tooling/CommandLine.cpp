@@ -236,11 +236,11 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
   static std::unordered_map<OutputFormat, std::string_view> mapping = {
     { OutputFormat::Ascii, "ascii" },
     { OutputFormat::Dot, "dot" },
+    { OutputFormat::Json, "json" },
     { OutputFormat::JsonTree, "jsonTree" },
     { OutputFormat::Llvm, "llvm" },
     { OutputFormat::Mlir, "mlir" },
     { OutputFormat::Tree, "tree" },
-    { OutputFormat::Xml, "xml" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -811,6 +811,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Ascii, "Output Ascii"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Dot, "Output Dot"),
           CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Json,
+              "Output json dump"),
+          CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::JsonTree,
               "Output Rvsdg tree as JSON"),
           CreateOutputFormatOption(
@@ -821,8 +824,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 #endif
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
-              "Output Rvsdg Tree"),
-          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
+              "Output Rvsdg Tree")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
@@ -931,6 +933,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes,
           "NumAllocaNodes",
           "Annotate number of AllocaOperation nodes")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::DebugIds,
+          "DebugIds",
+          "Annotate region and node IDs")),
       cl::values(::clEnumValN(
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes,
           "NumLoadNodes",
