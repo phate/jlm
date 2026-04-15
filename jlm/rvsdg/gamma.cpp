@@ -344,7 +344,9 @@ const rvsdg::Input &
 GammaNode::mapBranchArgumentToInput(const rvsdg::Output & output) const
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<GammaNode>(output) == this);
-  return *input(output.index());
+  auto & in = *input(output.index());
+  JLM_ASSERT(*in.Type() == *output.Type());
+  return in;
 }
 
 GammaNode::ExitVar
