@@ -929,6 +929,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           "NumAllocaNodes",
           "Annotate number of AllocaOperation nodes")),
       cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::DebugIds,
+          "DebugIds",
+          "Annotate region and node IDs")),
+      cl::values(::clEnumValN(
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes,
           "NumLoadNodes",
           "Annotate number of LoadOperation nodes")),
