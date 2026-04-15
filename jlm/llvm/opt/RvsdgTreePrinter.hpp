@@ -50,7 +50,7 @@ public:
 
       /**
        * Annotate regions and structural nodes with their respective \ref rvsdg::Region::Id and \ref
-       * rvsdg::Node:Id.
+       * rvsdg::Node::Id.
        */
       DebugIds,
 
