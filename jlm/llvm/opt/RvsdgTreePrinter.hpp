@@ -49,6 +49,12 @@ public:
       FirstEnumValue,
 
       /**
+       * Annotate regions and structural nodes with their respective \ref rvsdg::Region::Id and \ref
+       * rvsdg::Node::Id.
+       */
+      DebugIds,
+
+      /**
        * Annotate regions and structural nodes with the number of RVSDG nodes.
        */
       NumRvsdgNodes,
@@ -69,7 +75,7 @@ public:
       NumStoreNodes,
 
       /**
-       * Annotate region and structural nodes with the number of inputs/outputs of type
+       * Annotate regions and structural nodes with the number of inputs/outputs of type
        * MemoryStateType.
        */
       NumMemoryStateInputsOutputs,
@@ -80,7 +86,7 @@ public:
       LastEnumValue
     };
 
-    Configuration(util::HashSet<Annotation> requiredAnnotations)
+    explicit Configuration(util::HashSet<Annotation> requiredAnnotations)
         : RequiredAnnotations_(std::move(requiredAnnotations))
     {}
 
@@ -159,6 +165,17 @@ private:
   AnnotateNumMemoryStateInputsOutputs(
       const rvsdg::Graph & rvsdg,
       util::AnnotationMap & annotationMap);
+
+  /**
+   * Adds the ID of a region and structural node to \p annotationMap.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param annotationMap The annotation map in which the annotation is inserted.
+   *
+   * @see DebugIds
+   */
+  static void
+  AnnotateDebugIds(const rvsdg::Graph & rvsdg, util::AnnotationMap & annotationMap);
 
   [[nodiscard]] static bool
   IsMemoryStateInput(const rvsdg::Input * input) noexcept;
