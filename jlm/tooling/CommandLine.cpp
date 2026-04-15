@@ -235,8 +235,9 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
 {
   static std::unordered_map<OutputFormat, std::string_view> mapping = {
     { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
-    { OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
-    { OutputFormat::Tree, "tree" },   { OutputFormat::Xml, "xml" }
+    { OutputFormat::Json, "json" },   { OutputFormat::Llvm, "llvm" },
+    { OutputFormat::Mlir, "mlir" },   { OutputFormat::Tree, "tree" },
+    { OutputFormat::Xml, "xml" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -806,6 +807,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::values(
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Ascii, "Output Ascii"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Dot, "Output Dot"),
+          CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Json,
+              "Output json dump"),
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Llvm,
               "Output LLVM IR [default]"),
