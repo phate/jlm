@@ -54,6 +54,7 @@ public:
     Ascii,
     Dot,
     Json,
+    JsonTree,
     Llvm,
     Mlir,
     Tree,

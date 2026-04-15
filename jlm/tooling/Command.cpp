@@ -621,6 +621,28 @@ JlmOptCommand::PrintAsGraphs(
 }
 
 void
+JlmOptCommand::printAsRvsdgJsonTree(
+    const llvm::LlvmRvsdgModule & rvsdgModule,
+    const util::FilePath & outputFile,
+    util::StatisticsCollector &)
+{
+  const auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
+  const auto json = rvsdg::Region::toJson(rootRegion);
+
+  if (outputFile == "")
+  {
+    std::cout << json << std::flush;
+  }
+  else
+  {
+    std::ofstream fs{};
+    fs.open(outputFile.to_str());
+    fs << json;
+    fs.close();
+  }
+}
+
+void
 JlmOptCommand::PrintRvsdgModule(
     llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
@@ -650,6 +672,10 @@ JlmOptCommand::PrintRvsdgModule(
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Json)
   {
     PrintAsGraphs(rvsdgModule, outputFile, util::graph::OutputFormat::Json, statisticsCollector);
+  }
+  else if (outputFormat == JlmOptCommandLineOptions::OutputFormat::JsonTree)
+  {
+    printAsRvsdgJsonTree(rvsdgModule, outputFile, statisticsCollector);
   }
   else
   {
