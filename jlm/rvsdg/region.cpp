@@ -521,13 +521,13 @@ Region::toJson(
       stream << ",";
 
     bool firstNode = true;
-    stream << "\"StructuralNodes\" : [";
+    stream << "\"StructuralNodes\":[";
     for (const auto & structuralNode : structuralNodes)
     {
       if (firstNode)
         firstNode = false;
       else
-        stream << ", ";
+        stream << ",";
 
       toJson(*structuralNode, annotationMap, stream);
     }
@@ -543,10 +543,10 @@ Region::toJson(
     std::stringstream & stream) noexcept
 {
   stream << '{';
-  stream << "\"DebugString\": \"" << structuralNode.DebugString() << "\"";
+  stream << "\"DebugString\":\"" << structuralNode.DebugString() << "\"";
   if (annotationMap.HasAnnotations(&structuralNode))
   {
-    stream << ", ";
+    stream << ",";
 
     bool first = true;
     for (auto & annotation : annotationMap.GetAnnotations(&structuralNode))
@@ -554,23 +554,23 @@ Region::toJson(
       if (first)
         first = false;
       else
-        stream << ", ";
+        stream << ",";
 
       stream << toJsonKeyValue(annotation);
     }
   }
-  stream << ", ";
+  stream << ",";
 
   if (structuralNode.nsubregions() != 0)
   {
     bool firstSubregion = true;
-    stream << "\"Subregions\" : [";
+    stream << "\"Subregions\":[";
     for (auto & subregion : structuralNode.Subregions())
     {
       if (firstSubregion)
         firstSubregion = false;
       else
-        stream << ", ";
+        stream << ",";
 
       toJson(subregion, annotationMap, stream);
     }
@@ -604,7 +604,7 @@ Region::toJsonKeyValue(const util::Annotation & annotation) noexcept
     JLM_UNREACHABLE("Unhandled annotation type.");
   }
 
-  return util::strfmt("\"", annotation.Label(), "\": ", value);
+  return util::strfmt("\"", annotation.Label(), "\":", value);
 }
 
 std::string
