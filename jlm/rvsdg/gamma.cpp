@@ -280,9 +280,10 @@ GammaNode::GetEntryVar(std::size_t index) const
   JLM_ASSERT(index <= ninputs() - 1);
   EntryVar ev;
   ev.input = input(index + 1);
+  ev.branchArgument.resize(nsubregions());
   for (size_t n = 0; n < nsubregions(); ++n)
   {
-    ev.branchArgument.push_back(subregion(n)->argument(index + 1));
+    ev.branchArgument[n] = subregion(n)->argument(index + 1);
   }
   return ev;
 }
@@ -292,9 +293,10 @@ GammaNode::GetMatchVar() const
 {
   MatchVar mv;
   mv.input = input(0);
+  mv.matchContent.resize(nsubregions());
   for (size_t n = 0; n < nsubregions(); ++n)
   {
-    mv.matchContent.push_back(subregion(n)->argument(0));
+    mv.matchContent[n] = subregion(n)->argument(0);
   }
   return mv;
 }
@@ -302,10 +304,10 @@ GammaNode::GetMatchVar() const
 std::vector<GammaNode::EntryVar>
 GammaNode::GetEntryVars() const
 {
-  std::vector<GammaNode::EntryVar> vars;
-  for (size_t n = 0; n < ninputs() - 1; ++n)
+  std::vector<GammaNode::EntryVar> vars(ninputs() - 1);
+  for (size_t n = 0; n < vars.size(); ++n)
   {
-    vars.push_back(GetEntryVar(n));
+    vars[n] = GetEntryVar(n);
   }
   return vars;
 }
@@ -336,6 +338,15 @@ GammaNode::MapBranchArgument(const rvsdg::Output & output) const
   {
     return GetEntryVar(output.index() - 1);
   }
+}
+
+const rvsdg::Input &
+GammaNode::mapBranchArgumentToInput(const rvsdg::Output & output) const
+{
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<GammaNode>(output) == this);
+  auto & in = *input(output.index());
+  JLM_ASSERT(*in.Type() == *output.Type());
+  return in;
 }
 
 GammaNode::ExitVar
