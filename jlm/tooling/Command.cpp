@@ -532,20 +532,6 @@ JlmOptCommand::PrintAsAscii(
 }
 
 void
-JlmOptCommand::PrintAsXml(
-    const llvm::LlvmRvsdgModule & rvsdgModule,
-    const util::FilePath & outputFile,
-    util::StatisticsCollector &)
-{
-  auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
-
-  view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), fd);
-
-  if (fd != stdout)
-    fclose(fd);
-}
-
-void
 JlmOptCommand::PrintAsLlvm(
     llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
@@ -644,10 +630,6 @@ JlmOptCommand::PrintRvsdgModule(
   if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Ascii)
   {
     PrintAsAscii(rvsdgModule, outputFile, statisticsCollector);
-  }
-  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Xml)
-  {
-    PrintAsXml(rvsdgModule, outputFile, statisticsCollector);
   }
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Llvm)
   {

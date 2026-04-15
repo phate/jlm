@@ -57,7 +57,6 @@ public:
     Llvm,
     Mlir,
     Tree,
-    Xml,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };

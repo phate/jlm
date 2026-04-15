@@ -237,7 +237,6 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
     { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
     { OutputFormat::Json, "json" },   { OutputFormat::Llvm, "llvm" },
     { OutputFormat::Mlir, "mlir" },   { OutputFormat::Tree, "tree" },
-    { OutputFormat::Xml, "xml" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -818,8 +817,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 #endif
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
-              "Output Rvsdg Tree"),
-          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
+              "Output Rvsdg Tree")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
