@@ -56,11 +56,11 @@ RvsdgTreePrinter::Run(
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
+  const auto json = rvsdg::Region::toJson(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
 
   auto file = statisticsCollector.createOutputFile("rvsdgTree.txt", true);
   file.open("w");
-  fprintf(file.fd(), "%s\n", tree.c_str());
+  fprintf(file.fd(), "%s\n", json.c_str());
   file.close();
 
   statistics->Stop();
