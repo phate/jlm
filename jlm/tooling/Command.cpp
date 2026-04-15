@@ -33,6 +33,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 #include <llvm/IR/Module.h>
 
@@ -594,9 +595,10 @@ JlmOptCommand::PrintAsRvsdgTree(
 }
 
 void
-JlmOptCommand::PrintAsDot(
+JlmOptCommand::PrintAsGraphs(
     const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
+    jlm::util::graph::OutputFormat format,
     util::StatisticsCollector &)
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
@@ -607,13 +609,13 @@ JlmOptCommand::PrintAsDot(
 
   if (outputFile == "")
   {
-    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, format);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.outputAllGraphs(fs, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(fs, format);
     fs.close();
   }
 }
@@ -643,7 +645,11 @@ JlmOptCommand::PrintRvsdgModule(
   }
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Dot)
   {
-    PrintAsDot(rvsdgModule, outputFile, statisticsCollector);
+    PrintAsGraphs(rvsdgModule, outputFile, util::graph::OutputFormat::Dot, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Json)
+  {
+    PrintAsGraphs(rvsdgModule, outputFile, util::graph::OutputFormat::Json, statisticsCollector);
   }
   else
   {
