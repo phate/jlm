@@ -299,22 +299,6 @@ LoopStrengthReduction::FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::
   return reversed;
 }
 
-bool
-LoopStrengthReduction::IsAncestorRegion(
-    const rvsdg::Region & candidateAncestor,
-    const rvsdg::Region & region)
-{
-  if (region.IsRootRegion())
-    return false;
-
-  const auto parentRegion = region.node()->region();
-
-  if (&candidateAncestor == parentRegion)
-    return true;
-
-  return IsAncestorRegion(candidateAncestor, *parentRegion);
-}
-
 std::optional<rvsdg::Output *>
 LoopStrengthReduction::TryRouteValueThroughLoops(
     rvsdg::Output & origin,
@@ -379,7 +363,7 @@ LoopStrengthReduction::HoistChrec(
     return chrecOutput;
   }
 
-  if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+  if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
   {
     const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
     if (!traced.has_value())
@@ -452,7 +436,7 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       return initLoopVar.input->origin();
     }
 
-    if (IsAncestorRegion(*thetaNode.subregion(), *targetLoop->subregion()))
+    if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
     {
       const auto traced = TryTraceValueUpwards(*initLoopVar.pre, *thetaNode.region());
       if (!traced.has_value())

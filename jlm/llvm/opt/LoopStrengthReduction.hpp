@@ -92,9 +92,6 @@ private:
   static std::optional<std::vector<rvsdg::StructuralNode *>>
   FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::ThetaNode & to);
 
-  static bool
-  IsAncestorRegion(const rvsdg::Region & candidateAncestor, const rvsdg::Region & region);
-
   /**
    * Tries to route a value down from an outer loop to an inner loop.
    *
