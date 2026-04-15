@@ -71,10 +71,15 @@ util::AnnotationMap
 RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
 {
   util::AnnotationMap annotationMap;
-  for (auto annotation : Configuration_.RequiredAnnotations().Items())
+  for (const auto annotation : Configuration_.RequiredAnnotations().Items())
   {
     switch (annotation)
     {
+    case Configuration::Annotation::DebugIds:
+    {
+      AnnotateDebugIds(rvsdg, annotationMap);
+      break;
+    }
     case Configuration::Annotation::NumRvsdgNodes:
     {
       const auto matchNode = [](const rvsdg::Node &)
@@ -227,6 +232,35 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         }
       }
     }
+  };
+
+  annotateRegion(rvsdg.GetRootRegion());
+}
+
+void
+RvsdgTreePrinter::AnnotateDebugIds(const rvsdg::Graph & rvsdg, util::AnnotationMap & annotationMap)
+{
+  std::string_view nodeIdLabel("NodeId");
+  std::string_view regionIdLabel("RegionId");
+
+  std::function<void(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
+  {
+    for (auto & node : region.Nodes())
+    {
+      if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+      {
+        for (auto & subregion : structuralNode->Subregions())
+          annotateRegion(subregion);
+
+        annotationMap.AddAnnotation(
+            structuralNode,
+            { nodeIdLabel, static_cast<uint64_t>(structuralNode->GetNodeId()) });
+      }
+    }
+
+    annotationMap.AddAnnotation(
+        &region,
+        { regionIdLabel, static_cast<uint64_t>(region.getRegionId()) });
   };
 
   annotateRegion(rvsdg.GetRootRegion());
