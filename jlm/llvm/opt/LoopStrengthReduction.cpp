@@ -265,69 +265,6 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   }
 }
 
-std::optional<std::vector<rvsdg::StructuralNode *>>
-LoopStrengthReduction::FindLoopPath(const rvsdg::ThetaNode & from, const rvsdg::ThetaNode & to)
-{
-  std::vector<rvsdg::StructuralNode *> reversed;
-
-  const auto * cursor = to.region();
-  const auto * target = from.subregion();
-
-  while (cursor != target)
-  {
-    auto * owner = cursor->node();
-    if (!owner)
-      return std::nullopt; // hit top without reaching `from`
-
-    if (auto * theta = dynamic_cast<rvsdg::ThetaNode *>(owner))
-    {
-      reversed.push_back(theta);
-      cursor = theta->region();
-    }
-    else if (auto * gamma = dynamic_cast<rvsdg::GammaNode *>(owner))
-    {
-      reversed.push_back(gamma);
-      cursor = gamma->region();
-    }
-    else
-    {
-      return std::nullopt;
-    }
-  }
-
-  std::reverse(reversed.begin(), reversed.end());
-  return reversed;
-}
-
-std::optional<rvsdg::Output *>
-LoopStrengthReduction::TryRouteValueThroughLoops(
-    rvsdg::Output & origin,
-    const rvsdg::ThetaNode & from,
-    const rvsdg::ThetaNode & to)
-{
-  JLM_ASSERT(origin.region() == from.subregion());
-
-  const auto loopPath = FindLoopPath(from, to);
-  if (!loopPath.has_value())
-    return std::nullopt;
-
-  auto current = &origin;
-  for (const auto intermediateNode : *loopPath)
-  {
-    if (const auto intermediateTheta = dynamic_cast<rvsdg::ThetaNode *>(intermediateNode))
-    {
-      const auto loopVar = intermediateTheta->AddLoopVar(current);
-      current = loopVar.pre;
-    }
-    else if (const auto intermediateGamma = dynamic_cast<rvsdg::GammaNode *>(intermediateNode))
-    {
-      const auto [input, branchArgument] = intermediateGamma->AddEntryVar(current);
-      current = branchArgument[1];
-    }
-  }
-  return current;
-}
-
 std::optional<rvsdg::Output *>
 LoopStrengthReduction::HoistChrec(
     const SCEVChainRecurrence & chrec,
@@ -372,11 +309,11 @@ LoopStrengthReduction::HoistChrec(
     return *traced;
   }
 
-  const auto routed = TryRouteValueThroughLoops(*chrecOutput, *targetLoop, thetaNode);
-  if (routed.has_value())
-    return *routed;
-
-  return std::nullopt;
+  // This is fine to do and wont throw since we know, due to the cases above and the invariance
+  // check at the start, that the region of the chrec output is guaranteed to be an ancestor of the
+  // theta region
+  auto & routed = rvsdg::RouteToRegion(*chrecOutput, *thetaNode.region());
+  return &routed;
 }
 
 std::optional<rvsdg::Output *>
@@ -445,11 +382,8 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       return *traced;
     }
 
-    const auto routed = TryRouteValueThroughLoops(*initLoopVar.pre, *targetLoop, thetaNode);
-    if (!routed.has_value())
-      return std::nullopt;
-
-    return *routed;
+    auto & routed = rvsdg::RouteToRegion(*initLoopVar.pre, *thetaNode.region());
+    return &routed;
   }
   if (const auto addExpr = dynamic_cast<const SCEVNAryAddExpr *>(&scev))
   {
