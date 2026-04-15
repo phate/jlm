@@ -234,12 +234,9 @@ const std::unordered_map<JlmOptCommandLineOptions::OutputFormat, std::string_vie
 JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
 {
   static std::unordered_map<OutputFormat, std::string_view> mapping = {
-    { OutputFormat::Ascii, "ascii" },
-    { OutputFormat::Dot, "dot" },
-    { OutputFormat::Json, "json" },
-    { OutputFormat::JsonTree, "jsonTree" },
-    { OutputFormat::Llvm, "llvm" },
-    { OutputFormat::Mlir, "mlir" },
+    { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
+    { OutputFormat::Json, "json" },   { OutputFormat::JsonTree, "jsonTree" },
+    { OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
     { OutputFormat::Tree, "tree" },
   };
 
