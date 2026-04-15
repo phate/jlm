@@ -417,6 +417,12 @@ private:
       jlm::util::graph::OutputFormat format,
       util::StatisticsCollector & statisticsCollector);
 
+  static void
+  printAsRvsdgJsonTree(
+      const llvm::LlvmRvsdgModule & rvsdgModule,
+      const util::FilePath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
   [[nodiscard]] std::vector<std::shared_ptr<rvsdg::Transformation>>
   GetTransformations() const;
 
