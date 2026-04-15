@@ -812,7 +812,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Dot, "Output Dot"),
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::JsonTree,
-              "Output Rvsdg Tree as JSON"),
+              "Output Rvsdg tree as JSON"),
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Llvm,
               "Output LLVM IR [default]"),
