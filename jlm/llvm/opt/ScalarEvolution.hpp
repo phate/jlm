@@ -346,31 +346,6 @@ public:
     return Operands_.size();
   }
 
-  /**
-   * Checks the operands of the given \p chrec to see if any of them are unknown.
-   *
-   * @param chrec the chain recurrence to be checked
-   * @return true if the recurrence contains an unknown, false otherwise
-   */
-  bool static IsUnknown(const SCEVNAryExpr & chrec)
-  {
-    for (const auto operand : chrec.GetOperands())
-    {
-      if (auto operandNary = dynamic_cast<const SCEVNAryExpr *>(operand))
-      {
-        if (IsUnknown(*operandNary))
-        {
-          return true;
-        }
-      }
-      else if (dynamic_cast<const SCEVUnknown *>(operand))
-      {
-        return true;
-      }
-    }
-    return false;
-  }
-
 protected:
   std::vector<std::unique_ptr<SCEV>> Operands_;
 };
@@ -677,6 +652,15 @@ public:
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
+
+  /**
+   * Checks if the given \p scev is or contains a SCEVUnknown.
+   *
+   * @param scev the SCEV expression to be checked
+   * @return true if the SCEV contains or is unknown, false otherwise
+   */
+  [[nodiscard]] static bool
+  IsUnknown(const SCEV & scev);
 
 private:
   /**

@@ -645,7 +645,7 @@ LoopStrengthReduction::IsValidCandidateOperation(const rvsdg::Output & output)
   const auto & chrec = ChrecMap_.at(&output);
 
   // We only support invariant and affine recurrences (1-2 operands) that are not unknown
-  if (SCEVChainRecurrence::IsUnknown(*chrec))
+  if (ScalarEvolution::IsUnknown(*chrec))
     return false;
 
   if (chrec->NumOperands() > 2)
@@ -691,7 +691,7 @@ LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
 
     const auto & chrec = it->second;
 
-    if (SCEVChainRecurrence::IsUnknown(*chrec))
+    if (ScalarEvolution::IsUnknown(*chrec))
       return DependsOnIVMemo_[&output] = false;
 
     return DependsOnIVMemo_[&output] = true;

@@ -104,7 +104,7 @@ public:
       if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*out)
           && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
-        if (chrec->GetOperands().size() == n + 1 && !SCEVChainRecurrence::IsUnknown(*chrec))
+        if (chrec->GetOperands().size() == n + 1 && !IsUnknown(*chrec))
           count++;
       }
     }
@@ -121,7 +121,7 @@ public:
           && out->Type()->Kind() != rvsdg::TypeKind::State)
       {
         // Only count chrecs that are not unknown
-        if (!SCEVChainRecurrence::IsUnknown(*chrec))
+        if (!IsUnknown(*chrec))
           count++;
       }
     }
@@ -1977,6 +1977,36 @@ ScalarEvolution::HasCycleThroughOthers(
 
   recursionStack.erase(&currentOutput);
   return false;
+}
+
+bool
+ScalarEvolution::IsUnknown(const SCEV & scev)
+{
+  if (dynamic_cast<const SCEVUnknown *>(&scev))
+    return true;
+
+  if (dynamic_cast<const SCEVInit *>(&scev) || dynamic_cast<const SCEVConstant *>(&scev)
+      || dynamic_cast<const SCEVPlaceholder *>(&scev))
+  {
+    return false;
+  }
+
+  if (auto * binaryExpr = dynamic_cast<const SCEVBinaryExpr *>(&scev))
+  {
+    return IsUnknown(*binaryExpr->GetLeftOperand()) || IsUnknown(*binaryExpr->GetLeftOperand());
+  }
+
+  if (auto * nAryExpr = dynamic_cast<const SCEVNAryExpr *>(&scev))
+  {
+    for (const auto operand : nAryExpr->GetOperands())
+    {
+      if (IsUnknown(*operand))
+        return true;
+    }
+    return false;
+  }
+
+  throw std::logic_error("Invalid SCEV type in IsUnknown!\n");
 }
 
 bool
