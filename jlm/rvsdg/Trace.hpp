@@ -115,8 +115,12 @@ public:
   [[nodiscard]] Output &
   trace(Output & output);
 
+  /**
+   * Traces from the given \p output to find the source of the output's value.
+   * The optional parameter \p withinRegion prevents values from being traced out of the region.
+   */
   Output &
-  trace(Output & output, rvsdg::Region * targetRegion);
+  trace(Output & output, rvsdg::Region * withinRegion);
 
   /**
    * Attempts to trace the output of a gamma node through the node.
@@ -158,24 +162,14 @@ public:
 
 protected:
   /**
-   * Traces from the given \p output to find the source of the output's value.
-   * @param output the output to trace from.
-   * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
-   * @param targetRegion
-   */
-  [[nodiscard]] Output &
-  trace(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion);
-
-  /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
-   * @param output the output to trace from
-   * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
-   * @param targetRegion
+   * @param output the output to trace from.
+   * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion);
+  traceStep(Output & output, rvsdg::Region * withinRegion);
 
   /**
    * Inserts a traced value into the tracing cache.

@@ -21,17 +21,11 @@ OutputTracer::OutputTracer(const bool enableCaching) noexcept
 Output &
 OutputTracer::trace(Output & output)
 {
-  return trace(output, true, nullptr);
+  return trace(output, nullptr);
 }
 
 Output &
-OutputTracer::trace(Output & output, rvsdg::Region * targetRegion)
-{
-  return trace(output, true, targetRegion);
-}
-
-Output &
-OutputTracer::trace(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion)
+OutputTracer::trace(Output & output, rvsdg::Region * withinRegion)
 {
   Output * head = &output;
 
@@ -39,7 +33,7 @@ OutputTracer::trace(Output & output, bool mayLeaveRegion, rvsdg::Region * target
   while (true)
   {
     Output * prevHead = head;
-    head = &traceStep(*head, mayLeaveRegion, targetRegion);
+    head = &traceStep(*head, withinRegion);
     if (head == prevHead)
     {
       return *head;
@@ -80,7 +74,8 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     // If deep tracing is enabled, make a greater effort to trace up to a region argument
     if (traceThroughStrucutalNodes_)
     {
-      tracedInner = &trace(*tracedInner, false, output.region());
+      // Trace the branch result origin, but only within the gamma subregion
+      tracedInner = &trace(*tracedInner, tracedInner->region());
     }
 
     // The traced output must reach a region argument in the gamma subregion
@@ -122,7 +117,8 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If deep tracing is enabled, make a greater effort in tracing up to a region argument
   if (traceThroughStrucutalNodes_)
   {
-    tracedInner = &trace(*tracedInner, false, output.region());
+    // trace the origin within the thetaNode, but only within the theta's subregion
+    tracedInner = &trace(*tracedInner, thetaNode.subregion());
   }
 
   // If tracing reached the pre argument of the same loop variable, it is invariant
@@ -146,16 +142,11 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 }
 
 Output &
-OutputTracer::traceStep(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion)
+OutputTracer::traceStep(Output & output, rvsdg::Region * withinRegion)
 {
-  if (!mayLeaveRegion && TryGetRegionParentNode<Node>(output))
+  if (withinRegion && withinRegion == TryGetOwnerRegion(output))
   {
-    // We are not allowed to leave the region, so return early on region arguments
-    return output;
-  }
-
-  if (targetRegion && output.region() == targetRegion)
-  {
+    // We are not allowed to leave this region, and tracing has reached one of its arguments
     return output;
   }
 
