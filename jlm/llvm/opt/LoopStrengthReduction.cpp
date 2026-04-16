@@ -9,10 +9,10 @@
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <algorithm>
-#include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::llvm
 {
