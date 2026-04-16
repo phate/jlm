@@ -274,33 +274,33 @@ LoopStrengthReduction::HoistChrec(
   if (!SCEVChainRecurrence::IsInvariantInLoop(chrec, thetaNode))
     return std::nullopt;
 
-  const auto targetLoop = chrec.GetLoop();
+  auto & targetLoop = chrec.GetLoop();
 
   rvsdg::Output * chrecOutput = nullptr;
-  if (ScalarEvolution::StructurallyEqual(*ChrecMap_.at(chrec.GetOutput()), chrec))
+  if (ScalarEvolution::StructurallyEqual(*ChrecMap_.at(&chrec.GetOutput()), chrec))
   {
     // The chrec stored in the chrec map corresponds with the chrec we are processing (it is an
     // induction variable). This means that the chrec has a corresponding output which we can use.
-    chrecOutput = chrec.GetOutput();
+    chrecOutput = &chrec.GetOutput();
   }
   else
   {
     // The chrec doesn't have a corresponding output. This can happen in cases where we have folded
     // some constant into the chrec of an induction variable, either with addition or
     // multiplication. In this case, we need to create a new induction variable for the chrec.
-    auto newIV = CreateNewArithmeticInductionVariable(chrec, *targetLoop, numBits);
+    auto newIV = CreateNewArithmeticInductionVariable(chrec, targetLoop, numBits);
     if (!newIV.has_value())
       return std::nullopt;
 
     chrecOutput = newIV->pre;
   }
 
-  if (targetLoop->subregion() == thetaNode.region())
+  if (targetLoop.subregion() == thetaNode.region())
   {
     return chrecOutput;
   }
 
-  if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
+  if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop.subregion()))
   {
     const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
     if (!traced.has_value())
@@ -361,12 +361,12 @@ LoopStrengthReduction::HoistSCEVExpresssion(
   }
   if (const auto init = dynamic_cast<const SCEVInit *>(&scev))
   {
-    const auto prePointer = init->GetPrePointer();
-    const auto targetLoop = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*prePointer);
+    const auto & prePointer = init->GetPrePointer();
+    const auto targetLoop = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(prePointer);
     if (targetLoop == nullptr)
       return std::nullopt;
 
-    const auto initLoopVar = targetLoop->MapPreLoopVar(*prePointer);
+    const auto initLoopVar = targetLoop->MapPreLoopVar(prePointer);
 
     if (targetLoop->subregion() == thetaNode.subregion())
     {
@@ -533,9 +533,9 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
         return std::nullopt;
 
       auto newIV = thetaNode.AddLoopVar(*hoistedStart);
-      auto stepPrePointer = stepInit->GetPrePointer();
+      auto & stepPrePointer = stepInit->GetPrePointer();
       auto & newAddNode =
-          jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ newIV.pre, stepPrePointer }, numBits);
+          jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ newIV.pre, &stepPrePointer }, numBits);
       newIV.post->divert_to(newAddNode.output(0));
 
       return newIV;
@@ -579,8 +579,8 @@ LoopStrengthReduction::ReplaceGEPOperation(
 
   JLM_ASSERT(baseAddressInit);
 
-  const auto baseAddressPointer = baseAddressInit->GetPrePointer();
-  const auto baseAddressLoopVar = thetaNode.MapPreLoopVar(*baseAddressPointer);
+  const auto & baseAddressPointer = baseAddressInit->GetPrePointer();
+  const auto baseAddressLoopVar = thetaNode.MapPreLoopVar(baseAddressPointer);
 
   if (SCEVChainRecurrence::IsConstant(*chrec))
   {

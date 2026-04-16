@@ -67,10 +67,10 @@ public:
       : PrePointer_{ &pre }
   {}
 
-  rvsdg::Output *
-  GetPrePointer() const
+  [[nodiscard]] rvsdg::Output &
+  GetPrePointer() const noexcept
   {
-    return PrePointer_;
+    return *PrePointer_;
   }
 
   std::string
@@ -104,10 +104,10 @@ public:
       : PrePointer_{ &pre }
   {}
 
-  rvsdg::Output *
-  GetPrePointer() const
+  [[nodiscard]] rvsdg::Output &
+  GetPrePointer() const noexcept
   {
-    return PrePointer_;
+    return *PrePointer_;
   }
 
   std::string
@@ -369,16 +369,16 @@ public:
         Output_{ &output }
   {}
 
-  rvsdg::ThetaNode *
-  GetLoop() const
+  [[nodiscard]] rvsdg::ThetaNode &
+  GetLoop() const noexcept
   {
-    return Loop_;
+    return *Loop_;
   }
 
-  rvsdg::Output *
-  GetOutput() const
+  [[nodiscard]] rvsdg::Output &
+  GetOutput() const noexcept
   {
-    return Output_;
+    return *Output_;
   }
 
   SCEV *
@@ -404,7 +404,7 @@ public:
 
   bool static IsInvariantInLoop(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & theta)
   {
-    return chrec.GetLoop() != &theta;
+    return &chrec.GetLoop() != &theta;
   }
 
   std::optional<std::unique_ptr<SCEV>>
