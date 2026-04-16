@@ -48,16 +48,7 @@ OutputTracer::trace(Output & output, bool mayLeaveRegion)
 static Output &
 mapGammaArgumentToOrigin(GammaNode & gammaNode, Output & output)
 {
-  const auto roleVar = gammaNode.MapBranchArgument(output);
-  if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
-  {
-    return *entryVar->input->origin();
-  }
-  if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
-  {
-    return *matchVar->input->origin();
-  }
-  throw std::logic_error("Unhandled role variable type.");
+  return *gammaNode.mapBranchArgumentToInput(output).origin();
 }
 
 Output *

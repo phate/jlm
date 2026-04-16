@@ -57,6 +57,11 @@ inputs:
     default: "false"
     required: false
 
+  install-gcovr:
+    description: "Install gcovr. Default is 'false'."
+    default: "false"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -134,4 +139,8 @@ runs:
     - name: "Install gtest package"
       if: ${{inputs.install-gtest == 'true'}}
       run: sudo apt-get install libgtest-dev
+      shell: bash
+
+    - name: "Install gcovr package"
+      run: sudo apt-get install gcovr
       shell: bash

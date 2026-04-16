@@ -33,6 +33,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+#include <jlm/util/GraphWriter.hpp>
 
 #include <llvm/IR/Module.h>
 
@@ -531,20 +532,6 @@ JlmOptCommand::PrintAsAscii(
 }
 
 void
-JlmOptCommand::PrintAsXml(
-    const llvm::LlvmRvsdgModule & rvsdgModule,
-    const util::FilePath & outputFile,
-    util::StatisticsCollector &)
-{
-  auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
-
-  view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), fd);
-
-  if (fd != stdout)
-    fclose(fd);
-}
-
-void
 JlmOptCommand::PrintAsLlvm(
     llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
@@ -608,9 +595,10 @@ JlmOptCommand::PrintAsRvsdgTree(
 }
 
 void
-JlmOptCommand::PrintAsDot(
+JlmOptCommand::PrintAsGraphs(
     const llvm::LlvmRvsdgModule & rvsdgModule,
     const util::FilePath & outputFile,
+    jlm::util::graph::OutputFormat format,
     util::StatisticsCollector &)
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
@@ -621,13 +609,35 @@ JlmOptCommand::PrintAsDot(
 
   if (outputFile == "")
   {
-    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, format);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.outputAllGraphs(fs, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(fs, format);
+    fs.close();
+  }
+}
+
+void
+JlmOptCommand::printAsRvsdgJsonTree(
+    const llvm::LlvmRvsdgModule & rvsdgModule,
+    const util::FilePath & outputFile,
+    util::StatisticsCollector &)
+{
+  const auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
+  const auto json = rvsdg::Region::toJson(rootRegion);
+
+  if (outputFile == "")
+  {
+    std::cout << json << std::flush;
+  }
+  else
+  {
+    std::ofstream fs{};
+    fs.open(outputFile.to_str());
+    fs << json;
     fs.close();
   }
 }
@@ -643,10 +653,6 @@ JlmOptCommand::PrintRvsdgModule(
   {
     PrintAsAscii(rvsdgModule, outputFile, statisticsCollector);
   }
-  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Xml)
-  {
-    PrintAsXml(rvsdgModule, outputFile, statisticsCollector);
-  }
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Llvm)
   {
     PrintAsLlvm(rvsdgModule, outputFile, statisticsCollector);
@@ -661,7 +667,15 @@ JlmOptCommand::PrintRvsdgModule(
   }
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Dot)
   {
-    PrintAsDot(rvsdgModule, outputFile, statisticsCollector);
+    PrintAsGraphs(rvsdgModule, outputFile, util::graph::OutputFormat::Dot, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Json)
+  {
+    PrintAsGraphs(rvsdgModule, outputFile, util::graph::OutputFormat::Json, statisticsCollector);
+  }
+  else if (outputFormat == JlmOptCommandLineOptions::OutputFormat::JsonTree)
+  {
+    printAsRvsdgJsonTree(rvsdgModule, outputFile, statisticsCollector);
   }
   else
   {

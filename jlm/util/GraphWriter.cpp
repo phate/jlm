@@ -4,15 +4,42 @@
  */
 
 #include <jlm/util/GraphWriter.hpp>
-
 #include <jlm/util/strfmt.hpp>
+
+#include <ostream>
+#include <string_view>
 
 namespace jlm::util::graph
 {
 // All GraphElements with an associated ProgramObject get this attribute added
-static const char * const TOOLTIP_ATTRIBUTE = "tooltip";
+static const char * const DOT_TOOLTIP_ATTRIBUTE = "tooltip";
 // Edges are not named in dot, so use an attribute to assign id instead
-static const char * const EDGE_ID_ATTRIBUTE = "id";
+static const char * const DOT_EDGE_ID_ATTRIBUTE = "id";
+// For setting the background color of cells in dot html tables
+static const char * const DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE = "BGCOLOR";
+
+// The json field containing the label of a graph element
+static const char * const JSON_LABEL_FIELD = "label";
+// The map of attributes in a graph element json object
+static const char * const JSON_ATTRIBUTE_FIELD = "attr";
+// The address of the program object represented by a graph element json object
+static const char * const JSON_OBJECT_POINTER_FIELD = "obj";
+// Field specifying the type of node, for special nodes like InOutNodes
+static const char * const JSON_NODE_TYPE_FIELD = "type";
+
+// Fields in json objects representing InOutNodes
+static const char * const JSON_IN_PORTS_FIELD = "ins";
+static const char * const JSON_OUT_PORTS_FIELD = "outs";
+static const char * const JSON_SUBGRAPHS_FIELD = "subgraphs";
+static const char * const JSON_HTML_TABLE_ATTRIBUTES_FIELD = "htmlTableAttr";
+
+// Fields in Graph objects
+static const char * const JSON_PARENT_NODE_FIELD = "parentNode";
+static const char * const JSON_PARENT_GRAPH_FIELD = "parentGraph";
+static const char * const JSON_ARGUMENTS_FIELD = "arguments";
+static const char * const JSON_NODES_FIELD = "nodes";
+static const char * const JSON_RESULTS_FIELD = "results";
+static const char * const JSON_EDGES_FIELD = "edges";
 
 /**
  * Checks if the provided \p string looks like a regular C identifier.
@@ -20,7 +47,7 @@ static const char * const EDGE_ID_ATTRIBUTE = "id";
  * @return true if the passed string passes as a C identifier.
  */
 static bool
-LooksLikeIdentifier(std::string_view string)
+looksLikeIdentifier(std::string_view string)
 {
   if (string.empty())
     return false;
@@ -51,9 +78,9 @@ LooksLikeIdentifier(std::string_view string)
  * Unless the string looks like a regular C / Dot identifier, it is surrounded in quotes.
  */
 static void
-PrintIdentifierSafe(std::ostream & out, std::string_view string)
+printIdentifierSafe(std::ostream & out, std::string_view string)
 {
-  bool quoted = !LooksLikeIdentifier(string);
+  bool quoted = !looksLikeIdentifier(string);
 
   if (quoted)
     out << '"';
@@ -61,6 +88,8 @@ PrintIdentifierSafe(std::ostream & out, std::string_view string)
   {
     if (c == '"')
       out << "\\\"";
+    else if (c == '\\')
+      out << "\\\\";
     else if (c == '\n')
       out << "\\n";
     else if (c == '\r')
@@ -87,7 +116,7 @@ PrintIdentifierSafe(std::ostream & out, std::string_view string)
  * Newlines are allowed inside HTML attributes, but are ignored in HTML text.
  */
 static void
-PrintStringAsHtmlText(std::ostream & out, std::string_view string, bool replaceNewlines)
+printStringAsHtmlText(std::ostream & out, std::string_view string, bool replaceNewlines)
 {
   for (char c : string)
   {
@@ -111,7 +140,7 @@ PrintStringAsHtmlText(std::ostream & out, std::string_view string, bool replaceN
  * replacing chars that are not allowed in html attribute names by '-'
  */
 static void
-PrintStringAsHtmlAttributeName(std::ostream & out, std::string_view string)
+printStringAsHtmlAttributeName(std::ostream & out, std::string_view string)
 {
   for (char c : string)
   {
@@ -124,26 +153,39 @@ PrintStringAsHtmlAttributeName(std::ostream & out, std::string_view string)
 }
 
 /**
- * Returns a C string with the given amount of indentation.
- * The string is valid until this function is called again.
- * @param indent the number of indentation levels
- * @return a string of spaces corresponding to the indentation level.
+ * Prints the given \p string as a JSON string to the \p out stream.
+ * The result is always quoted. quotes, backslashes and newlines get escaped.
  */
-[[nodiscard]] static const char *
-Indent(size_t indent)
+static void
+printJsonString(std::ostream & out, std::string_view string)
 {
-  static constexpr size_t SPACE_PER_INDENT = 2;
-  static constexpr size_t MAX_SPACES = 128;
-  static thread_local char indentation[MAX_SPACES + 1];
+  out << '"';
+  for (char c : string)
+  {
+    if (c == '"')
+      out << "\\\"";
+    else if (c == '\\')
+      out << "\\\\";
+    else if (c == '\n')
+      out << "\\n";
+    else if (c == '\t')
+      out << "\\t";
+    else
+      out << c;
+  }
+  out << '"';
+}
 
-  size_t spaces = indent * SPACE_PER_INDENT;
-  if (spaces > MAX_SPACES)
-    spaces = MAX_SPACES;
-
-  for (size_t i = 0; i < spaces; i++)
-    indentation[i] = ' ';
-  indentation[spaces] = '\0';
-  return indentation;
+/**
+ * Prints the given number of spaces to the output stream,
+ * and returns the output stream.
+ */
+std::ostream &
+withIndent(std::ostream & out, size_t indent)
+{
+  for (size_t i = 0; i < indent; i++)
+    out << ' ';
+  return out;
 }
 
 GraphElement::GraphElement()
@@ -153,12 +195,18 @@ GraphElement::GraphElement()
       AttributeMap_()
 {}
 
+void
+GraphElement::PrintFullId(std::ostream & out) const
+{
+  JLM_ASSERT(IsFinalized());
+  out << GetIdPrefix() << GetUniqueIdSuffix();
+}
+
 std::string
 GraphElement::GetFullId() const
 {
-  JLM_ASSERT(IsFinalized());
   std::ostringstream ss;
-  ss << GetIdPrefix() << GetUniqueIdSuffix();
+  PrintFullId(ss);
   return ss.str();
 }
 
@@ -344,60 +392,182 @@ GraphElement::IsFinalized() const
   return UniqueIdSuffix_.has_value();
 }
 
+/**
+ * Outputs a single key value pair in the given format
+ */
+static void
+outputKeyValuePair(
+    std::ostream & out,
+    std::string_view name,
+    std::string_view value,
+    AttributeOutputFormat format)
+{
+  if (format == AttributeOutputFormat::SpaceSeparatedList)
+  {
+    printIdentifierSafe(out, name);
+    out << "=";
+    printIdentifierSafe(out, value);
+    out << " "; // space separation
+  }
+  else if (format == AttributeOutputFormat::HTMLAttributes)
+  {
+    printStringAsHtmlAttributeName(out, name);
+    out << "=\""; // HTML attributes must be quoted
+    printStringAsHtmlText(out, value, false);
+    out << "\" "; // Closing quote and separating space
+  }
+  else if (format == AttributeOutputFormat::JSON)
+  {
+    printJsonString(out, name);
+    out << ':';
+    printJsonString(out, value);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown AttributeOutputFormat");
+  }
+}
+
+void
+GraphElement::OutputAttribute(
+    std::ostream & out,
+    const std::string & name,
+    AttributeOutputFormat format) const
+{
+  if (auto string = GetAttributeString(name))
+  {
+    outputKeyValuePair(out, name, *string, format);
+  }
+  else if (auto graphElement = GetAttributeGraphElement(name))
+  {
+    outputKeyValuePair(out, name, graphElement->GetFullId(), format);
+  }
+  else if (auto object = GetAttributeObject(name))
+  {
+    outputKeyValuePair(out, name, strfmt("ptr", reinterpret_cast<void *>(*object)), format);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown attribute type");
+  }
+}
+
 void
 GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format) const
 {
-  auto FormatAttribute = [&](std::string_view name, std::string_view value)
+  bool first = true;
+  const auto next = [&]()
   {
-    if (format == AttributeOutputFormat::SpaceSeparatedList)
-    {
-      PrintIdentifierSafe(out, name);
-      out << "=";
-      PrintIdentifierSafe(out, value);
-    }
-    else if (format == AttributeOutputFormat::HTMLAttributes)
-    {
-      PrintStringAsHtmlAttributeName(out, name);
-      out << "=\""; // HTML attributes must be quoted
-      PrintStringAsHtmlText(out, value, false);
-      out << '"'; // Closing quote
-    }
+    if (first)
+      first = false;
+    else if (format == AttributeOutputFormat::JSON)
+      out << ", ";
     else
-    {
-      JLM_UNREACHABLE("Unknown AttributeOutputFormat");
-    }
-
-    out << " "; // Attributes are space separated in both formats
-  };
-
-  auto OutputAttribute = [&](const std::string & name)
-  {
-    if (auto string = GetAttributeString(name))
-    {
-      FormatAttribute(name, *string);
-    }
-    else if (auto graphElement = GetAttributeGraphElement(name))
-    {
-      FormatAttribute(name, graphElement->GetFullId());
-    }
-    else if (auto object = GetAttributeObject(name))
-    {
-      FormatAttribute(name, strfmt("ptr", std::hex, *object));
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unknown attribute type");
-    }
+      out << ' ';
   };
 
   for (const auto & [name, _] : AttributeMap_)
   {
-    OutputAttribute(name);
+    next();
+    OutputAttribute(out, name, format);
   }
 
-  // If no other tooltip is set, print the address of the associated program object
-  if (HasProgramObject() && !HasAttribute(TOOLTIP_ATTRIBUTE))
-    FormatAttribute(TOOLTIP_ATTRIBUTE, strfmt(std::hex, GetProgramObject()));
+  // If no tooltip attribute is specified, use the program object pointer.
+  // This is not done in JSON, as the program object is included in a separate field.
+  if (format != AttributeOutputFormat::JSON && !HasAttribute(DOT_TOOLTIP_ATTRIBUTE)
+      && HasProgramObject())
+  {
+    next();
+    outputKeyValuePair(
+        out,
+        DOT_TOOLTIP_ATTRIBUTE,
+        strfmt(reinterpret_cast<void *>(GetProgramObject())),
+        format);
+  }
+}
+
+/**
+ * Helper for starting a new field on a new line in a Json object.
+ * If \p firstField is false, a comma is printed before the newline.
+ * @post firstField is always set to false after this function.
+ */
+static std::ostream &
+printNextJsonField(std::ostream & out, std::string_view name, size_t indent, bool & firstField)
+{
+  if (firstField)
+    firstField = false;
+  else
+    out << ',';
+  out << std::endl;
+  withIndent(out, indent) << '"' << name << "\": ";
+
+  return out;
+};
+
+template<typename T>
+static void
+printJsonElementMap(std::ostream & out, size_t indent, const T & elements)
+{
+  out << "{";
+  bool first = true;
+  for (auto & element : elements)
+  {
+    if (first)
+      first = false;
+    else
+      out << ",";
+    out << std::endl;
+    element->outputJson(out, indent + 1);
+  }
+
+  if (first)
+    out << "}";
+  else
+  {
+    out << std::endl;
+    withIndent(out, indent) << "}";
+  }
+};
+
+void
+GraphElement::outputJsonObjectOpening(std::ostream & out, size_t indent, bool & firstField) const
+{
+  withIndent(out, indent) << "\"";
+  PrintFullId(out); // The full id does not include quotes or special characters
+  out << "\": {";
+
+  indent++;
+  if (HasLabel())
+  {
+    printNextJsonField(out, JSON_LABEL_FIELD, indent, firstField);
+    printJsonString(out, GetLabel());
+  }
+
+  if (HasProgramObject())
+  {
+    printNextJsonField(out, JSON_OBJECT_POINTER_FIELD, indent, firstField);
+    out << '"' << reinterpret_cast<void *>(GetProgramObject()) << '"';
+  }
+
+  if (!AttributeMap_.empty())
+  {
+    printNextJsonField(out, JSON_ATTRIBUTE_FIELD, indent, firstField);
+    out << '{';
+    OutputAttributes(out, AttributeOutputFormat::JSON);
+    out << '}';
+  }
+}
+
+static void
+outputJsonObjectClosing(std::ostream & out, size_t indent, bool firstField)
+{
+  // The object contains at least one field, close on the next line
+  if (!firstField)
+  {
+    out << std::endl;
+    withIndent(out, indent);
+  }
+  out << "}";
 }
 
 Port::Port()
@@ -532,30 +702,14 @@ Node::OutputDotPortId(std::ostream & out) const
 }
 
 void
-Node::Output(std::ostream & out, OutputFormat format, size_t indent) const
-{
-  switch (format)
-  {
-  case OutputFormat::ASCII:
-    OutputASCII(out, indent);
-    break;
-  case OutputFormat::Dot:
-    OutputDot(out, indent);
-    break;
-  default:
-    JLM_UNREACHABLE("Unknown graph::OutputFormat");
-  }
-}
-
-void
 Node::OutputASCII(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent);
+  withIndent(out, indent);
   if (HasOutgoingEdges())
   {
     out << GetFullId() << ":";
   }
-  PrintIdentifierSafe(out, GetLabelOr("NODE"));
+  printIdentifierSafe(out, GetLabelOr("NODE"));
   if (HasIncomingEdges())
   {
     out << "<-";
@@ -567,19 +721,27 @@ Node::OutputASCII(std::ostream & out, size_t indent) const
 void
 Node::OutputDot(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent) << GetFullId() << " [";
+  withIndent(out, indent) << GetFullId() << " [";
   out << "label=";
   if (HasLabel())
   {
-    PrintIdentifierSafe(out, GetLabel());
+    printIdentifierSafe(out, GetLabel());
   }
   else
   {
-    PrintIdentifierSafe(out, GetFullId());
+    printIdentifierSafe(out, GetFullId());
   }
   out << " ";
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
+}
+
+void
+Node::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  outputJsonObjectClosing(out, indent, firstField);
 }
 
 void
@@ -590,9 +752,7 @@ Node::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) co
 
 InputPort::InputPort(InOutNode & node)
     : Node_(node)
-{
-  SetFillColor(Colors::White);
-}
+{}
 
 const char *
 InputPort::GetIdPrefix() const
@@ -616,7 +776,7 @@ void
 InputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("BGCOLOR", std::move(color));
+  SetAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
@@ -625,11 +785,17 @@ InputPort::OutputDotPortId(std::ostream & out) const
   out << Node_.GetFullId() << ":" << GetFullId() << ":n";
 }
 
+void
+InputPort::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  outputJsonObjectClosing(out, indent, firstField);
+}
+
 OutputPort::OutputPort(InOutNode & node)
     : Node_(node)
-{
-  SetFillColor(Colors::White);
-}
+{}
 
 const char *
 OutputPort::GetIdPrefix() const
@@ -653,13 +819,21 @@ void
 OutputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("BGCOLOR", std::move(color));
+  SetAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
 OutputPort::OutputDotPortId(std::ostream & out) const
 {
   out << Node_.GetFullId() << ":" << GetFullId() << ":s";
+}
+
+void
+OutputPort::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  outputJsonObjectClosing(out, indent, firstField);
 }
 
 InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
@@ -670,8 +844,6 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 
   for (size_t i = 0; i < outputPorts; i++)
     CreateOutputPort();
-
-  SetFillColor(Colors::White);
 }
 
 void
@@ -752,7 +924,7 @@ InOutNode::SetHtmlTableAttribute(std::string name, std::string value)
 void
 InOutNode::SetFillColor(std::string color)
 {
-  SetHtmlTableAttribute("BGCOLOR", std::move(color));
+  SetHtmlTableAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE, std::move(color));
 }
 
 void
@@ -771,6 +943,9 @@ InOutNode::Finalize()
 void
 InOutNode::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const
 {
+  // Only the ASCII format prints subgraphs inside the nodes themselves
+  JLM_ASSERT(format == OutputFormat::ASCII);
+
   for (auto & graph : SubGraphs_)
     graph->Output(out, format, indent);
 }
@@ -778,7 +953,7 @@ InOutNode::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t inden
 void
 InOutNode::OutputASCII(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent);
+  withIndent(out, indent);
 
   // output the names of all output ports
   for (size_t i = 0; i < NumOutputPorts(); i++)
@@ -795,7 +970,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent) const
   {
     out << GetFullId() << ":";
   }
-  PrintIdentifierSafe(out, GetLabelOr("NODE"));
+  printIdentifierSafe(out, GetLabelOr("NODE"));
   if (Port::HasIncomingEdges())
   {
     out << "<-";
@@ -819,7 +994,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent) const
 void
 InOutNode::OutputDot(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent) << GetFullId() << " [shape=plain style=solid ";
+  withIndent(out, indent) << GetFullId() << " [shape=plain style=solid ";
   out << "label=<" << std::endl;
 
   // InOutNodes are printed as html tables
@@ -844,10 +1019,15 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
       out << "PORT=\"" << port.GetFullId() << "\" ";
       port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      // Unless a different color is specified, fill the port cell with white
+      if (!port.HasAttribute(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE))
+      {
+        out << DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE << "=\"white\" ";
+      }
       if (port.HasLabel())
       {
         out << "><FONT POINT-SIZE=\"10\">";
-        PrintStringAsHtmlText(out, port.GetLabel(), true);
+        printStringAsHtmlText(out, port.GetLabel(), true);
         out << "</FONT>";
       }
       else
@@ -871,14 +1051,19 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
   out << "CELLSPACING=\"0\" CELLPADDING=\"0\" ";
   for (auto & [name, value] : HtmlTableAttributes_)
   {
-    PrintStringAsHtmlAttributeName(out, name);
+    printStringAsHtmlAttributeName(out, name);
     out << "=\"";
-    PrintStringAsHtmlText(out, value, false);
+    printStringAsHtmlText(out, value, false);
     out << "\" ";
+  }
+  // Unless a different color is specified, fill the table cell with white
+  if (HtmlTableAttributes_.find(DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE) == HtmlTableAttributes_.end())
+  {
+    out << DOT_HTML_TABLE_BGCOLOR_ATTRIBUTE << "=\"white\" ";
   }
   out << ">" << std::endl;
   out << "\t\t\t<TR><TD CELLPADDING=\"1\">";
-  PrintStringAsHtmlText(out, GetLabelOr(GetFullId()), true);
+  printStringAsHtmlText(out, GetLabelOr(GetFullId()), true);
   out << "</TD></TR>" << std::endl;
 
   // Subgraphs
@@ -890,7 +1075,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     {
       out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" BGCOLOR=\"white\" ";
       out << "_SUBGRAPH=\"" << graph->GetFullId() << "\">";
-      PrintStringAsHtmlText(out, graph->GetFullId(), true);
+      printStringAsHtmlText(out, graph->GetFullId(), true);
       out << "</TD>" << std::endl;
     }
     out << "\t\t\t\t</TR></TABLE>" << std::endl;
@@ -904,9 +1089,70 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
   PrintPortList(OutputPorts_);
 
   out << "</TABLE>" << std::endl;
-  out << Indent(indent) << "> ";
+  withIndent(out, indent) << "> ";
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
+}
+
+void
+InOutNode::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  indent++;
+
+  printNextJsonField(out, JSON_NODE_TYPE_FIELD, indent, firstField) << "\"inout\"";
+
+  // Input ports
+  if (NumInputPorts())
+  {
+    printNextJsonField(out, JSON_IN_PORTS_FIELD, indent, firstField);
+    printJsonElementMap(out, indent + 1, InputPorts_);
+  }
+
+  // Output ports
+  if (NumOutputPorts())
+  {
+    printNextJsonField(out, JSON_OUT_PORTS_FIELD, indent, firstField);
+    printJsonElementMap(out, indent + 1, OutputPorts_);
+  }
+
+  // Subgraphs
+  if (NumSubgraphs())
+  {
+    printNextJsonField(out, JSON_SUBGRAPHS_FIELD, indent, firstField) << "[";
+    bool first = true;
+    for (const auto & subgraph : SubGraphs_)
+    {
+      if (first)
+        first = false;
+      else
+        out << ", ";
+      out << '"';
+      subgraph->PrintFullId(out);
+      out << '"';
+    }
+    out << "]";
+  }
+
+  // HTML Table attributes
+  if (!HtmlTableAttributes_.empty())
+  {
+    printNextJsonField(out, JSON_HTML_TABLE_ATTRIBUTES_FIELD, indent, firstField) << "{";
+    bool first = true;
+    for (const auto & [key, value] : HtmlTableAttributes_)
+    {
+      if (first)
+        first = false;
+      else
+        out << ", ";
+      outputKeyValuePair(out, key, value, AttributeOutputFormat::JSON);
+    }
+    out << "}";
+  }
+
+  indent--;
+  outputJsonObjectClosing(out, indent, firstField);
 }
 
 ArgumentNode::ArgumentNode(Graph & graph)
@@ -941,7 +1187,7 @@ ArgumentNode::OutputASCII(std::ostream & out, size_t) const
   if (HasLabel())
   {
     out << ":";
-    PrintIdentifierSafe(out, GetLabel());
+    printIdentifierSafe(out, GetLabel());
   }
   if (OutsideSource_ != nullptr)
   {
@@ -982,7 +1228,7 @@ ResultNode::OutputASCII(std::ostream & out, size_t) const
   if (HasLabel())
   {
     out << ":";
-    PrintIdentifierSafe(out, GetLabel());
+    printIdentifierSafe(out, GetLabel());
   }
   if (OutsideDestination_ != nullptr)
     out << " => " << OutsideDestination_->GetFullId();
@@ -1058,45 +1304,74 @@ Edge::SetArrowTail(std::string arrow)
   SetAttribute("arrowtail", std::move(arrow));
 }
 
+std::string_view
+Edge::getDirection() const
+{
+  const bool hasHeadArrow = HasAttribute("arrowhead") || Directed_;
+  const bool hasTailArrow = HasAttribute("arrowtail");
+  if (hasHeadArrow && hasTailArrow)
+    return "both";
+  else if (hasHeadArrow)
+    return "forward";
+  else if (hasTailArrow)
+    return "back";
+  else
+    return "none";
+}
+
 void
 Edge::OutputDot(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent);
+  withIndent(out, indent);
   From_.OutputDotPortId(out);
   out << " -> ";
   To_.OutputDotPortId(out);
   out << "[";
 
-  const bool hasHeadArrow = HasAttribute("arrowhead") || Directed_;
-  const bool hasTailArrow = HasAttribute("arrowtail");
-  if (hasHeadArrow && hasTailArrow)
-    out << "dir=both ";
-  else if (hasHeadArrow)
-  {
-    // dir=forward is the default in digraphs
-  }
-  else if (hasTailArrow)
-    out << "dir=back ";
-  else
-    out << "dir=none ";
+  out << "dir=" << getDirection() << " ";
 
   if (HasLabel())
   {
     out << "label=";
-    PrintIdentifierSafe(out, GetLabel());
+    printIdentifierSafe(out, GetLabel());
     out << " ";
   }
 
   // Edges are not normally named, so use the id attribute to include the edge's id
-  if (!HasAttribute(EDGE_ID_ATTRIBUTE))
+  if (!HasAttribute(DOT_EDGE_ID_ATTRIBUTE))
   {
-    out << EDGE_ID_ATTRIBUTE << "=";
-    PrintIdentifierSafe(out, GetFullId());
+    out << DOT_EDGE_ID_ATTRIBUTE << "=";
+    printIdentifierSafe(out, GetFullId());
     out << " ";
   }
 
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
+}
+
+void
+Edge::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  indent++;
+
+  printNextJsonField(out, "from", indent, firstField);
+  out << '"';
+  From_.OutputDotPortId(out);
+  out << '"';
+
+  printNextJsonField(out, "to", indent, firstField);
+  out << '"';
+  To_.OutputDotPortId(out);
+  out << '"';
+
+  // Direction
+  printNextJsonField(out, "dir", indent, firstField);
+  out << '"' << getDirection() << '"';
+
+  indent--;
+  outputJsonObjectClosing(out, indent, firstField);
 }
 
 Graph::Graph(Writer & writer)
@@ -1298,7 +1573,7 @@ Graph::Finalize()
 void
 Graph::OutputASCII(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent) << "{" << std::endl;
+  withIndent(out, indent) << "{" << std::endl;
   indent++;
 
   // Use a single ARG line for all graph arguments
@@ -1306,7 +1581,7 @@ Graph::OutputASCII(std::ostream & out, size_t indent) const
   for (auto & arg : ArgumentNodes_)
   {
     if (!anyArguments)
-      out << Indent(indent) << "ARG ";
+      withIndent(out, indent) << "ARG ";
     else
       out << ", ";
     anyArguments = true;
@@ -1327,7 +1602,7 @@ Graph::OutputASCII(std::ostream & out, size_t indent) const
   for (auto & res : ResultNodes_)
   {
     if (!anyResults)
-      out << Indent(indent) << "RES ";
+      withIndent(out, indent) << "RES ";
     else
       out << ", ";
     anyResults = true;
@@ -1337,27 +1612,27 @@ Graph::OutputASCII(std::ostream & out, size_t indent) const
     out << std::endl;
 
   indent--;
-  out << Indent(indent) << "}" << std::endl;
+  withIndent(out, indent) << "}" << std::endl;
 }
 
 void
 Graph::OutputDot(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
+  withIndent(out, indent) << "digraph " << GetFullId() << " {" << std::endl;
   indent++;
 
   // Default node attributes. Filling nodes by default makes them easier to click
-  out << Indent(indent)
+  withIndent(out, indent)
       << "node[shape=box style=filled fillcolor=white width=0.1 height=0.1 margin=0.05];"
       << std::endl;
-  out << Indent(indent) << "penwidth=6;" << std::endl;
+  withIndent(out, indent) << "penwidth=6;" << std::endl;
   if (HasLabel())
   {
-    out << Indent(indent) << "label=";
-    PrintIdentifierSafe(out, GetLabel());
+    withIndent(out, indent) << "label=";
+    printIdentifierSafe(out, GetLabel());
     out << std::endl;
   }
-  out << Indent(indent);
+  withIndent(out, indent);
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << std::endl;
 
@@ -1366,18 +1641,18 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   {
     if (nodes.empty())
       return;
-    out << Indent(indent++) << "{" << std::endl;
-    out << Indent(indent) << "rank=" << rank << ";" << std::endl;
+    withIndent(out, indent++) << "{" << std::endl;
+    withIndent(out, indent) << "rank=" << rank << ";" << std::endl;
     for (size_t i = 0; i < nodes.size(); i++)
     {
       nodes[i]->OutputDot(out, indent);
 
       // Use invisible edges to order nodes in the subgraph
       if (i != 0)
-        out << Indent(indent) << nodes[i - 1]->GetFullId() << " -> " << nodes[i]->GetFullId()
-            << "[style=invis];" << std::endl;
+        withIndent(out, indent) << nodes[i - 1]->GetFullId() << " -> " << nodes[i]->GetFullId()
+                                << "[style=invis];" << std::endl;
     }
-    out << Indent(--indent) << "}" << std::endl;
+    withIndent(out, --indent) << "}" << std::endl;
   };
 
   PrintOrderedSubgraph(ArgumentNodes_, "source", indent);
@@ -1395,13 +1670,60 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   }
 
   indent--;
-  out << Indent(indent) << "}" << std::endl;
+  withIndent(out, indent) << "}" << std::endl;
+}
 
-  // After fully printing this graph, print any sub graphs it may have
-  for (auto & node : Nodes_)
+void
+Graph::outputJson(std::ostream & out, size_t indent) const
+{
+  bool firstField = true;
+  outputJsonObjectOpening(out, indent, firstField);
+  indent++;
+
+  // If we are a subgraph, list both the node and its parent graph
+  if (IsSubgraph())
   {
-    node->OutputSubgraphs(out, OutputFormat::Dot, indent);
+    printNextJsonField(out, JSON_PARENT_NODE_FIELD, indent, firstField);
+    out << '"';
+    ParentNode_->PrintFullId(out);
+    out << '"';
+
+    printNextJsonField(out, JSON_PARENT_GRAPH_FIELD, indent, firstField);
+    out << '"';
+    ParentNode_->GetGraph().PrintFullId(out);
+    out << '"';
   }
+
+  // Arguments
+  if (!ArgumentNodes_.empty())
+  {
+    printNextJsonField(out, JSON_ARGUMENTS_FIELD, indent, firstField);
+    printJsonElementMap(out, indent, ArgumentNodes_);
+  }
+
+  // Nodes
+  if (!Nodes_.empty())
+  {
+    printNextJsonField(out, JSON_NODES_FIELD, indent, firstField);
+    printJsonElementMap(out, indent, Nodes_);
+  }
+
+  // Results
+  if (!ResultNodes_.empty())
+  {
+    printNextJsonField(out, JSON_RESULTS_FIELD, indent, firstField);
+    printJsonElementMap(out, indent, ResultNodes_);
+  }
+
+  // Edges
+  if (!Edges_.empty())
+  {
+    printNextJsonField(out, JSON_EDGES_FIELD, indent, firstField);
+    printJsonElementMap(out, indent, Edges_);
+  }
+
+  indent--;
+  outputJsonObjectClosing(out, indent, firstField);
 }
 
 void
@@ -1416,6 +1738,9 @@ Graph::Output(std::ostream & out, OutputFormat format, size_t indent) const
     break;
   case OutputFormat::Dot:
     OutputDot(out, indent);
+    break;
+  case OutputFormat::Json:
+    outputJson(out, indent);
     break;
   default:
     JLM_UNREACHABLE("Unknown output format");
@@ -1481,9 +1806,43 @@ Writer::outputAllGraphs(std::ostream & out, OutputFormat format)
 {
   Finalize();
 
-  for (auto & graph : Graphs_)
-    if (!graph->IsSubgraph())
-      graph->Output(out, format);
-}
+  switch (format)
+  {
+  case OutputFormat::ASCII:
+    for (auto & graph : Graphs_)
+    {
+      // In ASCII printing, subgraphs are printed inside their nodes,
+      // so we only output root graphs in this loop
+      if (!graph->IsSubgraph())
+        graph->Output(out, format, 0);
+    }
+    break;
 
+  case OutputFormat::Dot:
+    for (auto & graph : Graphs_)
+    {
+      graph->Output(out, format, 0);
+    }
+    break;
+
+  case OutputFormat::Json:
+  {
+    out << "{" << std::endl;
+    bool first = true;
+    for (auto & graph : Graphs_)
+    {
+      if (first)
+        first = false;
+      else
+        out << "," << std::endl;
+      graph->Output(out, format, 1);
+    }
+    out << std::endl << "}" << std::endl;
+    break;
+  }
+
+  default:
+    JLM_UNREACHABLE("Unknown OutputFormat");
+  }
+}
 }
