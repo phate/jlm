@@ -80,17 +80,6 @@ private:
   std::optional<rvsdg::Output *>
   HoistChrec(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & thetaNode, size_t numBits);
 
-  /**
-   * Tries to trace a value upwards to the corresponding output in a target region.
-   *
-   * @param origin The output of the value we want to trace.
-   * @param targetRegion The region we want to reach.
-   * @return the output of the traced value in the target region if it can be found, otherwise
-   * std::nullopt.
-   */
-  static std::optional<rvsdg::Output *>
-  TryTraceValueUpwards(rvsdg::Output & origin, rvsdg::Region & targetRegion);
-
   std::optional<rvsdg::Output *>
   HoistSCEVExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
 

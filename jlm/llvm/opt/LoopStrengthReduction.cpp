@@ -12,6 +12,7 @@
 #include <jlm/util/Statistics.hpp>
 
 #include <algorithm>
+#include <jlm/rvsdg/Trace.hpp>
 
 namespace jlm::llvm
 {
@@ -302,11 +303,8 @@ LoopStrengthReduction::HoistChrec(
 
   if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop.subregion()))
   {
-    const auto traced = TryTraceValueUpwards(*chrecOutput, *thetaNode.subregion());
-    if (!traced.has_value())
-      return std::nullopt;
-
-    return *traced;
+    auto & traced = rvsdg::traceOutput(*chrecOutput, thetaNode.subregion());
+    return &traced;
   }
 
   // This is fine to do and wont throw since we know, due to the cases above and the invariance
@@ -314,35 +312,6 @@ LoopStrengthReduction::HoistChrec(
   // theta region
   auto & routed = rvsdg::RouteToRegion(*chrecOutput, *thetaNode.region());
   return &routed;
-}
-
-std::optional<rvsdg::Output *>
-LoopStrengthReduction::TryTraceValueUpwards(rvsdg::Output & origin, rvsdg::Region & targetRegion)
-{
-  if (origin.region() == &targetRegion)
-  {
-    return &origin;
-  }
-
-  if (const auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(origin))
-  {
-    const auto loopVar = theta->MapPreLoopVar(origin);
-    auto traced = TryTraceValueUpwards(*loopVar.input->origin(), targetRegion);
-    if (traced.has_value())
-      return *traced;
-  }
-  else if (const auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(origin))
-  {
-    const auto roleVar = gamma->MapBranchArgument(origin);
-    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
-    {
-      auto traced = TryTraceValueUpwards(*entryVar->input->origin(), targetRegion);
-      if (traced.has_value())
-        return *traced;
-    }
-  }
-
-  return std::nullopt;
 }
 
 std::optional<rvsdg::Output *>
@@ -375,11 +344,8 @@ LoopStrengthReduction::HoistSCEVExpresssion(
 
     if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
     {
-      const auto traced = TryTraceValueUpwards(*initLoopVar.pre, *thetaNode.region());
-      if (!traced.has_value())
-        return std::nullopt;
-
-      return *traced;
+      auto & traced = rvsdg::traceOutput(*initLoopVar.pre, thetaNode.region());
+      return &traced;
     }
 
     auto & routed = rvsdg::RouteToRegion(*initLoopVar.pre, *thetaNode.region());

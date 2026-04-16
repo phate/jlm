@@ -253,12 +253,14 @@ traceOutputIntraProcedurally(const Output & output)
 Output &
 traceOutput(Output & output, const rvsdg::Region * withinRegion = nullptr);
 
+Output &
+traceOutput(Output & output, rvsdg::Region * targetRegion);
+
 inline const Output &
 traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
   return traceOutput(const_cast<Output &>(output), withinRegion);
 }
-
 }
 
 #endif // JLM_RVSDG_TRACE_HPP

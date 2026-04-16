@@ -809,7 +809,7 @@ ScalarEvolution::TryReplaceInitForSCEV(const SCEV & scev, rvsdg::Output & output
     if (const auto innerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(initPrePointer))
     {
       const auto correspondingInput = innerTheta->MapPreLoopVar(initPrePointer).input;
-      auto & inputOrigin = llvm::traceOutput(*correspondingInput->origin());
+      auto & inputOrigin = rvsdg::traceOutput(*correspondingInput->origin());
       if (const auto originSCEV = Context_->TryGetSCEVForOutput(inputOrigin))
       {
         // We have found a SCEV for the origin of the input, find the corresponding theta node so
