@@ -21,11 +21,17 @@ OutputTracer::OutputTracer(const bool enableCaching) noexcept
 Output &
 OutputTracer::trace(Output & output)
 {
-  return trace(output, true);
+  return trace(output, true, nullptr);
 }
 
 Output &
-OutputTracer::trace(Output & output, bool mayLeaveRegion)
+OutputTracer::trace(Output & output, rvsdg::Region * targetRegion)
+{
+  return trace(output, true, targetRegion);
+}
+
+Output &
+OutputTracer::trace(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion)
 {
   Output * head = &output;
 
@@ -33,7 +39,7 @@ OutputTracer::trace(Output & output, bool mayLeaveRegion)
   while (true)
   {
     Output * prevHead = head;
-    head = &traceStep(*head, mayLeaveRegion);
+    head = &traceStep(*head, mayLeaveRegion, targetRegion);
     if (head == prevHead)
     {
       return *head;
@@ -74,7 +80,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     // If deep tracing is enabled, make a greater effort to trace up to a region argument
     if (traceThroughStrucutalNodes_)
     {
-      tracedInner = &trace(*tracedInner, false);
+      tracedInner = &trace(*tracedInner, false, output.region());
     }
 
     // The traced output must reach a region argument in the gamma subregion
@@ -116,7 +122,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If deep tracing is enabled, make a greater effort in tracing up to a region argument
   if (traceThroughStrucutalNodes_)
   {
-    tracedInner = &trace(*tracedInner, false);
+    tracedInner = &trace(*tracedInner, false, output.region());
   }
 
   // If tracing reached the pre argument of the same loop variable, it is invariant
@@ -140,11 +146,16 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 }
 
 Output &
-OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
+OutputTracer::traceStep(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion)
 {
   if (!mayLeaveRegion && TryGetRegionParentNode<Node>(output))
   {
     // We are not allowed to leave the region, so return early on region arguments
+    return output;
+  }
+
+  if (targetRegion && output.region() == targetRegion)
+  {
     return output;
   }
 
@@ -284,6 +295,13 @@ traceOutputIntraProcedurally(Output & output)
   OutputTracer tracer(enableCaching);
   tracer.setInterprocedural(false);
   return tracer.trace(output);
+}
+
+Output &
+traceOutput(Output & output, rvsdg::Region * targetRegion)
+{
+  OutputTracer tracer;
+  return tracer.trace(output, targetRegion);
 }
 
 Output &

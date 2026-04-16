@@ -42,7 +42,7 @@ public:
 
 protected:
   [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, bool mayLeaveRegion) override;
+  traceStep(rvsdg::Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion) override;
 
 private:
   bool traceThroughLoadedStates_ = false;

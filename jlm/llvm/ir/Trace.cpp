@@ -21,9 +21,9 @@ OutputTracer::OutputTracer(const bool enableCaching)
 {}
 
 rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
+OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion, targetRegion);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);

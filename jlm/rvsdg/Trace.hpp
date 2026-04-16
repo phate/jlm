@@ -115,6 +115,9 @@ public:
   [[nodiscard]] Output &
   trace(Output & output);
 
+  Output &
+  trace(Output & output, rvsdg::Region * targetRegion);
+
   /**
    * Attempts to trace the output of a gamma node through the node.
    * This is only possible if the output can be traced to a gamma entry variable in all subregions,
@@ -158,19 +161,21 @@ protected:
    * Traces from the given \p output to find the source of the output's value.
    * @param output the output to trace from.
    * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
+   * @param targetRegion
    */
   [[nodiscard]] Output &
-  trace(Output & output, bool mayLeaveRegion);
+  trace(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion);
 
   /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from
    * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
+   * @param targetRegion
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, bool mayLeaveRegion);
+  traceStep(Output & output, bool mayLeaveRegion, rvsdg::Region * targetRegion);
 
   /**
    * Inserts a traced value into the tracing cache.
@@ -247,6 +252,9 @@ traceOutputIntraProcedurally(const Output & output)
  */
 Output &
 traceOutput(Output & output);
+
+Output &
+traceOutput(Output & output, rvsdg::Region * targetRegion);
 
 inline const Output &
 traceOutput(const Output & output)
