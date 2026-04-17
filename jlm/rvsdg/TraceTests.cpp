@@ -183,7 +183,8 @@ TEST(TraceTests, TestTraceNestedStructuralNodes)
   // Act & Assert 2
   {
     // Create an alternative tracer that does not perform deep tracing
-    OutputTracer shallowTracer;
+    constexpr bool enableCaching = false;
+    OutputTracer shallowTracer(enableCaching);
     shallowTracer.setTraceThroughStructuralNodes(false);
 
     const auto & tracedX0 = shallowTracer.trace(*x0.origin());
@@ -324,4 +325,50 @@ TEST(TraceTests, TestIndirectLoopInvariance)
   EXPECT_FALSE(ThetaLoopVarIsInvariant(indirectLoopVar));
   EXPECT_EQ(&tracedUser1, &c20);
   EXPECT_EQ(&tracedUser2, &c20);
+}
+
+TEST(TraceTests, GammaCachingTest)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = TestType::createValueType();
+
+  Graph rvsdg;
+
+  auto & predicate = GraphImport::Create(rvsdg, controlType, "predicate");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+  auto & i2 = GraphImport::Create(rvsdg, valueType, "i2");
+
+  auto gammaNode = GammaNode::create(&predicate, 2);
+  auto i1EntryVar = gammaNode->AddEntryVar(&i1);
+  auto i2EntryVar = gammaNode->AddEntryVar(&i2);
+
+  auto exitVar =
+      gammaNode->AddExitVar({ i1EntryVar.branchArgument[0], i1EntryVar.branchArgument[1] });
+
+  auto & graphExport = GraphExport::Create(*exitVar.output, "export");
+
+  constexpr bool enableCaching = true;
+  OutputTracer tracer(enableCaching);
+
+  // Act & Assert
+  // This is the first time we are tracing this output. We expect it to arrive at i1.
+  auto traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == &i1);
+
+  // Divert the origins of the exit variable results to i2.
+  exitVar.branchResult[0]->divert_to(i2EntryVar.branchArgument[0]);
+  exitVar.branchResult[1]->divert_to(i2EntryVar.branchArgument[1]);
+
+  // Since we traced graphExport already and had caching enabled in the tracer, we expect the tracer
+  // to still return i1 even though we redirected the origins of the exit variable results to i2.
+  traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == &i1);
+
+  // Clear the tracing cache. We should now arrive at i2.
+  tracer.clearCache();
+  traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == &i2);
 }

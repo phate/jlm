@@ -16,7 +16,9 @@
 namespace jlm::llvm
 {
 
-llvm::OutputTracer::OutputTracer() = default;
+OutputTracer::OutputTracer(const bool enableCaching)
+    : rvsdg::OutputTracer(enableCaching)
+{}
 
 rvsdg::Output &
 OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
@@ -51,7 +53,8 @@ OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 rvsdg::Output &
 traceOutput(rvsdg::Output & output)
 {
-  OutputTracer tracer;
+  constexpr bool enableCaching = true;
+  OutputTracer tracer(enableCaching);
   return tracer.trace(output);
 }
 

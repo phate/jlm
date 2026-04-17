@@ -371,7 +371,8 @@ private:
   getLastStoreBeforeInputInternal(rvsdg::Input & input)
   {
     // Create a tracer, allow it to go through loads, as we only care about stores
-    llvm::OutputTracer tracer;
+    constexpr bool enableCaching = false;
+    OutputTracer tracer(enableCaching);
     tracer.setTraceThroughStructuralNodes(true);
     tracer.setTraceThroughLoadedStates(true);
     auto & tracedOutput = tracer.trace(*input.origin());

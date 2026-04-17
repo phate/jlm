@@ -26,8 +26,10 @@ public:
 
   /**
    * Creates an OutputTracer with the default configuration
+   *
+   * FIXME: chande documentation
    */
-  OutputTracer();
+  explicit OutputTracer(bool enableCaching) noexcept;
 
   /**
    * When tracing reaches the output of a structural node, how much effort should be made to
@@ -137,6 +139,13 @@ public:
   [[nodiscard]] Output *
   tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
 
+  // FIXME: documentation
+  void
+  clearCache()
+  {
+    traceCache_.clear();
+  }
+
 protected:
   /**
    * Traces from the given \p output to find the source of the output's value.
@@ -156,6 +165,14 @@ protected:
   [[nodiscard]] virtual Output &
   traceStep(Output & output, bool mayLeaveRegion);
 
+  // FIXME: add documentation
+  Output *
+  insertInCache(const Output & output, Output * traceResult);
+
+  // FIXME: add documentation
+  std::optional<Output *>
+  lookupInCache(const Output & output);
+
   // When true, tracing enters subregions of structural nodes to check if the value is invariant.
   // When false, values are only considered invariant if they are directly connected to arguments.
   bool traceThroughStrucutalNodes_ = true;
@@ -167,6 +184,10 @@ protected:
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
+
+  // FIXME: some documentation
+  bool enableCaching_;
+  std::unordered_map<const Output *, Output *> traceCache_{};
 };
 
 /**

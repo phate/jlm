@@ -14,7 +14,9 @@ namespace jlm::rvsdg
 {
 OutputTracer::~OutputTracer() = default;
 
-OutputTracer::OutputTracer() = default;
+OutputTracer::OutputTracer(const bool enableCaching) noexcept
+    : enableCaching_(enableCaching)
+{}
 
 Output &
 OutputTracer::trace(Output & output)
@@ -54,6 +56,11 @@ mapGammaArgumentToOrigin(GammaNode & gammaNode, Output & output)
 Output *
 OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 {
+  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  {
+    return traceResultOpt.value();
+  }
+
   const auto exitVar = gammaNode.MapOutputExitVar(output);
 
   // The shared output that is the origin of the entry variable(s) going into the gamma node
@@ -71,7 +78,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 
     // The traced output must reach a region argument in the gamma subregion
     if (TryGetRegionParentNode<GammaNode>(*tracedInner) != &gammaNode)
-      return nullptr;
+      return insertInCache(output, nullptr);
 
     // Get the origin of the region argument outside the gamma
     Output & outerOrigin = mapGammaArgumentToOrigin(gammaNode, *tracedInner);
@@ -83,12 +90,12 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     }
     else if (commonOrigin != &outerOrigin)
     {
-      return nullptr;
+      return insertInCache(output, nullptr);
     }
   }
 
   JLM_ASSERT(commonOrigin != nullptr);
-  return commonOrigin;
+  return insertInCache(output, commonOrigin);
 }
 
 Output *
@@ -237,10 +244,36 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   return output;
 }
 
+Output *
+OutputTracer::insertInCache(const Output & output, Output * traceResult)
+{
+  if (!enableCaching_)
+    return traceResult;
+
+  JLM_ASSERT(traceCache_.find(&output) == traceCache_.end());
+  traceCache_[&output] = traceResult;
+  return traceResult;
+}
+
+std::optional<Output *>
+OutputTracer::lookupInCache(const Output & output)
+{
+  if (!enableCaching_)
+    return std::nullopt;
+
+  if (const auto it = traceCache_.find(&output); it != traceCache_.end())
+  {
+    return it->second;
+  }
+
+  return std::nullopt;
+}
+
 Output &
 traceOutputIntraProcedurally(Output & output)
 {
-  OutputTracer tracer;
+  constexpr bool enableCaching = false;
+  OutputTracer tracer(enableCaching);
   tracer.setInterprocedural(false);
   return tracer.trace(output);
 }
@@ -248,7 +281,8 @@ traceOutputIntraProcedurally(Output & output)
 Output &
 traceOutput(Output & output)
 {
-  OutputTracer tracer;
+  constexpr bool enableCaching = false;
+  OutputTracer tracer(enableCaching);
   return tracer.trace(output);
 }
 
