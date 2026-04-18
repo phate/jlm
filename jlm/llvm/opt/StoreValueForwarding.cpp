@@ -77,14 +77,21 @@ public:
  */
 struct StoreValueForwarding::Context final
 {
-  Context() = default;
+  Context() noexcept
+      : outputTracer(true)
+  {
+    outputTracer.setTraceThroughStructuralNodes(true);
+    outputTracer.setTraceThroughLoadedStates(true);
+  }
 
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
 
   // Memoization of outputs that have been routed into regions
-  std::map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *> routedOutputs;
+  std::map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *> routedOutputs{};
+
+  OutputTracer outputTracer;
 };
 
 StoreValueForwarding::~StoreValueForwarding() noexcept = default;
@@ -106,6 +113,11 @@ StoreValueForwarding::traverseInterProceduralRegion(rvsdg::Region & region)
         },
         [&](rvsdg::LambdaNode & lambdaNode)
         {
+          // Output tracing is only done intra-procedural in this pass, and we are about to process
+          // a new lambda node. Clear the tracing cache to free up the memory from the last lambda
+          // we processed.
+          context_->outputTracer.clearCache();
+
           traverseIntraProceduralRegion(*lambdaNode.subregion());
         },
         [&]([[maybe_unused]] rvsdg::DeltaNode & deltaNode)
@@ -240,8 +252,9 @@ struct StoreValueOrigin
 class LoadTracingInfo
 {
 public:
-  LoadTracingInfo(rvsdg::SimpleNode & loadNode)
-      : loadNode(loadNode)
+  LoadTracingInfo(rvsdg::SimpleNode & loadNode, OutputTracer & tracer)
+      : loadNode(loadNode),
+        tracer(tracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -370,11 +383,6 @@ private:
   StoreValueOrigin
   getLastStoreBeforeInputInternal(rvsdg::Input & input)
   {
-    // Create a tracer, allow it to go through loads, as we only care about stores
-    constexpr bool enableCaching = false;
-    OutputTracer tracer(enableCaching);
-    tracer.setTraceThroughStructuralNodes(true);
-    tracer.setTraceThroughLoadedStates(true);
     auto & tracedOutput = tracer.trace(*input.origin());
 
     // If tracing reached a store operation, look up its info
@@ -540,6 +548,8 @@ public:
   std::shared_ptr<const rvsdg::Type> loadedType;
   size_t loadedTypeSize;
 
+  OutputTracer & tracer;
+
   // Map containing info about each store node relevant to store value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
 
@@ -572,7 +582,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   // Only non-volatile loads are candidates for being forwarded to
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
 
-  LoadTracingInfo loadTracingInfo(loadNode);
+  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
 
   if (success)
