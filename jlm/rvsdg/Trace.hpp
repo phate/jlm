@@ -18,6 +18,9 @@ class ThetaNode;
  * Traces through simple nodes that do not affect the value,
  * through structural nodes when the value is invariant,
  * and out of structural nodes when the value is passed in.
+ *
+ * It supports caching of traced values at gamma and theta outputs to avoid the retracing of a value
+ * through these structural nodes.
  */
 class OutputTracer
 {
@@ -27,7 +30,7 @@ public:
   /**
    * Creates an OutputTracer with the default configuration
    *
-   * FIXME: chande documentation
+   * @param enableCaching Determines whether the output tracer should cache traced results.
    */
   explicit OutputTracer(bool enableCaching) noexcept;
 
@@ -139,7 +142,9 @@ public:
   [[nodiscard]] Output *
   tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
 
-  // FIXME: documentation
+  /**
+   * Clears the tracing cache.
+   */
   void
   clearCache()
   {
@@ -165,11 +170,22 @@ protected:
   [[nodiscard]] virtual Output &
   traceStep(Output & output, bool mayLeaveRegion);
 
-  // FIXME: add documentation
+  /**
+   * Inserts a traced value into the tracing cache.
+   *
+   * @param output The output that was traced.
+   * @param traceResult The output at which the tracing arrived.
+   * @return \p traceResult for convenience.
+   */
   Output *
   insertInCache(const Output & output, Output * traceResult);
 
-  // FIXME: add documentation
+  /**
+   * Loops up the tracing result for \p output.
+   *
+   * @param output The output that is traced.
+   * @return The output at which tracing arrived, otherwise std::nullopt.
+   */
   std::optional<Output *>
   lookupInCache(const Output & output);
 
@@ -185,7 +201,7 @@ protected:
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
 
-  // FIXME: some documentation
+  // When true, tracing is allowed to cache traced values.
   bool enableCaching_;
   std::unordered_map<const Output *, Output *> traceCache_{};
 };
