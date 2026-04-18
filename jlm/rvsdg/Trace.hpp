@@ -8,6 +8,8 @@
 
 #include <jlm/rvsdg/node.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 class GammaNode;
@@ -18,6 +20,9 @@ class ThetaNode;
  * Traces through simple nodes that do not affect the value,
  * through structural nodes when the value is invariant,
  * and out of structural nodes when the value is passed in.
+ *
+ * It supports caching of traced values at gamma and theta outputs to avoid the retracing of a value
+ * through these structural nodes.
  */
 class OutputTracer
 {
@@ -26,8 +31,10 @@ public:
 
   /**
    * Creates an OutputTracer with the default configuration
+   *
+   * @param enableCaching Determines whether the output tracer should cache traced results.
    */
-  OutputTracer();
+  explicit OutputTracer(bool enableCaching) noexcept;
 
   /**
    * When tracing reaches the output of a structural node, how much effort should be made to
@@ -137,6 +144,15 @@ public:
   [[nodiscard]] Output *
   tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
 
+  /**
+   * Clears the tracing cache.
+   */
+  void
+  clearCache()
+  {
+    traceCache_.clear();
+  }
+
 protected:
   /**
    * Traces from the given \p output to find the source of the output's value.
@@ -156,6 +172,25 @@ protected:
   [[nodiscard]] virtual Output &
   traceStep(Output & output, bool mayLeaveRegion);
 
+  /**
+   * Inserts a traced value into the tracing cache.
+   *
+   * @param output The output that was traced.
+   * @param traceResult The output at which the tracing arrived.
+   * @return \p traceResult for convenience.
+   */
+  Output *
+  insertInCache(const Output & output, Output * traceResult);
+
+  /**
+   * Loops up the tracing result for \p output.
+   *
+   * @param output The output that is traced.
+   * @return The output at which tracing arrived, otherwise std::nullopt.
+   */
+  std::optional<Output *>
+  lookupInCache(const Output & output);
+
   // When true, tracing enters subregions of structural nodes to check if the value is invariant.
   // When false, values are only considered invariant if they are directly connected to arguments.
   bool traceThroughStrucutalNodes_ = true;
@@ -167,6 +202,10 @@ protected:
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
+
+  // When true, tracing is allowed to cache traced values.
+  bool enableCaching_;
+  std::unordered_map<const Output *, Output *> traceCache_{};
 };
 
 /**
