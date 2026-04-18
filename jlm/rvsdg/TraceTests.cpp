@@ -372,3 +372,45 @@ TEST(TraceTests, GammaCachingTest)
   traceResult = &tracer.trace(*graphExport.origin());
   assert(traceResult == &i2);
 }
+
+TEST(TraceTests, ThetaCachingTest)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = TestType::createValueType();
+
+  Graph rvsdg;
+
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+  auto & i2 = GraphImport::Create(rvsdg, valueType, "i2");
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar1 = thetaNode->AddLoopVar(&i1);
+  auto loopVar2 = thetaNode->AddLoopVar(&i2);
+
+  auto & graphExport = GraphExport::Create(*loopVar1.output, "export");
+
+  constexpr bool enableCaching = true;
+  OutputTracer tracer(enableCaching);
+
+  // Act & Assert
+  // This is the first time we are tracing this output. We expect it to arrive at i1.
+  auto traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == &i1);
+
+  // Divert the origins of the loop variables' post value
+  loopVar1.post->divert_to(loopVar2.pre);
+  loopVar2.post->divert_to(loopVar1.pre);
+
+  // Since we traced graphExport already and had caching enabled in the tracer, we expect the tracer
+  // to still return i1 even though we redirected loopVar1.
+  traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == &i1);
+
+  // Clear the tracing cache. We should now arrive at the output of loopVar1.
+  tracer.clearCache();
+  traceResult = &tracer.trace(*graphExport.origin());
+  assert(traceResult == loopVar1.output);
+}

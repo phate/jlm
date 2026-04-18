@@ -101,6 +101,11 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 Output *
 OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 {
+  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  {
+    return traceResultOpt.value();
+  }
+
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
 
   auto tracedInner = loopVar.post->origin();
@@ -114,7 +119,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
-    return loopVar.input->origin();
+    return insertInCache(output, loopVar.input->origin());
   }
 
   // If tracing from the post result lead to the pre argument of a different loop variable,
@@ -124,11 +129,11 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return originLoopVar.input->origin();
+      return insertInCache(output, originLoopVar.input->origin());
     }
   }
 
-  return nullptr;
+  return insertInCache(output, nullptr);
 }
 
 Output &
