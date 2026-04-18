@@ -17,7 +17,7 @@ namespace jlm::llvm
 class OutputTracer : public rvsdg::OutputTracer
 {
 public:
-  OutputTracer();
+  explicit OutputTracer(bool enableCaching);
 
   /**
    * When enabled, tracing can continue through the memory state output of a load,

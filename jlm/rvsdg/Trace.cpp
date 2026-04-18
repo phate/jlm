@@ -14,7 +14,9 @@ namespace jlm::rvsdg
 {
 OutputTracer::~OutputTracer() = default;
 
-OutputTracer::OutputTracer() = default;
+OutputTracer::OutputTracer(const bool enableCaching) noexcept
+    : enableCaching_(enableCaching)
+{}
 
 Output &
 OutputTracer::trace(Output & output)
@@ -54,6 +56,11 @@ mapGammaArgumentToOrigin(GammaNode & gammaNode, Output & output)
 Output *
 OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 {
+  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  {
+    return traceResultOpt.value();
+  }
+
   const auto exitVar = gammaNode.MapOutputExitVar(output);
 
   // The shared output that is the origin of the entry variable(s) going into the gamma node
@@ -71,7 +78,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 
     // The traced output must reach a region argument in the gamma subregion
     if (TryGetRegionParentNode<GammaNode>(*tracedInner) != &gammaNode)
-      return nullptr;
+      return insertInCache(output, nullptr);
 
     // Get the origin of the region argument outside the gamma
     Output & outerOrigin = mapGammaArgumentToOrigin(gammaNode, *tracedInner);
@@ -83,17 +90,22 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     }
     else if (commonOrigin != &outerOrigin)
     {
-      return nullptr;
+      return insertInCache(output, nullptr);
     }
   }
 
   JLM_ASSERT(commonOrigin != nullptr);
-  return commonOrigin;
+  return insertInCache(output, commonOrigin);
 }
 
 Output *
 OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 {
+  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  {
+    return traceResultOpt.value();
+  }
+
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
 
   auto tracedInner = loopVar.post->origin();
@@ -107,7 +119,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
-    return loopVar.input->origin();
+    return insertInCache(output, loopVar.input->origin());
   }
 
   // If tracing from the post result lead to the pre argument of a different loop variable,
@@ -117,11 +129,11 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return originLoopVar.input->origin();
+      return insertInCache(output, originLoopVar.input->origin());
     }
   }
 
-  return nullptr;
+  return insertInCache(output, nullptr);
 }
 
 Output &
@@ -237,10 +249,36 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
   return output;
 }
 
+Output *
+OutputTracer::insertInCache(const Output & output, Output * traceResult)
+{
+  if (!enableCaching_)
+    return traceResult;
+
+  JLM_ASSERT(traceCache_.find(&output) == traceCache_.end());
+  traceCache_[&output] = traceResult;
+  return traceResult;
+}
+
+std::optional<Output *>
+OutputTracer::lookupInCache(const Output & output)
+{
+  if (!enableCaching_)
+    return std::nullopt;
+
+  if (const auto it = traceCache_.find(&output); it != traceCache_.end())
+  {
+    return it->second;
+  }
+
+  return std::nullopt;
+}
+
 Output &
 traceOutputIntraProcedurally(Output & output)
 {
-  OutputTracer tracer;
+  constexpr bool enableCaching = false;
+  OutputTracer tracer(enableCaching);
   tracer.setInterprocedural(false);
   return tracer.trace(output);
 }
@@ -248,7 +286,8 @@ traceOutputIntraProcedurally(Output & output)
 Output &
 traceOutput(Output & output)
 {
-  OutputTracer tracer;
+  constexpr bool enableCaching = false;
+  OutputTracer tracer(enableCaching);
   return tracer.trace(output);
 }
 
