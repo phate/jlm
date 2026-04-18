@@ -114,7 +114,7 @@ StoreValueForwarding::traverseInterProceduralRegion(rvsdg::Region & region)
         [&](rvsdg::LambdaNode & lambdaNode)
         {
           // Output tracing is only done intra-procedural in this pass, and we are about to process
-          // a new lambda node. Clear the tracing cache to free up some memory from the last lambda
+          // a new lambda node. Clear the tracing cache to free up the memory from the last lambda
           // we processed.
           context_->outputTracer.clearCache();
 
