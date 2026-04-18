@@ -53,7 +53,7 @@ OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 rvsdg::Output &
 traceOutput(rvsdg::Output & output)
 {
-  constexpr bool enableCaching = true;
+  constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
   return tracer.trace(output);
 }
