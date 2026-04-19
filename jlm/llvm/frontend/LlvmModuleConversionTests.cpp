@@ -71,11 +71,14 @@ TEST(LlvmModuleConversionTests, SwitchConversion)
   {
     using namespace jlm::llvm;
 
-    auto controlFlowGraph =
+    const auto controlFlowGraph =
         dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
 
     EXPECT_EQ(controlFlowGraph->nnodes(), 6);
 
-    // FIXME: add test for structure
+    // We expect the split node to only have 4 outgoing edges. One for each target basic block of
+    // the original LLVM switch statement
+    const auto splitNode = controlFlowGraph->entry()->OutEdge(0)->sink();
+    EXPECT_EQ(splitNode->NumOutEdges(), 4u);
   }
 }
