@@ -176,6 +176,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/frontend/ExportTests.cpp \
     jlm/llvm/frontend/FNegTests.cpp \
     jlm/llvm/frontend/FunctionCallTests.cpp \
+    jlm/llvm/frontend/LlvmModuleConversionTests.cpp \
     jlm/llvm/frontend/LlvmPhiConversionTests.cpp \
     jlm/llvm/frontend/LoadTests.cpp \
     jlm/llvm/frontend/MemCpyTests.cpp \

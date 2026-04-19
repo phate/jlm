@@ -777,32 +777,47 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 }
 
 static const Variable *
-ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs, Context & ctx)
+convertSwitchInstruction(::llvm::SwitchInst * switchInstruction, tacsvector_t & tacs, Context & ctx)
 {
-  JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Switch);
-  auto i = ::llvm::cast<::llvm::SwitchInst>(instruction);
-  auto bb = ctx.get(i->getParent());
+  auto jlmSwitchBasicBlock = ctx.get(switchInstruction->getParent());
 
-  JLM_ASSERT(bb->NumOutEdges() == 0);
-  std::unordered_map<uint64_t, uint64_t> mapping;
-  for (auto it = i->case_begin(); it != i->case_end(); it++)
+  JLM_ASSERT(jlmSwitchBasicBlock->NumOutEdges() == 0);
+  std::unordered_map<uint64_t, uint64_t> matchMapping;
+  std::unordered_map<::llvm::BasicBlock *, ControlFlowGraphEdge *> outEdgeMapping;
+  for (auto caseIt = switchInstruction->case_begin(); caseIt != switchInstruction->case_end();
+       ++caseIt)
   {
-    JLM_ASSERT(it != i->case_default());
-    auto edge = bb->add_outedge(ctx.get(it->getCaseSuccessor()));
-    mapping[it->getCaseValue()->getZExtValue()] = edge->index();
+    JLM_ASSERT(caseIt != switchInstruction->case_default());
+    auto llvmCaseBasicBlock = caseIt->getCaseSuccessor();
+
+    if (auto outEdgeIt = outEdgeMapping.find(llvmCaseBasicBlock); outEdgeIt != outEdgeMapping.end())
+    {
+      // We have seen this LLVM basic block already and created an outgoing edge for it. Reuse that
+      // edge.
+      matchMapping[caseIt->getCaseValue()->getZExtValue()] = outEdgeIt->second->index();
+    }
+    else
+    {
+      auto jlmCaseBasicBlock = ctx.get(llvmCaseBasicBlock);
+      auto edge = jlmSwitchBasicBlock->add_outedge(jlmCaseBasicBlock);
+      outEdgeMapping[llvmCaseBasicBlock] = edge;
+      matchMapping[caseIt->getCaseValue()->getZExtValue()] = edge->index();
+    }
   }
 
-  auto defaultEdge = bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
+  auto jlmDefaultBasicBlock = ctx.get(switchInstruction->case_default()->getCaseSuccessor());
+  auto defaultEdge = jlmSwitchBasicBlock->add_outedge(jlmDefaultBasicBlock);
 
-  auto c = ConvertValue(i->getCondition(), tacs, ctx);
-  auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
+  auto c = ConvertValue(switchInstruction->getCondition(), tacs, ctx);
+  auto numBits = switchInstruction->getCondition()->getType()->getIntegerBitWidth();
   auto op = std::make_unique<rvsdg::MatchOperation>(
-      nbits,
-      mapping,
+      numBits,
+      matchMapping,
       defaultEdge->index(),
-      bb->NumOutEdges());
+      jlmSwitchBasicBlock->NumOutEdges());
   tacs.push_back(ThreeAddressCode::create(std::move(op), { c }));
-  tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
+  tacs.push_back(
+      BranchOperation::create(jlmSwitchBasicBlock->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -1703,7 +1718,10 @@ convertInstruction(
   case ::llvm::Instruction::Br:
     return ConvertBranchInstruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::Switch:
-    return ConvertSwitchInstruction(instruction, threeAddressCodes, context);
+    return convertSwitchInstruction(
+        ::llvm::cast<::llvm::SwitchInst>(instruction),
+        threeAddressCodes,
+        context);
   case ::llvm::Instruction::Unreachable:
     return convert_unreachable_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::FNeg:
