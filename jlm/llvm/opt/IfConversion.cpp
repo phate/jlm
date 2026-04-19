@@ -121,13 +121,22 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
       continue;
     }
 
-    const auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*gammaPredicate);
-    if (is<rvsdg::MatchOperation>(matchNode))
+    auto [matchNode, matchOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*gammaPredicate);
+    if (matchOperation)
     {
-      const auto matchOperation =
-          util::assertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
-      JLM_ASSERT(matchOperation->nalternatives() == 2);
-      JLM_ASSERT(std::distance(matchOperation->begin(), matchOperation->end()) == 1);
+      if (std::distance(matchOperation->begin(), matchOperation->end()) != 1)
+      {
+        // FIXME: This case could actually be handled if we wanted to by just making the condition
+        // to the select to be a "not-equal default value".
+
+        // FIXME: We would NOT like to perform the match checks for each exit variable. This can be
+        // done once at the beginning.
+
+        // The match operation has multiple alternatives that map to a single subregion.
+        // Nothing can be done.
+        continue;
+      }
 
       const auto matchOrigin = matchNode->input(0)->origin();
       const auto caseValue = matchOperation->begin()->first;
