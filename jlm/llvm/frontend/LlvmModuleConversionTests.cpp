@@ -1,0 +1,81 @@
+/*
+ * Copyright 2026 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#include <gtest/gtest.h>
+
+#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/print.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
+
+TEST(LlvmModuleConversionTests, SwitchConversion)
+{
+  using namespace llvm;
+
+  // Arrange
+  LLVMContext context;
+  const std::unique_ptr<Module> llvmModule(new Module("module", context));
+
+  auto int64Type = Type::getInt64Ty(context);
+
+  auto functionType = FunctionType::get(int64Type, ArrayRef<Type *>({ int64Type }), false);
+  auto function =
+      Function::Create(functionType, GlobalValue::ExternalLinkage, "f", llvmModule.get());
+
+  auto bbSplit = BasicBlock::Create(context, "BasicBlockSplit", function);
+  auto bb1 = BasicBlock::Create(context, "BasicBlock1", function);
+  auto bb2 = BasicBlock::Create(context, "BasicBlock2", function);
+  auto bb3 = BasicBlock::Create(context, "BasicBlock4", function);
+  auto bb4 = BasicBlock::Create(context, "BasicBlock4", function);
+  auto bbJoin = BasicBlock::Create(context, "BasicBlockJoin", function);
+
+  IRBuilder builder(bbSplit);
+  auto switchInstruction = builder.CreateSwitch(function->arg_begin(), bb4);
+  switchInstruction->addCase(ConstantInt::get(int64Type, 1), bb1);
+  switchInstruction->addCase(ConstantInt::get(int64Type, 2), bb2);
+  switchInstruction->addCase(ConstantInt::get(int64Type, 3), bb2);
+  switchInstruction->addCase(ConstantInt::get(int64Type, 4), bb3);
+  switchInstruction->addCase(ConstantInt::get(int64Type, 5), bb3);
+
+  builder.SetInsertPoint(bb1);
+  builder.CreateBr(bbJoin);
+
+  builder.SetInsertPoint(bb2);
+  builder.CreateBr(bbJoin);
+
+  builder.SetInsertPoint(bb3);
+  builder.CreateBr(bbJoin);
+
+  builder.SetInsertPoint(bb4);
+  builder.CreateBr(bbJoin);
+
+  builder.SetInsertPoint(bbJoin);
+  auto phiInstruction = builder.CreatePHI(int64Type, 4);
+  phiInstruction->addIncoming(ConstantInt::get(int64Type, 1), bb1);
+  phiInstruction->addIncoming(ConstantInt::get(int64Type, 2), bb2);
+  phiInstruction->addIncoming(ConstantInt::get(int64Type, 3), bb3);
+  phiInstruction->addIncoming(ConstantInt::get(int64Type, 4), bb4);
+  builder.CreateRet(phiInstruction);
+
+  llvmModule->print(errs(), nullptr);
+
+  // Act
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+  print(*ipgModule, stdout);
+
+  // Assert
+  {
+    using namespace jlm::llvm;
+
+    auto controlFlowGraph =
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
+
+    EXPECT_EQ(controlFlowGraph->nnodes(), 6);
+
+    // FIXME: add test for structure
+  }
+}
