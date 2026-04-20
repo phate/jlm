@@ -124,7 +124,7 @@ public:
    * @param withinRegion the region where we stop tracing.
    */
   [[nodiscard]] Output &
-  trace(Output & output, rvsdg::Region * withinRegion);
+  trace(Output & output, const rvsdg::Region * withinRegion);
 
   /**
    * Attempts to trace the output of a gamma node through the node.
@@ -173,7 +173,7 @@ protected:
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, rvsdg::Region * withinRegion);
+  traceStep(Output & output, const rvsdg::Region * withinRegion);
 
   /**
    * Inserts a traced value into the tracing cache.
@@ -251,12 +251,12 @@ traceOutputIntraProcedurally(const Output & output)
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output, rvsdg::Region * withinRegion = nullptr);
+traceOutput(Output & output, const rvsdg::Region * withinRegion = nullptr);
 
 inline const Output &
 traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
-  return traceOutput(const_cast<Output &>(output), const_cast<Region *>(withinRegion));
+  return traceOutput(const_cast<Output &>(output), withinRegion);
 }
 
 }

@@ -21,7 +21,7 @@ OutputTracer::OutputTracer(const bool enableCaching)
 {}
 
 rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, rvsdg::Region * withinRegion)
+OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
 {
   auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
 
@@ -51,7 +51,7 @@ OutputTracer::traceStep(rvsdg::Output & output, rvsdg::Region * withinRegion)
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, rvsdg::Region * withinRegion)
+traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);

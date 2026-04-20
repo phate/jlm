@@ -42,7 +42,7 @@ public:
 
 protected:
   [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, rvsdg::Region * withinRegion) override;
+  traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion) override;
 
 private:
   bool traceThroughLoadedStates_ = false;
@@ -60,14 +60,12 @@ private:
  * @return the maximally traced output
  */
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, rvsdg::Region * withinRegion = nullptr);
+traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion = nullptr);
 
 inline const rvsdg::Output &
 traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
-  return llvm::traceOutput(
-      const_cast<rvsdg::Output &>(output),
-      const_cast<rvsdg::Region *>(withinRegion));
+  return llvm::traceOutput(const_cast<rvsdg::Output &>(output), withinRegion);
 }
 
 /**

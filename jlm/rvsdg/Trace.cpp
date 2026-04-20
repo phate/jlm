@@ -25,7 +25,7 @@ OutputTracer::trace(Output & output)
 }
 
 Output &
-OutputTracer::trace(Output & output, rvsdg::Region * withinRegion)
+OutputTracer::trace(Output & output, const rvsdg::Region * withinRegion)
 {
   Output * head = &output;
 
@@ -142,7 +142,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 }
 
 Output &
-OutputTracer::traceStep(Output & output, rvsdg::Region * withinRegion)
+OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
 {
   if (withinRegion && withinRegion == TryGetOwnerRegion(output))
   {
@@ -289,7 +289,7 @@ traceOutputIntraProcedurally(Output & output)
 }
 
 Output &
-traceOutput(Output & output, rvsdg::Region * withinRegion)
+traceOutput(Output & output, const rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
