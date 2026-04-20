@@ -636,18 +636,18 @@ TEST(RegionTests, Ancestor)
 
   // Act & Assert
   // The root region is an ancestor of all the regions
-  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode1->subregion(0)));
-  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode2->subregion(0)));
-  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode3->subregion(0)));
-  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode4->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(graph.GetRootRegion(), *structuralNode1->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(graph.GetRootRegion(), *structuralNode2->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(graph.GetRootRegion(), *structuralNode3->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(graph.GetRootRegion(), *structuralNode4->subregion(0)));
 
   // A region is not it's own ancestor
-  EXPECT_FALSE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode1->subregion(0)));
+  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode1->subregion(0)));
 
   // Two unrelated regions are not ancestors
-  EXPECT_FALSE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode2->subregion(0)));
+  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode2->subregion(0)));
 
   // Ancestry works at multiple levels of nesting
-  EXPECT_TRUE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
-  EXPECT_TRUE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
+  EXPECT_TRUE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
 }
