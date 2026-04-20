@@ -65,6 +65,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 
   // The shared output that is the origin of the entry variable(s) going into the gamma node
   Output * commonOrigin = nullptr;
+  Input * gammaInput = nullptr;
 
   for (auto branchResult : exitVar.branchResult)
   {
@@ -81,7 +82,8 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
       return insertInCache(output, nullptr);
 
     // Get the origin of the region argument outside the gamma
-    Output & outerOrigin = mapGammaArgumentToOrigin(gammaNode, *tracedInner);
+    gammaInput = &gammaNode.mapBranchArgumentToInput(*tracedInner);
+    Output & outerOrigin = *gammaInput->origin();
 
     // Check that the origin matches with all other origins
     if (commonOrigin == nullptr)
@@ -95,7 +97,8 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
   }
 
   JLM_ASSERT(commonOrigin != nullptr);
-  return insertInCache(output, commonOrigin);
+  JLM_ASSERT(gammaInput != nullptr);
+  return insertInCache(output, gammaInput);
 }
 
 Output *
@@ -119,7 +122,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
-    return insertInCache(output, loopVar.input->origin());
+    return insertInCache(output, loopVar.input);
   }
 
   // If tracing from the post result lead to the pre argument of a different loop variable,
@@ -129,7 +132,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return insertInCache(output, originLoopVar.input->origin());
+      return insertInCache(output, originLoopVar.input);
     }
   }
 
@@ -250,14 +253,14 @@ OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
 }
 
 Output *
-OutputTracer::insertInCache(const Output & output, Output * traceResult)
+OutputTracer::insertInCache(const Output & output, Input * traceResult)
 {
   if (!enableCaching_)
-    return traceResult;
+    return traceResult != nullptr ? traceResult->origin() : nullptr;
 
   JLM_ASSERT(traceCache_.find(&output) == traceCache_.end());
   traceCache_[&output] = traceResult;
-  return traceResult;
+  return traceResult != nullptr ? traceResult->origin() : nullptr;
 }
 
 std::optional<Output *>
@@ -268,7 +271,7 @@ OutputTracer::lookupInCache(const Output & output)
 
   if (const auto it = traceCache_.find(&output); it != traceCache_.end())
   {
-    return it->second;
+    return it->second != nullptr ? it->second->origin() : nullptr;
   }
 
   return std::nullopt;

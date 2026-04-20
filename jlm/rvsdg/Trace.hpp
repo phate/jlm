@@ -176,11 +176,11 @@ protected:
    * Inserts a traced value into the tracing cache.
    *
    * @param output The output that was traced.
-   * @param traceResult The output at which the tracing arrived.
-   * @return \p traceResult for convenience.
+   * @param traceResult The input at which the tracing arrived.
+   * @return The origin of \p traceResult for convenience.
    */
   Output *
-  insertInCache(const Output & output, Output * traceResult);
+  insertInCache(const Output & output, Input * traceResult);
 
   /**
    * Loops up the tracing result for \p output.
@@ -205,7 +205,7 @@ protected:
 
   // When true, tracing is allowed to cache traced values.
   bool enableCaching_;
-  std::unordered_map<const Output *, Output *> traceCache_{};
+  std::unordered_map<const Output *, Input *> traceCache_{};
 };
 
 /**
