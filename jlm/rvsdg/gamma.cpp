@@ -349,6 +349,15 @@ GammaNode::mapBranchArgumentToInput(const rvsdg::Output & output) const
   return in;
 }
 
+Input &
+GammaNode::mapBranchArgumentToInput(Output & output) const
+{
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<GammaNode>(output) == this);
+  auto & in = *input(output.index());
+  JLM_ASSERT(*in.Type() == *output.Type());
+  return in;
+}
+
 GammaNode::ExitVar
 GammaNode::AddExitVar(const std::vector<jlm::rvsdg::Output *> & values)
 {
