@@ -11,9 +11,13 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/common.hpp>
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
+
 #include <map>
+#include <unordered_map>
 
 namespace jlm::llvm
 {
@@ -717,10 +721,137 @@ tryGetGammaExitVarCongruenceSet(
 }
 
 /**
+ * Calculates a hash for the given exit variable,
+ * based on the congruence sets of all its branch arguments.
+ * @param exitVar the exit variable
+ * @param context the context of the common node elimination pass
+ * @return the calculated hash
+ *
+ * @pre the gamma subregions have been traversed at least once
+ */
+[[nodiscard]] static size_t
+getGammaExitVariableHash(
+    const rvsdg::GammaNode::ExitVar & exitVar,
+    CommonNodeElimination::Context & context)
+{
+  size_t hash = 1;
+  for (auto branchResult : exitVar.branchResult)
+  {
+    const auto set = context.getSetFor(*branchResult->origin());
+    hash = util::CombineHashes(hash, set);
+  }
+  return hash;
+}
+
+/**
+ * Check if the two given exit variables are congruent,
+ * by comparing the origins of their branch results in each subregion.
+ * @param first the first exit variable
+ * @param second the second exit variable
+ * @param context the context of the common node elimination pass
+ * @return true if the exit variables are congruent
+ *
+ * @pre the exit variables belong to the same gamma node
+ */
+[[nodiscard]] static bool
+areGammaExitVariablesCongruent(
+    const rvsdg::GammaNode::ExitVar & first,
+    const rvsdg::GammaNode::ExitVar & second,
+    CommonNodeElimination::Context & context)
+{
+  const auto numResults = first.branchResult.size();
+  JLM_ASSERT(numResults == second.branchResult.size());
+  for (size_t i = 0; i < numResults; i++)
+  {
+    const auto firstSet = context.getSetFor(*first.branchResult[i]->origin());
+    const auto secondSet = context.getSetFor(*second.branchResult[i]->origin());
+    if (firstSet != secondSet)
+      return false;
+  }
+  return true;
+}
+
+/**
+ * Inserts the given \p exitVar as a leader in the hashmap containing exit variable leaders.
+ * @param exitVar the exit variable to insert as a leader
+ * @param congruenceSet the index of the congruence set the exit variable is leading
+ * @param leaderHashes the hashmap to add the exit variable as a leader to
+ * @param context the context of the current common node elimination pass
+ *
+ * @pre the output of the \p exitVar is the leader of the given \p congruenceSet
+ */
+static void
+insertGammaExitVarInHashmap(
+    rvsdg::GammaNode::ExitVar & exitVar,
+    CommonNodeElimination::Context::CongruenceSetIndex congruenceSet,
+    std::unordered_map<size_t, CommonNodeElimination::Context::CongruenceSetIndex> & leaderHashes,
+    CommonNodeElimination::Context & context)
+{
+  JLM_ASSERT(&context.getLeader(congruenceSet) == exitVar.output);
+
+  size_t hash = getGammaExitVariableHash(exitVar, context);
+  do
+  {
+    const auto [_, inserted] = leaderHashes.emplace(hash, congruenceSet);
+    if (inserted)
+      return;
+
+    // Open addressing, try next hash
+    hash++;
+  } while (true);
+}
+
+/**
+ * Tries to find an existing exit variable in the hashmap of exit variable leaders,
+ * that is congruent with the given \p exitVar.
+ * If one is found, the \p exitVar is registered as a follower of the existing leader.
+ *
+ * If no existing match is found, the \p exitVar becomes the leader of its own congruence set,
+ * and is added to the hashmap of leaders.
+ *
+ * @param exitVar the exit variable to lookup matches for
+ * @param gamma the gamma node the exit variable belongs to
+ * @param leaderHashes the hashmap containing existing leaders, and possibly add a new leader to
+ * @param context the context of the current common node elimination pass
+ */
+static void
+lookupOrInsertGammaExitVarInHashmap(
+    const rvsdg::GammaNode::ExitVar & exitVar,
+    const rvsdg::GammaNode & gamma,
+    std::unordered_map<size_t, CommonNodeElimination::Context::CongruenceSetIndex> & leaderHashes,
+    CommonNodeElimination::Context & context)
+{
+  size_t hash = getGammaExitVariableHash(exitVar, context);
+  do
+  {
+    // If no leader has the same hash already, insert a new leader exit variable
+    const auto [it, inserted] = leaderHashes.emplace(hash, 0);
+    if (inserted)
+    {
+      it->second = context.getOrCreateSetForLeader(*exitVar.output);
+      return;
+    }
+
+    // There is already an exit variable with the same hash, check if it is a match
+    auto & otherLeader = context.getLeader(it->second);
+    auto otherExitVar = gamma.MapOutputExitVar(otherLeader);
+    if (areGammaExitVariablesCongruent(exitVar, otherExitVar, context))
+    {
+      context.addFollower(it->second, *exitVar.output);
+      return;
+    }
+
+    // Open addressing, try next hash
+    hash++;
+  } while (true);
+}
+
+/**
  * Marks the arguments of the gamma subregions, and the nodes within the subregions.
  * Uses the origins of the branch results of exit variables to assign congruence sets to
- * each exit variable's output.
- * @param gamma the gamma node to mark
+ * each exit variable's output. Exit variables can either be congruent with gamma inputs
+ * if the output is gamma-invariant, or be congruent with another exit variable.
+ * @param gamma the gamma node to mark.
  * @param context the current context of the marking phase.
  */
 static void
@@ -728,21 +859,63 @@ markGamma(const rvsdg::GammaNode & gamma, CommonNodeElimination::Context & conte
 {
   markSubregionsFromInputs(gamma, context);
 
+  // Mapping from exit variable hash to the leader of its congruence set.
+  // The hash function is not collision free, and the table uses open addressing.
+  std::unordered_map<size_t, CommonNodeElimination::Context::CongruenceSetIndex> leaderHashes;
+
   // Go through the outputs of the gamma node and create congruence sets for them.
-  // By default, each exit variable output gets a distinct congruence set.
-  // Only if an exit variable is a copy of an entry variable in each region,
-  // and all the entry variables have congruent origins, does the gamma output become a follower.
   for (auto exitVar : gamma.GetExitVars())
   {
-    if (const auto entryVarCongruenceSet = tryGetGammaExitVarCongruenceSet(exitVar, context);
-        entryVarCongruenceSet.has_value())
+    // If the exit variable has previously been found to not be invariant, we skip trying again
+    bool skipInvarianceCheck = false;
+
+    // First check if the exit variable already belongs to a congruence set
+    const auto existingSet = context.tryGetSetFor(*exitVar.output);
+    if (existingSet != CommonNodeElimination::Context::NoCongruenceSetIndex)
     {
-      context.addFollower(*entryVarCongruenceSet, *exitVar.output);
+      // The output already belongs to a congruence set
+
+      // Check if the output is the leader
+      const auto & exisitingLeader = context.getLeader(existingSet);
+      if (&exisitingLeader == exitVar.output)
+      {
+        // Add the exit var to the hashmap of exit variable leaders
+        insertGammaExitVarInHashmap(exitVar, existingSet, leaderHashes, context);
+
+        // A leader can never become a follower, so we are done
+        continue;
+      }
+
+      // Check if the leader is another exit variable of the same gamma
+      if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(exisitingLeader) == &gamma)
+      {
+        const auto otherExitVar = gamma.MapOutputExitVar(exisitingLeader);
+        // Double check that the output still belongs to the same congurence set
+        if (areGammaExitVariablesCongruent(exitVar, otherExitVar, context))
+        {
+          // The exit variable should continue to be a follower
+          continue;
+        }
+
+        // exitVar should find a new leader, but we can skip checking if it is invariant
+        skipInvarianceCheck = true;
+      }
     }
-    else
+
+    if (!skipInvarianceCheck)
     {
-      context.getOrCreateSetForLeader(*exitVar.output);
+      // First check if the exit variable is gamma invariant
+      if (const auto entryVarCongruenceSet = tryGetGammaExitVarCongruenceSet(exitVar, context);
+          entryVarCongruenceSet.has_value())
+      {
+        context.addFollower(*entryVarCongruenceSet, *exitVar.output);
+        continue;
+      }
     }
+
+    // This function either finds a new congruent leader for the exitVar,
+    // or makes exitVar itself the leader of its own congruence set.
+    lookupOrInsertGammaExitVarInHashmap(exitVar, gamma, leaderHashes, context);
   }
 }
 
