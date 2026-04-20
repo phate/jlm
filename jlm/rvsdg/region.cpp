@@ -467,6 +467,22 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
   return numRegions;
 }
 
+bool
+Region::isAncestor(const Region & region, const Region & ancestor) noexcept
+{
+  auto current = &region;
+
+  while (!current->IsRootRegion())
+  {
+    current = current->node()->region();
+
+    if (current == &ancestor)
+      return true;
+  }
+
+  return false;
+}
+
 std::string
 Region::toJson(const Region & region, const util::AnnotationMap & annotationMap) noexcept
 {
