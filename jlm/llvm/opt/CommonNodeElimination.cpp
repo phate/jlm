@@ -744,8 +744,10 @@ getGammaExitVariableHash(
 }
 
 /**
- * Check if the two given exit variables are congruent,
+ * Checks if the two given exit variables are congruent,
  * by comparing the origins of their branch results in each subregion.
+ * Unlike comparing hashes, this function never yields false positives.
+ *
  * @param first the first exit variable
  * @param second the second exit variable
  * @param context the context of the common node elimination pass
