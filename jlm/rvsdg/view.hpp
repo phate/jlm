@@ -57,12 +57,6 @@ view(const Graph & graph, FILE * out)
   return view(&graph.GetRootRegion(), out);
 }
 
-std::string
-to_xml(const rvsdg::Region * region);
-
-void
-view_xml(const rvsdg::Region * region, FILE * out);
-
 }
 
 #endif
