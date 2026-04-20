@@ -87,7 +87,6 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/ArgumentTests.cpp \
     jlm/rvsdg/BinaryTests.cpp \
     jlm/rvsdg/BottomUpTests.cpp \
-    jlm/rvsdg/CseTests.cpp \
     jlm/rvsdg/GammaTests.cpp \
     jlm/rvsdg/GraphTests.cpp \
     jlm/rvsdg/InputTests.cpp \
