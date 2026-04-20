@@ -5,11 +5,11 @@
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
-#include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <algorithm>
@@ -301,9 +301,9 @@ LoopStrengthReduction::HoistChrec(
     return chrecOutput;
   }
 
-  if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop.subregion()))
+  if (rvsdg::Region::isAncestor(*thetaNode.subregion(), *targetLoop.subregion()))
   {
-    auto & traced = rvsdg::traceOutput(*chrecOutput, thetaNode.subregion());
+    auto & traced = llvm::traceOutput(*chrecOutput, thetaNode.subregion());
     if (traced.region() != thetaNode.region())
       return std::nullopt;
 
@@ -345,9 +345,9 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       return initLoopVar.input->origin();
     }
 
-    if (rvsdg::Region::IsAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
+    if (rvsdg::Region::isAncestor(*thetaNode.subregion(), *targetLoop->subregion()))
     {
-      auto & traced = rvsdg::traceOutput(*initLoopVar.pre, thetaNode.region());
+      auto & traced = llvm::traceOutput(*initLoopVar.pre, thetaNode.region());
 
       if (traced.region() != thetaNode.region())
         return std::nullopt;
