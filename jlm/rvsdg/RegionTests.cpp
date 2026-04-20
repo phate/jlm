@@ -621,3 +621,33 @@ TEST(RegionTests, computeDepthMap)
   EXPECT_EQ(depthMap.at(node2), 0u);
   EXPECT_EQ(depthMap.at(node3), 2u);
 }
+
+TEST(RegionTests, Ancestor)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::Graph graph;
+
+  auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode3 = TestStructuralNode::create(structuralNode1->subregion(0), 1);
+  auto structuralNode4 = TestStructuralNode::create(structuralNode3->subregion(0), 1);
+
+  // Act & Assert
+  // The root is an ancestor of all the regions
+  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode1->subregion(0)));
+  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode2->subregion(0)));
+  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode3->subregion(0)));
+  EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode4->subregion(0)));
+
+  // A region is not it's own ancestor
+  EXPECT_FALSE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode1->subregion(0)));
+
+  // Two unrelated regions are not ancestors
+  EXPECT_FALSE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode2->subregion(0)));
+
+  // Ancestry works at multiple levels of nesting
+  EXPECT_TRUE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
+  EXPECT_TRUE(Region::IsAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
+}
