@@ -261,7 +261,7 @@ private:
 
   /**
    * Goes through all ModRefSets in all functions, and keeps track of memory nodes that always
-   * appear alongside the external memory node. These memory nodes are compactable,
+   * appear alongside the external memory node. These memory nodes are compressible,
    * and can be removed from all ModRefSets in the function.
    */
   void
