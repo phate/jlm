@@ -123,7 +123,7 @@ public:
    * @param output the output to trace from.
    * @param withinRegion the region where we stop tracing.
    */
-  Output &
+  [[nodiscard]] Output &
   trace(Output & output, rvsdg::Region * withinRegion);
 
   /**
