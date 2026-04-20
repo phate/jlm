@@ -95,14 +95,6 @@ pre_opt(jlm::llvm::LlvmRvsdgModule & rm)
   dne.Run(rm, statisticsCollector);
 }
 
-void
-dump_xml(llvm::LlvmRvsdgModule & rvsdgModule, const std::string & file_name)
-{
-  auto xml_file = fopen(file_name.c_str(), "w");
-  jlm::rvsdg::view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), xml_file);
-  fclose(xml_file);
-}
-
 bool
 function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
 {
