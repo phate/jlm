@@ -116,6 +116,17 @@ public:
   trace(Output & output);
 
   /**
+   * Traces from the given \p output to find the source of the output's value.
+   * The optional parameter \p withinRegion prevents values from being traced out of the region. If
+   * \p withinRegion is a nullptr, the tracing will continue until the output no longer changes.
+   *
+   * @param output the output to trace from.
+   * @param withinRegion the region where we stop tracing.
+   */
+  [[nodiscard]] Output &
+  trace(Output & output, const rvsdg::Region * withinRegion);
+
+  /**
    * Attempts to trace the output of a gamma node through the node.
    * This is only possible if the output can be traced to a gamma entry variable in all subregions,
    * and these entry variables all share the same origin outside the gamma.
@@ -155,22 +166,14 @@ public:
 
 protected:
   /**
-   * Traces from the given \p output to find the source of the output's value.
-   * @param output the output to trace from.
-   * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
-   */
-  [[nodiscard]] Output &
-  trace(Output & output, bool mayLeaveRegion);
-
-  /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
-   * @param output the output to trace from
-   * @param mayLeaveRegion if false, tracing stops if it reaches a region argument
+   * @param output the output to trace from.
+   * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, bool mayLeaveRegion);
+  traceStep(Output & output, const rvsdg::Region * withinRegion);
 
   /**
    * Inserts a traced value into the tracing cache.
@@ -231,9 +234,10 @@ traceOutputIntraProcedurally(const Output & output)
 }
 
 /**
- * Traces \p output through the RVSDG.
- * The function is capable of tracing through everything \ref traceOutputIntraProcedurally is,
- * in addition to:
+ * Traces \p output through the RVSDG. The optional parameter \p withinRegion prevents values from
+ * being traced out of the region. If it is a nullptr, tracing will continue until the output no
+ * longer changes. The function is capable of tracing through everything \ref
+ * traceOutputIntraProcedurally is, in addition to:
  *
  * 1. From lambda context variables out of the lambda
  * 2. From delta context variables out of the delta
@@ -243,15 +247,16 @@ traceOutputIntraProcedurally(const Output & output)
  * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
+ * @param withinRegion the region to stop at (if any).
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output);
+traceOutput(Output & output, const rvsdg::Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(const Output & output)
+traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
-  return traceOutput(const_cast<Output &>(output));
+  return traceOutput(const_cast<Output &>(output), withinRegion);
 }
 
 }

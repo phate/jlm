@@ -21,9 +21,9 @@ OutputTracer::OutputTracer(const bool enableCaching)
 {}
 
 rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
+OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, mayLeaveRegion);
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
@@ -51,17 +51,17 @@ OutputTracer::traceStep(rvsdg::Output & output, bool mayLeaveRegion)
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output)
+traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
-  return tracer.trace(output);
+  return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output);
+  const auto & normalized = llvm::traceOutput(output, nullptr);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);

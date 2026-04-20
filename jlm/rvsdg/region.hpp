@@ -671,6 +671,17 @@ public:
   NumRegions(const rvsdg::Region & region) noexcept;
 
   /**
+   * Determines if \p ancestor is a direct or indirect parent region of \p region
+   * in the RVSDG.
+   *
+   * @param region The region to check the ancestry of.
+   * @param ancestor The region to test as a potential ancestor.
+   * @return true if \p ancestor appears somewhere above \p region in the RVSDG, false otherwise.
+   */
+  [[nodiscard]] static bool
+  isAncestor(const rvsdg::Region & region, const rvsdg::Region & ancestor) noexcept;
+
+  /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
    * ASCII format of the following form:
    *
