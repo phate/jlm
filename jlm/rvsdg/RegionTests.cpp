@@ -635,7 +635,7 @@ TEST(RegionTests, Ancestor)
   auto structuralNode4 = TestStructuralNode::create(structuralNode3->subregion(0), 1);
 
   // Act & Assert
-  // The root is an ancestor of all the regions
+  // The root region is an ancestor of all the regions
   EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode1->subregion(0)));
   EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode2->subregion(0)));
   EXPECT_TRUE(Region::IsAncestor(graph.GetRootRegion(), *structuralNode3->subregion(0)));
