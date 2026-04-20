@@ -21,11 +21,11 @@ OutputTracer::OutputTracer(const bool enableCaching) noexcept
 Output &
 OutputTracer::trace(Output & output)
 {
-  return trace(output, true);
+  return trace(output, nullptr);
 }
 
 Output &
-OutputTracer::trace(Output & output, bool mayLeaveRegion)
+OutputTracer::trace(Output & output, const rvsdg::Region * withinRegion)
 {
   Output * head = &output;
 
@@ -33,7 +33,7 @@ OutputTracer::trace(Output & output, bool mayLeaveRegion)
   while (true)
   {
     Output * prevHead = head;
-    head = &traceStep(*head, mayLeaveRegion);
+    head = &traceStep(*head, withinRegion);
     if (head == prevHead)
     {
       return *head;
@@ -74,7 +74,8 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     // If deep tracing is enabled, make a greater effort to trace up to a region argument
     if (traceThroughStrucutalNodes_)
     {
-      tracedInner = &trace(*tracedInner, false);
+      // Trace the branch result origin, but only within the gamma subregion
+      tracedInner = &trace(*tracedInner, tracedInner->region());
     }
 
     // The traced output must reach a region argument in the gamma subregion
@@ -116,7 +117,8 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If deep tracing is enabled, make a greater effort in tracing up to a region argument
   if (traceThroughStrucutalNodes_)
   {
-    tracedInner = &trace(*tracedInner, false);
+    // trace the origin within the thetaNode, but only within the theta's subregion
+    tracedInner = &trace(*tracedInner, thetaNode.subregion());
   }
 
   // If tracing reached the pre argument of the same loop variable, it is invariant
@@ -140,11 +142,11 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
 }
 
 Output &
-OutputTracer::traceStep(Output & output, bool mayLeaveRegion)
+OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
 {
-  if (!mayLeaveRegion && TryGetRegionParentNode<Node>(output))
+  if (withinRegion && withinRegion == TryGetOwnerRegion(output))
   {
-    // We are not allowed to leave the region, so return early on region arguments
+    // We are not allowed to leave this region, and tracing has reached one of its arguments
     return output;
   }
 
@@ -287,11 +289,11 @@ traceOutputIntraProcedurally(Output & output)
 }
 
 Output &
-traceOutput(Output & output)
+traceOutput(Output & output, const rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
-  return tracer.trace(output);
+  return tracer.trace(output, withinRegion);
 }
 
 }
