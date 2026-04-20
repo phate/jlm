@@ -117,7 +117,11 @@ public:
 
   /**
    * Traces from the given \p output to find the source of the output's value.
-   * The optional parameter \p withinRegion prevents values from being traced out of the region.
+   * The optional parameter \p withinRegion prevents values from being traced out of the region. If
+   * \p withinRegion is a nullptr, the tracing will continue until the output no longer changes.
+   *
+   * @param output the output to trace from.
+   * @param withinRegion the region where we stop tracing.
    */
   Output &
   trace(Output & output, rvsdg::Region * withinRegion);
@@ -230,9 +234,10 @@ traceOutputIntraProcedurally(const Output & output)
 }
 
 /**
- * Traces \p output through the RVSDG.
- * The function is capable of tracing through everything \ref traceOutputIntraProcedurally is,
- * in addition to:
+ * Traces \p output through the RVSDG. The optional parameter \p withinRegion prevents values from
+ * being traced out of the region. If it is a nullptr, tracing will continue until the output no
+ * longer changes. The function is capable of tracing through everything \ref
+ * traceOutputIntraProcedurally is, in addition to:
  *
  * 1. From lambda context variables out of the lambda
  * 2. From delta context variables out of the delta
@@ -242,18 +247,16 @@ traceOutputIntraProcedurally(const Output & output)
  * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
+ * @param withinRegion the region to stop at (if any).
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output);
-
-Output &
-traceOutput(Output & output, rvsdg::Region * targetRegion);
+traceOutput(Output & output, rvsdg::Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(const Output & output)
+traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
-  return traceOutput(const_cast<Output &>(output));
+  return traceOutput(const_cast<Output &>(output), const_cast<Region *>(withinRegion));
 }
 
 }

@@ -289,19 +289,11 @@ traceOutputIntraProcedurally(Output & output)
 }
 
 Output &
-traceOutput(Output & output, rvsdg::Region * targetRegion)
+traceOutput(Output & output, rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
-  return tracer.trace(output, targetRegion);
-}
-
-Output &
-traceOutput(Output & output)
-{
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
-  return tracer.trace(output);
+  return tracer.trace(output, withinRegion);
 }
 
 }

@@ -49,20 +49,25 @@ private:
 };
 
 /**
- * Traces the origin of the given \p output to find the origin of the value.
- * Traces through everything handled by \ref jlm::rvsdg::traceOutput,
- * with the addition of LLVM-specific operations.
+ * Traces the origin of the given \p output to find the origin of the value. The optional parameter
+ * \p withinRegion prevents values from being traced out of the region. If it is a nullptr, tracing
+ * will continue until the output no longer changes.
+ * Traces through everything handled by \ref jlm::rvsdg::traceOutput, with the addition of
+ * LLVM-specific operations.
  *
  * @param output the output to start tracing from
+ * @param withinRegion the region to stop at (if any).
  * @return the maximally traced output
  */
 rvsdg::Output &
-traceOutput(rvsdg::Output & output);
+traceOutput(rvsdg::Output & output, rvsdg::Region * withinRegion = nullptr);
 
 inline const rvsdg::Output &
-traceOutput(const rvsdg::Output & output)
+traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = nullptr)
 {
-  return llvm::traceOutput(const_cast<rvsdg::Output &>(output));
+  return llvm::traceOutput(
+      const_cast<rvsdg::Output &>(output),
+      const_cast<rvsdg::Region *>(withinRegion));
 }
 
 /**

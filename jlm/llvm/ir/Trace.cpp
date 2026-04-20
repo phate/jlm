@@ -51,17 +51,17 @@ OutputTracer::traceStep(rvsdg::Output & output, rvsdg::Region * withinRegion)
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output)
+traceOutput(rvsdg::Output & output, rvsdg::Region * withinRegion)
 {
   constexpr bool enableCaching = false;
   OutputTracer tracer(enableCaching);
-  return tracer.trace(output);
+  return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output);
+  const auto & normalized = llvm::traceOutput(output, nullptr);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
