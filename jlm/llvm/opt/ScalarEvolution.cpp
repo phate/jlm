@@ -12,6 +12,7 @@
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <algorithm>
@@ -233,7 +234,7 @@ public:
 };
 
 ScalarEvolution::ScalarEvolution()
-    : Transformation("ScalarEvolution")
+    : rvsdg::Transformation("ScalarEvolution")
 {}
 
 ScalarEvolution::~ScalarEvolution() noexcept = default;
@@ -1120,11 +1121,8 @@ ScalarEvolution::FindDependenciesForSCEV(
 
   if (const auto mulSCEV = dynamic_cast<const SCEVMulExpr *>(&scev))
   {
-    // Only pass Mul down if we haven't already seen Add in the path from root
-    // If op is already Add, preserve it; otherwise use Mul
-    const DependencyOp opToPass = (op == DependencyOp::Add) ? DependencyOp::Add : DependencyOp::Mul;
-    FindDependenciesForSCEV(*mulSCEV->GetLeftOperand(), dependencies, opToPass);
-    FindDependenciesForSCEV(*mulSCEV->GetRightOperand(), dependencies, opToPass);
+    FindDependenciesForSCEV(*mulSCEV->GetLeftOperand(), dependencies, DependencyOp::Mul);
+    FindDependenciesForSCEV(*mulSCEV->GetRightOperand(), dependencies, DependencyOp::Mul);
   }
 }
 
@@ -1920,19 +1918,17 @@ ScalarEvolution::CanCreateChainRecurrence(rvsdg::Output & output, DependencyGrap
 {
   auto deps = dependencyGraph[&output];
   if (deps.find(&output) != deps.end())
+  {
     if (deps[&output].count != 1)
     {
       // First check that variable has only one self-reference
       return false;
     }
-
-  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
-  {
-    // If this is the output of a loop variable, check that it has no reference via a mult-operation
-    for (auto [out, dependencyInfo] : deps)
+    if (deps[&output].operation == DependencyOp::Mul)
     {
-      if (dependencyInfo.operation == DependencyOp::Mul)
-        return false;
+      // A variable cannot have a self-depencency via multiplication (results in a geometric
+      // induction variable)
+      return false;
     }
   }
 

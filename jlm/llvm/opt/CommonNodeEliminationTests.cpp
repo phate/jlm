@@ -126,6 +126,84 @@ TEST(CommonNodeEliminationTests, test_gamma)
   EXPECT_EQ(argument0->input(), argument1->input());
 }
 
+TEST(CommonNodeEliminationTests, test_gamma_congruent_exit_vars)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG graph that looks like
+   *   c := GraphImport("c") // ControlType(2)
+   *   a := GraphImport("a") // ValueType
+   *   b := GraphImport("b") // ValueType
+   *   a2, b2, x, y, z := gamma c, a, b
+   *     [_, a0 <- a, b0 <- b] {
+   *     } [a0 -> a2, b0 -> b2, a0 -> x, a0 -> y, b0 -> z]
+   *     [_, a1 <- a, b1 <- b] {
+   *     } [a1 -> a2, b1 -> b2, b1 -> x, b1 -> y, a1 -> z]
+   *  GraphExport(a2)
+   *  GraphExport(b2)
+   *  GraphExport(x)
+   *  GraphExport(y)
+   *  GraphExport(z)
+   *
+   * and checks the result of running CommonNodeElimination.
+   *
+   * The exports of a2 and b2 should be redirected directly to the respective imports,
+   * while x and y should be merged into a single output.
+   * The z graph export should be left alone, as it is unique and non-invariant.
+   */
+
+  // Arrange
+  auto vt = jlm::rvsdg::TestType::createValueType();
+  auto ct = jlm::rvsdg::ControlType::Create(2);
+
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  auto & graph = rm.Rvsdg();
+
+  auto importPredicate = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto importA = &jlm::rvsdg::GraphImport::Create(graph, vt, "a");
+  auto importB = &jlm::rvsdg::GraphImport::Create(graph, vt, "b");
+
+  auto gamma = jlm::rvsdg::GammaNode::create(importPredicate, 2);
+
+  auto entryVarA = gamma->AddEntryVar(importA);
+  auto entryVarB = gamma->AddEntryVar(importB);
+
+  // Create invariant exit variables that simply copy the inputs
+  auto exitVarA = gamma->AddExitVar({ entryVarA.branchArgument[0], entryVarA.branchArgument[1] });
+  auto exitVarB = gamma->AddExitVar({ entryVarB.branchArgument[0], entryVarB.branchArgument[1] });
+
+  // Create exit variables that mix between different inputs
+  auto exitVarX = gamma->AddExitVar({ entryVarA.branchArgument[0], entryVarB.branchArgument[1] });
+  auto exitVarY = gamma->AddExitVar({ entryVarA.branchArgument[0], entryVarB.branchArgument[1] });
+  auto exitVarZ = gamma->AddExitVar({ entryVarB.branchArgument[0], entryVarA.branchArgument[1] });
+
+  auto & exportA = jlm::rvsdg::GraphExport::Create(*exitVarA.output, "a2");
+  auto & exportB = jlm::rvsdg::GraphExport::Create(*exitVarB.output, "b2");
+  auto & exportX = jlm::rvsdg::GraphExport::Create(*exitVarX.output, "x");
+  auto & exportY = jlm::rvsdg::GraphExport::Create(*exitVarY.output, "y");
+  auto & exportZ = jlm::rvsdg::GraphExport::Create(*exitVarZ.output, "z");
+
+  // Act
+  jlm::llvm::CommonNodeElimination cne;
+  cne.Run(rm, statisticsCollector);
+
+  // Assert
+
+  // The invariant gamma outputs have been routed around the gamma
+  EXPECT_EQ(exportA.origin(), importA);
+  EXPECT_EQ(exportB.origin(), importB);
+
+  // "x" and "y" are identical, so they should have a single origin (exit var X)
+  EXPECT_EQ(exportX.origin(), exitVarX.output);
+  EXPECT_EQ(exportY.origin(), exitVarX.output);
+  EXPECT_EQ(exitVarY.output->nusers(), 0);
+
+  // "z" should remain untouced
+  EXPECT_EQ(exportZ.origin(), exitVarZ.output);
+}
+
 TEST(CommonNodeEliminationTests, test_theta)
 {
   using namespace jlm::llvm;
