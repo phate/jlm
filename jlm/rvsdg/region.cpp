@@ -468,7 +468,7 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
 }
 
 bool
-Region::isAncestor(const Region & ancestor, const Region & region) noexcept
+Region::isAncestor(const Region & region, const Region & ancestor) noexcept
 {
   auto current = &region;
 
