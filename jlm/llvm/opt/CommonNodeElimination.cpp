@@ -761,8 +761,10 @@ areGammaExitVariablesCongruent(
     const rvsdg::GammaNode::ExitVar & second,
     CommonNodeElimination::Context & context)
 {
+  JLM_ASSERT(
+      &rvsdg::AssertGetOwnerNode<rvsdg::GammaNode>(*first.output)
+      == &rvsdg::AssertGetOwnerNode<rvsdg::GammaNode>(*second.output));
   const auto numResults = first.branchResult.size();
-  JLM_ASSERT(numResults == second.branchResult.size());
   for (size_t i = 0; i < numResults; i++)
   {
     const auto firstSet = context.getSetFor(*first.branchResult[i]->origin());
