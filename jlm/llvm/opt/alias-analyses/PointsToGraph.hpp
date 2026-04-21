@@ -46,6 +46,9 @@ class PointsToGraph final
 public:
   using NodeIndex = uint32_t;
 
+  // The external node, representing all memory not represented by any other memory node
+  static const NodeIndex externalMemoryNode = 0;
+
   enum class NodeKind : uint8_t
   {
     // Register nodes can never be the target of pointers, and cannot be externally available
@@ -807,9 +810,6 @@ private:
   ImportNodeMap importMap_;
   LambdaNodeMap lambdaMap_;
   MallocNodeMap mallocMap_;
-
-  // The external node, representing all memory not represented by any other memory node
-  NodeIndex externalMemoryNode_;
 
   // RegisterNode is the only kind of PointsToGraph nodes where multiple
   // \ref rvsdg::Output* can be mapped to the same PointsToGraph node.

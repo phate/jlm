@@ -15,10 +15,12 @@ namespace jlm::llvm::aa
 
 PointsToGraph::PointsToGraph()
 {
-  // Create the single external node, representing all memory not represented by any other node
-  externalMemoryNode_ = addNode(NodeKind::ExternalNode, true, false, std::nullopt, nullptr);
-  // The external node can never be explicitly targeted and never explicitly target any other node
-  markAsTargetsAllExternallyAvailable(externalMemoryNode_);
+  // Create the single external node, representing all memory not represented by any other node.
+  // The external node can never be explicitly targeted and never explicitly target any other node.
+  auto index = addNode(NodeKind::ExternalNode, true, false, std::nullopt, nullptr);
+  // Ensure the external node always has the same specific index
+  JLM_ASSERT(index == externalMemoryNode);
+  markAsTargetsAllExternallyAvailable(externalMemoryNode);
 }
 
 PointsToGraph::AllocaNodeRange
@@ -54,7 +56,7 @@ PointsToGraph::mallocNodes() const noexcept
 PointsToGraph::NodeIndex
 PointsToGraph::getExternalMemoryNode() const noexcept
 {
-  return externalMemoryNode_;
+  return externalMemoryNode;
 }
 
 PointsToGraph::RegisterNodeRange
@@ -226,9 +228,9 @@ PointsToGraph::addTarget(NodeIndex source, NodeIndex target)
   JLM_ASSERT(source < nodeExplicitTargets_.size());
 
   // The external memory node should never be an explicit target
-  JLM_ASSERT(target != externalMemoryNode_);
+  JLM_ASSERT(target != externalMemoryNode);
   // The external memory node should never have explicit targets
-  JLM_ASSERT(source != externalMemoryNode_);
+  JLM_ASSERT(source != externalMemoryNode);
 
   // Register nodes can never be targeted
   JLM_ASSERT(getNodeKind(target) != NodeKind::RegisterNode);

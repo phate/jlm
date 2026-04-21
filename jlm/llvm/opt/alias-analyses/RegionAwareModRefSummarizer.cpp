@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/opt/alias-analyses/PointsToGraph.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -1361,7 +1362,7 @@ RegionAwareModRefSummarizer::compressExternalInFunction(const rvsdg::LambdaNode 
   findAllModRefSets(lambda, modRefSets);
 
   // The node representing all memory locations that are only known in external modules
-  const auto externalMemoryNode = ModRefSummary_->GetPointsToGraph().getExternalMemoryNode();
+  const auto externalMemoryNode = aa::PointsToGraph::externalMemoryNode;
 
   // Memory nodes that appear in modRefSets without the external memory node
   util::HashSet<PointsToGraph::NodeIndex> memoryNodesToKeep;
