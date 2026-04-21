@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/opt/alias-analyses/PointsToGraph.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -12,6 +11,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>

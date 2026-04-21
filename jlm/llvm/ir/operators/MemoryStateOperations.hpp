@@ -464,7 +464,7 @@ public:
       const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
-  static rvsdg::Node &
+  static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::Region & region,
       const std::vector<rvsdg::Output *> & operands,

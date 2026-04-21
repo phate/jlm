@@ -47,7 +47,7 @@ public:
   using NodeIndex = uint32_t;
 
   // The external node, representing all memory not represented by any other memory node
-  static const NodeIndex externalMemoryNode = 0;
+  static constexpr NodeIndex externalMemoryNode = 0;
 
   enum class NodeKind : uint8_t
   {
