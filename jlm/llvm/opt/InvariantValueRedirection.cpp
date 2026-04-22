@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -344,12 +345,35 @@ InvariantValueRedirection::redirectCallOutputs(rvsdg::SimpleNode & callNode)
       *util::assertedCast<const CallExitMemoryStateSplitOperation>(&callExitSplit->GetOperation());
   for (const auto memoryNodeId : callExitSplitOp.getMemoryNodeIds())
   {
-    const auto result = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+    // TODO: This function contains special handling of the external memory node due to
+    // the possiblity of some memory nodes being compressed into the external memory node,
+    // with different functions compressing different sets of memory nodes.
+    // The merge and split nodes should ideally contain explicit information about compression,
+    // to avoid any loss of precision from assuming that missing memory nodes are still present.
+
+    // The memory state edge representing external in the caller can not be re-routed,
+    // because it may represent several memory state edges in the callee.
+    if (memoryNodeId == aa::PointsToGraph::externalMemoryNode)
+      continue;
+
+    // First try to find memory state edges corresponding directly
+    auto result = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
         *lambdaExitMerge,
         memoryNodeId);
-    const auto argument = LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
+    auto argument = LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
         *lambdaEntrySplit,
         memoryNodeId);
+
+    // If the memory node is not represented by a distinct memory state edge in the callee,
+    // assume that it is instead represented by the external memory node state edge.
+    if (result == nullptr)
+      result = LambdaExitMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+          *lambdaExitMerge,
+          aa::PointsToGraph::externalMemoryNode);
+    if (argument == nullptr)
+      argument = LambdaEntryMemoryStateSplitOperation::tryMapMemoryNodeIdToOutput(
+          *lambdaEntrySplit,
+          aa::PointsToGraph::externalMemoryNode);
 
     // If the lambda does not route this memory state at all, it is effectively invariant
     if (result != nullptr && argument != nullptr)

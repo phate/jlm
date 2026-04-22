@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
@@ -54,6 +55,12 @@ static const bool ENABLE_OPERATION_SIZE_BLOCKING =
 static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
     !std::getenv("JLM_DISABLE_CONSTANT_MEMORY_BLOCKING");
 
+/**
+ * Within each function, memory nodes that always occur together with the extern node,
+ * can be removed from all mod ref sets.
+ */
+static const bool ENABLE_EXTERNAL_COMPRESSION = !std::getenv("JLM_DISABLE_EXTERN_COMPRESSION");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -69,6 +76,18 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto NumFunctionsCallingSetjmp_ = "#FunctionsCallingSetjmp";
   static constexpr auto NumCallGraphSccsCanCallExternal_ = "#CallGraphSccsCanCallExternal";
 
+  // Statistics about compressing memory nodes into the external node
+  // Number of ModRefSets containing external
+  static constexpr auto NumExtModRefSets_ = "#ExtModRefSets";
+  // Number of memory nodes removed from compression in sets containing external
+  static constexpr auto NumExtModRefCompressed_ = "#ExtModRefCompressed";
+  // Number of memory nodes kept (not compressed) in sets containing external
+  static constexpr auto NumExtModRefKept_ = "#ExtModRefKept";
+  // Number of ModRefSets that do not contain external
+  static constexpr auto NumLocalModRefSets_ = "#LocalModRefSets";
+  // Number of memory nodes in sets that do not contain external
+  static constexpr auto NumLocalModRefKept_ = "#LocalModRefKept";
+
   static constexpr auto CallGraphTimer_ = "CallGraphTimer";
   static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
   static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
@@ -76,6 +95,7 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto CreateExternalModRefSetTimer_ = "CreateExternalModRefSetTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
+  static constexpr auto ExternalCompressionTimer_ = "ExternalCompactionTimer";
 
 public:
   ~Statistics() override = default;
@@ -178,6 +198,28 @@ public:
     GetTimer(SolvingTimer_).stop();
   }
 
+  void
+  StartExternalCompactionStatistics()
+  {
+    AddTimer(ExternalCompressionTimer_).start();
+  }
+
+  void
+  StopExternalCompactionStatistics(
+      size_t numExtModRefSets,
+      size_t numExtModRefCompressed,
+      size_t numExtModRefKept,
+      size_t numLocalModRefSets,
+      size_t numLocalModRefKept)
+  {
+    GetTimer(ExternalCompressionTimer_).stop();
+    AddMeasurement(NumExtModRefSets_, numExtModRefSets);
+    AddMeasurement(NumExtModRefCompressed_, numExtModRefCompressed);
+    AddMeasurement(NumExtModRefKept_, numExtModRefKept);
+    AddMeasurement(NumLocalModRefSets_, numLocalModRefSets);
+    AddMeasurement(NumLocalModRefKept_, numLocalModRefKept);
+  }
+
   static std::unique_ptr<Statistics>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph)
   {
@@ -233,6 +275,13 @@ public:
   NumModRefSets() const noexcept
   {
     return ModRefSets_.size();
+  }
+
+  [[nodiscard]] util::HashSet<PointsToGraph::NodeIndex> &
+  GetModRefSet(ModRefSetIndex index)
+  {
+    JLM_ASSERT(index < ModRefSets_.size());
+    return ModRefSets_[index].GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<PointsToGraph::NodeIndex> &
@@ -457,6 +506,13 @@ struct RegionAwareModRefSummarizer::Context
    */
   std::unordered_map<ModRefSetIndex, const util::HashSet<PointsToGraph::NodeIndex> *>
       ModRefSetBlocklists;
+
+  // Counters used for external compression statistics
+  size_t numExtModRefSets = 0;
+  size_t numExtModRefCompressed = 0;
+  size_t numExtModRefKept = 0;
+  size_t numLocalModRefSets = 0;
+  size_t numLocalModRefKept = 0;
 };
 
 RegionAwareModRefSummarizer::~RegionAwareModRefSummarizer() noexcept = default;
@@ -509,6 +565,18 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StartSolvingStatistics();
   SolveModRefSetConstraintGraph();
   statistics->StopSolvingStatistics();
+
+  if (ENABLE_EXTERNAL_COMPRESSION)
+  {
+    statistics->StartExternalCompactionStatistics();
+    doExternalCompression();
+    statistics->StopExternalCompactionStatistics(
+        Context_->numExtModRefSets,
+        Context_->numExtModRefCompressed,
+        Context_->numExtModRefKept,
+        Context_->numLocalModRefSets,
+        Context_->numLocalModRefKept);
+  }
 
   // Print debug output
   // std::cerr << PointsToGraph::dumpDot(pointsToGraph) << std::endl;
@@ -1271,6 +1339,91 @@ RegionAwareModRefSummarizer::VerifyBlocklists() const
     }
   }
   return true;
+}
+
+void
+RegionAwareModRefSummarizer::doExternalCompression()
+{
+  for (auto & functions : Context_->SccFunctions)
+  {
+    for (auto function : functions.Items())
+    {
+      compressExternalInFunction(*function);
+    }
+  }
+}
+
+void
+RegionAwareModRefSummarizer::compressExternalInFunction(const rvsdg::LambdaNode & lambda)
+{
+  // The set of ModRefSets that belong to this function
+  // TODO: They could be placed in a map when created to avoid needing to find them again
+  util::HashSet<ModRefSetIndex> modRefSets;
+  findAllModRefSets(lambda, modRefSets);
+
+  // The node representing all memory locations that are only known in external modules
+  const auto externalMemoryNode = aa::PointsToGraph::externalMemoryNode;
+
+  // Memory nodes that appear in modRefSets without the external memory node
+  util::HashSet<PointsToGraph::NodeIndex> memoryNodesToKeep;
+  for (auto modRefSetIndex : modRefSets.Items())
+  {
+    auto & modRefSet = ModRefSummary_->GetModRefSet(modRefSetIndex);
+    if (modRefSet.Contains(externalMemoryNode))
+      continue;
+
+    for (auto memoryNode : modRefSet.Items())
+      memoryNodesToKeep.insert(memoryNode);
+  }
+
+  // All memory nodes that are compressed are instead represented by external, which we keep
+  memoryNodesToKeep.insert(externalMemoryNode);
+
+  // Now go over again, removing all memory nodes that are not on the keep list
+  for (auto modRefSetIndex : modRefSets.Items())
+  {
+    auto & modRefSet = ModRefSummary_->GetModRefSet(modRefSetIndex);
+    if (!modRefSet.Contains(externalMemoryNode))
+    {
+      Context_->numLocalModRefSets++;
+      Context_->numLocalModRefKept += modRefSet.Size();
+      continue;
+    }
+
+    Context_->numExtModRefSets++;
+    size_t removed = modRefSet.RemoveWhere(
+        [&](PointsToGraph::NodeIndex node)
+        {
+          return !memoryNodesToKeep.Contains(node);
+        });
+    Context_->numExtModRefCompressed += removed;
+    Context_->numExtModRefKept += modRefSet.Size();
+  }
+}
+
+void
+RegionAwareModRefSummarizer::findAllModRefSets(
+    const rvsdg::Node & node,
+    util::HashSet<ModRefSetIndex> & modRefSets)
+{
+  if (ModRefSummary_->HasSetForNode(node))
+  {
+    modRefSets.insert(ModRefSummary_->GetSetForNode(node));
+  }
+
+  // If the node is a structural node, recurse into its subregion(s)
+  rvsdg::MatchType(
+      node,
+      [&](const rvsdg::StructuralNode & structuralNode)
+      {
+        for (auto & subregion : structuralNode.Subregions())
+        {
+          for (auto & node : subregion.Nodes())
+          {
+            findAllModRefSets(node, modRefSets);
+          }
+        }
+      });
 }
 
 std::string
