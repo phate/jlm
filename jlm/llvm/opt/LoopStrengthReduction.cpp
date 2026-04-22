@@ -477,11 +477,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
     JLM_ASSERT(stepPtr.has_value());
 
     const auto & stepSCEV = *stepPtr;
-    const auto & stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get());
-    const auto & stepInit = dynamic_cast<const SCEVInit *>(stepSCEV.get());
-    const auto & stepNAryExpr = dynamic_cast<const SCEVNAryExpr *>(stepSCEV.get());
-
-    if (stepConstant)
+    if (const auto stepConstant = dynamic_cast<const SCEVConstant *>(stepSCEV.get()))
     {
       auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
 
@@ -499,7 +495,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 
       return newIV;
     }
-    if (stepInit)
+    if (const auto stepInit = dynamic_cast<const SCEVInit *>(stepSCEV.get()))
     {
       auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
       if (!hoistedStart.has_value())
@@ -513,7 +509,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 
       return newIV;
     }
-    if (stepNAryExpr)
+    if (const auto stepNAryExpr = dynamic_cast<const SCEVNAryExpr *>(stepSCEV.get()))
     {
       const auto hoistedStep = HoistSCEVExpresssion(*stepNAryExpr, thetaNode, numBits);
       if (!hoistedStep.has_value())
@@ -535,7 +531,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 
     return std::nullopt;
   }
-  throw std::logic_error("Invalid chrec size in CreateNewInductionVariable!");
+  throw std::logic_error("Invalid chrec size in CreateNewArithmeticInductionVariable!");
 }
 
 void
