@@ -198,7 +198,7 @@ TEST(CommonNodeEliminationTests, test_gamma_congruent_exit_vars)
   // "x" and "y" are identical, so they should have a single origin (exit var X)
   EXPECT_EQ(exportX.origin(), exitVarX.output);
   EXPECT_EQ(exportY.origin(), exitVarX.output);
-  EXPECT_EQ(exitVarY.output->nusers(), 0);
+  EXPECT_EQ(exitVarY.output->nusers(), 0u);
 
   // "z" should remain untouced
   EXPECT_EQ(exportZ.origin(), exitVarZ.output);

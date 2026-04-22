@@ -63,14 +63,14 @@ public:
 class SCEVInit final : public SCEV
 {
 public:
-  explicit SCEVInit(const rvsdg::Output & pre)
+  explicit SCEVInit(rvsdg::Output & pre)
       : PrePointer_{ &pre }
   {}
 
-  const rvsdg::Output *
-  GetPrePointer() const
+  [[nodiscard]] rvsdg::Output &
+  GetPrePointer() const noexcept
   {
-    return PrePointer_;
+    return *PrePointer_;
   }
 
   std::string
@@ -88,26 +88,26 @@ public:
   }
 
   static std::unique_ptr<SCEVInit>
-  Create(const rvsdg::Output & prePointer)
+  Create(rvsdg::Output & prePointer)
   {
     return std::make_unique<SCEVInit>(prePointer);
   }
 
 private:
-  const rvsdg::Output * PrePointer_;
+  rvsdg::Output * PrePointer_;
 };
 
 class SCEVPlaceholder final : public SCEV
 {
 public:
-  explicit SCEVPlaceholder(const rvsdg::Output & pre)
+  explicit SCEVPlaceholder(rvsdg::Output & pre)
       : PrePointer_{ &pre }
   {}
 
-  const rvsdg::Output *
-  GetPrePointer() const
+  [[nodiscard]] rvsdg::Output &
+  GetPrePointer() const noexcept
   {
-    return PrePointer_;
+    return *PrePointer_;
   }
 
   std::string
@@ -125,13 +125,13 @@ public:
   }
 
   static std::unique_ptr<SCEVPlaceholder>
-  Create(const rvsdg::Output & PrePointer_)
+  Create(rvsdg::Output & PrePointer_)
   {
     return std::make_unique<SCEVPlaceholder>(PrePointer_);
   }
 
 private:
-  const rvsdg::Output * PrePointer_;
+  rvsdg::Output * PrePointer_;
 };
 
 class SCEVConstant final : public SCEV
@@ -323,10 +323,10 @@ public:
     }
   }
 
-  std::vector<const SCEV *>
+  std::vector<SCEV *>
   GetOperands() const
   {
-    std::vector<const SCEV *> operands{};
+    std::vector<SCEV *> operands{};
     for (auto & op : Operands_)
     {
       operands.push_back(op.get());
@@ -353,21 +353,32 @@ protected:
 class SCEVChainRecurrence final : public SCEVNAryExpr
 {
 public:
-  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta)
+  explicit SCEVChainRecurrence(rvsdg::ThetaNode & theta, rvsdg::Output & output)
       : SCEVNAryExpr(),
-        Loop_{ &theta }
+        Loop_{ &theta },
+        Output_{ &output }
   {}
 
   template<typename... Args>
-  explicit SCEVChainRecurrence(const rvsdg::ThetaNode & theta, Args &&... operands)
+  explicit SCEVChainRecurrence(
+      rvsdg::ThetaNode & theta,
+      rvsdg::Output & output,
+      Args &&... operands)
       : SCEVNAryExpr(std::forward<Args>(operands)...),
-        Loop_{ &theta }
+        Loop_{ &theta },
+        Output_{ &output }
   {}
 
-  const rvsdg::ThetaNode *
-  GetLoop() const
+  [[nodiscard]] rvsdg::ThetaNode &
+  GetLoop() const noexcept
   {
-    return Loop_;
+    return *Loop_;
+  }
+
+  [[nodiscard]] rvsdg::Output &
+  GetOutput() const noexcept
+  {
+    return *Output_;
   }
 
   SCEV *
@@ -376,7 +387,7 @@ public:
     return Operands_[0].get();
   }
 
-  bool static IsInvariant(const SCEVChainRecurrence & chrec)
+  bool static IsConstant(const SCEVChainRecurrence & chrec)
   {
     return chrec.GetOperands().size() == 1;
   }
@@ -391,22 +402,9 @@ public:
     return chrec.GetOperands().size() == 3;
   }
 
-  /**
-   * Checks the operands of the given \p chrec to see if any of them are unknown.
-   *
-   * @param chrec the chain recurrence to be checked
-   * @return true if the recurrence contains an unknown, false otherwise
-   */
-  bool static IsUnknown(const SCEVChainRecurrence & chrec)
+  bool static IsInvariantInLoop(const SCEVChainRecurrence & chrec, const rvsdg::ThetaNode & theta)
   {
-    for (const auto operand : chrec.GetOperands())
-    {
-      if (dynamic_cast<const SCEVUnknown *>(operand))
-      {
-        return true;
-      }
-    }
-    return false;
+    return &chrec.GetLoop() != &theta;
   }
 
   std::optional<std::unique_ptr<SCEV>>
@@ -420,7 +418,7 @@ public:
     {
       return Operands_[1]->Clone();
     }
-    auto newRec = SCEVChainRecurrence::Create(*Loop_);
+    auto newRec = SCEVChainRecurrence::Create(*Loop_, *Output_);
     for (auto & operand : util::IteratorRange(std::next(Operands_.begin()), Operands_.end()))
     {
       newRec->AddOperand(operand->Clone());
@@ -452,7 +450,7 @@ public:
   std::unique_ptr<SCEV>
   Clone() const override
   {
-    auto copy = std::make_unique<SCEVChainRecurrence>(*Loop_);
+    auto copy = std::make_unique<SCEVChainRecurrence>(*Loop_, *Output_);
     for (const auto & op : Operands_)
     {
       copy->AddOperand(op->Clone());
@@ -461,20 +459,21 @@ public:
   }
 
   static std::unique_ptr<SCEVChainRecurrence>
-  Create(const rvsdg::ThetaNode & loop)
+  Create(rvsdg::ThetaNode & loop, rvsdg::Output & output)
   {
-    return std::make_unique<SCEVChainRecurrence>(loop);
+    return std::make_unique<SCEVChainRecurrence>(loop, output);
   }
 
   template<typename... Args>
   static std::unique_ptr<SCEVChainRecurrence>
-  Create(const rvsdg::ThetaNode & loop, Args &&... operands)
+  Create(rvsdg::ThetaNode & loop, rvsdg::Output & output, Args &&... operands)
   {
-    return std::make_unique<SCEVChainRecurrence>(loop, std::forward<Args>(operands)...);
+    return std::make_unique<SCEVChainRecurrence>(loop, output, std::forward<Args>(operands)...);
   }
 
 protected:
-  const rvsdg::ThetaNode * Loop_;
+  rvsdg::ThetaNode * Loop_;
+  rvsdg::Output * Output_;
 };
 
 class SCEVNAryAddExpr final : public SCEVNAryExpr
@@ -600,9 +599,9 @@ public:
     {}
   };
 
-  typedef std::unordered_map<const rvsdg::Output *, DependencyInfo> DependencyMap;
+  typedef std::unordered_map<rvsdg::Output *, DependencyInfo> DependencyMap;
 
-  typedef std::unordered_map<const rvsdg::Output *, DependencyMap> DependencyGraph;
+  typedef std::unordered_map<rvsdg::Output *, DependencyMap> DependencyGraph;
 
   ~ScalarEvolution() noexcept override;
 
@@ -639,10 +638,10 @@ public:
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   std::optional<size_t>
-  GetPredictedTripCount(const rvsdg::ThetaNode & thetaNode);
+  GetPredictedTripCount(rvsdg::ThetaNode & thetaNode);
 
   void
-  AnalyzeRegion(const rvsdg::Region & region);
+  AnalyzeRegion(rvsdg::Region & region);
 
   /**
    * Goes through all chain recurrences stored in the context (across different loops), and
@@ -653,6 +652,15 @@ public:
 
   static bool
   StructurallyEqual(const SCEV & a, const SCEV & b);
+
+  /**
+   * Checks if the given \p scev is or contains a SCEVUnknown.
+   *
+   * @param scev the SCEV expression to be checked
+   * @return true if the SCEV contains or is unknown, false otherwise
+   */
+  [[nodiscard]] static bool
+  IsUnknown(const SCEV & scev);
 
 private:
   /**
@@ -704,7 +712,7 @@ private:
   GetNegativeSCEV(const SCEV & scev);
 
   std::unique_ptr<SCEV>
-  GetOrCreateSCEVForOutput(const rvsdg::Output & output);
+  GetOrCreateSCEVForOutput(rvsdg::Output & output);
 
   DependencyGraph
   CreateDependencyGraph(const rvsdg::ThetaNode & thetaNode) const;
@@ -712,11 +720,11 @@ private:
   static void
   FindDependenciesForSCEV(const SCEV & scev, DependencyMap & dependencies, DependencyOp op);
 
-  static std::vector<const rvsdg::Output *>
-  TopologicalSort(const DependencyGraph & dependencyGraph);
+  static std::vector<rvsdg::Output *>
+  TopologicalSort(DependencyGraph & dependencyGraph);
 
   void
-  PerformSCEVAnalysis(const rvsdg::ThetaNode & thetaNode);
+  PerformSCEVAnalysis(rvsdg::ThetaNode & thetaNode);
 
   std::unique_ptr<SCEV>
   ComputeSCEVForGepInnerOffset(
@@ -729,53 +737,58 @@ private:
    * computed) corresponding chain recurrences and replaces them
    *
    * @param scev The SCEV expression to be traversed
+   * @param output The output of the operation the SCEV represents
    * @return The resulting recurrence, or std::nullopt if no change was made
    */
   std::optional<std::unique_ptr<SCEV>>
-  TryReplaceInitForSCEV(const SCEV & scev);
+  TryReplaceInitForSCEV(const SCEV & scev, rvsdg::Output & output);
 
   std::unique_ptr<SCEVChainRecurrence>
   GetOrCreateChainRecurrence(
-      const rvsdg::Output & output,
+      rvsdg::Output & output,
       const SCEV & scev,
-      const rvsdg::ThetaNode & thetaNode);
+      rvsdg::ThetaNode & thetaNode);
 
   std::unique_ptr<SCEVChainRecurrence>
   GetOrCreateStepForSCEV(
-      const rvsdg::Output & output,
+      rvsdg::Output & output,
       const SCEV & scevTree,
-      const rvsdg::ThetaNode & thetaNode);
+      rvsdg::ThetaNode & thetaNode);
 
   /**
    * \brief Apply folding rules for addition to combine two SCEV operands into one.
    * @param lhsOperand The left-hand side operand of the add operation
    * @param rhsOperand The right-hand side operand of the add operation
+   * @param output The output of the addition operation we are folding.
    * @return A unique ptr to the new operand
    */
   static std::unique_ptr<SCEV>
-  ApplyAddFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+  ApplyAddFolding(SCEV * lhsOperand, SCEV * rhsOperand, rvsdg::Output & output);
 
   static std::unique_ptr<SCEVChainRecurrence>
   ComputeProductOfChrecs(
-      const SCEVChainRecurrence * lhsChrec,
-      const SCEVChainRecurrence * rhsChrec);
+      SCEVChainRecurrence * lhsChrec,
+      SCEVChainRecurrence * rhsChrec,
+      rvsdg::Output & output);
 
   /**
    * \brief Apply folding rules for multiplication to combine two SCEV operands into one.
    * @param lhsOperand The left-hand side operand of the mul operation
    * @param rhsOperand The right-hand side operand of the mul operation
+   * @param output The output of the multiplication operation we are folding
    * @return A unique ptr to the new operand
    */
   static std::unique_ptr<SCEV>
-  ApplyMulFolding(const SCEV * lhsOperand, const SCEV * rhsOperand);
+  ApplyMulFolding(SCEV * lhsOperand, SCEV * rhsOperand, rvsdg::Output & output);
 
   /**
    * \brief Try to combine the constants in an n-ary expression (Add or Mul) into themselves.
    * @param expression The expression to be folded
+   * @param output The output of the operation the n-ary expression represents
    * @return The unique ptr to the expression
    */
   static std::unique_ptr<SCEV>
-  FoldNAryExpression(SCEVNAryExpr & expression);
+  FoldNAryExpression(SCEVNAryExpr & expression, rvsdg::Output & output);
 
   /**
    * Checks the dependencies of the input variable to determine if we can create a chain recurrence
@@ -793,11 +806,11 @@ private:
    * @return True if the requirements are fulfilled, false otherwise.
    */
   static bool
-  CanCreateChainRecurrence(const rvsdg::Output & output, DependencyGraph & dependencyGraph);
+  CanCreateChainRecurrence(rvsdg::Output & output, DependencyGraph & dependencyGraph);
 
   static bool
   HasCycleThroughOthers(
-      const rvsdg::Output & currentOutput,
+      rvsdg::Output & currentOutput,
       const rvsdg::Output & originalOutput,
       DependencyGraph & dependencyGraph,
       std::unordered_set<const rvsdg::Output *> & visited,
