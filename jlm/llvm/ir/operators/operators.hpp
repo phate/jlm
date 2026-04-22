@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 
+#include "jlm/rvsdg/operation.hpp"
+#include "llvm/IR/InstrTypes.h"
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -1075,6 +1077,64 @@ public:
 
   PoisonValueOperation &
   operator=(PoisonValueOperation &&) = delete;
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  const jlm::rvsdg::Type &
+  GetType() const noexcept
+  {
+    return *result(0).get();
+  }
+
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  Create(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  {
+    auto valueType = CheckAndConvertType(type);
+
+    auto operation = std::make_unique<PoisonValueOperation>(std::move(valueType));
+    return ThreeAddressCode::create(std::move(operation), {});
+  }
+
+  static jlm::rvsdg::Output *
+  Create(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  {
+    auto valueType = CheckAndConvertType(type);
+
+    return rvsdg::CreateOpNode<PoisonValueOperation>(*region, std::move(valueType)).output(0);
+  }
+
+private:
+  static std::shared_ptr<const jlm::rvsdg::Type>
+  CheckAndConvertType(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  {
+    if (type->Kind() == rvsdg::TypeKind::Value)
+      return type;
+
+    throw util::Error("Expected value type.");
+  }
+};
+
+/** \brief FreezeOperation class
+ *
+ * This operator is the Jlm equivalent of LLVM's freeze operation.
+ * It converts undef and poison values into arbitrary, but fixed, values.
+ * For all other inputs it is a no-op.
+ */
+class FreezeOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~FreezeOperation() noexcept override;
+
+  explicit FreezeOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
+      : rvsdg::SimpleOperation({ type }, { type })
+  {}
 
   bool
   operator==(const Operation & other) const noexcept override;
