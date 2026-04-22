@@ -104,13 +104,13 @@ TEST(ScalarEvolutionTests, InductionVariable)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a constant with the recurrence {2}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
@@ -163,13 +163,13 @@ TEST(ScalarEvolutionTests, RecursiveInductionVariable)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a recursive induction variable, which should be folded to {4,+,5}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(4));
   lv2TestChrec.AddOperand(SCEVConstant::Create(5));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
@@ -218,14 +218,14 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariable)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a (second degree) polynomial induction variable with three operands,
   // Recurrence: {2,+,1,+,1}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
@@ -283,13 +283,13 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {2,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(2));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a second degree polynomial induction variable with three operands, {3,+,2,+,1}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(3));
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
@@ -297,7 +297,7 @@ TEST(ScalarEvolutionTests, ThirdDegreePolynomialInductionVariable)
 
   // lv2 is a third degree polynomial induction variable with three operands,
   // Recurrence: {4,+,3,+,2,+,1}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVConstant::Create(4));
   lv3TestChrec.AddOperand(SCEVConstant::Create(3));
   lv3TestChrec.AddOperand(SCEVConstant::Create(2));
@@ -352,14 +352,14 @@ TEST(ScalarEvolutionTests, InductionVariableWithMultiplication)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is incremented with 3 * {1,+,1} (lv1 + 1) each iteration. With the starting value of 2,
   // this should give us the recurrence {2,+,3,+,3}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   lv2TestChrec.AddOperand(SCEVConstant::Create(3));
   lv2TestChrec.AddOperand(SCEVConstant::Create(3));
@@ -403,7 +403,7 @@ TEST(ScalarEvolutionTests, InvalidInductionVariableWithMultiplication)
 
   // lv1 is not an induction variable because of illegal mult operation
   // (results in quadratic recurrence). It should therefore be modeled as {Unknown}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 }
@@ -454,14 +454,14 @@ TEST(ScalarEvolutionTests, MultiplicationOfTwoAffineChrecs)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // {0,+,1} * {0,+,1} folded together should be {0,+,1,+,2}, so adding this to lv2, should give us
   // {3,+,0,+,1,+,2} as the recurrence for lv2
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(3));
   lv2TestChrec.AddOperand(SCEVConstant::Create(0));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
@@ -521,13 +521,13 @@ TEST(ScalarEvolutionTests, MultiplicationOfTwoQuadraticChrecs)
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the affine recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a polynomial induction variable with the quadratic recurrence {1,+,0,+,1}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(SCEVConstant::Create(0));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
@@ -535,7 +535,7 @@ TEST(ScalarEvolutionTests, MultiplicationOfTwoQuadraticChrecs)
 
   // {1,+,0,+,1} * {1,+,0,+,1} foled together is {1,+,0,+,3,+,6,+,6}, adding that to lv3, we get the
   // recurrence {2,+,1,+,0,+,3,+,6,+,6}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVConstant::Create(2));
   lv3TestChrec.AddOperand(SCEVConstant::Create(1));
   lv3TestChrec.AddOperand(SCEVConstant::Create(0));
@@ -591,14 +591,14 @@ TEST(ScalarEvolutionTests, InvalidPolynomialInductionVariableWithMultiplication)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
-  // lv1 is not an induction variable because of illegal mult operation
+  // lv2 is not an induction variable because of illegal mult operation
   // (results in quadratic recurrence). It should therefore be modeled as {Unknown}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
@@ -640,7 +640,7 @@ TEST(ScalarEvolutionTests, InductionVariableWithSubtraction)
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is a simple negative induction variable with the recurrence {10,+,-1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(10));
   lv1TestChrec.AddOperand(SCEVConstant::Create(-1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
@@ -689,14 +689,14 @@ TEST(ScalarEvolutionTests, PolynomialInductionVariableWithSubtraction)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
-  // lv2 is decremented with {1,+,1} every iteration (lv1 + 1}, and has a start value of 3, this
+  // lv2 is decremented with {1,+,1} every iteration (lv1 + 1), and has a start value of 3, this
   // results in the recurrence {3,+,-1,+,-1}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(3));
   lv2TestChrec.AddOperand(SCEVConstant::Create(-1));
   lv2TestChrec.AddOperand(SCEVConstant::Create(-1));
@@ -775,21 +775,21 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
 
   // lv1 is a trivial (constant) induction variable.
   // Recurrence: {Init(a0)}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVInit::Create(*lv1.pre));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a general induction variable which is incremented by the value of lv1 for each
   // iteration.
   // Recurrence: {Init(a1),+,Init(a0)}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVInit::Create(*lv2.pre));
   lv2TestChrec.AddOperand(SCEVInit::Create(*lv1.pre));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // Tests that two init nodes folded together creates an NAryAdd expression
   // Recurrence: {Init(a2),+,(Init(a1) + Init(a0)),+,Init(a0)}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   lv3TestChrec.AddOperand(
       SCEVNAryAddExpr::Create(SCEVInit::Create(*lv2.pre), SCEVInit::Create(*lv1.pre)));
@@ -800,7 +800,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValues)
   // added to the LHS add
   // Recurrence: {Init(a3),+,(Init(a1) + Init(a0) + Init(a2) + Init(a1) + Init(a0)),+,(Init(a1) +
   // Init(a0) + Init(a0) + Init(a0)),+,Init(a0)}
-  auto lv4TestChrec = SCEVChainRecurrence(*theta);
+  auto lv4TestChrec = SCEVChainRecurrence(*theta, *lv4.pre);
   lv4TestChrec.AddOperand(SCEVInit::Create(*lv4.pre));
   lv4TestChrec.AddOperand(SCEVNAryAddExpr::Create(
       SCEVInit::Create(*lv2.pre),
@@ -888,20 +888,20 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
 
   // lv1 is a trivial (constant) induction variable.
   // Recurrence: {Init(a0)}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVInit::Create(*lv1.pre));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a general induction variable which is incremented by 1 each iteration.
   // Recurrence: {Init(a1),+,1}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVInit::Create(*lv2.pre));
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // Tests multiplying two init nodes together creates an n-ary mult expression.
   // Recurrence: {Init(a2),+,(Init(a0) * Init(a1)),+,Init(a0)}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   lv3TestChrec.AddOperand(
       SCEVNAryMulExpr::Create(SCEVInit::Create(*lv1.pre), SCEVInit::Create(*lv2.pre)));
@@ -915,7 +915,7 @@ TEST(ScalarEvolutionTests, InductionVariablesWithNonConstantInitialValuesAndMult
   // {Init(a3),+,(Init(a0) * Init(a1) * Init(a0) * Init(a1)),+,((Init(a0) * Init(a1) * Init(a0)) +
   // (Init(a0) * Init(a0)) + (Init(a0) * Init(a1) * Init(a0))),+,((Init(a0) * Init(a0)) + (Init(a0)
   // * Init(a0)))}
-  auto lv4TestChrec = SCEVChainRecurrence(*theta);
+  auto lv4TestChrec = SCEVChainRecurrence(*theta, *lv4.pre);
   lv4TestChrec.AddOperand(SCEVInit::Create(*lv4.pre));
   lv4TestChrec.AddOperand(SCEVNAryMulExpr::Create(
       SCEVInit::Create(*lv1.pre),
@@ -974,7 +974,7 @@ TEST(ScalarEvolutionTests, SelfRecursiveInductionVariable)
   EXPECT_NE(chrecMap.find(lv1.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 }
@@ -1021,12 +1021,12 @@ TEST(ScalarEvolutionTests, DependentOnInvalidInductionVariable)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // lv1 is not an induction variable because of self dependency. Should be {Unknown}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 has the recurrence {0,+,Unknown} due to the dependency of lv1
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(0));
   lv2TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
@@ -1075,10 +1075,12 @@ TEST(ScalarEvolutionTests, MutuallyDependentInductionVariables)
   EXPECT_NE(chrecMap.find(lv2.pre), chrecMap.end());
 
   // Both lv1 and lv2 should be {Unknown} due to mutual dependency (A->B->A)
-  auto testChrec = SCEVChainRecurrence(*theta);
-  testChrec.AddOperand(SCEVUnknown::Create());
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
+  lv1TestChrec.AddOperand(SCEVUnknown::Create());
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
+  lv2TestChrec.AddOperand(SCEVUnknown::Create());
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 }
 
 TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
@@ -1135,12 +1137,19 @@ TEST(ScalarEvolutionTests, MultiLayeredMutuallyDependentInductionVariables)
   EXPECT_NE(chrecMap.find(lv4.pre), chrecMap.end());
 
   // All variables should be {Unknown} due to mutual dependency chain (A->B->C->D->A)
-  auto testChrec = SCEVChainRecurrence(*theta);
-  testChrec.AddOperand(SCEVUnknown::Create());
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv1.pre)));
-  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(testChrec, *chrecMap.at(lv2.pre)));
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
+  lv1TestChrec.AddOperand(SCEVUnknown::Create());
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
+  lv2TestChrec.AddOperand(SCEVUnknown::Create());
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
+  lv3TestChrec.AddOperand(SCEVUnknown::Create());
+  auto lv4TestChrec = SCEVChainRecurrence(*theta, *lv4.pre);
+  lv4TestChrec.AddOperand(SCEVUnknown::Create());
+
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
+  EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv4TestChrec, *chrecMap.at(lv4.pre)));
 }
 
 TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
@@ -1198,19 +1207,20 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoops)
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<1>
-  auto lv1TestChrec = SCEVChainRecurrence(*theta1);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta1, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
-  // lv2 is a nested induction variable, which is incremented by the value of lv1 for each iteration
-  auto lv2TestChrec = SCEVChainRecurrence(*theta2);
+  // lv2 is a nested induction variable, which is incremented by the value of lv1 for each
+  // iteration
+  auto lv2TestChrec = SCEVChainRecurrence(*theta2, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(lv1TestChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv3 has the same value as lv1, but for the inner loop
-  auto lv3TestChrec = SCEVChainRecurrence(*theta2);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta2, *lv3.pre);
   lv3TestChrec.AddOperand(lv1TestChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
@@ -1306,52 +1316,53 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
   EXPECT_NE(chrecMap.find(lv5.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<1>
-  auto lv1TestChrec = SCEVChainRecurrence(*theta1);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta1, *lv1_1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1_1.pre)));
 
   // lv2 is a simple induction variable with the recurrence {2,+,2}<1>
-  auto lv2TestChrec = SCEVChainRecurrence(*theta1);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta1, *lv2_1.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2_1.pre)));
 
   // lv3 is a simple induction variable with the recurrence {3,+,3}<1>
-  auto lv3TestChrec = SCEVChainRecurrence(*theta1);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta1, *lv3_1.pre);
   lv3TestChrec.AddOperand(SCEVConstant::Create(3));
   lv3TestChrec.AddOperand(SCEVConstant::Create(3));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3_1.pre)));
 
   // lv1_2 is lv1_1 incremented by 1 but in the inner loop
-  auto lv1_2TestChrec = SCEVChainRecurrence(*theta2);
-  const auto lv1_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  auto lv1_2TestChrec = SCEVChainRecurrence(*theta2, *lv1_2.pre);
+  const auto lv1_2InnerChrec = SCEVChainRecurrence::Create(*theta1, *lv1_1.post->origin());
   lv1_2InnerChrec->AddOperand(SCEVConstant::Create(1));
   lv1_2InnerChrec->AddOperand(SCEVConstant::Create(1));
   lv1_2TestChrec.AddOperand(lv1_2InnerChrec->Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1_2TestChrec, *chrecMap.at(lv1_2.pre)));
 
   // lv2_2 is lv2_1 incremented by 2 but in the inner loop
-  auto lv2_2TestChrec = SCEVChainRecurrence(*theta2);
-  const auto lv2_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  auto lv2_2TestChrec = SCEVChainRecurrence(*theta2, *lv2_2.pre);
+  const auto lv2_2InnerChrec = SCEVChainRecurrence::Create(*theta1, *lv2_1.post->origin());
   lv2_2InnerChrec->AddOperand(SCEVConstant::Create(4));
   lv2_2InnerChrec->AddOperand(SCEVConstant::Create(2));
   lv2_2TestChrec.AddOperand(lv2_2InnerChrec->Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2_2TestChrec, *chrecMap.at(lv2_2.pre)));
 
   // lv3_2 is lv3_1 incremented by 3 but in the inner loop
-  auto lv3_2TestChrec = SCEVChainRecurrence(*theta2);
-  const auto lv3_2InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  auto lv3_2TestChrec = SCEVChainRecurrence(*theta2, *lv3_2.pre);
+  const auto lv3_2InnerChrec = SCEVChainRecurrence::Create(*theta1, *lv3_1.post->origin());
   lv3_2InnerChrec->AddOperand(SCEVConstant::Create(6));
   lv3_2InnerChrec->AddOperand(SCEVConstant::Create(3));
   lv3_2TestChrec.AddOperand(lv3_2InnerChrec->Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3_2TestChrec, *chrecMap.at(lv3_2.pre)));
 
   // lv4 is in the inner loop and has a start value of 1 which is incremented by the result of
-  // folding ({1,+,1}<1> + {4,+,2}<1> + {6,+,3}<1>) = {11,+,6}<1>. Recurrence: {1,+,{11,+,6}<1>}<2>
-  auto lv4TestChrec = SCEVChainRecurrence(*theta2);
+  // folding ({1,+,1}<1> + {4,+,2}<1> + {6,+,3}<1>) = {11,+,6}<1>. Recurrence:
+  // { 1, +, { 11, +, 6 } < 1 > } < 2 >
+  auto lv4TestChrec = SCEVChainRecurrence(*theta2, *lv4.pre);
   lv4TestChrec.AddOperand(SCEVConstant::Create(1));
-  const auto lv4InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  const auto lv4InnerChrec = SCEVChainRecurrence::Create(*theta1, *lv4.pre);
   lv4InnerChrec->AddOperand(SCEVConstant::Create(11));
   lv4InnerChrec->AddOperand(SCEVConstant::Create(6));
   lv4TestChrec.AddOperand(lv4InnerChrec->Clone());
@@ -1359,9 +1370,9 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
 
   // lv5 is in the inner loop and has a start value of 1 which is incremented by the result of
   // folding ({1,+,1}<1> * {4,+,2}<1>) = {4,+,8,+,4}<1>. Recurrence: {1,+,{4,+,8,+,4}<1>}<2>
-  auto lv5TestChrec = SCEVChainRecurrence(*theta2);
+  auto lv5TestChrec = SCEVChainRecurrence(*theta2, *lv5.pre);
   lv5TestChrec.AddOperand(SCEVConstant::Create(1));
-  const auto lv5InnerChrec = SCEVChainRecurrence::Create(*theta1);
+  const auto lv5InnerChrec = SCEVChainRecurrence::Create(*theta1, *lv5.pre);
   lv5InnerChrec->AddOperand(SCEVConstant::Create(4));
   lv5InnerChrec->AddOperand(SCEVConstant::Create(8));
   lv5InnerChrec->AddOperand(SCEVConstant::Create(4));
@@ -1371,8 +1382,8 @@ TEST(ScalarEvolutionTests, InductionVariablesInNestedLoopsWithFolding)
 
 TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
 {
-  // Tests "stitching" of induction variables in other loops that are on the same level, AKA "sister
-  // loops"
+  // Tests "stitching" of induction variables in other loops that are on the same level, AKA
+  // "sister loops"
   using namespace jlm::llvm;
 
   // Arrange
@@ -1426,23 +1437,23 @@ TEST(ScalarEvolutionTests, InductionVariablesInSisterLoops)
   EXPECT_NE(chrecMap.find(lv3.pre), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}<1>
-  auto lv1TestChrec = SCEVChainRecurrence(*theta1);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta1, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is a nested induction variable, which is incremented by the post iteration value of lv1
   // ({1,+,1}<1>) for each iteration
-  auto lv2TestChrec = SCEVChainRecurrence(*theta2);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta2, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(2));
-  auto lv2InnerChrec = SCEVChainRecurrence(*theta1);
+  auto lv2InnerChrec = SCEVChainRecurrence(*theta1, *lv1.output);
   lv2InnerChrec.AddOperand(SCEVConstant::Create(1));
   lv2InnerChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(lv2InnerChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv3 has the same value as the post iteration value of lv1, but wrapped in the inner loop
-  auto lv3TestChrec = SCEVChainRecurrence(*theta2);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta2, *lv3.pre);
   lv3TestChrec.AddOperand(lv2InnerChrec.Clone());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 }
@@ -1538,19 +1549,19 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
   EXPECT_NE(chrecMap.find(gep), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is reliant on the result from a LOAD operation, and should therefore be {1,+,Unknown}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv3 (base pointer in GEP) is unchanged, it's recurrence should be {Init(a3)}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 
@@ -1558,7 +1569,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
   // Replacing the placeholders gives us ({Init(a3)} + (0 * 20) + ({0,+,1} * 4)})
   // Folding constants together gives us ({Init(a3)} + {0,+,4}) = {Init(a3),+,4} which is the
   // resulting recurrence
-  auto gepTestChrec = SCEVChainRecurrence(*theta);
+  auto gepTestChrec = SCEVChainRecurrence(*theta, *gep);
   gepTestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   gepTestChrec.AddOperand(SCEVConstant::Create(4));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
@@ -1653,19 +1664,19 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
   EXPECT_NE(chrecMap.find(gep), chrecMap.end());
 
   // lv1 is a simple induction variable with the recurrence {0,+,1}
-  auto lv1TestChrec = SCEVChainRecurrence(*theta);
+  auto lv1TestChrec = SCEVChainRecurrence(*theta, *lv1.pre);
   lv1TestChrec.AddOperand(SCEVConstant::Create(0));
   lv1TestChrec.AddOperand(SCEVConstant::Create(1));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv1TestChrec, *chrecMap.at(lv1.pre)));
 
   // lv2 is reliant on the result from a LOAD operation, and should therefore be {1,+,Unknown}
-  auto lv2TestChrec = SCEVChainRecurrence(*theta);
+  auto lv2TestChrec = SCEVChainRecurrence(*theta, *lv2.pre);
   lv2TestChrec.AddOperand(SCEVConstant::Create(1));
   lv2TestChrec.AddOperand(SCEVUnknown::Create());
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv2TestChrec, *chrecMap.at(lv2.pre)));
 
   // lv3 (base pointer in GEP) is unchanged, it's recurrence should be {Init(a3)}
-  auto lv3TestChrec = SCEVChainRecurrence(*theta);
+  auto lv3TestChrec = SCEVChainRecurrence(*theta, *lv3.pre);
   lv3TestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(lv3TestChrec, *chrecMap.at(lv3.pre)));
 
@@ -1673,7 +1684,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
   // Replacing the placeholders gives us ({Init(a3)} + ({0,+,1} * 4))
   // Folding constants together gives us ({Init(a3)} + {0,+,4}) = {Init(a3),+,4} which is the
   // resulting recurrence
-  auto gepTestChrec = SCEVChainRecurrence(*theta);
+  auto gepTestChrec = SCEVChainRecurrence(*theta, *gep);
   gepTestChrec.AddOperand(SCEVInit::Create(*lv3.pre));
   gepTestChrec.AddOperand(SCEVConstant::Create(4));
   EXPECT_TRUE(ScalarEvolution::StructurallyEqual(gepTestChrec, *chrecMap.at(gep)));
