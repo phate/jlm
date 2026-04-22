@@ -49,6 +49,9 @@ using ModRefSetIndex = uint32_t;
  *
  * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
  *
+ * 7. Mod/Ref set compaction: Within each function, memory nodes that always
+ * appear along with the external node are removed. External can represent it instead.
+ *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
  */
@@ -268,7 +271,7 @@ private:
   doExternalCompression();
 
   /**
-   * Performs external compation in the given function.
+   * Performs external compaction in the given function.
    */
   void
   compressExternalInFunction(const rvsdg::LambdaNode & lambda);
