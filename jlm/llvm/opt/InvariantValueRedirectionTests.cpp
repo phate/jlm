@@ -10,8 +10,10 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -227,6 +229,40 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
   // Arrange
   using namespace jlm::llvm;
 
+  /**
+   * Creates an RVSDG that looks like
+   *
+   * test1 = lambda
+   *   [c:CTRL(2), x:ValueType, io, mem] {
+   *     mem1, mem2 = LambdaEntrySplit{1, 2} mem
+   *     // A gamma that routes the values through in both regions
+   *     x2, mem3, mem4 = gamma c x mem1, mem2
+   *       [_, x, mem1, mem2] {
+   *       }[x, mem1, mem2]
+   *       [_, x, mem1, mem2] {
+   *       }[x, mem1, mem2]
+   *     memMerged = LambdaExitMerge{1, 2} mem3, mem4
+   *   } [x2, io, memMerged]
+   *
+   * test2 = lambda
+   *   [test1 <- test1, x:ValueType, io, mem] {
+   *     mem1, mem2 = LambdaEntrySplit{1, 2} mem
+   *     callMerged = CallEntryMerge{1, 2} mem1, mem2
+   *     c = CTRL(0)
+   *     x2, io, returnMem = call test1 c x io callMerged
+   *     mem3, mem4 = CallExitSplit{2, 1} returnMem
+   *     memMerged = LambdaExitMerge{2, 1} mem3, mem4
+   *   } [x2, io, memMerged]
+   *
+   * After InvariantValueRedirection, the LambdaExitMerge in test2 should be directly connected
+   * to the LambdaEntrySplit in test2, with the correct memory node indices matching up.
+   *
+   * The test uses memory node indices 1 and 2, since 0 is reserved for the external node.
+   */
+
+  // The memory node representing external has index 0, and is avoided in this test
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
+
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::rvsdg::TestType::createValueType();
@@ -250,7 +286,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 1, 2 });
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
@@ -265,7 +301,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         { gammaOutputMemoryState1.output, gammaOutputMemoryState2.output },
-        { 0, 1 });
+        { 1, 2 });
 
     lambdaOutputTest1 = lambdaNode->finalize(
         { gammaOutputX.output, ioStateArgument, lambdaExitMergeNode.output(0) });
@@ -286,12 +322,12 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
     auto lambdaArgumentTest1 = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 1, 2 });
 
     auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         outputs(&lambdaEntrySplitNode),
-        { 0, 1 });
+        { 1, 2 });
 
     auto controlResult =
         &jlm::rvsdg::ControlConstantOperation::create(*lambdaNode->subregion(), 2, 0);
@@ -304,12 +340,12 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNode),
-        { 1, 0 });
+        { 2, 1 });
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         outputs(&callExitSplitNode),
-        { 1, 0 });
+        { 2, 1 });
 
     lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
                                                &CallOperation::GetIOStateOutput(callNode),
@@ -340,6 +376,9 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
   // Arrange
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
+
+  // The memory node representing external has index 0, and is avoided in this test
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -375,7 +414,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         { storeNode.output(0) },
-        { 0 });
+        { 1 });
 
     lambdaOutputTest1 = lambdaNode->finalize(
         { zeroNode.output(0), ioStateArgument, lambdaExitMergeNode.output(0) });
@@ -392,12 +431,12 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
     auto lambdaArgumentTest = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
 
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0 });
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 1 });
 
     auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         outputs(&lambdaEntrySplitNode),
-        { 0 });
+        { 1 });
 
     auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest,
@@ -407,12 +446,12 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNode),
-        { 0 });
+        { 1 });
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
         outputs(&callExitSplitNode),
-        { 0 });
+        { 1 });
 
     lambdaOutputTest2 = lambdaNode->finalize({ callNode.output(0),
                                                &CallOperation::GetIOStateOutput(callNode),
@@ -452,6 +491,198 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
       TryGetSimpleNodeAndOptionalOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
   EXPECT_EQ(callEntryMergeNode->ninputs(), 1u);
   EXPECT_EQ(callEntryMergeNode->input(0)->origin(), lambdaEntrySplit2->output(0));
+}
+
+TEST(InvariantValueRedirectionTests, TestCallWithDifferentExternalCompression)
+{
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  /**
+   * This test creates a situation where a caller and callee have compressed some memory nodes
+   * into the memory state belonging to the external memory.
+   * The caller has compressed memory node 3 into external,
+   * while the callees have compressed 2 into external.
+   *
+   * // callee0 does something to mem0
+   * callee0 = lambda
+   *   [io, mem] {
+   *     mem0, mem1, mem3 = LambdaEntrySplit{0, 1, 3} mem
+   *     mem00 = TestOperation mem0
+   *     memMerged = LambdaExitMerge{0, 1, 3} mem00, mem1, mem3
+   *   } [io, memMerged]
+   *
+   * // callee3 does something to mem3
+   * callee3 = lambda
+   *   [io, mem] {
+   *     mem0, mem1, mem3 = LambdaEntrySplit{0, 1, 3} mem
+   *     mem03 = TestOperation mem3
+   *     memMerged = LambdaExitMerge{0, 1, 3} mem0, mem1, mem03
+   *   } [io, memMerged]
+   *
+   * caller = lambda
+   *   [io, mem] {
+   *     mem0, mem1, mem2 = LambdaEntrySplit{0, 1, 2} mem
+   *
+   *     // calling callee0
+   *     callMergedA = CallEntryMerge{0, 1, 2} mem0, mem1, mem2
+   *     io, returnMemA = call callee0 io callMergedA
+   *     mem00, mem01, mem02 = CallExitSplit{0, 1, 2} returnMemA
+   *
+   *     // calling callee3
+   *     callMergedB = CallEntryMerge{0, 1, 2} mem00, mem01, mem02
+   *     io, returnMemB = call callee3 io callMergedB
+   *     mem10, mem11, mem12 = CallExitSplit{0, 1, 2} returnMemB
+   *
+   *     memMerged = LambdaExitMerge{0, 1, 2} mem10, mem11, mem12
+   *   } [io, memMerged]
+   *
+   * After InvariantValueRedirection, memory node 1 should be routed around both calls.
+   * Memory node 2 should only be routed around the call to callee3.
+   * Memory node 0 should not be routed around anything.
+   */
+
+  // The memory node representing external has index 0
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
+
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto functionType =
+      FunctionType::Create({ ioStateType, memoryStateType }, { ioStateType, memoryStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  Output * callee0Output = nullptr;
+  {
+    auto lambdaNode = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "callee0", Linkage::externalLinkage));
+
+    auto ioStateArgument = lambdaNode->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1, 3 });
+    auto modifiedExternal = TestOperation::createNode(
+        lambdaNode->subregion(),
+        { lambdaEntrySplitNode.output(0) },
+        { memoryStateType });
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        { modifiedExternal->output(0),
+          lambdaEntrySplitNode.output(1),
+          lambdaEntrySplitNode.output(2) },
+        { 0, 1, 3 });
+
+    callee0Output = lambdaNode->finalize({ ioStateArgument, lambdaExitMergeNode.output(0) });
+  }
+
+  Output * callee3Output = nullptr;
+  {
+    auto lambdaNode = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "callee3", Linkage::externalLinkage));
+
+    auto ioStateArgument = lambdaNode->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1, 3 });
+    auto modifiedMemory3 = TestOperation::createNode(
+        lambdaNode->subregion(),
+        { lambdaEntrySplitNode.output(2) },
+        { memoryStateType });
+    auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        { lambdaEntrySplitNode.output(0),
+          lambdaEntrySplitNode.output(1),
+          modifiedMemory3->output(0) },
+        { 0, 1, 3 });
+
+    callee3Output = lambdaNode->finalize({ ioStateArgument, lambdaExitMergeNode.output(0) });
+  }
+
+  SimpleNode * lambdaEntrySplitNode = nullptr;
+  SimpleNode * callEntryMergeNodeA = nullptr;
+  SimpleNode * callExitSplitNodeA = nullptr;
+  SimpleNode * callEntryMergeNodeB = nullptr;
+  SimpleNode * callExitSplitNodeB = nullptr;
+  SimpleNode * lambdaExitMergeNode = nullptr;
+  {
+    auto lambdaNode = LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "caller", Linkage::externalLinkage));
+
+    auto ioStateArgument = lambdaNode->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
+    auto callee0Argument = lambdaNode->AddContextVar(*callee0Output).inner;
+    auto callee3Argument = lambdaNode->AddContextVar(*callee3Output).inner;
+
+    lambdaEntrySplitNode =
+        &LambdaEntryMemoryStateSplitOperation::CreateNode(*memoryStateArgument, { 0, 1, 2 });
+
+    callEntryMergeNodeA = &CallEntryMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        outputs(lambdaEntrySplitNode),
+        { 0, 1, 2 });
+    auto & callNodeA = CallOperation::CreateNode(
+        callee0Argument,
+        functionType,
+        AttributeList::createEmptyList(),
+        { ioStateArgument, callEntryMergeNodeA->output(0) });
+    callExitSplitNodeA = &CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNodeA),
+        { 0, 1, 2 });
+
+    callEntryMergeNodeB = &CallEntryMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        outputs(callExitSplitNodeA),
+        { 0, 1, 2 });
+    auto & callNodeB = CallOperation::CreateNode(
+        callee3Argument,
+        functionType,
+        AttributeList::createEmptyList(),
+        { &CallOperation::GetIOStateOutput(callNodeA), callEntryMergeNodeB->output(0) });
+    callExitSplitNodeB = &CallExitMemoryStateSplitOperation::CreateNode(
+        CallOperation::GetMemoryStateOutput(callNodeB),
+        { 0, 1, 2 });
+
+    lambdaExitMergeNode = &LambdaExitMemoryStateMergeOperation::CreateNode(
+        *lambdaNode->subregion(),
+        outputs(callExitSplitNodeB),
+        { 0, 1, 2 });
+
+    lambdaNode->finalize(
+        { &CallOperation::GetIOStateOutput(callNodeB), lambdaExitMergeNode->output(0) });
+  }
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+
+  // Assert
+  ASSERT_EQ(lambdaEntrySplitNode->noutputs(), 3);
+  ASSERT_EQ(callEntryMergeNodeA->ninputs(), 3);
+  ASSERT_EQ(callExitSplitNodeA->noutputs(), 3);
+  ASSERT_EQ(callEntryMergeNodeB->ninputs(), 3);
+  ASSERT_EQ(callExitSplitNodeB->noutputs(), 3);
+  ASSERT_EQ(lambdaExitMergeNode->ninputs(), 3);
+
+  // the memory state edge representing the external node has not been re-routed around anything
+  EXPECT_EQ(callEntryMergeNodeA->input(0)->origin(), lambdaEntrySplitNode->output(0));
+  EXPECT_EQ(callEntryMergeNodeB->input(0)->origin(), callExitSplitNodeA->output(0));
+  EXPECT_EQ(lambdaExitMergeNode->input(0)->origin(), callExitSplitNodeB->output(0));
+
+  // the memory state edge representing memory node 1 has been re-routed to the entry
+  EXPECT_EQ(callEntryMergeNodeA->input(1)->origin(), lambdaEntrySplitNode->output(1));
+  EXPECT_EQ(callEntryMergeNodeB->input(1)->origin(), lambdaEntrySplitNode->output(1));
+  EXPECT_EQ(lambdaExitMergeNode->input(1)->origin(), lambdaEntrySplitNode->output(1));
+
+  // the memory state edge representing memory node 2 only been re-routed around callee3
+  EXPECT_EQ(callEntryMergeNodeA->input(2)->origin(), lambdaEntrySplitNode->output(2));
+  EXPECT_EQ(callEntryMergeNodeB->input(2)->origin(), callExitSplitNodeA->output(2));
+  EXPECT_EQ(lambdaExitMergeNode->input(2)->origin(), callExitSplitNodeA->output(2));
 }
 
 TEST(InvariantValueRedirectionTests, TestLambdaCallArgumentMismatch)

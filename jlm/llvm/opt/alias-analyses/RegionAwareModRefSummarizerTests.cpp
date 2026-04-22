@@ -1125,17 +1125,11 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto deltaAMemoryNode = pointsToGraph.getNodeForDelta(*test.DeltaA);
     auto deltaBMemoryNode = pointsToGraph.getNodeForDelta(*test.DeltaB);
-    auto deltaXMemoryNode = pointsToGraph.getNodeForDelta(*test.DeltaX);
-    auto deltaYMemoryNode = pointsToGraph.getNodeForDelta(*test.DeltaY);
+    // Delta A, X and Y have been compressed into the external memory node
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
-    jlm::util::HashSet expectedMemoryNodes{ deltaAMemoryNode,
-                                            deltaBMemoryNode,
-                                            deltaXMemoryNode,
-                                            deltaYMemoryNode,
-                                            externalMemoryNode };
+    jlm::util::HashSet expectedMemoryNodes{ deltaBMemoryNode, externalMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
     EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
@@ -1192,8 +1186,8 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
      * Validate CallExternalFunction1 function
      */
     {
-      jlm::util::HashSet expectedMemoryNodes{ returnAddressMallocMemoryNode,
-                                              callExternalFunction1MallocMemoryNode,
+      // The returnAddressMallocMemoryNode is compressed into the external node
+      jlm::util::HashSet expectedMemoryNodes{ callExternalFunction1MallocMemoryNode,
                                               externalMemoryNode };
 
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.CallExternalFunction1);
@@ -1210,9 +1204,8 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
      * Validate CallExternalFunction2 function
      */
     {
+      // The function only does a call, and a load of unknown, so everything can be compressed
       jlm::util::HashSet<jlm::llvm::aa::PointsToGraph::NodeIndex> expectedMemoryNodes{
-        returnAddressMallocMemoryNode,
-        callExternalFunction1MallocMemoryNode,
         externalMemoryNode
       };
 
@@ -1254,10 +1247,10 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory3)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto deltaMemoryNode = pointsToGraph.getNodeForDelta(*test.DeltaGlobal);
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
-    jlm::util::HashSet expectedMemoryNodes{ deltaMemoryNode, externalMemoryNode };
+    // DeltaGlobal has been compressed into the externalMemoryNode
+    jlm::util::HashSet expectedMemoryNodes{ externalMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
     EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
@@ -1526,9 +1519,10 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   const auto callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
   EXPECT_FALSE(callKModRef.Contains(allocaPtgNode));
 
-  // The call to opaque() within h() should contain a in its Mod/Ref set
+  // The call to opaque() within h() only contains the external memory node,
+  // since the memory node representing a has been compressed into it
   const auto callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
-  EXPECT_TRUE(callOpaqueModRef.Contains(allocaPtgNode));
+  EXPECT_EQ(callOpaqueModRef.Size(), 1);
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();

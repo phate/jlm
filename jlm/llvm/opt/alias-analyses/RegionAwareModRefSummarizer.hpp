@@ -49,6 +49,9 @@ using ModRefSetIndex = uint32_t;
  *
  * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
  *
+ * 7. Mod/Ref set compaction: Within each function, memory nodes that always
+ * appear along with the external node are removed. External can represent it instead.
+ *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
  */
@@ -258,6 +261,28 @@ private:
    */
   bool
   VerifyBlocklists() const;
+
+  /**
+   * Goes through all ModRefSets in all functions, and keeps track of memory nodes that always
+   * appear alongside the external memory node. These memory nodes are compressible,
+   * and can be removed from all ModRefSets in the function.
+   */
+  void
+  doExternalCompression();
+
+  /**
+   * Performs external compaction in the given function.
+   */
+  void
+  compressExternalInFunction(const rvsdg::LambdaNode & lambda);
+
+  /**
+   * Helper function for recursively finding all ModRefSets in the given node.
+   * @param node the node to traverse, including any subregions.
+   * @param modRefSets the hash set in which all found ModRefSets are placed.
+   */
+  void
+  findAllModRefSets(const rvsdg::Node & node, util::HashSet<ModRefSetIndex> & modRefSets);
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
