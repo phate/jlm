@@ -536,6 +536,131 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   EXPECT_EQ(StoreOperation::AddressInput(*storeNode).origin(), newIV.pre);
 }
 
+TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
+{
+  // Tests strength reduction of a GEP operation which takes j = (3 * i) + 4 as index. i has the
+  // recurrence {0,+,2} and j has recurrence {4,+,6}. Since the GEP has int type, the recurrence for
+  // the GEP is {(Init(a1) + 16),+,24}. We expect to strength reduce the original GEP to a new loop
+  // variable which has as input value a GEP operation with the ptr Init(a1) and 16 as offset,
+  // and is incremented by the value of a new GEP with byte type and offset 24
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+  const auto intArrayType = ArrayType::Create(intType, 5);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  auto arrPtr = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "arrPtr");
+  auto mem = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "");
+
+  const auto & c0_1 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+
+  const auto memoryState = theta->AddLoopVar(mem);
+  const auto lv1 = theta->AddLoopVar(c0_1.output(0)); // i
+  const auto lv2 = theta->AddLoopVar(arrPtr);         // arr ptr
+
+  const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
+  auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c2.output(0) }, 32);
+
+  const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
+  auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
+  const auto & c4 = IntegerConstantOperation::Create(*theta->subregion(), 32, 4);
+  auto & addNode2 =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c4.output(0) }, 32);
+
+  const auto & sExtNode = SExtOperation::create(64, addNode2.output(0));
+
+  const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
+  const auto gep = GetElementPtrOperation::Create(
+      lv2.pre,
+      { c0_2.output(0), sExtNode },
+      intArrayType,
+      pointerType);
+
+  const auto & c10 = IntegerConstantOperation::Create(*theta->subregion(), 32, 10);
+
+  auto storeOutputs = StoreNonVolatileOperation::Create(gep, c10.output(0), { memoryState.pre }, 4);
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+
+  auto & sltNode =
+      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ addNode1.output(0), c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  lv1.post->divert_to(addNode1.output(0));
+  memoryState.post->divert_to(storeOutputs[0]);
+  theta->set_predicate(matchResult);
+
+  jlm::rvsdg::GraphExport::Create(*memoryState.output, "");
+
+  // std::cout << "Before: \n";
+  // jlm::rvsdg::view(graph, stdout);
+
+  const auto numLoopVarsBefore = theta->GetLoopVars().size();
+
+  std::vector<jlm::rvsdg::Input *> oldGepNodeUsers;
+
+  // Act
+  RunLoopStrengthReduction(rvsdgModule);
+
+  // std::cout << "After: \n";
+  // jlm::rvsdg::view(graph, stdout);
+
+  const auto numLoopVarsAfter = theta->GetLoopVars().size();
+
+  // Assert
+
+  // Check that a new loop variable was added
+  EXPECT_EQ(numLoopVarsAfter, numLoopVarsBefore + 1);
+  auto newIV = theta->GetLoopVars()[numLoopVarsAfter - 1];
+
+  // Check that the base address of the new induction variable is a GEP operation with the original
+  // array ptr as lhs and the right offset as rhs
+  const auto & newIVInputNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV.input->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<GetElementPtrOperation>(newIVInputNode->GetOperation()));
+  auto lhs = newIVInputNode->input(0)->origin();
+  auto rhs = newIVInputNode->input(1)->origin();
+  EXPECT_EQ(lhs, arrPtr);
+  const auto rhsNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*rhs);
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerConstantOperation>(rhsNode->GetOperation()));
+  const auto & constantOperation =
+      dynamic_cast<const IntegerConstantOperation *>(&rhsNode->GetOperation());
+  EXPECT_NE(constantOperation, nullptr);
+  EXPECT_EQ(constantOperation->Representation().to_uint(), 16u);
+
+  // Check that the post value of the new IV comes from a new GEP node
+  const auto & IVPostOrigin =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*newIV.post->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<GetElementPtrOperation>(IVPostOrigin->GetOperation()));
+  const auto & stepGepOperation =
+      dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
+  EXPECT_NE(stepGepOperation, nullptr);
+  // Check that it has the right type
+  EXPECT_EQ(stepGepOperation->GetPointeeType(), *jlm::rvsdg::BitType::Create(8));
+
+  // Check that index of the GEP is an integer constant with the step value
+  const auto & gepIndexInputNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*IVPostOrigin->input(1)->origin());
+  EXPECT_TRUE(jlm::rvsdg::is<IntegerConstantOperation>(gepIndexInputNode));
+  const auto & indexConstantOperation =
+      dynamic_cast<const IntegerConstantOperation *>(&gepIndexInputNode->GetOperation());
+  EXPECT_NE(indexConstantOperation, nullptr);
+  EXPECT_EQ(indexConstantOperation->Representation().nbits(), 64u);
+  EXPECT_EQ(indexConstantOperation->Representation().to_uint(), 24u);
+
+  // Check that the both the load and store nodes use the new induction variable as address
+  auto storeNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeOutputs[0]);
+  EXPECT_NE(storeNode, nullptr);
+  EXPECT_TRUE(jlm::rvsdg::is<StoreNonVolatileOperation>(storeNode->GetOperation()));
+  EXPECT_EQ(StoreOperation::AddressInput(*storeNode).origin(), newIV.pre);
+}
+
 TEST(LoopStrengthReductionTests, CandidateOperationInNestedLoopTest)
 {
   // Tests strength reduction of a variable with the recurrence {{0,+,3}<1>}<2>. Since {0,+,3}<1> is

@@ -240,7 +240,18 @@ protected:
     inline static const char * NumLoops = "#NumLoops";
     inline static const char * TripCounts = "#TripCounts";
 
+    inline static const char * NumCandidates = "#NumCandidates";
+    inline static const char * NumArithmeticCandidates = "#NumArithmeticCandidates";
+    inline static const char * NumGEPCandidates = "#NumGEPCandidates";
     inline static const char * NumOperationsReduced = "#NumOperationsReduced";
+    inline static const char * NumArithmeticOperationsReduced = "#NumArithmeticOperationsReduced";
+    inline static const char * NumGEPOperationsReduced = "#NumGEPOperationsReduced";
+
+    inline static const char * NumGEPDoesNotDependOnIV = "#NumGEPDoesNotDependOnIV";
+    inline static const char * NumArithmeticDoesNotDependOnIV = "#NumArithmeticDoesNotDependOnIV";
+    inline static const char * NumArithmeticNotContainsMul = "#NumArithmeticNotContainsMul";
+    inline static const char * NumGEPIsUnknown = "#NumGEPIsUnknown";
+    inline static const char * NumArithmeticIsUnknown = "#NumArithmeticIsUnknown";
 
     static inline const char * Timer = "Time";
   };
