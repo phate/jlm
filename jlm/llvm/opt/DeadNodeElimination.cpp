@@ -243,13 +243,7 @@ DeadNodeElimination::markOutput(const rvsdg::Output & output)
 
   if (const auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    const auto origin = std::visit(
-        [](const auto & roleVar) -> rvsdg::Output *
-        {
-          return roleVar.input->origin();
-        },
-        gamma->MapBranchArgument(output));
-    markOutput(*origin);
+    markOutput(*gamma->mapBranchArgumentToInput(output).origin());
     return;
   }
 
