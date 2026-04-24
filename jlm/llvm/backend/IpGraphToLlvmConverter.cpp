@@ -22,10 +22,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <deque>
 #include <unordered_map>
-
-#include <typeindex>
 
 namespace jlm::llvm
 {
@@ -242,6 +239,18 @@ IpGraphToLlvmConverter::convert(
 
   auto type = typeConverter.ConvertJlmType(operation.GetType(), llvmContext);
   return ::llvm::PoisonValue::get(type);
+}
+
+::llvm::Value *
+IpGraphToLlvmConverter::convert(
+    const FreezeOperation &,
+    const std::vector<const Variable *> & operands,
+    ::llvm::IRBuilder<> & builder)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto operand = Context_->value(operands[0]);
+
+  return builder.CreateFreeze(operand);
 }
 
 ::llvm::Value *
@@ -1190,6 +1199,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<PoisonValueOperation>(op))
   {
     return convert<PoisonValueOperation>(op, arguments, builder);
+  }
+  if (is<FreezeOperation>(op))
+  {
+    return convert<FreezeOperation>(op, arguments, builder);
   }
   if (is<rvsdg::MatchOperation>(op))
   {

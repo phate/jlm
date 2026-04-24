@@ -36,6 +36,7 @@ class ControlFlowGraph;
 class DataNode;
 class ConstantFP;
 class PoisonValueOperation;
+class FreezeOperation;
 class CallOperation;
 class LoadNonVolatileOperation;
 class LoadVolatileOperation;
@@ -475,6 +476,12 @@ private:
   ::llvm::Value *
   convert(
       const PoisonValueOperation & operation,
+      const std::vector<const Variable *> &,
+      ::llvm::IRBuilder<> &);
+
+  ::llvm::Value *
+  convert(
+      const FreezeOperation & operation,
       const std::vector<const Variable *> &,
       ::llvm::IRBuilder<> &);
 

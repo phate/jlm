@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/unary.hpp>
 
 #include <llvm/ADT/APFloat.h>
+#include <stdexcept>
 
 namespace jlm::llvm
 {
@@ -1116,6 +1117,59 @@ private:
       return type;
 
     throw util::Error("Expected value type.");
+  }
+};
+
+/** \brief FreezeOperation class
+ *
+ * This operator is the Jlm equivalent of LLVM's freeze operation.
+ * It converts undef and poison values into arbitrary, but fixed, values.
+ * For all other inputs it is a no-op.
+ */
+class FreezeOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~FreezeOperation() noexcept override;
+
+  explicit FreezeOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
+      : rvsdg::UnaryOperation(type, type)
+  {
+    if (type->Kind() != rvsdg::TypeKind::Value)
+      throw std::runtime_error("FreezeOperation given non-value type");
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
+
+  jlm::rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  const jlm::rvsdg::Type &
+  getType() const noexcept
+  {
+    return *result(0).get();
+  }
+
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  createTac(const Variable & operand)
+  {
+    auto operation = std::make_unique<FreezeOperation>(operand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand });
+  }
+
+  static jlm::rvsdg::Node &
+  createNode(jlm::rvsdg::Output & operand)
+  {
+    return rvsdg::CreateOpNode<FreezeOperation>({ &operand }, operand.Type());
   }
 };
 

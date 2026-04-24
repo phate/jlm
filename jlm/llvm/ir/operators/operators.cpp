@@ -8,6 +8,7 @@
 #include <jlm/rvsdg/Trace.hpp>
 
 #include <llvm/ADT/SmallVector.h>
+#include <stdexcept>
 
 namespace jlm::llvm
 {
@@ -537,6 +538,41 @@ std::unique_ptr<rvsdg::Operation>
 PoisonValueOperation::copy() const
 {
   return std::make_unique<PoisonValueOperation>(*this);
+}
+
+FreezeOperation::~FreezeOperation() noexcept = default;
+
+bool
+FreezeOperation::operator==(const Operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const FreezeOperation *>(&other);
+  return operation && operation->getType() == getType();
+}
+
+rvsdg::unop_reduction_path_t
+FreezeOperation::can_reduce_operand([[maybe_unused]] const jlm::rvsdg::Output * arg) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+jlm::rvsdg::Output *
+FreezeOperation::reduce_operand(
+    [[maybe_unused]] rvsdg::unop_reduction_path_t path,
+    [[maybe_unused]] jlm::rvsdg::Output * arg) const
+{
+  throw std::runtime_error("FreezeOperation does not support reductions");
+}
+
+std::string
+FreezeOperation::debug_string() const
+{
+  return "freeze";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FreezeOperation::copy() const
+{
+  return std::make_unique<FreezeOperation>(*this);
 }
 
 FBinaryOperation::~FBinaryOperation() noexcept = default;
