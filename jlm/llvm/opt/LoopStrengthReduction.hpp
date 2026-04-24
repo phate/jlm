@@ -65,7 +65,7 @@ private:
   DependsOnInductionVariable(const rvsdg::Output & output);
 
   bool
-  IsValidCandidateOperation(const rvsdg::Output & output);
+  IsValidCandidateOperation(const rvsdg::Output & output, const rvsdg::SimpleOperation & operation);
 
   void
   ProcessOutput(
@@ -83,19 +83,11 @@ private:
   std::optional<rvsdg::Output *>
   HoistSCEVExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
 
-  void
-  ReplaceGEPOperation(
-      std::unique_ptr<SCEVChainRecurrence> & chrec,
-      rvsdg::Output & output,
+  std::optional<rvsdg::ThetaNode::LoopVar>
+  CreateNewGEPInductionVariable(
+      const SCEVChainRecurrence & chrec,
       rvsdg::ThetaNode & thetaNode,
       const std::shared_ptr<const PointerType> & pointerType);
-
-  void
-  ReplaceArithmeticOperation(
-      std::unique_ptr<SCEVChainRecurrence> & chrec,
-      rvsdg::Output & output,
-      rvsdg::ThetaNode & thetaNode,
-      const std::shared_ptr<const rvsdg::BitType> & bitType);
 
   std::optional<rvsdg::ThetaNode::LoopVar>
   CreateNewArithmeticInductionVariable(
