@@ -306,10 +306,10 @@ public:
   GetExitVars() const;
 
   /**
-   * \brief Gets all gamma outputs that match condition defined by \p match.
+   * \brief Gets all gamma outputs that match the condition defined by \p match.
    *
    * @tparam F A type supporting function call operator: bool operator(const Output&)
-   * @param match Defines the condition of the elements to return.
+   * @param match Defines the condition of the outputs to return.
    * @return The gamma outputs that matched the condition.
    */
   template<typename F>
@@ -367,7 +367,8 @@ public:
 
   /**
    * \brief Removes the exit variables corresponding to the given \p gammaOutputs.
-   *   * \pre
+   *
+   * \pre
    *    1. All outputs must belong to a gamma node.
    *    1. All outputs must be dead.
    *

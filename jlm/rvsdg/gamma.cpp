@@ -423,6 +423,7 @@ GammaNode::RemoveExitVars(const std::vector<Output *> & gammaOutputs)
   util::HashSet<size_t> indices;
   for (const auto output : gammaOutputs)
   {
+    JLM_ASSERT(output->IsDead());
     JLM_ASSERT(TryGetOwnerNode<GammaNode>(*output) == this);
     indices.insert(output->index());
   }
