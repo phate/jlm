@@ -3,9 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/util/BijectiveMap.hpp>
+#include <jlm/util/common.hpp>
+
 #include <llvm/IR/CallingConv.h>
 
 namespace jlm::llvm

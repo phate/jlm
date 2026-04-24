@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_OPERATORS_CALL_HPP
 #define JLM_LLVM_IR_OPERATORS_CALL_HPP
 
+#include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -463,6 +464,15 @@ public:
   Create(
       rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::Output *> & arguments)
+  {
+    return outputs(&CreateNode(function, std::move(functionType), arguments));
+  }
+
+  static std::vector<rvsdg::Output *>
+  Create(
+      rvsdg::Output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
       CallingConv callingConv,
       AttributeList attributes,
       const std::vector<rvsdg::Output *> & arguments)
@@ -475,15 +485,6 @@ public:
         arguments));
   }
 
-  static std::vector<rvsdg::Output *>
-  Create(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::Output *> & operands)
-  {
-    return outputs(&CreateNode(region, std::move(callOperation), operands));
-  }
-
   static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::Region & region,
@@ -493,6 +494,25 @@ public:
     CheckFunctionType(*callOperation->GetFunctionType());
 
     return rvsdg::SimpleNode::Create(region, std::move(callOperation), operands);
+  }
+
+  /**
+   * Helper function for creating a call node calling the given \p function,
+   * with the given \p functionType, and the given \p arguments.
+   * The call gets the default calling convention and an empty attribute list.
+   */
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::Output *> & arguments)
+  {
+    return CreateNode(
+        function,
+        std::move(functionType),
+        CallingConv::C,
+        AttributeList::createEmptyList(),
+        arguments);
   }
 
   static rvsdg::SimpleNode &

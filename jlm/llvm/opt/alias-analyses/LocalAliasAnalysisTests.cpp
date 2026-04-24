@@ -234,11 +234,8 @@ private:
       memoryState = storeOutputs[0];
 
       // Get bytePtr by calling getPtr()
-      const auto callOutputs = CallOperation::Create(
-          getPtrCtxVar,
-          getPtrFuncType,
-          AttributeList::createEmptyList(),
-          { ioState, memoryState });
+      const auto callOutputs =
+          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
       Outputs_.BytePtr = callOutputs[0];
       ioState = callOutputs[1];
       memoryState = callOutputs[2];

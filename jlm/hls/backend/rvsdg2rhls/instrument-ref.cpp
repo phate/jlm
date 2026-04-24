@@ -188,7 +188,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           load_func,
           loadFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
@@ -223,7 +222,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           alloca_func,
           allocaFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, sizeNode.output(0), ioState, memstate });
       for (auto ou : old_users)
       {
@@ -253,7 +251,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           store_func,
           storeFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state after the store to the new memstate from the call operation
       for (auto user : oldUsers)
