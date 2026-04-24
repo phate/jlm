@@ -54,13 +54,6 @@ public:
 
   size_t NumArithmeticCandidates = 0;
   size_t NumGEPCandidates = 0;
-
-  size_t NumGEPDoesNotDependOnIV = 0;
-  size_t NumArithmeticDoesNotDependOnIV = 0;
-  size_t NumArithmeticNotContainsMul = 0;
-  size_t NumGEPIsUnknown = 0;
-  size_t NumArithmeticIsUnknown = 0;
-
   size_t NumArithmeticOperationsReduced = 0;
   size_t NumGEPOperationsReduced = 0;
 
@@ -90,20 +83,12 @@ public:
     GetTimer(Label::Timer).stop();
 
     AddMeasurement(
-        Label::NumCandidates,
+        Label::NumLSRCandidates,
         context.NumArithmeticCandidates + context.NumGEPCandidates);
-    AddMeasurement(Label::NumArithmeticCandidates, context.NumArithmeticCandidates);
-    AddMeasurement(Label::NumGEPCandidates, context.NumGEPCandidates);
-
-    AddMeasurement(Label::NumArithmeticDoesNotDependOnIV, context.NumArithmeticDoesNotDependOnIV);
-    AddMeasurement(Label::NumGEPDoesNotDependOnIV, context.NumGEPDoesNotDependOnIV);
-    AddMeasurement(Label::NumArithmeticNotContainsMul, context.NumArithmeticNotContainsMul);
- AddMeasurement(Label::NumArithmeticIsUnknown, context.NumArithmeticIsUnknown);
-    AddMeasurement(Label::NumGEPIsUnknown, context.NumGEPIsUnknown);
-
+    AddMeasurement(Label::NumArithmeticLSRCandidates, context.NumArithmeticCandidates);
+    AddMeasurement(Label::NumGepLSRCandidates, context.NumGEPCandidates);
     AddMeasurement(Label::NumArithmeticOperationsReduced, context.NumArithmeticOperationsReduced);
-    AddMeasurement(Label::NumGEPOperationsReduced, context.NumGEPOperationsReduced);
-
+    AddMeasurement(Label::NumGepOperationsReduced, context.NumGEPOperationsReduced);
     AddMeasurement(
         Label::NumOperationsReduced,
         GetStatisticsString(context.GetOperationsReducedMap()));
@@ -282,7 +267,6 @@ LoopStrengthReduction::ReplaceCandidateOperation(
   auto & chrec = ChrecMap_.at(&output);
 
   JLM_ASSERT(chrec->NumOperands() <= 2);
-  std::cout << "We have this chrec: " << chrec->DebugString() << '\n';
 
   const rvsdg::ThetaNode::LoopVar * newIV = nullptr;
   if (const auto & bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(output.Type()))
@@ -295,7 +279,6 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     newIV = &newIVOpt.value();
 
     Context_->NumArithmeticOperationsReduced++;
-    std::cout << "arithmetic operation reduced\n";
   }
   else if (const auto & pointerType = std::dynamic_pointer_cast<const PointerType>(output.Type()))
   {
@@ -306,7 +289,6 @@ LoopStrengthReduction::ReplaceCandidateOperation(
     newIV = &newIVOpt.value();
 
     Context_->NumGEPOperationsReduced++;
-    std::cout << "GEP operation reduced\n";
   }
   else
   {
@@ -347,7 +329,7 @@ LoopStrengthReduction::HoistChrec(
     // The chrec doesn't have a corresponding output. This can happen in cases where we have folded
     // some constant into the chrec of an induction variable, either with addition or
     // multiplication. In this case, we need to create a new induction variable for the chrec.
-    auto newIV = CreateNewArithmeticInductionVariable(chrec, targetLoop, numBits);
+    const auto newIV = CreateNewArithmeticInductionVariable(chrec, targetLoop, numBits);
     if (!newIV.has_value())
       return std::nullopt;
 
@@ -418,12 +400,12 @@ LoopStrengthReduction::HoistSCEVExpresssion(
   }
   if (const auto addExpr = dynamic_cast<const SCEVNAryAddExpr *>(&scev))
   {
-    auto rightMost = addExpr->GetOperand(addExpr->NumOperands() - 1);
-    auto rightSideOpt = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
+    const auto rightMost = addExpr->GetOperand(addExpr->NumOperands() - 1);
+    const auto rightSideOpt = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
     if (!rightSideOpt.has_value())
       return std::nullopt;
 
-    auto newAddExpr = SCEV::CloneAs<SCEVNAryAddExpr>(*addExpr);
+    const auto newAddExpr = SCEV::CloneAs<SCEVNAryAddExpr>(*addExpr);
     newAddExpr->RemoveOperand(addExpr->NumOperands() - 1);
 
     std::optional<rvsdg::Output *> leftSideOpt;
@@ -444,12 +426,11 @@ LoopStrengthReduction::HoistSCEVExpresssion(
     rvsdg::Output * leftSide = *leftSideOpt;
     rvsdg::Output * rightSide = *rightSideOpt;
     // If either side is a pointer, we use a GEP instead of IntegerAddOperation
-    const auto leftIsPtr = rvsdg::is<PointerType>(leftSide->Type());
-    const auto rightIsPtr = rvsdg::is<PointerType>(rightSide->Type());
-
-    if (leftIsPtr || rightIsPtr)
+    if (const auto rightIsPtr = rvsdg::is<PointerType>(rightSide->Type()),
+        leftIsPtr = rvsdg::is<PointerType>(leftSide->Type());
+        leftIsPtr || rightIsPtr)
     {
-      auto ptrSide = leftIsPtr ? leftSide : rightSide;
+      const auto ptrSide = leftIsPtr ? leftSide : rightSide;
       auto offsetSide = leftIsPtr ? rightSide : leftSide;
 
       const auto ptrType = std::dynamic_pointer_cast<const PointerType>(ptrSide->Type());
@@ -463,12 +444,13 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       return newGep;
     }
 
-    if (auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
+    if (const auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
         leftBitType->nbits() != numBits)
     {
       leftSide = SExtOperation::create(numBits, leftSide);
     }
-    if (auto rightBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
+    if (const auto rightBitType =
+            std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
         rightBitType->nbits() != numBits)
     {
       rightSide = SExtOperation::create(numBits, rightSide);
@@ -481,12 +463,12 @@ LoopStrengthReduction::HoistSCEVExpresssion(
   }
   if (const auto mulExpr = dynamic_cast<const SCEVNAryMulExpr *>(&scev))
   {
-    auto rightMost = mulExpr->GetOperand(mulExpr->NumOperands() - 1);
-    auto rightSideOpt = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
+    const auto rightMost = mulExpr->GetOperand(mulExpr->NumOperands() - 1);
+    const auto rightSideOpt = HoistSCEVExpresssion(*rightMost, thetaNode, numBits);
     if (!rightSideOpt.has_value())
       return std::nullopt;
 
-    auto newMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*mulExpr);
+    const auto newMulExpr = SCEV::CloneAs<SCEVNAryMulExpr>(*mulExpr);
     newMulExpr->RemoveOperand(mulExpr->NumOperands() - 1);
 
     std::optional<rvsdg::Output *> leftSideOpt;
@@ -506,12 +488,13 @@ LoopStrengthReduction::HoistSCEVExpresssion(
     rvsdg::Output * leftSide = *leftSideOpt;
     rvsdg::Output * rightSide = *rightSideOpt;
     // Sign extend in cases where the input does not match the expected number of bits
-    if (auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
+    if (const auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
         leftBitType->nbits() != numBits)
     {
       leftSide = SExtOperation::create(numBits, leftSide);
     }
-    if (auto rightBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
+    if (const auto rightBitType =
+            std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
         rightBitType->nbits() != numBits)
     {
       rightSide = SExtOperation::create(numBits, rightSide);
@@ -544,7 +527,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
   {
     // Chrec has the form {a}, which indicates a loop-invariant (trivial induction variable).
     // We can hoist this out of the loop by creating a new loop variable.
-    auto hoistedConstant = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
+    const auto hoistedConstant = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
     if (!hoistedConstant.has_value())
       return std::nullopt;
 
@@ -577,8 +560,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
       if (!hoistedStep.has_value())
         return std::nullopt;
 
-      auto newStepIV = thetaNode.AddLoopVar(*hoistedStep);
-
+      const auto newStepIV = thetaNode.AddLoopVar(*hoistedStep);
       stepOutput = newStepIV.pre;
     }
     else
@@ -586,7 +568,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
       return std::nullopt;
     }
 
-    auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
+    const auto hoistedStart = HoistSCEVExpresssion(*startSCEV, thetaNode, numBits);
     if (!hoistedStart.has_value())
       return std::nullopt;
 
@@ -610,7 +592,7 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
   const auto & baseAddressSCEV = chrec.GetStartValue();
   if (SCEVChainRecurrence::IsConstant(chrec))
   {
-    auto hoistedStart = HoistSCEVExpresssion(*baseAddressSCEV, thetaNode, 64);
+    const auto hoistedStart = HoistSCEVExpresssion(*baseAddressSCEV, thetaNode, 64);
 
     if (!hoistedStart.has_value())
       return std::nullopt;
@@ -645,7 +627,7 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
       if (!hoistedStep.has_value())
         return std::nullopt;
 
-      auto newStepIV = thetaNode.AddLoopVar(*hoistedStep);
+      const auto newStepIV = thetaNode.AddLoopVar(*hoistedStep);
       stepOutput = newStepIV.pre;
     }
     else
@@ -653,14 +635,15 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
       return std::nullopt;
     }
 
-    auto hoistedStart = HoistSCEVExpresssion(*baseAddressSCEV, thetaNode, 64);
+    const auto hoistedStart = HoistSCEVExpresssion(*baseAddressSCEV, thetaNode, 64);
 
     if (!hoistedStart.has_value())
       return std::nullopt;
 
     const auto newIV = thetaNode.AddLoopVar(*hoistedStart);
 
-    if (auto stepBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(stepOutput->Type());
+    if (const auto stepBitType =
+            std::dynamic_pointer_cast<const rvsdg::BitType>(stepOutput->Type());
         stepBitType->nbits() != 64)
     {
       stepOutput = SExtOperation::create(64, stepOutput);
@@ -685,53 +668,22 @@ LoopStrengthReduction::IsValidCandidateOperation(
     const rvsdg::Output & output,
     const rvsdg::SimpleOperation & operation)
 {
-  bool isGEP = false;
   if (rvsdg::is<GetElementPtrOperation>(operation))
-  {
     Context_->NumGEPCandidates++;
-    isGEP = true;
-  }
   else
-  {
     Context_->NumArithmeticCandidates++;
-  }
 
   if (!DependsOnInductionVariable(output))
-  {
-    if (isGEP)
-      Context_->NumGEPDoesNotDependOnIV++;
-    else
-      Context_->NumArithmeticDoesNotDependOnIV++;
     return false;
-  }
-
-  const auto & simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
-
-  JLM_ASSERT(simpleNode);
-
-  const auto & simpleOperation = simpleNode->GetOperation();
 
   // We only reduce arithmetic operations if they contain a multiplication somewhere
-  if (rvsdg::is<IntegerBinaryOperation>(simpleOperation) && !ContainsMul(output))
-  {
-    Context_->NumArithmeticNotContainsMul++;
+  if (rvsdg::is<IntegerBinaryOperation>(operation) && !ContainsMul(output))
     return false;
-  }
-
-  const auto & chrec = ChrecMap_.at(&output);
 
   // We only support invariant and affine recurrences (1-2 operands) that are not unknown
-  if (chrec->NumOperands() > 2)
+  if (const auto & chrec = ChrecMap_.at(&output);
+      chrec->NumOperands() > 2 || ScalarEvolution::IsUnknown(*chrec))
     return false;
-
-  if (ScalarEvolution::IsUnknown(*chrec))
-  {
-    if (isGEP)
-      Context_->NumGEPIsUnknown++;
-    else
-      Context_->NumArithmeticIsUnknown++;
-    return false;
-  }
 
   return true;
 }
@@ -750,9 +702,7 @@ LoopStrengthReduction::DependsOnInductionVariable(const rvsdg::Output & output)
     if (it == ChrecMap_.end())
       return DependsOnIVMemo_[&output] = false;
 
-    const auto & chrec = it->second;
-
-    if (ScalarEvolution::IsUnknown(*chrec))
+    if (const auto & chrec = it->second; ScalarEvolution::IsUnknown(*chrec))
       return DependsOnIVMemo_[&output] = false;
 
     return DependsOnIVMemo_[&output] = true;
@@ -783,9 +733,8 @@ LoopStrengthReduction::ContainsMul(const rvsdg::Output & output)
   if (!simpleNode)
     return ContainsMulMemo_[&output] = false;
 
-  const auto & simpleOperation = simpleNode->GetOperation();
-
-  if (rvsdg::is<IntegerMulOperation>(simpleOperation)
+  if (const auto & simpleOperation = simpleNode->GetOperation();
+      rvsdg::is<IntegerMulOperation>(simpleOperation)
       || rvsdg::is<IntegerShlOperation>(simpleOperation))
     return ContainsMulMemo_[&output] = true;
 

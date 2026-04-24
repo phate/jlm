@@ -280,12 +280,6 @@ ScalarEvolution::Run(
   AnalyzeRegion(rootRegion);
   CombineChrecsAcrossLoops();
 
-  // for (auto & [output, chrec] : Context_->GetChrecMap())
-  // {
-  //   std::cout << output << "(" << output->debug_string() << "): " << chrec->DebugString() <<
-  //   '\n';
-  // }
-
   statistics->Stop(*Context_);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 };
