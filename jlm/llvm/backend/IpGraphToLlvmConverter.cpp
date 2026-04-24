@@ -22,10 +22,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <deque>
 #include <unordered_map>
-
-#include <typeindex>
 
 namespace jlm::llvm
 {
@@ -291,6 +288,7 @@ IpGraphToLlvmConverter::convert(
 
   auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
   auto callInstruction = builder.CreateCall(ftype, function, operands);
+  callInstruction->setCallingConv(convertCallingConvToLlvm(op.getCallingConv()));
   callInstruction->setAttributes(convertAttributeList(op.getAttributes()));
   return callInstruction;
 }

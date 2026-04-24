@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_OPERATORS_CALL_HPP
 #define JLM_LLVM_IR_OPERATORS_CALL_HPP
 
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/tac.hpp>
@@ -252,10 +253,12 @@ public:
 
   explicit CallOperation(
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      CallingConv callingConv,
       AttributeList attributes)
       : SimpleOperation(create_srctypes(functionType), functionType->Results()),
-        attributes_(std::move(attributes)),
-        FunctionType_(std::move(functionType))
+        FunctionType_(std::move(functionType)),
+        callingConv_(callingConv),
+        attributes_(std::move(attributes))
   {}
 
   bool
@@ -268,6 +271,12 @@ public:
   GetFunctionType() const noexcept
   {
     return FunctionType_;
+  }
+
+  [[nodiscard]] CallingConv
+  getCallingConv() const noexcept
+  {
+    return callingConv_;
   }
 
   [[nodiscard]] const AttributeList &
@@ -435,12 +444,16 @@ public:
   create(
       const Variable * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      CallingConv callingConv,
       AttributeList attributes,
       const std::vector<const Variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    auto op = std::make_unique<CallOperation>(std::move(functionType), std::move(attributes));
+    auto op = std::make_unique<CallOperation>(
+        std::move(functionType),
+        callingConv,
+        std::move(attributes));
     std::vector<const Variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
     return ThreeAddressCode::create(std::move(op), operands);
@@ -450,11 +463,16 @@ public:
   Create(
       rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      CallingConv callingConv,
       AttributeList attributes,
       const std::vector<rvsdg::Output *> & arguments)
   {
-    return outputs(
-        &CreateNode(function, std::move(functionType), std::move(attributes), arguments));
+    return outputs(&CreateNode(
+        function,
+        std::move(functionType),
+        callingConv,
+        std::move(attributes),
+        arguments));
   }
 
   static std::vector<rvsdg::Output *>
@@ -481,13 +499,16 @@ public:
   CreateNode(
       rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
+      CallingConv callingConv,
       AttributeList attributes,
       const std::vector<rvsdg::Output *> & arguments)
   {
     CheckFunctionInputType(*function->Type());
 
-    auto callOperation =
-        std::make_unique<CallOperation>(std::move(functionType), std::move(attributes));
+    auto callOperation = std::make_unique<CallOperation>(
+        std::move(functionType),
+        callingConv,
+        std::move(attributes));
     std::vector operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 
@@ -549,8 +570,9 @@ private:
     CheckResultTypes(functionType);
   }
 
-  AttributeList attributes_;
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
+  CallingConv callingConv_;
+  AttributeList attributes_;
 };
 
 }

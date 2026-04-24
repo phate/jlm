@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -1275,6 +1276,7 @@ createCall(
 
   auto convertedFunctionType = context.GetTypeConverter().ConvertFunctionType(*functionType);
   const auto arguments = convertCallArguments(callInstruction, threeAddressCodes, context);
+  const auto callingConv = convertCallingConvToJlm(callInstruction.getCallingConv());
   auto attributes = convertAttributeList(
       callInstruction.getAttributes(),
       callInstruction.arg_size(),
@@ -1320,8 +1322,12 @@ createCall(
     throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
   }
 
-  auto call =
-      CallOperation::create(callee, convertedFunctionType, std::move(attributes), arguments);
+  auto call = CallOperation::create(
+      callee,
+      convertedFunctionType,
+      callingConv,
+      std::move(attributes),
+      arguments);
 
   const auto result = call->result(0);
   const auto ioState = call->result(call->nresults() - 2);
@@ -1357,8 +1363,6 @@ convertCallInstruction(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
-  JLM_ASSERT(callInstruction.getCallingConv() == ::llvm::CallingConv::C);
-
   if (const auto intrinsicInstruction = ::llvm::dyn_cast<::llvm::IntrinsicInst>(&callInstruction))
     return convertIntrinsicInstruction(*intrinsicInstruction, threeAddressCodes, context);
 

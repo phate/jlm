@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_BACKEND_IPGRAPHTOLLVMCONVERTER_HPP
 #define JLM_LLVM_BACKEND_IPGRAPHTOLLVMCONVERTER_HPP
 
+#include "jlm/llvm/ir/operators/operators.hpp"
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
