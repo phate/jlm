@@ -1132,7 +1132,7 @@ public:
   ~FreezeOperation() noexcept override;
 
   explicit FreezeOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
-      : rvsdg::SimpleOperation({ type }, { type })
+      : rvsdg::UnaryOperation( type, type )
   {
     if (type->Kind() != rvsdg::TypeKind::Value)
       throw std::runtime_error("FreezeOperation given non-value type");
