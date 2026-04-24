@@ -1579,6 +1579,17 @@ convert_insertelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convert_freeze_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
+{
+  JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Freeze);
+
+  auto operand = ConvertValue(i->getOperand(0), tacs, ctx);
+  tacs.push_back(FreezeOperation::create(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVector, Context & ctx)
 {
   JLM_ASSERT(unaryOperator->getOpcode() == ::llvm::Instruction::FNeg);
@@ -1755,6 +1766,8 @@ convertInstruction(
     return convert<::llvm::ShuffleVectorInst>(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::InsertElement:
     return convert_insertelement_instruction(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::Freeze:
+    return convert_freeze_instruction(instruction, threeAddressCodes, context);
   default:
     throw std::runtime_error(util::strfmt(instruction->getOpcodeName(), " is not supported."));
   }

@@ -246,6 +246,18 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
+    const FreezeOperation &,
+    const std::vector<const Variable *> & operands,
+    ::llvm::IRBuilder<> & builder)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto operand = Context_->value(operands[0]);
+
+  return builder.CreateFreeze(operand);
+}
+
+::llvm::Value *
+IpGraphToLlvmConverter::convert(
     const CallOperation & op,
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
@@ -1190,6 +1202,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<PoisonValueOperation>(op))
   {
     return convert<PoisonValueOperation>(op, arguments, builder);
+  }
+  if (is<FreezeOperation>(op))
+  {
+    return convert<FreezeOperation>(op, arguments, builder);
   }
   if (is<rvsdg::MatchOperation>(op))
   {

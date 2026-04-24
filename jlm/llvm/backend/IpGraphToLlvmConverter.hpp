@@ -479,6 +479,12 @@ private:
       ::llvm::IRBuilder<> &);
 
   ::llvm::Value *
+  convert(
+      const FreezeOperation & operation,
+      const std::vector<const Variable *> &,
+      ::llvm::IRBuilder<> &);
+
+  ::llvm::Value *
   convert_undef(
       const rvsdg::SimpleOperation & op,
       const std::vector<const Variable *> &,

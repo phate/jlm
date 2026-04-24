@@ -539,6 +539,27 @@ PoisonValueOperation::copy() const
   return std::make_unique<PoisonValueOperation>(*this);
 }
 
+FreezeOperation::~FreezeOperation() noexcept = default;
+
+bool
+FreezeOperation::operator==(const Operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const FreezeOperation *>(&other);
+  return operation && operation->getType() == getType();
+}
+
+std::string
+FreezeOperation::debug_string() const
+{
+  return "freeze";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FreezeOperation::copy() const
+{
+  return std::make_unique<FreezeOperation>(*this);
+}
+
 FBinaryOperation::~FBinaryOperation() noexcept = default;
 
 bool

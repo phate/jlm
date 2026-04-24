@@ -1134,7 +1134,9 @@ public:
 
   explicit FreezeOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
       : rvsdg::SimpleOperation({ type }, { type })
-  {}
+  {
+    JLM_ASSERT(type->Kind() == rvsdg::TypeKind::Value);
+  }
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -1146,36 +1148,22 @@ public:
   copy() const override;
 
   const jlm::rvsdg::Type &
-  GetType() const noexcept
+  getType() const noexcept
   {
     return *result(0).get();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  create(const Variable & operand)
   {
-    auto valueType = CheckAndConvertType(type);
-
-    auto operation = std::make_unique<PoisonValueOperation>(std::move(valueType));
-    return ThreeAddressCode::create(std::move(operation), {});
+    auto operation = std::make_unique<FreezeOperation>(operand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand });
   }
 
-  static jlm::rvsdg::Output *
-  Create(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  static jlm::rvsdg::Output &
+  create(jlm::rvsdg::Output & operand)
   {
-    auto valueType = CheckAndConvertType(type);
-
-    return rvsdg::CreateOpNode<PoisonValueOperation>(*region, std::move(valueType)).output(0);
-  }
-
-private:
-  static std::shared_ptr<const jlm::rvsdg::Type>
-  CheckAndConvertType(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    if (type->Kind() == rvsdg::TypeKind::Value)
-      return type;
-
-    throw util::Error("Expected value type.");
+    return *rvsdg::CreateOpNode<FreezeOperation>({ &operand }, operand.Type()).output(0);
   }
 };
 
