@@ -418,11 +418,12 @@ GammaNode::MapBranchResultExitVar(const rvsdg::Input & input) const
 }
 
 void
-GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitVars)
+GammaNode::RemoveExitVars(const std::vector<Output *> & gammaOutputs)
 {
   util::HashSet<size_t> indices;
-  for (const auto & [_, output] : exitVars)
+  for (const auto output : gammaOutputs)
   {
+    JLM_ASSERT(output->IsDead());
     JLM_ASSERT(TryGetOwnerNode<GammaNode>(*output) == this);
     indices.insert(output->index());
   }

@@ -37,6 +37,7 @@ class ControlFlowGraph;
 class DataNode;
 class ConstantFP;
 class PoisonValueOperation;
+class FreezeOperation;
 class CallOperation;
 class LoadNonVolatileOperation;
 class LoadVolatileOperation;

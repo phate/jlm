@@ -307,6 +307,8 @@ LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
 
       base = node->input(0)->origin();
       offset += *calculatedOffset;
+
+      continue;
     }
 
     // We were not able to trace further

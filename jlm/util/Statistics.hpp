@@ -240,7 +240,12 @@ protected:
     inline static const char * NumLoops = "#NumLoops";
     inline static const char * TripCounts = "#TripCounts";
 
-    inline static const char * NumOperationsReduced = "#NumOperationsReduced";
+    inline static const char * NumLSRCandidates = "#Candidates";
+    inline static const char * NumArithmeticLSRCandidates = "#ArithmeticCandidates";
+    inline static const char * NumGepLSRCandidates = "#GepCandidates";
+    inline static const char * NumOperationsReduced = "#OperationsReduced";
+    inline static const char * NumArithmeticOperationsReduced = "#ArithmeticOperationsReduced";
+    inline static const char * NumGepOperationsReduced = "#GepOperationsReduced";
 
     static inline const char * Timer = "Time";
   };
