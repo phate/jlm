@@ -17,10 +17,12 @@ LlvmLambdaOperation::LlvmLambdaOperation(
     std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     std::string name,
     const jlm::llvm::Linkage & linkage,
+    jlm::llvm::CallingConv callingConv,
     jlm::llvm::AttributeSet attributes)
     : rvsdg::LambdaOperation(std::move(type)),
       name_(std::move(name)),
       linkage_(linkage),
+      callingConv_(callingConv),
       attributes_(std::move(attributes))
 {
   ArgumentAttributes_.resize(Type()->NumArguments());
@@ -37,7 +39,7 @@ LlvmLambdaOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const LlvmLambdaOperation *>(&other);
   return op && op->type() == type() && op->name() == name() && op->linkage() == linkage()
-      && op->attributes() == attributes();
+      && op->callingConv() == callingConv() && op->attributes() == attributes();
 }
 
 std::unique_ptr<rvsdg::Operation>

@@ -20,8 +20,10 @@ bool
 CallOperation::operator==(const Operation & other) const noexcept
 {
   const auto callOperation = dynamic_cast<const CallOperation *>(&other);
-  return callOperation && attributes_ == callOperation->attributes_
-      && FunctionType_ == callOperation->FunctionType_;
+  return callOperation
+      && FunctionType_ == callOperation->FunctionType_
+      && callingConv_ == callOperation->callingConv_
+      && attributes_ == callOperation->attributes_;
 }
 
 std::string
