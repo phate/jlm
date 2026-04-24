@@ -417,16 +417,13 @@ DeadNodeElimination::sweepStructuralNode(rvsdg::StructuralNode & node) const
 void
 DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
 {
-  // Remove dead exit vars.
-  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
-  for (const auto & exitVar : gammaNode.GetExitVars())
-  {
-    if (!Context_->isAlive(*exitVar.output))
-    {
-      deadExitVars.push_back(exitVar);
-    }
-  }
-  gammaNode.RemoveExitVars(deadExitVars);
+  // Remove dead exit variables.
+  const auto deadGammaOutputs = gammaNode.GetOutputsWhere(
+      [this](const rvsdg::Output & output)
+      {
+        return !Context_->isAlive(output);
+      });
+  gammaNode.RemoveExitVars(deadGammaOutputs);
 
   // Sweep gamma subregions
   for (auto & subregion : gammaNode.Subregions())
@@ -434,7 +431,7 @@ DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
     sweepRegion(subregion);
   }
 
-  // Remove dead entry vars.
+  // Remove dead entry variables.
   std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
   for (const auto & entryVar : gammaNode.GetEntryVars())
   {
