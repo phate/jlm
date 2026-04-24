@@ -6,8 +6,6 @@
 #ifndef JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 
-#include "jlm/rvsdg/operation.hpp"
-#include "llvm/IR/InstrTypes.h"
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
