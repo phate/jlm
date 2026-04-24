@@ -43,13 +43,18 @@ class StoreValueForwarding::Statistics final : public util::Statistics
 {
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
+  static constexpr auto TracingLabel_ = "TracingTime";
+  static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
 public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::FilePath & sourceFile)
-      : util::Statistics(Statistics::Id::StoreValueForwarding, sourceFile)
-  {}
+      : util::Statistics(Id::StoreValueForwarding, sourceFile)
+  {
+    AddTimer(TracingLabel_);
+    AddTimer(ForwardingLabel_);
+  }
 
   void
   StartStatistics() noexcept
@@ -65,6 +70,30 @@ public:
     AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
   }
 
+  void
+  startTracing() noexcept
+  {
+    GetTimer(TracingLabel_).start();
+  }
+
+  void
+  stopTracing() noexcept
+  {
+    GetTimer(TracingLabel_).stop();
+  }
+
+  void
+  startForwarding() noexcept
+  {
+    GetTimer(ForwardingLabel_).start();
+  }
+
+  void
+  stopForwarding() noexcept
+  {
+    GetTimer(ForwardingLabel_).stop();
+  }
+
   static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
@@ -77,8 +106,9 @@ public:
  */
 struct StoreValueForwarding::Context final
 {
-  Context() noexcept
-      : outputTracer(true)
+  explicit Context(Statistics & statistics) noexcept
+      : outputTracer(true),
+        statistics(statistics)
   {
     outputTracer.setTraceThroughStructuralNodes(true);
     outputTracer.setTraceThroughLoadedStates(true);
@@ -92,6 +122,8 @@ struct StoreValueForwarding::Context final
   std::map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *> routedOutputs{};
 
   OutputTracer outputTracer;
+
+  Statistics & statistics;
 };
 
 StoreValueForwarding::~StoreValueForwarding() noexcept = default;
@@ -512,6 +544,14 @@ private:
       if (!lastStoreNode.isKnown())
         return StoreValueOrigin::createUnknown();
 
+      // if the last store before the end of the theta subregion is the pre of the same theta,
+      // the loaded memory is loop invariant, and we can load from the last store before the theta.
+      if (lastStoreNode.kind == StoreValueOrigin::Kind::ThetaNodePre
+          && lastStoreNode.node == thetaNode)
+      {
+        return getLastStoreBeforeInput(*loopVar.input);
+      }
+
       // if the reached store node is inside the theta, it must be routed out of it
       if (lastStoreNode.node->region() == thetaNode->subregion())
         return StoreValueOrigin::createThetaNodeOutput(*thetaNode);
@@ -582,11 +622,17 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   // Only non-volatile loads are candidates for being forwarded to
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
 
+  context_->statistics.startTracing();
   LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
+  context_->statistics.stopTracing();
 
   if (success)
+  {
+    context_->statistics.startForwarding();
     forwardStoredValues(loadTracingInfo);
+    context_->statistics.stopForwarding();
+  }
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
@@ -807,9 +853,9 @@ StoreValueForwarding::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  context_ = std::make_unique<Context>();
-
   auto statistics = Statistics::Create(module.SourceFilePath().value());
+  context_ = std::make_unique<Context>(*statistics);
+
   statistics->StartStatistics();
 
   auto & rvsdg = module.Rvsdg();

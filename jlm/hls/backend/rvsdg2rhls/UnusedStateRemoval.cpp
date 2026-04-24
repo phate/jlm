@@ -142,7 +142,7 @@ static void
 RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
   std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
-  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
+  std::vector<rvsdg::Output *> deadGammaOutputs;
 
   for (const auto & entryvar : gammaNode.GetEntryVars())
   {
@@ -163,11 +163,11 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
     {
       exitvar0->output->divert_users(entryvar.input->origin());
       deadEntryVars.push_back(entryvar);
-      deadExitVars.push_back(*exitvar0);
+      deadGammaOutputs.push_back(exitvar0->output);
     }
   }
 
-  gammaNode.RemoveExitVars(deadExitVars);
+  gammaNode.RemoveExitVars(deadGammaOutputs);
   gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
