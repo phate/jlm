@@ -22,10 +22,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <deque>
 #include <unordered_map>
-
-#include <typeindex>
 
 namespace jlm::llvm
 {
