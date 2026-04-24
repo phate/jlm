@@ -306,6 +306,29 @@ public:
   GetExitVars() const;
 
   /**
+   * \brief Gets all gamma outputs that match the condition defined by \p match.
+   *
+   * @tparam F A type supporting function call operator: bool operator(const Output&)
+   * @param match Defines the condition of the outputs to return.
+   * @return The gamma outputs that matched the condition.
+   */
+  template<typename F>
+  std::vector<Output *>
+  GetOutputsWhere(const F & match)
+  {
+    std::vector<Output *> outputs;
+    for (auto & output : Outputs())
+    {
+      if (match(output))
+      {
+        outputs.push_back(&output);
+      }
+    }
+
+    return outputs;
+  }
+
+  /**
    * \brief Maps gamma output to exit variable description.
    *
    * \param output
@@ -343,16 +366,18 @@ public:
   MapBranchResultExitVar(const rvsdg::Input & input) const;
 
   /**
-   * \brief Removes the given exit variables.
+   * \brief Removes the exit variables corresponding to the given \p gammaOutputs.
    *
    * \pre
-   *   All exit variables must be unused (= the corresponding gamma outputs
-   *   must not have any users).
+   *    1. All outputs must belong to a gamma node.
+   *    1. All outputs must be dead.
    *
-   * Removes the variables as exit variables from this gamma.
+   * @param gammaOutputs The outputs indicating the corresponding exit variables.
+   *
+   * @see Output::IsDead()
    */
   void
-  RemoveExitVars(const std::vector<ExitVar> & exitVars);
+  RemoveExitVars(const std::vector<Output *> & gammaOutputs);
 
   /**
    * \brief Removes the given entry variables
@@ -374,16 +399,12 @@ public:
   void
   PruneExitVars()
   {
-    std::vector<ExitVar> exitVars;
-    for (auto exitVar : GetExitVars())
-    {
-      if (exitVar.output->IsDead())
-      {
-        exitVars.push_back(exitVar);
-      }
-    }
-
-    RemoveExitVars(exitVars);
+    const auto deadGammaOutputs = GetOutputsWhere(
+        [](const Output & output)
+        {
+          return output.IsDead();
+        });
+    RemoveExitVars(deadGammaOutputs);
   }
 
   GammaNode *
