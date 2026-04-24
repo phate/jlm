@@ -544,6 +544,14 @@ private:
       if (!lastStoreNode.isKnown())
         return StoreValueOrigin::createUnknown();
 
+      // if the last store before the end of the theta subregion is the pre of the same theta,
+      // the loaded memory is loop invariant, and we can load from the last store before the theta.
+      if (lastStoreNode.kind == StoreValueOrigin::Kind::ThetaNodePre
+          && lastStoreNode.node == thetaNode)
+      {
+        return getLastStoreBeforeInput(*loopVar.input);
+      }
+
       // if the reached store node is inside the theta, it must be routed out of it
       if (lastStoreNode.node->region() == thetaNode->subregion())
         return StoreValueOrigin::createThetaNodeOutput(*thetaNode);
