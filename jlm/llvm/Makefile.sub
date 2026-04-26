@@ -26,6 +26,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/LambdaMemoryState.cpp \
     jlm/llvm/ir/Linkage.cpp \
     jlm/llvm/ir/TypeConverter.cpp \
+    jlm/llvm/ir/operators/AggregateOperations.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
@@ -143,6 +144,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/Trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
+    jlm/llvm/ir/operators/AggregateOperations.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
     jlm/llvm/ir/operators/MemCpy.hpp \

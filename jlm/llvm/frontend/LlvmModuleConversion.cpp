@@ -6,6 +6,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -1538,6 +1539,21 @@ convert_extractvalue(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertInsertValueInstruction(
+    const ::llvm::InsertValueInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto aggregateOperand = ConvertValue(instruction.getOperand(0), tacs, context);
+  const auto valueOperand = ConvertValue(instruction.getOperand(1), tacs, context);
+
+  tacs.push_back(
+      InsertValueOperation::createTac(*aggregateOperand, *valueOperand, instruction.getIndices()));
+
+  return tacs.back()->result(0);
+}
+
 static inline const Variable *
 convert_extractelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
 {
@@ -1760,6 +1776,11 @@ convertInstruction(
     return convert_alloca_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::ExtractValue:
     return convert_extractvalue(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::InsertValue:
+    return convertInsertValueInstruction(
+        *::llvm::dyn_cast<::llvm::InsertValueInst>(instruction),
+        threeAddressCodes,
+        context);
   case ::llvm::Instruction::ExtractElement:
     return convert_extractelement_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::ShuffleVector:
