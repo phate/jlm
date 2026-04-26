@@ -60,6 +60,7 @@ class CallExitMemoryStateSplitOperation;
 class ControlFlowGraphNode;
 class ExtractValueOperation;
 class FunctionNode;
+class InsertValueOperation;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
@@ -258,6 +259,12 @@ private:
       const ExtractValueOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
+
+  ::llvm::Value *
+  convertInsertValueOperation(
+      const InsertValueOperation & operation,
+      const std::vector<const Variable *> & operands,
+      ::llvm::IRBuilder<> & builder) const;
 
   template<::llvm::Instruction::CastOps OPCODE>
   ::llvm::Value *
