@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
@@ -143,5 +144,74 @@ TEST(LlvmModuleConversionTests, FreezeConversion)
     }
 
     EXPECT_EQ(numFreezeThreeAddressCodes, 1);
+  }
+}
+
+/**
+ * Tests that LLVM's insertvalue instructions are converted to correct RVSDG InsertValueOperations.
+ */
+TEST(LlvmModuleConversionTests, InsertValueConversion)
+{
+
+  // Arrange
+  llvm::LLVMContext context;
+  llvm::Module llvmModule("module", context);
+
+  auto int64Type = llvm::Type::getInt64Ty(context);
+  auto structType = llvm::StructType::get(int64Type, int64Type);
+  auto functionType = llvm::FunctionType::get(
+      structType,
+      ::llvm::ArrayRef<llvm::Type *>({ int64Type, int64Type }),
+      false);
+  auto function =
+      llvm::Function::Create(functionType, llvm::GlobalValue::ExternalLinkage, "f", &llvmModule);
+
+  auto basicBlock = llvm::BasicBlock::Create(context, "BasicBlock", function);
+
+  llvm::IRBuilder builder(basicBlock);
+  auto poison = llvm::PoisonValue::get(structType);
+  auto insertValue0 = builder.CreateInsertValue(poison, function->arg_begin(), 0);
+  auto insertValue1 = builder.CreateInsertValue(insertValue0, function->arg_begin() + 1, 1);
+  builder.CreateRet(insertValue1);
+
+  // Act
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
+  print(*ipgModule, stdout);
+
+  // Assert
+  {
+    using namespace jlm::llvm;
+
+    const auto jlmInt64Type = jlm::rvsdg::BitType::Create(64);
+    const auto controlFlowGraph =
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
+    const auto convertedBasicBlock =
+        dynamic_cast<const BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
+
+    size_t numInsertValueAddressCodes = 0;
+    for (auto tac : *convertedBasicBlock)
+    {
+      if (auto insertValueOperation = dynamic_cast<const InsertValueOperation *>(&tac->operation()))
+      {
+        EXPECT_EQ(tac->noperands(), 2u);
+        EXPECT_EQ(tac->nresults(), 1u);
+        EXPECT_EQ(insertValueOperation->getIndices().size(), 1u);
+        EXPECT_EQ(*insertValueOperation->getValueType(), *jlmInt64Type);
+
+        numInsertValueAddressCodes++;
+        if (numInsertValueAddressCodes == 1)
+        {
+          EXPECT_EQ(tac->operand(1), controlFlowGraph->entry()->argument(0));
+          EXPECT_EQ(insertValueOperation->getIndices()[0], 0u);
+        }
+        else if (numInsertValueAddressCodes == 2)
+        {
+          EXPECT_EQ(tac->operand(1), controlFlowGraph->entry()->argument(1));
+          EXPECT_EQ(insertValueOperation->getIndices()[0], 1u);
+        }
+      }
+    }
+
+    EXPECT_EQ(numInsertValueAddressCodes, 2u);
   }
 }
