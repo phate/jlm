@@ -79,7 +79,6 @@ public:
       rvsdg::Output & valueOperand,
       std::vector<unsigned> indices)
   {
-    checkOperandTypes(aggregateOperand.Type(), valueOperand.Type(), indices);
     auto insertValueOperation =
         create(aggregateOperand.Type(), valueOperand.Type(), std::move(indices));
     return rvsdg::SimpleNode::Create(
@@ -94,7 +93,6 @@ public:
       const Variable & valueOperand,
       std::vector<unsigned> indices)
   {
-    checkOperandTypes(aggregateOperand.Type(), valueOperand.Type(), indices);
     auto insertValueOperation =
         create(aggregateOperand.Type(), valueOperand.Type(), std::move(indices));
     return ThreeAddressCode::create(
