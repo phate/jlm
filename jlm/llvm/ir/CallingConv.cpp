@@ -28,7 +28,7 @@ jlm::llvm::CallingConv
 convertCallingConvToJlm(::llvm::CallingConv::ID cc)
 {
   const auto & map = getCallingConventionMap();
-  JLM_ASSERT(map.HasKey(cc) && "Unknown calling convention");
+  // LookupKey throws if the calling convention could not be found
   return map.LookupKey(cc);
 }
 
@@ -36,7 +36,7 @@ convertCallingConvToJlm(::llvm::CallingConv::ID cc)
 convertCallingConvToLlvm(jlm::llvm::CallingConv cc)
 {
   const auto & map = getCallingConventionMap();
-  JLM_ASSERT(map.HasValue(cc) && "Unknown calling convention");
+  // LookupValue throws if the calling convention could not be found
   return map.LookupValue(cc);
 }
 

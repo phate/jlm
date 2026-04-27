@@ -48,6 +48,7 @@ enum class CallingConv
  * Converts the given calling convention from LLVM to jlm.
  * @param cc the calling convention
  * @return the same calling convention as a jlm enum value
+ * @throws jlm::util::Error if the calling convention is unknown
  */
 [[nodiscard]] jlm::llvm::CallingConv
 convertCallingConvToJlm(::llvm::CallingConv::ID cc);
@@ -56,6 +57,7 @@ convertCallingConvToJlm(::llvm::CallingConv::ID cc);
  * Converts the given calling convention from jlm to LLVM.
  * @param cc the calling convention
  * @return the same calling convention as an LLVM enum value
+ * @throws jlm::util::Error if the calling convention is unknown
  */
 [[nodiscard]] ::llvm::CallingConv::ID
 convertCallingConvToLlvm(jlm::llvm::CallingConv cc);
