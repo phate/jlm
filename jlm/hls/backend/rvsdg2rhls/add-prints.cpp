@@ -5,6 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -59,14 +60,12 @@ convert_prints(llvm::LlvmRvsdgModule & rm)
   // TODO: make this less hacky by using the correct state types
   auto fct =
       rvsdg::FunctionType::Create({ rvsdg::BitType::Create(64), rvsdg::BitType::Create(64) }, {});
-  auto & printf = llvm::LlvmGraphImport::Create(
+  auto & printf = llvm::LlvmGraphImport::createFunctionImport(
       graph,
-      fct,
       fct,
       "printnode",
       llvm::Linkage::externalLinkage,
-      false,
-      1);
+      llvm::CallingConv::Default);
   convert_prints(root, &printf, fct);
 }
 

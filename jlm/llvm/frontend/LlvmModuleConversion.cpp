@@ -2095,11 +2095,18 @@ declare_globals(::llvm::Module & lm, Context & ctx)
   auto create_function_node = [](const ::llvm::Function & f, Context & ctx)
   {
     auto name = f.getName().str();
-    auto linkage = convert_linkage(f.getLinkage());
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
+    auto linkage = convert_linkage(f.getLinkage());
+    auto callingConv = convertCallingConvToJlm(f.getCallingConv());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx.GetTypeConverter());
 
-    return FunctionNode::create(ctx.module().ipgraph(), name, type, linkage, attributes);
+    return FunctionNode::create(
+        ctx.module().ipgraph(),
+        name,
+        type,
+        linkage,
+        callingConv,
+        attributes);
   };
 
   for (auto & gv : lm.globals())

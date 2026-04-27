@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_IPGRAPH_HPP
 #define JLM_LLVM_IR_IPGRAPH_HPP
 
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -174,11 +175,13 @@ private:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage,
+      const llvm::CallingConv & callingConv,
       const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
         name_(name),
         linkage_(linkage),
+        callingConv_(callingConv),
         attributes_(attributes)
   {}
 
@@ -216,6 +219,12 @@ public:
   [[nodiscard]] bool
   hasBody() const noexcept override;
 
+  [[nodiscard]] const CallingConv &
+  callingConv() const noexcept
+  {
+    return callingConv_;
+  }
+
   const AttributeSet &
   attributes() const noexcept
   {
@@ -235,15 +244,19 @@ public:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage,
+      const CallingConv & callingConv,
       const AttributeSet & attributes)
   {
     std::unique_ptr<FunctionNode> node(
-        new FunctionNode(ipg, name, std::move(type), linkage, attributes));
+        new FunctionNode(ipg, name, std::move(type), linkage, callingConv, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
   }
 
+  /**
+   * Helper for creating function nodes with default calling convention and no attributes
+   */
   static FunctionNode *
   create(
       InterProceduralGraph & ipg,
@@ -251,13 +264,14 @@ public:
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage)
   {
-    return create(ipg, name, std::move(type), linkage, {});
+    return create(ipg, name, std::move(type), linkage, llvm::CallingConv::Default, {});
   }
 
 private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::Linkage linkage_;
+  llvm::CallingConv callingConv_;
   AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };

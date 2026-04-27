@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/DotWriter.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
@@ -1345,23 +1346,19 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
       { ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
 
-  auto & opaqueImport = LlvmGraphImport::Create(
+  auto & opaqueImport = LlvmGraphImport::createFunctionImport(
       graph,
-      unitFunctionType,
       unitFunctionType,
       "opaque",
       Linkage::externalLinkage,
-      false,
-      1);
+      CallingConv::Default);
 
-  auto & setjmpImport = LlvmGraphImport::Create(
+  auto & setjmpImport = LlvmGraphImport::createFunctionImport(
       graph,
-      setjmpFunctionType,
       setjmpFunctionType,
       "_setjmp",
       Linkage::externalLinkage,
-      false,
-      1);
+      CallingConv::Default);
 
   auto & bufGlobal = *rvsdg::DeltaNode::Create(
       &rootRegion,

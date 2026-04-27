@@ -122,17 +122,18 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
       auto jlmValueType = ConvertType(valueType);
       auto jlmImportedType = ConvertType(importedType);
 
-      jlm::llvm::LlvmGraphImport::Create(
+      auto & jlmArgument = jlm::llvm::LlvmGraphImport::create(
           *rvsdgRegion.graph(),
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
-          false, // FIXME: Currently not supported in MLIR dialect
-          1);    // FIXME: Currently not supported in MLIR dialect
+          llvm::CallingConv::Default, // FIXME: Currently not supported in MLIR dialect
+          false,                      // FIXME: Currently not supported in MLIR dialect
+          1);                         // FIXME: Currently not supported in MLIR dialect
 
       auto key = argument.getResult().getAsOpaquePointer();
-      outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
+      outputMap[key] = &jlmArgument;
     }
     else
     {
@@ -516,7 +517,7 @@ MlirToJlmConverter::ConvertOperation(
     return llvm::CallOperation::Create(
         target,
         std::move(functionType),
-        llvm::CallingConv::C, // FIXME: MLIR dialect does not support calling conventions
+        llvm::CallingConv::Default, // FIXME: MLIR dialect does not support calling conventions
         llvm::AttributeList::createEmptyList(), // FIXME: MLIR dialect does not support attributes
         arguments);
   }

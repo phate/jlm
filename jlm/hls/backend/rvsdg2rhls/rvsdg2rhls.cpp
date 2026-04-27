@@ -31,6 +31,7 @@
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/DotWriter.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -229,7 +230,12 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::Linkage link)
   const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
   auto lambda = rvsdg::LambdaNode::Create(
       *ln->region(),
-      llvm::LlvmLambdaOperation::Create(op.Type(), op.name(), link, op.attributes()));
+      llvm::LlvmLambdaOperation::Create(
+          op.Type(),
+          op.name(),
+          link,
+          op.callingConv(),
+          op.attributes()));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -293,14 +299,7 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
         {
           // handle decouple stuff
           auto oldGraphImport = dynamic_cast<llvm::LlvmGraphImport *>(ln->input(i)->origin());
-          auto & newGraphImport = llvm::LlvmGraphImport::Create(
-              rhls->Rvsdg(),
-              oldGraphImport->ValueType(),
-              oldGraphImport->ImportedType(),
-              oldGraphImport->Name(),
-              oldGraphImport->linkage(),
-              oldGraphImport->isConstant(),
-              oldGraphImport->getAlignment());
+          auto & newGraphImport = oldGraphImport->Copy(rhls->Rvsdg().GetRootRegion(), nullptr);
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
@@ -323,7 +322,7 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           }
           std::cout << "delta node " << op->name() << ": " << op->Type()->debug_string() << "\n";
           // add import for delta to rhls
-          auto & graphImport = llvm::LlvmGraphImport::Create(
+          auto & graphImport = llvm::LlvmGraphImport::createGlobalImport(
               rhls->Rvsdg(),
               op->Type(),
               llvm::PointerType::Create(),
@@ -348,14 +347,12 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
       rvsdg::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
-      auto & graphImport = llvm::LlvmGraphImport::Create(
+      auto & graphImport = llvm::LlvmGraphImport::createFunctionImport(
           rm.Rvsdg(),
-          op.Type(),
           op.Type(),
           op.name(),
           llvm::Linkage::externalLinkage, // TODO: change linkage?
-          false,
-          1);
+          llvm::CallingConv::Default);
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "

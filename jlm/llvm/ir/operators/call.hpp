@@ -510,7 +510,7 @@ public:
     return CreateNode(
         function,
         std::move(functionType),
-        CallingConv::C,
+        CallingConv::Default,
         AttributeList::createEmptyList(),
         arguments);
   }

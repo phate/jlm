@@ -4,19 +4,25 @@
  */
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/util/common.hpp>
 
 namespace jlm::llvm
 {
 
 LlvmGraphImport &
-LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *) const
+LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const
 {
-  return Create(
+  // The copy interface is more general that what we support
+  JLM_ASSERT(region.IsRootRegion());
+  JLM_ASSERT(input == nullptr);
+
+  return create(
       *region.graph(),
       ValueType(),
       ImportedType(),
       Name(),
       linkage(),
+      callingConv(),
       isConstant(),
       getAlignment());
 }

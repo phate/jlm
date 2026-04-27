@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -1418,14 +1419,12 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
 
-    jlm::llvm::LlvmGraphImport::Create(
+    [[maybe_unused]] const auto & testImport = jlm::llvm::LlvmGraphImport::createFunctionImport(
         *graph,
-        functionType,
         functionType,
         "test",
         Linkage::externalLinkage,
-        false,
-        1);
+        CallingConv::Default);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1495,7 +1494,7 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    jlm::llvm::LlvmGraphImport::Create(
+    [[maybe_unused]] const auto & testImport = jlm::llvm::LlvmGraphImport::createGlobalImport(
         *graph,
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),

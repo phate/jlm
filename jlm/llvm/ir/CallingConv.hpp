@@ -23,6 +23,9 @@ enum class CallingConv
   // Only convention to support varargs. Supports some prototype mismatch.
   C,
 
+  // Default is defined as an alias for the C calling convention
+  Default = C,
+
   // The following are generic LLVM calling conventions. None of these support varargs calls,
   // and all assume that the caller and callee prototype exactly match.
 

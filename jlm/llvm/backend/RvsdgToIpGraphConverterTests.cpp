@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
@@ -316,8 +317,14 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
 
   LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp =
-      &LlvmGraphImport::Create(rm.Rvsdg(), vt, pt, "import", Linkage::externalLinkage, false, 4);
+  auto imp = &LlvmGraphImport::createGlobalImport(
+      rm.Rvsdg(),
+      vt,
+      pt,
+      "import",
+      Linkage::externalLinkage,
+      false,
+      4);
 
   PhiBuilder phiBuilder;
   phiBuilder.begin(&rm.Rvsdg().GetRootRegion());
@@ -414,14 +421,12 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
   LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & opaque = LlvmGraphImport::Create(
+  auto & opaque = LlvmGraphImport::createFunctionImport(
       rvsdg,
-      functionType,
       functionType,
       "opaque",
       Linkage::externalLinkage,
-      false,
-      1);
+      CallingConv::Default);
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -510,7 +515,7 @@ TEST_P(DataImportConversionTest, Test)
   const auto pointerType = PointerType::Create();
 
   LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
-  LlvmGraphImport::Create(
+  [[maybe_unused]] const auto & import = LlvmGraphImport::createGlobalImport(
       rvsdgModule.Rvsdg(),
       valueType,
       pointerType,

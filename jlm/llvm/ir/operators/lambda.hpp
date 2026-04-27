@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
 #define JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
 
-#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/attribute.hpp>
+#include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -110,7 +110,7 @@ public:
         std::move(type),
         std::move(name),
         linkage,
-        jlm::llvm::CallingConv::C,
+        jlm::llvm::CallingConv::Default,
         jlm::llvm::AttributeSet{});
   }
 

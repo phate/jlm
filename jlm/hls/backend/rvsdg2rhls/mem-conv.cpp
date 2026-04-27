@@ -704,7 +704,12 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   auto newFunctionType = rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = rvsdg::LambdaNode::Create(
       *lambda->region(),
-      llvm::LlvmLambdaOperation::Create(newFunctionType, op.name(), op.linkage(), op.attributes()));
+      llvm::LlvmLambdaOperation::Create(
+          newFunctionType,
+          op.name(),
+          op.linkage(),
+          op.callingConv(),
+          op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : lambda->GetContextVars())
