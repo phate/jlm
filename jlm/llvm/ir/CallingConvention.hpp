@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_CALLCONV_HPP
-#define JLM_LLVM_IR_CALLCONV_HPP
+#ifndef JLM_LLVM_IR_CALLINGCONVENTION_HPP
+#define JLM_LLVM_IR_CALLINGCONVENTION_HPP
 
 #include <llvm/IR/CallingConv.h>
 
@@ -64,4 +64,4 @@ convertCallingConventionToLlvm(jlm::llvm::CallingConvention cc);
 
 }
 
-#endif
+#endif // JLM_LLVM_IR_CALLINGCONVENTION_HPP
