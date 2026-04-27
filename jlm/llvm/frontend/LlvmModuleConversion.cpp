@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/CallingConv.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -1542,6 +1543,21 @@ convert_extractvalue(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertInsertValueInstruction(
+    const ::llvm::InsertValueInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto aggregateOperand = ConvertValue(instruction.getOperand(0), tacs, context);
+  const auto valueOperand = ConvertValue(instruction.getOperand(1), tacs, context);
+
+  tacs.push_back(
+      InsertValueOperation::createTac(*aggregateOperand, *valueOperand, instruction.getIndices()));
+
+  return tacs.back()->result(0);
+}
+
 static inline const Variable *
 convert_extractelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
 {
@@ -1583,12 +1599,12 @@ convert_insertelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, 
 }
 
 static const Variable *
-convert_freeze_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
+convertFreezeInstruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
 {
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Freeze);
 
   auto operand = ConvertValue(i->getOperand(0), tacs, ctx);
-  tacs.push_back(FreezeOperation::create(*operand));
+  tacs.push_back(FreezeOperation::createTac(*operand));
 
   return tacs.back()->result(0);
 }
@@ -1764,6 +1780,11 @@ convertInstruction(
     return convert_alloca_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::ExtractValue:
     return convert_extractvalue(instruction, threeAddressCodes, context);
+  case ::llvm::Instruction::InsertValue:
+    return convertInsertValueInstruction(
+        *::llvm::dyn_cast<::llvm::InsertValueInst>(instruction),
+        threeAddressCodes,
+        context);
   case ::llvm::Instruction::ExtractElement:
     return convert_extractelement_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::ShuffleVector:
@@ -1771,7 +1792,7 @@ convertInstruction(
   case ::llvm::Instruction::InsertElement:
     return convert_insertelement_instruction(instruction, threeAddressCodes, context);
   case ::llvm::Instruction::Freeze:
-    return convert_freeze_instruction(instruction, threeAddressCodes, context);
+    return convertFreezeInstruction(instruction, threeAddressCodes, context);
   default:
     throw std::runtime_error(util::strfmt(instruction->getOpcodeName(), " is not supported."));
   }

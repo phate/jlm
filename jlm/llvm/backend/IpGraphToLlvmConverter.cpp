@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -924,6 +925,18 @@ IpGraphToLlvmConverter::convert(
 }
 
 ::llvm::Value *
+IpGraphToLlvmConverter::convertInsertValueOperation(
+    const InsertValueOperation & operation,
+    const std::vector<const Variable *> & operands,
+    ::llvm::IRBuilder<> & builder) const
+{
+  const auto aggregateOperand = Context_->value(operands[0]);
+  const auto valueOperand = Context_->value(operands[1]);
+
+  return builder.CreateInsertValue(aggregateOperand, valueOperand, operation.getIndices());
+}
+
+::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MallocOperation & op,
     const std::vector<const Variable *> & args,
@@ -1324,6 +1337,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<ExtractValueOperation>(op))
   {
     return convert<ExtractValueOperation>(op, arguments, builder);
+  }
+  if (const auto insertValueOperation = dynamic_cast<const InsertValueOperation *>(&op))
+  {
+    return convertInsertValueOperation(*insertValueOperation, arguments, builder);
   }
   if (is<CallOperation>(op))
   {

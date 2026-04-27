@@ -1125,19 +1125,26 @@ private:
  * It converts undef and poison values into arbitrary, but fixed, values.
  * For all other inputs it is a no-op.
  */
-class FreezeOperation final : public rvsdg::SimpleOperation
+class FreezeOperation final : public rvsdg::UnaryOperation
 {
 public:
   ~FreezeOperation() noexcept override;
 
   explicit FreezeOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
-      : rvsdg::SimpleOperation({ type }, { type })
+      : rvsdg::UnaryOperation(type, type)
   {
-    JLM_ASSERT(type->Kind() == rvsdg::TypeKind::Value);
+    if (type->Kind() != rvsdg::TypeKind::Value)
+      throw std::runtime_error("FreezeOperation given non-value type");
   }
 
   bool
   operator==(const Operation & other) const noexcept override;
+
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
+
+  jlm::rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   std::string
   debug_string() const override;
@@ -1152,16 +1159,16 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable & operand)
+  createTac(const Variable & operand)
   {
     auto operation = std::make_unique<FreezeOperation>(operand.Type());
     return ThreeAddressCode::create(std::move(operation), { &operand });
   }
 
-  static jlm::rvsdg::Output &
-  create(jlm::rvsdg::Output & operand)
+  static jlm::rvsdg::Node &
+  createNode(jlm::rvsdg::Output & operand)
   {
-    return *rvsdg::CreateOpNode<FreezeOperation>({ &operand }, operand.Type()).output(0);
+    return rvsdg::CreateOpNode<FreezeOperation>({ &operand }, operand.Type());
   }
 };
 
