@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
@@ -119,7 +119,7 @@ private:
         getPtrFuncType,
         "getPtr",
         Linkage::externalLinkage,
-        CallingConv::Default);
+        CallingConvention::Default);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(

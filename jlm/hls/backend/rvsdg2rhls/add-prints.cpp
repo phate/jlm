@@ -5,7 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -65,7 +65,7 @@ convert_prints(llvm::LlvmRvsdgModule & rm)
       fct,
       "printnode",
       llvm::Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   convert_prints(root, &printf, fct);
 }
 

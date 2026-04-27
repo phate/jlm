@@ -79,7 +79,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
           newFunctionType,
           op.name(),
           op.linkage(),
-          op.callingConv(),
+          op.callingConvention(),
           op.attributes()));
 
   rvsdg::SubstitutionMap substitutionMap;

@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_RVSDGMODULE_HPP
 #define JLM_LLVM_IR_RVSDGMODULE_HPP
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -27,14 +27,14 @@ class LlvmGraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      CallingConv callingConv,
+      CallingConvention callingConvention,
       const bool isConstant,
       const size_t alignment)
       : GraphImport(graph, importedType, std::move(name)),
         ValueType_(std::move(valueType)),
         ImportedType_(std::move(importedType)),
         Linkage_(std::move(linkage)),
-        callingConv_(callingConv),
+        callingConvention_(callingConvention),
         isConstant_(isConstant),
         alignment_(alignment)
   {}
@@ -57,10 +57,10 @@ public:
    * Only applies to imported functions, not global variables.
    * @return the calling convention of the imported function.
    */
-  [[nodiscard]] const CallingConv &
-  callingConv() const noexcept
+  [[nodiscard]] const CallingConvention &
+  callingConvention() const noexcept
   {
-    return callingConv_;
+    return callingConvention_;
   }
 
   [[nodiscard]] bool
@@ -112,7 +112,7 @@ public:
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
-      CallingConv callingConv,
+      CallingConvention callingConvention,
       const bool isConstant,
       const size_t alignment)
   {
@@ -122,7 +122,7 @@ public:
         std::move(importedType),
         std::move(name),
         std::move(linkage),
-        callingConv,
+        callingConvention,
         isConstant,
         alignment);
     graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
@@ -155,7 +155,7 @@ public:
         std::move(importedType),
         std::move(name),
         std::move(linkage),
-        CallingConv::Default, // Global variables do not have a calling convention
+        CallingConvention::Default, // Global variables do not have a calling convention
         isConstant,
         alignment);
   }
@@ -166,7 +166,7 @@ public:
    * @param functionType the type of the function, which is also the type of the argument
    * @param name the name of the function symbol
    * @param linkage the linkage of the function symbol
-   * @param callingConv the calling convention of the function
+   * @param callingConvention the calling convention of the function
    */
   [[nodiscard]] static LlvmGraphImport &
   createFunctionImport(
@@ -174,7 +174,7 @@ public:
       std::shared_ptr<const rvsdg::FunctionType> functionType,
       std::string name,
       Linkage linkage,
-      CallingConv callingConv)
+      CallingConvention callingConvention)
   {
     return create(
         graph,
@@ -182,7 +182,7 @@ public:
         std::move(functionType),
         std::move(name),
         std::move(linkage),
-        callingConv,
+        callingConvention,
         true, // Functions are always considered constants
         1);   // We are not responsible for function alignment
   }
@@ -191,7 +191,7 @@ private:
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
   llvm::Linkage Linkage_;
-  CallingConv callingConv_;
+  CallingConvention callingConvention_;
   bool isConstant_;
   size_t alignment_;
 };

@@ -7,7 +7,7 @@
 #define JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
 
 #include <jlm/llvm/ir/attribute.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -35,7 +35,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::Linkage & linkage,
-      jlm::llvm::CallingConv callingConv_,
+      jlm::llvm::CallingConvention callingConvention_,
       jlm::llvm::AttributeSet attributes);
 
   [[nodiscard]] const std::string &
@@ -50,10 +50,10 @@ public:
     return linkage_;
   }
 
-  [[nodiscard]] CallingConv
-  callingConv() const noexcept
+  [[nodiscard]] CallingConvention
+  callingConvention() const noexcept
   {
-    return callingConv_;
+    return callingConvention_;
   }
 
   [[nodiscard]] const jlm::llvm::AttributeSet &
@@ -85,14 +85,14 @@ public:
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::Linkage & linkage,
-      jlm::llvm::CallingConv callingConv,
+      jlm::llvm::CallingConvention callingConvention,
       jlm::llvm::AttributeSet attributes)
   {
     return std::make_unique<LlvmLambdaOperation>(
         std::move(type),
         std::move(name),
         linkage,
-        callingConv,
+        callingConvention,
         std::move(attributes));
   }
 
@@ -110,14 +110,14 @@ public:
         std::move(type),
         std::move(name),
         linkage,
-        jlm::llvm::CallingConv::Default,
+        jlm::llvm::CallingConvention::Default,
         jlm::llvm::AttributeSet{});
   }
 
 private:
   std::string name_;
   jlm::llvm::Linkage linkage_;
-  jlm::llvm::CallingConv callingConv_;
+  jlm::llvm::CallingConvention callingConvention_;
   jlm::llvm::AttributeSet attributes_;
   std::vector<jlm::llvm::AttributeSet> ArgumentAttributes_;
 };

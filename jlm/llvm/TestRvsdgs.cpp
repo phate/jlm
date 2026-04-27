@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -1200,7 +1200,7 @@ ExternalCallTest1::SetupRvsdg()
         functionGType,
         "g",
         Linkage::externalLinkage,
-        llvm::CallingConv::Default);
+        llvm::CallingConvention::Default);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::RegionArgument * functionG)
@@ -1307,19 +1307,19 @@ ExternalCallTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   auto llvmLifetimeEnd = &LlvmGraphImport::createFunctionImport(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   ExternalFArgument_ = &LlvmGraphImport::createFunctionImport(
       rvsdg,
       lambdaFType,
       "f",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
 
   // Setup function g()
   LambdaG_ = rvsdg::LambdaNode::Create(
@@ -2949,7 +2949,7 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction1Type,
         "ExternalFunction1",
         Linkage::externalLinkage,
-        llvm::CallingConv::Default);
+        llvm::CallingConvention::Default);
   };
 
   auto SetupExternalFunction2Declaration = [&]()
@@ -2959,7 +2959,7 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction2Type,
         "ExternalFunction2",
         Linkage::externalLinkage,
-        llvm::CallingConv::Default);
+        llvm::CallingConvention::Default);
   };
 
   auto SetupReturnAddressFunction = [&]()
@@ -3128,7 +3128,7 @@ EscapedMemoryTest3::SetupRvsdg()
         externalFunctionType,
         "externalFunction",
         Linkage::externalLinkage,
-        llvm::CallingConv::Default);
+        llvm::CallingConvention::Default);
   };
 
   auto SetupGlobal = [&]()
@@ -4003,7 +4003,7 @@ VariadicFunctionTest1::SetupRvsdg()
       lambdaHType,
       "h",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
 
   // Setup f()
   {
@@ -4114,25 +4114,25 @@ VariadicFunctionTest2::SetupRvsdg()
       lambdaLlvmLifetimeStartType,
       "llvm.lifetime.start.p0",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   auto llvmLifetimeEnd = &LlvmGraphImport::createFunctionImport(
       rvsdg,
       lambdaLlvmLifetimeEndType,
       "llvm.lifetime.end.p0",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   auto llvmVaStart = &LlvmGraphImport::createFunctionImport(
       rvsdg,
       lambdaVaStartType,
       "llvm.va_start",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   auto llvmVaEnd = &LlvmGraphImport::createFunctionImport(
       rvsdg,
       lambdaVaEndType,
       "llvm.va_end",
       Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
 
   // Setup function fst()
   {

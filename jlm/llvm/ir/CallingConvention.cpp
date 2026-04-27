@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 
@@ -12,20 +12,20 @@
 namespace jlm::llvm
 {
 
-static const util::BijectiveMap<::llvm::CallingConv::ID, CallingConv> &
+static const util::BijectiveMap<::llvm::CallingConv::ID, CallingConvention> &
 getCallingConventionMap()
 {
-  static util::BijectiveMap<::llvm::CallingConv::ID, CallingConv> map = {
-    { ::llvm::CallingConv::C, CallingConv::C },
-    { ::llvm::CallingConv::Fast, CallingConv::Fast },
-    { ::llvm::CallingConv::Cold, CallingConv::Cold },
-    { ::llvm::CallingConv::Tail, CallingConv::Tail },
+  static util::BijectiveMap<::llvm::CallingConv::ID, CallingConvention> map = {
+    { ::llvm::CallingConv::C, CallingConvention::C },
+    { ::llvm::CallingConv::Fast, CallingConvention::Fast },
+    { ::llvm::CallingConv::Cold, CallingConvention::Cold },
+    { ::llvm::CallingConv::Tail, CallingConvention::Tail },
   };
   return map;
 }
 
-jlm::llvm::CallingConv
-convertCallingConvToJlm(::llvm::CallingConv::ID cc)
+jlm::llvm::CallingConvention
+convertCallingConventionToJlm(::llvm::CallingConv::ID cc)
 {
   const auto & map = getCallingConventionMap();
   // LookupKey throws if the calling convention could not be found
@@ -33,7 +33,7 @@ convertCallingConvToJlm(::llvm::CallingConv::ID cc)
 }
 
 ::llvm::CallingConv::ID
-convertCallingConvToLlvm(jlm::llvm::CallingConv cc)
+convertCallingConventionToLlvm(jlm::llvm::CallingConvention cc)
 {
   const auto & map = getCallingConventionMap();
   // LookupValue throws if the calling convention could not be found

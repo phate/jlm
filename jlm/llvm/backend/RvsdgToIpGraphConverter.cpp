@@ -419,7 +419,7 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
       operation.name(),
       operation.Type(),
       operation.linkage(),
-      operation.callingConv(),
+      operation.callingConvention(),
       operation.attributes());
   functionNode->add_cfg(CreateControlFlowGraph(lambdaNode));
 
@@ -462,7 +462,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           lambdaOperation.name(),
           lambdaOperation.Type(),
           lambdaOperation.linkage(),
-          lambdaOperation.callingConv(),
+          lambdaOperation.callingConvention(),
           lambdaOperation.attributes());
       Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_variable(functionNode));
     }
@@ -624,7 +624,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
           graphImport->Name(),
           functionType,
           graphImport->linkage(),
-          graphImport->callingConv(),
+          graphImport->callingConvention(),
           {});
       const auto variable = ipGraphModule.create_variable(functionNode);
       Context_->InsertVariable(graphImport, variable);

@@ -17,7 +17,7 @@ namespace jlm::llvm
  * LLVM allows arbitrary numbers to be used as calling convention identifiers,
  * but jlm limits the set of possible values to this enum.
  */
-enum class CallingConv
+enum class CallingConvention
 {
   // The default llvm calling convention, compatible with C.
   // Only convention to support varargs. Supports some prototype mismatch.
@@ -50,8 +50,8 @@ enum class CallingConv
  * @return the same calling convention as a jlm enum value
  * @throws jlm::util::Error if the calling convention is unknown
  */
-[[nodiscard]] jlm::llvm::CallingConv
-convertCallingConvToJlm(::llvm::CallingConv::ID cc);
+[[nodiscard]] jlm::llvm::CallingConvention
+convertCallingConventionToJlm(::llvm::CallingConv::ID cc);
 
 /**
  * Converts the given calling convention from jlm to LLVM.
@@ -60,7 +60,7 @@ convertCallingConvToJlm(::llvm::CallingConv::ID cc);
  * @throws jlm::util::Error if the calling convention is unknown
  */
 [[nodiscard]] ::llvm::CallingConv::ID
-convertCallingConvToLlvm(jlm::llvm::CallingConv cc);
+convertCallingConventionToLlvm(jlm::llvm::CallingConvention cc);
 
 }
 

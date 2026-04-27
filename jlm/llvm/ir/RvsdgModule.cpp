@@ -22,7 +22,7 @@ LlvmGraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) co
       ImportedType(),
       Name(),
       linkage(),
-      callingConv(),
+      callingConvention(),
       isConstant(),
       getAlignment());
 }

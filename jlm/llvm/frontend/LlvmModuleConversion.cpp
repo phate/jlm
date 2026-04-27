@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
@@ -1277,7 +1277,7 @@ createCall(
 
   auto convertedFunctionType = context.GetTypeConverter().ConvertFunctionType(*functionType);
   const auto arguments = convertCallArguments(callInstruction, threeAddressCodes, context);
-  const auto callingConv = convertCallingConvToJlm(callInstruction.getCallingConv());
+  const auto callingConvention = convertCallingConventionToJlm(callInstruction.getCallingConv());
   auto attributes = convertAttributeList(
       callInstruction.getAttributes(),
       callInstruction.arg_size(),
@@ -1326,7 +1326,7 @@ createCall(
   auto call = CallOperation::create(
       callee,
       convertedFunctionType,
-      callingConv,
+      callingConvention,
       std::move(attributes),
       arguments);
 
@@ -2097,7 +2097,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
     auto name = f.getName().str();
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
     auto linkage = convert_linkage(f.getLinkage());
-    auto callingConv = convertCallingConvToJlm(f.getCallingConv());
+    auto callingConvention = convertCallingConventionToJlm(f.getCallingConv());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx.GetTypeConverter());
 
     return FunctionNode::create(
@@ -2105,7 +2105,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
         name,
         type,
         linkage,
-        callingConv,
+        callingConvention,
         attributes);
   };
 

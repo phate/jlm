@@ -16,7 +16,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/Annotation.cpp \
     jlm/llvm/ir/attribute.cpp \
     jlm/llvm/ir/basic-block.cpp \
-    jlm/llvm/ir/CallingConv.cpp \
+    jlm/llvm/ir/CallingConvention.cpp \
     jlm/llvm/ir/CallSummary.cpp \
     jlm/llvm/ir/cfg.cpp \
     jlm/llvm/ir/cfg-structure.cpp \
@@ -130,7 +130,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/Linkage.hpp \
     jlm/llvm/ir/Annotation.hpp \
     jlm/llvm/ir/attribute.hpp \
-    jlm/llvm/ir/CallingConv.hpp \
+    jlm/llvm/ir/CallingConvention.hpp \
     jlm/llvm/ir/CallSummary.hpp \
     jlm/llvm/ir/LambdaMemoryState.hpp \
     jlm/llvm/ir/tac.hpp \

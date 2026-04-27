@@ -31,7 +31,7 @@
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/DotWriter.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -234,7 +234,7 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::Linkage link)
           op.Type(),
           op.name(),
           link,
-          op.callingConv(),
+          op.callingConvention(),
           op.attributes()));
 
   /* add context variables */
@@ -352,7 +352,7 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
           op.Type(),
           op.name(),
           llvm::Linkage::externalLinkage, // TODO: change linkage?
-          llvm::CallingConv::Default);
+          llvm::CallingConvention::Default);
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "

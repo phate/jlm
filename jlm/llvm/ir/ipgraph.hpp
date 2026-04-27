@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_IPGRAPH_HPP
 #define JLM_LLVM_IR_IPGRAPH_HPP
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -175,13 +175,13 @@ private:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage,
-      const llvm::CallingConv & callingConv,
+      const llvm::CallingConvention & callingConvention,
       const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
         name_(name),
         linkage_(linkage),
-        callingConv_(callingConv),
+        callingConvention_(callingConvention),
         attributes_(attributes)
   {}
 
@@ -219,10 +219,10 @@ public:
   [[nodiscard]] bool
   hasBody() const noexcept override;
 
-  [[nodiscard]] const CallingConv &
-  callingConv() const noexcept
+  [[nodiscard]] const CallingConvention &
+  callingConvention() const noexcept
   {
-    return callingConv_;
+    return callingConvention_;
   }
 
   const AttributeSet &
@@ -244,11 +244,11 @@ public:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage,
-      const CallingConv & callingConv,
+      const CallingConvention & callingConvention,
       const AttributeSet & attributes)
   {
     std::unique_ptr<FunctionNode> node(
-        new FunctionNode(ipg, name, std::move(type), linkage, callingConv, attributes));
+        new FunctionNode(ipg, name, std::move(type), linkage, callingConvention, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
@@ -264,14 +264,14 @@ public:
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::Linkage & linkage)
   {
-    return create(ipg, name, std::move(type), linkage, llvm::CallingConv::Default, {});
+    return create(ipg, name, std::move(type), linkage, llvm::CallingConvention::Default, {});
   }
 
 private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::Linkage linkage_;
-  llvm::CallingConv callingConv_;
+  llvm::CallingConvention callingConvention_;
   AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };

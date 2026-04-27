@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -1424,7 +1424,7 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         functionType,
         "test",
         Linkage::externalLinkage,
-        CallingConv::Default);
+        CallingConvention::Default);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

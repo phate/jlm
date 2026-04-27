@@ -708,7 +708,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
           newFunctionType,
           op.name(),
           op.linkage(),
-          op.callingConv(),
+          op.callingConvention(),
           op.attributes()));
 
   rvsdg::SubstitutionMap smap;

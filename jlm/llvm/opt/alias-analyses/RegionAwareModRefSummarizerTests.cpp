@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/DotWriter.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
@@ -1351,14 +1351,14 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
       unitFunctionType,
       "opaque",
       Linkage::externalLinkage,
-      CallingConv::Default);
+      CallingConvention::Default);
 
   auto & setjmpImport = LlvmGraphImport::createFunctionImport(
       graph,
       setjmpFunctionType,
       "_setjmp",
       Linkage::externalLinkage,
-      CallingConv::Default);
+      CallingConvention::Default);
 
   auto & bufGlobal = *rvsdg::DeltaNode::Create(
       &rootRegion,

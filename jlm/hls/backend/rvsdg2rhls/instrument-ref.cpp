@@ -6,7 +6,7 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -27,7 +27,7 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
           op.Type(),
           name,
           op.linkage(),
-          op.callingConv(),
+          op.callingConvention(),
           op.attributes()));
 
   /* add context variables */
@@ -103,13 +103,13 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
       loadFunctionType,
       "reference_load",
       llvm::Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   auto & reference_store = llvm::LlvmGraphImport::createFunctionImport(
       graph,
       loadFunctionType,
       "reference_store",
       llvm::Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -122,7 +122,7 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
       allocaFunctionType,
       "reference_alloca",
       llvm::Linkage::externalLinkage,
-      llvm::CallingConv::Default);
+      llvm::CallingConvention::Default);
 
   instrument_ref(
       root,

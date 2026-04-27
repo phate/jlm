@@ -136,7 +136,7 @@ private:
         getPtrFuncType,
         "getPtr",
         Linkage::externalLinkage,
-        CallingConv::Default);
+        CallingConvention::Default);
 
     Outputs_.Global = &LlvmGraphImport::createGlobalImport(
         rvsdg,

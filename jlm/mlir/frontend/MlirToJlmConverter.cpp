@@ -128,9 +128,9 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
-          llvm::CallingConv::Default, // FIXME: Currently not supported in MLIR dialect
-          false,                      // FIXME: Currently not supported in MLIR dialect
-          1);                         // FIXME: Currently not supported in MLIR dialect
+          llvm::CallingConvention::Default, // FIXME: Currently not supported in MLIR dialect
+          false,                            // FIXME: Currently not supported in MLIR dialect
+          1);                               // FIXME: Currently not supported in MLIR dialect
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = &jlmArgument;
@@ -517,7 +517,8 @@ MlirToJlmConverter::ConvertOperation(
     return llvm::CallOperation::Create(
         target,
         std::move(functionType),
-        llvm::CallingConv::Default, // FIXME: MLIR dialect does not support calling conventions
+        llvm::CallingConvention::Default,       // FIXME: MLIR dialect does not support calling
+                                                // conventions
         llvm::AttributeList::createEmptyList(), // FIXME: MLIR dialect does not support attributes
         arguments);
   }

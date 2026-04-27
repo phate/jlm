@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -290,7 +290,7 @@ IpGraphToLlvmConverter::convert(
 
   auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
   auto callInstruction = builder.CreateCall(ftype, function, operands);
-  callInstruction->setCallingConv(convertCallingConvToLlvm(op.getCallingConv()));
+  callInstruction->setCallingConv(convertCallingConventionToLlvm(op.getCallingConvention()));
   callInstruction->setAttributes(convertAttributeList(op.getAttributes()));
   return callInstruction;
 }
@@ -2031,8 +2031,8 @@ IpGraphToLlvmConverter::convert_ipgraph()
       auto f = ::llvm::Function::Create(type, linkage, n->name(), &lm);
 
       // Set the calling convention and attributes on the function
-      const auto callingConv = convertCallingConvToLlvm(n->callingConv());
-      f->setCallingConv(callingConv);
+      const auto callingConvention = convertCallingConventionToLlvm(n->callingConvention());
+      f->setCallingConv(callingConvention);
       auto attributes = convert_attributes(*n);
       f->setAttributes(attributes);
 

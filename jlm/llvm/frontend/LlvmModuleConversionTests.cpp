@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
@@ -313,9 +313,9 @@ TEST(LlvmModuleConversionTests, CallingConvConversion)
     EXPECT_TRUE(calleeNode->hasBody());
     EXPECT_TRUE(callerNode->hasBody());
 
-    EXPECT_EQ(importedNode->callingConv(), CallingConv::Fast);
-    EXPECT_EQ(calleeNode->callingConv(), CallingConv::Cold);
-    EXPECT_EQ(callerNode->callingConv(), CallingConv::Tail);
+    EXPECT_EQ(importedNode->callingConvention(), CallingConvention::Fast);
+    EXPECT_EQ(calleeNode->callingConvention(), CallingConvention::Cold);
+    EXPECT_EQ(callerNode->callingConvention(), CallingConvention::Tail);
 
     const auto convertedBasicBlock =
         dynamic_cast<const BasicBlock *>(callerNode->cfg()->entry()->OutEdge(0)->sink());
@@ -339,7 +339,7 @@ TEST(LlvmModuleConversionTests, CallingConvConversion)
       auto callImportedTac = nextCallTac();
       EXPECT_EQ(callImportedTac->operand(0), ipgModule->variable(importedNode));
       auto op = jlm::util::assertedCast<const CallOperation>(&callImportedTac->operation());
-      EXPECT_EQ(op->getCallingConv(), CallingConv::Fast);
+      EXPECT_EQ(op->getCallingConvention(), CallingConvention::Fast);
     }
 
     // Check that the call to callee has been converted correctly
@@ -347,7 +347,7 @@ TEST(LlvmModuleConversionTests, CallingConvConversion)
       auto callCalleeTac = nextCallTac();
       EXPECT_EQ(callCalleeTac->operand(0), ipgModule->variable(calleeNode));
       auto op = jlm::util::assertedCast<const CallOperation>(&callCalleeTac->operation());
-      EXPECT_EQ(op->getCallingConv(), CallingConv::Cold);
+      EXPECT_EQ(op->getCallingConvention(), CallingConvention::Cold);
     }
   }
 }

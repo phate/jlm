@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
-#include <jlm/llvm/ir/CallingConv.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -686,7 +686,7 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
       "imported",
       functionType,
       Linkage::externalLinkage,
-      CallingConv::Fast,
+      CallingConvention::Fast,
       {});
   auto importedVariable = ipgModule.create_variable(imported);
 
@@ -695,7 +695,7 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
       "callee",
       functionType,
       Linkage::externalLinkage,
-      CallingConv::Cold,
+      CallingConvention::Cold,
       {});
   auto calleeVariable = ipgModule.create_variable(callee);
 
@@ -722,7 +722,7 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
       "caller",
       functionType,
       Linkage::externalLinkage,
-      CallingConv::Tail,
+      CallingConvention::Tail,
       {});
   ipgModule.create_variable(caller);
 
@@ -738,13 +738,13 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
     auto importedCall = basicBlock->append_last(CallOperation::create(
         importedVariable,
         functionType,
-        CallingConv::Fast,
+        CallingConvention::Fast,
         AttributeList::createEmptyList(),
         { valueArgument, ioStateArgument, memoryStateArgument }));
     auto calleeCall = basicBlock->append_last(CallOperation::create(
         calleeVariable,
         functionType,
-        CallingConv::Cold,
+        CallingConvention::Cold,
         AttributeList::createEmptyList(),
         { importedCall->result(0), importedCall->result(1), importedCall->result(2) }));
 
