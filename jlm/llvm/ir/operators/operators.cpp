@@ -8,7 +8,6 @@
 #include <jlm/rvsdg/Trace.hpp>
 
 #include <llvm/ADT/SmallVector.h>
-
 #include <stdexcept>
 
 namespace jlm::llvm

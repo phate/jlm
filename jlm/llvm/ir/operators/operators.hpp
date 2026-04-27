@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/unary.hpp>
 
 #include <llvm/ADT/APFloat.h>
+#include <stdexcept>
 
 namespace jlm::llvm
 {
