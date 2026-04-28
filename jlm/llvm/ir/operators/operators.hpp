@@ -16,8 +16,8 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-#include <llvm/IR/InstrTypes.h>
 #include <llvm/ADT/APFloat.h>
+#include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
 
 namespace jlm::llvm

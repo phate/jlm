@@ -8,8 +8,8 @@
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <llvm/IR/InstrTypes.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
 
 namespace jlm::llvm
@@ -516,21 +516,20 @@ FCmpOperation::operator==(const Operation & other) const noexcept
 std::string
 FCmpOperation::debug_string() const
 {
-  static std::unordered_map<fpcmp, std::string> map(
-      { { fpcmp::oeq, "oeq" },
-        { fpcmp::ogt, "ogt" },
-        { fpcmp::oge, "oge" },
-        { fpcmp::olt, "olt" },
-        { fpcmp::ole, "ole" },
-        { fpcmp::one, "one" },
-        { fpcmp::ord, "ord" },
-        { fpcmp::ueq, "ueq" },
-        { fpcmp::ugt, "ugt" },
-        { fpcmp::uge, "uge" },
-        { fpcmp::ult, "ult" },
-        { fpcmp::ule, "ule" },
-        { fpcmp::une, "une" },
-        { fpcmp::uno, "uno" } });
+  static std::unordered_map<fpcmp, std::string> map({ { fpcmp::oeq, "oeq" },
+                                                      { fpcmp::ogt, "ogt" },
+                                                      { fpcmp::oge, "oge" },
+                                                      { fpcmp::olt, "olt" },
+                                                      { fpcmp::ole, "ole" },
+                                                      { fpcmp::one, "one" },
+                                                      { fpcmp::ord, "ord" },
+                                                      { fpcmp::ueq, "ueq" },
+                                                      { fpcmp::ugt, "ugt" },
+                                                      { fpcmp::uge, "uge" },
+                                                      { fpcmp::ult, "ult" },
+                                                      { fpcmp::ule, "ule" },
+                                                      { fpcmp::une, "une" },
+                                                      { fpcmp::uno, "uno" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
   return "FCmp " + map[cmp()];
@@ -644,12 +643,11 @@ FBinaryOperation::operator==(const Operation & other) const noexcept
 std::string
 FBinaryOperation::debug_string() const
 {
-  static std::unordered_map<llvm::fpop, std::string> map(
-      { { fpop::add, "add" },
-        { fpop::sub, "sub" },
-        { fpop::mul, "mul" },
-        { fpop::div, "div" },
-        { fpop::mod, "mod" } });
+  static std::unordered_map<llvm::fpop, std::string> map({ { fpop::add, "add" },
+                                                           { fpop::sub, "sub" },
+                                                           { fpop::mul, "mul" },
+                                                           { fpop::div, "div" },
+                                                           { fpop::mod, "mod" } });
 
   JLM_ASSERT(map.find(fpop()) != map.end());
   return "FPOP " + map[fpop()];
