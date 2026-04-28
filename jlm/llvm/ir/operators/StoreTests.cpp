@@ -320,14 +320,14 @@ TEST(StoreOperationTests, TestStoreStoreReduction)
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto vt = TestType::createValueType();
+  auto int64 = BitType::Create(64);
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
   auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "address");
-  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, vt, "value");
-  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, vt, "value");
+  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, int64, "value");
+  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, int64, "value");
   auto s = &jlm::rvsdg::GraphImport::Create(graph, mt, "state");
 
   auto & storeNode1 = StoreNonVolatileOperation::CreateNode(*a, *v1, { s }, 4);

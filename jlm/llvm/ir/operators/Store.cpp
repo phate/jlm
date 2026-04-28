@@ -8,6 +8,8 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
@@ -56,31 +58,38 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 
 static bool
 is_store_store_reducible(
-    const StoreNonVolatileOperation & op,
+    const StoreNonVolatileOperation & store2Op,
     const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 2);
 
-  const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
-  if (!is<StoreNonVolatileOperation>(storeNode))
+  // Try tracing a memory state edge to a previous store
+  const auto [store1Node, store1Op] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*operands[2]);
+  if (!store1Op)
     return false;
 
-  if (op.NumMemoryStates() != storeNode->noutputs())
+  const auto & store1Address = *StoreOperation::AddressInput(*store1Node).origin();
+  const auto & store2Address = *operands[0];
+
+  // only continue if store1 and store2 have the same address
+  if (&llvm::traceOutput(store1Address) != &llvm::traceOutput(store2Address))
     return false;
 
-  /* check for same address */
-  if (operands[0] != storeNode->input(0)->origin())
-    return false;
-
+  // Check that all memory state inputs come from store1Node, and have no other users
   for (size_t n = 2; n < operands.size(); n++)
   {
-    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != storeNode
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != store1Node
         || operands[n]->nusers() != 1)
       return false;
   }
 
-  auto other = static_cast<const StoreNonVolatileOperation *>(&storeNode->GetOperation());
-  JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
+  // Check that store2 fully overwrites store1
+  const auto & store1Type = store1Op->GetStoredType();
+  const auto & store2Type = store2Op.GetStoredType();
+  if (GetTypeStoreSize(store2Type) < GetTypeStoreSize(store1Type))
+    return false;
+
   return true;
 }
 
