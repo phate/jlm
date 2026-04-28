@@ -132,7 +132,6 @@ TEST(FunctionInliningTests, testSimpleInlining)
     auto callResults = CallOperation::Create(
         gammaInputF1.branchArgument[0],
         jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).GetOperation().Type(),
-        AttributeList::createEmptyList(),
         { gammaInputValue.branchArgument[0],
           gammaInputIoState.branchArgument[0],
           gammaInputMemoryState.branchArgument[0] });
@@ -273,7 +272,6 @@ TEST(FunctionInliningTests, testInliningWithAlloca)
     auto callResults = CallOperation::Create(
         gammaInputF1.branchArgument[0],
         jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).GetOperation().Type(),
-        AttributeList::createEmptyList(),
         { gammaInputValue.branchArgument[0],
           gammaInputIoState.branchArgument[0],
           gammaInputMemoryState.branchArgument[0] });
@@ -361,11 +359,8 @@ TEST(FunctionInliningTests, testIndirectCall)
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto callResults = CallOperation::Create(
-        cvi,
-        functionType2,
-        AttributeList::createEmptyList(),
-        { cvf1, iOStateArgument, memoryStateArgument });
+    auto callResults =
+        CallOperation::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };

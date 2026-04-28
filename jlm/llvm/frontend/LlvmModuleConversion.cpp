@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
@@ -1276,6 +1277,7 @@ createCall(
 
   auto convertedFunctionType = context.GetTypeConverter().ConvertFunctionType(*functionType);
   const auto arguments = convertCallArguments(callInstruction, threeAddressCodes, context);
+  const auto callingConvention = convertCallingConventionToJlm(callInstruction.getCallingConv());
   auto attributes = convertAttributeList(
       callInstruction.getAttributes(),
       callInstruction.arg_size(),
@@ -1321,8 +1323,12 @@ createCall(
     throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
   }
 
-  auto call =
-      CallOperation::create(callee, convertedFunctionType, std::move(attributes), arguments);
+  auto call = CallOperation::create(
+      callee,
+      convertedFunctionType,
+      callingConvention,
+      std::move(attributes),
+      arguments);
 
   const auto result = call->result(0);
   const auto ioState = call->result(call->nresults() - 2);
@@ -1358,8 +1364,6 @@ convertCallInstruction(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
-  JLM_ASSERT(callInstruction.getCallingConv() == ::llvm::CallingConv::C);
-
   if (const auto intrinsicInstruction = ::llvm::dyn_cast<::llvm::IntrinsicInst>(&callInstruction))
     return convertIntrinsicInstruction(*intrinsicInstruction, threeAddressCodes, context);
 
@@ -2091,11 +2095,18 @@ declare_globals(::llvm::Module & lm, Context & ctx)
   auto create_function_node = [](const ::llvm::Function & f, Context & ctx)
   {
     auto name = f.getName().str();
-    auto linkage = convert_linkage(f.getLinkage());
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
+    auto linkage = convert_linkage(f.getLinkage());
+    auto callingConvention = convertCallingConventionToJlm(f.getCallingConv());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx.GetTypeConverter());
 
-    return FunctionNode::create(ctx.module().ipgraph(), name, type, linkage, attributes);
+    return FunctionNode::create(
+        ctx.module().ipgraph(),
+        name,
+        type,
+        linkage,
+        callingConvention,
+        attributes);
   };
 
   for (auto & gv : lm.globals())

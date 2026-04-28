@@ -7,6 +7,7 @@
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/ir/aggregation.hpp>
 #include <jlm/llvm/ir/Annotation.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
@@ -912,6 +913,7 @@ ConvertAggregationTreeToLambda(
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
     const Linkage & functionLinkage,
+    const CallingConvention & functionCallingConvention,
     const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -921,6 +923,7 @@ ConvertAggregationTreeToLambda(
           std::move(functionType),
           functionName,
           functionLinkage,
+          functionCallingConvention,
           functionAttributes));
 
   auto convertAggregationTreeToLambda = [&]()
@@ -962,6 +965,7 @@ ConvertControlFlowGraph(
       functionName,
       functionNode.GetFunctionType(),
       functionNode.linkage(),
+      functionNode.callingConvention(),
       functionNode.attributes(),
       statisticsCollector);
 
@@ -982,14 +986,12 @@ ConvertFunctionNode(
    */
   if (functionNode.cfg() == nullptr)
   {
-    return &LlvmGraphImport::Create(
+    return &LlvmGraphImport::createFunctionImport(
         *region.graph(),
-        functionNode.GetFunctionType(),
         functionNode.GetFunctionType(),
         functionNode.name(),
         functionNode.linkage(),
-        true, // Function imports are regarded as constant
-        1);
+        functionNode.callingConvention());
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1026,7 +1028,7 @@ ConvertDataNode(
      */
     if (!dataNodeInitialization)
     {
-      return &LlvmGraphImport::Create(
+      return &LlvmGraphImport::createGlobalImport(
           *region.graph(),
           dataNode.GetValueType(),
           PointerType::Create(),

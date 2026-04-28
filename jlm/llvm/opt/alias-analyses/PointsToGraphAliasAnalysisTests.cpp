@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
@@ -113,14 +114,12 @@ private:
         { ioStateType, memoryStateType },
         { pointerType, ioStateType, memoryStateType });
 
-    Outputs_.GetPtr = &LlvmGraphImport::Create(
+    Outputs_.GetPtr = &LlvmGraphImport::createFunctionImport(
         rvsdg,
-        getPtrFuncType,
         getPtrFuncType,
         "getPtr",
         Linkage::externalLinkage,
-        false,
-        1);
+        CallingConvention::Default);
 
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
@@ -145,7 +144,7 @@ private:
     }
     Outputs_.Local = &localDelta.output();
 
-    Outputs_.Imported = &LlvmGraphImport::Create(
+    Outputs_.Imported = &LlvmGraphImport::createGlobalImport(
         rvsdg,
         pointerType,
         pointerType,
@@ -229,11 +228,8 @@ private:
       memoryState = storeImported[0];
 
       // Get r by calling getPtr()
-      const auto callOutputs = CallOperation::Create(
-          getPtrCtxVar,
-          getPtrFuncType,
-          AttributeList::createEmptyList(),
-          { ioState, memoryState });
+      const auto callOutputs =
+          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
       Outputs_.R = callOutputs[0];
       ioState = callOutputs[1];
       memoryState = callOutputs[2];
@@ -390,7 +386,7 @@ private:
         { pointerType, int32Type, ioStateType, memoryStateType },
         { ioStateType, memoryStateType });
 
-    Outputs_.GlobalInt = &LlvmGraphImport::Create(
+    Outputs_.GlobalInt = &LlvmGraphImport::createGlobalImport(
         rvsdg,
         int32Type,
         pointerType,
@@ -399,7 +395,7 @@ private:
         false,
         4);
 
-    Outputs_.GlobalLong = &LlvmGraphImport::Create(
+    Outputs_.GlobalLong = &LlvmGraphImport::createGlobalImport(
         rvsdg,
         int64Type,
         pointerType,

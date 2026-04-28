@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -22,7 +23,12 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
   const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
   auto lambda = rvsdg::LambdaNode::Create(
       *ln->region(),
-      llvm::LlvmLambdaOperation::Create(op.Type(), name, op.linkage(), op.attributes()));
+      llvm::LlvmLambdaOperation::Create(
+          op.Type(),
+          name,
+          op.linkage(),
+          op.callingConvention(),
+          op.attributes()));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -92,22 +98,18 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
         llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
-  auto & reference_load = llvm::LlvmGraphImport::Create(
+  auto & reference_load = llvm::LlvmGraphImport::createFunctionImport(
       graph,
-      loadFunctionType,
       loadFunctionType,
       "reference_load",
       llvm::Linkage::externalLinkage,
-      false,
-      1);
-  auto & reference_store = llvm::LlvmGraphImport::Create(
+      llvm::CallingConvention::Default);
+  auto & reference_store = llvm::LlvmGraphImport::createFunctionImport(
       graph,
-      loadFunctionType,
       loadFunctionType,
       "reference_store",
       llvm::Linkage::externalLinkage,
-      false,
-      1);
+      llvm::CallingConvention::Default);
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -115,14 +117,12 @@ instrument_ref(llvm::LlvmRvsdgModule & rm)
         llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
-  auto & reference_alloca = llvm::LlvmGraphImport::Create(
+  auto & reference_alloca = llvm::LlvmGraphImport::createFunctionImport(
       graph,
-      allocaFunctionType,
       allocaFunctionType,
       "reference_alloca",
       llvm::Linkage::externalLinkage,
-      false,
-      1);
+      llvm::CallingConvention::Default);
 
   instrument_ref(
       root,
@@ -188,7 +188,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           load_func,
           loadFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
@@ -223,7 +222,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           alloca_func,
           allocaFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, sizeNode.output(0), ioState, memstate });
       for (auto ou : old_users)
       {
@@ -253,7 +251,6 @@ instrument_ref(
       auto callOp = jlm::llvm::CallOperation::Create(
           store_func,
           storeFunctionType,
-          llvm::AttributeList::createEmptyList(),
           { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state after the store to the new memstate from the call operation
       for (auto user : oldUsers)

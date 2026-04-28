@@ -127,7 +127,6 @@ TEST(CallSummaryTests, TestCallSummaryComputationDirectCalls)
     auto callResults = jlm::llvm::CallOperation::Create(
         lambdaXCv,
         functionType,
-        llvm::AttributeList::createEmptyList(),
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
@@ -152,12 +151,10 @@ TEST(CallSummaryTests, TestCallSummaryComputationDirectCalls)
     auto callXResults = jlm::llvm::CallOperation::Create(
         lambdaXCv,
         functionType,
-        llvm::AttributeList::createEmptyList(),
         { iOStateArgument, memoryStateArgument });
     auto callYResults = jlm::llvm::CallOperation::Create(
         lambdaYCv,
         functionType,
-        llvm::AttributeList::createEmptyList(),
         { callXResults[1], callXResults[2] });
 
     auto result = rvsdg::TestOperation::createNode(

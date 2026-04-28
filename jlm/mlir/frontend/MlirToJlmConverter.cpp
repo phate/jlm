@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -18,6 +19,7 @@
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/FunctionType.hpp>
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
 
@@ -120,17 +122,18 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
       auto jlmValueType = ConvertType(valueType);
       auto jlmImportedType = ConvertType(importedType);
 
-      jlm::llvm::LlvmGraphImport::Create(
+      auto & jlmArgument = jlm::llvm::LlvmGraphImport::create(
           *rvsdgRegion.graph(),
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()),
-          false, // FIXME: Currently not supported in MLIR dialect
-          1);    // FIXME: Currently not supported in MLIR dialect
+          llvm::CallingConvention::Default, // FIXME: Currently not supported in MLIR dialect
+          false,                            // FIXME: Currently not supported in MLIR dialect
+          1);                               // FIXME: Currently not supported in MLIR dialect
 
       auto key = argument.getResult().getAsOpaquePointer();
-      outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
+      outputMap[key] = &jlmArgument;
     }
     else
     {
@@ -497,6 +500,7 @@ MlirToJlmConverter::ConvertOperation(
     }
     argumentTypes.push_back(llvm::IOStateType::Create());
     argumentTypes.push_back(llvm::MemoryStateType::Create());
+
     std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
     for (auto res : callOp.getResults())
     {
@@ -504,11 +508,19 @@ MlirToJlmConverter::ConvertOperation(
       resultTypes.push_back(ConvertType(type));
     }
 
-    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::CallOperation>(
-        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
-        std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes),
-        llvm::AttributeList::createEmptyList())); // FIXME: MLIR dialect does not support attribute
-                                                  // lists
+    if (inputs.size() != 1 + argumentTypes.size())
+      throw std::runtime_error("Function call should take target and parameters as input");
+    const auto functionType = rvsdg::FunctionType::Create(argumentTypes, resultTypes);
+
+    const auto target = inputs[0];
+    const auto arguments = std::vector(std::next(inputs.begin()), inputs.end());
+    return llvm::CallOperation::Create(
+        target,
+        std::move(functionType),
+        llvm::CallingConvention::Default,       // FIXME: MLIR dialect does not support calling
+                                                // conventions
+        llvm::AttributeList::createEmptyList(), // FIXME: MLIR dialect does not support attributes
+        arguments);
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {

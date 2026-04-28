@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/DotWriter.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
@@ -1345,23 +1346,19 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
       { ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
 
-  auto & opaqueImport = LlvmGraphImport::Create(
+  auto & opaqueImport = LlvmGraphImport::createFunctionImport(
       graph,
-      unitFunctionType,
       unitFunctionType,
       "opaque",
       Linkage::externalLinkage,
-      false,
-      1);
+      CallingConvention::Default);
 
-  auto & setjmpImport = LlvmGraphImport::Create(
+  auto & setjmpImport = LlvmGraphImport::createFunctionImport(
       graph,
-      setjmpFunctionType,
       setjmpFunctionType,
       "_setjmp",
       Linkage::externalLinkage,
-      false,
-      1);
+      CallingConvention::Default);
 
   auto & bufGlobal = *rvsdg::DeltaNode::Create(
       &rootRegion,
@@ -1383,11 +1380,8 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
 
     const auto opaqueCtxVar = hLambdaNode.AddContextVar(opaqueImport);
 
-    const auto call = CallOperation::Create(
-        opaqueCtxVar.inner,
-        unitFunctionType,
-        AttributeList::createEmptyList(),
-        { ioState, memoryState });
+    const auto call =
+        CallOperation::Create(opaqueCtxVar.inner, unitFunctionType, { ioState, memoryState });
     callOpaqueNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*call[0]);
     ioState = call[0];
     memoryState = call[1];
@@ -1420,7 +1414,6 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
     const auto setjmpCall = CallOperation::Create(
         setjmpCtxVar.inner,
         setjmpFunctionType,
-        AttributeList::createEmptyList(),
         { bufCtxVar.inner, ioState, memoryState });
     auto & setjmpResult = *setjmpCall[0];
     ioState = setjmpCall[1];
@@ -1444,14 +1437,12 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
     const auto hCall = CallOperation::Create(
         hEntryVar.branchArgument[0],
         unitFunctionType,
-        AttributeList::createEmptyList(),
         { ioStateEntryVar.branchArgument[0], storeOutputs[0] });
     callHNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*hCall[0]);
 
     const auto kCall = CallOperation::Create(
         kEntryVar.branchArgument[0],
         unitFunctionType,
-        AttributeList::createEmptyList(),
         { hCall[0], hCall[1] });
     callKNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*kCall[0]);
 
@@ -1482,7 +1473,6 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
     const auto gCall = CallOperation::Create(
         gCtxVar.inner,
         gFunctionType,
-        AttributeList::createEmptyList(),
         { aAlloca[0], ioStateIn, memoryStateJoin.output(0) });
 
     auto loadOutputs = LoadNonVolatileOperation::Create(aAlloca[0], { gCall[1] }, int32Type, 4);

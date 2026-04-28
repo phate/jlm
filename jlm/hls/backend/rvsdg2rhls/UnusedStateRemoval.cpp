@@ -75,7 +75,12 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   auto newFunctionType = rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = rvsdg::LambdaNode::Create(
       *lambdaNode.region(),
-      llvm::LlvmLambdaOperation::Create(newFunctionType, op.name(), op.linkage(), op.attributes()));
+      llvm::LlvmLambdaOperation::Create(
+          newFunctionType,
+          op.name(),
+          op.linkage(),
+          op.callingConvention(),
+          op.attributes()));
 
   rvsdg::SubstitutionMap substitutionMap;
   for (const auto & ctxvar : lambdaNode.GetContextVars())

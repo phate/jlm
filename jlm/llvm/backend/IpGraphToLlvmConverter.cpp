@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -289,6 +290,7 @@ IpGraphToLlvmConverter::convert(
 
   auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
   auto callInstruction = builder.CreateCall(ftype, function, operands);
+  callInstruction->setCallingConv(convertCallingConventionToLlvm(op.getCallingConvention()));
   callInstruction->setAttributes(convertAttributeList(op.getAttributes()));
   return callInstruction;
 }
@@ -1807,8 +1809,6 @@ IpGraphToLlvmConverter::convert_attributes(const AttributeSet & attributeSet)
 ::llvm::AttributeList
 IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
 {
-  JLM_ASSERT(f.cfg());
-
   auto & llvmctx = Context_->llvm_module().getContext();
 
   auto fctset = convert_attributes(f.attributes());
@@ -1817,14 +1817,19 @@ IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
   auto retset = ::llvm::AttributeSet();
 
   std::vector<::llvm::AttributeSet> argsets;
-  for (size_t n = 0; n < f.cfg()->entry()->narguments(); n++)
+
+  // Attributes on function arguments are stored in the cfg
+  if (f.cfg())
   {
-    auto argument = f.cfg()->entry()->argument(n);
+    for (size_t n = 0; n < f.cfg()->entry()->narguments(); n++)
+    {
+      auto argument = f.cfg()->entry()->argument(n);
 
-    if (argument->type().Kind() == rvsdg::TypeKind::State)
-      continue;
+      if (argument->type().Kind() == rvsdg::TypeKind::State)
+        continue;
 
-    argsets.push_back(convert_attributes(argument->attributes()));
+      argsets.push_back(convert_attributes(argument->attributes()));
+    }
   }
 
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
@@ -1950,8 +1955,8 @@ IpGraphToLlvmConverter::convert_function(const FunctionNode & node)
   auto & im = Context_->module();
   auto f = ::llvm::cast<::llvm::Function>(Context_->value(im.variable(&node)));
 
-  auto attributes = convert_attributes(node);
-  f->setAttributes(attributes);
+  // Type, name, attributes and calling convention have already been set on the LLVM Function.
+  // The only conversion that remains is the function body.
 
   convert_cfg(*node.cfg(), *f);
 }
@@ -2024,6 +2029,13 @@ IpGraphToLlvmConverter::convert_ipgraph()
       auto type = typeConverter.ConvertFunctionType(n->fcttype(), lm.getContext());
       auto linkage = convert_linkage(n->linkage());
       auto f = ::llvm::Function::Create(type, linkage, n->name(), &lm);
+
+      // Set the calling convention and attributes on the function
+      const auto callingConvention = convertCallingConventionToLlvm(n->callingConvention());
+      f->setCallingConv(callingConvention);
+      auto attributes = convert_attributes(*n);
+      f->setAttributes(attributes);
+
       Context_->insert(v, f);
     }
     else

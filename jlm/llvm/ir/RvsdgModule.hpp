@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_RVSDGMODULE_HPP
 #define JLM_LLVM_IR_RVSDGMODULE_HPP
 
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -26,12 +27,14 @@ class LlvmGraphImport final : public rvsdg::GraphImport
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
+      CallingConvention callingConvention,
       const bool isConstant,
       const size_t alignment)
       : GraphImport(graph, importedType, std::move(name)),
         ValueType_(std::move(valueType)),
         ImportedType_(std::move(importedType)),
         Linkage_(std::move(linkage)),
+        callingConvention_(callingConvention),
         isConstant_(isConstant),
         alignment_(alignment)
   {}
@@ -47,6 +50,17 @@ public:
   linkage() const noexcept
   {
     return Linkage_;
+  }
+
+  /**
+   * The calling convention of the imported symbol.
+   * Only applies to imported functions, not global variables.
+   * @return the calling convention of the imported function.
+   */
+  [[nodiscard]] const CallingConvention &
+  callingConvention() const noexcept
+  {
+    return callingConvention_;
   }
 
   [[nodiscard]] bool
@@ -82,16 +96,23 @@ public:
     return ImportedType_;
   }
 
+  /**
+   * Makes a copy of this LlvmGraphImport in the given region.
+   * @param region the region to create the copy in. Must be a root region.
+   * @param input must be nullptr
+   * @return the created copy
+   */
   LlvmGraphImport &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) const override;
 
-  static LlvmGraphImport &
-  Create(
+  [[nodiscard]] static LlvmGraphImport &
+  create(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       Linkage linkage,
+      CallingConvention callingConvention,
       const bool isConstant,
       const size_t alignment)
   {
@@ -101,16 +122,76 @@ public:
         std::move(importedType),
         std::move(name),
         std::move(linkage),
+        callingConvention,
         isConstant,
         alignment);
     graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
     return *graphImport;
   }
 
+  /**
+   * Creates a new graph import representing a global variable.
+   * @param graph the graph whose root region will contain the import as an argument
+   * @param valueType the underlying type of the global variable
+   * @param importedType the reference type used to access the global variable (e.g. PointerType)
+   * @param name the name of the global variable symbol
+   * @param linkage the linkage of the global variable symbol
+   * @param isConstant true if the global variable is constant memory
+   * @param alignment the alignment of the global variable
+   */
+  [[nodiscard]] static LlvmGraphImport &
+  createGlobalImport(
+      rvsdg::Graph & graph,
+      std::shared_ptr<const rvsdg::Type> valueType,
+      std::shared_ptr<const rvsdg::Type> importedType,
+      std::string name,
+      Linkage linkage,
+      const bool isConstant,
+      const size_t alignment)
+  {
+    return create(
+        graph,
+        std::move(valueType),
+        std::move(importedType),
+        std::move(name),
+        std::move(linkage),
+        CallingConvention::Default, // Global variables do not have a calling convention
+        isConstant,
+        alignment);
+  }
+
+  /**
+   * Creates a new graph import representing an imported function.
+   * @param graph the graph whose root region will contain the import as an argument
+   * @param functionType the type of the function, which is also the type of the argument
+   * @param name the name of the function symbol
+   * @param linkage the linkage of the function symbol
+   * @param callingConvention the calling convention of the function
+   */
+  [[nodiscard]] static LlvmGraphImport &
+  createFunctionImport(
+      rvsdg::Graph & graph,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      std::string name,
+      Linkage linkage,
+      CallingConvention callingConvention)
+  {
+    return create(
+        graph,
+        functionType,
+        std::move(functionType),
+        std::move(name),
+        std::move(linkage),
+        callingConvention,
+        true, // Functions are always considered constants
+        1);   // We are not responsible for function alignment
+  }
+
 private:
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
   llvm::Linkage Linkage_;
+  CallingConvention callingConvention_;
   bool isConstant_;
   size_t alignment_;
 };

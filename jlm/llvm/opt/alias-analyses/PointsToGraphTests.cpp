@@ -370,7 +370,7 @@ TEST(PointsToGraphTests, testIsMemoryNodeConstant)
     const auto intType = jlm::rvsdg::BitType::Create(32);
     const auto pointerType = jlm::llvm::PointerType::Create();
 
-    auto & constImport = LlvmGraphImport::Create(
+    auto & constImport = LlvmGraphImport::createGlobalImport(
         graph,
         intType,
         pointerType,
@@ -378,7 +378,7 @@ TEST(PointsToGraphTests, testIsMemoryNodeConstant)
         Linkage::externalLinkage,
         true,
         4);
-    auto & nonConstImport = LlvmGraphImport::Create(
+    auto & nonConstImport = LlvmGraphImport::createGlobalImport(
         graph,
         intType,
         pointerType,

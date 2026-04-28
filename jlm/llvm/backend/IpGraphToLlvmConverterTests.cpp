@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -656,5 +657,144 @@ TEST(IpGraphToLlvmConverterTests, TestAttributeKindConversion)
   for (int attributeKind = begin; attributeKind != end; attributeKind++)
   {
     jlm::llvm::IpGraphToLlvmConverter::ConvertAttributeKind(static_cast<ak>(attributeKind));
+  }
+}
+
+TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
+{
+  /**
+   * Tests that function nodes and call operations in the IpGraph are converted to
+   * LLVM function declarations, definitions and calls with the correct calling conventions.
+   *
+   * The tested IpGraph corresponds to the one created in the CallingConvConversion test
+   * in LlvmModuleConversionTests.cpp
+   */
+  using namespace jlm::llvm;
+
+  // Arrange
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { bit64Type, ioStateType, memoryStateType },
+      { bit64Type, ioStateType, memoryStateType });
+
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
+
+  auto imported = FunctionNode::create(
+      ipgModule.ipgraph(),
+      "imported",
+      functionType,
+      Linkage::externalLinkage,
+      CallingConvention::Fast,
+      {});
+  auto importedVariable = ipgModule.create_variable(imported);
+
+  auto callee = FunctionNode::create(
+      ipgModule.ipgraph(),
+      "callee",
+      functionType,
+      Linkage::externalLinkage,
+      CallingConvention::Cold,
+      {});
+  auto calleeVariable = ipgModule.create_variable(callee);
+
+  // Create the body of the callee
+  {
+    auto cfg = ControlFlowGraph::create(ipgModule);
+    auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit64Type));
+    auto ioStateArgument = cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
+    auto memoryStateArgument =
+        cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+    auto basicBlock = BasicBlock::create(*cfg);
+    cfg->exit()->divert_inedges(basicBlock);
+    basicBlock->add_outedge(cfg->exit());
+    cfg->exit()->append_result(valueArgument);
+    cfg->exit()->append_result(ioStateArgument);
+    cfg->exit()->append_result(memoryStateArgument);
+
+    callee->add_cfg(std::move(cfg));
+  }
+
+  auto caller = FunctionNode::create(
+      ipgModule.ipgraph(),
+      "caller",
+      functionType,
+      Linkage::externalLinkage,
+      CallingConvention::Tail,
+      {});
+  ipgModule.create_variable(caller);
+
+  // Create the body of the caller
+  {
+    auto cfg = ControlFlowGraph::create(ipgModule);
+    auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit64Type));
+    auto ioStateArgument = cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
+    auto memoryStateArgument =
+        cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+    auto basicBlock = BasicBlock::create(*cfg);
+    auto importedCall = basicBlock->append_last(CallOperation::create(
+        importedVariable,
+        functionType,
+        CallingConvention::Fast,
+        AttributeList::createEmptyList(),
+        { valueArgument, ioStateArgument, memoryStateArgument }));
+    auto calleeCall = basicBlock->append_last(CallOperation::create(
+        calleeVariable,
+        functionType,
+        CallingConvention::Cold,
+        AttributeList::createEmptyList(),
+        { importedCall->result(0), importedCall->result(1), importedCall->result(2) }));
+
+    cfg->exit()->divert_inedges(basicBlock);
+    basicBlock->add_outedge(cfg->exit());
+    cfg->exit()->append_result(calleeCall->result(0));
+    cfg->exit()->append_result(calleeCall->result(1));
+    cfg->exit()->append_result(calleeCall->result(2));
+
+    caller->add_cfg(std::move(cfg));
+  }
+
+  print(ipgModule, stdout);
+
+  // Act
+  llvm::LLVMContext ctx;
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
+
+  // Assert
+  {
+    auto importedFunction = llvmModule->getFunction("imported");
+    auto calleeFunction = llvmModule->getFunction("callee");
+    auto callerFunction = llvmModule->getFunction("caller");
+
+    ASSERT_NE(importedFunction, nullptr);
+    ASSERT_NE(calleeFunction, nullptr);
+    ASSERT_NE(callerFunction, nullptr);
+
+    EXPECT_TRUE(importedFunction->empty());
+    EXPECT_FALSE(calleeFunction->empty());
+    EXPECT_FALSE(callerFunction->empty());
+
+    EXPECT_EQ(importedFunction->getCallingConv(), ::llvm::CallingConv::Fast);
+    EXPECT_EQ(calleeFunction->getCallingConv(), ::llvm::CallingConv::Cold);
+    EXPECT_EQ(callerFunction->getCallingConv(), ::llvm::CallingConv::Tail);
+
+    std::vector<const ::llvm::CallInst *> callInstructions;
+    for (const auto & instruction : callerFunction->getEntryBlock())
+    {
+      if (const auto callInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction))
+        callInstructions.push_back(callInstruction);
+    }
+
+    ASSERT_EQ(callInstructions.size(), 2u);
+    ASSERT_NE(callInstructions[0]->getCalledFunction(), nullptr);
+    ASSERT_NE(callInstructions[1]->getCalledFunction(), nullptr);
+
+    EXPECT_EQ(callInstructions[0]->getCalledFunction()->getName(), "imported");
+    EXPECT_EQ(callInstructions[0]->getCallingConv(), ::llvm::CallingConv::Fast);
+    EXPECT_EQ(callInstructions[1]->getCalledFunction()->getName(), "callee");
+    EXPECT_EQ(callInstructions[1]->getCallingConv(), ::llvm::CallingConv::Cold);
   }
 }
