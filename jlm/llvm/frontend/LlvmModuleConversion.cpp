@@ -866,23 +866,8 @@ ConvertIntegerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate, const st
 static std::unique_ptr<rvsdg::BinaryOperation>
 ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
 {
-  switch (predicate)
-  {
-  case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::lt);
-  case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::le);
-  case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::eq);
-  case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ne);
-  case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ge);
-  case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::gt);
-  default:
-    JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
-  }
+  const auto pred = convertICmpPredicateToJlm(predicate);
+  return std::make_unique<PtrCmpOperation>(PointerType::Create(), pred);
 }
 
 static const Variable *

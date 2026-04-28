@@ -179,7 +179,7 @@ public:
     return create(
         graph,
         functionType,
-        std::move(functionType),
+        functionType,
         std::move(name),
         std::move(linkage),
         callingConvention,

@@ -6,7 +6,9 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/Trace.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 
+#include <llvm/IR/InstrTypes.h>
 #include <llvm/ADT/SmallVector.h>
 #include <stdexcept>
 
@@ -326,27 +328,81 @@ ConstantDataArray::copy() const
   return std::make_unique<ConstantDataArray>(*this);
 }
 
+static const util::BijectiveMap<::llvm::CmpInst::Predicate, ICmpPredicate> &
+getICmpPredicateMap()
+{
+  static util::BijectiveMap<::llvm::CmpInst::Predicate, ICmpPredicate> map = {
+    { ::llvm::CmpInst::ICMP_EQ, ICmpPredicate::Eq },
+    { ::llvm::CmpInst::ICMP_NE, ICmpPredicate::Ne },
+    { ::llvm::CmpInst::ICMP_UGT, ICmpPredicate::Ugt },
+    { ::llvm::CmpInst::ICMP_UGE, ICmpPredicate::Uge },
+    { ::llvm::CmpInst::ICMP_ULT, ICmpPredicate::Ult },
+    { ::llvm::CmpInst::ICMP_ULE, ICmpPredicate::Ule },
+    { ::llvm::CmpInst::ICMP_SGT, ICmpPredicate::Sgt },
+    { ::llvm::CmpInst::ICMP_SGE, ICmpPredicate::Sge },
+    { ::llvm::CmpInst::ICMP_SLT, ICmpPredicate::Slt },
+    { ::llvm::CmpInst::ICMP_SLE, ICmpPredicate::Sle },
+  };
+  return map;
+}
+
+ICmpPredicate
+convertICmpPredicateToJlm(::llvm::CmpInst::Predicate predicate)
+{
+  const auto & map = getICmpPredicateMap();
+  return map.LookupKey(predicate);
+}
+
+[[nodiscard]] ::llvm::CmpInst::Predicate
+convertICmpPredicateToLlvm(ICmpPredicate predicate)
+{
+  const auto & map = getICmpPredicateMap();
+  return map.LookupValue(predicate);
+}
+
+[[nodiscard]] std::string_view
+iCmpPredicateToString(ICmpPredicate predicate)
+{
+  switch (predicate)
+  {
+  case ICmpPredicate::Eq:
+    return "eq";
+  case ICmpPredicate::Ne:
+    return "ne";
+  case ICmpPredicate::Ugt:
+    return "ugt";
+  case ICmpPredicate::Uge:
+    return "uge";
+  case ICmpPredicate::Ult:
+    return "ult";
+  case ICmpPredicate::Ule:
+    return "ule";
+  case ICmpPredicate::Sgt:
+    return "sgt";
+  case ICmpPredicate::Sge:
+    return "sge";
+  case ICmpPredicate::Slt:
+    return "slt";
+  case ICmpPredicate::Sle:
+    return "sle";
+  default:
+    throw std::runtime_error("Unknown ICmpPredicate");
+  }
+}
+
 PtrCmpOperation::~PtrCmpOperation() noexcept = default;
 
 bool
 PtrCmpOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const PtrCmpOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
+  return op && op->argument(0) == argument(0) && op->predicate_ == predicate_;
 }
 
 std::string
 PtrCmpOperation::debug_string() const
 {
-  static std::unordered_map<llvm::cmp, std::string> map({ { cmp::eq, "eq" },
-                                                          { cmp::ne, "ne" },
-                                                          { cmp::gt, "gt" },
-                                                          { cmp::ge, "ge" },
-                                                          { cmp::lt, "lt" },
-                                                          { cmp::le, "le" } });
-
-  JLM_ASSERT(map.find(cmp()) != map.end());
-  return "PtrCmp " + map[cmp()];
+  return util::strfmt("PtrCmp[", iCmpPredicateToString, "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
@@ -460,20 +516,21 @@ FCmpOperation::operator==(const Operation & other) const noexcept
 std::string
 FCmpOperation::debug_string() const
 {
-  static std::unordered_map<fpcmp, std::string> map({ { fpcmp::oeq, "oeq" },
-                                                      { fpcmp::ogt, "ogt" },
-                                                      { fpcmp::oge, "oge" },
-                                                      { fpcmp::olt, "olt" },
-                                                      { fpcmp::ole, "ole" },
-                                                      { fpcmp::one, "one" },
-                                                      { fpcmp::ord, "ord" },
-                                                      { fpcmp::ueq, "ueq" },
-                                                      { fpcmp::ugt, "ugt" },
-                                                      { fpcmp::uge, "uge" },
-                                                      { fpcmp::ult, "ult" },
-                                                      { fpcmp::ule, "ule" },
-                                                      { fpcmp::une, "une" },
-                                                      { fpcmp::uno, "uno" } });
+  static std::unordered_map<fpcmp, std::string> map(
+      { { fpcmp::oeq, "oeq" },
+        { fpcmp::ogt, "ogt" },
+        { fpcmp::oge, "oge" },
+        { fpcmp::olt, "olt" },
+        { fpcmp::ole, "ole" },
+        { fpcmp::one, "one" },
+        { fpcmp::ord, "ord" },
+        { fpcmp::ueq, "ueq" },
+        { fpcmp::ugt, "ugt" },
+        { fpcmp::uge, "uge" },
+        { fpcmp::ult, "ult" },
+        { fpcmp::ule, "ule" },
+        { fpcmp::une, "une" },
+        { fpcmp::uno, "uno" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
   return "FCmp " + map[cmp()];
@@ -587,11 +644,12 @@ FBinaryOperation::operator==(const Operation & other) const noexcept
 std::string
 FBinaryOperation::debug_string() const
 {
-  static std::unordered_map<llvm::fpop, std::string> map({ { fpop::add, "add" },
-                                                           { fpop::sub, "sub" },
-                                                           { fpop::mul, "mul" },
-                                                           { fpop::div, "div" },
-                                                           { fpop::mod, "mod" } });
+  static std::unordered_map<llvm::fpop, std::string> map(
+      { { fpop::add, "add" },
+        { fpop::sub, "sub" },
+        { fpop::mul, "mul" },
+        { fpop::div, "div" },
+        { fpop::mod, "mod" } });
 
   JLM_ASSERT(map.find(fpop()) != map.end());
   return "FPOP " + map[fpop()];
@@ -1163,5 +1221,4 @@ FreeOperation::copy() const
 {
   return std::make_unique<FreeOperation>(*this);
 }
-
 }

@@ -606,18 +606,10 @@ IpGraphToLlvmConverter::convert_ptrcmp(
   JLM_ASSERT(is<PtrCmpOperation>(op));
   auto & pop = *static_cast<const PtrCmpOperation *>(&op);
 
-  static std::unordered_map<llvm::cmp, ::llvm::CmpInst::Predicate> map(
-      { { cmp::le, ::llvm::CmpInst::ICMP_ULE },
-        { cmp::lt, ::llvm::CmpInst::ICMP_ULT },
-        { cmp::eq, ::llvm::CmpInst::ICMP_EQ },
-        { cmp::ne, ::llvm::CmpInst::ICMP_NE },
-        { cmp::ge, ::llvm::CmpInst::ICMP_UGE },
-        { cmp::gt, ::llvm::CmpInst::ICMP_UGT } });
-
-  auto op1 = Context_->value(args[0]);
-  auto op2 = Context_->value(args[1]);
-  JLM_ASSERT(map.find(pop.cmp()) != map.end());
-  return builder.CreateICmp(map[pop.cmp()], op1, op2);
+  const auto predicate = convertICmpPredicateToLlvm(pop.predicate());
+  const auto op1 = Context_->value(args[0]);
+  const auto op2 = Context_->value(args[1]);
+  return builder.CreateICmp(predicate, op1, op2);
 }
 
 ::llvm::Value *
