@@ -66,7 +66,7 @@ is_store_store_reducible(
   // Try tracing a memory state edge to a previous store
   const auto [store1Node, store1Op] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*operands[2]);
-  if (!store1Node || !store1Op)
+  if (!store1Op)
     return false;
 
   const auto & store1Address = *StoreOperation::AddressInput(*store1Node).origin();
