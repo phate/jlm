@@ -402,7 +402,7 @@ PtrCmpOperation::operator==(const Operation & other) const noexcept
 std::string
 PtrCmpOperation::debug_string() const
 {
-  return util::strfmt("PtrCmp[", iCmpPredicateToString, "]");
+  return util::strfmt("PtrCmp[", iCmpPredicateToString(predicate_), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
