@@ -13,7 +13,7 @@ namespace jlm::llvm
 
 /**
  * Types of calling conventions.
- * Based on LLVM's ""::llvm::CallingConv" namespace.
+ * Based on LLVM's "::llvm::CallingConv" namespace.
  * LLVM allows arbitrary numbers to be used as calling convention identifiers,
  * but jlm limits the set of possible values to this enum.
  */
