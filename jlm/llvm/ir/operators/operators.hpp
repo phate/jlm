@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/unary.hpp>
 
 #include <llvm/ADT/APFloat.h>
+#include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
 
 namespace jlm::llvm
@@ -682,24 +683,53 @@ public:
   }
 };
 
-enum class cmp
+/**
+ * The set of possible types of predicates for integer and pointer comparisons.
+ * Based on the integer comparison predicates defined in "::llvm::CmpInst".
+ */
+enum class ICmpPredicate
 {
-  eq,
-  ne,
-  gt,
-  ge,
-  lt,
-  le
+  Eq,
+  Ne,
+  Ugt,
+  Uge,
+  Ult,
+  Ule,
+  Sgt,
+  Sge,
+  Slt,
+  Sle
 };
+
+/**
+ * Converts the given comparison \p predicate from an LLVM to the corresponding Jlm enum.
+ * @throws if the predicate is not an integer comparison predicate
+ */
+[[nodiscard]] ICmpPredicate
+convertICmpPredicateToJlm(::llvm::CmpInst::Predicate predicate);
+
+/**
+ * Converts the given comparison \p predicate from an LLVM to the corresponding Jlm enum.
+ * @throws if the predicate is not a valid enum value
+ */
+[[nodiscard]] ::llvm::CmpInst::Predicate
+convertICmpPredicateToLlvm(ICmpPredicate predicate);
+
+/**
+ * Converts the given comparison \p predicate to a string
+ * @throws if the predicate is not a valid enum value
+ */
+[[nodiscard]] std::string_view
+iCmpPredicateToString(ICmpPredicate predicate);
 
 class PtrCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
   ~PtrCmpOperation() noexcept override;
 
-  PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
+  PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, ICmpPredicate predicate)
       : BinaryOperation({ ptype, ptype }, jlm::rvsdg::BitType::Create(1)),
-        cmp_(cmp)
+        predicate_(predicate)
   {}
 
   bool
@@ -721,25 +751,25 @@ public:
       jlm::rvsdg::Output * op1,
       jlm::rvsdg::Output * op2) const override;
 
-  inline llvm::cmp
-  cmp() const noexcept
+  ICmpPredicate
+  predicate() const noexcept
   {
-    return cmp_;
+    return predicate_;
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const llvm::cmp & cmp, const Variable * op1, const Variable * op2)
+  create(ICmpPredicate predicateKind, const Variable * op1, const Variable * op2)
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(op1->Type());
     if (!pt)
       throw util::Error("expected pointer type.");
 
-    auto op = std::make_unique<PtrCmpOperation>(std::move(pt), cmp);
+    auto op = std::make_unique<PtrCmpOperation>(std::move(pt), predicateKind);
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
 private:
-  llvm::cmp cmp_;
+  ICmpPredicate predicate_;
 };
 
 class ZExtOperation final : public rvsdg::UnaryOperation

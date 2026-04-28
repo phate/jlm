@@ -216,8 +216,9 @@ MlirToJlmConverter::ConvertICmpOp(
 {
   if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::eq)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::eq);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Eq);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -225,8 +226,9 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ne)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::ne);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Ne);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -234,8 +236,9 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sge)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::ge);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Sge);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -243,8 +246,9 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sgt)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::gt);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Sgt);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -252,8 +256,9 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sle)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::le);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Sle);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -261,8 +266,9 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::slt)
   {
-    auto newOp =
-        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::lt);
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Slt);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),

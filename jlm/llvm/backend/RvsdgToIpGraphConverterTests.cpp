@@ -515,7 +515,7 @@ TEST_P(DataImportConversionTest, Test)
   const auto pointerType = PointerType::Create();
 
   LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
-  [[maybe_unused]] const auto & import = LlvmGraphImport::createGlobalImport(
+  [[maybe_unused]] auto & import = LlvmGraphImport::createGlobalImport(
       rvsdgModule.Rvsdg(),
       valueType,
       pointerType,

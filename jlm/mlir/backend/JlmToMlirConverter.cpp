@@ -29,6 +29,8 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Verifier.h>
 
+#include <unordered_map>
+
 namespace jlm::mlir
 {
 
@@ -369,28 +371,23 @@ JlmToMlirConverter::ConvertPointerCompareNode(
     const llvm::PtrCmpOperation & operation,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
-  auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
-  if (operation.cmp() == llvm::cmp::eq)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
-  else if (operation.cmp() == llvm::cmp::ne)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::ne;
-  else if (operation.cmp() == llvm::cmp::gt)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::sgt;
-  else if (operation.cmp() == llvm::cmp::ge)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::sge;
-  else if (operation.cmp() == llvm::cmp::lt)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::slt;
-  else if (operation.cmp() == llvm::cmp::le)
-    compPredicate = ::mlir::LLVM::ICmpPredicate::sle;
-  else
-  {
-    auto message = util::strfmt("Unknown pointer compare operation: ", operation.debug_string());
-    JLM_UNREACHABLE(message.c_str());
-  }
+  static std::unordered_map<llvm::ICmpPredicate, ::mlir::LLVM::ICmpPredicate> map = {
+    { llvm::ICmpPredicate::Eq, ::mlir::LLVM::ICmpPredicate::eq },
+    { llvm::ICmpPredicate::Ne, ::mlir::LLVM::ICmpPredicate::ne },
+    { llvm::ICmpPredicate::Ugt, ::mlir::LLVM::ICmpPredicate::ugt },
+    { llvm::ICmpPredicate::Uge, ::mlir::LLVM::ICmpPredicate::uge },
+    { llvm::ICmpPredicate::Ult, ::mlir::LLVM::ICmpPredicate::ult },
+    { llvm::ICmpPredicate::Ule, ::mlir::LLVM::ICmpPredicate::ule },
+    { llvm::ICmpPredicate::Sgt, ::mlir::LLVM::ICmpPredicate::sgt },
+    { llvm::ICmpPredicate::Sge, ::mlir::LLVM::ICmpPredicate::sge },
+    { llvm::ICmpPredicate::Slt, ::mlir::LLVM::ICmpPredicate::slt },
+    { llvm::ICmpPredicate::Sle, ::mlir::LLVM::ICmpPredicate::sle },
+  };
 
+  const auto mlirPredicate = map.at(operation.predicate());
   auto MlirOp = Builder_->create<::mlir::LLVM::ICmpOp>(
       Builder_->getUnknownLoc(),
-      compPredicate,
+      mlirPredicate,
       inputs[0],
       inputs[1]);
   return MlirOp;
