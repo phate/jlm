@@ -384,6 +384,12 @@ private:
   AnalyzeUndef(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzePoison(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFreeze(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeMemcpy(const rvsdg::SimpleNode & node);
 
   void
@@ -394,6 +400,8 @@ private:
 
   void
   AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node);
+
+  void AnalyzeInsertValue(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeExtractValue(const rvsdg::SimpleNode & node);

@@ -3,7 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
@@ -662,6 +664,14 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeUndef(node);
       },
+      [&](const PoisonValueOperation &)
+      {
+        AnalyzePoison(node);
+      },
+      [&](const FreezeOperation &)
+      {
+        AnalyzeFreeze(node);
+      },
       [&](const MemCpyOperation &)
       {
         AnalyzeMemcpy(node);
@@ -677,6 +687,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       [&](const ConstantAggregateZeroOperation &)
       {
         AnalyzeConstantAggregateZero(node);
+      },
+      [&](const InsertValueOperation &)
+      {
+        AnalyzeInsertValue(node);
       },
       [&](const ExtractValueOperation &)
       {
@@ -891,6 +905,37 @@ Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 }
 
 void
+Andersen::AnalyzePoison(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PoisonValueOperation>(node.GetOperation()));
+  const auto & output = *node.output(0);
+
+  if (!IsOrContainsPointerType(*output.Type()))
+    return;
+
+  // PoisonValue cannot point to any memory location. We therefore only insert a register node for
+  // it, but let this node not point to anything.
+  (void)Set_->CreateRegisterPointerObject(output);
+}
+
+void
+Andersen::AnalyzeFreeze(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<FreezeOperation>(node.GetOperation()));
+  const auto & output = *node.output(0);
+
+  if (!IsOrContainsPointerType(*output.Type()))
+    return;
+
+  // Freeze will either be a copy of its argument (when defined),
+  // or be an illegal pointer, so just re-use its argument
+
+  auto & operand = *node.input(0)->origin();
+  auto operandPO = Set_->GetRegisterPointerObject(operand);
+  Set_->MapRegisterToExistingPointerObject(output, operandPO);
+}
+
+void
 Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(node.GetOperation()));
@@ -969,6 +1014,41 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
   // ConstantAggregateZero cannot point to any memory location.
   // We therefore only insert a register node for it, but let this node not point to anything.
   (void)Set_->CreateRegisterPointerObject(output);
+}
+
+void
+Andersen::AnalyzeInsertValue(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<InsertValueOperation>(node.GetOperation()));
+
+  // The InsertValue instruction looks like
+  //     result = insertvalue(input, element, index)
+  // where result and input are values of some aggregate type
+
+  // We only care about aggregate types that contain pointers
+  const auto & result = *node.output(0);
+  if (!IsOrContainsPointerType(*result.Type()))
+    return;
+
+  const auto & inputRegister = *node.input(0)->origin();
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+
+  // Check if the element type also contains a pointer
+  const auto & element = *node.input(1)->origin();
+  if (IsOrContainsPointerType(*element.Type()))
+  {
+    // Both the original aggregate and the inserted element contain pointers
+    // Create a new PointerObject for the result containing their union
+    const auto elementPO = Set_->GetRegisterPointerObject(element);
+    const auto resultPO = Set_->CreateRegisterPointerObject(result);
+    Constraints_->AddConstraint(SupersetConstraint(resultPO, inputRegisterPO));
+    Constraints_->AddConstraint(SupersetConstraint(resultPO, elementPO));
+  }
+  else
+  {
+    // The operation does not add any additional pointees, so map the result to the input
+    Set_->MapRegisterToExistingPointerObject(result, inputRegisterPO);
+  }
 }
 
 void
