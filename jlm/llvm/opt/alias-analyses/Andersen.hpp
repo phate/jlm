@@ -401,7 +401,8 @@ private:
   void
   AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node);
 
-  void AnalyzeInsertValue(const rvsdg::SimpleNode & node);
+  void
+  AnalyzeInsertValue(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeExtractValue(const rvsdg::SimpleNode & node);
