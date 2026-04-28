@@ -1025,7 +1025,7 @@ Andersen::AnalyzeInsertValue(const rvsdg::SimpleNode & node)
   //     result = insertvalue(input, element, index, [additional indices...])
   // where result and input are values of some aggregate type (e.g. a struct).
   // The element is inserted into the result aggregate at the specified index.
-  // If multiple indicies are given, the element is inserted in multiple positions.
+  // Additional indicies can be given to index into nested aggregate types.
 
   // We only care about aggregate types that contain pointers
   const auto & result = *node.output(0);
