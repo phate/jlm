@@ -1334,7 +1334,7 @@ createCall(
  * @return true if the intrinsic should be ignored, false otherwise
  */
 static bool
-isIntrinsicIgnored(::llvm::Intrinsic::ID intrinsicId)
+shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
 {
   switch (intrinsicId)
   {
@@ -1356,7 +1356,7 @@ convertIntrinsicInstruction(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
-  if (isIntrinsicIgnored(intrinsicInstruction.getIntrinsicID()))
+  if (shouldIgnoreIntrinsic(intrinsicInstruction.getIntrinsicID()))
     return nullptr;
 
   switch (intrinsicInstruction.getIntrinsicID())
@@ -2129,7 +2129,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
 
   for (auto & f : lm.getFunctionList())
   {
-    if (f.isIntrinsic() && isIntrinsicIgnored(f.getIntrinsicID()))
+    if (f.isIntrinsic() && shouldIgnoreIntrinsic(f.getIntrinsicID()))
       continue;
 
     auto node = create_function_node(f, ctx);
