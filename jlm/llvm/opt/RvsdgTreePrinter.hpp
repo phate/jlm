@@ -60,6 +60,12 @@ public:
       NumRvsdgNodes,
 
       /**
+       * Annotate regions and structural nodes with the number of AllocaOperation nodes that feature
+       * an aggregate type.
+       */
+      NumAggregateAllocaNodes,
+
+      /**
        * Annotate regions and structural nodes with the number of AllocaOperation nodes.
        */
       NumAllocaNodes,

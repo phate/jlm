@@ -89,6 +89,16 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
       AnnotateNumNodes(rvsdg, matchNode, "NumRvsdgNodes", annotationMap);
       break;
     }
+    case Configuration::Annotation::NumAggregateAllocaNodes:
+    {
+      const auto matchAggregateAlloca = [](const rvsdg::Node & node)
+      {
+        const auto allocaOperation = dynamic_cast<const AllocaOperation *>(&node.GetOperation());
+        return allocaOperation && IsAggregateType(*allocaOperation->ValueType());
+      };
+      AnnotateNumNodes(rvsdg, matchAggregateAlloca, "NumAggregateAllocaNodes", annotationMap);
+      break;
+    }
     case Configuration::Annotation::NumAllocaNodes:
     {
       const auto matchAlloca = [](const rvsdg::Node & node)
