@@ -926,16 +926,14 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
       "annotations",
-      cl::values(
-          ::clEnumValN(
-              llvm::RvsdgTreePrinter::Configuration::Annotation::DebugIds,
-              "DebugIds",
-              "Annotate region and node IDs")),
-      cl::values(
-          ::clEnumValN(
-              llvm::RvsdgTreePrinter::Configuration::Annotation::NumAggregateAllocaNodes,
-              "NumAggregateAllocaNodes",
-              "Annotate number of AllocaOperation nodes with aggregate types.")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::DebugIds,
+          "DebugIds",
+          "Annotate region and node IDs")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumAggregateAllocaNodes,
+          "NumAggregateAllocaNodes",
+          "Annotate number of AllocaOperation nodes with aggregate types.")),
       cl::values(::clEnumValN(
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes,
           "NumAllocaNodes",
