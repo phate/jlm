@@ -21,6 +21,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/Module.h>
 
 namespace jlm::llvm
@@ -1326,12 +1327,38 @@ createCall(
   return result;
 }
 
+/**
+ * Checks if the intrinsic with the given ID should be ignored in the frontend.
+ * Calls to ignored intrinsics become no-ops, and declarations of ignored intrisincs are skipped.
+ * @param intrinsicId the id of the llvm intrinsic
+ * @return true if the intrinsic should be ignored, false otherwise
+ */
+static bool
+shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
+{
+  switch (intrinsicId)
+  {
+  // These intrinsics are ignored because they take pointers to local variables,
+  // reducing the precision of alias analysis unless specifically handled
+  case ::llvm::Intrinsic::lifetime_start:
+  case ::llvm::Intrinsic::lifetime_end:
+  // This intrinsic is ignored because it takes a parameter of type "metadata"
+  case ::llvm::Intrinsic::experimental_noalias_scope_decl:
+    return true;
+  default:
+    return false;
+  }
+}
+
 static const Variable *
 convertIntrinsicInstruction(
     const ::llvm::IntrinsicInst & intrinsicInstruction,
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
+  if (shouldIgnoreIntrinsic(intrinsicInstruction.getIntrinsicID()))
+    return nullptr;
+
   switch (intrinsicInstruction.getIntrinsicID())
   {
   case ::llvm::Intrinsic::fmuladd:
@@ -2102,6 +2129,9 @@ declare_globals(::llvm::Module & lm, Context & ctx)
 
   for (auto & f : lm.getFunctionList())
   {
+    if (f.isIntrinsic() && shouldIgnoreIntrinsic(f.getIntrinsicID()))
+      continue;
+
     auto node = create_function_node(f, ctx);
     ctx.insert_value(&f, ctx.module().create_variable(node));
   }
