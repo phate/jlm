@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
@@ -235,6 +237,39 @@ TEST(RvsdgTreePrinterTests, printDebugIds)
   const auto expectedTree =
       "{\"RegionId\":0,\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\","
       "\"NodeId\":0,\"Subregions\":[{\"RegionId\":1},{\"RegionId\":2}]}]}\n";
+
+  EXPECT_EQ(tree, expectedTree);
+}
+
+TEST(RvsdgTreePrinterTests, printAllocaNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto valueType = TestType::createValueType();
+  auto structType = StructType::CreateIdentified({ valueType, valueType }, false);
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto & one = IntegerConstantOperation::Create(rvsdg.GetRootRegion(), 32, 1);
+
+  auto allocaResults = AllocaOperation::create(valueType, one.output(0), 4);
+  auto aggregatedAllocaResults = AllocaOperation::create(structType, one.output(0), 4);
+
+  const RvsdgTreePrinter::Configuration configuration(
+      { RvsdgTreePrinter::Configuration::Annotation::NumAggregateAllocaNodes,
+        RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes });
+  RvsdgTreePrinter printer(configuration);
+
+  // Act
+  auto tree = RunAndExtractFile(*rvsdgModule, printer);
+  std::cout << tree;
+
+  // Assert
+  const auto expectedTree = "{\"NumAllocaNodes\":2,\"NumAggregateAllocaNodes\":1}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }
