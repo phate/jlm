@@ -1155,27 +1155,6 @@ ConstantDataVectorOperation::copy() const
   return std::make_unique<ConstantDataVectorOperation>(*this);
 }
 
-ExtractValueOperation::~ExtractValueOperation() noexcept = default;
-
-bool
-ExtractValueOperation::operator==(const Operation & other) const noexcept
-{
-  auto op = dynamic_cast<const ExtractValueOperation *>(&other);
-  return op && op->indices_ == indices_ && op->type() == type();
-}
-
-std::string
-ExtractValueOperation::debug_string() const
-{
-  return "ExtractValue";
-}
-
-std::unique_ptr<rvsdg::Operation>
-ExtractValueOperation::copy() const
-{
-  return std::make_unique<ExtractValueOperation>(*this);
-}
-
 MallocOperation::~MallocOperation() noexcept = default;
 
 bool
