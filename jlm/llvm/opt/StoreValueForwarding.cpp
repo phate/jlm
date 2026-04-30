@@ -119,7 +119,17 @@ struct StoreValueForwarding::Context final
   size_t numLoadsForwarded = 0;
 
   // Memoization of outputs that have been routed into regions
-  std::map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *> routedOutputs{};
+  struct OutputRegionHash
+  {
+    std::size_t
+    operator()(const std::pair<rvsdg::Output *, rvsdg::Region *> & value) const
+    {
+      return std::hash<rvsdg::Output *>()(value.first) ^ std::hash<rvsdg::Region *>()(value.second);
+    }
+  };
+
+  std::unordered_map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *, OutputRegionHash>
+      routedOutputs{};
 
   OutputTracer outputTracer;
 
