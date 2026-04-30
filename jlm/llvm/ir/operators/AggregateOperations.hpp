@@ -15,6 +15,94 @@ namespace jlm::llvm
 {
 
 /**
+ * Represents LLVM's extractvalue instruction.
+ *
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#extractvalue-instruction)
+ * for more details.
+ */
+class ExtractValueOperation final : public rvsdg::SimpleOperation
+{
+  typedef std::vector<unsigned>::const_iterator const_iterator;
+
+public:
+  ~ExtractValueOperation() noexcept override;
+
+  ExtractValueOperation(
+      const std::shared_ptr<const rvsdg::Type> & aggtype,
+      const std::vector<unsigned> & indices)
+      : SimpleOperation({ aggtype }, { dsttype(aggtype, indices) }),
+        indices_(indices)
+  {
+    if (indices.empty())
+      throw util::Error("expected at least one index.");
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  const_iterator
+  begin() const
+  {
+    return indices_.begin();
+  }
+
+  const_iterator
+  end() const
+  {
+    return indices_.end();
+  }
+
+  const rvsdg::Type &
+  type() const noexcept
+  {
+    return *argument(0);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  create(const Variable * aggregate, const std::vector<unsigned> & indices)
+  {
+    auto op = std::make_unique<ExtractValueOperation>(aggregate->Type(), indices);
+    return ThreeAddressCode::create(std::move(op), { aggregate });
+  }
+
+private:
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  dsttype(const std::shared_ptr<const rvsdg::Type> & aggtype, const std::vector<unsigned> & indices)
+  {
+    std::shared_ptr<const rvsdg::Type> type = aggtype;
+    for (const auto & index : indices)
+    {
+      if (auto st = std::dynamic_pointer_cast<const StructType>(type))
+      {
+        if (index >= st->numElements())
+          throw util::Error("extractvalue index out of bound.");
+
+        type = st->getElementType(index);
+      }
+      else if (auto at = std::dynamic_pointer_cast<const ArrayType>(type))
+      {
+        if (index >= at->nelements())
+          throw util::Error("extractvalue index out of bound.");
+
+        type = at->GetElementType();
+      }
+      else
+        throw util::Error("expected struct or array type.");
+    }
+
+    return { type };
+  }
+
+  std::vector<unsigned> indices_{};
+};
+
+/**
  * Represents LLVM's insertvalue instruction.
  *
  * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#insertvalue-instruction)
