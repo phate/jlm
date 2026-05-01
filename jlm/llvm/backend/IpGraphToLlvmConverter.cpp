@@ -17,11 +17,11 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/TypeConverter.hpp>
 #include <jlm/rvsdg/control.hpp>

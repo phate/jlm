@@ -10,9 +10,9 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>

@@ -7,8 +7,8 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemCpy.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
