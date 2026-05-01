@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators/MemCpy.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 
 namespace jlm::llvm
 {
