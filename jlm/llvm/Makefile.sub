@@ -37,11 +37,11 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/IOBarrier.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
-    jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/sext.cpp \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
+    jlm/llvm/ir/operators/StdLibIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -149,7 +149,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
-    jlm/llvm/ir/operators/MemCpy.hpp \
     jlm/llvm/ir/operators/MemoryStateOperations.hpp \
     jlm/llvm/ir/operators/FunctionPointer.hpp \
     jlm/llvm/ir/operators/GetElementPtr.hpp \
@@ -162,6 +161,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
+    jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 $(eval $(call common_library,libllvm))
@@ -183,7 +183,6 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/frontend/LlvmModuleConversionTests.cpp \
     jlm/llvm/frontend/LlvmPhiConversionTests.cpp \
     jlm/llvm/frontend/LoadTests.cpp \
-    jlm/llvm/frontend/MemCpyTests.cpp \
     jlm/llvm/frontend/RecursiveDataTests.cpp \
     jlm/llvm/frontend/SelectTests.cpp \
     jlm/llvm/frontend/SpecializedArithmeticIntrinsicOperationTests.cpp \
@@ -197,10 +196,10 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/GetElementPtrTests.cpp \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \
-    jlm/llvm/ir/operators/MemCpyTests.cpp \
     jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \
     jlm/llvm/ir/operators/PhiTests.cpp \
     jlm/llvm/ir/operators/SExtTests.cpp \
+    jlm/llvm/ir/operators/StdLibIntrinsicOperationsTests.cpp \
     jlm/llvm/ir/operators/StoreTests.cpp \
     \
     jlm/llvm/ir/AggregationTests.cpp \

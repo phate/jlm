@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/operators/MemCpy.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
