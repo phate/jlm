@@ -1419,7 +1419,7 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
 
-    [[maybe_unused]] const auto & testImport = jlm::llvm::LlvmGraphImport::createFunctionImport(
+    [[maybe_unused]] auto & testImport = jlm::llvm::LlvmGraphImport::createFunctionImport(
         *graph,
         functionType,
         "test",
@@ -1494,7 +1494,7 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    [[maybe_unused]] const auto & testImport = jlm::llvm::LlvmGraphImport::createGlobalImport(
+    [[maybe_unused]] auto & testImport = jlm::llvm::LlvmGraphImport::createGlobalImport(
         *graph,
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
