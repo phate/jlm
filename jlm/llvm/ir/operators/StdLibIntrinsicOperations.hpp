@@ -469,7 +469,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation =
-        std::make_unique<MemCpyNonVolatileOperation>(length.Type(), memoryStates.size());
+        std::make_unique<MemSetNonVolatileOperation>(length.Type(), memoryStates.size());
     return ThreeAddressCode::create(std::move(operation), operands);
   }
 
