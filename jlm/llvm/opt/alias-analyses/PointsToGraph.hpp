@@ -7,7 +7,8 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>

@@ -5,9 +5,16 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>

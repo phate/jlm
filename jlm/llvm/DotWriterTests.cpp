@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/DotWriter.hpp>
-#include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 

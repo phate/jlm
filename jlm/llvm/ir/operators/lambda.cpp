@@ -3,9 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm
@@ -67,10 +66,10 @@ LlvmLambdaOperation::SetArgumentAttributes(
 rvsdg::Output &
 LlvmLambdaOperation::getIOStateArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
-  JLM_ASSERT(is<LlvmLambdaOperation>(&lambdaNode));
+  JLM_ASSERT(rvsdg::is<LlvmLambdaOperation>(&lambdaNode));
   const auto functionArguments = lambdaNode.GetFunctionArguments();
   const auto ioStateArgument = functionArguments[functionArguments.size() - 2];
-  JLM_ASSERT(is<IOStateType>(ioStateArgument->Type()));
+  JLM_ASSERT(rvsdg::is<IOStateType>(ioStateArgument->Type()));
   return *ioStateArgument;
 }
 
