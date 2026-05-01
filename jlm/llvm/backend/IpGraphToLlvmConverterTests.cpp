@@ -8,9 +8,13 @@
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemCpy.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <llvm/IR/Instructions.h>

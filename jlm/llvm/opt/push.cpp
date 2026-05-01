@@ -3,18 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 #include <deque>
-#include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm
 {

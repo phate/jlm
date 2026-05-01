@@ -7,7 +7,11 @@
 
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 

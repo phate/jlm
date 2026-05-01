@@ -4,7 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>

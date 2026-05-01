@@ -124,7 +124,6 @@ libllvm_HEADERS = \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
-    jlm/llvm/ir/operators.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
     jlm/llvm/ir/RvsdgModule.hpp \
     jlm/llvm/ir/Linkage.hpp \

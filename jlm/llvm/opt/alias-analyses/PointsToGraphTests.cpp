@@ -5,7 +5,9 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>

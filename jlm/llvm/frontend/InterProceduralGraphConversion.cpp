@@ -11,11 +11,14 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/ssa.hpp>
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>

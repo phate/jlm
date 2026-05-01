@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ANDERSEN_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_ANDERSEN_HPP
 
-#include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
