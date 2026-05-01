@@ -155,13 +155,13 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/IntegerOperations.hpp \
     jlm/llvm/ir/operators/IOBarrier.hpp \
     jlm/llvm/ir/operators/delta.hpp \
-    jlm/llvm/ir/operators/StdLibIntrinsicsOperations.hpp \
     jlm/llvm/ir/operators/Store.hpp \
     jlm/llvm/ir/operators/alloca.hpp \
     jlm/llvm/ir/operators/call.hpp \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
+    jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 $(eval $(call common_library,libllvm))
