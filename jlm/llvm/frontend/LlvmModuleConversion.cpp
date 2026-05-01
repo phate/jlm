@@ -1175,6 +1175,16 @@ convertMemCpyCall(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
+  JLM_ASSERT(
+      instruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy
+      || instruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy_inline
+      || instruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy_element_unordered_atomic);
+
+  if (instruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy_inline)
+    throw std::logic_error("Unhandled memcpy_inline intrinsic.");
+  if (instruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy_element_unordered_atomic)
+    throw std::logic_error("Unhandled memcpy_element_unordered_atomic intrinsic.");
+
   const auto ioState = context.iostate();
   auto memoryState = context.memory_state();
 
@@ -1371,6 +1381,8 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::memcpy:
+  case ::llvm::Intrinsic::memcpy_inline:
+  case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
     return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
   default:
     return createCall(intrinsicInstruction, threeAddressCodes, context);
