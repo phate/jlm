@@ -6,17 +6,15 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <jlm/rvsdg/delta.hpp>
-#include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/Phi.hpp>
-#include <typeindex>
 
 namespace jlm::hls
 {
