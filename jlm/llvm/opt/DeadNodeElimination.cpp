@@ -14,6 +14,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <algorithm>
+
 namespace jlm::llvm
 {
 
