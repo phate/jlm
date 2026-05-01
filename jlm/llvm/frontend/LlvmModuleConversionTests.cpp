@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 
@@ -349,5 +350,79 @@ TEST(LlvmModuleConversionTests, CallingConvConversion)
       auto op = jlm::util::assertedCast<const CallOperation>(&callCalleeTac->operation());
       EXPECT_EQ(op->getCallingConvention(), CallingConvention::Cold);
     }
+  }
+}
+
+TEST(MemCpyTests, MemCpyConversion)
+{
+  using namespace llvm;
+
+  // Arrange
+  LLVMContext context;
+  std::unique_ptr<Module> llvmModule(new Module("module", context));
+
+  auto int64Type = Type::getInt64Ty(context);
+  auto pointerType = PointerType::getUnqual(context);
+  auto voidType = Type::getVoidTy(context);
+
+  auto functionType =
+      FunctionType::get(voidType, ArrayRef<Type *>({ pointerType, pointerType, int64Type }), false);
+  auto function =
+      Function::Create(functionType, GlobalValue::ExternalLinkage, "f", llvmModule.get());
+  auto destination = function->getArg(0);
+  auto source = function->getArg(1);
+  auto length = function->getArg(2);
+
+  auto llvmBasicBlock = BasicBlock::Create(context, "BasicBlock", function);
+
+  IRBuilder<> builder(llvmBasicBlock);
+  builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, true);
+  builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, false);
+  builder.CreateMemCpy(destination, MaybeAlign(), source, MaybeAlign(), length, true);
+  builder.CreateRetVoid();
+
+  llvmModule->print(errs(), nullptr);
+
+  // Act
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+  print(*ipgModule, stdout);
+
+  // Assert
+  {
+    using namespace jlm::llvm;
+
+    auto controlFlowGraph =
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
+    auto jlmBasicBlock =
+        dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
+
+    size_t numMemCpyThreeAddressCodes = 0;
+    size_t numMemCpyVolatileThreeAddressCodes = 0;
+    for (auto it = jlmBasicBlock->begin(); it != jlmBasicBlock->end(); ++it)
+    {
+      if (is<MemCpyVolatileOperation>(*it))
+      {
+        numMemCpyVolatileThreeAddressCodes++;
+        auto ioStateAssignment = *std::next(it);
+        auto memoryStateAssignment = *std::next(it, 2);
+
+        EXPECT_TRUE(is<AssignmentOperation>(ioStateAssignment->operation()));
+        EXPECT_TRUE(is<IOStateType>(ioStateAssignment->operand(0)->type()));
+
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+      }
+      else if (is<MemCpyNonVolatileOperation>(*it))
+      {
+        numMemCpyThreeAddressCodes++;
+        auto memoryStateAssignment = *std::next(it, 1);
+
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+      }
+    }
+
+    EXPECT_EQ(numMemCpyThreeAddressCodes, 1u);
+    EXPECT_EQ(numMemCpyVolatileThreeAddressCodes, 2u);
   }
 }
