@@ -52,6 +52,7 @@ class MallocOperation;
 class FreeOperation;
 class MemCpyNonVolatileOperation;
 class MemCpyVolatileOperation;
+class MemSetNonVolatileOperation;
 class MemoryStateMergeOperation;
 class MemoryStateSplitOperation;
 class LambdaEntryMemoryStateSplitOperation;
@@ -241,6 +242,12 @@ private:
       const MemCpyNonVolatileOperation &,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
+
+  ::llvm::Value *
+  convertMemsetNonVolatileOperation(
+      const rvsdg::SimpleOperation &,
+      const std::vector<const Variable *> &,
+      ::llvm::IRBuilder<> &);
 
   ::llvm::Value *
   convert(

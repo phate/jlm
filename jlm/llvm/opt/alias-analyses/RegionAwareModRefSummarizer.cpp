@@ -1098,6 +1098,10 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
       {
         return AnnotateMemcpy(simpleNode, lambda);
       },
+      [&](const MemSetOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateMemset(simpleNode, lambda);
+      },
       [&](const CallOperation &) -> std::optional<ModRefSetIndex>
       {
         return AnnotateCall(simpleNode, lambda);
@@ -1233,6 +1237,22 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
   const auto count = tryGetConstantSignedInteger(*countOrigin);
   AddPointerOriginTargets(nodeModRef, *dstOrigin, count, lambda);
   AddPointerOriginTargets(nodeModRef, *srcOrigin, count, lambda);
+  return nodeModRef;
+}
+
+ModRefSetIndex
+RegionAwareModRefSummarizer::AnnotateMemset(
+    const rvsdg::SimpleNode & memsetNode,
+    const rvsdg::LambdaNode & lambda)
+{
+  JLM_ASSERT(is<MemSetOperation>(memsetNode.GetOperation()));
+
+  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(memsetNode);
+  const auto dstOrigin = MemSetOperation::destinationInput(memsetNode).origin();
+  const auto lengthOrigin = MemSetOperation::lengthInput(memsetNode).origin();
+  const auto numBytes = tryGetConstantSignedInteger(*lengthOrigin);
+  AddPointerOriginTargets(nodeModRef, *dstOrigin, numBytes, lambda);
+
   return nodeModRef;
 }
 

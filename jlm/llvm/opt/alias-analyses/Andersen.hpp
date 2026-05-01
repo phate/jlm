@@ -392,6 +392,9 @@ private:
   AnalyzeMemcpy(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzeMemset(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeConstantArray(const rvsdg::SimpleNode & node);
 
   void

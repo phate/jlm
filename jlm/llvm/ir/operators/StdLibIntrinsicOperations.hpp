@@ -427,6 +427,46 @@ public:
         || *input->Type() == *rvsdg::BitType::Create(64));
     return *input;
   }
+
+  /**
+   * Maps a memory state output to its corresponding memory state input.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  mapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [memsetNode, memsetOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemSetOperation>(output);
+    JLM_ASSERT(memsetOperation);
+    const auto numNonMemoryStateOutputs =
+        memsetNode->noutputs() - memsetOperation->numMemoryStates();
+    JLM_ASSERT(output.index() >= numNonMemoryStateOutputs);
+    const auto numNonMemoryStateInputs = memsetNode->ninputs() - memsetOperation->numMemoryStates();
+    const auto inputIndex = numNonMemoryStateInputs + (output.index() - numNonMemoryStateOutputs);
+    const auto input = memsetNode->input(inputIndex);
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * Maps a memory state input to its corresponding memory state output.
+   */
+  [[nodiscard]] static rvsdg::Output &
+  mapMemoryStateInputToOutput(const rvsdg::Input & input)
+  {
+    JLM_ASSERT(is<MemoryStateType>(input.Type()));
+    auto [memsetNode, memsetOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemSetOperation>(input);
+    JLM_ASSERT(memsetOperation);
+    const auto numNonMemoryStateInputs = memsetNode->ninputs() - memsetOperation->numMemoryStates();
+    JLM_ASSERT(input.index() >= numNonMemoryStateInputs);
+    const auto numNonMemoryStateOutputs =
+        memsetNode->noutputs() - memsetOperation->numMemoryStates();
+    const auto outputIndex = numNonMemoryStateOutputs + (input.index() - numNonMemoryStateInputs);
+    const auto output = memsetNode->output(outputIndex);
+    JLM_ASSERT(is<MemoryStateType>(output->Type()));
+    return *output;
+  }
 };
 
 /**

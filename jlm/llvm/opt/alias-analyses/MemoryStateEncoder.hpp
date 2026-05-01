@@ -107,6 +107,9 @@ private:
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   void
+  EncodeMemset(const rvsdg::SimpleNode & memsetNode);
+
+  void
   EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
@@ -182,6 +185,21 @@ private:
   [[nodiscard]] static std::vector<rvsdg::Output *>
   ReplaceMemcpyNode(
       const rvsdg::SimpleNode & memcpyNode,
+      const std::vector<rvsdg::Output *> & memoryStates);
+
+  /**
+   * Replace \p memsetNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memsetNode are redirected to the respective outputs of the newly created
+   * copy.
+   *
+   * @param memsetNode A rvsdg::SimpleNode representing a MemSetOperation.
+   * @param memoryStates The memory states the new memset node should consume.
+   *
+   * @return A vector with the memory states of the newly created copy.
+   */
+  [[nodiscard]] static std::vector<rvsdg::Output *>
+  ReplaceMemsetNode(
+      const rvsdg::SimpleNode & memsetNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   std::unique_ptr<Context> Context_;
