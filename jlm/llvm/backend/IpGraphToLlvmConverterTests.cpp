@@ -257,6 +257,63 @@ TEST(IpGraphToLlvmConverterTests, MemCpyVolatileConversion)
   }
 }
 
+TEST(IpGraphToLlvmConverterTests, MemSetConversion)
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  auto pointerType = PointerType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto bit8Type = jlm::rvsdg::BitType::Create(8);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { pointerType, bit8Type, bit64Type, memoryStateType },
+      { memoryStateType });
+
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
+
+  auto cfg = ControlFlowGraph::create(ipgModule);
+  auto destinationArgument =
+      cfg->entry()->append_argument(Argument::create("destination", pointerType));
+  auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit8Type));
+  auto lengthArgument = cfg->entry()->append_argument(Argument::create("length", bit64Type));
+  auto memoryStateArgument =
+      cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+  auto basicBlock = BasicBlock::create(*cfg);
+  auto memsetTac = basicBlock->append_last(MemSetNonVolatileOperation::createTac(
+      *destinationArgument,
+      *valueArgument,
+      *lengthArgument,
+      { memoryStateArgument }));
+
+  cfg->exit()->divert_inedges(basicBlock);
+  basicBlock->add_outedge(cfg->exit());
+  cfg->exit()->append_result(memsetTac->result(0));
+
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
+  f->add_cfg(std::move(cfg));
+
+  print(ipgModule, stdout);
+
+  // Act
+  llvm::LLVMContext ctx;
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
+  llvmModule->print(llvm::errs(), nullptr);
+
+  // Assert
+  {
+    auto llvmFunction = llvmModule->getFunction("f");
+    auto & basicBlock = llvmFunction->back();
+    auto & instruction = basicBlock.front();
+
+    auto memsetInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
+    EXPECT_NE(memsetInstruction, nullptr);
+    EXPECT_EQ(memsetInstruction->getIntrinsicID(), ::llvm::Intrinsic::memset);
+    EXPECT_FALSE(memsetInstruction->isVolatile());
+  }
+}
+
 TEST(IpGraphToLlvmConverterTests, StoreConversion)
 {
   using namespace jlm::llvm;
