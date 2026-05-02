@@ -353,7 +353,7 @@ TEST(LlvmModuleConversionTests, CallingConvConversion)
   }
 }
 
-TEST(MemCpyTests, MemCpyConversion)
+TEST(LlvmModuleConversionTests, MemCpyConversion)
 {
   using namespace llvm;
 
@@ -424,5 +424,64 @@ TEST(MemCpyTests, MemCpyConversion)
 
     EXPECT_EQ(numMemCpyThreeAddressCodes, 1u);
     EXPECT_EQ(numMemCpyVolatileThreeAddressCodes, 2u);
+  }
+}
+
+TEST(LlvmModuleConversionTests, MemSetConversion)
+{
+  using namespace llvm;
+
+  // Arrange
+  LLVMContext context;
+  std::unique_ptr<Module> llvmModule(new Module("module", context));
+
+  auto int8Type = Type::getInt8Ty(context);
+  auto int64Type = Type::getInt64Ty(context);
+  auto pointerType = PointerType::getUnqual(context);
+  auto voidType = Type::getVoidTy(context);
+
+  auto functionType =
+      FunctionType::get(voidType, ArrayRef<Type *>({ pointerType, int8Type, int64Type }), false);
+  auto function =
+      Function::Create(functionType, GlobalValue::ExternalLinkage, "f", llvmModule.get());
+  auto destination = function->getArg(0);
+  auto value = function->getArg(1);
+  auto length = function->getArg(2);
+
+  auto llvmBasicBlock = BasicBlock::Create(context, "BasicBlock", function);
+
+  IRBuilder builder(llvmBasicBlock);
+  builder.CreateMemSet(destination, value, length, MaybeAlign());
+  builder.CreateRetVoid();
+
+  llvmModule->print(errs(), nullptr);
+
+  // Act
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+  print(*ipgModule, stdout);
+
+  // Assert
+  {
+    using namespace jlm::llvm;
+
+    auto controlFlowGraph =
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
+    auto jlmBasicBlock =
+        dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
+
+    size_t numMemsetThreeAddressCodes = 0;
+    for (auto it = jlmBasicBlock->begin(); it != jlmBasicBlock->end(); ++it)
+    {
+      if (is<MemSetNonVolatileOperation>(*it))
+      {
+        numMemsetThreeAddressCodes++;
+        auto memoryStateAssignment = *std::next(it, 1);
+
+        EXPECT_TRUE(is<AssignmentOperation>(memoryStateAssignment->operation()));
+        EXPECT_TRUE(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
+      }
+    }
+
+    EXPECT_EQ(numMemsetThreeAddressCodes, 1u);
   }
 }
