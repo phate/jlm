@@ -682,6 +682,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeMemcpy(node);
       },
+      [&](const MemSetOperation &)
+      {
+        AnalyzeMemset(node);
+      },
       [&](const ConstantArrayOperation &)
       {
         AnalyzeConstantArray(node);
@@ -961,6 +965,19 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
   Constraints_->AddConstraint(LoadConstraint(dummyPO, srcAddressRegisterPO));
   // Add a "store" constraint from the dummy register into the destination
   Constraints_->AddConstraint(StoreConstraint(dstAddressRegisterPO, dummyPO));
+}
+
+void
+Andersen::AnalyzeMemset(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<MemSetOperation>(node.GetOperation()));
+
+  const auto & dstAddressRegister = *MemSetOperation::destinationInput(node).origin();
+  JLM_ASSERT(is<PointerType>(dstAddressRegister.Type()));
+
+  const auto dstAddressRegisterPO = Set_->GetRegisterPointerObject(dstAddressRegister);
+
+  Set_->MarkAsStoringAsScalar(dstAddressRegisterPO);
 }
 
 void

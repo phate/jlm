@@ -245,6 +245,9 @@ private:
   AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
+  AnnotateMemset(const rvsdg::SimpleNode & memsetNode, const rvsdg::LambdaNode & lambda);
+
+  ModRefSetIndex
   AnnotateCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambda);
 
   /**

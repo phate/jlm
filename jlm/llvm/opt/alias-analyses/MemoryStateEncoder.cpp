@@ -737,6 +737,10 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
       {
         EncodeMemcpy(simpleNode);
       },
+      [&](const MemSetOperation &)
+      {
+        EncodeMemset(simpleNode);
+      },
       [&](const MemoryStateOperation &)
       {
         // Nothing needs to be done
@@ -906,6 +910,20 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto memoryStateResults = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
+
+  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+}
+
+void
+MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode)
+{
+  JLM_ASSERT(is<MemSetOperation>(memsetNode.GetOperation()));
+  auto & stateMap = Context_->GetRegionalizedStateMap();
+
+  auto memoryNodeStatePairs = stateMap.GetExistingStates(memsetNode);
+  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+
+  auto memoryStateResults = ReplaceMemsetNode(memsetNode, memoryStateOperands);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
 }
@@ -1227,6 +1245,26 @@ MemoryStateEncoder::ReplaceMemcpyNode(
   }
 
   throw std::logic_error("Unhandled memcpy operation type.");
+}
+
+std::vector<rvsdg::Output *>
+MemoryStateEncoder::ReplaceMemsetNode(
+    const rvsdg::SimpleNode & memsetNode,
+    const std::vector<rvsdg::Output *> & memoryStates)
+{
+  JLM_ASSERT(is<MemSetOperation>(memsetNode.GetOperation()));
+
+  auto destination = MemSetOperation::destinationInput(memsetNode).origin();
+  auto value = MemSetOperation::valueInput(memsetNode).origin();
+  auto length = MemSetOperation::lengthInput(memsetNode).origin();
+
+  if (is<MemSetNonVolatileOperation>(memsetNode.GetOperation()))
+  {
+    return outputs(
+        &MemSetNonVolatileOperation::createNode(*destination, *value, *length, memoryStates));
+  }
+
+  throw std::logic_error("Unhandled memset operation type.");
 }
 
 }

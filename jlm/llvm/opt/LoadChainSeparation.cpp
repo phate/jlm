@@ -428,6 +428,13 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
                 currentOutput =
                     MemCpyOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
               },
+              [&](const MemSetOperation &)
+              {
+                hasModRefChainLinkAboveInRegion = true;
+                currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
+                currentOutput =
+                    MemSetOperation::mapMemoryStateOutputToInput(*currentOutput).origin();
+              },
               [&](const CallOperation &)
               {
                 // FIXME: I really would like that state edges through calls would be recognized as

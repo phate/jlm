@@ -1150,12 +1150,12 @@ convertFreeCall(
 }
 
 /**
- * In LLVM, the memcpy intrinsic is modeled as a call instruction. It expects four arguments, with
- * the fourth argument being a ConstantInt of bit width 1 to encode the volatile flag for the memcpy
- * instruction. This function takes this argument and converts it to a boolean flag.
+ * In LLVM, the memcpy/memset intrinsic is modeled as a call instruction. It expects four arguments,
+ * with the fourth argument being a ConstantInt of bit width 1 to encode the volatile flag for the
+ * memcpy/memset instruction. This function takes this argument and converts it to a boolean flag.
  *
- * @param value The volatile argument of the memcpy intrinsic.
- * @return Boolean flag indicating whether the memcpy is volatile.
+ * @param value The volatile argument of the memcpy/memset intrinsic.
+ * @return Boolean flag indicating whether the memcpy/memset is volatile.
  */
 static bool
 IsVolatile(const ::llvm::Value & value)
@@ -1209,6 +1209,43 @@ convertMemCpyCall(
   {
     threeAddressCodes.push_back(
         MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
+    threeAddressCodes.push_back(
+        AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
+  }
+
+  return nullptr;
+}
+
+static const Variable *
+convertMemSetCall(
+    const ::llvm::IntrinsicInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  JLM_ASSERT(
+      instruction.getIntrinsicID() == ::llvm::Intrinsic::memset
+      || instruction.getIntrinsicID() == ::llvm::Intrinsic::memset_inline
+      || instruction.getIntrinsicID() == ::llvm::Intrinsic::memset_element_unordered_atomic);
+
+  if (instruction.getIntrinsicID() == ::llvm::Intrinsic::memset_inline)
+    throw std::logic_error("Unhandled memset_inline intrinsic.");
+  if (instruction.getIntrinsicID() == ::llvm::Intrinsic::memset_element_unordered_atomic)
+    throw std::logic_error("Unhandled memset_element_unordered_atomic intrinsic.");
+
+  auto memoryState = context.memory_state();
+
+  const auto destination = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
+  const auto value = ConvertValue(instruction.getArgOperand(1), threeAddressCodes, context);
+  const auto length = ConvertValue(instruction.getArgOperand(2), threeAddressCodes, context);
+
+  if (IsVolatile(*instruction.getArgOperand(3)))
+  {
+    throw std::logic_error("Unhandled volatile memset intrinsic.");
+  }
+  else
+  {
+    threeAddressCodes.push_back(
+        MemSetNonVolatileOperation::createTac(*destination, *value, *length, { memoryState }));
     threeAddressCodes.push_back(
         AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
   }
@@ -1384,6 +1421,10 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memcpy_inline:
   case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
     return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memset:
+  case ::llvm::Intrinsic::memset_inline:
+  case ::llvm::Intrinsic::memset_element_unordered_atomic:
+    return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
   default:
     return createCall(intrinsicInstruction, threeAddressCodes, context);
   }

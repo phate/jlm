@@ -1008,6 +1008,19 @@ IpGraphToLlvmConverter::convert(
 }
 
 ::llvm::Value *
+IpGraphToLlvmConverter::convertMemsetNonVolatileOperation(
+    const rvsdg::SimpleOperation &,
+    const std::vector<const Variable *> & operands,
+    ::llvm::IRBuilder<> & builder)
+{
+  auto destination = Context_->value(operands[0]);
+  auto value = Context_->value(operands[1]);
+  auto length = Context_->value(operands[2]);
+
+  return builder.CreateMemSet(destination, value, length, ::llvm::MaybeAlign());
+}
+
+::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemoryStateMergeOperation &,
     const std::vector<const Variable *> &,
@@ -1360,6 +1373,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<MemCpyVolatileOperation>(op))
   {
     return convert<MemCpyVolatileOperation>(op, arguments, builder);
+  }
+  if (is<MemSetNonVolatileOperation>(op))
+  {
+    return convertMemsetNonVolatileOperation(op, arguments, builder);
   }
   if (is<FNegOperation>(op))
   {
