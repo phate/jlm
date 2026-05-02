@@ -547,7 +547,7 @@ private:
   {
     // The memset() standard C library call has as return type void*, but LLVM models the
     // function call nevertheless as:
-    // call void @llvm.memset.p0.p0.i64(ptr align 4 %7, ptr align 4 %8, i64 %9, i1 false)
+    // call void @llvm.memset.p0.i64(ptr %0, i8 0, i64 8, i1 false)
     //
     // LLVM simply hands in register %7 (dest pointer) to all users of the return type of memset().
     // Thus, we only need state types as result types of the operation here.

@@ -430,9 +430,6 @@ LoadChainSeparation::traceModRefChains(rvsdg::Output & startOutput, ModRefChainS
               },
               [&](const MemSetOperation &)
               {
-                // FIXME: We really would like to know here which memory state belongs to the source
-                // and which to the dst address. This would allow us to be more precise in the
-                // separation.
                 hasModRefChainLinkAboveInRegion = true;
                 currentModRefChain.add({ currentOutput, ModRefChainLink::Type::Modification });
                 currentOutput =
