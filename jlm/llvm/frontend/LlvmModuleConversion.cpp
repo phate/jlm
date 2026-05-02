@@ -1425,6 +1425,9 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memmove:
+  case ::llvm::Intrinsic::memmove_element_unordered_atomic:
+    throw std::logic_error("Unhandled memmove intrinsic.");
   default:
     return createCall(intrinsicInstruction, threeAddressCodes, context);
   }
