@@ -166,13 +166,17 @@ MatchOperation::debug_string() const
   constexpr size_t maxAlternatives = 3;
   for (auto [input, subregionId] : mapping_)
   {
-    if (n >= maxAlternatives)
+    if (n < maxAlternatives)
+    {
+      oss << input << " -> " << subregionId << ", ";
+      n++;
+    }
+    else
+    {
+      oss << "..., ";
       break;
-    oss << input << " -> " << subregionId << ", ";
-    n++;
+    }
   }
-  if (nalternatives() >= maxAlternatives)
-    oss << "..., ";
   oss << default_alternative_;
 
   return "MATCH[" + oss.str() + "]";
