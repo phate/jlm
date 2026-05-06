@@ -41,7 +41,9 @@ class StoreValueForwarding::Statistics final : public util::Statistics
 {
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
-  static constexpr auto NumAAQueries_ = "#AliasAnalysisQueries";
+  static constexpr auto numNoAliasAnalysisQueriesLabel_ = "#NoAliasAnalysisQueries";
+  static constexpr auto numMayAliasAnalysisQueriesLabel_ = "#MayAliasAnalysisQueries";
+  static constexpr auto numMustAliasAnalysisQueriesLabel_ = "#MustAliasAnalysisQueries";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
@@ -63,14 +65,18 @@ public:
 
   void
   StopStatistics(
-      size_t numTotalLoads,
-      size_t numLoadsForwarded,
-      size_t numAliasAnalysisQueries) noexcept
+      const size_t numTotalLoads,
+      const size_t numLoadsForwarded,
+      const size_t numNoAliasAnalysisQueries,
+      const size_t numMayAliasAnalysisQueries,
+      const size_t numMustAliasAnalysisQueries) noexcept
   {
     GetTimer(Label::Timer).stop();
     AddMeasurement(NumTotalLoads_, numTotalLoads);
     AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
-    AddMeasurement(NumAAQueries_, numAliasAnalysisQueries);
+    AddMeasurement(numNoAliasAnalysisQueriesLabel_, numNoAliasAnalysisQueries);
+    AddMeasurement(numMayAliasAnalysisQueriesLabel_, numMayAliasAnalysisQueries);
+    AddMeasurement(numMustAliasAnalysisQueriesLabel_, numMustAliasAnalysisQueries);
   }
 
   void
@@ -120,7 +126,9 @@ struct StoreValueForwarding::Context final
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
-  size_t numAliasAnalysisQueries = 0;
+  size_t numNoAliasAnalysisQueries = 0;
+  size_t numMayAliasAnalysisQueries = 0;
+  size_t numMustAliasAnalysisQueries = 0;
 
   // Memoization of outputs that have been routed into regions
   struct OutputRegionHash
@@ -368,14 +376,15 @@ private:
     aa::LocalAliasAnalysis localAA;
     localAA.setMaxTraceCollectionSize(1);
 
-    numAliasAnalysisQueries++;
-
     const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
     const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
     const auto storedSize = GetTypeStoreSize(*storeType);
 
     // Query the alias analysis
-    return localAA.Query(*loadedAddress, loadedTypeSize, storeAddress, storedSize);
+    const auto response = localAA.Query(*loadedAddress, loadedTypeSize, storeAddress, storedSize);
+    updateAliasAnalysisQueryCounters(response);
+
+    return response;
   }
 
   /**
@@ -598,6 +607,25 @@ private:
     return StoreValueOrigin::createUnknown();
   }
 
+  void
+  updateAliasAnalysisQueryCounters(aa::AliasAnalysis::AliasQueryResponse response)
+  {
+    switch (response)
+    {
+    case aa::AliasAnalysis::NoAlias:
+      numNoAliasAnalysisQueries++;
+      break;
+    case aa::AliasAnalysis::MayAlias:
+      numMayAliasAnalysisQueries++;
+      break;
+    case aa::AliasAnalysis::MustAlias:
+      numMustAliasAnalysisQueries++;
+      break;
+    default:
+      throw std::logic_error("Unhandled alias analysis query response!");
+    }
+  }
+
 public:
   rvsdg::SimpleNode & loadNode;
   rvsdg::Output * loadedAddress;
@@ -606,8 +634,10 @@ public:
 
   OutputTracer & tracer;
 
-  // Counter used for statistics
-  size_t numAliasAnalysisQueries = 0;
+  // Counters used for statistics
+  size_t numNoAliasAnalysisQueries = 0;
+  size_t numMayAliasAnalysisQueries = 0;
+  size_t numMustAliasAnalysisQueries = 0;
 
   // Map containing info about each store node relevant to store value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -646,7 +676,9 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
-  context_->numAliasAnalysisQueries += loadTracingInfo.numAliasAnalysisQueries;
+  context_->numNoAliasAnalysisQueries += loadTracingInfo.numNoAliasAnalysisQueries;
+  context_->numMayAliasAnalysisQueries += loadTracingInfo.numMayAliasAnalysisQueries;
+  context_->numMustAliasAnalysisQueries += loadTracingInfo.numMustAliasAnalysisQueries;
 
   if (success)
   {
@@ -885,7 +917,9 @@ StoreValueForwarding::Run(
   statistics->StopStatistics(
       context_->numTotalLoads,
       context_->numLoadsForwarded,
-      context_->numAliasAnalysisQueries);
+      context_->numNoAliasAnalysisQueries,
+      context_->numMayAliasAnalysisQueries,
+      context_->numMustAliasAnalysisQueries);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done
