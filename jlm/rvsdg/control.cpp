@@ -161,12 +161,21 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
 std::string
 MatchOperation::debug_string() const
 {
-  std::string str("[");
-  for (const auto & pair : mapping_)
-    str += jlm::util::strfmt(pair.first, " -> ", pair.second, ", ");
-  str += jlm::util::strfmt(default_alternative_, "]");
+  size_t n = 0;
+  std::ostringstream oss;
+  constexpr size_t maxAlternatives = 3;
+  for (auto [input, subregionId] : mapping_)
+  {
+    if (n >= maxAlternatives)
+      break;
+    oss << input << " -> " << subregionId << ", ";
+    n++;
+  }
+  if (nalternatives() >= maxAlternatives)
+    oss << "..., ";
+  oss << default_alternative_;
 
-  return "MATCH" + str;
+  return "MATCH[" + oss.str() + "]";
 }
 
 std::unique_ptr<Operation>
