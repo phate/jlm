@@ -41,6 +41,7 @@ class StoreValueForwarding::Statistics final : public util::Statistics
 {
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
+  static constexpr auto NumAAQueries_ = "#AliasAnalysisQueries";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
@@ -61,11 +62,15 @@ public:
   }
 
   void
-  StopStatistics(size_t numTotalLoads, size_t numLoadsForwarded) noexcept
+  StopStatistics(
+      size_t numTotalLoads,
+      size_t numLoadsForwarded,
+      size_t numAliasAnalysisQueries) noexcept
   {
     GetTimer(Label::Timer).stop();
     AddMeasurement(NumTotalLoads_, numTotalLoads);
     AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
+    AddMeasurement(NumAAQueries_, numAliasAnalysisQueries);
   }
 
   void
@@ -115,6 +120,7 @@ struct StoreValueForwarding::Context final
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
+  size_t numAliasAnalysisQueries = 0;
 
   // Memoization of outputs that have been routed into regions
   struct OutputRegionHash
@@ -362,6 +368,8 @@ private:
     aa::LocalAliasAnalysis localAA;
     localAA.setMaxTraceCollectionSize(1);
 
+    numAliasAnalysisQueries++;
+
     const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
     const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
     const auto storedSize = GetTypeStoreSize(*storeType);
@@ -598,6 +606,9 @@ public:
 
   OutputTracer & tracer;
 
+  // Counter used for statistics
+  size_t numAliasAnalysisQueries = 0;
+
   // Map containing info about each store node relevant to store value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
 
@@ -634,6 +645,8 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
+
+  context_->numAliasAnalysisQueries += loadTracingInfo.numAliasAnalysisQueries;
 
   if (success)
   {
@@ -869,7 +882,10 @@ StoreValueForwarding::Run(
   auto & rvsdg = module.Rvsdg();
   traverseInterProceduralRegion(rvsdg.GetRootRegion());
 
-  statistics->StopStatistics(context_->numTotalLoads, context_->numLoadsForwarded);
+  statistics->StopStatistics(
+      context_->numTotalLoads,
+      context_->numLoadsForwarded,
+      context_->numAliasAnalysisQueries);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done
