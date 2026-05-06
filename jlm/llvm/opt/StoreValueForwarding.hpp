@@ -30,6 +30,7 @@ class StoreValueForwarding final : public rvsdg::Transformation
 {
   class Statistics;
   struct Context;
+  friend LoadTracingInfo;
 
 public:
   ~StoreValueForwarding() noexcept override;

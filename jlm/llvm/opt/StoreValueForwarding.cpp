@@ -41,6 +41,7 @@ class StoreValueForwarding::Statistics final : public util::Statistics
 {
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
+  static constexpr auto NumAAQueries_ = "#AliasAnalysisQueries";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
@@ -61,11 +62,15 @@ public:
   }
 
   void
-  StopStatistics(size_t numTotalLoads, size_t numLoadsForwarded) noexcept
+  StopStatistics(
+      size_t numTotalLoads,
+      size_t numLoadsForwarded,
+      size_t numAliasAnalysisQueries) noexcept
   {
     GetTimer(Label::Timer).stop();
     AddMeasurement(NumTotalLoads_, numTotalLoads);
     AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
+    AddMeasurement(NumAAQueries_, numAliasAnalysisQueries);
   }
 
   void
@@ -115,6 +120,7 @@ struct StoreValueForwarding::Context final
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
+  size_t numAliasAnalysisQueries = 0;
 
   // Memoization of outputs that have been routed into regions
   struct OutputRegionHash
@@ -292,9 +298,9 @@ struct StoreValueOrigin
 class LoadTracingInfo
 {
 public:
-  LoadTracingInfo(rvsdg::SimpleNode & loadNode, OutputTracer & tracer)
+  LoadTracingInfo(rvsdg::SimpleNode & loadNode, StoreValueForwarding::Context & context)
       : loadNode(loadNode),
-        tracer(tracer)
+        context(context)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -362,6 +368,8 @@ private:
     aa::LocalAliasAnalysis localAA;
     localAA.setMaxTraceCollectionSize(1);
 
+    context.numAliasAnalysisQueries++;
+
     const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
     const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
     const auto storedSize = GetTypeStoreSize(*storeType);
@@ -423,7 +431,7 @@ private:
   StoreValueOrigin
   getLastStoreBeforeInputInternal(rvsdg::Input & input)
   {
-    auto & tracedOutput = tracer.trace(*input.origin());
+    auto & tracedOutput = context.outputTracer.trace(*input.origin());
 
     // If tracing reached a store operation, look up its info
     if (auto [storeNode, storeOp] =
@@ -596,7 +604,7 @@ public:
   std::shared_ptr<const rvsdg::Type> loadedType;
   size_t loadedTypeSize;
 
-  OutputTracer & tracer;
+  StoreValueForwarding::Context & context;
 
   // Map containing info about each store node relevant to store value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -631,7 +639,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
 
   context_->statistics.startTracing();
-  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
+  LoadTracingInfo loadTracingInfo(loadNode, *context_);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
@@ -869,7 +877,10 @@ StoreValueForwarding::Run(
   auto & rvsdg = module.Rvsdg();
   traverseInterProceduralRegion(rvsdg.GetRootRegion());
 
-  statistics->StopStatistics(context_->numTotalLoads, context_->numLoadsForwarded);
+  statistics->StopStatistics(
+      context_->numTotalLoads,
+      context_->numLoadsForwarded,
+      context_->numAliasAnalysisQueries);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done
