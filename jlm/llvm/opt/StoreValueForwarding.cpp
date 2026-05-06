@@ -298,9 +298,9 @@ struct StoreValueOrigin
 class LoadTracingInfo
 {
 public:
-  LoadTracingInfo(rvsdg::SimpleNode & loadNode, StoreValueForwarding::Context & context)
+  LoadTracingInfo(rvsdg::SimpleNode & loadNode, OutputTracer & tracer)
       : loadNode(loadNode),
-        context(context)
+        tracer(tracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -368,7 +368,7 @@ private:
     aa::LocalAliasAnalysis localAA;
     localAA.setMaxTraceCollectionSize(1);
 
-    context.numAliasAnalysisQueries++;
+    numAliasAnalysisQueries++;
 
     const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
     const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
@@ -431,7 +431,7 @@ private:
   StoreValueOrigin
   getLastStoreBeforeInputInternal(rvsdg::Input & input)
   {
-    auto & tracedOutput = context.outputTracer.trace(*input.origin());
+    auto & tracedOutput = tracer.trace(*input.origin());
 
     // If tracing reached a store operation, look up its info
     if (auto [storeNode, storeOp] =
@@ -604,7 +604,10 @@ public:
   std::shared_ptr<const rvsdg::Type> loadedType;
   size_t loadedTypeSize;
 
-  StoreValueForwarding::Context & context;
+  OutputTracer & tracer;
+
+  // Counter used for statistics
+  size_t numAliasAnalysisQueries = 0;
 
   // Map containing info about each store node relevant to store value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -639,9 +642,11 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
 
   context_->statistics.startTracing();
-  LoadTracingInfo loadTracingInfo(loadNode, *context_);
+  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
+
+  context_->numAliasAnalysisQueries += loadTracingInfo.numAliasAnalysisQueries;
 
   if (success)
   {
