@@ -20,7 +20,7 @@ AllocaOperation::operator==(const Operation & other) const noexcept
 std::string
 AllocaOperation::debug_string() const
 {
-  return "ALLOCA[" + value_type().debug_string() + "]";
+  return "ALLOCA[" + allocatedType()->debug_string() + "]";
 }
 
 std::unique_ptr<rvsdg::Operation>

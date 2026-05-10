@@ -207,7 +207,7 @@ instrument_ref(
       jlm::rvsdg::Output * addr = node->output(0);
       // ensure that the alloca is an array type
       JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
-      auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
+      auto at = dynamic_cast<const llvm::ArrayType *>(ao->allocatedType().get());
       JLM_ASSERT(at);
       auto & sizeNode =
           llvm::IntegerConstantOperation::Create(*region, 64, BaseHLS::JlmSize(at) / 8);

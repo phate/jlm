@@ -456,7 +456,7 @@ IpGraphToLlvmConverter::convert_alloca(
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
-  auto t = typeConverter.ConvertJlmType(aop.value_type(), llvmContext);
+  auto t = typeConverter.ConvertJlmType(*aop.allocatedType(), llvmContext);
   auto i = builder.CreateAlloca(t, Context_->value(args[0]));
   i->setAlignment(::llvm::Align(aop.alignment()));
   return i;

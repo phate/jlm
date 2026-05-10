@@ -594,7 +594,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         ConvertType(*alloca_op->result(0)),                               // ptr
         ConvertType(*alloca_op->result(1)),                               // memstate
-        ConvertType(alloca_op->value_type()),                             // value type
+        ConvertType(*alloca_op->allocatedType()),                         // value type
         inputs[0],                                                        // size
         alloca_op->alignment(),                                           // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
