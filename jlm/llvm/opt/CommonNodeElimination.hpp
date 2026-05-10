@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_CNE_HPP
-#define JLM_LLVM_OPT_CNE_HPP
+#ifndef JLM_LLVM_OPT_COMMONNODEELIMINATION_HPP
+#define JLM_LLVM_OPT_COMMONNODEELIMINATION_HPP
 
 #include <jlm/rvsdg/Transformation.hpp>
 
