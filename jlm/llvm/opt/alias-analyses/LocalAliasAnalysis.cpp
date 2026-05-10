@@ -508,7 +508,7 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   {
     const auto elementCount = tryGetConstantSignedInteger(*node->input(0)->origin());
     if (elementCount.has_value())
-      return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
+      return *elementCount * GetTypeAllocSize(*allocaOp->allocatedType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)

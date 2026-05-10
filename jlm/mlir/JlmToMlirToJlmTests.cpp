@@ -139,9 +139,9 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
         {
           EXPECT_EQ(allocaOp->alignment(), 4);
 
-          EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->ValueType()));
+          EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->allocatedType()));
           auto valueBitType =
-              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->ValueType().get());
+              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->allocatedType().get());
           EXPECT_EQ(valueBitType->nbits(), 64);
 
           EXPECT_EQ(allocaOp->narguments(), 1);

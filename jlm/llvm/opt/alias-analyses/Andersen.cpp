@@ -746,7 +746,7 @@ Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
 
-  const bool canPoint = IsOrContainsPointerType(*allocaOp->ValueType());
+  const bool canPoint = IsOrContainsPointerType(*allocaOp->allocatedType());
   const auto allocaPO = Set_->CreateAllocaMemoryObject(node, canPoint);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, allocaPO);
 }

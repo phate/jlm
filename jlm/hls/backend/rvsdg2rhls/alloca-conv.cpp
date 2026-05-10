@@ -137,7 +137,7 @@ alloca_conv(rvsdg::Region * region)
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
       // ensure that the alloca is an array type
-      auto at = std::dynamic_pointer_cast<const llvm::ArrayType>(po->ValueType());
+      auto at = std::dynamic_pointer_cast<const llvm::ArrayType>(po->allocatedType());
       JLM_ASSERT(at);
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));

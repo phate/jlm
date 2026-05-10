@@ -21,11 +21,13 @@ public:
 
   AllocaOperation(
       std::shared_ptr<const rvsdg::Type> allocatedType,
-      std::shared_ptr<const rvsdg::BitType> btype,
-      size_t alignment)
-      : SimpleOperation({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
+      std::shared_ptr<const rvsdg::BitType> countType,
+      const size_t alignment)
+      : SimpleOperation(
+            { countType },
+            { { PointerType::Create() }, { MemoryStateType::Create() } }),
         alignment_(alignment),
-        AllocatedType_(std::move(allocatedType))
+        allocatedType_(std::move(allocatedType))
   {}
 
   AllocaOperation(const AllocaOperation & other) = default;
@@ -41,25 +43,21 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const rvsdg::BitType &
-  size_type() const noexcept
+  const rvsdg::BitType &
+  countType() const noexcept
   {
-    return *std::static_pointer_cast<const rvsdg::BitType>(argument(0));
-  }
-
-  [[nodiscard]] const rvsdg::Type &
-  value_type() const noexcept
-  {
-    return *AllocatedType_;
+    const auto type = argument(0);
+    JLM_ASSERT(is<rvsdg::BitType>(type));
+    return *std::static_pointer_cast<const rvsdg::BitType>(type);
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
-  ValueType() const noexcept
+  allocatedType() const noexcept
   {
-    return AllocatedType_;
+    return allocatedType_;
   }
 
-  inline size_t
+  size_t
   alignment() const noexcept
   {
     return alignment_;
@@ -86,41 +84,70 @@ public:
     return *node.output(1);
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(std::shared_ptr<const rvsdg::Type> allocatedType, const Variable * size, size_t alignment)
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(
+      std::shared_ptr<const rvsdg::Type> allocatedType,
+      const Variable * count,
+      size_t alignment)
   {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
-    if (!bt)
-      throw util::Error("expected bits type.");
+    auto bitType = checkOperandType(count->Type());
 
-    auto op = std::make_unique<AllocaOperation>(std::move(allocatedType), std::move(bt), alignment);
-    return ThreeAddressCode::create(std::move(op), { size });
+    auto op =
+        std::make_unique<AllocaOperation>(std::move(allocatedType), std::move(bitType), alignment);
+    return ThreeAddressCode::create(std::move(op), { count });
+  }
+
+  /**
+   * Creates a SimpleNode containing an AllocaOperation.
+   *
+   * @param allocatedType the type being allocated
+   * @param count the number of elements of the given type to allocate.
+   * @param alignment the minimum alignment of the allocation
+   * @return the created SimpleNode
+   */
+  static rvsdg::SimpleNode &
+  createNode(
+      std::shared_ptr<const rvsdg::Type> allocatedType,
+      rvsdg::Output & count,
+      const size_t alignment)
+  {
+    auto bitType = checkOperandType(count.Type());
+
+    return rvsdg::CreateOpNode<AllocaOperation>(
+        { &count },
+        std::move(allocatedType),
+        std::move(bitType),
+        alignment);
   }
 
   /**
    * Creates a SimpleNode containing an AllocaOperation.
    * @param allocatedType the type being allocated
-   * @param size the number of elements of the given type to allocate. Should almost always be 1.
+   * @param count the number of elements of the given type to allocate. Should almost always be 1.
    * @param alignment the minimum alignment of the allocation
    * @return the outputs of the created SimpleNode
    */
   static std::vector<rvsdg::Output *>
-  create(std::shared_ptr<const rvsdg::Type> allocatedType, rvsdg::Output * size, size_t alignment)
+  create(
+      std::shared_ptr<const rvsdg::Type> allocatedType,
+      rvsdg::Output * count,
+      const size_t alignment)
   {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
-    if (!bt)
-      throw util::Error("expected bits type.");
-
-    return outputs(&rvsdg::CreateOpNode<AllocaOperation>(
-        { size },
-        std::move(allocatedType),
-        std::move(bt),
-        alignment));
+    return rvsdg::outputs(&createNode(std::move(allocatedType), *count, alignment));
   }
 
 private:
+  static std::shared_ptr<const rvsdg::BitType>
+  checkOperandType(const std::shared_ptr<const rvsdg::Type> & countType)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(countType))
+      return bitType;
+
+    throw util::Error("Expected bits type.");
+  }
+
   size_t alignment_;
-  std::shared_ptr<const rvsdg::Type> AllocatedType_;
+  std::shared_ptr<const rvsdg::Type> allocatedType_;
 };
 
 }

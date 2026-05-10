@@ -85,7 +85,7 @@ PointsToGraph::addNodeForAlloca(const rvsdg::SimpleNode & allocaNode, bool exter
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
     const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
     if (elementCount.has_value() && *elementCount >= 0)
-      return *elementCount * GetTypeAllocSize(*allocaOp->ValueType());
+      return *elementCount * GetTypeAllocSize(*allocaOp->allocatedType());
     return std::nullopt;
   };
 
