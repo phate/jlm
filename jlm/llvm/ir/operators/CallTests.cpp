@@ -389,7 +389,6 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
 
   auto SetupFib = [&]()
   {
-    auto pbit64 = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -445,8 +444,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gepnm1 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm1 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { callfibm2Results[1] },
@@ -456,8 +454,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gepnm2 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm2 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm2 =
         LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
@@ -473,8 +470,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto store = StoreNonVolatileOperation::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
     auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });

@@ -438,8 +438,7 @@ LoopStrengthReduction::HoistSCEVExpresssion(
       auto newGep = GetElementPtrOperation::Create(
           ptrSide,
           { offsetSide },
-          rvsdg::BitType::Create(8), // Byte
-          ptrType);
+          rvsdg::BitType::Create(8)); // Byte
 
       return newGep;
     }
@@ -652,8 +651,7 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
     auto newGep = GetElementPtrOperation::Create(
         newIV.pre,
         { stepOutput },
-        rvsdg::BitType::Create(8), // Byte
-        pointerType);
+        rvsdg::BitType::Create(8)); // Byte
 
     newIV.post->divert_to(newGep);
 

@@ -712,11 +712,7 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
 
     auto arrayType = ArrayType::Create(bitType, 2);
 
-    GetElementPtrOperation::Create(
-        pointerArgument,
-        { bitArgument, bitArgument },
-        arrayType,
-        pointerType);
+    GetElementPtrOperation::Create(pointerArgument, { bitArgument, bitArgument }, arrayType);
 
     lambda->finalize({});
 

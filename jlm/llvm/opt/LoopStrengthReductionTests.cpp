@@ -456,11 +456,7 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   const auto & sExtNode = SExtOperation::create(64, mulNode.output(0));
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(
-      lv2.pre,
-      { c0_2.output(0), sExtNode },
-      intArrayType,
-      pointerType);
+  const auto gep = GetElementPtrOperation::Create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
 
   auto loadOutputs = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
   auto & subNode =
@@ -576,10 +572,7 @@ TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
   const auto gep = GetElementPtrOperation::Create(
-      lv2.pre,
-      { c0_2.output(0), sExtNode },
-      intArrayType,
-      pointerType);
+      lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
 
   const auto & c10 = IntegerConstantOperation::Create(*theta->subregion(), 32, 10);
 

@@ -80,13 +80,9 @@ public:
   /**
    * Creates a GetElementPtr RVSDG node.
    *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
-   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
-   *
    * @param baseAddress The base address for the pointer calculation.
    * @param offsets The offsets from the base address.
    * @param pointeeType The type the base address points to.
-   * @param resultType The result type of the operation.
    *
    * @return The output of the created GetElementPtr RVSDG node.
    */
@@ -94,12 +90,10 @@ public:
   Create(
       rvsdg::Output * baseAddress,
       const std::vector<rvsdg::Output *> & offsets,
-      std::shared_ptr<const rvsdg::Type> pointeeType,
-      std::shared_ptr<const rvsdg::Type> resultType)
+      std::shared_ptr<const rvsdg::Type> pointeeType)
   {
     CheckPointerType(*baseAddress->Type());
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::Output>(offsets);
-    CheckPointerType(*resultType);
 
     std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());

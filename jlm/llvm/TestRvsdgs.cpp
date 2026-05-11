@@ -297,7 +297,6 @@ GetElementPtrTest::SetupRvsdg()
       StructType::CreateIdentified({ BitType::Create(32), BitType::Create(32) }, false);
 
   auto mt = MemoryStateType::Create();
-  auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
@@ -309,22 +308,16 @@ GetElementPtrTest::SetupRvsdg()
   auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
   auto one = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
 
-  auto gepx = GetElementPtrOperation::Create(
-      fct->GetFunctionArguments()[0],
-      { zero, zero },
-      structType,
-      pointerType);
+  auto gepx =
+      GetElementPtrOperation::Create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
   auto ldx = LoadNonVolatileOperation::Create(
       gepx,
       { fct->GetFunctionArguments()[1] },
       jlm::rvsdg::BitType::Create(32),
       4);
 
-  auto gepy = GetElementPtrOperation::Create(
-      fct->GetFunctionArguments()[0],
-      { zero, one },
-      structType,
-      pointerType);
+  auto gepy =
+      GetElementPtrOperation::Create(fct->GetFunctionArguments()[0], { zero, one }, structType);
   auto ldy = LoadNonVolatileOperation::Create(gepy, { ldx[1] }, jlm::rvsdg::BitType::Create(32), 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
@@ -1366,8 +1359,7 @@ ExternalCallTest2::SetupRvsdg()
   auto one = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 1 });
   auto two = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 2 });
 
-  auto gepResult1 =
-      GetElementPtrOperation::Create(allocaResults[0], { zero, one }, structType, pointerType);
+  auto gepResult1 = GetElementPtrOperation::Create(allocaResults[0], { zero, one }, structType);
   auto loadResults1 = LoadNonVolatileOperation::Create(
       gepResult1,
       { &CallOperation::GetMemoryStateOutput(*CallF_) },
@@ -1376,8 +1368,7 @@ ExternalCallTest2::SetupRvsdg()
   auto loadResults2 =
       LoadNonVolatileOperation::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
 
-  auto gepResult2 =
-      GetElementPtrOperation::Create(allocaResults[0], { zero, two }, structType, pointerType);
+  auto gepResult2 = GetElementPtrOperation::Create(allocaResults[0], { zero, two }, structType);
   auto loadResults3 =
       LoadNonVolatileOperation::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
   auto loadResults4 =
@@ -1687,11 +1678,7 @@ ThetaTest::SetupRvsdg()
   auto c = thetanode->AddLoopVar(fct->GetFunctionArguments()[2]);
   auto s = thetanode->AddLoopVar(fct->GetFunctionArguments()[3]);
 
-  auto gepnode = GetElementPtrOperation::Create(
-      a.pre,
-      { n.pre },
-      jlm::rvsdg::BitType::Create(32),
-      pointerType);
+  auto gepnode = GetElementPtrOperation::Create(a.pre, { n.pre }, BitType::Create(32));
   auto store = StoreNonVolatileOperation::Create(gepnode, c.pre, { s.pre }, 4);
 
   auto one = &BitConstantOperation::create(*thetanode->subregion(), { 32, 1 });
@@ -2167,7 +2154,6 @@ PhiTest1::SetupRvsdg()
   auto module = llvm::LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto pbit64 = PointerType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto fibFunctionType = rvsdg::FunctionType::Create(
@@ -2229,8 +2215,7 @@ PhiTest1::SetupRvsdg()
     auto gepnm1 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm1 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { &CallOperation::GetMemoryStateOutput(callFibm2) },
@@ -2240,8 +2225,7 @@ PhiTest1::SetupRvsdg()
     auto gepnm2 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm2 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm2 =
         LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
@@ -2258,8 +2242,7 @@ PhiTest1::SetupRvsdg()
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto store = StoreNonVolatileOperation::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
     auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });
@@ -2273,7 +2256,6 @@ PhiTest1::SetupRvsdg()
   auto SetupTestFunction = [&](rvsdg::PhiNode * phiNode)
   {
     auto at = ArrayType::Create(jlm::rvsdg::BitType::Create(64), 10);
-    auto pbit64 = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
@@ -2295,7 +2277,7 @@ PhiTest1::SetupRvsdg()
         std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
 
     auto zero = &BitConstantOperation::create(*lambda->subregion(), { 64, 0 });
-    auto gep = GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, at, pbit64);
+    auto gep = GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, at);
 
     auto & call = CallOperation::CreateNode(
         fibcv,
@@ -3297,11 +3279,7 @@ MemcpyTest::SetupRvsdg()
     auto two = &BitConstantOperation::create(*lambda->subregion(), { 32, 2 });
     auto six = &BitConstantOperation::create(*lambda->subregion(), { 32, 6 });
 
-    auto gep = GetElementPtrOperation::Create(
-        globalArrayArgument,
-        { zero, two },
-        arrayType,
-        PointerType::Create());
+    auto gep = GetElementPtrOperation::Create(globalArrayArgument, { zero, two }, arrayType);
 
     auto storeResults = StoreNonVolatileOperation::Create(gep, six, { memoryStateArgument }, 8);
 
@@ -3416,12 +3394,12 @@ MemcpyTest2::SetupRvsdg()
     auto c0 = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
     auto c128 = &BitConstantOperation::create(*lambda->subregion(), { 64, 128 });
 
-    auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, structTypeB, pointerType);
-    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
+    auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, structTypeB);
+    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType);
     auto ldS2 = LoadNonVolatileOperation::Create(gepS22, { memoryStateArgument }, pointerType, 8);
 
-    auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, structTypeB, pointerType);
-    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
+    auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, structTypeB);
+    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType);
     auto ldS1 = LoadNonVolatileOperation::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
     auto memcpyResults = MemCpyNonVolatileOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
@@ -3454,10 +3432,10 @@ MemcpyTest2::SetupRvsdg()
 
     auto c0 = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
 
-    auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, structTypeB, pointerType);
+    auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, structTypeB);
     auto ldS1 = LoadNonVolatileOperation::Create(gepS1, { memoryStateArgument }, pointerType, 8);
 
-    auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, structTypeB, pointerType);
+    auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, structTypeB);
     auto ldS2 = LoadNonVolatileOperation::Create(gepS2, { ldS1[1] }, pointerType, 8);
 
     auto & call = CallOperation::CreateNode(
@@ -3522,11 +3500,11 @@ MemcpyTest3::SetupRvsdg()
       MemCpyNonVolatileOperation::create(allocaResults[0], pArgument, eight, { memoryState });
 
   auto gep1 =
-      GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, structType, pointerType);
+      GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, structType);
   auto ld = LoadNonVolatileOperation::Create(gep1, { memcpyResults[0] }, pointerType, 8);
 
   auto gep2 =
-      GetElementPtrOperation::Create(allocaResults[0], { minusFive }, structType, pointerType);
+      GetElementPtrOperation::Create(allocaResults[0], { minusFive }, structType);
 
   memcpyResults = MemCpyNonVolatileOperation::create(ld[0], gep2, three, { ld[1] });
 
@@ -3601,7 +3579,7 @@ LinkedListTest::SetupRvsdg()
     auto store1 = StoreNonVolatileOperation::Create(alloca[0], load1[0], { load1[1] }, 4);
 
     auto load2 = LoadNonVolatileOperation::Create(alloca[0], { store1[0] }, pointerType, 4);
-    auto gep = GetElementPtrOperation::Create(load2[0], { zero, zero }, structType, pointerType);
+    auto gep = GetElementPtrOperation::Create(load2[0], { zero, zero }, structType);
 
     auto load3 = LoadNonVolatileOperation::Create(gep, { load2[1] }, pointerType, 4);
     auto store2 = StoreNonVolatileOperation::Create(alloca[0], load3[0], { load3[1] }, 4);
@@ -4197,9 +4175,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto eight = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 8 });
     auto gepResult1 = GetElementPtrOperation::Create(
         gammaVaAddress.branchArgument[0],
-        { zero, two },
-        structType,
-        pointerType);
+        { zero, two }, structType);
     auto loadResultsGamma0 = LoadNonVolatileOperation::Create(
         gepResult1,
         { gammaMemoryState.branchArgument[0] },
@@ -4208,8 +4184,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma0[0],
         { eight },
-        rvsdg::BitType::Create(8),
-        pointerType);
+        rvsdg::BitType::Create(8));
     auto storeResultsGamma0 =
         StoreNonVolatileOperation::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
 
@@ -4220,8 +4195,7 @@ VariadicFunctionTest2::SetupRvsdg()
     gepResult1 = GetElementPtrOperation::Create(
         gammaVaAddress.branchArgument[1],
         { zero, three },
-        structType,
-        pointerType);
+        structType);
     auto loadResultsGamma1 = LoadNonVolatileOperation::Create(
         gepResult1,
         { gammaMemoryState.branchArgument[1] },
@@ -4232,8 +4206,7 @@ VariadicFunctionTest2::SetupRvsdg()
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },
-        rvsdg::BitType::Create(8),
-        pointerType);
+        rvsdg::BitType::Create(8));
     auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult.branchArgument[1], eightBit32);
     auto storeResultsGamma1 = StoreNonVolatileOperation::Create(
         gammaVaAddress.branchArgument[1],
