@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/opt/alias-analyses/PointsToGraph.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/CallingConvention.hpp>
@@ -263,9 +264,9 @@ TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysis)
   // jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
 
   Andersen andersen;
-  auto pointsToGraph = andersen.Analyze(rvsdg.module());
+  std::shared_ptr<PointsToGraph> pointsToGraph = andersen.Analyze(rvsdg.module());
   std::cout << PointsToGraph::dumpDot(*pointsToGraph) << std::endl;
-  PointsToGraphAliasAnalysis aa(*pointsToGraph);
+  PointsToGraphAliasAnalysis aa(pointsToGraph);
 
   // Assert
 
@@ -453,9 +454,9 @@ TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysisOffsets)
   // jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
 
   Andersen andersen;
-  auto pointsToGraph = andersen.Analyze(rvsdg.module());
+  std::shared_ptr<PointsToGraph> pointsToGraph = andersen.Analyze(rvsdg.module());
   std::cout << PointsToGraph::dumpDot(*pointsToGraph) << std::endl;
-  PointsToGraphAliasAnalysis aa(*pointsToGraph);
+  PointsToGraphAliasAnalysis aa(pointsToGraph);
 
   // Assert
 
