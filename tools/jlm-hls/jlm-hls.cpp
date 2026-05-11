@@ -92,7 +92,7 @@ main(int argc, char ** argv)
 
     jlm::hls::HlsDotWriter dotWriter;
     auto transformationSequence =
-        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgDotGraphs_);
+        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgGraphs_);
     transformationSequence->Run(*rvsdgModule, collector);
 
     // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
@@ -130,7 +130,7 @@ main(int argc, char ** argv)
   {
     jlm::hls::HlsDotWriter dotWriter;
     auto transformationSequence =
-        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgDotGraphs_);
+        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgGraphs_);
     transformationSequence->Run(*rvsdgModule, collector);
 
     jlm::hls::DotHLS dhls;

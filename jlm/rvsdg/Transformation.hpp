@@ -78,10 +78,10 @@ public:
   explicit TransformationSequence(
       std::vector<std::shared_ptr<Transformation>> transformations,
       DotWriter & dotWriter,
-      const bool dumpRvsdgDotGraphs)
+      const bool dumpRvsdgGraphs)
       : Transformation("TransformationSequence"),
         DotWriter_(dotWriter),
-        DumpRvsdgDotGraphs_(dumpRvsdgDotGraphs),
+        dumpRvsdgGraphs_(dumpRvsdgGraphs),
         Transformations_(std::move(transformations))
   {}
 
@@ -101,7 +101,7 @@ public:
    * @param statisticsCollector Statistics collector for collecting transformation statistics.
    * @param transformations The transformations that are sequentially applied to \p rvsdgModule.
    * @param dotWriter The DOT writer for dumping the RVSDG graphs.
-   * @param dumpRvsdgDotGraphs Determines whether to dump the RVSDG graphs.
+   * @param dumpRvsdgGraphs Determines whether to dump the RVSDG graphs.
    */
   static void
   CreateAndRun(
@@ -109,12 +109,12 @@ public:
       util::StatisticsCollector & statisticsCollector,
       std::vector<std::shared_ptr<Transformation>> transformations,
       DotWriter & dotWriter,
-      const bool dumpRvsdgDotGraphs)
+      const bool dumpRvsdgGraphs)
   {
     TransformationSequence sequentialApplication(
         std::move(transformations),
         dotWriter,
-        dumpRvsdgDotGraphs);
+        dumpRvsdgGraphs);
     sequentialApplication.Run(rvsdgModule, statisticsCollector);
   }
 
@@ -127,7 +127,7 @@ private:
       size_t numPass) const;
 
   DotWriter & DotWriter_;
-  bool DumpRvsdgDotGraphs_;
+  bool dumpRvsdgGraphs_;
   std::vector<std::shared_ptr<Transformation>> Transformations_;
 };
 

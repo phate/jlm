@@ -88,7 +88,7 @@ TransformationSequence::Run(
     statistics->StartMeasuring();
 
   size_t numPasses = 0;
-  if (DumpRvsdgDotGraphs_)
+  if (dumpRvsdgGraphs_)
   {
     DumpDotGraphs(
         rvsdgModule,
@@ -111,7 +111,7 @@ TransformationSequence::Run(
     if (statistics)
       statistics->EndTransformationMeasuring();
 
-    if (DumpRvsdgDotGraphs_)
+    if (dumpRvsdgGraphs_)
     {
       DumpDotGraphs(
           rvsdgModule,
@@ -144,11 +144,11 @@ TransformationSequence::DumpDotGraphs(
 
   std::stringstream filePath;
   filePath << outputDir.to_str() << "/" << std::setw(3) << std::setfill('0') << numPass << "-"
-           << passName << ".dot";
+           << passName << ".json";
 
   std::ofstream outputFile;
   outputFile.open(filePath.str());
-  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Json);
   outputFile.close();
 }
 

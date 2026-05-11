@@ -690,10 +690,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
-  cl::opt<bool> dumpRvsdgDotGraphs(
-      "dumpRvsdgDotGraphs",
+  cl::opt<bool> dumpRvsdgGraphs(
+      "dumpRvsdgGraphs",
       cl::init(false),
-      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+      cl::desc("Dump RVSDG as json graphs after each transformation in debug folder."));
 
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
@@ -983,7 +983,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
       std::move(optimizationIds),
-      dumpRvsdgDotGraphs);
+      dumpRvsdgGraphs);
 
   return *CommandLineOptions_;
 }
@@ -1038,10 +1038,10 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
-  cl::opt<bool> dumpRvsdgDotGraphs(
-      "dumpRvsdgDotGraphs",
+  cl::opt<bool> dumpRvsdgGraphs(
+      "dumpRvsdgGraphs",
       cl::init(false),
-      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+      cl::desc("Dump RVSDG as json graphs after each transformation in debug folder."));
 
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
@@ -1066,7 +1066,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
-  CommandLineOptions_.dumpRvsdgDotGraphs_ = dumpRvsdgDotGraphs;
+  CommandLineOptions_.dumpRvsdgGraphs_ = dumpRvsdgGraphs;
 
   if (latency < 1)
   {

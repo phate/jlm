@@ -96,7 +96,7 @@ public:
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations,
-      const bool dumpRvsdgDotGraphs)
+      const bool dumpRvsdgGraphs)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
@@ -104,7 +104,7 @@ public:
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
         OptimizationIds_(std::move(optimizations)),
         RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration)),
-        DumpRvsdgDotGraphs_(dumpRvsdgDotGraphs)
+        dumpRvsdgGraphs_(dumpRvsdgGraphs)
   {}
 
   void
@@ -153,9 +153,9 @@ public:
   }
 
   [[nodiscard]] bool
-  DumpRvsdgDotGraphs() const noexcept
+  dumpRvsdgGraphs() const noexcept
   {
-    return DumpRvsdgDotGraphs_;
+    return dumpRvsdgGraphs_;
   }
 
   static OptimizationId
@@ -185,7 +185,7 @@ public:
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations,
-      bool dumpRvsdgDotGraphs)
+      bool dumpRvsdgGraphs)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
         std::move(inputFile),
@@ -195,7 +195,7 @@ public:
         std::move(statisticsCollectorSettings),
         std::move(rvsdgTreePrinterConfiguration),
         std::move(optimizations),
-        dumpRvsdgDotGraphs);
+        dumpRvsdgGraphs);
   }
 
 private:
@@ -206,7 +206,7 @@ private:
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
   llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
-  bool DumpRvsdgDotGraphs_;
+  bool dumpRvsdgGraphs_;
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
   GetStatisticsIdCommandLineArguments();
@@ -397,7 +397,7 @@ public:
         OutputFormat_(OutputFormat::Firrtl),
         ExtractHlsFunction_(false),
         MemoryLatency_(10),
-        dumpRvsdgDotGraphs_(false)
+        dumpRvsdgGraphs_(false)
   {
     JLM_ASSERT(MemoryLatency_ > 0);
   }
@@ -411,7 +411,7 @@ public:
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
   size_t MemoryLatency_;
-  bool dumpRvsdgDotGraphs_;
+  bool dumpRvsdgGraphs_;
 };
 
 /**

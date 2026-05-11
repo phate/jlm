@@ -70,6 +70,6 @@ TEST(ArgumentTests, RvsdgDumping)
       true);
 
   // Assert
-  EXPECT_TRUE(std::filesystem::exists("/tmp/000-Pristine.dot"));
-  EXPECT_TRUE(std::filesystem::exists("/tmp/001-AfterTestTransformation.dot"));
+  EXPECT_TRUE(std::filesystem::exists("/tmp/000-Pristine.json"));
+  EXPECT_TRUE(std::filesystem::exists("/tmp/001-AfterTestTransformation.json"));
 }

@@ -362,7 +362,7 @@ JlmOptCommand::Run() const
       statisticsCollector,
       GetTransformations(),
       dotWriter,
-      CommandLineOptions_.DumpRvsdgDotGraphs());
+      CommandLineOptions_.dumpRvsdgGraphs());
 
   PrintRvsdgModule(
       *rvsdgModule,
