@@ -55,29 +55,23 @@ public:
   /**
    * Creates a GetElementPtr three address code.
    *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
-   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
-   *
    * @param baseAddress The base address for the pointer calculation.
    * @param offsets The offsets from the base address.
    * @param pointeeType The type the base address points to.
-   * @param resultType The result type of the operation.
    *
    * @return A getElementPtr three address code.
    */
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(
+  static std::unique_ptr<ThreeAddressCode>
+  createTAC(
       const Variable * baseAddress,
       const std::vector<const Variable *> & offsets,
-      std::shared_ptr<const rvsdg::Type> pointeeType,
-      std::shared_ptr<const rvsdg::Type> resultType)
+      std::shared_ptr<const rvsdg::Type> pointeeType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<const Variable>(offsets);
-    CheckPointerType(*resultType);
 
     auto operation = std::make_unique<GetElementPtrOperation>(offsetTypes, std::move(pointeeType));
-    std::vector<const Variable *> operands(1, baseAddress);
+    std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
     return ThreeAddressCode::create(std::move(operation), operands);
