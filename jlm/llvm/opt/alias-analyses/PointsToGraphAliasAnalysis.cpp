@@ -7,8 +7,9 @@
 
 namespace jlm::llvm::aa
 {
-PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(const PointsToGraph & pointsToGraph)
-    : pointsToGraph_(pointsToGraph)
+PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(
+    std::shared_ptr<const PointsToGraph> pointsToGraph)
+    : pointsToGraph_(std::move(pointsToGraph))
 {}
 
 PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() noexcept = default;
@@ -30,13 +31,22 @@ PointsToGraphAliasAnalysis::Query(
   if (&p1 == &p2)
     return MustAlias;
 
-  // Assume that all pointers actually exist in the PointsToGraph
-  const auto p1RegisterNode = pointsToGraph_.getNodeForRegister(p1);
-  const auto p2RegisterNode = pointsToGraph_.getNodeForRegister(p2);
+  // The output may have been created after the PointsToGraph
+  // In which case we have no better response than MayAlias
+  auto tryP1RegisterNode = pointsToGraph_->tryGetNodeForRegister(p1);
+  if (!tryP1RegisterNode)
+    return MayAlias;
+
+  auto tryP2RegisterNode = pointsToGraph_->tryGetNodeForRegister(p2);
+  if (!tryP2RegisterNode)
+    return MayAlias;
+
+  const auto p1RegisterNode = *tryP1RegisterNode;
+  const auto p2RegisterNode = *tryP2RegisterNode;
 
   // Check if both pointers may target the external node, to avoid iterating over large sets
-  const bool p1TargetsExternal = pointsToGraph_.isTargetingAllExternallyAvailable(p1RegisterNode);
-  const bool p2TargetsExternal = pointsToGraph_.isTargetingAllExternallyAvailable(p2RegisterNode);
+  const bool p1TargetsExternal = pointsToGraph_->isTargetingAllExternallyAvailable(p1RegisterNode);
+  const bool p2TargetsExternal = pointsToGraph_->isTargetingAllExternallyAvailable(p2RegisterNode);
   if (p1TargetsExternal && p2TargetsExternal)
     return MayAlias;
 
@@ -49,7 +59,7 @@ PointsToGraphAliasAnalysis::Query(
     const auto p2SingleTarget = TryGetSingleTarget(p2RegisterNode, s2);
     if (p1SingleTarget.has_value() && p2SingleTarget.has_value()
         && *p1SingleTarget == *p2SingleTarget && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
-        && pointsToGraph_.tryGetNodeSize(*p1SingleTarget) == s1)
+        && pointsToGraph_->tryGetNodeSize(*p1SingleTarget) == s1)
     {
       return MustAlias;
     }
@@ -68,15 +78,15 @@ PointsToGraphAliasAnalysis::Query(
     std::swap(onlyExplicitTargetsNode, otherNode);
   }
 
-  for (const auto target : pointsToGraph_.getExplicitTargets(onlyExplicitTargetsNode).Items())
+  for (const auto target : pointsToGraph_->getExplicitTargets(onlyExplicitTargetsNode).Items())
   {
     // Skip memory locations that are too small
-    const auto targetSize = pointsToGraph_.tryGetNodeSize(target);
+    const auto targetSize = pointsToGraph_->tryGetNodeSize(target);
 
     if (targetSize.has_value() && *targetSize < neededSize)
       continue;
 
-    if (pointsToGraph_.isTargeting(otherNode, target))
+    if (pointsToGraph_->isTargeting(otherNode, target))
       return MayAlias;
   }
 
@@ -87,15 +97,15 @@ std::optional<PointsToGraph::NodeIndex>
 PointsToGraphAliasAnalysis::TryGetSingleTarget(PointsToGraph::NodeIndex node, size_t size) const
 {
   // Nodes that target everything external always have "infinite" targets
-  if (pointsToGraph_.isTargetingAllExternallyAvailable(node))
+  if (pointsToGraph_->isTargetingAllExternallyAvailable(node))
     return std::nullopt;
 
   std::optional<PointsToGraph::NodeIndex> singleTarget = std::nullopt;
 
-  for (const auto target : pointsToGraph_.getExplicitTargets(node).Items())
+  for (const auto target : pointsToGraph_->getExplicitTargets(node).Items())
   {
     // Skip memory locations that are too small to hold size
-    const auto targetSize = pointsToGraph_.tryGetNodeSize(target);
+    const auto targetSize = pointsToGraph_->tryGetNodeSize(target);
     if (targetSize.has_value() && *targetSize < size)
       continue;
 
@@ -112,7 +122,7 @@ PointsToGraphAliasAnalysis::TryGetSingleTarget(PointsToGraph::NodeIndex node, si
 bool
 PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(PointsToGraph::NodeIndex node) const
 {
-  switch (pointsToGraph_.getNodeKind(node))
+  switch (pointsToGraph_->getNodeKind(node))
   {
   case PointsToGraph::NodeKind::AllocaNode:
   case PointsToGraph::NodeKind::MallocNode:

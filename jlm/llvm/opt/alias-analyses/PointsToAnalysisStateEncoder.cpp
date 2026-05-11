@@ -27,19 +27,19 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
     util::StatisticsCollector & statisticsCollector)
 {
   TPointsToAnalysis ptaPass;
-  auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
+  std::shared_ptr<PointsToGraph> pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
 
   if (statisticsCollector.IsDemanded(util::Statistics::Id::AliasAnalysisPrecisionEvaluation))
   {
     AliasAnalysisPrecisionEvaluator precisionEvaluator;
 
     // Use different alias analyses, and their combination
-    LocalAliasAnalysis localAA;
-    PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
+    auto localAA = std::make_shared<LocalAliasAnalysis>();
+    auto ptgAA = std::make_shared<PointsToGraphAliasAnalysis>(pointsToGraph);
     ChainedAliasAnalysis ptgPlusLocalAA(ptgAA, localAA);
 
-    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, localAA, statisticsCollector);
-    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, *localAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, *ptgAA, statisticsCollector);
     precisionEvaluator.EvaluateAliasAnalysisClient(
         rvsdgModule,
         ptgPlusLocalAA,

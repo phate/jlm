@@ -41,9 +41,11 @@ AreAliasResponsesCompatible(
   JLM_UNREACHABLE("Unknown alias response");
 }
 
-ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
-    : First_(first),
-      Second_(second)
+ChainedAliasAnalysis::ChainedAliasAnalysis(
+    std::shared_ptr<AliasAnalysis> first,
+    std::shared_ptr<AliasAnalysis> second)
+    : First_(std::move(first)),
+      Second_(std::move(second))
 {}
 
 ChainedAliasAnalysis::~ChainedAliasAnalysis() noexcept = default;
@@ -55,19 +57,19 @@ ChainedAliasAnalysis::Query(
     const rvsdg::Output & p2,
     size_t s2)
 {
-  const auto firstResponse = First_.Query(p1, s1, p2, s2);
+  const auto firstResponse = First_->Query(p1, s1, p2, s2);
   if (firstResponse == MayAlias)
-    return Second_.Query(p1, s1, p2, s2);
+    return Second_->Query(p1, s1, p2, s2);
 
   // When building with asserts, always query the second analysis and double check
-  JLM_ASSERT(AreAliasResponsesCompatible(firstResponse, Second_.Query(p1, s1, p2, s2)));
+  JLM_ASSERT(AreAliasResponsesCompatible(firstResponse, Second_->Query(p1, s1, p2, s2)));
   return firstResponse;
 }
 
 std::string
 ChainedAliasAnalysis::ToString() const
 {
-  return util::strfmt("ChainedAA(", First_.ToString(), ",", Second_.ToString(), ")");
+  return util::strfmt("ChainedAA(", First_->ToString(), ",", Second_->ToString(), ")");
 }
 
 bool

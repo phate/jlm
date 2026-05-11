@@ -265,7 +265,7 @@ TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysis)
   Andersen andersen;
   auto pointsToGraph = andersen.Analyze(rvsdg.module());
   std::cout << PointsToGraph::dumpDot(*pointsToGraph) << std::endl;
-  PointsToGraphAliasAnalysis aa(*pointsToGraph);
+  PointsToGraphAliasAnalysis aa(std::move(pointsToGraph));
 
   // Assert
 
@@ -455,7 +455,7 @@ TEST(PointsToGraphAnalysisTests, TestPtGAliasAnalysisOffsets)
   Andersen andersen;
   auto pointsToGraph = andersen.Analyze(rvsdg.module());
   std::cout << PointsToGraph::dumpDot(*pointsToGraph) << std::endl;
-  PointsToGraphAliasAnalysis aa(*pointsToGraph);
+  PointsToGraphAliasAnalysis aa(std::move(pointsToGraph));
 
   // Assert
 

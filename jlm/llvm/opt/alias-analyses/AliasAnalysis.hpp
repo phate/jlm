@@ -69,7 +69,7 @@ public:
 class ChainedAliasAnalysis final : public AliasAnalysis
 {
 public:
-  ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second);
+  ChainedAliasAnalysis(std::shared_ptr<AliasAnalysis> first, std::shared_ptr<AliasAnalysis> second);
 
   ~ChainedAliasAnalysis() noexcept override;
 
@@ -80,8 +80,8 @@ public:
   Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
-  AliasAnalysis & First_;
-  AliasAnalysis & Second_;
+  std::shared_ptr<AliasAnalysis> First_;
+  std::shared_ptr<AliasAnalysis> Second_;
 };
 
 /**
