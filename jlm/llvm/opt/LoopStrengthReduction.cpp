@@ -280,9 +280,9 @@ LoopStrengthReduction::ReplaceCandidateOperation(
 
     Context_->NumArithmeticOperationsReduced++;
   }
-  else if (const auto & pointerType = std::dynamic_pointer_cast<const PointerType>(output.Type()))
+  else if (std::dynamic_pointer_cast<const PointerType>(output.Type()))
   {
-    const auto newIVOpt = CreateNewGEPInductionVariable(*chrec, thetaNode, pointerType);
+    const auto newIVOpt = CreateNewGEPInductionVariable(*chrec, thetaNode);
     if (!newIVOpt.has_value())
       return;
 
@@ -585,8 +585,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 std::optional<rvsdg::ThetaNode::LoopVar>
 LoopStrengthReduction::CreateNewGEPInductionVariable(
     const SCEVChainRecurrence & chrec,
-    rvsdg::ThetaNode & thetaNode,
-    const std::shared_ptr<const PointerType> & pointerType)
+    rvsdg::ThetaNode & thetaNode)
 {
   const auto & baseAddressSCEV = chrec.GetStartValue();
   if (SCEVChainRecurrence::IsConstant(chrec))
