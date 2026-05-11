@@ -421,8 +421,8 @@ public:
    * if such a node exists. Otherwise nullopt is returned.
    * @see getNodeForRegister()
    */
-  std::optional<NodeIndex>
-  tryGetNodeForRegister(const rvsdg::Output & output) const
+  [[nodiscard]] std::optional<NodeIndex>
+  tryGetNodeForRegister(const rvsdg::Output & output) const noexcept
   {
     auto it = registerMap_.find(&output);
     if (it != registerMap_.end())
