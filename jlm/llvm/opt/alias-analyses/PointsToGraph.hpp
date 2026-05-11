@@ -16,6 +16,7 @@
 #include <jlm/util/Math.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -413,6 +414,20 @@ public:
   getNodeForRegister(const rvsdg::Output & output) const
   {
     return registerMap_.at(&output);
+  }
+
+  /**
+   * Retrieves the index of the PointsToGraph node mapped to the given \p output,
+   * if such a node exists. Otherwise nullopt is returned.
+   * @see getNodeForRegister()
+   */
+  std::optional<NodeIndex>
+  tryGetNodeForRegister(const rvsdg::Output & output) const
+  {
+    auto it = registerMap_.find(&output);
+    if (it != registerMap_.end())
+      return it->second;
+    return std::nullopt;
   }
 
   /**

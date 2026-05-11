@@ -20,7 +20,7 @@ namespace jlm::llvm::aa
 class PointsToGraphAliasAnalysis : public AliasAnalysis
 {
 public:
-  explicit PointsToGraphAliasAnalysis(const PointsToGraph & pointsToGraph);
+  explicit PointsToGraphAliasAnalysis(std::shared_ptr<const PointsToGraph> pointsToGraph);
 
   ~PointsToGraphAliasAnalysis() noexcept override;
 
@@ -53,7 +53,7 @@ private:
   [[nodiscard]] bool
   IsRepresentingSingleMemoryLocation(PointsToGraph::NodeIndex node) const;
 
-  const PointsToGraph & pointsToGraph_;
+  std::shared_ptr<const PointsToGraph> pointsToGraph_;
 };
 
 } // namespace jlm::llvm::aa
