@@ -417,6 +417,24 @@ GammaNode::MapBranchResultExitVar(const rvsdg::Input & input) const
   return ExitVar{ std::move(branchResults), Node::output(input.index()) };
 }
 
+const Output &
+GammaNode::mapBranchResultToOutput(const Input & input) const
+{
+  JLM_ASSERT(TryGetRegionParentNode<GammaNode>(input) == this);
+  auto & out = *output(input.index());
+  JLM_ASSERT(*out.Type() == *input.Type());
+  return out;
+}
+
+Output &
+GammaNode::mapBranchResultToOutput(Input & input) const
+{
+  JLM_ASSERT(TryGetRegionParentNode<GammaNode>(input) == this);
+  auto & out = *output(input.index());
+  JLM_ASSERT(*out.Type() == *input.Type());
+  return out;
+}
+
 void
 GammaNode::RemoveExitVars(const std::vector<Output *> & gammaOutputs)
 {
