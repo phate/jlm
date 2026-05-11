@@ -15,9 +15,14 @@ namespace jlm::llvm
 {
 
 /**
- * This operation is the equivalent of LLVM's getelementptr instruction.
+ * Represents LLVM's getelementptr instruction.
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#getelementptr-instruction) for more details.
  *
  * FIXME: We currently do not support vector of pointers for the baseAddress.
+ *
+ * FIXME: We should type check that pointeeType and the number/types of indices fit together.
  *
  */
 class GetElementPtrOperation final : public rvsdg::SimpleOperation
