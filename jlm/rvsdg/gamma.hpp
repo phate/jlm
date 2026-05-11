@@ -366,6 +366,36 @@ public:
   MapBranchResultExitVar(const rvsdg::Input & input) const;
 
   /**
+   * \brief Maps branch subregion exit result to its corresponding gamma output.
+   *
+   * \param input
+   *   The branch result to be mapped.
+   *
+   * \returns
+   *   The gamma node output corresponding to the given branch result.
+   *
+   * \pre
+   *   \p input must be the exit result to a subregion of this gamma node.
+   */
+  const Output &
+  mapBranchResultToOutput(const Input & input) const;
+
+  /**
+   * \brief Maps branch subregion exit result to its corresponding gamma output.
+   *
+   * \param input
+   *   The branch result to be mapped.
+   *
+   * \returns
+   *   The gamma node output corresponding to the given branch result.
+   *
+   * \pre
+   *   \p input must be the exit result to a subregion of this gamma node.
+   */
+  Output &
+  mapBranchResultToOutput(Input & input) const;
+
+  /**
    * \brief Removes the exit variables corresponding to the given \p gammaOutputs.
    *
    * \pre
