@@ -12,7 +12,9 @@
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -33,6 +35,14 @@
 
 namespace jlm::llvm
 {
+
+// Makes the LocalAA try harder, by tracing along all possible paths,
+// and checking if allocas provably do not escape the function.
+static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRESSIVE_LOCALAA");
+
+// Enables the use of the PointsToGraphAliasAnalysis.
+// Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
+static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
 
 /**
  * \brief Store Value Forwarding Statistics class
@@ -115,8 +125,9 @@ public:
  */
 struct StoreValueForwarding::Context final
 {
-  explicit Context(Statistics & statistics) noexcept
+  explicit Context(aa::AliasAnalysis & aliasAnalysis, Statistics & statistics) noexcept
       : outputTracer(true),
+        aliasAnalysis(aliasAnalysis),
         statistics(statistics)
   {
     outputTracer.setTraceThroughStructuralNodes(true);
@@ -144,6 +155,9 @@ struct StoreValueForwarding::Context final
       routedOutputs{};
 
   OutputTracer outputTracer;
+
+  // The AliasAnalysis instance used for all alias queries
+  aa::AliasAnalysis & aliasAnalysis;
 
   Statistics & statistics;
 };
@@ -306,9 +320,13 @@ struct StoreValueOrigin
 class LoadTracingInfo
 {
 public:
-  LoadTracingInfo(rvsdg::SimpleNode & loadNode, OutputTracer & tracer)
+  LoadTracingInfo(
+      rvsdg::SimpleNode & loadNode,
+      OutputTracer & tracer,
+      aa::AliasAnalysis & aliasAnalysis)
       : loadNode(loadNode),
-        tracer(tracer)
+        tracer(tracer),
+        aliasAnalysis(aliasAnalysis)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -370,18 +388,16 @@ private:
   {
     JLM_ASSERT(is<StoreOperation>(&storeNode));
 
-    // Use the local alias analysis, but limited to a single traced origin.
-    // This causes the analysis to give up as soon as a pointer has multiple possible origins,
-    // or an unknown offset.
-    aa::LocalAliasAnalysis localAA;
-    localAA.setMaxTraceCollectionSize(1);
-
     const auto & storeAddress = *StoreOperation::AddressInput(storeNode).origin();
     const auto storeType = StoreOperation::StoredValueInput(storeNode).Type();
     const auto storedSize = GetTypeStoreSize(*storeType);
 
+    // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
+    const auto & tracedStoredAddress = llvm::traceOutput(storeAddress);
+
     // Query the alias analysis
-    const auto response = localAA.Query(*loadedAddress, loadedTypeSize, storeAddress, storedSize);
+    const auto response =
+        aliasAnalysis.Query(*loadedAddress, loadedTypeSize, tracedStoredAddress, storedSize);
     updateAliasAnalysisQueryCounters(response);
 
     return response;
@@ -633,6 +649,7 @@ public:
   size_t loadedTypeSize;
 
   OutputTracer & tracer;
+  aa::AliasAnalysis & aliasAnalysis;
 
   // Counters used for statistics
   size_t numNoAliasAnalysisQueries = 0;
@@ -672,7 +689,7 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
 
   context_->statistics.startTracing();
-  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer);
+  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer, context_->aliasAnalysis);
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
@@ -901,13 +918,36 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
   JLM_UNREACHABLE("routeOutputToRegion reached unhandled structural node");
 }
 
+static std::unique_ptr<aa::AliasAnalysis>
+createAliasAnalysis(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+{
+  auto localAA = std::make_unique<aa::LocalAliasAnalysis>();
+
+  if (!ENABLE_AGGRESSIVE_LOCALAA)
+  {
+    // Setting the trace collection size to 1 limits the analysis to only the most trivial tracing
+    localAA->setMaxTraceCollectionSize(1);
+  }
+
+  if (!ENABLE_PTGAA)
+    return localAA;
+
+  aa::Andersen andersen;
+  auto ptg = andersen.Analyze(module, statisticsCollector);
+  auto ptgAA = std::make_unique<aa::PointsToGraphAliasAnalysis>(std::move(ptg));
+
+  return std::make_unique<aa::ChainedAliasAnalysis>(std::move(localAA), std::move(ptgAA));
+}
+
 void
 StoreValueForwarding::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto aliasAnalysis = createAliasAnalysis(module, statisticsCollector);
   auto statistics = Statistics::Create(module.SourceFilePath().value());
-  context_ = std::make_unique<Context>(*statistics);
+
+  context_ = std::make_unique<Context>(*aliasAnalysis, *statistics);
 
   statistics->StartStatistics();
 
