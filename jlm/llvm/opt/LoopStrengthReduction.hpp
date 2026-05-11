@@ -84,10 +84,7 @@ private:
   HoistSCEVExpresssion(const SCEV & scev, rvsdg::ThetaNode & thetaNode, size_t numBits);
 
   std::optional<rvsdg::ThetaNode::LoopVar>
-  CreateNewGEPInductionVariable(
-      const SCEVChainRecurrence & chrec,
-      rvsdg::ThetaNode & thetaNode,
-      const std::shared_ptr<const PointerType> & pointerType);
+  CreateNewGEPInductionVariable(const SCEVChainRecurrence & chrec, rvsdg::ThetaNode & thetaNode);
 
   std::optional<rvsdg::ThetaNode::LoopVar>
   CreateNewArithmeticInductionVariable(

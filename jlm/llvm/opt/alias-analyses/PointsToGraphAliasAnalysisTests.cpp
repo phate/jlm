@@ -424,16 +424,10 @@ private:
       const auto globalIntCtxVar = lambdaNode.AddContextVar(*Outputs_.GlobalInt).inner;
       const auto globalLongCtxVar = lambdaNode.AddContextVar(*Outputs_.GlobalLong).inner;
 
-      Outputs_.IntWithOffset = GetElementPtrOperation::Create(
-          globalIntCtxVar,
-          { Outputs_.Offset },
-          byteType,
-          pointerType);
-      Outputs_.LongWithOffset = GetElementPtrOperation::Create(
-          globalLongCtxVar,
-          { Outputs_.Offset },
-          byteType,
-          pointerType);
+      Outputs_.IntWithOffset =
+          GetElementPtrOperation::create(globalIntCtxVar, { Outputs_.Offset }, byteType);
+      Outputs_.LongWithOffset =
+          GetElementPtrOperation::create(globalLongCtxVar, { Outputs_.Offset }, byteType);
 
       lambdaNode.finalize({ ioState, memoryState });
       Outputs_.Func = lambdaNode.output();

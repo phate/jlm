@@ -389,7 +389,6 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
 
   auto SetupFib = [&]()
   {
-    auto pbit64 = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -442,22 +441,20 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
         functionType,
         { nm2, resultev.branchArgument[0], callfibm1Results[0], callfibm1Results[1] });
 
-    auto gepnm1 = GetElementPtrOperation::Create(
+    auto gepnm1 = GetElementPtrOperation::create(
         resultev.branchArgument[0],
         { nm1 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { callfibm2Results[1] },
         jlm::rvsdg::BitType::Create(64),
         8);
 
-    auto gepnm2 = GetElementPtrOperation::Create(
+    auto gepnm2 = GetElementPtrOperation::create(
         resultev.branchArgument[0],
         { nm2 },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto ldnm2 =
         LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
@@ -470,11 +467,10 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gOIoState = gammaNode->AddExitVar({ callfibm2Results[0], gIIoState.branchArgument[1] });
     auto gOMemoryState = gammaNode->AddExitVar({ ldnm2[1], gIMemoryState.branchArgument[1] });
 
-    auto gepn = GetElementPtrOperation::Create(
+    auto gepn = GetElementPtrOperation::create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::BitType::Create(64),
-        pbit64);
+        jlm::rvsdg::BitType::Create(64));
     auto store = StoreNonVolatileOperation::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
     auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });

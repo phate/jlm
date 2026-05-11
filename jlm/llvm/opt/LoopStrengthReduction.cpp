@@ -280,9 +280,9 @@ LoopStrengthReduction::ReplaceCandidateOperation(
 
     Context_->NumArithmeticOperationsReduced++;
   }
-  else if (const auto & pointerType = std::dynamic_pointer_cast<const PointerType>(output.Type()))
+  else if (std::dynamic_pointer_cast<const PointerType>(output.Type()))
   {
-    const auto newIVOpt = CreateNewGEPInductionVariable(*chrec, thetaNode, pointerType);
+    const auto newIVOpt = CreateNewGEPInductionVariable(*chrec, thetaNode);
     if (!newIVOpt.has_value())
       return;
 
@@ -435,11 +435,10 @@ LoopStrengthReduction::HoistSCEVExpresssion(
 
       const auto ptrType = std::dynamic_pointer_cast<const PointerType>(ptrSide->Type());
       JLM_ASSERT(ptrType);
-      auto newGep = GetElementPtrOperation::Create(
+      auto newGep = GetElementPtrOperation::create(
           ptrSide,
           { offsetSide },
-          rvsdg::BitType::Create(8), // Byte
-          ptrType);
+          rvsdg::BitType::Create(8)); // Byte
 
       return newGep;
     }
@@ -586,8 +585,7 @@ LoopStrengthReduction::CreateNewArithmeticInductionVariable(
 std::optional<rvsdg::ThetaNode::LoopVar>
 LoopStrengthReduction::CreateNewGEPInductionVariable(
     const SCEVChainRecurrence & chrec,
-    rvsdg::ThetaNode & thetaNode,
-    const std::shared_ptr<const PointerType> & pointerType)
+    rvsdg::ThetaNode & thetaNode)
 {
   const auto & baseAddressSCEV = chrec.GetStartValue();
   if (SCEVChainRecurrence::IsConstant(chrec))
@@ -649,11 +647,10 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
       stepOutput = SExtOperation::create(64, stepOutput);
     }
 
-    auto newGep = GetElementPtrOperation::Create(
+    auto newGep = GetElementPtrOperation::create(
         newIV.pre,
         { stepOutput },
-        rvsdg::BitType::Create(8), // Byte
-        pointerType);
+        rvsdg::BitType::Create(8)); // Byte
 
     newIV.post->divert_to(newGep);
 

@@ -658,7 +658,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
         Builder_->getUnknownLoc(),
         ConvertType(*op->result(0)),                                      // resultType
-        ConvertType(op->GetPointeeType()),                                // elementType
+        ConvertType(op->getPointeeType()),                                // elementType
         inputs[0],                                                        // basePtr
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
   }

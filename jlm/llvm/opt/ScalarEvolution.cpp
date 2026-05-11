@@ -976,7 +976,7 @@ ScalarEvolution::GetOrCreateSCEVForOutput(rvsdg::Output & output)
       const auto baseIndex = simpleNode->input(0)->origin();
       JLM_ASSERT(is<PointerType>(baseIndex->Type()));
 
-      const auto & pointeeType = gepOp->GetPointeeType();
+      const auto & pointeeType = gepOp->getPointeeType();
 
       auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
 

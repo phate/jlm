@@ -474,7 +474,7 @@ IpGraphToLlvmConverter::convert_getelementptr(
   auto & typeConverter = Context_->GetTypeConverter();
 
   std::vector<::llvm::Value *> indices;
-  auto t = typeConverter.ConvertJlmType(pop.GetPointeeType(), llvmContext);
+  auto t = typeConverter.ConvertJlmType(pop.getPointeeType(), llvmContext);
   for (size_t n = 1; n < args.size(); n++)
     indices.push_back(Context_->value(args[n]));
 

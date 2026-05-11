@@ -854,11 +854,7 @@ MlirToJlmConverter::ConvertOperation(
       }
     }
 
-    return { jlm::llvm::GetElementPtrOperation::Create(
-        inputs[0],
-        indices,
-        pointeeType,
-        llvm::PointerType::Create()) };
+    return { llvm::GetElementPtrOperation::create(inputs[0], indices, pointeeType) };
   }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))

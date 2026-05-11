@@ -1095,9 +1095,8 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
     indices.push_back(ConvertValue(*it, tacs, ctx));
 
   auto pointeeType = typeConverter.ConvertLlvmType(*i->getSourceElementType());
-  auto resultType = typeConverter.ConvertLlvmType(*i->getType());
 
-  tacs.push_back(GetElementPtrOperation::Create(base, indices, pointeeType, resultType));
+  tacs.push_back(GetElementPtrOperation::createTAC(base, indices, pointeeType));
 
   return tacs.back()->result(0);
 }
