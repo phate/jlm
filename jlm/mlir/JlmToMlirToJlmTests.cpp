@@ -712,7 +712,7 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
 
     auto arrayType = ArrayType::Create(bitType, 2);
 
-    GetElementPtrOperation::Create(pointerArgument, { bitArgument, bitArgument }, arrayType);
+    GetElementPtrOperation::create(pointerArgument, { bitArgument, bitArgument }, arrayType);
 
     lambda->finalize({});
 
@@ -767,7 +767,7 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
       EXPECT_TRUE(is<GetElementPtrOperation>(op->GetOperation()));
       auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(&op->GetOperation());
 
-      EXPECT_TRUE(is<ArrayType>(convertedGep->GetPointeeType()));
+      EXPECT_TRUE(is<ArrayType>(convertedGep->getPointeeType()));
       EXPECT_TRUE(is<PointerType>(convertedGep->result(0)));
       EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedGep->argument(1)));
       EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedGep->argument(2)));

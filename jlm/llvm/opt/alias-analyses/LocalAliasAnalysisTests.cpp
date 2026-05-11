@@ -202,21 +202,22 @@ private:
           LoadNonVolatileOperation::Create(Outputs_.P, { memoryState }, pointerType, 8);
       memoryState = loadP[1];
 
-      Outputs_.Q = GetElementPtrOperation::Create(loadP[0], { constantTwo }, intType);
-      Outputs_.QPlus2 = GetElementPtrOperation::Create(loadP[0], { constantFour }, intType);
-      Outputs_.QAgain = GetElementPtrOperation::Create(Outputs_.QPlus2, { constantMinusTwo }, intType);
+      Outputs_.Q = GetElementPtrOperation::create(loadP[0], { constantTwo }, intType);
+      Outputs_.QPlus2 = GetElementPtrOperation::create(loadP[0], { constantFour }, intType);
+      Outputs_.QAgain =
+          GetElementPtrOperation::create(Outputs_.QPlus2, { constantMinusTwo }, intType);
 
       // Create offsets into array
-      Outputs_.Arr1 = GetElementPtrOperation::Create(arrayCtxVar, { constantOne }, intType);
-      Outputs_.Arr2 = GetElementPtrOperation::Create(arrayCtxVar, { constantTwo }, intType);
-      Outputs_.Arr3 = GetElementPtrOperation::Create(arrayCtxVar, { constantThree }, intType);
+      Outputs_.Arr1 = GetElementPtrOperation::create(arrayCtxVar, { constantOne }, intType);
+      Outputs_.Arr2 = GetElementPtrOperation::create(arrayCtxVar, { constantTwo }, intType);
+      Outputs_.Arr3 = GetElementPtrOperation::create(arrayCtxVar, { constantThree }, intType);
 
       // Create a load of the global integer variable "global"
       const auto loadGlobal =
           LoadNonVolatileOperation::Create(globalCtxVar, { memoryState }, intType, 4);
       memoryState = loadGlobal[1];
       Outputs_.ArrUnknown =
-          GetElementPtrOperation::Create(arrayCtxVar, { loadGlobal[0] }, byteType);
+          GetElementPtrOperation::create(arrayCtxVar, { loadGlobal[0] }, byteType);
 
       // Make alloca2 escape
       const auto storeOutputs =
@@ -231,7 +232,7 @@ private:
       memoryState = callOutputs[2];
 
       Outputs_.BytePtrPlus2 =
-          GetElementPtrOperation::Create(Outputs_.BytePtr, { constantTwo }, byteType);
+          GetElementPtrOperation::create(Outputs_.BytePtr, { constantTwo }, byteType);
 
       lambdaNode.finalize({ ioState, memoryState });
       Outputs_.Func = lambdaNode.output();
@@ -434,12 +435,10 @@ private:
           gamma->AddExitVar({ entryVarA1.branchArgument[0], entryVarA2.branchArgument[1] });
       Outputs_.AllocaUnknown = exitVar.output;
 
-      Outputs_.AllocaUnknownPlus1 = GetElementPtrOperation::Create(
-          Outputs_.AllocaUnknown,
-          { constantOne },
-          int32Type);
+      Outputs_.AllocaUnknownPlus1 =
+          GetElementPtrOperation::create(Outputs_.AllocaUnknown, { constantOne }, int32Type);
 
-      Outputs_.Alloca3Plus1 = GetElementPtrOperation::Create(
+      Outputs_.Alloca3Plus1 = GetElementPtrOperation::create(
           Outputs_.Alloca3,
           { constantZero, constantOne },
           intArrayType);

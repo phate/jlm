@@ -330,7 +330,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     mlir::Value result = AddCvtOp(body, input0);
 
     // TODO: support structs
-    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->getPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
@@ -3923,7 +3923,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   }
   if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&node->GetOperation()))
   {
-    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->getPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);

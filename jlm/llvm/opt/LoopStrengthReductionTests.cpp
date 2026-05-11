@@ -456,7 +456,8 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   const auto & sExtNode = SExtOperation::create(64, mulNode.output(0));
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
+  const auto gep =
+      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
 
   auto loadOutputs = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
   auto & subNode =
@@ -506,7 +507,7 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
       dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
   EXPECT_NE(gepOperation, nullptr);
   // Check that it has the right type
-  EXPECT_EQ(gepOperation->GetPointeeType(), *jlm::rvsdg::BitType::Create(8));
+  EXPECT_EQ(gepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
   // Check that base address of the GEP is the pre value of the new IV
   EXPECT_EQ(IVPostOrigin->input(0)->origin(), newIV.pre);
   // Check that index of the GEP is an integer constant with the step value
@@ -571,8 +572,8 @@ TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
   const auto & sExtNode = SExtOperation::create(64, addNode2.output(0));
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto gep = GetElementPtrOperation::Create(
-      lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
+  const auto gep =
+      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
 
   const auto & c10 = IntegerConstantOperation::Create(*theta->subregion(), 32, 10);
 
@@ -634,7 +635,7 @@ TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
       dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
   EXPECT_NE(stepGepOperation, nullptr);
   // Check that it has the right type
-  EXPECT_EQ(stepGepOperation->GetPointeeType(), *jlm::rvsdg::BitType::Create(8));
+  EXPECT_EQ(stepGepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
 
   // Check that index of the GEP is an integer constant with the step value
   const auto & gepIndexInputNode =

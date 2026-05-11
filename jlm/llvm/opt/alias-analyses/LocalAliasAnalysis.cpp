@@ -269,7 +269,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   const auto gep = util::assertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
 
   // The pointee type. Gets updated by the loop below if the GEP has multiple levels of offsets
-  const auto & pointeeType = gep->GetPointeeType();
+  const auto & pointeeType = gep->getPointeeType();
 
   const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
   const auto wholeTypeIndexing = tryGetConstantSignedInteger(wholeTypeIndexingOrigin);

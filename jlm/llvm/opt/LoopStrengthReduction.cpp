@@ -435,7 +435,7 @@ LoopStrengthReduction::HoistSCEVExpresssion(
 
       const auto ptrType = std::dynamic_pointer_cast<const PointerType>(ptrSide->Type());
       JLM_ASSERT(ptrType);
-      auto newGep = GetElementPtrOperation::Create(
+      auto newGep = GetElementPtrOperation::create(
           ptrSide,
           { offsetSide },
           rvsdg::BitType::Create(8)); // Byte
@@ -648,7 +648,7 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
       stepOutput = SExtOperation::create(64, stepOutput);
     }
 
-    auto newGep = GetElementPtrOperation::Create(
+    auto newGep = GetElementPtrOperation::create(
         newIV.pre,
         { stepOutput },
         rvsdg::BitType::Create(8)); // Byte

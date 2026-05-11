@@ -202,7 +202,7 @@ TEST(StoreValueForwardingTests, GetElementPointerOffsets)
   // b = GetElementPointer a, bits32[1]
   auto & constantOne = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
   auto gepBOutput =
-      GetElementPtrOperation::Create(allocaAOutputs[0], { constantOne.output(0) }, bits32Type);
+      GetElementPtrOperation::create(allocaAOutputs[0], { constantOne.output(0) }, bits32Type);
 
   // STORE b, 20, memA1
   auto & storeB20Node = StoreNonVolatileOperation::CreateNode(
@@ -227,7 +227,8 @@ TEST(StoreValueForwardingTests, GetElementPointerOffsets)
 
   // c = GetElementPointer[byte] a, 4
   auto & constantFour = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4);
-  auto gepCOutput = GetElementPtrOperation::Create(allocaAOutputs[0], { constantFour.output(0) }, byteType);
+  auto gepCOutput =
+      GetElementPtrOperation::create(allocaAOutputs[0], { constantFour.output(0) }, byteType);
 
   // l3, memA5 = LOAD[bits32] c, memA4
   auto & loadL3Node =
@@ -769,11 +770,11 @@ TEST(StoreValueForwardingTests, GepInLoop)
   auto allocaAOutputs = AllocaOperation::create(intArrayType, constantOne.output(0), 4);
 
   // a2 = &a[2], a3 = &a[3]
-  auto a2 = GetElementPtrOperation::Create(
+  auto a2 = GetElementPtrOperation::create(
       allocaAOutputs[0],
       { constantZero.output(0), constantTwo.output(0) },
       intArrayType);
-  auto a3 = GetElementPtrOperation::Create(
+  auto a3 = GetElementPtrOperation::create(
       allocaAOutputs[0],
       { constantZero.output(0), constantThree.output(0) },
       intArrayType);
@@ -803,10 +804,9 @@ TEST(StoreValueForwardingTests, GepInLoop)
 
   // a1 = &a[1]; a22 = &a1[1];
   auto & constantOneInLoop = IntegerConstantOperation::Create(*thetaNode.subregion(), 32, 1);
-  auto a1 = GetElementPtrOperation::Create(
-      aLoopVar.pre,
-      { constantOneInLoop.output(0) }, bits32Type);
-  auto a22 = GetElementPtrOperation::Create(a1, { constantOneInLoop.output(0) }, bits32Type);
+  auto a1 =
+      GetElementPtrOperation::create(aLoopVar.pre, { constantOneInLoop.output(0) }, bits32Type);
+  auto a22 = GetElementPtrOperation::create(a1, { constantOneInLoop.output(0) }, bits32Type);
 
   // *a22 = loaded + 1;
   auto & addLoadedOneNode =

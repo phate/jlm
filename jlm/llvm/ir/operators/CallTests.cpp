@@ -441,7 +441,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
         functionType,
         { nm2, resultev.branchArgument[0], callfibm1Results[0], callfibm1Results[1] });
 
-    auto gepnm1 = GetElementPtrOperation::Create(
+    auto gepnm1 = GetElementPtrOperation::create(
         resultev.branchArgument[0],
         { nm1 },
         jlm::rvsdg::BitType::Create(64));
@@ -451,7 +451,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
         jlm::rvsdg::BitType::Create(64),
         8);
 
-    auto gepnm2 = GetElementPtrOperation::Create(
+    auto gepnm2 = GetElementPtrOperation::create(
         resultev.branchArgument[0],
         { nm2 },
         jlm::rvsdg::BitType::Create(64));
@@ -467,7 +467,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gOIoState = gammaNode->AddExitVar({ callfibm2Results[0], gIIoState.branchArgument[1] });
     auto gOMemoryState = gammaNode->AddExitVar({ ldnm2[1], gIMemoryState.branchArgument[1] });
 
-    auto gepn = GetElementPtrOperation::Create(
+    auto gepn = GetElementPtrOperation::create(
         pointerArgument,
         { valueArgument },
         jlm::rvsdg::BitType::Create(64));
