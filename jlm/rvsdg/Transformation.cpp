@@ -88,7 +88,7 @@ TransformationSequence::Run(
     statistics->StartMeasuring();
 
   size_t numPasses = 0;
-  if (DumpRvsdgDotGraphs_)
+  if (dumpRvsdgGraphs_)
   {
     DumpDotGraphs(
         rvsdgModule,
@@ -111,7 +111,7 @@ TransformationSequence::Run(
     if (statistics)
       statistics->EndTransformationMeasuring();
 
-    if (DumpRvsdgDotGraphs_)
+    if (dumpRvsdgGraphs_)
     {
       DumpDotGraphs(
           rvsdgModule,

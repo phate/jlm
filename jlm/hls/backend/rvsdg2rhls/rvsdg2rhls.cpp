@@ -371,7 +371,7 @@ rvsdg2ref(llvm::LlvmRvsdgModule & rhls, const util::FilePath & path)
 }
 
 std::unique_ptr<rvsdg::TransformationSequence>
-createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgDotGraphs)
+createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgGraphs)
 {
   auto predicateCorrelation = std::make_shared<llvm::PredicateCorrelation>();
   auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
@@ -450,7 +450,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   return std::make_unique<rvsdg::TransformationSequence>(
       std::move(sequence),
       dotWriter,
-      dumpRvsdgDotGraphs);
+      dumpRvsdgGraphs);
 }
 
 void
