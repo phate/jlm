@@ -1015,6 +1015,14 @@ RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
     // and turn them into loads
     AddModRefSimpleConstraint(lambdaModRefSet, Context_->ExternalModRefIndex);
   }
+
+  // If the function is externally available, it can be called by external functions,
+  // so add a simple edge to the ModRefSet representing all external functions.
+  const auto lambdaPtgNode = Context_->pointsToGraph.getNodeForLambda(lambda);
+  if (Context_->pointsToGraph.isExternallyAvailable(lambdaPtgNode))
+  {
+    AddModRefSimpleConstraint(lambdaModRefSet, Context_->ExternalModRefIndex);
+  }
 }
 
 ModRefSetIndex
