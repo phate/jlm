@@ -182,6 +182,9 @@ public:
  */
 class StructType final : public rvsdg::Type
 {
+  using ElementTypeConstIterator = std::vector<std::shared_ptr<const Type>>::const_iterator;
+  using ElementTypeConstRange = util::IteratorRange<ElementTypeConstIterator>;
+
 public:
   ~StructType() noexcept override;
 
@@ -214,6 +217,14 @@ public:
 
   rvsdg::TypeKind
   Kind() const noexcept override;
+
+  [[nodiscard]] ElementTypeConstRange
+  elementTypes() const noexcept
+  {
+    return ElementTypeConstRange(
+        ElementTypeConstIterator(types_.begin()),
+        ElementTypeConstIterator(types_.end()));
+  }
 
   [[nodiscard]] size_t
   numElements() const noexcept
