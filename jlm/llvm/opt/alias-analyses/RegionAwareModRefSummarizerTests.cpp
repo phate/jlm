@@ -1526,6 +1526,103 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1u);
 }
 
+TEST(RegionAwareModRefSummarizerTests, TestEscapedFunction)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates the RVSDG equivalent of the program
+   *
+   * void opaque();
+   * static int global;
+   *
+   * void f() {
+   *   global = global + 1;
+   *   opaque();
+   *   return global;
+   * }
+   *
+   * The ModRefSet for the call to opaque() should contain the global variable "global",
+   * since f() can be called from external functions.
+   */
+
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto & rootRegion = graph.GetRootRegion();
+
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto int32Type = rvsdg::BitType::Create(32);
+
+  const auto opaqueFunctionType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  const auto fFunctionType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { int32Type, ioStateType, memoryStateType });
+
+  auto & opaqueImport = LlvmGraphImport::createFunctionImport(
+      graph,
+      opaqueFunctionType,
+      "opaque",
+      Linkage::externalLinkage,
+      CallingConvention::Default);
+
+  auto & global = *rvsdg::DeltaNode::Create(
+      &rootRegion,
+      DeltaOperation::Create(int32Type, "global", Linkage::internalLinkage, "", false, 4));
+  global.finalize(IntegerConstantOperation::Create(*global.subregion(), 32, 0).output(0));
+
+  rvsdg::SimpleNode * opaqueCallNode = nullptr;
+  auto & fLambdaNode = *rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(fFunctionType, "f", Linkage::externalLinkage));
+  {
+    const auto arguments = fLambdaNode.GetFunctionArguments();
+    auto ioState = arguments.at(0);
+    auto memoryState = arguments.at(1);
+
+    const auto globalCtxVar = fLambdaNode.AddContextVar(global.output());
+    const auto opaqueCtxVar = fLambdaNode.AddContextVar(opaqueImport);
+
+    const auto loadOutputs =
+        LoadNonVolatileOperation::Create(globalCtxVar.inner, { memoryState }, int32Type, 4);
+    const auto one = IntegerConstantOperation::Create(*fLambdaNode.subregion(), 32, 1).output(0);
+    const auto incrementedGlobal =
+        rvsdg::CreateOpNode<IntegerAddOperation>({ loadOutputs[0], one }, 32).output(0);
+    const auto storeOutputs = StoreNonVolatileOperation::Create(
+        globalCtxVar.inner,
+        incrementedGlobal,
+        { loadOutputs[1] },
+        4);
+
+    const auto opaqueCall =
+        CallOperation::Create(opaqueCtxVar.inner, opaqueFunctionType, { ioState, storeOutputs[0] });
+    opaqueCallNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*opaqueCall[0]);
+    ioState = opaqueCall[0];
+    memoryState = opaqueCall[1];
+
+    const auto returnLoadOutputs =
+        LoadNonVolatileOperation::Create(globalCtxVar.inner, { memoryState }, int32Type, 4);
+
+    fLambdaNode.finalize({ returnLoadOutputs[0], ioState, returnLoadOutputs[1] });
+  }
+
+  rvsdg::GraphExport::Create(*fLambdaNode.output(), "f");
+
+  const auto pointsToGraph = RunAndersen(rvsdgModule);
+  const auto modRefSummary = aa::RegionAwareModRefSummarizer::Create(rvsdgModule, *pointsToGraph);
+
+  const auto globalMemoryNode = pointsToGraph->getNodeForDelta(global);
+  const auto externalMemoryNode = pointsToGraph->getExternalMemoryNode();
+  const util::HashSet expectedMemoryNodes{ globalMemoryNode, externalMemoryNode };
+
+  const auto & opaqueCallModRef = modRefSummary->GetSimpleNodeModRef(*opaqueCallNode);
+  EXPECT_TRUE(setsEqual(opaqueCallModRef, expectedMemoryNodes));
+}
+
 TEST(RegionAwareModRefSummarizerTests, TestStatistics)
 {
   using namespace jlm;
