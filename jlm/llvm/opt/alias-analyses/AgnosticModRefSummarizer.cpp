@@ -242,6 +242,13 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
         AddPointerTargetsToModRefSet(dstAddress, modRefSet);
         ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
       },
+      [&](const MemSetOperation &)
+      {
+        util::HashSet<PointsToGraph::NodeIndex> modRefSet;
+        const auto & dstAddress = *MemSetOperation::destinationInput(node).origin();
+        AddPointerTargetsToModRefSet(dstAddress, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
       [&](const FreeOperation &)
       {
         util::HashSet<PointsToGraph::NodeIndex> modRefSet;
