@@ -221,35 +221,6 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
               auto & operation = simpleNode.GetOperation();
               return rvsdg::MatchTypeWithDefault(
                   operation,
-#if 0
-                  [&](const LoadOperation &)
-                  {
-                    return true;
-                  },
-                  [&](const StoreOperation &)
-                  {
-                    if (&user != &StoreOperation::AddressInput(simpleNode))
-                      return false;
-
-                    return true;
-                  },
-#endif
-                  [&](const MemSetOperation &)
-                  {
-                    // FIXME: We currently do not handle memset operations
-                    return false;
-
-                    // allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
-                    // return true;
-                  },
-                  [&](const MemCpyOperation &)
-                  {
-                    // FIXME: We currently do not handle memcpy operations
-                    return false;
-
-                    // allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
-                    // return true;
-                  },
                   [&](const GetElementPtrOperation &)
                   {
                     JLM_ASSERT(userNode->input(0) == &user);
@@ -262,7 +233,6 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
                     }
 
                     allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
-                    //                    addToVisitSet(*simpleNode.output(0));
                     return true;
                   },
                   [&]()
