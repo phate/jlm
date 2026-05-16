@@ -30,7 +30,7 @@ class AggregateAllocaSplitting::Statistics final : public util::Statistics
   const char * numAggregateAllocaNodesLabel_ = "#AggregateAllocaNodes";
   const char * numAggregateStructAllocaNodesLabel_ = "#AggregateStructAllocaNodes";
   const char * numSplitableTypeAggregateAllocaNodesLabel_ = "#SplitableTypeAggregateAllocaNodes";
-  const char * numSplitableAggregateAllocaNodesLabel_ = "#SplitableAggregateAllocaNodes";
+  const char * numSplitAggregateAllocaNodesLabel_ = "#SplitAggregateAllocaNodes";
   const char * aggregateAllocaSplittingTimerLabel_ = "AggregateAllocaSplittingTime";
 
 public:
@@ -51,7 +51,7 @@ public:
       const size_t numAggregateAllocaNodes,
       const size_t numAggregateStructAllocaNodes,
       const size_t numSplitableTypeAggregateAllocaNodes,
-      const size_t numSplitableAggregateAllocaNodes)
+      const size_t numSplitAggregateAllocaNodes)
   {
     GetTimer(aggregateAllocaSplittingTimerLabel_).stop();
     AddMeasurement(numAggregateAllocaNodesLabel_, numAggregateAllocaNodes);
@@ -59,7 +59,7 @@ public:
     AddMeasurement(
         numSplitableTypeAggregateAllocaNodesLabel_,
         numSplitableTypeAggregateAllocaNodes);
-    AddMeasurement(numSplitableAggregateAllocaNodesLabel_, numSplitableAggregateAllocaNodes);
+    AddMeasurement(numSplitAggregateAllocaNodesLabel_, numSplitAggregateAllocaNodes);
   }
 
   static std::unique_ptr<Statistics>
@@ -74,7 +74,7 @@ struct AggregateAllocaSplitting::Context
   size_t numAggregateAllocaNodes = 0;
   size_t numAggregateStructAllocaNodes = 0;
   size_t numSplitableTypeAggregateAllocaNodes = 0;
-  size_t numSplitableAggregateAllocaNodes = 0;
+  size_t numSplitAggregateAllocaNodes = 0;
 };
 
 struct AggregateAllocaSplitting::AllocaTraceInfo
@@ -493,7 +493,7 @@ AggregateAllocaSplitting::findSplitableAllocaNodes(rvsdg::Region & region) const
               context_->numSplitableTypeAggregateAllocaNodes++;
               if (auto allocaTraceInfo = isSplitable(simpleNode))
               {
-                context_->numSplitableAggregateAllocaNodes++;
+                context_->numSplitAggregateAllocaNodes++;
                 traceInfo.emplace_back(*allocaTraceInfo);
               }
             }
@@ -592,7 +592,7 @@ AggregateAllocaSplitting::Run(
       context_->numAggregateAllocaNodes,
       context_->numAggregateStructAllocaNodes,
       context_->numSplitableTypeAggregateAllocaNodes,
-      context_->numSplitableAggregateAllocaNodes);
+      context_->numSplitAggregateAllocaNodes);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
