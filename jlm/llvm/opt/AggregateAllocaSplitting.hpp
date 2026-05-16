@@ -11,6 +11,14 @@
 namespace jlm::llvm
 {
 
+/**
+ * \brief Aggregate Alloca Splitting Transformation
+ *
+ * Aggregate Alloca Splitting splits up \ref AllocaOperation nodes with aggregate types, i.e.,
+ * struct and array types, into multiple \ref AllocaOperation nodes with simple types, i.e., integer
+ * or floating-point types. The intention is to simplify the processing of these \ref
+ * AllocaOperation nodes by passes such as \ref StoreValueForwarding.
+ */
 class AggregateAllocaSplitting final : public rvsdg::Transformation
 {
   struct Context;

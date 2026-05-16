@@ -8,7 +8,6 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/AggregateAllocaSplitting.hpp>
@@ -522,6 +521,7 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
           JLM_ASSERT(index0 == 0);
 
           auto elementAlloca = elementAllocaNodes[index1];
+          // FIXME: Introduce caching of routed values to avoid duplicated routing.
           auto & routedAddress = rvsdg::RouteToRegion(
               AllocaOperation::getPointerOutput(*elementAlloca),
               consumerRegion);
