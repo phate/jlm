@@ -107,7 +107,7 @@ public:
   /**
    * Returns an iterator range to the memory state inputs of a \ref StoreOperation node.
    *
-   * \pre \p node is expected to have a \ref StoreOperation node.
+   * \pre \p node is expected to have a \ref StoreOperation.
    *
    * @param node A \ref StoreOperation node
    * @return An iterator range for all the memory state inputs.
