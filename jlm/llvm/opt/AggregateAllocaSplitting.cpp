@@ -83,7 +83,7 @@ struct AggregateAllocaSplitting::AllocaTraceInfo
       : allocaNode(&allocaNode)
   {}
 
-  rvsdg::SimpleNode * allocaNode = nullptr;
+  rvsdg::SimpleNode * allocaNode;
   std::vector<rvsdg::SimpleNode *> allocaConsumers{};
 };
 
