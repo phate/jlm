@@ -10,6 +10,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/AggregateAllocaSplitting.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
@@ -35,14 +36,13 @@
 #include <jlm/tooling/CommandPaths.hpp>
 #include <jlm/util/GraphWriter.hpp>
 
-#include <llvm/IR/Module.h>
-
 #ifdef ENABLE_MLIR
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #endif
 
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
@@ -412,6 +412,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
+  case JlmOptCommandLineOptions::OptimizationId::AggregateAllocaSplitting:
+    return std::make_shared<llvm::AggregateAllocaSplitting>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_shared<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:

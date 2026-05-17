@@ -94,6 +94,7 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
   static util::BijectiveMap<OptimizationId, std::string_view> map = {
     { OptimizationId::AAAndersenAgnostic, "AAAndersenAgnostic" },
     { OptimizationId::AAAndersenRegionAware, "AAAndersenRegionAware" },
+    { OptimizationId::AggregateAllocaSplitting, "AggregateAllocaSplitting" },
     { OptimizationId::CommonNodeElimination, "CommonNodeElimination" },
     { OptimizationId::DeadNodeElimination, "DeadNodeElimination" },
     { OptimizationId::FunctionInlining, "FunctionInlining" },
@@ -195,6 +196,7 @@ const util::BijectiveMap<util::Statistics::Id, std::string_view> &
 JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
 {
   static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
+    { util::Statistics::Id::AggregateAllocaSplitting, "print-aggregate-alloca-splitting" },
     { util::Statistics::Id::Aggregation, "print-aggregation-time" },
     { util::Statistics::Id::AgnosticModRefSummarizer, "print-agnostic-mod-ref-summarization" },
     { util::Statistics::Id::AliasAnalysisPrecisionEvaluation, "print-aa-precision-evaluation" },
@@ -698,6 +700,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
           CreateStatisticsOption(
+              util::Statistics::Id::AggregateAllocaSplitting,
+              "Write aggregate alloca splitting statistics to file."),
+          CreateStatisticsOption(
               util::Statistics::Id::Aggregation,
               "Write aggregation statistics to file."),
           CreateStatisticsOption(
@@ -826,6 +831,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
+  auto aggregateAllocaSplitting =
+      JlmOptCommandLineOptions::OptimizationId::AggregateAllocaSplitting;
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
@@ -854,6 +861,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
+          ::clEnumValN(
+              aggregateAllocaSplitting,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aggregateAllocaSplitting),
+              "Split aggregate type alloca nodes"),
           ::clEnumValN(
               commonNodeElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeElimination),

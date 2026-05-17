@@ -68,6 +68,7 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
+    AggregateAllocaSplitting,
     CommonNodeElimination,
     DeadNodeElimination,
     FunctionInlining,
