@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <deque>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -21,6 +20,8 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
+
+#include <deque>
 
 namespace jlm::llvm
 {
