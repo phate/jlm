@@ -57,6 +57,19 @@ public:
   }
 
   /**
+   * \pre \p node must be a \ref GetElementPtrOperation
+   *
+   * @param node The \ref GetElementPtrOperation
+   * @return The number of indices of the node.
+   */
+  [[nodiscard]] static size_t
+  numIndices(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    return node.ninputs() - 1; // Subtract base address
+  }
+
+  /**
    * Returns the base address input of a \ref GetElementPtrOperation node.
    *
    * \pre \p node must be a \ref GetElementPtrOperation
@@ -64,7 +77,7 @@ public:
    * @param node The \ref GetElementPtrOperation node.
    * @return The base address on which the address calculation is performed.
    */
-  static rvsdg::Input &
+  [[nodiscard]] static rvsdg::Input &
   getBaseAddressInput(rvsdg::Node & node)
   {
     JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
@@ -81,7 +94,7 @@ public:
    * @param node The \ref GetElementPtrOperation node.
    * @return The base address on which the address calculation is performed.
    */
-  static const rvsdg::Input &
+  [[nodiscard]] static const rvsdg::Input &
   getBaseAddressInput(const rvsdg::Node & node)
   {
     JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
