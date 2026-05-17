@@ -57,6 +57,40 @@ public:
   }
 
   /**
+   * Returns the base address input of a \ref GetElementPtrOperation node.
+   *
+   * \pre \p node must be a \ref GetElementPtrOperation
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The base address on which the address calculation is performed.
+   */
+  static rvsdg::Input &
+  getBaseAddressInput(rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    const auto baseAddress = node.input(0);
+    JLM_ASSERT(is<PointerType>(baseAddress->Type()));
+    return *baseAddress;
+  }
+
+  /**
+   * Returns the base address input of a \ref GetElementPtrOperation node.
+   *
+   * \pre \p node must be a \ref GetElementPtrOperation
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The base address on which the address calculation is performed.
+   */
+  static const rvsdg::Input &
+  getBaseAddressInput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    const auto baseAddress = node.input(0);
+    JLM_ASSERT(is<PointerType>(baseAddress->Type()));
+    return *baseAddress;
+  }
+
+  /**
    * Creates a GetElementPtr three address code.
    *
    * @param baseAddress The base address for the pointer calculation.
