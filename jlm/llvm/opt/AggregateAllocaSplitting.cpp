@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <deque>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -125,25 +126,24 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
   bool isSplitable = true;
   AllocaTraceInfo allocaTraceInfo(allocaNode);
 
-  util::HashSet<rvsdg::Output *> visited;
-  util::HashSet<rvsdg::Output *> toVisit{ &address };
+  util::HashSet<rvsdg::Output *> seen;
+  std::deque<rvsdg::Output *> toVisit{ &address };
   auto addToVisitSet = [&](rvsdg::Output & output)
   {
-    if (!visited.Contains(&output) && !toVisit.Contains(&output))
+    if (!seen.Contains(&output))
     {
-      toVisit.insert(&output);
+      toVisit.push_back(&output);
     }
+    seen.insert(&output);
   };
   auto removeFromVisitSet = [&]()
   {
-    const auto output = *toVisit.Items().begin();
-    toVisit.Remove(output);
-    [[maybe_unused]] auto inserted = visited.insert(output);
-    JLM_ASSERT(inserted);
+    const auto output = toVisit.front();
+    toVisit.pop_front();
     return output;
   };
 
-  while (!toVisit.IsEmpty() && isSplitable)
+  while (!toVisit.empty() && isSplitable)
   {
     const auto currentOutput = removeFromVisitSet();
 
@@ -275,25 +275,24 @@ AggregateAllocaSplitting::checkGetElementPtrUsers(const rvsdg::SimpleNode & gepN
 
   bool hasOnlyLoadsAndStores = true;
 
-  util::HashSet<rvsdg::Output *> visited;
-  util::HashSet<rvsdg::Output *> toVisit{ &address };
+  util::HashSet<rvsdg::Output *> seen;
+  std::deque<rvsdg::Output *> toVisit{ &address };
   auto addToVisitSet = [&](rvsdg::Output & output)
   {
-    if (!visited.Contains(&output) && !toVisit.Contains(&output))
+    if (!seen.Contains(&output))
     {
-      toVisit.insert(&output);
+      toVisit.push_back(&output);
     }
+    seen.insert(&output);
   };
   auto removeFromVisitSet = [&]()
   {
-    const auto output = *toVisit.Items().begin();
-    toVisit.Remove(output);
-    [[maybe_unused]] auto inserted = visited.insert(output);
-    JLM_ASSERT(inserted);
+    const auto output = toVisit.front();
+    toVisit.pop_front();
     return output;
   };
 
-  while (!toVisit.IsEmpty() && hasOnlyLoadsAndStores)
+  while (!toVisit.empty() && hasOnlyLoadsAndStores)
   {
     const auto currentOutput = removeFromVisitSet();
     for (auto & user : currentOutput->Users())
