@@ -44,6 +44,48 @@ static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRES
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
 static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
 
+// By default, loads whose memory states can be traced to other loads
+// attempt to forward the previously loaded value, if the address and type are matching.
+// When disabled, loads are skipped during tracing, and never considered for value forwarding.
+static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
+
+/**
+ * Helper for counting alias analysis responses
+ */
+struct AliasQueryResponseCounter
+{
+  size_t numNoAliasAnalysisQueries = 0;
+  size_t numMayAliasAnalysisQueries = 0;
+  size_t numMustAliasAnalysisQueries = 0;
+
+  void
+  addResponse(aa::AliasAnalysis::AliasQueryResponse response)
+  {
+    switch (response)
+    {
+    case aa::AliasAnalysis::NoAlias:
+      numNoAliasAnalysisQueries++;
+      break;
+    case aa::AliasAnalysis::MayAlias:
+      numMayAliasAnalysisQueries++;
+      break;
+    case aa::AliasAnalysis::MustAlias:
+      numMustAliasAnalysisQueries++;
+      break;
+    default:
+      throw std::logic_error("Unhandled alias analysis query response!");
+    }
+  }
+
+  void
+  addFromCounter(const AliasQueryResponseCounter & other)
+  {
+    numNoAliasAnalysisQueries += other.numNoAliasAnalysisQueries;
+    numMayAliasAnalysisQueries += other.numMayAliasAnalysisQueries;
+    numMustAliasAnalysisQueries += other.numMustAliasAnalysisQueries;
+  }
+};
+
 /**
  * \brief Store Value Forwarding Statistics class
  */
@@ -51,9 +93,12 @@ class StoreValueForwarding::Statistics final : public util::Statistics
 {
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
-  static constexpr auto numNoAliasAnalysisQueriesLabel_ = "#NoAliasAnalysisQueries";
-  static constexpr auto numMayAliasAnalysisQueriesLabel_ = "#MayAliasAnalysisQueries";
-  static constexpr auto numMustAliasAnalysisQueriesLabel_ = "#MustAliasAnalysisQueries";
+  static constexpr auto numNoAliasStore_ = "#NoAliasStore";
+  static constexpr auto numMayAliasStore_ = "#NoMayAliasStore";
+  static constexpr auto numMustAliasStore_ = "#MustAliasStore";
+  static constexpr auto numNoAliasLoad_ = "#NoAliasLoad";
+  static constexpr auto numMayAliasLoad_ = "#NoMayAliasLoad";
+  static constexpr auto numMustAliasLoad_ = "#MustAliasLoad";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
@@ -77,16 +122,18 @@ public:
   StopStatistics(
       const size_t numTotalLoads,
       const size_t numLoadsForwarded,
-      const size_t numNoAliasAnalysisQueries,
-      const size_t numMayAliasAnalysisQueries,
-      const size_t numMustAliasAnalysisQueries) noexcept
+      const AliasQueryResponseCounter & storeAAResponses,
+      const AliasQueryResponseCounter & loadAAResponses) noexcept
   {
     GetTimer(Label::Timer).stop();
     AddMeasurement(NumTotalLoads_, numTotalLoads);
     AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
-    AddMeasurement(numNoAliasAnalysisQueriesLabel_, numNoAliasAnalysisQueries);
-    AddMeasurement(numMayAliasAnalysisQueriesLabel_, numMayAliasAnalysisQueries);
-    AddMeasurement(numMustAliasAnalysisQueriesLabel_, numMustAliasAnalysisQueries);
+    AddMeasurement(numNoAliasStore_, storeAAResponses.numNoAliasAnalysisQueries);
+    AddMeasurement(numMayAliasStore_, storeAAResponses.numMayAliasAnalysisQueries);
+    AddMeasurement(numMustAliasStore_, storeAAResponses.numMustAliasAnalysisQueries);
+    AddMeasurement(numNoAliasLoad_, loadAAResponses.numNoAliasAnalysisQueries);
+    AddMeasurement(numMayAliasLoad_, loadAAResponses.numMayAliasAnalysisQueries);
+    AddMeasurement(numMustAliasLoad_, loadAAResponses.numMustAliasAnalysisQueries);
   }
 
   void
@@ -131,15 +178,15 @@ struct StoreValueForwarding::Context final
         statistics(statistics)
   {
     outputTracer.setTraceThroughStructuralNodes(true);
-    outputTracer.setTraceThroughLoadedStates(true);
+    // If load/load forwarding is disabled, make the tracer skip loads
+    outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
   }
 
   // Counters used for statistics
   size_t numTotalLoads = 0;
   size_t numLoadsForwarded = 0;
-  size_t numNoAliasAnalysisQueries = 0;
-  size_t numMayAliasAnalysisQueries = 0;
-  size_t numMustAliasAnalysisQueries = 0;
+  AliasQueryResponseCounter storeAAResponses;
+  AliasQueryResponseCounter loadAAResponses;
 
   // Memoization of outputs that have been routed into regions
   struct OutputRegionHash
@@ -239,18 +286,27 @@ enum class StoreNodeInfo
   NoClobber         // The store is guaranteed to not clobber the loaded value
 };
 
+// Enum containing the possible relationships between a load operation and a previous load
+enum class LoadNodeInfo
+{
+  ValueForwarding, // The load can be forwarded
+  NoClobber,       // The load can not be forwarded, but it is not a clobber
+};
+
 // When tracing backwards from a load node through memory state edges, we store points
-// at which a store writes to the load node, or a structural node causes the loaded value
-// to have multiple possible origins. These points are known as StoreValueOrigins
-struct StoreValueOrigin
+// at which a store writes to the load node, an aliasing load is performed,
+// or a structural node causes the loaded value to have multiple possible origins.
+// These points are known as ValueOrigins
+struct ValueOrigin
 {
   enum class Kind
   {
-    Unknown,         // Tracing does not lead to known stored values in all branches
+    Unknown,         // Tracing does not lead to a known value origin in all branches
     Uninitialized,   // Tracing leads to uninitialized memory, like an alloca
+    LoadNode,        // Tracing leads to exactly one load node, and it is not inside a subregion
     StoreNode,       // Tracing leads to exactly one store node, and it is not inside a subregion
-    GammaNodeOutput, // Tracing leads to the output of a gamma, but all branches trace to stores
-    ThetaNodeOutput, // Tracing leads to the output of a theta, with a store inside
+    GammaNodeOutput, // Tracing leads to a gamma output, but all branches trace to value origins
+    ThetaNodeOutput, // Tracing leads to a theta output, with a value origin inside
     ThetaNodePre     // Tracing leads to the pre value of a loop variable
   };
 
@@ -264,58 +320,64 @@ struct StoreValueOrigin
   }
 
   [[nodiscard]] bool
-  operator==(const StoreValueOrigin & other) const noexcept
+  operator==(const ValueOrigin & other) const noexcept
   {
     return kind == other.kind && node == other.node;
   }
 
   [[nodiscard]] bool
-  operator!=(const StoreValueOrigin & other) const noexcept
+  operator!=(const ValueOrigin & other) const noexcept
   {
     return !(*this == other);
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
   createUnknown()
   {
-    return StoreValueOrigin{ Kind::Unknown, nullptr };
+    return ValueOrigin{ Kind::Unknown, nullptr };
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
   createUninitialized()
   {
-    return StoreValueOrigin{ Kind::Uninitialized, nullptr };
+    return ValueOrigin{ Kind::Uninitialized, nullptr };
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
   createStoreNode(rvsdg::SimpleNode & storeNode)
   {
-    return StoreValueOrigin{ Kind::StoreNode, &storeNode };
+    return ValueOrigin{ Kind::StoreNode, &storeNode };
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
+  createLoadNode(rvsdg::SimpleNode & loadNode)
+  {
+    return ValueOrigin{ Kind::LoadNode, &loadNode };
+  }
+
+  static ValueOrigin
   createGammaNodeOutput(rvsdg::GammaNode & gammaNode)
   {
-    return StoreValueOrigin{ Kind::GammaNodeOutput, &gammaNode };
+    return ValueOrigin{ Kind::GammaNodeOutput, &gammaNode };
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
   createThetaNodeOutput(rvsdg::ThetaNode & thetaNode)
   {
-    return StoreValueOrigin{ Kind::ThetaNodeOutput, &thetaNode };
+    return ValueOrigin{ Kind::ThetaNodeOutput, &thetaNode };
   }
 
-  static StoreValueOrigin
+  static ValueOrigin
   createThetaNodePre(rvsdg::ThetaNode & thetaNode)
   {
-    return StoreValueOrigin{ Kind::ThetaNodePre, &thetaNode };
+    return ValueOrigin{ Kind::ThetaNodePre, &thetaNode };
   }
 };
 
 /**
  * Helper class holding info during tracing of the memory states going to a given load node.
- * Can trace into structural nodes, and keep track of separate store nodes for separate regions.
- * If all branches lead to a store that can be forwarded, forwarding can be performed.
+ * Can trace into structural nodes, and keep track of separate value origins for separate regions.
+ * If all branches lead to a value origin that can be forwarded, forwarding can be performed.
  */
 class LoadTracingInfo
 {
@@ -335,13 +397,13 @@ public:
   }
 
   /**
-   * Performs tracing of memory states to find store node(s) that can be forwarded to the load.
+   * Performs tracing of memory states to find value origin(s) that can be forwarded to the load.
    * If tracing leads to nodes that may or may not clobber the load,
-   * or if different memory state inputs lead to different store node(s),
-   * store value forwarding is not possible, and false is returned.
-   * Different branches of structural nodes can lead to different store nodes,
+   * or if different memory state inputs lead to different value origins,
+   * value forwarding is not possible, and false is returned.
+   * Different branches of structural nodes can lead to different value origins,
    * as long as all memory states lead to the same store node in each branch.
-   * @return true iff all memory state inputs could be traced to the same store node(s).
+   * @return true iff all memory state inputs could be traced to the same value origin(s).
    */
   bool
   traceAllMemoryStateInputs()
@@ -356,8 +418,8 @@ public:
     {
       // If the memory state input can not be traced back to store nodes,
       // or different memory state inputs lead to different store nodes, we give up
-      auto lastStoredValue = getLastStoreBeforeInput(memoryStateInput);
-      if (!lastStoredValue.isKnown())
+      auto lastValueOrigin = getLastValueOriginBeforeInput(memoryStateInput);
+      if (!lastValueOrigin.isKnown())
         return false;
     }
 
@@ -366,8 +428,8 @@ public:
     while (!loopVarPostsToTrace.IsEmpty())
     {
       auto loopVarPost = *loopVarPostsToTrace.Items().begin();
-      auto lastStoredValue = getLastStoreBeforeInput(*loopVarPost);
-      if (!lastStoredValue.isKnown())
+      auto lastValueOrigin = getLastValueOriginBeforeInput(*loopVarPost);
+      if (!lastValueOrigin.isKnown())
         return false;
 
       loopVarPostsToTrace.Remove(loopVarPost);
@@ -384,7 +446,7 @@ private:
    * @param storeNode the StoreOperation node
    */
   aa::AliasAnalysis::AliasQueryResponse
-  queryAliasAnalysis(rvsdg::SimpleNode & storeNode)
+  queryAliasAnalysisWithStore(rvsdg::SimpleNode & storeNode)
   {
     JLM_ASSERT(is<StoreOperation>(&storeNode));
 
@@ -398,7 +460,32 @@ private:
     // Query the alias analysis
     const auto response =
         aliasAnalysis.Query(*loadedAddress, loadedTypeSize, tracedStoredAddress, storedSize);
-    updateAliasAnalysisQueryCounters(response);
+    storeAAResponses.addResponse(response);
+
+    return response;
+  }
+
+  /**
+   * Performs a simple alias analysis query between the \ref loadNode and the given load node,
+   * to determine if they read from the same exact address.
+   * @param storeNode the LoadOperation node
+   */
+  aa::AliasAnalysis::AliasQueryResponse
+  queryAliasAnalysisWithLoad(rvsdg::SimpleNode & loadNode)
+  {
+    JLM_ASSERT(is<LoadOperation>(&loadNode));
+
+    const auto & otherLoadAddress = *LoadOperation::AddressInput(loadNode).origin();
+    const auto otherLoadType = LoadOperation::LoadedValueOutput(loadNode).Type();
+    const auto otherLoadSize = GetTypeStoreSize(*otherLoadType);
+
+    // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
+    const auto & tracedOtherLoadAddress = llvm::traceOutput(otherLoadAddress);
+
+    // Query the alias analysis
+    const auto response =
+        aliasAnalysis.Query(*loadedAddress, loadedTypeSize, tracedOtherLoadAddress, otherLoadSize);
+    loadAAResponses.addResponse(response);
 
     return response;
   }
@@ -417,44 +504,45 @@ private:
    * @param input the memory state input to trace from
    * @return the last node that stores to the memory loaded by the loadNode, before the input.
    */
-  StoreValueOrigin
-  getLastStoreBeforeInput(rvsdg::Input & input)
+  ValueOrigin
+  getLastValueOriginBeforeInput(rvsdg::Input & input)
   {
     // If the input has already been traced, return the last result
-    if (const auto it = lastStoreBeforeInput.find(&input); it != lastStoreBeforeInput.end())
+    if (const auto it = lastValueOriginBeforeInput.find(&input);
+        it != lastValueOriginBeforeInput.end())
       return it->second;
 
-    auto result = getLastStoreBeforeInputInternal(input);
+    auto result = getLastValueOriginBeforeInputInternal(input);
 
     // Add the result to the tracing maps
-    lastStoreBeforeInput[&input] = result;
+    lastValueOriginBeforeInput[&input] = result;
 
     // If the input is on a node, add the result to the node map
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(input))
     {
-      const auto [it, inserted] = lastStoreBeforeNode.emplace(node, result);
+      const auto [it, inserted] = lastValueOriginBeforeNode.emplace(node, result);
 
       // If the node already had a different last store value, give up
       if (!inserted && it->second != result)
-        return StoreValueOrigin::createUnknown();
+        return ValueOrigin::createUnknown();
     }
 
     // If the input is a region exit, add the result to the region exit map
     if (auto regionResult = dynamic_cast<rvsdg::RegionResult *>(&input))
     {
       const auto region = regionResult->region();
-      const auto [it, inserted] = lastStoreInRegion.emplace(region, result);
+      const auto [it, inserted] = lastValueOriginInRegion.emplace(region, result);
 
       // If the region already had a different last store value, give up
       if (!inserted && it->second != result)
-        return StoreValueOrigin::createUnknown();
+        return ValueOrigin::createUnknown();
     }
 
     return result;
   }
 
-  StoreValueOrigin
-  getLastStoreBeforeInputInternal(rvsdg::Input & input)
+  ValueOrigin
+  getLastValueOriginBeforeInputInternal(rvsdg::Input & input)
   {
     auto & tracedOutput = tracer.trace(*input.origin());
 
@@ -469,7 +557,7 @@ private:
       // If the store has not been encountered before, determine forwarding / clobbering
       if (inserted)
       {
-        const auto aliasReponse = queryAliasAnalysis(*storeNode);
+        const auto aliasReponse = queryAliasAnalysisWithStore(*storeNode);
         switch (aliasReponse)
         {
         case aa::AliasAnalysis::MayAlias:
@@ -497,16 +585,64 @@ private:
       switch (it->second)
       {
       case StoreNodeInfo::ValueForwarding:
-        return StoreValueOrigin::createStoreNode(*storeNode);
-
+        return ValueOrigin::createStoreNode(*storeNode);
       case StoreNodeInfo::ClobberNoForward:
-        return StoreValueOrigin::createUnknown();
-
+        return ValueOrigin::createUnknown();
       case StoreNodeInfo::NoClobber:
       {
         // If the store is not clobbering, keep tracing along the memory state chain
         auto & memoryStateInput = StoreOperation::MapMemoryStateOutputToInput(tracedOutput);
-        return getLastStoreBeforeInput(memoryStateInput);
+        return getLastValueOriginBeforeInput(memoryStateInput);
+      }
+
+      default:
+        JLM_UNREACHABLE("Unknown StoreNodeInfo");
+      }
+    }
+
+    // If tracing reached a load operation, check if it is a perfect match
+    if (auto [otherLoadNode, otherLoadOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(tracedOutput);
+        otherLoadNode && otherLoadOp)
+    {
+      // Lookup or create a load node info entry
+      auto [it, inserted] = loadNodeInfo.emplace(otherLoadNode, LoadNodeInfo::NoClobber);
+
+      // If the load has not been encountered before, determine if forwarding is possible
+      if (inserted)
+      {
+        const auto aliasReponse = queryAliasAnalysisWithLoad(*otherLoadNode);
+        switch (aliasReponse)
+        {
+        case aa::AliasAnalysis::MayAlias:
+        case aa::AliasAnalysis::NoAlias:
+          it->second = LoadNodeInfo::NoClobber;
+          break;
+        case aa::AliasAnalysis::MustAlias:
+        {
+          // MustAlias means a forwarding candidate was found,
+          // but forwarding is only possible if the type matches
+          auto otherLoadedType = LoadOperation::LoadedValueOutput(*otherLoadNode).Type();
+          if (*otherLoadedType == *loadedType)
+            it->second = LoadNodeInfo::ValueForwarding;
+          else
+            it->second = LoadNodeInfo::NoClobber;
+          break;
+        }
+        default:
+          JLM_UNREACHABLE("Unknown AliasAnalysis response");
+        }
+      }
+
+      switch (it->second)
+      {
+      case LoadNodeInfo::ValueForwarding:
+        return ValueOrigin::createLoadNode(*otherLoadNode);
+      case LoadNodeInfo::NoClobber:
+      {
+        // If the load can not be forwarded, keep tracing along the memory state chain
+        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(tracedOutput);
+        return getLastValueOriginBeforeInput(memoryStateInput);
       }
 
       default:
@@ -520,17 +656,17 @@ private:
         joinNode && joinOp)
     {
       if (joinNode->ninputs() == 0)
-        return StoreValueOrigin::createUnknown();
+        return ValueOrigin::createUnknown();
 
       for (auto & input : joinNode->Inputs())
       {
-        auto result = getLastStoreBeforeInput(input);
+        auto result = getLastValueOriginBeforeInput(input);
         if (!result.isKnown())
-          return StoreValueOrigin::createUnknown();
+          return ValueOrigin::createUnknown();
       }
 
       // If none of the calls returned nullptr, there must a shared last store before the join
-      const auto sharedLastStore = lastStoreBeforeNode[joinNode];
+      const auto sharedLastStore = lastValueOriginBeforeNode[joinNode];
       JLM_ASSERT(sharedLastStore.isKnown());
       return sharedLastStore;
     }
@@ -540,7 +676,7 @@ private:
             rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(tracedOutput);
         allocaNode && allocaOp)
     {
-      return StoreValueOrigin::createUninitialized();
+      return ValueOrigin::createUninitialized();
     }
 
     // If we found an exit variable of a gamma node, trace each of its subregions
@@ -550,22 +686,22 @@ private:
 
       // If all branches lead to the same store node, return it directly.
       // If different last store nodes have been observed, this becomes nullptr
-      std::optional<StoreValueOrigin> commonStoreValueOrigin;
+      std::optional<ValueOrigin> commonStoreValueOrigin;
 
       for (auto branchResult : exitVar.branchResult)
       {
-        auto lastStoreNode = getLastStoreBeforeInput(*branchResult);
+        auto lastStoreNode = getLastValueOriginBeforeInput(*branchResult);
 
         // If any of the gamma branches is impossible to trace back to a last store,
         // give up on forwarding entirely
         if (!lastStoreNode.isKnown())
-          return StoreValueOrigin::createUnknown();
+          return ValueOrigin::createUnknown();
 
         // Keep track if there is a single shared last store in all branches
         if (!commonStoreValueOrigin.has_value())
           commonStoreValueOrigin = lastStoreNode;
         else if (commonStoreValueOrigin.value() != lastStoreNode)
-          commonStoreValueOrigin = StoreValueOrigin::createUnknown();
+          commonStoreValueOrigin = ValueOrigin::createUnknown();
       }
 
       JLM_ASSERT(commonStoreValueOrigin.has_value());
@@ -573,29 +709,28 @@ private:
         return *commonStoreValueOrigin;
 
       // If the last store node depends on the branch taken, return the gamma node itself
-      return StoreValueOrigin::createGammaNodeOutput(*gammaNode);
+      return ValueOrigin::createGammaNodeOutput(*gammaNode);
     }
 
     // If we found an exit variable of a theta node, continue tracing on the inside
     if (auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(tracedOutput))
     {
       const auto loopVar = thetaNode->MapOutputLoopVar(tracedOutput);
-      auto lastStoreNode = getLastStoreBeforeInput(*loopVar.post);
+      auto lastStoreNode = getLastValueOriginBeforeInput(*loopVar.post);
 
       if (!lastStoreNode.isKnown())
-        return StoreValueOrigin::createUnknown();
+        return ValueOrigin::createUnknown();
 
       // if the last store before the end of the theta subregion is the pre of the same theta,
       // the loaded memory is loop invariant, and we can load from the last store before the theta.
-      if (lastStoreNode.kind == StoreValueOrigin::Kind::ThetaNodePre
-          && lastStoreNode.node == thetaNode)
+      if (lastStoreNode.kind == ValueOrigin::Kind::ThetaNodePre && lastStoreNode.node == thetaNode)
       {
-        return getLastStoreBeforeInput(*loopVar.input);
+        return getLastValueOriginBeforeInput(*loopVar.input);
       }
 
       // if the reached store node is inside the theta, it must be routed out of it
       if (lastStoreNode.node->region() == thetaNode->subregion())
-        return StoreValueOrigin::createThetaNodeOutput(*thetaNode);
+        return ValueOrigin::createThetaNodeOutput(*thetaNode);
 
       // The last store node is outside the theta, so point to it directly
       return lastStoreNode;
@@ -607,39 +742,20 @@ private:
       const auto loopVar = thetaNode->MapPreLoopVar(tracedOutput);
 
       // Trace from the theta input first
-      auto inputLastStoreNode = getLastStoreBeforeInput(*loopVar.input);
+      auto inputLastStoreNode = getLastValueOriginBeforeInput(*loopVar.input);
       if (!inputLastStoreNode.isKnown())
-        return StoreValueOrigin::createUnknown();
+        return ValueOrigin::createUnknown();
 
       // If the loop variables' post result is not traced, add it to the list.
       // Using a list prevents visiting the loop body multiple times during recursion.
-      if (lastStoreBeforeInput.count(loopVar.post) == 0)
+      if (lastValueOriginBeforeInput.count(loopVar.post) == 0)
         loopVarPostsToTrace.insert(loopVar.post);
 
-      return StoreValueOrigin::createThetaNodePre(*thetaNode);
+      return ValueOrigin::createThetaNodePre(*thetaNode);
     }
 
     // Tracing reached something that is not handled, such as a function call
-    return StoreValueOrigin::createUnknown();
-  }
-
-  void
-  updateAliasAnalysisQueryCounters(aa::AliasAnalysis::AliasQueryResponse response)
-  {
-    switch (response)
-    {
-    case aa::AliasAnalysis::NoAlias:
-      numNoAliasAnalysisQueries++;
-      break;
-    case aa::AliasAnalysis::MayAlias:
-      numMayAliasAnalysisQueries++;
-      break;
-    case aa::AliasAnalysis::MustAlias:
-      numMustAliasAnalysisQueries++;
-      break;
-    default:
-      throw std::logic_error("Unhandled alias analysis query response!");
-    }
+    return ValueOrigin::createUnknown();
   }
 
 public:
@@ -651,21 +767,21 @@ public:
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
 
-  // Counters used for statistics
-  size_t numNoAliasAnalysisQueries = 0;
-  size_t numMayAliasAnalysisQueries = 0;
-  size_t numMustAliasAnalysisQueries = 0;
+  AliasQueryResponseCounter storeAAResponses;
+  AliasQueryResponseCounter loadAAResponses;
 
-  // Map containing info about each store node relevant to store value forwarding.
+  // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
+  // Map containing info about each load node relevant to value forwarding.
+  std::unordered_map<rvsdg::SimpleNode *, LoadNodeInfo> loadNodeInfo;
 
-  // The last store value origin on the memory state chain before the given input.
-  std::unordered_map<rvsdg::Input *, StoreValueOrigin> lastStoreBeforeInput;
-  // The last store value origin before the given node.
-  std::unordered_map<rvsdg::Node *, StoreValueOrigin> lastStoreBeforeNode;
-  // The last store value origin node before the end of the given region.
-  // It can be outside the region if no store occurs inside the region.
-  std::unordered_map<rvsdg::Region *, StoreValueOrigin> lastStoreInRegion;
+  // The last value origin on the memory state chain before the given input.
+  std::unordered_map<rvsdg::Input *, ValueOrigin> lastValueOriginBeforeInput;
+  // The last value origin before the given node.
+  std::unordered_map<rvsdg::Node *, ValueOrigin> lastValueOriginBeforeNode;
+  // The last value origin node before the end of the given region.
+  // It can also be outside the region if no clobber occurs inside the region.
+  std::unordered_map<rvsdg::Region *, ValueOrigin> lastValueOriginInRegion;
 
   // When tracing reaches a loop var pre argument, tracing does not continue through the post.
   // The loop var post result is instead added to this set, to ensure that tracing happens later.
@@ -693,21 +809,20 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   const bool success = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
-  context_->numNoAliasAnalysisQueries += loadTracingInfo.numNoAliasAnalysisQueries;
-  context_->numMayAliasAnalysisQueries += loadTracingInfo.numMayAliasAnalysisQueries;
-  context_->numMustAliasAnalysisQueries += loadTracingInfo.numMustAliasAnalysisQueries;
+  context_->storeAAResponses.addFromCounter(loadTracingInfo.storeAAResponses);
+  context_->loadAAResponses.addFromCounter(loadTracingInfo.loadAAResponses);
 
   if (success)
   {
     context_->statistics.startForwarding();
-    forwardStoredValues(loadTracingInfo);
+    forwardValueOrigins(loadTracingInfo);
     context_->statistics.stopForwarding();
   }
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
 void
-StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
+StoreValueForwarding::forwardValueOrigins(LoadTracingInfo & tracingInfo)
 {
   context_->numLoadsForwarded++;
 
@@ -716,9 +831,9 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
   auto & loadRegion = *loadNode.region();
 
   // There must be a node providing the last value stored before the load
-  const auto lastStoreNode = tracingInfo.lastStoreBeforeNode[&loadNode];
+  const auto lastStoreNode = tracingInfo.lastValueOriginBeforeNode[&loadNode];
   JLM_ASSERT(lastStoreNode.isKnown());
-  auto & storedValueOutput = getStoredValueOrigin(lastStoreNode, loadRegion, tracingInfo);
+  auto & storedValueOutput = getValueOriginOutput(lastStoreNode, loadRegion, tracingInfo);
 
   // Fixup all loop variables that were created during the above routing
   connectUnroutedLoopPosts(tracingInfo);
@@ -735,32 +850,39 @@ StoreValueForwarding::forwardStoredValues(LoadTracingInfo & tracingInfo)
   }
 }
 
-// Gets an rvsdg output providing the last value stored relative to the storeValueOrigin.
+// Gets an rvsdg output providing the output referenced by the value origin.
 rvsdg::Output &
-StoreValueForwarding::getStoredValueOrigin(
-    StoreValueOrigin storeValueOrigin,
+StoreValueForwarding::getValueOriginOutput(
+    ValueOrigin valueOrigin,
     rvsdg::Region & targetRegion,
     LoadTracingInfo & tracingInfo)
 {
-  JLM_ASSERT(storeValueOrigin.isKnown());
+  JLM_ASSERT(valueOrigin.isKnown());
 
-  if (storeValueOrigin.kind == StoreValueOrigin::Kind::Uninitialized)
+  if (valueOrigin.kind == ValueOrigin::Kind::Uninitialized)
   {
     // When forwarding uninitialized memory, create an undef node
     return *UndefValueOperation::Create(targetRegion, tracingInfo.loadedType);
   }
 
-  if (storeValueOrigin.kind == StoreValueOrigin::Kind::StoreNode)
+  if (valueOrigin.kind == ValueOrigin::Kind::StoreNode)
   {
     // For store nodes, the stored value is the origin of the node's value input
-    auto & storedValue = *StoreOperation::StoredValueInput(*storeValueOrigin.node).origin();
+    auto & storedValue = *StoreOperation::StoredValueInput(*valueOrigin.node).origin();
     return routeOutputToRegion(storedValue, targetRegion);
   }
 
-  // For gamma nodes, create an exit variable by finding the stored value in each of its regions
-  if (storeValueOrigin.kind == StoreValueOrigin::Kind::GammaNodeOutput)
+  if (valueOrigin.kind == ValueOrigin::Kind::LoadNode)
   {
-    auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(storeValueOrigin.node);
+    // For load nodes, the load output is the value origin
+    auto & loadedValue = LoadOperation::LoadedValueOutput(*valueOrigin.node);
+    return routeOutputToRegion(loadedValue, targetRegion);
+  }
+
+  // For gamma nodes, create an exit variable by finding the stored value in each of its regions
+  if (valueOrigin.kind == ValueOrigin::Kind::GammaNodeOutput)
+  {
+    auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(valueOrigin.node);
     JLM_ASSERT(gammaNode);
 
     // We only need to create at most one exit variable per gamma, so memoize it
@@ -770,8 +892,8 @@ StoreValueForwarding::getStoredValueOrigin(
       std::vector<rvsdg::Output *> lastStorePerSubregion;
       for (auto & subregion : gammaNode->Subregions())
       {
-        auto lastStoreValue = tracingInfo.lastStoreInRegion[&subregion];
-        auto & storedValueOutput = getStoredValueOrigin(lastStoreValue, subregion, tracingInfo);
+        auto lastStoreValue = tracingInfo.lastValueOriginInRegion[&subregion];
+        auto & storedValueOutput = getValueOriginOutput(lastStoreValue, subregion, tracingInfo);
         lastStorePerSubregion.push_back(&storedValueOutput);
       }
 
@@ -783,26 +905,26 @@ StoreValueForwarding::getStoredValueOrigin(
   }
 
   // For theta nodes, create a loop variable
-  if (storeValueOrigin.kind == StoreValueOrigin::Kind::ThetaNodeOutput
-      || storeValueOrigin.kind == StoreValueOrigin::Kind::ThetaNodePre)
+  if (valueOrigin.kind == ValueOrigin::Kind::ThetaNodeOutput
+      || valueOrigin.kind == ValueOrigin::Kind::ThetaNodePre)
   {
-    auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(storeValueOrigin.node);
+    auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(valueOrigin.node);
     JLM_ASSERT(thetaNode);
 
     // If the theta output is being requested, and no clobber happens inside the theta,
     // skip making a loop variable and return the last store before the theta instead
-    if (storeValueOrigin.kind == StoreValueOrigin::Kind::ThetaNodeOutput)
+    if (valueOrigin.kind == ValueOrigin::Kind::ThetaNodeOutput)
     {
-      auto lastStoreInRegion = tracingInfo.lastStoreInRegion.find(thetaNode->subregion());
-      JLM_ASSERT(lastStoreInRegion != tracingInfo.lastStoreInRegion.end());
+      auto lastStoreInRegion = tracingInfo.lastValueOriginInRegion.find(thetaNode->subregion());
+      JLM_ASSERT(lastStoreInRegion != tracingInfo.lastValueOriginInRegion.end());
       JLM_ASSERT(lastStoreInRegion->second.isKnown());
 
       // If the last store is the theta pre, the loop body never clobbers
-      if (lastStoreInRegion->second.kind == StoreValueOrigin::Kind::ThetaNodePre)
+      if (lastStoreInRegion->second.kind == ValueOrigin::Kind::ThetaNodePre)
       {
-        auto lastStoreBeforeTheta = tracingInfo.lastStoreBeforeNode.find(thetaNode);
-        JLM_ASSERT(lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end());
-        return getStoredValueOrigin(lastStoreBeforeTheta->second, targetRegion, tracingInfo);
+        auto lastStoreBeforeTheta = tracingInfo.lastValueOriginBeforeNode.find(thetaNode);
+        JLM_ASSERT(lastStoreBeforeTheta != tracingInfo.lastValueOriginBeforeNode.end());
+        return getValueOriginOutput(lastStoreBeforeTheta->second, targetRegion, tracingInfo);
       }
     }
 
@@ -812,13 +934,13 @@ StoreValueForwarding::getStoredValueOrigin(
     {
       rvsdg::Output * initialValue = nullptr;
 
-      if (auto lastStoreBeforeTheta = tracingInfo.lastStoreBeforeNode.find(thetaNode);
-          lastStoreBeforeTheta != tracingInfo.lastStoreBeforeNode.end())
+      if (auto lastStoreBeforeTheta = tracingInfo.lastValueOriginBeforeNode.find(thetaNode);
+          lastStoreBeforeTheta != tracingInfo.lastValueOriginBeforeNode.end())
       {
         JLM_ASSERT(lastStoreBeforeTheta->second.isKnown());
         auto & outerRegion = *thetaNode->region();
         initialValue =
-            &getStoredValueOrigin(lastStoreBeforeTheta->second, outerRegion, tracingInfo);
+            &getValueOriginOutput(lastStoreBeforeTheta->second, outerRegion, tracingInfo);
       }
       else
       {
@@ -839,11 +961,11 @@ StoreValueForwarding::getStoredValueOrigin(
     }
 
     // Return the correct output, depending on the query kind
-    switch (storeValueOrigin.kind)
+    switch (valueOrigin.kind)
     {
-    case StoreValueOrigin::Kind::ThetaNodePre:
+    case ValueOrigin::Kind::ThetaNodePre:
       return routeOutputToRegion(*loopVarSlot->second.pre, targetRegion);
-    case StoreValueOrigin::Kind::ThetaNodeOutput:
+    case ValueOrigin::Kind::ThetaNodeOutput:
       return routeOutputToRegion(*loopVarSlot->second.output, targetRegion);
     default:
       JLM_UNREACHABLE("Unknown StoreValueOrigin kind");
@@ -863,9 +985,9 @@ StoreValueForwarding::connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo)
     auto post = tracingInfo.unroutedLoopVarPosts.front();
     tracingInfo.unroutedLoopVarPosts.pop();
 
-    auto lastStore = tracingInfo.lastStoreInRegion.find(post->region());
-    JLM_ASSERT(lastStore != tracingInfo.lastStoreInRegion.end());
-    auto & origin = getStoredValueOrigin(lastStore->second, *post->region(), tracingInfo);
+    auto lastStore = tracingInfo.lastValueOriginInRegion.find(post->region());
+    JLM_ASSERT(lastStore != tracingInfo.lastValueOriginInRegion.end());
+    auto & origin = getValueOriginOutput(lastStore->second, *post->region(), tracingInfo);
     post->divert_to(&origin);
   }
 }
@@ -957,9 +1079,8 @@ StoreValueForwarding::Run(
   statistics->StopStatistics(
       context_->numTotalLoads,
       context_->numLoadsForwarded,
-      context_->numNoAliasAnalysisQueries,
-      context_->numMayAliasAnalysisQueries,
-      context_->numMustAliasAnalysisQueries);
+      context_->storeAAResponses,
+      context_->loadAAResponses);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done

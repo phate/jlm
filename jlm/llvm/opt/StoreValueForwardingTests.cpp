@@ -861,3 +861,180 @@ TEST(StoreValueForwardingTests, GepInLoop)
   const auto & addRhsOrigin = *addResultNode.input(1)->origin();
   EXPECT_EQ(&addRhsOrigin, constantThirty.output(0));
 }
+
+TEST(StoreValueForwardingTests, LoadForwarding)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   * lambda [p:ptr, io, mem0] {
+   *   l1, mem1 = load[uint32] p, mem0
+   *   l2, mem2 = load[uint32] p, mem1
+   *   add0 = add l1, l2
+   * } [add0, io, mem2]
+   *
+   * and validates that only one load remains after running StoreValueForwarding.
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & p = *lambdaNode.GetFunctionArguments()[0];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[1];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[2];
+
+  auto & load1Node = LoadNonVolatileOperation::CreateNode(p, { &mem0 }, bits32Type, 4);
+  auto & l1 = LoadOperation::LoadedValueOutput(load1Node);
+  auto & mem1 = *LoadOperation::MemoryStateOutputs(load1Node).begin();
+
+  auto & load2Node = LoadNonVolatileOperation::CreateNode(p, { &mem1 }, bits32Type, 4);
+  auto & l2 = LoadOperation::LoadedValueOutput(load2Node);
+  auto & mem2 = *LoadOperation::MemoryStateOutputs(load2Node).begin();
+
+  auto & addNode = rvsdg::CreateOpNode<IntegerAddOperation>({ &l1, &l2 }, 32);
+  auto & add0 = *addNode.output(0);
+
+  lambdaNode.finalize({ &add0, &io0, &mem2 });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  size_t loadCount = 0;
+  for (auto & node : lambdaNode.subregion()->Nodes())
+  {
+    if (is<LoadOperation>(&node))
+      loadCount++;
+  }
+  EXPECT_EQ(loadCount, 1u);
+
+  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin());
+  const auto & addRhsOrigin = jlm::llvm::traceOutput(*addNode.input(1)->origin());
+  EXPECT_EQ(&addLhsOrigin, &l1);
+  EXPECT_EQ(&addRhsOrigin, &l1);
+
+  const auto & memoryResultOrigin =
+      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin());
+  EXPECT_EQ(&memoryResultOrigin, &mem1);
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingIntoTheta)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   * lambda [p:ptr, io, mem0] {
+   *   l1, mem1 = load[uint32] p, mem0
+   *
+   *   _, sum, mem4 = theta p, l1, mem1 [pInner, sumInner, mem2] {
+   *     l2, mem3 = load[uint32] pInner, mem2
+   *     sum2 = add sumInner, l2
+   *     constant100 = IntegerConstantValue[100: uint32]
+   *     compare = SignedLessThan sum2, constant100
+   *     predicate = MATCH[1->1, 0] compare
+   *   }[predicate, pInner, sum2, mem3]
+   *
+   * } [sum, io, mem4]
+   *
+   * and validates that the load inside the theta gets removed by forwarding.
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & p = *lambdaNode.GetFunctionArguments()[0];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[1];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[2];
+
+  auto & load1Node = LoadNonVolatileOperation::CreateNode(p, { &mem0 }, bits32Type, 4);
+  auto & l1 = LoadOperation::LoadedValueOutput(load1Node);
+  auto & mem1 = *LoadOperation::MemoryStateOutputs(load1Node).begin();
+
+  auto & thetaNode = *rvsdg::ThetaNode::create(lambdaNode.subregion());
+  auto pLoopVar = thetaNode.AddLoopVar(&p);
+  auto sumLoopVar = thetaNode.AddLoopVar(&l1);
+  auto memLoopVar = thetaNode.AddLoopVar(&mem1);
+
+  auto & load2Node =
+      LoadNonVolatileOperation::CreateNode(*pLoopVar.pre, { memLoopVar.pre }, bits32Type, 4);
+  auto & l2 = LoadOperation::LoadedValueOutput(load2Node);
+  auto & mem3 = *LoadOperation::MemoryStateOutputs(load2Node).begin();
+
+  auto & addNode = rvsdg::CreateOpNode<IntegerAddOperation>({ sumLoopVar.pre, &l2 }, 32);
+  auto & sum2 = *addNode.output(0);
+
+  auto & constant100 = IntegerConstantOperation::Create(*thetaNode.subregion(), 32, 100);
+  auto & sltNode = rvsdg::CreateOpNode<IntegerSltOperation>({ &sum2, constant100.output(0) }, 32);
+  const auto predicate = rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  thetaNode.set_predicate(predicate);
+  sumLoopVar.post->divert_to(&sum2);
+  memLoopVar.post->divert_to(&mem3);
+
+  lambdaNode.finalize({ sumLoopVar.output, &io0, memLoopVar.output });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  size_t lambdaLoadCount = 0;
+  for (auto & node : lambdaNode.subregion()->Nodes())
+  {
+    if (is<LoadOperation>(&node))
+      lambdaLoadCount++;
+  }
+  EXPECT_EQ(lambdaLoadCount, 1u);
+
+  size_t thetaLoadCount = 0;
+  for (auto & node : thetaNode.subregion()->Nodes())
+  {
+    if (is<LoadOperation>(&node))
+      thetaLoadCount++;
+  }
+  EXPECT_EQ(thetaLoadCount, 0u);
+
+  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin());
+  EXPECT_EQ(&addLhsOrigin, sumLoopVar.pre);
+
+  const auto & addRhsOrigin = *addNode.input(1)->origin();
+  const auto forwardedLoopVar = thetaNode.MapPreLoopVar(addRhsOrigin);
+  EXPECT_TRUE(rvsdg::ThetaLoopVarIsInvariant(forwardedLoopVar));
+  EXPECT_EQ(forwardedLoopVar.input->origin(), &l1);
+  EXPECT_EQ(&jlm::llvm::traceOutput(addRhsOrigin), &l1);
+
+  const auto & memoryResultOrigin =
+      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin());
+  EXPECT_EQ(&memoryResultOrigin, &mem1);
+}
