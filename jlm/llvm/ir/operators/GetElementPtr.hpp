@@ -57,6 +57,80 @@ public:
   }
 
   /**
+   * Attempts to find the constant indices of a \ref GetElementPtrOperation node.
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The constant indices if all of them are found to be constant, otherwise std::nullopt.
+   */
+  static std::optional<std::vector<uint64_t>>
+  tryGetConstantIndices(const rvsdg::Node & node) noexcept;
+
+  /**
+   * Returns an iterator range to the indices of a \ref GetElementPtrOperation node.
+   *
+   * \pre \p node is expected to have a \ref GetElementPtrOperation.
+   *
+   * @param node A \ref GetElementPtrOperation node.
+   * @return An iterator range for all the indices.
+   */
+  [[nodiscard]] static rvsdg::Node::InputConstIteratorRange
+  indices(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(GetElementPtrOperation::numIndices(node) != 0);
+
+    const auto firstIndex = node.input(1);
+    JLM_ASSERT(is<rvsdg::BitType>(firstIndex->Type()));
+    return { rvsdg::Input::ConstIterator(firstIndex), rvsdg::Input::ConstIterator(nullptr) };
+  }
+
+  /**
+   * \pre \p node must be a \ref GetElementPtrOperation
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The number of indices of the node.
+   */
+  [[nodiscard]] static size_t
+  numIndices(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    return node.ninputs() - 1; // Subtract base address
+  }
+
+  /**
+   * Returns the base address input of a \ref GetElementPtrOperation node.
+   *
+   * \pre \p node must be a \ref GetElementPtrOperation.
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The base address on which the address calculation is performed.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  getBaseAddressInput(rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    const auto baseAddress = node.input(0);
+    JLM_ASSERT(is<PointerType>(baseAddress->Type()));
+    return *baseAddress;
+  }
+
+  /**
+   * Returns the base address input of a \ref GetElementPtrOperation node.
+   *
+   * \pre \p node must be a \ref GetElementPtrOperation
+   *
+   * @param node The \ref GetElementPtrOperation node.
+   * @return The base address on which the address calculation is performed.
+   */
+  [[nodiscard]] static const rvsdg::Input &
+  getBaseAddressInput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+    const auto baseAddress = node.input(0);
+    JLM_ASSERT(is<PointerType>(baseAddress->Type()));
+    return *baseAddress;
+  }
+
+  /**
    * Creates a GetElementPtr three address code.
    *
    * @param baseAddress The base address for the pointer calculation.
