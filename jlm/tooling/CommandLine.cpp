@@ -304,6 +304,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::PredicateCorrelation,
           JlmOptCommandLineOptions::OptimizationId::LoopUnswitching,
+          JlmOptCommandLineOptions::OptimizationId::AggregateAllocaSplitting,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
