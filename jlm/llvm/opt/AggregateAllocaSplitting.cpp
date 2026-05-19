@@ -224,14 +224,8 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
                   [&](const GetElementPtrOperation &)
                   {
                     JLM_ASSERT(userNode->input(0) == &user);
-                    for (size_t n = 1; n < userNode->ninputs(); n++)
-                    {
-                      if (!tryGetConstantSignedInteger(*userNode->input(n)->origin()).has_value())
-                      {
-                        return false;
-                      }
-                    }
-
+                    JLM_ASSERT(
+                        GetElementPtrOperation::tryGetConstantIndices(simpleNode).has_value());
                     allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
                     return true;
                   },
