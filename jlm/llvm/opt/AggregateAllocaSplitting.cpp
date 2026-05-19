@@ -541,20 +541,11 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
         allocaConsumer->GetOperation(),
         [&](const GetElementPtrOperation &)
         {
-          JLM_ASSERT(allocaConsumer->ninputs() >= 3);
+          JLM_ASSERT(GetElementPtrOperation::numIndices(*allocaConsumer) == 2);
           auto & consumerRegion = *allocaConsumer->region();
-          [[maybe_unused]] auto index0 =
-              tryGetConstantSignedInteger(*allocaConsumer->input(1)->origin()).value();
-          JLM_ASSERT(index0 == 0);
-
-          std::vector<uint64_t> indices;
-          // Skip base address and first index as it is always zero
-          for (size_t n = 2; n < allocaConsumer->ninputs(); ++n)
-          {
-            uint64_t index =
-                tryGetConstantSignedInteger(*allocaConsumer->input(n)->origin()).value();
-            indices.push_back(index);
-          }
+          const auto indices =
+              GetElementPtrOperation::tryGetConstantIndices(*allocaConsumer).value();
+          JLM_ASSERT(indices[0] == 0);
 
           auto elementAlloca = elementAllocaMap.at(indices);
           // FIXME: Introduce caching of routed values to avoid duplicated routing.
