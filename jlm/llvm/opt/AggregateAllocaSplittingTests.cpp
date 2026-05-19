@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/AggregateAllocaSplitting.hpp>
@@ -18,7 +17,6 @@
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
-#include <mlir/IR/BuiltinTypes.h>
 
 static void
 assertAllocaWithType(const jlm::rvsdg::Output & output, const jlm::rvsdg::Type & type)
