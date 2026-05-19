@@ -22,6 +22,7 @@
 #include <jlm/util/Statistics.hpp>
 
 #include <deque>
+#include <map>
 
 namespace jlm::llvm
 {
@@ -107,8 +108,7 @@ AggregateAllocaSplitting::isSplitableType(const rvsdg::Type & type)
   {
     if (IsAggregateType(*elementType))
     {
-      // FIXME: We currently only look at alloca nodes that do not contain nested aggregate types.
-      return false;
+      return isSplitableType(*elementType);
     }
   }
 
@@ -462,7 +462,6 @@ AggregateAllocaSplitting::findSplitableAllocaNodes(rvsdg::Region & region) const
               context_->numSplitableTypeAggregateAllocaNodes++;
               if (auto allocaTraceInfo = isSplitable(simpleNode))
               {
-                context_->numSplitAggregateAllocaNodes++;
                 traceInfo.emplace_back(*allocaTraceInfo);
               }
             }
@@ -479,25 +478,62 @@ AggregateAllocaSplitting::findSplitableAllocaNodes(rvsdg::Region & region) const
   return traceInfo;
 }
 
+// FIXME: Do not use std::map, and rather use std::unordered_map
+static std::map<std::vector<uint64_t>, rvsdg::Node *>
+createElementAllocaNodes(rvsdg::SimpleNode & allocaNode)
+{
+  const auto allocaOperation =
+      util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+  auto & allocaType = *util::assertedCast<const StructType>(allocaOperation->allocatedType().get());
+  const auto & countInput = AllocaOperation::getCountInput(allocaNode);
+  const auto alignment = allocaOperation->alignment();
+
+  std::function<void(
+      const StructType &,
+      std::map<std::vector<uint64_t>, rvsdg::Node *> &,
+      std::vector<uint64_t> &)>
+      createAllocaNodes = [&](const StructType & structType,
+                              std::map<std::vector<uint64_t>, rvsdg::Node *> & allocaNodes,
+                              std::vector<uint64_t> & indices)
+  {
+    size_t index = 0;
+    for (const auto & elementType : structType.elementTypes())
+    {
+      indices.push_back(index++);
+      if (auto structType = std::dynamic_pointer_cast<const StructType>(elementType))
+      {
+        createAllocaNodes(*structType, allocaNodes, indices);
+      }
+      else
+      {
+        auto & elementAlloca =
+            AllocaOperation::createNode(elementType, *countInput.origin(), alignment);
+
+        allocaNodes[indices] = &elementAlloca;
+      }
+
+      indices.pop_back();
+    }
+  };
+
+  std::vector<uint64_t> indices;
+  std::map<std::vector<uint64_t>, rvsdg::Node *> allocaNodes;
+  createAllocaNodes(allocaType, allocaNodes, indices);
+  return allocaNodes;
+}
+
 void
 AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInfo)
 {
   auto & allocaNode = *allocaTraceInfo.allocaNode;
   const auto allocaOperation = dynamic_cast<const AllocaOperation *>(&allocaNode.GetOperation());
   JLM_ASSERT(allocaOperation && isSplitableType(*allocaOperation->allocatedType()));
-  auto & allocaType = *std::static_pointer_cast<const StructType>(allocaOperation->allocatedType());
-  const auto & countInput = AllocaOperation::getCountInput(allocaNode);
-  const auto alignment = allocaOperation->alignment();
 
-  // Create alloca nodes for each element in the aggregate type
-  std::vector<rvsdg::Node *> elementAllocaNodes;
   std::vector<rvsdg::Output *> allocaMemoryStates;
-  for (const auto & elementType : allocaType.elementTypes())
+  auto elementAllocaMap = createElementAllocaNodes(allocaNode);
+  for (auto [_, elementAllocaNode] : elementAllocaMap)
   {
-    auto & elementAlloca =
-        AllocaOperation::createNode(elementType, *countInput.origin(), alignment);
-    elementAllocaNodes.push_back(&elementAlloca);
-    allocaMemoryStates.push_back(&AllocaOperation::getMemoryStateOutput(elementAlloca));
+    allocaMemoryStates.push_back(&AllocaOperation::getMemoryStateOutput(*elementAllocaNode));
   }
 
   // Replace alloca node's memory state output
@@ -511,16 +547,22 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
         allocaConsumer->GetOperation(),
         [&](const GetElementPtrOperation &)
         {
-          JLM_ASSERT(allocaConsumer->ninputs() == 3);
+          JLM_ASSERT(allocaConsumer->ninputs() >= 3);
           auto & consumerRegion = *allocaConsumer->region();
-          // FIXME: Introduce convenient functions
           [[maybe_unused]] auto index0 =
               tryGetConstantSignedInteger(*allocaConsumer->input(1)->origin()).value();
-          const auto index1 =
-              tryGetConstantSignedInteger(*allocaConsumer->input(2)->origin()).value();
           JLM_ASSERT(index0 == 0);
 
-          auto elementAlloca = elementAllocaNodes[index1];
+          std::vector<uint64_t> indices;
+          // Skip base address and first index as it is always zero
+          for (size_t n = 2; n < allocaConsumer->ninputs(); ++n)
+          {
+            uint64_t index =
+                tryGetConstantSignedInteger(*allocaConsumer->input(n)->origin()).value();
+            indices.push_back(index);
+          }
+
+          auto elementAlloca = elementAllocaMap.at(indices);
           // FIXME: Introduce caching of routed values to avoid duplicated routing.
           auto & routedAddress = rvsdg::RouteToRegion(
               AllocaOperation::getPointerOutput(*elementAlloca),
@@ -542,6 +584,7 @@ AggregateAllocaSplitting::splitAllocaNodes(rvsdg::RvsdgModule & rvsdgModule)
   for (const auto & allocaTraceInfo : traceInfo)
   {
     splitAllocaNode(allocaTraceInfo);
+    context_->numSplitAggregateAllocaNodes++;
   }
 
   // Remove all nodes that became dead throughout the transformation
