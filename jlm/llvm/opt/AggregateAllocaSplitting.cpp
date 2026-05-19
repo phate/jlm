@@ -510,7 +510,7 @@ createElementAllocaNodes(rvsdg::SimpleNode & allocaNode)
     }
   };
 
-  std::vector<uint64_t> indices;
+  std::vector<uint64_t> indices(1, 0);
   std::map<std::vector<uint64_t>, rvsdg::Node *> allocaNodes;
   createAllocaNodes(allocaType, allocaNodes, indices);
   return allocaNodes;
@@ -541,7 +541,7 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
         allocaConsumer->GetOperation(),
         [&](const GetElementPtrOperation &)
         {
-          JLM_ASSERT(GetElementPtrOperation::numIndices(*allocaConsumer) == 2);
+          JLM_ASSERT(GetElementPtrOperation::numIndices(*allocaConsumer) >= 2);
           auto & consumerRegion = *allocaConsumer->region();
           const auto indices =
               GetElementPtrOperation::tryGetConstantIndices(*allocaConsumer).value();
