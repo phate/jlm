@@ -492,4 +492,14 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
         traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin());
     assertAllocaWithType(tracedOutput, *bit128Type);
   }
+
+  // Check memstate
+  {
+    auto [memoryMergeNode, memoryMergeOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(
+            *lambdaNode->GetFunctionResults()[0]->origin());
+    EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
+
+    EXPECT_EQ(memoryMergeNode->ninputs(), 7u);
+  }
 }
