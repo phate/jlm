@@ -123,6 +123,14 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
   JLM_ASSERT(allocaOperation && isSplitableType(*allocaOperation->allocatedType()));
 
   auto & address = AllocaOperation::getPointerOutput(allocaNode);
+  auto & count = AllocaOperation::getCountInput(allocaNode);
+
+  const auto countOpt = tryGetConstantSignedInteger(*count.origin());
+  if (!countOpt.has_value() || countOpt.value() != 1)
+  {
+    // FIXME: Handle AllocaOperation nodes with a count unequal to 1.
+    return std::nullopt;
+  }
 
   bool isSplitable = true;
   AllocaTraceInfo allocaTraceInfo(allocaNode);

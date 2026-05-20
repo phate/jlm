@@ -503,3 +503,54 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
     EXPECT_EQ(memoryMergeNode->ninputs(), 7u);
   }
 }
+
+TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto bit32Type = BitType::Create(32);
+  auto bit64Type = BitType::Create(64);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto structType = StructType::CreateIdentified({ bit32Type, bit64Type }, false);
+  const auto functionType = FunctionType::Create({}, { memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & zero32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+  auto & zero64Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 0);
+  auto & one32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & two32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & allocaNode = AllocaOperation::createNode(structType, *two32Node.output(0), 4);
+
+  auto & gepNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), one32Node.output(0) },
+      bit64Type);
+  auto & storeGepNode = StoreNonVolatileOperation::CreateNode(
+      *gepNode.output(0),
+      *zero64Node.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto lambdaOutput = lambdaNode->finalize({ storeGepNode.output(0) });
+  GraphExport::Create(*lambdaOutput, "f");
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  AggregateAllocaSplitting aggregateAllocaSplitting;
+  aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
+  // bigger than one.
+  EXPECT_TRUE(Region::ContainsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+}
