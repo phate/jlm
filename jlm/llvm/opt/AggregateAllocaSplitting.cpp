@@ -224,13 +224,10 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
                   [&](const GetElementPtrOperation &)
                   {
                     JLM_ASSERT(userNode->input(0) == &user);
-                    for (size_t n = 1; n < userNode->ninputs(); n++)
-                    {
-                      if (!tryGetConstantSignedInteger(*userNode->input(n)->origin()).has_value())
-                      {
-                        return false;
-                      }
-                    }
+                    if (const auto indicesOpt =
+                            GetElementPtrOperation::tryGetConstantIndices(simpleNode);
+                        !indicesOpt.has_value())
+                      return false;
 
                     allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
                     return true;
@@ -511,16 +508,14 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
         allocaConsumer->GetOperation(),
         [&](const GetElementPtrOperation &)
         {
-          JLM_ASSERT(allocaConsumer->ninputs() == 3);
+          JLM_ASSERT(GetElementPtrOperation::numIndices(*allocaConsumer) == 2);
           auto & consumerRegion = *allocaConsumer->region();
-          // FIXME: Introduce convenient functions
-          [[maybe_unused]] auto index0 =
-              tryGetConstantSignedInteger(*allocaConsumer->input(1)->origin()).value();
-          const auto index1 =
-              tryGetConstantSignedInteger(*allocaConsumer->input(2)->origin()).value();
-          JLM_ASSERT(index0 == 0);
 
-          auto elementAlloca = elementAllocaNodes[index1];
+          const auto indices =
+              GetElementPtrOperation::tryGetConstantIndices(*allocaConsumer).value();
+          JLM_ASSERT(indices.size() == 2 && indices[0] == 0);
+
+          auto elementAlloca = elementAllocaNodes[indices[1]];
           // FIXME: Introduce caching of routed values to avoid duplicated routing.
           auto & routedAddress = rvsdg::RouteToRegion(
               AllocaOperation::getPointerOutput(*elementAlloca),
