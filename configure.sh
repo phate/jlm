@@ -93,7 +93,9 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Werror -Wfatal-errors -gdwarf-4 -g"
+# Flags for disabling warnings must come at the very end
+CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-unused-parameter"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
@@ -117,7 +119,7 @@ CPPFLAGS_CIRCT=""
 CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
-	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+	CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-error=comment"
 	CIRCT_LDFLAGS_ARRAY=(
 		"-L${CIRCT_PATH}/lib"
 		"-lCIRCTAnalysisTestPasses"
@@ -159,7 +161,7 @@ fi
 CPPFLAGS_MLIR=""
 if [ "${ENABLE_MLIR}" == "yes" ] ; then
 	CPPFLAGS_MLIR="-I${MLIR_PATH}/include -DENABLE_MLIR"
-	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+	CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-error=comment"
 	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIRJLM -lMLIRRVSDG -lMLIR"
 fi
 
@@ -177,7 +179,7 @@ GTEST_LDFLAGS=$(pkg-config --libs gtest_main)
 
 (
 	cat <<EOF
-CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMENT}
+CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_DISABLE_WARNINGS:-}
 CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR} ${GTEST_CPPFLAGS}
 ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
