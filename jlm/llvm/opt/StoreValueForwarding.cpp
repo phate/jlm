@@ -94,10 +94,10 @@ class StoreValueForwarding::Statistics final : public util::Statistics
   static constexpr auto NumTotalLoads_ = "#TotalLoads";
   static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
   static constexpr auto numNoAliasStore_ = "#NoAliasStore";
-  static constexpr auto numMayAliasStore_ = "#NoMayAliasStore";
+  static constexpr auto numMayAliasStore_ = "#MayAliasStore";
   static constexpr auto numMustAliasStore_ = "#MustAliasStore";
   static constexpr auto numNoAliasLoad_ = "#NoAliasLoad";
-  static constexpr auto numMayAliasLoad_ = "#NoMayAliasLoad";
+  static constexpr auto numMayAliasLoad_ = "#MayAliasLoad";
   static constexpr auto numMustAliasLoad_ = "#MustAliasLoad";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
@@ -869,6 +869,7 @@ StoreValueForwarding::getValueOriginOutput(
   {
     // For store nodes, the stored value is the origin of the node's value input
     auto & storedValue = *StoreOperation::StoredValueInput(*valueOrigin.node).origin();
+    JLM_ASSERT(*storedValue.Type() == *tracingInfo.loadedType);
     return routeOutputToRegion(storedValue, targetRegion);
   }
 
@@ -876,6 +877,7 @@ StoreValueForwarding::getValueOriginOutput(
   {
     // For load nodes, the load output is the value origin
     auto & loadedValue = LoadOperation::LoadedValueOutput(*valueOrigin.node);
+    JLM_ASSERT(*loadedValue.Type() == *tracingInfo.loadedType);
     return routeOutputToRegion(loadedValue, targetRegion);
   }
 
@@ -892,15 +894,17 @@ StoreValueForwarding::getValueOriginOutput(
       std::vector<rvsdg::Output *> lastStorePerSubregion;
       for (auto & subregion : gammaNode->Subregions())
       {
-        auto lastStoreValue = tracingInfo.lastValueOriginInRegion[&subregion];
-        auto & storedValueOutput = getValueOriginOutput(lastStoreValue, subregion, tracingInfo);
-        lastStorePerSubregion.push_back(&storedValueOutput);
+        JLM_ASSERT(tracingInfo.lastValueOriginInRegion.count(&subregion));
+        auto lastValueOrigin = tracingInfo.lastValueOriginInRegion[&subregion];
+        auto & valueOriginOutput = getValueOriginOutput(lastValueOrigin, subregion, tracingInfo);
+        lastStorePerSubregion.push_back(&valueOriginOutput);
       }
 
       auto exitVar = gammaNode->AddExitVar(lastStorePerSubregion);
       it->second = exitVar.output;
     }
     JLM_ASSERT(it->second);
+    JLM_ASSERT(*it->second->Type() == *tracingInfo.loadedType);
     return routeOutputToRegion(*it->second, targetRegion);
   }
 
@@ -950,6 +954,7 @@ StoreValueForwarding::getValueOriginOutput(
 
       // Create the loop variable and add it to the map
       JLM_ASSERT(initialValue);
+      JLM_ASSERT(*initialValue->Type() == *tracingInfo.loadedType);
       auto loopVar = thetaNode->AddLoopVar(initialValue);
       auto [it, inserted] = tracingInfo.createdLoopVars.emplace(thetaNode, loopVar);
       JLM_ASSERT(inserted);
@@ -1009,7 +1014,15 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     // If the outer output already has a corresponding EntryVar, return it
     if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
         it != context_->routedOutputs.end())
-      return *it->second;
+    {
+      // The output in the map key may have been deleted, and had its address re-used, so double check
+      auto & branchArgument = *it->second;
+      if (gammaNode->mapBranchArgumentToInput(branchArgument).origin() == &outerOutput)
+      {
+        JLM_ASSERT(*branchArgument.Type() == *output.Type());
+        return branchArgument;
+      }
+    }
 
     // Create an EntryVar for the output, add all branch arguments to the cache
     auto entryVar = gammaNode->AddEntryVar(&outerOutput);
@@ -1029,7 +1042,15 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     // If the outer output already has a corresponding invariant loop variable, return it
     if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
         it != context_->routedOutputs.end())
-      return *it->second;
+    {
+      // The output in the map key may have been deleted, and had its address re-used, so double check
+      auto & loopVarPre = *it->second;
+      if (thetaNode->MapPreLoopVar(loopVarPre).input->origin() == &outerOutput)
+      {
+        JLM_ASSERT(*loopVarPre.Type() == *output.Type());
+        return loopVarPre;
+      }
+    }
 
     // Create an invariant LoopVar for the output and add it to the cache
     auto loopVar = thetaNode->AddLoopVar(&outerOutput);
