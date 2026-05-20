@@ -23,6 +23,7 @@
 
 #include <deque>
 #include <map>
+#include <vector>
 
 namespace jlm::llvm
 {
@@ -472,8 +473,23 @@ AggregateAllocaSplitting::findSplitableAllocaNodes(rvsdg::Region & region) const
   return traceInfo;
 }
 
-// FIXME: Do not use std::map, and rather use std::unordered_map
-static std::map<std::vector<uint64_t>, rvsdg::Node *>
+struct VectorHash
+{
+  size_t
+  operator()(const std::vector<uint64_t> & v) const
+  {
+    std::size_t hash = 0;
+    for (auto & index : v)
+    {
+      hash = util::CombineHashes(hash, std::hash<uint64_t>()(index));
+    }
+    return hash;
+  }
+};
+
+using VectorNodeHashMap = std::unordered_map<std::vector<uint64_t>, rvsdg::Node *, VectorHash>;
+
+static VectorNodeHashMap
 createElementAllocaNodes(rvsdg::SimpleNode & allocaNode)
 {
   const auto allocaOperation =
@@ -482,12 +498,9 @@ createElementAllocaNodes(rvsdg::SimpleNode & allocaNode)
   const auto & countInput = AllocaOperation::getCountInput(allocaNode);
   const auto alignment = allocaOperation->alignment();
 
-  std::function<void(
-      const StructType &,
-      std::map<std::vector<uint64_t>, rvsdg::Node *> &,
-      std::vector<uint64_t> &)>
+  std::function<void(const StructType &, VectorNodeHashMap &, std::vector<uint64_t> &)>
       createAllocaNodes = [&](const StructType & structType,
-                              std::map<std::vector<uint64_t>, rvsdg::Node *> & allocaNodes,
+                              VectorNodeHashMap & allocaNodes,
                               std::vector<uint64_t> & indices)
   {
     size_t index = 0;
@@ -510,8 +523,8 @@ createElementAllocaNodes(rvsdg::SimpleNode & allocaNode)
     }
   };
 
+  VectorNodeHashMap allocaNodes;
   std::vector<uint64_t> indices(1, 0);
-  std::map<std::vector<uint64_t>, rvsdg::Node *> allocaNodes;
   createAllocaNodes(allocaType, allocaNodes, indices);
   return allocaNodes;
 }

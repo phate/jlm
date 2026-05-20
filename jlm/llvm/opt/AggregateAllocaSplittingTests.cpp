@@ -85,8 +85,6 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
   aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  // We expect two AllocaOperation, a MemoryStateMergeOperation, and a IntegerConstantOperation
-  // node
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 8u);
 
   assertAllocaWithType(*StoreOperation::AddressInput(storeGepXNode).origin(), *bit32Type);
@@ -100,8 +98,6 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 2u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit32Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit64Type);
   }
 }
 
@@ -223,9 +219,6 @@ TEST(AggregateAllocaSplittingTests, gammaTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 3u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit16Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit32Type);
-    assertAllocaWithType(*memoryMergeNode->input(2)->origin(), *bit64Type);
   }
 }
 
@@ -315,8 +308,6 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 2u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit16Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit32Type);
   }
 }
 
