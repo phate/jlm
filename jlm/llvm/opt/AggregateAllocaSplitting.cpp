@@ -22,7 +22,6 @@
 #include <jlm/util/Statistics.hpp>
 
 #include <deque>
-#include <map>
 #include <vector>
 
 namespace jlm::llvm
