@@ -116,7 +116,6 @@ if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
 fi
 
 CPPFLAGS_CIRCT=""
-CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-error=comment"
