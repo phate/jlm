@@ -466,17 +466,17 @@ private:
   }
 
   /**
-   * Performs a simple alias analysis query between the \ref loadNode and the given load node,
-   * to determine if they read from the same exact address.
-   * @param storeNode the LoadOperation node
+   * Performs a simple alias analysis query between the LoadTracingInfo's \ref loadNode,
+   * and the other load node given as a parameter, to determine if they read from the same address.
+   * @param otherLoadNode the LoadOperation node
    */
   aa::AliasAnalysis::AliasQueryResponse
-  queryAliasAnalysisWithLoad(rvsdg::SimpleNode & loadNode)
+  queryAliasAnalysisWithLoad(rvsdg::SimpleNode & otherLoadNode)
   {
-    JLM_ASSERT(is<LoadOperation>(&loadNode));
+    JLM_ASSERT(is<LoadOperation>(&otherLoadNode));
 
-    const auto & otherLoadAddress = *LoadOperation::AddressInput(loadNode).origin();
-    const auto otherLoadType = LoadOperation::LoadedValueOutput(loadNode).Type();
+    const auto & otherLoadAddress = *LoadOperation::AddressInput(otherLoadNode).origin();
+    const auto otherLoadType = LoadOperation::LoadedValueOutput(otherLoadNode).Type();
     const auto otherLoadSize = GetTypeStoreSize(*otherLoadType);
 
     // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
@@ -1015,7 +1015,8 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
         it != context_->routedOutputs.end())
     {
-      // The output in the map key may have been deleted, and had its address re-used, so double check
+      // The output in the map key may have been deleted, and had its address re-used, so double
+      // check
       auto & branchArgument = *it->second;
       if (gammaNode->mapBranchArgumentToInput(branchArgument).origin() == &outerOutput)
       {
@@ -1043,7 +1044,8 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
         it != context_->routedOutputs.end())
     {
-      // The output in the map key may have been deleted, and had its address re-used, so double check
+      // The output in the map key may have been deleted, and had its address re-used, so double
+      // check
       auto & loopVarPre = *it->second;
       if (thetaNode->MapPreLoopVar(loopVarPre).input->origin() == &outerOutput)
       {
