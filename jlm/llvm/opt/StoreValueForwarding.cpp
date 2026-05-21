@@ -44,8 +44,8 @@ static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRES
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
 static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
 
-// By default, loads whose memory states can be traced to other loads
-// attempt to forward the previously loaded value, if the address and type are matching.
+// By default, loads whose memory states can be traced to other loads attempt to forward
+// the previously loaded value, if the types match, and the addresses are the same (MustAlias).
 // When disabled, loads are skipped during tracing, and never considered for value forwarding.
 static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
 
@@ -91,14 +91,14 @@ struct AliasQueryResponseCounter
  */
 class StoreValueForwarding::Statistics final : public util::Statistics
 {
-  static constexpr auto NumTotalLoads_ = "#TotalLoads";
-  static constexpr auto NumLoadsForwarded_ = "#LoadsForwarded";
-  static constexpr auto numNoAliasStore_ = "#NoAliasStore";
-  static constexpr auto numMayAliasStore_ = "#MayAliasStore";
-  static constexpr auto numMustAliasStore_ = "#MustAliasStore";
-  static constexpr auto numNoAliasLoad_ = "#NoAliasLoad";
-  static constexpr auto numMayAliasLoad_ = "#MayAliasLoad";
-  static constexpr auto numMustAliasLoad_ = "#MustAliasLoad";
+  static constexpr auto NumTotalLoadsLabel_ = "#TotalLoads";
+  static constexpr auto NumLoadsForwardedLabel_ = "#LoadsForwarded";
+  static constexpr auto numNoAliasStoreLabel_ = "#NoAliasStore";
+  static constexpr auto numMayAliasStoreLabel_ = "#MayAliasStore";
+  static constexpr auto numMustAliasStoreLabel_ = "#MustAliasStore";
+  static constexpr auto numNoAliasLoadLabel_ = "#NoAliasLoad";
+  static constexpr auto numMayAliasLoadLabel_ = "#MayAliasLoad";
+  static constexpr auto numMustAliasLoadLabel_ = "#MustAliasLoad";
   static constexpr auto TracingLabel_ = "TracingTime";
   static constexpr auto ForwardingLabel_ = "ForwardingTime";
 
@@ -126,14 +126,14 @@ public:
       const AliasQueryResponseCounter & loadAAResponses) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(NumTotalLoads_, numTotalLoads);
-    AddMeasurement(NumLoadsForwarded_, numLoadsForwarded);
-    AddMeasurement(numNoAliasStore_, storeAAResponses.numNoAliasAnalysisQueries);
-    AddMeasurement(numMayAliasStore_, storeAAResponses.numMayAliasAnalysisQueries);
-    AddMeasurement(numMustAliasStore_, storeAAResponses.numMustAliasAnalysisQueries);
-    AddMeasurement(numNoAliasLoad_, loadAAResponses.numNoAliasAnalysisQueries);
-    AddMeasurement(numMayAliasLoad_, loadAAResponses.numMayAliasAnalysisQueries);
-    AddMeasurement(numMustAliasLoad_, loadAAResponses.numMustAliasAnalysisQueries);
+    AddMeasurement(NumTotalLoadsLabel_, numTotalLoads);
+    AddMeasurement(NumLoadsForwardedLabel_, numLoadsForwarded);
+    AddMeasurement(numNoAliasStoreLabel_, storeAAResponses.numNoAliasAnalysisQueries);
+    AddMeasurement(numMayAliasStoreLabel_, storeAAResponses.numMayAliasAnalysisQueries);
+    AddMeasurement(numMustAliasStoreLabel_, storeAAResponses.numMustAliasAnalysisQueries);
+    AddMeasurement(numNoAliasLoadLabel_, loadAAResponses.numNoAliasAnalysisQueries);
+    AddMeasurement(numMayAliasLoadLabel_, loadAAResponses.numMayAliasAnalysisQueries);
+    AddMeasurement(numMustAliasLoadLabel_, loadAAResponses.numMustAliasAnalysisQueries);
   }
 
   void
