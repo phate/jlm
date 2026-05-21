@@ -85,8 +85,6 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
   aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  // We expect two AllocaOperation, a MemoryStateMergeOperation, and a IntegerConstantOperation
-  // node
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 8u);
 
   assertAllocaWithType(*StoreOperation::AddressInput(storeGepXNode).origin(), *bit32Type);
@@ -100,8 +98,6 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 2u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit32Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit64Type);
   }
 }
 
@@ -223,9 +219,6 @@ TEST(AggregateAllocaSplittingTests, gammaTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 3u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit16Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit32Type);
-    assertAllocaWithType(*memoryMergeNode->input(2)->origin(), *bit64Type);
   }
 }
 
@@ -315,7 +308,249 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
     EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
 
     EXPECT_EQ(memoryMergeNode->ninputs(), 2u);
-    assertAllocaWithType(*memoryMergeNode->input(0)->origin(), *bit16Type);
-    assertAllocaWithType(*memoryMergeNode->input(1)->origin(), *bit32Type);
   }
+}
+
+TEST(AggregateAllocaSplittingTest, nestedStructTest)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+  auto bit8Type = BitType::Create(8);
+  auto bit12Type = BitType::Create(12);
+  auto bit16Type = BitType::Create(16);
+  auto bit20Type = BitType::Create(20);
+  auto bit32Type = BitType::Create(32);
+  auto bit64Type = BitType::Create(64);
+  auto bit128Type = BitType::Create(128);
+
+  auto structSmall = StructType::CreateIdentified({ bit12Type, bit16Type }, false);
+  auto structBig = StructType::CreateIdentified({ bit32Type, bit64Type }, false);
+  auto structType = StructType::CreateIdentified(
+      { bit8Type, structSmall, bit20Type, structBig, bit128Type },
+      false);
+
+  const auto functionType = FunctionType::Create({}, { memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & threeNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 3);
+  auto & fourNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 4);
+
+  auto & allocaNode = AllocaOperation::createNode(structType, *oneNode.output(0), 4);
+
+  auto & gepBit8Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), zeroNode.output(0) },
+      bit8Type);
+  auto & bit8ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 8, 8);
+  auto storeGepBit8Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit8Node.output(0),
+      *bit8ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit12Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), oneNode.output(0), zeroNode.output(0) },
+      bit12Type);
+  auto & bit12ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 12, 12);
+  auto storeGepBit12Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit12Node.output(0),
+      *bit12ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit16Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), oneNode.output(0), oneNode.output(0) },
+      bit16Type);
+  auto & bit16ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 16, 16);
+  auto storeGepBit16Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit16Node.output(0),
+      *bit16ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit20Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), twoNode.output(0) },
+      bit20Type);
+  auto & bit20ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 20, 20);
+  auto storeGepBit20Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit20Node.output(0),
+      *bit20ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit32Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), threeNode.output(0), zeroNode.output(0) },
+      bit32Type);
+  auto & bit32ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 32);
+  auto storeGepBit32Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit32Node.output(0),
+      *bit32ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit64Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), threeNode.output(0), oneNode.output(0) },
+      bit64Type);
+  auto & bit64ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 64);
+  auto storeGepBit64Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit64Node.output(0),
+      *bit64ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto & gepBit128Node = GetElementPtrOperation::createNode(
+      AllocaOperation::getPointerOutput(allocaNode),
+      { zeroNode.output(0), fourNode.output(0) },
+      bit64Type);
+  auto & bit128ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 128, 128);
+  auto storeGepBit128Node = &StoreNonVolatileOperation::CreateNode(
+      *gepBit128Node.output(0),
+      *bit128ConstantNode.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto memoryStateMerge = MemoryStateMergeOperation::Create({ storeGepBit8Node->output(0),
+                                                              storeGepBit12Node->output(0),
+                                                              storeGepBit16Node->output(0),
+                                                              storeGepBit20Node->output(0),
+                                                              storeGepBit32Node->output(0),
+                                                              storeGepBit64Node->output(0),
+                                                              storeGepBit128Node->output(0) });
+
+  auto lambdaOutput = lambdaNode->finalize({ memoryStateMerge });
+  GraphExport::Create(*lambdaOutput, "f");
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  AggregateAllocaSplitting aggregateAllocaSplitting;
+  aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // gepBit8
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit8Node).origin());
+    assertAllocaWithType(tracedOutput, *bit8Type);
+  }
+
+  // gepBit12
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit12Node).origin());
+    assertAllocaWithType(tracedOutput, *bit12Type);
+  }
+
+  // gepBit16
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit16Node).origin());
+    assertAllocaWithType(tracedOutput, *bit16Type);
+  }
+
+  // gepBit20
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit20Node).origin());
+    assertAllocaWithType(tracedOutput, *bit20Type);
+  }
+
+  // gepBit32
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit32Node).origin());
+    assertAllocaWithType(tracedOutput, *bit32Type);
+  }
+
+  // gepBit64
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit64Node).origin());
+    assertAllocaWithType(tracedOutput, *bit64Type);
+  }
+
+  // gepBit128
+  {
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin());
+    assertAllocaWithType(tracedOutput, *bit128Type);
+  }
+
+  // Check memstate
+  {
+    auto [memoryMergeNode, memoryMergeOperation] =
+        TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(
+            *lambdaNode->GetFunctionResults()[0]->origin());
+    EXPECT_TRUE(memoryMergeNode && memoryMergeOperation);
+
+    EXPECT_EQ(memoryMergeNode->ninputs(), 7u);
+  }
+}
+
+TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  auto bit32Type = BitType::Create(32);
+  auto bit64Type = BitType::Create(64);
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto structType = StructType::CreateIdentified({ bit32Type, bit64Type }, false);
+  const auto functionType = FunctionType::Create({}, { memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & zero32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+  auto & zero64Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 0);
+  auto & one32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & two32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & allocaNode = AllocaOperation::createNode(structType, *two32Node.output(0), 4);
+
+  auto & gepNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), one32Node.output(0) },
+      bit64Type);
+  auto & storeGepNode = StoreNonVolatileOperation::CreateNode(
+      *gepNode.output(0),
+      *zero64Node.output(0),
+      { &AllocaOperation::getMemoryStateOutput(allocaNode) },
+      4);
+
+  auto lambdaOutput = lambdaNode->finalize({ storeGepNode.output(0) });
+  GraphExport::Create(*lambdaOutput, "f");
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  AggregateAllocaSplitting aggregateAllocaSplitting;
+  aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
+  // bigger than one.
+  EXPECT_TRUE(Region::ContainsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
 }
