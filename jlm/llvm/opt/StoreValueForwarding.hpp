@@ -18,7 +18,7 @@ class Region;
 namespace jlm::llvm
 {
 
-struct StoreValueOrigin;
+struct ValueOrigin;
 class LoadTracingInfo;
 
 /** \brief Store Value Forwarding Optimization
@@ -81,7 +81,7 @@ private:
    * @param tracingInfo the metadata created during store value origin tracing.
    */
   void
-  forwardStoredValues(LoadTracingInfo & tracingInfo);
+  forwardValueOrigins(LoadTracingInfo & tracingInfo);
 
   /**
    * Gets an output providing the value stored at the given \p storeValueOrigin.
@@ -94,13 +94,13 @@ private:
    * @return the rvsdg output providing the stored value in the given region.
    */
   rvsdg::Output &
-  getStoredValueOrigin(
-      StoreValueOrigin storeValueOrigin,
+  getValueOriginOutput(
+      ValueOrigin storeValueOrigin,
       rvsdg::Region & targetRegion,
       LoadTracingInfo & tracingInfo);
 
   /**
-   * In \ref getStoredValueOrigin(), all loop variables are created as invariant,
+   * In \ref getValueOriginOutput(), all loop variables are created as invariant,
    * to avoid recursive function calls looping around the graph.
    * Instead, the post results of all created loop variables are added to a queue,
    * and properly diverted to their correct origins by this function.
