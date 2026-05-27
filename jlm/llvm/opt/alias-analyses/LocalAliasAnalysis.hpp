@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP
 
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 
 #include <optional>
 #include <unordered_map>
@@ -53,33 +53,6 @@ public:
   Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
-  struct TracedPointerOrigin;
-  struct TraceCollection;
-
-  /**
-   * Calculates the byte offset applied by the GEP, if the offset is static.
-   * The offset is the number of bytes needed to satisfy
-   *   output ptr = input ptr + offset in bytes
-   *
-   * @param gepNode the node representing the \ref GetElementPtrOperation
-   * @return the offset applied by the GEP, if it is possible to determine at compile time
-   */
-  [[nodiscard]] static std::optional<int64_t>
-  CalculateGepOffset(const rvsdg::SimpleNode & gepNode);
-
-  /**
-   * Returns the result of tracing the origin of p as far as possible, without tracing through
-   * operations that add an unknown offsets, or add multiple possible origins.
-   * Since the pointer has exactly one possible origin with a statically known offset,
-   * it may be possible to give MustAlias responses.
-   * If not, more extensive tracing can be performed using \ref TraceAllPointerOrigins.
-   *
-   * @param p the pointer value to trace
-   * @return the TracedPointer for p, which is guaranteed to have a defined offset
-   */
-  [[nodiscard]] static TracedPointerOrigin
-  TracePointerOriginPrecise(const rvsdg::Output & p);
-
   /**
    * Given two pointers with the same base pointer
    *  p1 = base + offset1
@@ -97,20 +70,6 @@ private:
       size_t s1,
       std::optional<int64_t> offset2,
       size_t s2);
-
-  /**
-   * Traces to find all possible origins of the given pointer.
-   * Traces through \ref GetElementPtrOperation, including those with offsets that are not known
-   * at compile time. Also traces through gamma and theta nodes, building a set of multiple
-   * possibilities. Tracing stops at "top origins", for example an \ref AllocaOperation, a \ref
-   * LoadNonVolatileOperation, the return value of a \ref CallOperation etc.
-   *
-   * @param p the pointer to trace from
-   * @param traceCollection the collection of trace points being created
-   * @return false if the trace collection reached its maximum allowed size, and tracing aborted
-   */
-  [[nodiscard]] bool
-  TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection);
 
   /**
    * Checks if the given pointer is the direct result of a memory location defining operation.

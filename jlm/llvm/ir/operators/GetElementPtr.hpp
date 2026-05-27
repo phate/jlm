@@ -131,6 +131,17 @@ public:
   }
 
   /**
+   * Calculates the byte offset applied by the GEP, if the offset is static.
+   * The offset is the number of bytes needed to satisfy
+   *   output ptr = input ptr + offset in bytes
+   *
+   * @param gepNode the node representing the \ref GetElementPtrOperation
+   * @return the offset applied by the GEP, if it is possible to determine at compile time
+   */
+  [[nodiscard]] static std::optional<int64_t>
+  CalculateOffset(const rvsdg::SimpleNode & gepNode);
+
+  /**
    * Creates a GetElementPtr three address code.
    *
    * @param baseAddress The base address for the pointer calculation.
