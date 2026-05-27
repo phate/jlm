@@ -46,42 +46,6 @@ LocalAliasAnalysis::setMaxTraceCollectionSize(size_t maxTraceCollectionSize)
   maxTraceCollectionSize_ = maxTraceCollectionSize;
 }
 
-/**
- * Represents the result of tracing a pointer p to some origin,
- * as a traced base pointer value plus an optional byte offset.
- *
- * If the offset is present, that means
- *  p = base pointer + offset
- *
- * If the offset is not present, that means
- *  p = base pointer + [unknown offset]
- */
-struct LocalAliasAnalysis::TracedPointerOrigin
-{
-  const rvsdg::Output * BasePointer;
-  std::optional<int64_t> Offset;
-};
-
-/**
- * Represents a collection of possible origins of a pointer value.
- */
-struct LocalAliasAnalysis::TraceCollection
-{
-  /**
-   * Contains all outputs visited while tracing, to avoid re-visiting.
-   * If an output is visited first with a known offset, and later with a different offset,
-   * the offset is collapsed to an unknown offset, and tracing continues with that.
-   */
-  std::unordered_map<const rvsdg::Output *, std::optional<int64_t>> AllTracedOutputs;
-
-  /**
-   * Contains the outputs that have been reached through tracing, which can not be traced further.
-   * For example the output of an AllocaOperation, the result of a LoadNonVolatileOperation,
-   * or the return value of a CallOperation.
-   */
-  std::unordered_map<const rvsdg::Output *, std::optional<int64_t>> TopOrigins;
-};
-
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
@@ -124,10 +88,10 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
   TraceCollection p2TraceCollection;
 
   // If tracing reaches too many possible outputs, it may give up
-  if (!TraceAllPointerOrigins(p1Traced, p1TraceCollection))
+  if (!TraceAllPointerOrigins(p1Traced, p1TraceCollection, maxTraceCollectionSize_))
     return MayAlias;
 
-  if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
+  if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection, maxTraceCollectionSize_))
     return MayAlias;
 
   // Removes top origins that can not possibly be valid targets due to being too small.
@@ -202,126 +166,6 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
   return MayAlias;
 }
 
-/**
- * Calculates the byte offset inside the given type, starting at the given offset of GEP inputs.
- * Uses recursion to handle nested types.
- * If any indexing input is not a compile time constant, nullopt is returned.
- * @param gepNode the GEP node
- * @param inputIndex the index of the input that applies inside the given type
- * @param type the type the offset is inside
- * @return the byte offset within the given type, or nullopt if not possible.
- */
-static std::optional<int64_t>
-CalculateIntraTypeGepOffset(
-    const rvsdg::SimpleNode & gepNode,
-    size_t inputIndex,
-    const rvsdg::Type & type)
-{
-  // If we have no more input index values, we are not offsetting into the type
-  if (inputIndex >= gepNode.ninputs())
-    return 0;
-
-  // GEP input 0 is the pointer being offset
-  // GEP input 1 is the number of whole types
-  // Intra-type offsets start at input 2 and beyond
-  JLM_ASSERT(inputIndex >= 2);
-
-  auto & gepInput = *gepNode.input(inputIndex)->origin();
-  auto indexingValue = tryGetConstantSignedInteger(gepInput);
-
-  // Any unknown indexing value means the GEP offset is unknown overall
-  if (!indexingValue.has_value())
-    return std::nullopt;
-
-  if (auto array = dynamic_cast<const ArrayType *>(&type))
-  {
-    const auto & elementType = array->GetElementType();
-    int64_t offset = *indexingValue * GetTypeAllocSize(*elementType);
-
-    // Get the offset into the element type as well, if any
-    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *elementType);
-    if (subOffset.has_value())
-      return offset + *subOffset;
-
-    return std::nullopt;
-  }
-  if (auto strct = dynamic_cast<const StructType *>(&type))
-  {
-    if (*indexingValue < 0 || static_cast<size_t>(*indexingValue) >= strct->numElements())
-      throw std::logic_error("Struct type has fewer fields than requested by GEP");
-
-    const auto & fieldType = strct->getElementType(*indexingValue);
-    int64_t offset = strct->GetFieldOffset(*indexingValue);
-
-    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *fieldType);
-    if (subOffset.has_value())
-      return offset + *subOffset;
-
-    return std::nullopt;
-  }
-
-  JLM_UNREACHABLE("Unknown GEP type");
-}
-
-std::optional<int64_t>
-LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
-{
-  const auto gep = util::assertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
-
-  // The pointee type. Gets updated by the loop below if the GEP has multiple levels of offsets
-  const auto & pointeeType = gep->getPointeeType();
-
-  const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
-  const auto wholeTypeIndexing = tryGetConstantSignedInteger(wholeTypeIndexingOrigin);
-
-  if (!wholeTypeIndexing.has_value())
-    return std::nullopt;
-
-  int64_t offset = *wholeTypeIndexing * GetTypeAllocSize(pointeeType);
-
-  // In addition to offsetting by whole types, a GEP can also offset within a type
-  const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, pointeeType);
-  if (!subOffset.has_value())
-    return std::nullopt;
-
-  return offset + *subOffset;
-}
-
-LocalAliasAnalysis::TracedPointerOrigin
-LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
-{
-  // The original pointer p is always equal to base + byte offset
-  const rvsdg::Output * base = &p;
-  int64_t offset = 0;
-
-  while (true)
-  {
-    // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base);
-
-    if (const auto [node, gep] =
-            rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
-        gep)
-    {
-      auto calculatedOffset = CalculateGepOffset(*node);
-
-      // Only trace through GEPs with statically known offsets
-      if (!calculatedOffset.has_value())
-        break;
-
-      base = node->input(0)->origin();
-      offset += *calculatedOffset;
-
-      continue;
-    }
-
-    // We were not able to trace further
-    break;
-  }
-
-  return TracedPointerOrigin{ base, offset };
-}
-
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::QueryOffsets(
     std::optional<int64_t> offset1,
@@ -347,109 +191,6 @@ LocalAliasAnalysis::QueryOffsets(
 
   // We have a partial alias
   return MayAlias;
-}
-
-bool
-LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection)
-{
-  if (traceCollection.AllTracedOutputs.size() >= maxTraceCollectionSize_)
-    return false;
-
-  // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  p.BasePointer = &llvm::traceOutput(*p.BasePointer);
-
-  auto it = traceCollection.AllTracedOutputs.find(p.BasePointer);
-  if (it != traceCollection.AllTracedOutputs.end())
-  {
-    // If the base pointer has already been traced with an unknown offset, we have nothing to add
-    if (!it->second.has_value())
-      return true;
-
-    // The offset used for the base pointer the last time it was traced
-    const auto prevOffset = *it->second;
-
-    // If we are visiting the same base pointer again with the same offset, we have nothing to add
-    if (p.Offset.has_value() && *p.Offset == prevOffset)
-      return true;
-
-    // We have different offsets to last time, collapse to unknown offset
-    p.Offset = std::nullopt;
-  }
-
-  traceCollection.AllTracedOutputs[p.BasePointer] = p.Offset;
-
-  // If it is a GEP, we can trace through it, but possibly lose precise offset information
-  if (const auto [node, gep] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*p.BasePointer);
-      gep)
-  {
-    // Update the base pointer and offset to represent the other side of the GEP
-    p.BasePointer = node->input(0)->origin();
-
-    // If we have precisely tracked the offset so far, try updating it with the GEPs offset
-    if (p.Offset.has_value())
-    {
-      const auto gepOffset = CalculateGepOffset(*node);
-      if (gepOffset.has_value())
-        p.Offset = *p.Offset + *gepOffset;
-      else
-        p.Offset = std::nullopt;
-    }
-
-    return TraceAllPointerOrigins(p, traceCollection);
-  }
-
-  // If the node is a \ref SelectOperation, trace through both possible inputs
-  if (const auto [node, select] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<SelectOperation>(*p.BasePointer);
-      select)
-  {
-    auto leftTrace = p;
-    leftTrace.BasePointer = node->input(1)->origin();
-    auto rightTrace = p;
-    rightTrace.BasePointer = node->input(2)->origin();
-
-    return TraceAllPointerOrigins(leftTrace, traceCollection)
-        && TraceAllPointerOrigins(rightTrace, traceCollection);
-  }
-
-  // If we reach undef nodes, do not include them in the TopOrigins
-  if (rvsdg::IsOwnerNodeOperation<UndefValueOperation>(*p.BasePointer))
-  {
-    return true;
-  }
-
-  // Trace into gamma nodes
-  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*p.BasePointer))
-  {
-    auto exitVar = gamma->MapOutputExitVar(*p.BasePointer);
-    for (auto result : exitVar.branchResult)
-    {
-      TracedPointerOrigin inside = { result->origin(), p.Offset };
-
-      // If tracing gives up, we give up
-      if (!TraceAllPointerOrigins(inside, traceCollection))
-        return false;
-    }
-
-    return true;
-  }
-
-  // Trace into theta nodes
-  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*p.BasePointer))
-  {
-    auto loopVar = theta->MapOutputLoopVar(*p.BasePointer);
-
-    // Invariant loop variables should already have been handled by normalization
-    JLM_ASSERT(!rvsdg::ThetaLoopVarIsInvariant(loopVar));
-
-    TracedPointerOrigin inside = { loopVar.post->origin(), p.Offset };
-    return TraceAllPointerOrigins(inside, traceCollection);
-  }
-
-  // We could not trace further, add p as a TopOrigin
-  traceCollection.TopOrigins[p.BasePointer] = p.Offset;
-  return true;
 }
 
 bool
