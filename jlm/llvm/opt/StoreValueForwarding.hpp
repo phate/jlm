@@ -72,7 +72,15 @@ private:
    * @param loadNode the load node to handle
    */
   void
-  processLoadNode(rvsdg::SimpleNode & loadNode);
+  processLoad(rvsdg::SimpleNode & loadNode);
+
+  // FIXME: documentation
+  void
+  processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode);
+
+  // FIXME: documentation
+  void
+  processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode);
 
   /**
    * Performs store value forwarding to the load node represented by the given \p tracingInfo.

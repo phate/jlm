@@ -91,8 +91,12 @@ struct AliasQueryResponseCounter
  */
 class StoreValueForwarding::Statistics final : public util::Statistics
 {
-  static constexpr auto NumTotalLoadsLabel_ = "#TotalLoads";
-  static constexpr auto NumLoadsForwardedLabel_ = "#LoadsForwarded";
+  static constexpr auto NumLoadsWithMemoryStateLabel_ = "#LoadsWithMemoryState";
+  static constexpr auto NumLoadsWithoutMemoryStateLabel_ = "#LoadsWithoutMemoryState";
+  static constexpr auto NumLoadsTracedToDeltaNodeLabel_ = "#LoadsTracedToDeltaNode";
+  static constexpr auto NumForwardedLoadsWithMemoryStateLabel_ = "#ForwardedLoadsWithMemoryState";
+  static constexpr auto NumForwardedLoadsWithoutMemoryStateLabel_ =
+      "#ForwardedLoadsWithoutMemoryState";
   static constexpr auto numNoAliasStoreLabel_ = "#NoAliasStore";
   static constexpr auto numMayAliasStoreLabel_ = "#MayAliasStore";
   static constexpr auto numMustAliasStoreLabel_ = "#MustAliasStore";
@@ -120,14 +124,20 @@ public:
 
   void
   StopStatistics(
-      const size_t numTotalLoads,
-      const size_t numLoadsForwarded,
+      const size_t numLoadsWithMemoryState,
+      const size_t numLoadsWithoutMemoryState,
+      const size_t numLoadsTracedtoDeltaNode,
+      const size_t numForwardedLoadsWithMemoryState,
+      const size_t numForwardedLoadsWithoutMemoryState,
       const AliasQueryResponseCounter & storeAAResponses,
       const AliasQueryResponseCounter & loadAAResponses) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(NumTotalLoadsLabel_, numTotalLoads);
-    AddMeasurement(NumLoadsForwardedLabel_, numLoadsForwarded);
+    AddMeasurement(NumLoadsWithMemoryStateLabel_, numLoadsWithMemoryState);
+    AddMeasurement(NumLoadsWithoutMemoryStateLabel_, numLoadsWithoutMemoryState);
+    AddMeasurement(NumLoadsTracedToDeltaNodeLabel_, numLoadsTracedtoDeltaNode);
+    AddMeasurement(NumForwardedLoadsWithMemoryStateLabel_, numForwardedLoadsWithMemoryState);
+    AddMeasurement(NumForwardedLoadsWithoutMemoryStateLabel_, numForwardedLoadsWithoutMemoryState);
     AddMeasurement(numNoAliasStoreLabel_, storeAAResponses.numNoAliasAnalysisQueries);
     AddMeasurement(numMayAliasStoreLabel_, storeAAResponses.numMayAliasAnalysisQueries);
     AddMeasurement(numMustAliasStoreLabel_, storeAAResponses.numMustAliasAnalysisQueries);
@@ -183,8 +193,11 @@ struct StoreValueForwarding::Context final
   }
 
   // Counters used for statistics
-  size_t numTotalLoads = 0;
-  size_t numLoadsForwarded = 0;
+  size_t numLoadsWithMemoryState = 0;
+  size_t numLoadsWithoutMemoryState = 0;
+  size_t numLoadsTracedToDeltaNode = 0;
+  size_t numForwardedLoadsWithMemoryState = 0;
+  size_t numForwardedLoadsWithoutMemoryState = 0;
   AliasQueryResponseCounter storeAAResponses;
   AliasQueryResponseCounter loadAAResponses;
 
@@ -265,7 +278,7 @@ StoreValueForwarding::traverseIntraProceduralRegion(rvsdg::Region & region)
         {
           if (is<LoadNonVolatileOperation>(&simpleNode))
           {
-            processLoadNode(simpleNode);
+            processLoad(simpleNode);
           }
 
           // For other node types, we don't need to do anything for store value forwarding
@@ -408,10 +421,7 @@ public:
   bool
   traceAllMemoryStateInputs()
   {
-    // Forwarding of loads with no memory states is not possible
-    // TODO: We could load values from constant globals
-    if (LoadOperation::numMemoryStates(loadNode) == 0)
-      return false;
+    JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
     // Perform tracing from each memory state input to find exactly what store it leads to
     for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(loadNode))
@@ -797,22 +807,37 @@ public:
 };
 
 void
-StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
+StoreValueForwarding::processLoad(rvsdg::SimpleNode & loadNode)
 {
-  context_->numTotalLoads++;
-
-  // Only non-volatile loads are candidates for being forwarded to
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+
+  if (LoadOperation::numMemoryStates(loadNode) == 0)
+  {
+    context_->numLoadsWithoutMemoryState++;
+    processLoadWithoutMemoryStates(loadNode);
+  }
+  else
+  {
+    context_->numLoadsWithMemoryState++;
+    processLoadWithMemoryStates(loadNode);
+  }
+}
+
+void
+StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
   context_->statistics.startTracing();
   LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer, context_->aliasAnalysis);
-  const bool success = loadTracingInfo.traceAllMemoryStateInputs();
+  const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
   context_->storeAAResponses.addFromCounter(loadTracingInfo.storeAAResponses);
   context_->loadAAResponses.addFromCounter(loadTracingInfo.loadAAResponses);
 
-  if (success)
+  if (shouldForwardValueOrigins)
   {
     context_->statistics.startForwarding();
     forwardValueOrigins(loadTracingInfo);
@@ -820,11 +845,53 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   }
 }
 
+void
+StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+
+  context_->statistics.startTracing();
+  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  // auto & loadedValue = LoadOperation::LoadedValueOutput(loadNode);
+  const auto & tracedAddress = context_->outputTracer.trace(loadAddress);
+
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedAddress);
+  if (!deltaNode)
+  {
+    context_->statistics.stopTracing();
+    return;
+  }
+  context_->numLoadsTracedToDeltaNode++;
+
+  auto & deltaSubregion = *deltaNode->subregion();
+  if (deltaSubregion.numNodes() != 1)
+  {
+    context_->statistics.stopTracing();
+    return;
+  }
+
+  auto & subregionNode = *deltaSubregion.Nodes().begin();
+  JLM_ASSERT(subregionNode.noutputs() == 1);
+  if (subregionNode.ninputs() != 0)
+  {
+    context_->statistics.stopTracing();
+    return;
+  }
+  context_->statistics.stopTracing();
+
+  context_->statistics.startForwarding();
+  // auto & copiedNode = *subregionNode.copy(loadNode.region(), {});
+  // loadedValue.divert_users(copiedNode.output(0));
+  context_->numForwardedLoadsWithoutMemoryState++;
+  context_->statistics.stopForwarding();
+}
+
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
 void
 StoreValueForwarding::forwardValueOrigins(LoadTracingInfo & tracingInfo)
 {
-  context_->numLoadsForwarded++;
+  context_->numForwardedLoadsWithMemoryState++;
 
   auto & loadNode = tracingInfo.loadNode;
   auto & loadedValueOutput = LoadOperation::LoadedValueOutput(loadNode);
@@ -1100,8 +1167,11 @@ StoreValueForwarding::Run(
   traverseInterProceduralRegion(rvsdg.GetRootRegion());
 
   statistics->StopStatistics(
-      context_->numTotalLoads,
-      context_->numLoadsForwarded,
+      context_->numLoadsWithMemoryState,
+      context_->numLoadsWithoutMemoryState,
+      context_->numLoadsTracedToDeltaNode,
+      context_->numForwardedLoadsWithMemoryState,
+      context_->numForwardedLoadsWithoutMemoryState,
       context_->storeAAResponses,
       context_->loadAAResponses);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
