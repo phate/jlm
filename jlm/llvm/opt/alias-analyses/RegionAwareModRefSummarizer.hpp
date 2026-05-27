@@ -161,13 +161,6 @@ private:
   CreateNonReentrantAllocaSets();
 
   /**
-   * Creates one ModRefSet which is responsible for representing all reads and writes
-   * that may happen in external functions.
-   */
-  void
-  CreateExternalModRefSet();
-
-  /**
    * Adds the fact that everything in the ModRefSet \p from should also be included
    * in the ModRefSet \p to.
    */
