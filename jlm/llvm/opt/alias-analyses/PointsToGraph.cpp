@@ -514,7 +514,9 @@ PointsToGraph::dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph 
     {
       // Memory nodes are boxes, and have an associated object
       node.SetShape("box");
-      node.SetAttributeObject("rvsdgObject", pointsToGraph.nodeObjects_[ptgNode]);
+      const void * object = pointsToGraph.nodeObjects_[ptgNode];
+      if (object)
+        node.SetAttributeObject("rvsdgObject", reinterpret_cast<uintptr_t>(object));
     }
     else
     {
@@ -530,7 +532,7 @@ PointsToGraph::dumpGraph(util::graph::Writer & graphWriter, const PointsToGraph 
   for (const auto & [rvsdgOutput, ptgNode] : pointsToGraph.registerMap_)
   {
     const auto count = outputCount[ptgNode]++;
-    nodes[ptgNode]->SetAttributeObject(util::strfmt("output", count), rvsdgOutput);
+    nodes[ptgNode]->SetAttributeObject(util::strfmt("output", count), *rvsdgOutput);
   }
 
   // Add all explicit edges

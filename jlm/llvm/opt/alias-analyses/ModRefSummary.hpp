@@ -35,14 +35,17 @@ namespace jlm::llvm::aa
  */
 class ModRefSet
 {
-  public:
-
+public:
   [[nodiscard]] const std::unordered_map<PointsToGraph::NodeIndex, bool> &
-  getModRefNodes() const {
+  getModRefNodes() const
+  {
     return modRefNodes_;
   }
 
-  protected:
+protected:
+  // Prevent users of the ModRefSummary from accidentally copying sets by value
+  ModRefSet() = default;
+  ModRefSet(const ModRefSet & other) = default;
 
   /**
    * The set of memory nodes in the ModRefSet, indexed by their index in a points to graph.

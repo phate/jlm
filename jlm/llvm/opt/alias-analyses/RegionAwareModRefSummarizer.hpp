@@ -190,12 +190,17 @@ private:
   AnnotateFunction(const rvsdg::LambdaNode & lambda);
 
   /**
-   * Recursive call used to create ModRefSets for the given region, its nodes and its sub-regions.
-   * @param region the region to create ModRefSets for.
+   * Recursive call used to make the given region, its nodes and its sub-regions all
+   * be represented by the given ModRefSet.
+   * @param region the region whose operations should be represented by the ModRefSet
+   * @param modRefSet the index of the ModRefSet used to represent the region
    * @param lambda the function this region belongs to
    */
-  ModRefSetIndex
-  AnnotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
+  void
+  AnnotateRegion(
+      const rvsdg::Region & region,
+      ModRefSetIndex modRefSet,
+      const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
   AnnotateStructuralNode(
@@ -210,13 +215,15 @@ private:
    * @param modRefSetIndex the index of the ModRefSet representing some memory operation
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
+   * @param mayMod if true, the operation may modifiy the memory, otherwise just read
    * @param lambda the function the operation is happening in
    */
   void
-  AddPointerOriginTargets(
+  addPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
+      bool mayMod,
       const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
@@ -226,10 +233,10 @@ private:
   AnnotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
-  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
+  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
-  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
+  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
   AnnotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
@@ -259,26 +266,24 @@ private:
   VerifyBlocklists() const;
 
   /**
-   * Goes through all ModRefSets in all functions, and keeps track of memory nodes that always
-   * appear alongside the external memory node. These memory nodes are compressible,
-   * and can be removed from all ModRefSets in the function.
+   * After solving, the ModRefSet representing all external functions is used to determine
+   * if any non-escaped variables in the module are only referenced, and never written to.
+   * These memory nodes can be considered constant, and should be omitted from all ModRefSets.
    */
   void
-  doExternalCompression();
+  determineReadOnlyMemory();
 
   /**
-   * Performs external compaction in the given function.
+   * Goes through the solved ModRefSets and materializes implicitly included
    */
   void
-  compressExternalInFunction(const rvsdg::LambdaNode & lambda);
+  materializeSets();
 
   /**
-   * Helper function for recursively finding all ModRefSets in the given node.
-   * @param node the node to traverse, including any subregions.
-   * @param modRefSets the hash set in which all found ModRefSets are placed.
+   *
    */
   void
-  findAllModRefSets(const rvsdg::Node & node, util::HashSet<ModRefSetIndex> & modRefSets);
+  materializeSetsInFunction(const rvsdg::LambdaNode & lambda);
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.

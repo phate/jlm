@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <cstdint>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -20,6 +21,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
+#include <unordered_map>
 
 namespace jlm::llvm::aa
 {
@@ -32,15 +34,19 @@ struct MemoryStateTypeCounter final
   // The number of entities that have been counted
   uint64_t NumEntities = 0;
 
+  // Count of total memory states, separated by ModRef/RefOnly
+  uint64_t NumRefOnly = 0;
+  uint64_t NumModRef = 0;
+
   // Count of total memory states, separated by MemoryNode type
   uint64_t NumAllocas = 0;
   uint64_t NumMallocs = 0;
   uint64_t NumDeltas = 0;
   uint64_t NumImports = 0;
   uint64_t NumLambdas = 0;
-  uint64_t NumExternal = 0;
+  uint64_t NumExternalNode = 0;
 
-  // Among the MemoryNodes counted above, how many were not escaping
+  // Count of the total memory states, how many are not externally available
   uint64_t NumNonEscaped = 0;
 
   // Remember the single entity with the highest number of memory states
@@ -50,25 +56,29 @@ struct MemoryStateTypeCounter final
 
   void
   CountEntity(
+      uint64_t numRefOnly,
+      uint64_t numModRef,
       uint64_t numAllocas,
       uint64_t numMallocs,
       uint64_t numDeltas,
       uint64_t numImports,
       uint64_t numLambdas,
-      uint64_t numExternal,
+      uint64_t numExternalNode,
       uint64_t numNonEscaped)
   {
     NumEntities++;
+
+    NumRefOnly += numRefOnly;
+    NumModRef += numModRef;
 
     NumAllocas += numAllocas;
     NumMallocs += numMallocs;
     NumDeltas += numDeltas;
     NumImports += numImports;
     NumLambdas += numLambdas;
-    NumExternal += numExternal;
+    NumExternalNode += numExternalNode;
 
-    const uint64_t totalMemoryStates =
-        numAllocas + numMallocs + numDeltas + numImports + numLambdas + numExternal;
+    const uint64_t totalMemoryStates = numRefOnly + numModRef;
     if (totalMemoryStates > MaxMemoryStateEntity)
       MaxMemoryStateEntity = totalMemoryStates;
 
@@ -78,21 +88,27 @@ struct MemoryStateTypeCounter final
   }
 
   void
-  CountEntity(
-      const PointsToGraph & pointsToGraph,
-      util::HashSet<PointsToGraph::NodeIndex> memoryNodes)
+  CountEntity(const PointsToGraph & pointsToGraph, const ModRefSet & memoryNodes)
   {
+    uint64_t numRefOnly = 0;
+    uint64_t numModRef = 0;
+
     uint64_t numAllocas = 0;
     uint64_t numMallocs = 0;
     uint64_t numDeltas = 0;
     uint64_t numImports = 0;
     uint64_t numLambdas = 0;
-    uint64_t numExternal = 0;
+    uint64_t numExternalNode = 0;
 
     uint64_t numNonEscaped = 0;
 
-    for (const auto memoryNode : memoryNodes.Items())
+    for (const auto [memoryNode, mayMod] : memoryNodes.getModRefNodes())
     {
+      if (mayMod)
+        numModRef++;
+      else
+        numRefOnly++;
+
       if (!pointsToGraph.isExternallyAvailable(memoryNode))
         numNonEscaped++;
 
@@ -115,7 +131,7 @@ struct MemoryStateTypeCounter final
         numMallocs++;
         break;
       case PointsToGraph::NodeKind::ExternalNode:
-        numExternal++;
+        numExternalNode++;
         break;
       default:
         throw std::logic_error("Unknown MemoryNode kind");
@@ -123,12 +139,14 @@ struct MemoryStateTypeCounter final
     }
 
     CountEntity(
+        numRefOnly,
+        numModRef,
         numAllocas,
         numMallocs,
         numDeltas,
         numImports,
         numLambdas,
-        numExternal,
+        numExternalNode,
         numNonEscaped);
   }
 };
@@ -138,15 +156,19 @@ struct MemoryStateTypeCounter final
  */
 class EncodingStatistics final : public util::Statistics
 {
+  // Prefixes for statistics that count ModRef vs RefOnly
+  static constexpr auto NumTotalRefOnlyStates_ = "#TotalRefOnlyState";
+  static constexpr auto NumTotalModRefStates_ = "#TotalModRefState";
   // These are prefixes for statistics that count MemoryNode types
   static constexpr auto NumTotalAllocaState_ = "#TotalAllocaState";
   static constexpr auto NumTotalMallocState_ = "#TotalMallocState";
   static constexpr auto NumTotalDeltaState_ = "#TotalDeltaState";
   static constexpr auto NumTotalImportState_ = "#TotalImportState";
   static constexpr auto NumTotalLambdaState_ = "#TotalLambdaState";
-  static constexpr auto NumTotalExternalState_ = "#TotalExternalState";
-  // Among all the MemoryNodes counted above, how many of them are not marked as escaped
+  static constexpr auto NumTotalExternalNodeState_ = "#TotalExternalNodeState";
+  // Among all the MemoryNodes counted above, how many of them are not externally available
   static constexpr auto NumTotalNonEscapedState_ = "#TotalNonEscapedState";
+  // Maximums in a single counted entity
   static constexpr auto NumMaxMemoryState_ = "#MaxMemoryState";
   static constexpr auto NumMaxNonEscapedMemoryState_ = "#MaxNonEscapedMemoryState";
 
@@ -228,12 +250,15 @@ private:
   void
   AddMemoryStateTypeCounter(const std::string & suffix, const MemoryStateTypeCounter & counter)
   {
+    AddMeasurement(NumTotalRefOnlyStates_ + suffix, counter.NumRefOnly);
+    AddMeasurement(NumTotalModRefStates_ + suffix, counter.NumModRef);
+
     AddMeasurement(NumTotalAllocaState_ + suffix, counter.NumAllocas);
     AddMeasurement(NumTotalMallocState_ + suffix, counter.NumMallocs);
     AddMeasurement(NumTotalDeltaState_ + suffix, counter.NumDeltas);
     AddMeasurement(NumTotalImportState_ + suffix, counter.NumImports);
     AddMeasurement(NumTotalLambdaState_ + suffix, counter.NumLambdas);
-    AddMeasurement(NumTotalExternalState_ + suffix, counter.NumExternal);
+    AddMeasurement(NumTotalExternalNodeState_ + suffix, counter.NumExternalNode);
     AddMeasurement(NumTotalNonEscapedState_ + suffix, counter.NumNonEscaped);
 
     AddMeasurement(NumMaxMemoryState_ + suffix, counter.MaxMemoryStateEntity);
@@ -363,10 +388,10 @@ public:
   }
 
   std::vector<MemoryNodeStatePair *>
-  GetStates(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
+  GetStates(const ModRefSet & modRefSet)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
-    for (auto & memoryNode : memoryNodes.Items())
+    for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
     {
       memoryNodeStatePairs.push_back(GetState(memoryNode));
     }
@@ -377,15 +402,15 @@ public:
   /**
    * Gets MemoryNodeStatePairs for each of the given memory nodes,
    * unless there is no memory state in the region representing the memory node.
-   * @param memoryNodes the set of memory nodes to retrieve states for.
+   * @param modRefSet the set of memory nodes to retrieve states for.
    * @return The MemoryNodeStatePairs for each given memory nodes, if one exists.
    * @see RegionalizedStateMap::GetExistingStates()
    */
   std::vector<MemoryNodeStatePair *>
-  GetExistingStates(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
+  GetExistingStates(const ModRefSet & modRefSet)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
-    for (auto & memoryNode : memoryNodes.Items())
+    for (auto & [memoryNode, _] : modRefSet.getModRefNodes())
     {
       if (const auto statePair = TryGetState(memoryNode))
         memoryNodeStatePairs.push_back(statePair);
@@ -472,11 +497,9 @@ public:
   }
 
   std::vector<StateMap::MemoryNodeStatePair *>
-  GetStates(
-      const rvsdg::Region & region,
-      const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
+  GetStates(const rvsdg::Region & region, const ModRefSet & modRefSet)
   {
-    return GetStateMap(region).GetStates(memoryNodes);
+    return GetStateMap(region).GetStates(modRefSet);
   }
 
   /**
@@ -486,15 +509,13 @@ public:
    * To avoid cycles in the graph, the alloca's state edge must be omitted.
    * This is also safe to do, as there is no way the "user" is actually using the alloca.
    * @param region the region in question.
-   * @param memoryNodes the set of memory nodes that is being looked up.
+   * @param modRefSet the set of memory nodes that is being looked up.
    * @return the MemoryNode/State pairs that exist in the region
    */
   std::vector<StateMap::MemoryNodeStatePair *>
-  GetExistingStates(
-      const rvsdg::Region & region,
-      const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes) const
+  GetExistingStates(const rvsdg::Region & region, const ModRefSet & modRefSet) const
   {
-    return GetStateMap(region).GetExistingStates(memoryNodes);
+    return GetStateMap(region).GetExistingStates(modRefSet);
   }
 
   std::vector<StateMap::MemoryNodeStatePair *>
@@ -503,7 +524,7 @@ public:
     return GetExistingStates(*node.region(), GetSimpleNodeModRef(node));
   }
 
-  const util::HashSet<PointsToGraph::NodeIndex> &
+  const ModRefSet &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const
   {
     return ModRefSummary_.GetSimpleNodeModRef(node);
@@ -610,10 +631,10 @@ private:
 };
 
 static std::vector<MemoryNodeId>
-GetMemoryNodeIds(const util::HashSet<PointsToGraph::NodeIndex> & memoryNodes)
+GetMemoryNodeIds(const ModRefSet & modRefSet)
 {
   std::vector<MemoryNodeId> memoryNodeIds;
-  for (const auto memoryNode : memoryNodes.Items())
+  for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
   {
     memoryNodeIds.push_back(memoryNode);
   }
@@ -758,9 +779,15 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
   JLM_ASSERT(is<AllocaOperation>(allocaNode.GetOperation()));
 
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode);
-  JLM_ASSERT(allocaMemoryNodes.Size() == 1);
-  auto allocaMemoryNode = *allocaMemoryNodes.Items().begin();
+  auto & allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode).getModRefNodes();
+  if (allocaMemoryNodes.size() != 1)
+  {
+    std::cerr << "Number of alloca memory nodes: " << allocaMemoryNodes.size() << std::endl;
+    std::cerr << "NodeID: " << allocaNode.GetNodeId()
+              << " regionID: " << allocaNode.region()->getRegionId() << std::endl;
+  }
+  JLM_ASSERT(allocaMemoryNodes.size() == 1);
+  auto allocaMemoryNode = allocaMemoryNodes.begin()->first;
   auto & allocaNodeStateOutput = *allocaNode.output(1);
 
   // If a state representing the alloca already exists in the region,
@@ -783,9 +810,9 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<MallocOperation>(mallocNode.GetOperation()));
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode);
-  JLM_ASSERT(mallocMemoryNodes.Size() == 1);
-  auto mallocMemoryNode = *mallocMemoryNodes.Items().begin();
+  auto & mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode).getModRefNodes();
+  JLM_ASSERT(mallocMemoryNodes.size() == 1);
+  auto mallocMemoryNode = mallocMemoryNodes.begin()->first;
 
   auto & mallocNodeStateOutput = MallocOperation::memoryStateOutput(mallocNode);
 
@@ -812,12 +839,12 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<LoadOperation>(node.GetOperation()));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & modRefSet = stateMap.GetSimpleNodeModRef(node);
   Context_->GetLoadCounter().CountEntity(
       Context_->GetModRefSummary().GetPointsToGraph(),
-      memoryNodes);
+      modRefSet);
 
-  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
+  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), modRefSet);
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
@@ -832,12 +859,12 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & modRefSet = stateMap.GetSimpleNodeModRef(node);
   Context_->GetStoreCounter().CountEntity(
       Context_->GetModRefSummary().GetPointsToGraph(),
-      memoryNodes);
+      modRefSet);
 
-  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), memoryNodes);
+  const auto memoryNodeStatePairs = stateMap.GetExistingStates(*node.region(), modRefSet);
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
@@ -941,12 +968,12 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
 
-  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
+  const auto & modRefSet = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
   Context_->GetInterProceduralRegionCounter().CountEntity(
       Context_->GetModRefSummary().GetPointsToGraph(),
-      memoryNodes);
+      modRefSet);
 
-  const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
+  const auto memoryNodeIds = GetMemoryNodeIds(modRefSet);
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   stateMap.PushRegion(*lambdaNode.subregion());
@@ -955,7 +982,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
 
   size_t n = 0;
-  for (auto & memoryNode : memoryNodes.Items())
+  for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
     stateMap.InsertState(memoryNode, *states[n++]);
 
   if (!states.empty())
@@ -987,14 +1014,14 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 void
 MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
-  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
+  const auto & modRefSet = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
   std::vector<rvsdg::Output *> states;
   std::vector<MemoryNodeId> memoryNodeIds;
   auto & subregion = *lambdaNode.subregion();
-  const auto memoryNodeStatePairs = stateMap.GetStates(subregion, memoryNodes);
+  const auto memoryNodeStatePairs = stateMap.GetStates(subregion, modRefSet);
   for (const auto memoryNodeStatePair : memoryNodeStatePairs)
   {
     states.push_back(&memoryNodeStatePair->State());
@@ -1042,7 +1069,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 {
   auto region = gammaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
+  auto & memoryNodes = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
 
   // Count the memory state arguments once per subregion
   for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
@@ -1063,7 +1090,7 @@ void
 MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
+  auto & memoryNodes = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
   auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), memoryNodes);
 
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
