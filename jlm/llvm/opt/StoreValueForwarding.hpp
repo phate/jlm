@@ -50,6 +50,8 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
+  struct TracedDelta;
+
   /**
    * Traverse the given inter-procedural region
    *
@@ -81,6 +83,14 @@ private:
   // FIXME: documentation
   void
   processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode);
+
+  // FIXME: documentation
+  std::optional<TracedDelta>
+  traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loadNode);
+
+  // FIXME: documentation
+  void
+  forwardLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode, const TracedDelta & tracedDelta);
 
   /**
    * Performs store value forwarding to the load node represented by the given \p tracingInfo.

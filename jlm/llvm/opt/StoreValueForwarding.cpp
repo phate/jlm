@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -845,6 +846,13 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
   }
 }
 
+// FIXME: documentation
+struct StoreValueForwarding::TracedDelta
+{
+  rvsdg::DeltaNode * deltaNode;
+  int64_t offset;
+};
+
 void
 StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode)
 {
@@ -852,28 +860,8 @@ StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNod
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
   context_->statistics.startTracing();
-  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  // auto & loadedValue = LoadOperation::LoadedValueOutput(loadNode);
-  const auto & tracedAddress = context_->outputTracer.trace(loadAddress);
-
-  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedAddress);
-  if (!deltaNode)
-  {
-    context_->statistics.stopTracing();
-    return;
-  }
-  context_->numLoadsTracedToDeltaNode++;
-
-  auto & deltaSubregion = *deltaNode->subregion();
-  if (deltaSubregion.numNodes() != 1)
-  {
-    context_->statistics.stopTracing();
-    return;
-  }
-
-  auto & subregionNode = *deltaSubregion.Nodes().begin();
-  JLM_ASSERT(subregionNode.noutputs() == 1);
-  if (subregionNode.ninputs() != 0)
+  const auto tracedDelta = traceLoadWithoutMemoryStates(loadNode);
+  if (!tracedDelta.has_value())
   {
     context_->statistics.stopTracing();
     return;
@@ -881,10 +869,71 @@ StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNod
   context_->statistics.stopTracing();
 
   context_->statistics.startForwarding();
-  // auto & copiedNode = *subregionNode.copy(loadNode.region(), {});
-  // loadedValue.divert_users(copiedNode.output(0));
-  context_->numForwardedLoadsWithoutMemoryState++;
+  forwardLoadWithoutMemoryStates(loadNode, tracedDelta.value());
   context_->statistics.stopForwarding();
+}
+
+std::optional<StoreValueForwarding::TracedDelta>
+StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+
+  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  const auto & tracedAddress = TracePointerOriginPrecise(loadAddress);
+  if (!tracedAddress.Offset.has_value())
+  {
+    return std::nullopt;
+  }
+
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*tracedAddress.BasePointer);
+  if (!deltaNode)
+  {
+    return std::nullopt;
+  }
+
+  context_->numLoadsTracedToDeltaNode++;
+  return std::optional<TracedDelta>({ deltaNode, tracedAddress.Offset.value() });
+}
+
+void
+StoreValueForwarding::forwardLoadWithoutMemoryStates(
+    rvsdg::SimpleNode & loadNode,
+    const TracedDelta & tracedDelta)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+  auto loadOperation = dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+
+  if (tracedDelta.offset != 0)
+  {
+    // FIXME: start dealing with offsets
+    return;
+  }
+  auto deltaSubregion = tracedDelta.deltaNode->subregion();
+  if (deltaSubregion->numNodes() != 1)
+  {
+    // FIXME: start dealing with it
+    return;
+  }
+  auto & node = *deltaSubregion->Nodes().begin();
+
+  if (!is<IntegerConstantOperation>(node.GetOperation()))
+  {
+    // FIXME: We only care about integer constants right now
+    return;
+  }
+
+  if (*loadOperation->GetLoadedType() != *node.output(0)->Type())
+  {
+    // FIXME: deal with non-matching types
+    return;
+  }
+
+  auto copiedNode = node.copy(loadNode.region(), {});
+  LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+
+  context_->numForwardedLoadsWithoutMemoryState++;
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
