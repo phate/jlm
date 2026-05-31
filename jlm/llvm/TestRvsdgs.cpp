@@ -781,8 +781,8 @@ CallTest2::SetupRvsdg()
   this->CallCreate1_ = callCreate1;
   this->CallCreate2_ = callCreate2;
 
-  this->CallDestroy1_ = callCreate1;
-  this->CallDestroy2_ = callCreate2;
+  this->CallDestroy1_ = callDestroy1;
+  this->CallDestroy2_ = callDestroy2;
 
   return module;
 }

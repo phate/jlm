@@ -780,12 +780,10 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode).getModRefNodes();
-  if (allocaMemoryNodes.size() != 1)
-  {
-    std::cerr << "Number of alloca memory nodes: " << allocaMemoryNodes.size() << std::endl;
-    std::cerr << "NodeID: " << allocaNode.GetNodeId()
-              << " regionID: " << allocaNode.region()->getRegionId() << std::endl;
-  }
+  // It is possible for read-only allocas to not have any associated memory nodes
+  if (allocaMemoryNodes.size() == 0)
+    return;
+  // An alloca can have at most one associated memory node
   JLM_ASSERT(allocaMemoryNodes.size() == 1);
   auto allocaMemoryNode = allocaMemoryNodes.begin()->first;
   auto & allocaNodeStateOutput = *allocaNode.output(1);
@@ -811,6 +809,10 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
   JLM_ASSERT(is<MallocOperation>(mallocNode.GetOperation()));
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode).getModRefNodes();
+  // It is possible for read-only mallocs to not have any associated memory nodes
+  if (mallocMemoryNodes.size() == 0)
+    return;
+  // A malloc can have at most one associated memory node
   JLM_ASSERT(mallocMemoryNodes.size() == 1);
   auto mallocMemoryNode = mallocMemoryNodes.begin()->first;
 

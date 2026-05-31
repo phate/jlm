@@ -1835,6 +1835,7 @@ public:
  *  #include <string.h>
  *
  *  int globalArray[5];
+ *  int localArray[5] = {0, 1, 2, 3, 4};
  *
  *  int
  *  f()
@@ -1846,7 +1847,6 @@ public:
  *  int
  *  g()
  *  {
- *    int localArray[5] = {0, 1, 2, 3, 4};
  *    memcpy(globalArray, localArray, sizeof(int)*5);
  *    return f();
  *  }

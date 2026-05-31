@@ -30,6 +30,7 @@
 #include <limits>
 #include <optional>
 #include <queue>
+#include <sstream>
 #include <unordered_map>
 
 namespace jlm::llvm::aa
@@ -239,33 +240,40 @@ public:
   RegionAwareModRefSet() = default;
 
   /**
-   * Checks if an externally available memory node with the given size may be read by this set.
-   * @param memoryNodeSize the size of the externally available memory node, or nullopt if unknown.
-   * @return true if this set represents possibly referencing the given memory node
+   * The ModRefSet can be flagged as possibly referencing all externally available memory locations
+   * with a byte size >= some minimum, and all memory nodes of unknown size.
+   * The returned value will always be <= the result of getModExeternalMinSize().
+   * If the ModRefSet is flagged as possibly calling external functions, it size will be 0,
+   * indicating that all externally available memory is possibly referenced.
+   *
+   * @return the minimum size where all externally available memory is referenced by this set.
+   *         If the set is not flagged, nullopt is returned.
    */
-  [[nodiscard]] bool
-  mayRefExternalOfSize(std::optional<size_t> memoryNodeSize) const
+  [[nodiscard]]
+  std::optional<size_t>
+  getRefExternalMinSize() const
   {
     if (refExternalOfSize_ == NoneSize)
-      return false;
-    if (!memoryNodeSize.has_value())
-      return true;
-    return *memoryNodeSize >= refExternalOfSize_;
+      return std::nullopt;
+    return refExternalOfSize_;
   }
 
   /**
-   * Checks if an externally available memory node with the given size may be modified by this set.
-   * @param memoryNodeSize the size of the externally available memory node, or nullopt if unknown.
-   * @return true if this set represents possibly modifying the given memory node
+   * The ModRefSet can be flagged as possibly modifying all externally available memory locations
+   * with a byte size >= some minimum, and all memory nodes of unknown size.
+   * If the ModRefSet is flagged as possibly calling external functions, the size will be 0,
+   * indicating that all externally available memory is possibly modified.
+   *
+   * @return the minimum size where all externally available memory is modified by this set.
+   *         If the set is not flagged, nullopt is returned.
    */
-  [[nodiscard]] bool
-  mayModExternalOfSize(std::optional<size_t> memoryNodeSize) const
+  [[nodiscard]]
+  std::optional<size_t>
+  getModExternalMinSize() const
   {
     if (modExternalOfSize_ == NoneSize)
-      return false;
-    if (!memoryNodeSize.has_value())
-      return true;
-    return *memoryNodeSize >= modExternalOfSize_;
+      return std::nullopt;
+    return modExternalOfSize_;
   }
 
   /**
@@ -310,6 +318,34 @@ public:
   }
 
   /**
+   * Helper function for checking if an externally available memory location of the given size
+   * is implicitly flagged as possibly referenced by this ModRefSet.
+   */
+  [[nodiscard]] bool
+  mayRefExternalOfSize(std::optional<size_t> size) const
+  {
+    if (refExternalOfSize_ == NoneSize)
+      return false;
+    if (!size.has_value())
+      return true;
+    return *size >= refExternalOfSize_;
+  }
+
+  /**
+   * Helper function for checking if an externally available memory location of the given size
+   * is implicitly flagged as possibly modified by this ModRefSet.
+   */
+  [[nodiscard]] bool
+  mayModExternalOfSize(std::optional<size_t> size) const
+  {
+    if (modExternalOfSize_ == NoneSize)
+      return false;
+    if (!size.has_value())
+      return true;
+    return *size >= modExternalOfSize_;
+  }
+
+  /**
    * @return true if the ModRefSet may represent a call to an externally defined function.
    */
   [[nodiscard]] bool
@@ -341,6 +377,7 @@ public:
    *
    * @param memoryNode the index of the memory node in the points-to graph.
    * @param mayMod if true, the memory node may be modified. If false it may only be referenced.
+   *     Memory nodes have are already been marked as possibly modified in the set stay that way.
    * @return true if the ModRefSet was modified by this operation, otherwise false
    */
   bool
@@ -364,8 +401,8 @@ public:
    * Uses the external availability and byte size of the memory node to determine this.
    *
    * @param memoryNode the index of the memory node in the points-to graph.
-   * @param isExternallAvailable a boolean indicating if the memory node is externally available
-   * @param memoryNodeSize the byte size of the memory node, if known. Otherwise nullopt
+   * @param isExternallyAvailable a boolean indicating if the memory node is externally available.
+   * @param memoryNodeSize the byte size of the memory node, if known. Otherwise nullopt.
    * @param mayMod if true, the memory node may be modified. If false it may only be referenced.
    * @return true if the ModRefSet was modified by this operation, otherwise false
    */
@@ -376,6 +413,7 @@ public:
       std::optional<size_t> memoryNodeSize,
       bool mayMod)
   {
+    // If the memory node is already included implicitly, skip adding it explicitly
     if (isExternallyAvailable)
     {
       if (mayMod)
@@ -545,7 +583,7 @@ public:
    * @return the index of the single ModRefSet representing all external functions
    */
   [[nodiscard]] ModRefSetIndex
-  getExternModRefSet()
+  getExternModRefSet() const noexcept
   {
     return externModRefSet_;
   }
@@ -588,6 +626,32 @@ public:
   getAllSetsInFunction(const rvsdg::LambdaNode & lambdaNode)
   {
     return modRefSetsInFunction_[&lambdaNode];
+  }
+
+  [[nodiscard]] std::string
+  getModRefSetDebugString(ModRefSetIndex index) const
+  {
+    const auto & modRefSet = getModRefSet(index);
+    std::stringstream ss;
+    ss << "{MRS#" << index << "; ";
+    const auto mayRefMinSize = modRefSet.getRefExternalMinSize();
+    if(mayRefMinSize.has_value())
+      ss << "RefExt>=" << *mayRefMinSize << " bytes; ";
+    const auto mayModMinSize = modRefSet.getModExternalMinSize();
+    if(mayModMinSize.has_value())
+      ss << "ModExt>=" << *mayModMinSize << " bytes; ";
+    if (modRefSet.mayCallExternalFunction())
+      ss << "MayCallExt; ";
+    for (auto [memoryNode, mayUse] : modRefSet.getModRefNodes())
+    {
+      ss << pointsToGraph_.getNodeDebugString(memoryNode);
+      if(mayUse)
+        ss << "[MR], ";
+      else
+        ss << "[R], ";
+    }
+    ss << "}";
+    return ss.str();
   }
 
   const ModRefSet &
@@ -817,6 +881,14 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   SolveModRefSetConstraintGraph();
   statistics->StopSolvingStatistics();
 
+  // Print debug output
+  // std::cerr << PointsToGraph::dumpDot(pointsToGraph) << std::endl;
+  // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
+  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
+  // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
+  // std::cerr << "After solving, before materialization: " << std::endl;
+  // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
+
   if (ENABLE_READ_ONLY_DETECTION)
   {
     statistics->startReadOnlyMemoryDetectionStatistics();
@@ -828,17 +900,12 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   materializeSets();
   statistics->stopModRefSetMaterializationStatistics();
 
-  // Print debug output
-  // std::cerr << PointsToGraph::dumpDot(pointsToGraph) << std::endl;
-  // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
-  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
-  // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
+  // More debug output
   // std::cerr << "ReadOnlyMemoryNodes (PtGIndex): ";
   // for (auto ptgNodeId : Context_->ReadOnlyMemoryNodes.Items())
   //   std::cerr << ptgNodeId << ", ";
-  // std::cerr << std::endl;
-  // std::cerr << "RegionTree:" << std::endl
-  //           << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
+  // std::cerr << "After materialization: " << std::endl;
+  // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();
@@ -1233,9 +1300,7 @@ RegionAwareModRefSummarizer::AddModRefSetBlocklist(
 void
 RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
 {
-  const auto & region = *lambda.subregion();
-  const auto modRefSet = ModRefSummary_->getOrCreateSetForNode(lambda, lambda);
-  AnnotateRegion(region, modRefSet, lambda);
+  const auto modRefSet = AnnotateStructuralNode(lambda, lambda);
 
   if (Context_->FunctionsCallingSetjmp.Contains(&lambda))
   {
@@ -1440,7 +1505,9 @@ RegionAwareModRefSummarizer::AnnotateAlloca(
 {
   const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(allocaNode, lambda);
   const auto allocaMemoryNode = Context_->pointsToGraph.getNodeForAlloca(allocaNode);
-  ModRefSummary_->addExplicitMemoryNodeToSet(nodeModRef, allocaMemoryNode, true);
+  // The alloca itself is only considered to be a ref, since its value is indeterminite,
+  // and any users of the alloca will depend on its address output
+  ModRefSummary_->addExplicitMemoryNodeToSet(nodeModRef, allocaMemoryNode, false);
   return nodeModRef;
 }
 
@@ -1451,7 +1518,9 @@ RegionAwareModRefSummarizer::AnnotateMalloc(
 {
   const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(mallocNode, lambda);
   const auto mallocMemoryNode = Context_->pointsToGraph.getNodeForMalloc(mallocNode);
-  ModRefSummary_->addExplicitMemoryNodeToSet(nodeModRef, mallocMemoryNode, true);
+  // The malloc itself is only considered to be a ref, since its value is indeterminite,
+  // and any users of the malloc will depend on its address output
+  ModRefSummary_->addExplicitMemoryNodeToSet(nodeModRef, mallocMemoryNode, false);
   return nodeModRef;
 }
 
@@ -1465,7 +1534,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
   const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(freeNode, lambda);
   const auto origin = FreeOperation::addressInput(freeNode).origin();
 
-  // TODO: Only free MallocMemoryNodes
+  // TODO: Filter so we only free MallocMemoryNodes
   addPointerOriginTargets(nodeModRef, *origin, std::nullopt, true, lambda);
   return nodeModRef;
 }
@@ -1789,20 +1858,9 @@ RegionAwareModRefSummarizer::ToRegionTree(
     const rvsdg::Graph & rvsdg,
     const RegionAwareModRefSummary & modRefSummary)
 {
-  const auto & pointsToGraph = modRefSummary.GetPointsToGraph();
-
   std::ostringstream ss;
 
-  auto toString = [&](const ModRefSet & modRefSet)
-  {
-    ss << "MemoryNodes: {";
-    for (auto [memoryNode, mayMod] : modRefSet.getModRefNodes())
-    {
-      ss << pointsToGraph.getNodeDebugString(memoryNode);
-      ss << (mayMod ? "[MR]" : "[R]") << ", ";
-    }
-    ss << "}";
-  };
+  ss << "ExternModRefSet: " << modRefSummary.getModRefSetDebugString(modRefSummary.getExternModRefSet()) << std::endl;
 
   auto indent = [&](size_t depth, char c = '-')
   {
@@ -1819,9 +1877,7 @@ RegionAwareModRefSummarizer::ToRegionTree(
     indent(depth, '-');
     ss << "node " << node.DebugString() << " NodeID: " << node.GetNodeId() << ": ";
     auto modRefIndex = modRefSummary.getSetForNode(node);
-    const auto & modRefSet = modRefSummary.getModRefSet(modRefIndex);
-    toString(modRefSet);
-    ss << std::endl;
+    ss << modRefSummary.getModRefSetDebugString(modRefIndex) << std::endl;
 
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -1835,6 +1891,7 @@ RegionAwareModRefSummarizer::ToRegionTree(
     }
   };
 
+  ss << "RootRegion:" << std::endl;
   for (auto & node : rvsdg.GetRootRegion().Nodes())
     toRegionTree(node, 0);
 

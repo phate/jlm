@@ -63,5 +63,5 @@ export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 cd jlm
-# make clean
+make clean
 make ${BENCHMARK_RUN_TARGET}
