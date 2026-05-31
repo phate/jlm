@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -91,8 +92,12 @@ struct AliasQueryResponseCounter
  */
 class StoreValueForwarding::Statistics final : public util::Statistics
 {
-  static constexpr auto NumTotalLoadsLabel_ = "#TotalLoads";
-  static constexpr auto NumLoadsForwardedLabel_ = "#LoadsForwarded";
+  static constexpr auto NumLoadsWithMemoryStateLabel_ = "#LoadsWithMemoryState";
+  static constexpr auto NumLoadsWithoutMemoryStateLabel_ = "#LoadsWithoutMemoryState";
+  static constexpr auto NumLoadsTracedToDeltaNodeLabel_ = "#LoadsTracedToDeltaNode";
+  static constexpr auto NumForwardedLoadsWithMemoryStateLabel_ = "#ForwardedLoadsWithMemoryState";
+  static constexpr auto NumForwardedLoadsWithoutMemoryStateLabel_ =
+      "#ForwardedLoadsWithoutMemoryState";
   static constexpr auto numNoAliasStoreLabel_ = "#NoAliasStore";
   static constexpr auto numMayAliasStoreLabel_ = "#MayAliasStore";
   static constexpr auto numMustAliasStoreLabel_ = "#MustAliasStore";
@@ -120,14 +125,20 @@ public:
 
   void
   StopStatistics(
-      const size_t numTotalLoads,
-      const size_t numLoadsForwarded,
+      const size_t numLoadsWithMemoryState,
+      const size_t numLoadsWithoutMemoryState,
+      const size_t numLoadsTracedtoDeltaNode,
+      const size_t numForwardedLoadsWithMemoryState,
+      const size_t numForwardedLoadsWithoutMemoryState,
       const AliasQueryResponseCounter & storeAAResponses,
       const AliasQueryResponseCounter & loadAAResponses) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(NumTotalLoadsLabel_, numTotalLoads);
-    AddMeasurement(NumLoadsForwardedLabel_, numLoadsForwarded);
+    AddMeasurement(NumLoadsWithMemoryStateLabel_, numLoadsWithMemoryState);
+    AddMeasurement(NumLoadsWithoutMemoryStateLabel_, numLoadsWithoutMemoryState);
+    AddMeasurement(NumLoadsTracedToDeltaNodeLabel_, numLoadsTracedtoDeltaNode);
+    AddMeasurement(NumForwardedLoadsWithMemoryStateLabel_, numForwardedLoadsWithMemoryState);
+    AddMeasurement(NumForwardedLoadsWithoutMemoryStateLabel_, numForwardedLoadsWithoutMemoryState);
     AddMeasurement(numNoAliasStoreLabel_, storeAAResponses.numNoAliasAnalysisQueries);
     AddMeasurement(numMayAliasStoreLabel_, storeAAResponses.numMayAliasAnalysisQueries);
     AddMeasurement(numMustAliasStoreLabel_, storeAAResponses.numMustAliasAnalysisQueries);
@@ -183,8 +194,11 @@ struct StoreValueForwarding::Context final
   }
 
   // Counters used for statistics
-  size_t numTotalLoads = 0;
-  size_t numLoadsForwarded = 0;
+  size_t numLoadsWithMemoryState = 0;
+  size_t numLoadsWithoutMemoryState = 0;
+  size_t numLoadsTracedToDeltaNode = 0;
+  size_t numForwardedLoadsWithMemoryState = 0;
+  size_t numForwardedLoadsWithoutMemoryState = 0;
   AliasQueryResponseCounter storeAAResponses;
   AliasQueryResponseCounter loadAAResponses;
 
@@ -265,7 +279,7 @@ StoreValueForwarding::traverseIntraProceduralRegion(rvsdg::Region & region)
         {
           if (is<LoadNonVolatileOperation>(&simpleNode))
           {
-            processLoadNode(simpleNode);
+            processLoad(simpleNode);
           }
 
           // For other node types, we don't need to do anything for store value forwarding
@@ -408,10 +422,7 @@ public:
   bool
   traceAllMemoryStateInputs()
   {
-    // Forwarding of loads with no memory states is not possible
-    // TODO: We could load values from constant globals
-    if (LoadOperation::numMemoryStates(loadNode) == 0)
-      return false;
+    JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
     // Perform tracing from each memory state input to find exactly what store it leads to
     for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(loadNode))
@@ -797,22 +808,37 @@ public:
 };
 
 void
-StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
+StoreValueForwarding::processLoad(rvsdg::SimpleNode & loadNode)
 {
-  context_->numTotalLoads++;
-
-  // Only non-volatile loads are candidates for being forwarded to
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+
+  if (LoadOperation::numMemoryStates(loadNode) == 0)
+  {
+    context_->numLoadsWithoutMemoryState++;
+    processLoadWithoutMemoryStates(loadNode);
+  }
+  else
+  {
+    context_->numLoadsWithMemoryState++;
+    processLoadWithMemoryStates(loadNode);
+  }
+}
+
+void
+StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
   context_->statistics.startTracing();
   LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer, context_->aliasAnalysis);
-  const bool success = loadTracingInfo.traceAllMemoryStateInputs();
+  const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
   context_->storeAAResponses.addFromCounter(loadTracingInfo.storeAAResponses);
   context_->loadAAResponses.addFromCounter(loadTracingInfo.loadAAResponses);
 
-  if (success)
+  if (shouldForwardValueOrigins)
   {
     context_->statistics.startForwarding();
     forwardValueOrigins(loadTracingInfo);
@@ -820,11 +846,101 @@ StoreValueForwarding::processLoadNode(rvsdg::SimpleNode & loadNode)
   }
 }
 
+// FIXME: documentation
+struct StoreValueForwarding::TracedDelta
+{
+  rvsdg::DeltaNode * deltaNode;
+  int64_t offset;
+};
+
+void
+StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+
+  context_->statistics.startTracing();
+  const auto tracedDelta = traceLoadWithoutMemoryStates(loadNode);
+  if (!tracedDelta.has_value())
+  {
+    context_->statistics.stopTracing();
+    return;
+  }
+  context_->statistics.stopTracing();
+
+  context_->statistics.startForwarding();
+  forwardLoadWithoutMemoryStates(loadNode, tracedDelta.value());
+  context_->statistics.stopForwarding();
+}
+
+std::optional<StoreValueForwarding::TracedDelta>
+StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loadNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+
+  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  const auto & tracedAddress = TracePointerOriginPrecise(loadAddress);
+  if (!tracedAddress.Offset.has_value())
+  {
+    return std::nullopt;
+  }
+
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*tracedAddress.BasePointer);
+  if (!deltaNode)
+  {
+    return std::nullopt;
+  }
+
+  context_->numLoadsTracedToDeltaNode++;
+  return std::optional<TracedDelta>({ deltaNode, tracedAddress.Offset.value() });
+}
+
+void
+StoreValueForwarding::forwardLoadWithoutMemoryStates(
+    rvsdg::SimpleNode & loadNode,
+    const TracedDelta & tracedDelta)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
+  JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
+  auto loadOperation = dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+
+  if (tracedDelta.offset != 0)
+  {
+    // FIXME: start dealing with offsets
+    return;
+  }
+  auto deltaSubregion = tracedDelta.deltaNode->subregion();
+  if (deltaSubregion->numNodes() != 1)
+  {
+    // FIXME: start dealing with it
+    return;
+  }
+  auto & node = *deltaSubregion->Nodes().begin();
+
+  if (!is<IntegerConstantOperation>(node.GetOperation()))
+  {
+    // FIXME: We only care about integer constants right now
+    return;
+  }
+
+  if (*loadOperation->GetLoadedType() != *node.output(0)->Type())
+  {
+    // FIXME: deal with non-matching types
+    return;
+  }
+
+  auto copiedNode = node.copy(loadNode.region(), {});
+  LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+
+  context_->numForwardedLoadsWithoutMemoryState++;
+}
+
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
 void
 StoreValueForwarding::forwardValueOrigins(LoadTracingInfo & tracingInfo)
 {
-  context_->numLoadsForwarded++;
+  context_->numForwardedLoadsWithMemoryState++;
 
   auto & loadNode = tracingInfo.loadNode;
   auto & loadedValueOutput = LoadOperation::LoadedValueOutput(loadNode);
@@ -1100,8 +1216,11 @@ StoreValueForwarding::Run(
   traverseInterProceduralRegion(rvsdg.GetRootRegion());
 
   statistics->StopStatistics(
-      context_->numTotalLoads,
-      context_->numLoadsForwarded,
+      context_->numLoadsWithMemoryState,
+      context_->numLoadsWithoutMemoryState,
+      context_->numLoadsTracedToDeltaNode,
+      context_->numForwardedLoadsWithMemoryState,
+      context_->numForwardedLoadsWithoutMemoryState,
       context_->storeAAResponses,
       context_->loadAAResponses);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
