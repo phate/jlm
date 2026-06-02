@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/opt/alias-analyses/ModRefSummary.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -15,6 +14,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -70,6 +70,13 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
  * Detecting this lets us treat them as constants, omitting them from memory state routing.
  */
 static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
+
+/**
+ * When doing a call, any Simple Alloca that is not reachable from the arguments to the call
+ * can be blocked from being added to the call's ModRefSet.
+ */
+static const bool ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING =
+    !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_BLOCKING");
 
 /** \brief Region-aware mod/ref summarizer statistics
  *
@@ -249,8 +256,7 @@ public:
    * @return the minimum size where all externally available memory is referenced by this set.
    *         If the set is not flagged, nullopt is returned.
    */
-  [[nodiscard]]
-  std::optional<size_t>
+  [[nodiscard]] std::optional<size_t>
   getRefExternalMinSize() const
   {
     if (refExternalOfSize_ == NoneSize)
@@ -267,8 +273,7 @@ public:
    * @return the minimum size where all externally available memory is modified by this set.
    *         If the set is not flagged, nullopt is returned.
    */
-  [[nodiscard]]
-  std::optional<size_t>
+  [[nodiscard]] std::optional<size_t>
   getModExternalMinSize() const
   {
     if (modExternalOfSize_ == NoneSize)
@@ -635,17 +640,17 @@ public:
     std::stringstream ss;
     ss << "{MRS#" << index << "; ";
     const auto mayRefMinSize = modRefSet.getRefExternalMinSize();
-    if(mayRefMinSize.has_value())
+    if (mayRefMinSize.has_value())
       ss << "RefExt>=" << *mayRefMinSize << " bytes; ";
     const auto mayModMinSize = modRefSet.getModExternalMinSize();
-    if(mayModMinSize.has_value())
+    if (mayModMinSize.has_value())
       ss << "ModExt>=" << *mayModMinSize << " bytes; ";
     if (modRefSet.mayCallExternalFunction())
       ss << "MayCallExt; ";
     for (auto [memoryNode, mayUse] : modRefSet.getModRefNodes())
     {
       ss << pointsToGraph_.getNodeDebugString(memoryNode);
-      if(mayUse)
+      if (mayUse)
         ss << "[MR], ";
       else
         ss << "[R], ";
@@ -1778,7 +1783,7 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
 
     // If true, this ModRefSet will not disqualify any other ref from compression,
     // but it can still disqualify nodes that may be modified
-    bool mayRefExternal = modRefSet.mayRefExternalOfSize(std::nullopt);
+    bool mayRefExternal = modRefSet.getRefExternalMinSize().has_value();
 
     for (auto [memoryNode, mayMod] : modRefSet.getModRefNodes())
     {
@@ -1806,7 +1811,7 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
         modRefSet.addExplicitMemoryNode(memoryNode, true);
       }
     }
-    else if (modRefSet.mayRefExternalOfSize(std::nullopt))
+    else if (modRefSet.getRefExternalMinSize().has_value())
     {
       // We are not adding everything, so only materialize memory locations of adequate size
       for (auto memoryNode : materializeExternallyAvailable)
@@ -1860,7 +1865,8 @@ RegionAwareModRefSummarizer::ToRegionTree(
 {
   std::ostringstream ss;
 
-  ss << "ExternModRefSet: " << modRefSummary.getModRefSetDebugString(modRefSummary.getExternModRefSet()) << std::endl;
+  ss << "ExternModRefSet: "
+     << modRefSummary.getModRefSetDebugString(modRefSummary.getExternModRefSet()) << std::endl;
 
   auto indent = [&](size_t depth, char c = '-')
   {
