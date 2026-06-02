@@ -861,12 +861,9 @@ StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNod
 
   context_->statistics.startTracing();
   const auto tracedDelta = traceLoadWithoutMemoryStates(loadNode);
-  if (!tracedDelta.has_value())
-  {
-    context_->statistics.stopTracing();
-    return;
-  }
   context_->statistics.stopTracing();
+  if (!tracedDelta.has_value())
+    return;
 
   context_->statistics.startForwarding();
   forwardLoadWithoutMemoryStates(loadNode, tracedDelta.value());
