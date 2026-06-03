@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <queue>
 #include <sstream>
@@ -35,13 +36,6 @@
 
 namespace jlm::llvm::aa
 {
-
-/**
- * allocas that are not defined in f(), and not defined in a predecessor of f() in the call graph,
- * cannot be live inside f(). They are added to the DeadAllocaBlocklist.
- */
-static const bool ENABLE_DEAD_ALLOCA_BLOCKLIST = !std::getenv("JLM_DISABLE_DEAD_ALLOCA_BLOCKLIST");
-
 /**
  * In a region with an alloca definition, the memory node representing the alloca does not need to
  * be routed into the region if the alloca is shown to be non-reentrant.
@@ -128,18 +122,6 @@ public:
     GetTimer(CallGraphTimer_).stop();
     AddMeasurement(NumCallGraphSccs_, numSccs);
     AddMeasurement(NumFunctionsCallingSetjmp_, numFunctionsCallingSetjmp);
-  }
-
-  void
-  StartAllocasDeadInSccStatistics()
-  {
-    AddTimer(AllocasDeadInSccsTimer_).start();
-  }
-
-  void
-  StopAllocasDeadInSccStatistics()
-  {
-    GetTimer(AllocasDeadInSccsTimer_).stop();
   }
 
   void
@@ -791,14 +773,6 @@ struct RegionAwareModRefSummarizer::Context
   util::HashSet<const rvsdg::LambdaNode *> FunctionsCallingSetjmp;
 
   /**
-   * For each SCC, only allocas defined within the SCC, or within a predecessor of the SCC,
-   * can possibly be live. All other allocas are considered dead in the SCC.
-   *
-   * Assigned in \ref FindAllocasDeadInSccs(). Remains constant after.
-   */
-  std::vector<util::HashSet<PointsToGraph::NodeIndex>> AllocasDeadInScc;
-
-  /**
    * The set of all Simple Allocas in the module.
    *
    * Assigned in \ref CreateSimpleAllocaSet(). Remains constant after.
@@ -813,6 +787,13 @@ struct RegionAwareModRefSummarizer::Context
    */
   std::unordered_map<const rvsdg::Node *, util::HashSet<PointsToGraph::NodeIndex>>
       NonReentrantAllocas;
+
+  /**
+   * Used for blocking simple allocas from being propagated to the ModRefSet of calls
+   * where none of the call's arguments can reach the simple alloca.
+   * The sets are placed in a deque, since references to elements stay valid.
+   */
+  std::deque<util::HashSet<PointsToGraph::NodeIndex>> CallBlocklists;
 
   /**
    * Simple edges in the ModRefSet constraint graph.
@@ -858,10 +839,6 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->stopCallGraphStatistics(
       Context_->SccFunctions.size(),
       Context_->FunctionsCallingSetjmp.Size());
-
-  statistics->StartAllocasDeadInSccStatistics();
-  FindAllocasDeadInSccs();
-  statistics->StopAllocasDeadInSccStatistics();
 
   statistics->StartCreateSimpleAllocasSetStatistics();
   Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
@@ -1094,52 +1071,6 @@ RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   Context_->ExternalNodeSccIndex = sccIndex[externalNodeIndex];
 }
 
-void
-RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
-{
-  // TODO: This is a candiate for removal.
-  // Enabling or disabling it does nothing for number of loads removed
-  const auto & pointsToGraph = Context_->pointsToGraph;
-
-  // First find which allocas may be live in each SCC
-  std::vector<util::HashSet<PointsToGraph::NodeIndex>> liveAllocas(Context_->SccFunctions.size());
-
-  util::HashSet<PointsToGraph::NodeIndex> allAllocas;
-
-  // Add all Allocas to the SCC of the function they are defined in
-  for (auto allocaPtgNode : Context_->pointsToGraph.allocaNodes())
-  {
-    allAllocas.insert(allocaPtgNode);
-    const auto & allocaNode = pointsToGraph.getAllocaForNode(allocaPtgNode);
-    const auto & lambdaNode = rvsdg::getSurroundingLambdaNode(allocaNode);
-    JLM_ASSERT(Context_->FunctionToSccIndex.count(&lambdaNode));
-    const auto sccIndex = Context_->FunctionToSccIndex[&lambdaNode];
-    liveAllocas[sccIndex].insert(allocaPtgNode);
-  }
-
-  // Propagate live allocas to targets of function calls.
-  // I.e., if a() -> b(), then any alloca that is live in a() may also be live in b()
-  // Start at the topologically earliest SCC, which has the largest SCC index
-  // The topologically latest SCC can't have any targets
-  for (size_t sccIndex = Context_->SccFunctions.size() - 1; sccIndex > 0; sccIndex--)
-  {
-    for (auto targetScc : Context_->SccCallTargets[sccIndex].Items())
-    {
-      JLM_ASSERT(targetScc <= sccIndex);
-      if (targetScc != sccIndex)
-        liveAllocas[targetScc].UnionWith(liveAllocas[sccIndex]);
-    }
-  }
-
-  // Any alloca that is not live in the SCC gets added to the set of allocas that are dead
-  Context_->AllocasDeadInScc.resize(Context_->SccFunctions.size());
-  for (size_t sccIndex = 0; sccIndex < Context_->SccFunctions.size(); sccIndex++)
-  {
-    Context_->AllocasDeadInScc[sccIndex].UnionWith(allAllocas);
-    Context_->AllocasDeadInScc[sccIndex].DifferenceWith(liveAllocas[sccIndex]);
-  }
-}
-
 util::HashSet<PointsToGraph::NodeIndex>
 RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph)
 {
@@ -1181,22 +1112,12 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
-    const rvsdg::Region & region)
+RegionAwareModRefSummarizer::
+getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
-  // Use a queue and a set to traverse the PointsToGraph
   util::HashSet<PointsToGraph::NodeIndex> reachableSimpleAllocas;
-  std::queue<PointsToGraph::NodeIndex> nodes;
-  for (auto argument : region.Arguments())
-  {
-    if (!IsPointerCompatible(*argument))
-      continue;
-    const auto ptgNode = pointsToGraph.getNodeForRegister(*argument);
-    nodes.push(ptgNode);
-  }
-
   // Traverse along PointsToGraph edges to find all reachable simple allocas
   while (!nodes.empty())
   {
@@ -1215,6 +1136,47 @@ RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
   }
 
   return reachableSimpleAllocas;
+}
+
+util::HashSet<PointsToGraph::NodeIndex>
+RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
+    const rvsdg::Region & region)
+{
+  const auto & pointsToGraph = Context_->pointsToGraph;
+
+  // Start by finding initial register nodes
+  std::queue<PointsToGraph::NodeIndex> nodes;
+  for (auto argument : region.Arguments())
+  {
+    if (!IsPointerCompatible(*argument))
+      continue;
+    const auto ptgNode = pointsToGraph.getNodeForRegister(*argument);
+    nodes.push(ptgNode);
+  }
+
+  return getReachableSimpleAllocas(nodes);
+}
+
+util::HashSet<PointsToGraph::NodeIndex>
+RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromCallArguments(
+    const rvsdg::SimpleNode & call)
+{
+  const auto & pointsToGraph = Context_->pointsToGraph;
+
+  // Use a queue and a set to traverse the PointsToGraph
+  std::queue<PointsToGraph::NodeIndex> nodes;
+  auto numArguments = CallOperation::NumArguments(call);
+  for (size_t i = 0; i < numArguments; i++)
+  {
+    const auto & argument = *CallOperation::Argument(call, i)->origin();
+
+    if (!IsPointerCompatible(argument))
+      continue;
+    const auto ptgNode = pointsToGraph.getNodeForRegister(argument);
+    nodes.push(ptgNode);
+  }
+
+  return getReachableSimpleAllocas(nodes);
 }
 
 bool
@@ -1428,11 +1390,9 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
     ModRefSetIndex modRefSetIndex,
     const rvsdg::Output & origin,
     std::optional<size_t> minTargetSize,
-    bool mayMod,
-    const rvsdg::LambdaNode & lambda)
+    bool mayMod)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
-  const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
 
   const auto registerPtgNode = pointsToGraph.getNodeForRegister(origin);
 
@@ -1446,8 +1406,6 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
       if (targetSize.has_value() && *targetSize < minTargetSize)
         return;
     }
-    if (ENABLE_DEAD_ALLOCA_BLOCKLIST && allocasDead.Contains(targetPtgNode))
-      return;
     ModRefSummary_->addExplicitMemoryNodeToSet(modRefSetIndex, targetPtgNode, mayMod);
   };
 
@@ -1485,7 +1443,7 @@ RegionAwareModRefSummarizer::AnnotateLoad(
   const auto loadOperation = util::assertedCast<const LoadOperation>(&loadNode.GetOperation());
   const auto loadSize = GetTypeStoreSize(*loadOperation->GetLoadedType());
 
-  addPointerOriginTargets(nodeModRef, *origin, loadSize, false, lambda);
+  addPointerOriginTargets(nodeModRef, *origin, loadSize, false);
   return nodeModRef;
 }
 
@@ -1499,7 +1457,7 @@ RegionAwareModRefSummarizer::AnnotateStore(
   const auto storeOperation = util::assertedCast<const StoreOperation>(&storeNode.GetOperation());
   const auto storeSize = GetTypeStoreSize(storeOperation->GetStoredType());
 
-  addPointerOriginTargets(nodeModRef, *origin, storeSize, true, lambda);
+  addPointerOriginTargets(nodeModRef, *origin, storeSize, true);
   return nodeModRef;
 }
 
@@ -1540,7 +1498,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
   const auto origin = FreeOperation::addressInput(freeNode).origin();
 
   // TODO: Filter so we only free MallocMemoryNodes
-  addPointerOriginTargets(nodeModRef, *origin, std::nullopt, true, lambda);
+  addPointerOriginTargets(nodeModRef, *origin, std::nullopt, true);
   return nodeModRef;
 }
 
@@ -1556,8 +1514,8 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
   const auto srcOrigin = MemCpyOperation::sourceInput(memcpyNode).origin();
   const auto countOrigin = MemCpyOperation::countInput(memcpyNode).origin();
   const auto count = tryGetConstantSignedInteger(*countOrigin);
-  addPointerOriginTargets(nodeModRef, *dstOrigin, count, true, lambda);
-  addPointerOriginTargets(nodeModRef, *srcOrigin, count, false, lambda);
+  addPointerOriginTargets(nodeModRef, *dstOrigin, count, true);
+  addPointerOriginTargets(nodeModRef, *srcOrigin, count, false);
   return nodeModRef;
 }
 
@@ -1572,7 +1530,7 @@ RegionAwareModRefSummarizer::AnnotateMemset(
   const auto dstOrigin = MemSetOperation::destinationInput(memsetNode).origin();
   const auto lengthOrigin = MemSetOperation::lengthInput(memsetNode).origin();
   const auto numBytes = tryGetConstantSignedInteger(*lengthOrigin);
-  addPointerOriginTargets(nodeModRef, *dstOrigin, numBytes, true, lambda);
+  addPointerOriginTargets(nodeModRef, *dstOrigin, numBytes, true);
 
   return nodeModRef;
 }
@@ -1614,12 +1572,14 @@ RegionAwareModRefSummarizer::AnnotateCall(
     ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
   }
 
-  // Allocas that are live within the call, might no longer be live from the call site
-  if (ENABLE_DEAD_ALLOCA_BLOCKLIST)
+  if (ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING)
   {
-    AddModRefSetBlocklist(
-        callModRef,
-        Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
+    const auto reachableSimpleAllocas = GetSimpleAllocasReachableFromCallArguments(callNode);
+    auto blocklist = Context_->SimpleAllocas;
+    blocklist.DifferenceWith(reachableSimpleAllocas);
+    // Move the blocklist to the deque to keep it alive during solving
+    Context_->CallBlocklists.push_back(std::move(blocklist));
+    AddModRefSetBlocklist(callModRef, Context_->CallBlocklists.back());
   }
 
   return callModRef;

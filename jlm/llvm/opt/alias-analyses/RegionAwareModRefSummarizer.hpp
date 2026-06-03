@@ -10,6 +10,8 @@
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
+#include <queue>
+
 namespace jlm::llvm::aa
 {
 
@@ -27,30 +29,24 @@ using ModRefSetIndex = uint32_t;
  * This graph includes calls to external functions, and calls from external functions.
  * Each function is assigned to a strongly connected component.
  *
- * 2. Find allocas that are dead in each SCC:
- * For each SCC in the call graph, only allocas defined within the SCC,
- * or within one of its predecessors, can be live.
- * All other allocas are placed in the DeadAllocasInScc lists.
- *
- * 3. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
+ * 2. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
  * any memory location, except for other simple allocas.
  * The PointsToGraph is used to determine which allocas are simple.
  *
- * 4. Create sets of non-reentrant allocas for each region.
+ * 3. Create sets of non-reentrant allocas for each region.
  * The requirements are:
  *  - the alloca must be simple
  *  - the alloca must not be reachable from any of the region's arguments,
  *    when following points-to edges in the \ref PointsToGraph.
  *
- * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
+ * 4. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
  * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
  * Special edges are used between function body region -> function,
  * which filter away all simple allocas defined in the function that are not recursive.
  *
- * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
+ * 5. Mod/Ref Graph Solving: Mod/Ref sets and flags are propagated along edges in the graph
  *
- * 7. Mod/Ref set compaction: Within each function, memory nodes that always
- * appear along with the external node are removed. External can represent it instead.
+ * 6. Mod/Ref set materialization, converting implicit memory nodes into explicit memory nodes.
  *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
@@ -113,19 +109,18 @@ private:
   createCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
-   * For each SCC in the call graph, determines which allocas can be known to not be live
-   * when a function from the SCC is at the top of the call stack.
-   */
-  void
-  FindAllocasDeadInSccs();
-
-  /**
    * Creates a set containing all simple Allocas is the PointsToGraph.
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
    */
   static util::HashSet<PointsToGraph::NodeIndex>
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
+
+  /**
+   *
+   */
+  util::HashSet<PointsToGraph::NodeIndex>
+  getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes);
 
   /**
    * Gets the set of simple alloca nodes that it is possible to reach from \p region's arguments.
@@ -137,6 +132,17 @@ private:
    */
   util::HashSet<PointsToGraph::NodeIndex>
   GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+
+  /**
+   * Gets the set of simple alloca nodes that it is possible to reach from the \p call's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph. A simple alloca is by definition
+   * only reachable from register nodes and other simple alloca nodes,
+   * so other types of memory nodes in the points-to graph can be ignored.
+   * @param call the region whose arguments are checked
+   * @return the set of simple allocas reachable from the call's arguments
+   */
+  util::HashSet<PointsToGraph::NodeIndex>
+  GetSimpleAllocasReachableFromCallArguments(const rvsdg::SimpleNode & call);
 
   /**
    * Uses the call graph to determine if the given function can ever be involved
@@ -216,15 +222,13 @@ private:
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
    * @param mayMod if true, the operation may modifiy the memory, otherwise just read
-   * @param lambda the function the operation is happening in
    */
   void
   addPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
-      bool mayMod,
-      const rvsdg::LambdaNode & lambda);
+      bool mayMod);
 
   ModRefSetIndex
   AnnotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
