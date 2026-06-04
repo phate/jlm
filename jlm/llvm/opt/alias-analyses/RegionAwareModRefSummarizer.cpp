@@ -1112,8 +1112,7 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::
-getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes)
+RegionAwareModRefSummarizer::getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
 
