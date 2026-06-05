@@ -12,6 +12,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/operation.cpp \
     jlm/rvsdg/Phi.cpp \
     jlm/rvsdg/region.cpp \
+    jlm/rvsdg/RegionPredicateTrace.cpp \
     jlm/rvsdg/RvsdgModule.cpp \
     jlm/rvsdg/simple-node.cpp \
     jlm/rvsdg/structural-node.cpp \
@@ -69,6 +70,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/binary.hpp \
     jlm/rvsdg/theta.hpp \
     jlm/rvsdg/reduction-helpers.hpp \
+    jlm/rvsdg/RegionPredicateTrace.hpp \
     jlm/rvsdg/RvsdgModule.hpp \
     jlm/rvsdg/Transformation.hpp \
     jlm/rvsdg/bitstring.hpp \
@@ -92,6 +94,7 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/MatchTypeTests.cpp \
     jlm/rvsdg/NodeTests.cpp \
     jlm/rvsdg/OutputTests.cpp \
+    jlm/rvsdg/RegionPredicateTraceTests.cpp \
     jlm/rvsdg/RegionTests.cpp \
     jlm/rvsdg/ResultTests.cpp \
     jlm/rvsdg/SimpleOperationTests.cpp \
