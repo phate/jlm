@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/operators/Bitcast.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/common.hpp>
 

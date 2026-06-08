@@ -7,7 +7,7 @@
 #define JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 
 #include <jlm/llvm/ir/ipgraph-module.hpp>
-#include <jlm/llvm/ir/operators/Bitcast.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/binary.hpp>

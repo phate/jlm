@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_OPERATORS_SEXT_HPP
-#define JLM_LLVM_IR_OPERATORS_SEXT_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_CONVERSIONOPERATIONS_HPP
+#define JLM_LLVM_IR_OPERATORS_CONVERSIONOPERATIONS_HPP
 
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/rvsdg/bitstring.hpp>

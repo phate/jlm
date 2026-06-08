@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/operators/Bitcast.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-TEST(BitcastTests, testSextZextConstantReductions)
+TEST(ConversionOperationsTests, testSextZextConstantReductions)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
