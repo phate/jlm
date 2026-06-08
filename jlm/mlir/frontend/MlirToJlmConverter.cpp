@@ -461,7 +461,9 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return { &llvm::ZExtOperation::create(type.cast<::mlir::IntegerType>().getWidth(), *inputs[0]) };
+    return {
+      &llvm::ZExtOperation::create(type.cast<::mlir::IntegerType>().getWidth(), *inputs[0])
+    };
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtSIOp>(&mlirOperation))
   {
@@ -596,12 +598,15 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (inputBits > MlirToJlmConverter::GetIndexBitWidth())
       {
-        return { &llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), *inputs[0]) };
+        return {
+          &llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), *inputs[0])
+        };
       }
       else
       {
         return { &llvm::ZExtOperation::create(
-            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth()), *(inputs[0])) };
+            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth()),
+            *(inputs[0])) };
       }
     }
   }

@@ -7,10 +7,10 @@
 
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
