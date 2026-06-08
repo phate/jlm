@@ -1688,30 +1688,19 @@ public:
   ~TruncOperation() noexcept override;
 
   TruncOperation(
-      const std::shared_ptr<const jlm::rvsdg::BitType> & otype,
-      const std::shared_ptr<const jlm::rvsdg::BitType> & rtype)
-      : UnaryOperation(otype, rtype)
+      const std::shared_ptr<const rvsdg::BitType> & operandType,
+      const std::shared_ptr<const rvsdg::BitType> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    if (otype->nbits() < rtype->nbits())
+    if (operandType->nbits() < resultType->nbits())
       throw util::Error("expected operand's #bits to be larger than results' #bits.");
   }
 
   TruncOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> optype,
-      std::shared_ptr<const jlm::rvsdg::Type> restype)
-      : UnaryOperation(optype, restype)
-  {
-    auto ot = dynamic_cast<const jlm::rvsdg::BitType *>(optype.get());
-    if (!ot)
-      throw util::Error("expected bits type.");
-
-    auto rt = dynamic_cast<const jlm::rvsdg::BitType *>(restype.get());
-    if (!rt)
-      throw util::Error("expected bits type.");
-
-    if (ot->nbits() < rt->nbits())
-      throw util::Error("expected operand's #bits to be larger than results' #bits.");
-  }
+      std::shared_ptr<const rvsdg::Type> operandType,
+      std::shared_ptr<const rvsdg::Type> resultType)
+      : UnaryOperation(checkBitType(std::move(operandType)), checkBitType(std::move(resultType)))
+  {}
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -1741,33 +1730,35 @@ public:
     return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  static std::unique_ptr<ThreeAddressCode>
+  create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!ot)
-      throw util::Error("expected bits type.");
-
-    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!rt)
-      throw util::Error("expected bits type.");
-
-    auto op = std::make_unique<TruncOperation>(std::move(ot), std::move(rt));
-    return ThreeAddressCode::create(std::move(op), { operand });
+    auto truncOperation = std::make_unique<TruncOperation>(operand->Type(), resultType);
+    return ThreeAddressCode::create(std::move(truncOperation), { operand });
   }
 
-  static jlm::rvsdg::Output *
-  create(size_t ndstbits, jlm::rvsdg::Output * operand)
+  static rvsdg::Node &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!ot)
-      throw util::Error("expected bits type.");
+    return rvsdg::CreateOpNode<TruncOperation>({ &operand }, operand.Type(), std::move(resultType));
+  }
 
-    return rvsdg::CreateOpNode<TruncOperation>(
-               { operand },
-               std::move(ot),
-               rvsdg::BitType::Create(ndstbits))
-        .output(0);
+  static rvsdg::Output *
+  create(size_t ndstbits, rvsdg::Output * operand)
+  {
+    return createNode(*operand, rvsdg::BitType::Create(ndstbits)).output(0);
+  }
+
+private:
+  static std::shared_ptr<const rvsdg::BitType>
+  checkBitType(const std::shared_ptr<const rvsdg::Type> & type)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(type))
+    {
+      return bitType;
+    }
+
+    throw std::logic_error("expected bits type.");
   }
 };
 
