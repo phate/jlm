@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -10,7 +11,6 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
@@ -453,11 +453,11 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
   auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv1.pre, c3.output(0) }, 32);
 
-  const auto & sExtNode = SExtOperation::create(64, mulNode.output(0));
+  auto & sExtNode = SExtOperation::create(64, *mulNode.output(0));
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
   const auto gep =
-      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
+      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), &sExtNode }, intArrayType);
 
   auto loadOutputs = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32);
   auto & subNode =
@@ -569,11 +569,11 @@ TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
   auto & addNode2 =
       jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ mulNode.output(0), c4.output(0) }, 32);
 
-  const auto & sExtNode = SExtOperation::create(64, addNode2.output(0));
+  auto & sExtNode = SExtOperation::create(64, *addNode2.output(0));
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
   const auto gep =
-      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), sExtNode }, intArrayType);
+      GetElementPtrOperation::create(lv2.pre, { c0_2.output(0), &sExtNode }, intArrayType);
 
   const auto & c10 = IntegerConstantOperation::Create(*theta->subregion(), 32, 10);
 

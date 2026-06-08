@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -1514,10 +1514,10 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
   const auto res1 = addNode1.output(0);
 
   const auto & c0_2 = IntegerConstantOperation::Create(*theta->subregion(), 64, 0);
-  const auto & lv1SExt = SExtOperation::create(64, lv1.pre);
+  auto & lv1SExt = SExtOperation::create(64, *lv1.pre);
 
   const auto gep =
-      GetElementPtrOperation::create(lv3.pre, { c0_2.output(0), lv1SExt }, intArrayType);
+      GetElementPtrOperation::create(lv3.pre, { c0_2.output(0), &lv1SExt }, intArrayType);
 
   auto loadedValue = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32)[0];
 
@@ -1631,8 +1631,8 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
   auto & addNode1 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1_2.output(0) }, 32);
   const auto res1 = addNode1.output(0);
 
-  const auto & lv1SExt = SExtOperation::create(64, lv1.pre);
-  const auto gep = GetElementPtrOperation::create(lv3.pre, { lv1SExt }, intType);
+  auto & lv1SExt = SExtOperation::create(64, *lv1.pre);
+  const auto gep = GetElementPtrOperation::create(lv3.pre, { &lv1SExt }, intType);
 
   auto loadedValue = LoadNonVolatileOperation::Create(gep, { memoryState.pre }, intType, 32)[0];
 

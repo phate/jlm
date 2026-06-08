@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -1994,9 +1995,9 @@ DeltaTest3::SetupRvsdg()
         storeResults,
         jlm::rvsdg::BitType::Create(32),
         8);
-    auto truncResult = TruncOperation::create(16, loadResults[0]);
+    auto & truncResult = TruncOperation::create(16, *loadResults[0]);
 
-    return lambda->finalize({ truncResult, iOStateArgument, loadResults[1] });
+    return lambda->finalize({ &truncResult, iOStateArgument, loadResults[1] });
   };
 
   auto SetupTest = [&](rvsdg::Output & lambdaF)
@@ -4196,8 +4197,7 @@ VariadicFunctionTest2::SetupRvsdg()
         { gammaMemoryState.branchArgument[1] },
         pointerType,
         16);
-    auto & zextResult =
-        ZExtOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::BitType::Create(64));
+    auto & zextResult = ZExtOperation::create(64, *gammaLoadResult.branchArgument[1]);
     gepResult2 = GetElementPtrOperation::create(
         loadResultsGamma1[0],
         { &zextResult },

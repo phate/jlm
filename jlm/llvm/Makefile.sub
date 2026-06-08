@@ -29,6 +29,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/AggregateOperations.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
+    jlm/llvm/ir/operators/Bitcast.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
     jlm/llvm/ir/operators/FunctionPointer.cpp \
@@ -39,7 +40,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
-    jlm/llvm/ir/operators/sext.cpp \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
@@ -148,6 +148,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
+    jlm/llvm/ir/operators/Bitcast.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
     jlm/llvm/ir/operators/MemoryStateOperations.hpp \
@@ -159,7 +160,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/Store.hpp \
     jlm/llvm/ir/operators/alloca.hpp \
     jlm/llvm/ir/operators/call.hpp \
-    jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp \
@@ -190,6 +190,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/frontend/StoreTests.cpp \
     jlm/llvm/frontend/ThreeAddressCodeConversionTests.cpp \
     \
+    jlm/llvm/ir/operators/BitcastTests.cpp \
     jlm/llvm/ir/operators/CallTests.cpp \
     jlm/llvm/ir/operators/ConstantFPTests.cpp \
     jlm/llvm/ir/operators/DeltaTests.cpp \
@@ -199,7 +200,6 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/LoadTests.cpp \
     jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \
     jlm/llvm/ir/operators/PhiTests.cpp \
-    jlm/llvm/ir/operators/SExtTests.cpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperationsTests.cpp \
     jlm/llvm/ir/operators/StoreTests.cpp \
     \
