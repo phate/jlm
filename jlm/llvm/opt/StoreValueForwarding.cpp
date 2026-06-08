@@ -903,35 +903,45 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
-  auto loadOperation = dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+  const auto loadOperation =
+      dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+  const auto & deltaResult = tracedDelta.deltaNode->result();
 
-  if (tracedDelta.offset != 0)
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*deltaResult.origin()))
   {
-    // FIXME: start dealing with offsets
-    return;
+    const auto success = rvsdg::MatchTypeWithDefault(
+        node->GetOperation(),
+        [&](const IntegerConstantOperation &)
+        {
+          JLM_ASSERT(tracedDelta.offset == 0);
+
+          auto copiedNode = node->copy(loadNode.region(), {});
+          if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
+          {
+            copiedNode =
+                &TruncOperation::createNode(*copiedNode->output(0), loadOperation->GetLoadedType());
+          }
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+
+          return true;
+        },
+        []()
+        {
+          // FIXME: support other operations
+          return false;
+        });
+
+    // FIXME: Once we handled all nodes, this statement can be removed
+    if (!success)
+    {
+      return;
+    }
   }
-  auto deltaSubregion = tracedDelta.deltaNode->subregion();
-  if (deltaSubregion->numNodes() != 1)
+  else
   {
     // FIXME: start dealing with it
     return;
   }
-  auto & node = *deltaSubregion->Nodes().begin();
-
-  if (!is<IntegerConstantOperation>(node.GetOperation()))
-  {
-    // FIXME: We only care about integer constants right now
-    return;
-  }
-
-  if (*loadOperation->GetLoadedType() != *node.output(0)->Type())
-  {
-    // FIXME: deal with non-matching types
-    return;
-  }
-
-  auto copiedNode = node.copy(loadNode.region(), {});
-  LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
 
   context_->numForwardedLoadsWithoutMemoryState++;
 }
