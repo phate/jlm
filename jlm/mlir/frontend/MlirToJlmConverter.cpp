@@ -604,9 +604,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else
       {
-        return { &llvm::ZExtOperation::create(
-            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth()),
-            *(inputs[0])) };
+        return { &llvm::ZExtOperation::create(MlirToJlmConverter::GetIndexBitWidth(), *inputs[0]) };
       }
     }
   }
@@ -636,7 +634,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = truncOp.getResult().getType();
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
-    return { llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]) };
+    return { &llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), *inputs[0]) };
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
