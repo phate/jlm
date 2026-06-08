@@ -4,8 +4,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -13,7 +15,6 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
@@ -460,7 +461,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return { &llvm::ZExtOperation::Create(*(inputs[0]), ConvertType(type)) };
+    return { &llvm::ZExtOperation::create(type.cast<::mlir::IntegerType>().getWidth(), *inputs[0]) };
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtSIOp>(&mlirOperation))
   {
@@ -468,9 +469,9 @@ MlirToJlmConverter::ConvertOperation(
     auto convertedOutputType = ConvertType(outputType);
     if (!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
       JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
-    return { llvm::SExtOperation::create(
+    return { &llvm::SExtOperation::create(
         castedOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0]) };
+        *inputs[0]) };
   }
   else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
   {
@@ -579,11 +580,11 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (outputBits > MlirToJlmConverter::GetIndexBitWidth())
       {
-        return { llvm::SExtOperation::create(outputBits, inputs[0]) };
+        return { &llvm::SExtOperation::create(outputBits, *inputs[0]) };
       }
       else
       {
-        return { llvm::TruncOperation::create(outputBits, inputs[0]) };
+        return { &llvm::TruncOperation::create(outputBits, *inputs[0]) };
       }
     }
     else
@@ -595,13 +596,12 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (inputBits > MlirToJlmConverter::GetIndexBitWidth())
       {
-        return { llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), inputs[0]) };
+        return { &llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), *inputs[0]) };
       }
       else
       {
-        return { &llvm::ZExtOperation::Create(
-            *(inputs[0]),
-            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth())) };
+        return { &llvm::ZExtOperation::create(
+            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth()), *(inputs[0])) };
       }
     }
   }

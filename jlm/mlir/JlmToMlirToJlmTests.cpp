@@ -10,7 +10,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Bitcast.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
@@ -370,8 +370,8 @@ TEST(JlmToMlirToJlmTests, TestSext)
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sext operation
-    auto sextOp = jlm::llvm::SExtOperation::create((size_t)64, bitsArgument);
-    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*sextOp);
+    auto & sextOp = jlm::llvm::SExtOperation::create((size_t)64, *bitsArgument);
+    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(sextOp);
     EXPECT_NE(node, nullptr);
 
     lambda->finalize({});

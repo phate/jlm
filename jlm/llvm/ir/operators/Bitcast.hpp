@@ -13,76 +13,76 @@
 namespace jlm::llvm
 {
 
-class BitCastOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~BitCastOperation() noexcept override;
+    class BitCastOperation final : public rvsdg::UnaryOperation
+    {
+    public:
+      ~BitCastOperation() noexcept override;
 
-  BitCastOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    check_types(srctype, dsttype);
-  }
+      BitCastOperation(
+          std::shared_ptr<const jlm::rvsdg::Type> srctype,
+          std::shared_ptr<const jlm::rvsdg::Type> dsttype)
+          : UnaryOperation(srctype, dsttype)
+      {
+        check_types(srctype, dsttype);
+      }
 
-  BitCastOperation(const BitCastOperation &) = default;
+      BitCastOperation(const BitCastOperation &) = default;
 
-  explicit BitCastOperation(Operation &&) = delete;
+      explicit BitCastOperation(Operation &&) = delete;
 
-  BitCastOperation &
-  operator=(const Operation &) = delete;
+      BitCastOperation &
+      operator=(const Operation &) = delete;
 
-  BitCastOperation &
-  operator=(Operation &&) = delete;
+      BitCastOperation &
+      operator=(Operation &&) = delete;
 
-  bool
-  operator==(const Operation & other) const noexcept override;
+      bool
+      operator==(const Operation & other) const noexcept override;
 
-  [[nodiscard]] std::string
-  debug_string() const override;
+      [[nodiscard]] std::string
+      debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
+      [[nodiscard]] std::unique_ptr<Operation>
+      copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
+      jlm::rvsdg::unop_reduction_path_t
+      can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
+      jlm::rvsdg::Output *
+      reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
+          const override;
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  createTac(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto pair = check_types(operand->Type(), type);
+      static std::unique_ptr<llvm::ThreeAddressCode>
+      createTac(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
+      {
+        auto pair = check_types(operand->Type(), type);
 
-    auto op = std::make_unique<BitCastOperation>(pair.first, pair.second);
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
+        auto op = std::make_unique<BitCastOperation>(pair.first, pair.second);
+        return ThreeAddressCode::create(std::move(op), { operand });
+      }
 
-  static jlm::rvsdg::Output *
-  create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
-  {
-    auto pair = check_types(operand->Type(), rtype);
-    return rvsdg::CreateOpNode<BitCastOperation>({ operand }, pair.first, pair.second).output(0);
-  }
+      static jlm::rvsdg::Output *
+      create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
+      {
+        auto pair = check_types(operand->Type(), rtype);
+        return rvsdg::CreateOpNode<BitCastOperation>({ operand }, pair.first, pair.second).output(0);
+      }
 
-private:
-  static std::pair<std::shared_ptr<const jlm::rvsdg::Type>, std::shared_ptr<const jlm::rvsdg::Type>>
-  check_types(
-      const std::shared_ptr<const jlm::rvsdg::Type> & otype,
-      const std::shared_ptr<const jlm::rvsdg::Type> & rtype)
-  {
-    if (otype->Kind() != rvsdg::TypeKind::Value)
-      throw util::Error("expected value type.");
+    private:
+      static std::pair<std::shared_ptr<const jlm::rvsdg::Type>, std::shared_ptr<const jlm::rvsdg::Type>>
+      check_types(
+          const std::shared_ptr<const jlm::rvsdg::Type> & otype,
+          const std::shared_ptr<const jlm::rvsdg::Type> & rtype)
+      {
+        if (otype->Kind() != rvsdg::TypeKind::Value)
+          throw util::Error("expected value type.");
 
-    if (rtype->Kind() != rvsdg::TypeKind::Value)
-      throw util::Error("expected value type.");
+        if (rtype->Kind() != rvsdg::TypeKind::Value)
+          throw util::Error("expected value type.");
 
-    return std::make_pair(otype, rtype);
-  }
-};
+        return std::make_pair(otype, rtype);
+      }
+    };
 
 class SExtOperation final : public rvsdg::UnaryOperation
 {
@@ -225,21 +225,19 @@ public:
   ~TruncOperation() noexcept override;
 
   TruncOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const rvsdg::BitType> & operandType,
+      const std::shared_ptr<const rvsdg::BitType> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto ot = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
-    if (!ot)
-      throw util::Error("expected bits type.");
-
-    auto rt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
-    if (!rt)
-      throw util::Error("expected bits type.");
-
-    if (ot->nbits() < rt->nbits())
+    if (operandType->nbits() < resultType->nbits())
       throw util::Error("expected operand's #bits to be larger than results' #bits.");
   }
+
+  TruncOperation(
+      std::shared_ptr<const rvsdg::Type> operandType,
+      std::shared_ptr<const rvsdg::Type> resultType)
+      : TruncOperation(checkBitType(std::move(operandType)), checkBitType(std::move(resultType)))
+  {}
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -269,21 +267,35 @@ public:
     return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  createTac(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
-    auto op = std::make_unique<TruncOperation>(operand->Type(), std::move(type));
-    return ThreeAddressCode::create(std::move(op), { operand });
+    auto truncOperation = std::make_unique<TruncOperation>(operand->Type(), resultType);
+    return ThreeAddressCode::create(std::move(truncOperation), { operand });
   }
 
-  static jlm::rvsdg::Output &
-  create(size_t ndstbits, jlm::rvsdg::Output & operand)
+  static rvsdg::Node &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
   {
-    return *rvsdg::CreateOpNode<TruncOperation>(
-                { &operand },
-                operand.Type(),
-                rvsdg::BitType::Create(ndstbits))
-                .output(0);
+    return rvsdg::CreateOpNode<TruncOperation>({ &operand }, operand.Type(), std::move(resultType));
+  }
+
+  static rvsdg::Output &
+  create(size_t ndstbits, rvsdg::Output & operand)
+  {
+    return *createNode(*operand, rvsdg::BitType::Create(ndstbits)).output(0);
+  }
+
+private:
+  static std::shared_ptr<const rvsdg::BitType>
+  checkBitType(const std::shared_ptr<const rvsdg::Type> & type)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(type))
+    {
+      return bitType;
+    }
+
+    throw std::logic_error("expected bits type.");
   }
 };
 
