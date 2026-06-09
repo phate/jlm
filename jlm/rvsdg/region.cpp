@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <filesystem>
 #include <jlm/rvsdg/DotWriter.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -144,23 +145,25 @@ Region::~Region() noexcept
   }
 }
 
-Region::Region(Region *, Graph * graph)
-    : id_(graph->generateRegionId()),
-      index_(0),
-      graph_(graph),
-      nextNodeId_(0),
+Region::Region(Graph * graph)
+    : graph_(graph),
+      id_(graph->generateRegionId()),
+      depth_(0),
       node_(nullptr),
+      index_(0),
+      nextNodeId_(0),
       numTopNodes_(0),
       numBottomNodes_(0),
       numNodes_(0)
 {}
 
 Region::Region(StructuralNode * node, const size_t index)
-    : id_(node->graph()->generateRegionId()),
-      index_(index),
-      graph_(node->graph()),
-      nextNodeId_(0),
+    : graph_(node->graph()),
+      id_(node->graph()->generateRegionId()),
+      depth_(node->region()->getDepth() + 1),
       node_(node),
+      index_(index),
+      nextNodeId_(0),
       numTopNodes_(0),
       numBottomNodes_(0),
       numNodes_(0)
@@ -470,17 +473,19 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
 bool
 Region::isAncestor(const Region & region, const Region & ancestor) noexcept
 {
-  auto current = &region;
+  const auto ancestorDepth = ancestor.getDepth();
+  // If region starts at the same level or higher than ancestor, it can not be an ancestor
+  if (region.getDepth() <= ancestorDepth)
+    return false;
 
-  while (!current->IsRootRegion())
+  // Follow the parent chain until the ancestor depth is reached
+  auto current = &region;
+  do
   {
     current = current->node()->region();
+  } while (current->getDepth() > ancestorDepth);
 
-    if (current == &ancestor)
-      return true;
-  }
-
-  return false;
+  return current == &ancestor;
 }
 
 std::string

@@ -651,3 +651,22 @@ TEST(RegionTests, Ancestor)
   EXPECT_TRUE(Region::isAncestor(*structuralNode3->subregion(0), *structuralNode1->subregion(0)));
   EXPECT_TRUE(Region::isAncestor(*structuralNode4->subregion(0), *structuralNode1->subregion(0)));
 }
+
+TEST(RegionTests, DepthTest)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::Graph graph;
+
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 2);
+  auto innerStructuralNode = TestStructuralNode::create(structuralNode->subregion(0), 1);
+
+  // Act & Assert
+  EXPECT_EQ(graph.GetRootRegion().getDepth(), 0);
+  EXPECT_EQ(structuralNode->region()->getDepth(), 0);
+  EXPECT_EQ(structuralNode->subregion(0)->getDepth(), 1);
+  EXPECT_EQ(structuralNode->subregion(1)->getDepth(), 1);
+  EXPECT_EQ(innerStructuralNode->region()->getDepth(), 1);
+  EXPECT_EQ(innerStructuralNode->subregion(0)->getDepth(), 2);
+}
