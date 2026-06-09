@@ -826,7 +826,7 @@ private:
   // The depth of the region. The root region has depth 0, all others have parent region depth + 1
   size_t depth_;
 
-  // The structural node this region belong to, or nullptr if it is the root region
+  // The structural node this region belongs to, or nullptr if it is the root region
   rvsdg::StructuralNode * node_;
   // The index of the region, if it is a subregion of a structural node
   size_t index_;
