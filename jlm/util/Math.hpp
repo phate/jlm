@@ -119,7 +119,7 @@ BitWidthOfEnum(T endValue)
 }
 
 /**
- * Takes a 64-bit integer \p value and keeps the \p inputBit least significant bits.
+ * Takes a 64-bit integer \p value and keeps the \p keepBits least significant bits.
  * All other bits are replaced by copies of the most significant kept input bit.
  *
  * Example:
@@ -141,7 +141,7 @@ truncateAndSignExtend(int64_t value, uint64_t keepBits)
 }
 
 /**
- * Takes a 64-bit integer \p value and keeps the \p inputBit least significant bits.
+ * Takes a 64-bit integer \p value and keeps the \p keepBits least significant bits.
  * All other bits are set to 0.
  *
  * Example:
