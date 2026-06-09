@@ -12,11 +12,14 @@
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/type.hpp>
+#include <jlm/util/common.hpp>
+#include <jlm/util/Math.hpp>
 
 namespace jlm::llvm
 {
@@ -86,6 +89,46 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
     if (rep.is_known() && rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
+  }
+
+  if (const auto [sextNode, sextOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<SExtOperation>(normalized);
+      sextOp)
+  {
+    const auto inputValue = tryGetConstantSignedInteger(*sextNode->input(0)->origin());
+    if (!inputValue.has_value())
+      return std::nullopt;
+
+    // When doing sign extensions, we only need to care about the size of the input type
+    const auto inputBits = sextOp->nsrcbits();
+    return util::truncateAndSignExtend(*inputValue, inputBits);
+  }
+
+  if (const auto [zextNode, zextOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<ZExtOperation>(normalized);
+      zextOp)
+  {
+    const auto inputValue = tryGetConstantSignedInteger(*zextNode->input(0)->origin());
+    if (!inputValue.has_value())
+      return std::nullopt;
+
+    // When doing zero extensions, we only need to care about the size of the input type
+    const auto inputBits = zextOp->nsrcbits();
+    return util::truncateAndZeroExtend(*inputValue, inputBits);
+  }
+
+  if (const auto [truncNode, truncOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<TruncOperation>(normalized);
+      truncOp)
+  {
+    const auto inputValue = tryGetConstantSignedInteger(*truncNode->input(0)->origin());
+    if (!inputValue.has_value())
+      return std::nullopt;
+
+    const auto outputBits = truncOp->ndstbits();
+    // When truncating, we still need to fill the high bits with something.
+    // We chose to sign extend, but this is mainly an aestetic choice
+    return util::truncateAndSignExtend(*inputValue, outputBits);
   }
 
   return std::nullopt;

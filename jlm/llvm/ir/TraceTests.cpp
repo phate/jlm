@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -132,4 +133,125 @@ TEST(TraceTests, testGetConstantSignedInteger)
   // A match output is not a constant integer, neither is the lambda output
   EXPECT_EQ(tryGetConstantSignedInteger(*matchOutput), std::nullopt);
   EXPECT_EQ(tryGetConstantSignedInteger(*lambdaOutput), std::nullopt);
+}
+
+TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG graph that look like:
+   *
+   * c = BITS32(5)
+   * sext = SExt(32 -> 64) c  // Should be 5
+   * zext = ZExt(32 -> 64) c  // Should be 5
+   *
+   * c2 = BITS8(-20)          // Should be -20  (0b1110 1100)
+   * sext2 = SExt(8 -> 32) c2 // Should be -20  (0b1111 .... 1110 1100)
+   * zext2 = ZExt(8 -> 32) c2 // Should be 236  (0b0000 .... 1110 1100)
+   *
+   * c3 = BITS32(1023)
+   * trunc3 = Trunc(32 -> 8)       // Should be -1   (0b1111 1111)
+   * sext3 = SExt(8 -> 32) trunc3  // Should be -1   (0b1111 .... 1111 1111)
+   * zext3 = ZExt(8 -> 32) trunc3  // Should be  255 (0b0000 .... 1111 1111)
+   *
+   * and uses tryGetConstantSignedInteger to get the integer values of the different constants.
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  const auto int64Type = rvsdg::BitType::Create(64);
+  const auto int32Type = rvsdg::BitType::Create(32);
+  const auto int8Type = rvsdg::BitType::Create(8);
+
+  auto & bits32Output5 = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(32, 5));
+  auto & sextOutput = SExtOperation::create(64, bits32Output5);
+  auto & zextOutput = ZExtOperation::create(64, bits32Output5);
+
+  auto & bits8OutputMinus20 = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(8, -20));
+  auto & sext2Output = SExtOperation::create(32, bits8OutputMinus20);
+  auto & zext2Output = ZExtOperation::create(32, bits8OutputMinus20);
+
+  auto & bits32Output1023 = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(32, 1023));
+  auto & truncOutput = TruncOperation::create(8, bits32Output1023);
+  auto & sext3Output = SExtOperation::create(32, truncOutput);
+  auto & zext3Output = ZExtOperation::create(32, truncOutput);
+
+  // Assert
+  // c = BITS32(5), sext = SExt(32 -> 64), zext = ZExt(32 -> 64)
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output5), 5);
+  EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), 5);
+  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 5);
+
+  // c2 = BITS8(-20), sext2 = SExt(8 -> 32), zext2 = ZExt(8 -> 32)
+  EXPECT_EQ(tryGetConstantSignedInteger(bits8OutputMinus20), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(sext2Output), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(zext2Output), 236);
+
+  // c3 = BITS32(1023), trunc3 = Trunc(32 -> 8), sext3 = SExt(8 -> 32), zext3 = ZExt(8 -> 32)
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output1023), 1023);
+  EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -1);
+  EXPECT_EQ(tryGetConstantSignedInteger(sext3Output), -1);
+  EXPECT_EQ(tryGetConstantSignedInteger(zext3Output), 255);
+}
+
+TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG graph that look like:
+   *
+   * x = BITS8(-20)
+   * c = CTRL(1)
+   *
+   * exitVar = gamma c x
+   *   [_, x1] {
+   *   } [x1]
+   *   [_, x2] {
+   *   } [x2]
+   *
+   * sext = SExt[8->32] exitVar   // should be -20   (0xFFFFFFEC)
+   * trunc = Trunc[32->16] sext   // should be -20   (0xFFEC)
+   * zext = ZExt[16->32] trunc    // should be 65516 (0x0000FFEC)
+   *
+   * GraphExport(zext)
+   *
+   * and uses tryGetConstantSignedInteger to get the integer values conversion outputs
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  auto & bits32Output = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(8, -20));
+  auto & controlOutput = rvsdg::ControlConstantOperation::create(graph.GetRootRegion(), 2, 1);
+
+  auto & gammaNode = *rvsdg::GammaNode::create(&controlOutput, 2);
+  auto entryVar = gammaNode.AddEntryVar(&bits32Output);
+  auto exitVarOutput = gammaNode.AddExitVar(entryVar.branchArgument).output;
+
+  auto & sextOutput = SExtOperation::create(32, *exitVarOutput);
+  auto & truncOutput = TruncOperation::create(16, sextOutput);
+  auto & zextOutput = ZExtOperation::create(32, truncOutput);
+
+  // Assert
+  // The -20 can be found through the gamma (invariant across both branches)
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*exitVarOutput), -20);
+
+  // After extensions and truncation
+  EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516);
 }
