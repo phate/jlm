@@ -820,26 +820,26 @@ private:
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   /**
-   * The graph this region belongs to
+   * The graph this region belongs to.
    */
-  Graph * graph_;
+  Graph * const graph_;
   /**
    * A region ID unique to all regions in the graph
    */
-  Id id_;
+  const Id id_;
   /**
-   * The depth of the region. The root region has depth 0, all others have parent region depth + 1
+   * The depth of the region. The root region has depth 0, all others have parent region depth + 1.
    */
-  size_t depth_;
+  const size_t depth_;
 
   /**
-   * The structural node this region belongs to, or nullptr if it is the root region
+   * The structural node this region belongs to, or nullptr if it is the root region.
    */
-  rvsdg::StructuralNode * node_;
+  rvsdg::StructuralNode * const node_;
   /**
    * The index of the region, if it is a subregion of a structural node
    */
-  size_t index_;
+  const size_t index_;
 
   /**
    * The ID that will be given to the next node created in this region
