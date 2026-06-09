@@ -72,7 +72,7 @@ Graph::~Graph() noexcept = default;
 
 Graph::Graph()
     : nextRegionId_(0),
-      RootRegion_(new Region(nullptr, this))
+      RootRegion_(new Region(this))
 {}
 
 std::unique_ptr<Graph>

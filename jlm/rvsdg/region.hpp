@@ -245,14 +245,29 @@ public:
 
   ~Region() noexcept;
 
-  Region(rvsdg::Region * parent, Graph * graph);
+  /**
+   * Constructor for the root region of a graph
+   */
+  Region(Graph * graph);
 
+  /**
+   * Constructor for a subregion in a structural node
+   */
   Region(rvsdg::StructuralNode * node, size_t index);
 
   Region(const Region &) = delete;
 
   Region &
   operator=(const Region &) = delete;
+
+  /**
+   * @return the Graph the region belongs to
+   */
+  [[nodiscard]] Graph *
+  graph() const noexcept
+  {
+    return graph_;
+  }
 
   /**
    * @return The unique identifier of the region instance within the graph.
@@ -263,6 +278,38 @@ public:
   getRegionId() const noexcept
   {
     return id_;
+  }
+
+  /**
+   * Gets the depth of the region.
+   * Region depth is defined as 0 for the root region,
+   * while all other regions have a depth equal to the depth of their parent region + 1.
+   *
+   * @return the depth of the region
+   */
+  [[nodiscard]] size_t
+  getDepth() const noexcept
+  {
+    return depth_;
+  }
+
+  /**
+   * @return the structual node this region is a subregion of.
+   * If the region is the root region, nullptr is returned instead.
+   */
+  [[nodiscard]] rvsdg::StructuralNode *
+  node() const noexcept
+  {
+    return node_;
+  }
+
+  /**
+   * @return the index of the region within the surrounding structural node.
+   */
+  [[nodiscard]] size_t
+  index() const noexcept
+  {
+    return index_;
   }
 
   /**
@@ -357,24 +404,6 @@ public:
   BottomNodes() const noexcept
   {
     return { bottomNodes_.begin(), bottomNodes_.end() };
-  }
-
-  [[nodiscard]] Graph *
-  graph() const noexcept
-  {
-    return graph_;
-  }
-
-  inline rvsdg::StructuralNode *
-  node() const noexcept
-  {
-    return node_;
-  }
-
-  size_t
-  index() const noexcept
-  {
-    return index_;
   }
 
   /**
@@ -790,11 +819,32 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
-  Id id_;
-  size_t index_;
-  Graph * graph_;
+  /**
+   * The graph this region belongs to.
+   */
+  Graph * const graph_;
+  /**
+   * A region ID unique to all regions in the graph.
+   */
+  const Id id_;
+  /**
+   * The depth of the region. The root region has depth 0, all others have parent region depth + 1.
+   */
+  const size_t depth_;
+
+  /**
+   * The structural node this region belongs to, or nullptr if it is the root region.
+   */
+  rvsdg::StructuralNode * const node_;
+  /**
+   * The index of the region, if it is a subregion of a structural node.
+   */
+  const size_t index_;
+
+  /**
+   * The ID that will be given to the next node created in this region.
+   */
   Node::Id nextNodeId_;
-  rvsdg::StructuralNode * node_;
 
   // The region owns its results, arguments and nodes
   std::vector<RegionResult *> results_;
@@ -806,7 +856,10 @@ private:
   region_nodes_list nodes_;
   size_t numNodes_;
 
-  // Allow RegionObservers to register themselves on const Regions
+  /**
+   * A linked list of RegionObservers registered on the Region.
+   * The field is mutable to allow observers to register on const Regions.
+   */
   mutable RegionObserver * observers_ = nullptr;
 
   friend class Node;
