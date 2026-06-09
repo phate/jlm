@@ -819,19 +819,31 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
-  // The graph this region belongs to
+  /**
+   * The graph this region belongs to
+   */
   Graph * graph_;
-  // A region ID unique to all regions in the graph
+  /**
+   * A region ID unique to all regions in the graph
+   */
   Id id_;
-  // The depth of the region. The root region has depth 0, all others have parent region depth + 1
+  /**
+   * The depth of the region. The root region has depth 0, all others have parent region depth + 1
+   */
   size_t depth_;
 
-  // The structural node this region belongs to, or nullptr if it is the root region
+  /**
+   * The structural node this region belongs to, or nullptr if it is the root region
+   */
   rvsdg::StructuralNode * node_;
-  // The index of the region, if it is a subregion of a structural node
+  /**
+   * The index of the region, if it is a subregion of a structural node
+   */
   size_t index_;
 
-  // The ID that will be given to the next node created in this region
+  /**
+   * The ID that will be given to the next node created in this region
+   */
   Node::Id nextNodeId_;
 
   // The region owns its results, arguments and nodes
@@ -844,7 +856,10 @@ private:
   region_nodes_list nodes_;
   size_t numNodes_;
 
-  // Allow RegionObservers to register themselves on const Regions
+  /**
+   * A linked list of RegionObservers registered on the Region.
+   * The field is mutable to allow observers to register on const Regions.
+   */
   mutable RegionObserver * observers_ = nullptr;
 
   friend class Node;
