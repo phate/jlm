@@ -118,6 +118,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerAddOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
