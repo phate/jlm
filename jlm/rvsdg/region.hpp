@@ -287,7 +287,7 @@ public:
    *
    * @return the depth of the region
    */
-  size_t
+  [[nodiscard]] size_t
   getDepth() const noexcept
   {
     return depth_;
@@ -297,7 +297,7 @@ public:
    * @return the structual node this region is a subregion of.
    * If the region is the root region, nullptr is returned instead.
    */
-  inline rvsdg::StructuralNode *
+  [[nodiscard]] rvsdg::StructuralNode *
   node() const noexcept
   {
     return node_;
@@ -306,7 +306,7 @@ public:
   /**
    * @return the index of the region within the surrounding structural node.
    */
-  size_t
+  [[nodiscard]] size_t
   index() const noexcept
   {
     return index_;

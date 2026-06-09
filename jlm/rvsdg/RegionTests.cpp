@@ -650,6 +650,10 @@ TEST(RegionTests, Ancestor)
   // Ancestry works at multiple levels of nesting
   EXPECT_TRUE(Region::isAncestor(*structuralNode3->subregion(0), *structuralNode1->subregion(0)));
   EXPECT_TRUE(Region::isAncestor(*structuralNode4->subregion(0), *structuralNode1->subregion(0)));
+
+  // Swapping the order makes the function return false
+  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
+  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
 }
 
 TEST(RegionTests, DepthTest)
