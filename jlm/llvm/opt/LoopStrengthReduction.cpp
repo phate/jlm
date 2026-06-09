@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
@@ -446,13 +446,13 @@ LoopStrengthReduction::HoistSCEVExpresssion(
     if (const auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
         leftBitType->nbits() != numBits)
     {
-      leftSide = SExtOperation::create(numBits, leftSide);
+      leftSide = &SExtOperation::create(numBits, *leftSide);
     }
     if (const auto rightBitType =
             std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
         rightBitType->nbits() != numBits)
     {
-      rightSide = SExtOperation::create(numBits, rightSide);
+      rightSide = &SExtOperation::create(numBits, *rightSide);
     }
 
     auto & newAddNode =
@@ -490,13 +490,13 @@ LoopStrengthReduction::HoistSCEVExpresssion(
     if (const auto leftBitType = std::dynamic_pointer_cast<const rvsdg::BitType>(leftSide->Type());
         leftBitType->nbits() != numBits)
     {
-      leftSide = SExtOperation::create(numBits, leftSide);
+      leftSide = &SExtOperation::create(numBits, *leftSide);
     }
     if (const auto rightBitType =
             std::dynamic_pointer_cast<const rvsdg::BitType>(rightSide->Type());
         rightBitType->nbits() != numBits)
     {
-      rightSide = SExtOperation::create(numBits, rightSide);
+      rightSide = &SExtOperation::create(numBits, *rightSide);
     }
 
     auto & newMulNode =
@@ -644,7 +644,7 @@ LoopStrengthReduction::CreateNewGEPInductionVariable(
             std::dynamic_pointer_cast<const rvsdg::BitType>(stepOutput->Type());
         stepBitType->nbits() != 64)
     {
-      stepOutput = SExtOperation::create(64, stepOutput);
+      stepOutput = &SExtOperation::create(64, *stepOutput);
     }
 
     auto newGep = GetElementPtrOperation::create(
