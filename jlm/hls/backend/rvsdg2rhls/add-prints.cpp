@@ -94,7 +94,7 @@ convert_prints(
       {
         auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(val->Type());
         JLM_ASSERT(bt);
-        val = &llvm::ZExtOperation::Create(*val, rvsdg::BitType::Create(64));
+        val = &llvm::ZExtOperation::create(64, *val);
       }
       llvm::CallOperation::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());

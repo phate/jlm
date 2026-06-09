@@ -8,9 +8,9 @@
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
