@@ -6,6 +6,9 @@
 #ifndef JLM_UTIL_MATH_HPP
 #define JLM_UTIL_MATH_HPP
 
+#include <jlm/util/common.hpp>
+
+#include <cstdint>
 #include <type_traits>
 
 namespace jlm::util
@@ -113,6 +116,50 @@ BitWidthOfEnum(T endValue)
   // To appease gcc warnings, the returned bit width is large enough to hold the endValue as well,
   // even if it is just a sentinel COUNT value
   return BitsRequiredToRepresent(static_cast<UnderlyingT>(endValue));
+}
+
+/**
+ * Takes a 64-bit integer \p value and keeps the \p inputBit least significant bits.
+ * All other bits are replaced by copies of the most significant kept input bit.
+ *
+ * Example:
+ *   signExtendInteger(0b1010 0111, 8) = 0b1111 ...[48x 1s]... 1111 1010 0111
+ *   signExtendInteger(0b1010 0111, 4) = 0b0000 ...[48x 0s]... 0000 0000 0111
+ *
+ * @param value the input value, which must fit in 64 bits
+ * @param keepBits the number of least significant bits to keep as-is
+ * @return the result of sign extending the truncated value back to a 64-bit value
+ */
+inline int64_t
+truncateAndSignExtend(int64_t value, uint64_t keepBits)
+{
+  JLM_ASSERT(keepBits <= 64);
+  const auto extendBits = 64 - keepBits;
+
+  // Shift signed value left and right again to sign extend
+  return (value << extendBits) >> extendBits;
+}
+
+/**
+ * Takes a 64-bit integer \p value and keeps the \p inputBit least significant bits.
+ * All other bits are set to 0.
+ *
+ * Example:
+ *   zeroExtendInteger(0b1010 0111, 8) = 0b0000 ...[48x 0s]... 0000 1010 0111
+ *   zeroExtendInteger(0b1010 0111, 4) = 0b0000 ...[48x 0s]... 0000 0000 0111
+ *
+ * @param value the input value, which must fit in 64 bits
+ * @param keepBits the number of least significant bits to keep as-is
+ * @return the result of sign extending the truncated value back to a 64-bit value
+ */
+inline int64_t
+truncateAndZeroExtend(int64_t value, uint64_t keepBits)
+{
+  JLM_ASSERT(keepBits <= 64);
+  const auto extendBits = 64 - keepBits;
+
+  // Shift unsigned value left and right again to zero extend
+  return (static_cast<uint64_t>(value) << extendBits) >> extendBits;
 }
 
 }

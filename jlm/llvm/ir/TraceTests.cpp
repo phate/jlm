@@ -202,3 +202,56 @@ TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
   EXPECT_EQ(tryGetConstantSignedInteger(sext3Output), -1);
   EXPECT_EQ(tryGetConstantSignedInteger(zext3Output), 255);
 }
+
+TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG graph that look like:
+   *
+   * x = BITS8(-20)
+   * c = CTRL(1)
+   *
+   * exitVar = gamma c x
+   *   [_, x1] {
+   *   } [x1]
+   *   [_, x2] {
+   *   } [x2]
+   *
+   * sext = SExt[8->32] exitVar   // should be -20   (0xFFFFFFEC)
+   * trunc = Trunc[32->16] sext   // should be -20   (0xFFEC)
+   * zext = ZExt[16->32] trunc    // should be 65516 (0x0000FFEC)
+   *
+   * GraphExport(zext)
+   *
+   * and uses tryGetConstantSignedInteger to get the integer values conversion outputs
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  auto & bits32Output = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(8, -20));
+  auto & controlOutput = rvsdg::ControlConstantOperation::create(graph.GetRootRegion(), 2, 1);
+
+  auto & gammaNode = *rvsdg::GammaNode::create(&controlOutput, 2);
+  auto entryVar = gammaNode.AddEntryVar(&bits32Output);
+  auto exitVarOutput = gammaNode.AddExitVar(entryVar.branchArgument).output;
+
+  auto & sextOutput = SExtOperation::create(32, *exitVarOutput);
+  auto & truncOutput = TruncOperation::create(16, sextOutput);
+  auto & zextOutput = ZExtOperation::create(32, truncOutput);
+
+  // Assert
+  // The -20 can be found through the gamma (invariant across both branches)
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*exitVarOutput), -20);
+
+  // After extensions and truncation
+  EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516);
+}
