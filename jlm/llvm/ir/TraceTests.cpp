@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/operators/Bitcast.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>

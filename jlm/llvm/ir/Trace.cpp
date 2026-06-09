@@ -20,6 +20,8 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 
+#include <optional>
+
 namespace jlm::llvm
 {
 
