@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <filesystem>
 #include <jlm/rvsdg/DotWriter.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
