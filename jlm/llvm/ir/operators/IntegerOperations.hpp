@@ -118,6 +118,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerAddOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -153,6 +159,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSubOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -188,6 +200,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerMulOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -223,6 +241,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSDivOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -258,6 +282,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerUDivOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -293,6 +323,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSRemOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -328,6 +364,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerURemOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -363,6 +405,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerAShrOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -398,6 +446,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerShlOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -433,6 +487,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerLShrOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -468,6 +528,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerAndOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -503,6 +569,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerOrOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -538,6 +610,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerXorOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -573,6 +651,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerEqOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -608,6 +692,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerNeOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -643,6 +733,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSgeOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -678,6 +774,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSgtOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -713,6 +815,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSleOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -748,6 +856,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerSltOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -783,6 +897,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerUgeOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -818,6 +938,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerUgtOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -853,6 +979,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerUleOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 /**
@@ -888,6 +1020,12 @@ public:
 
   enum flags
   flags() const noexcept override;
+
+  static rvsdg::Node &
+  createNode(const size_t numBits, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<IntegerUltOperation>({ &operand1, &operand2 }, numBits);
+  }
 };
 
 }
