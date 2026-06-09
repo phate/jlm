@@ -846,13 +846,6 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
   }
 }
 
-// FIXME: documentation
-struct StoreValueForwarding::TracedDelta
-{
-  rvsdg::DeltaNode * deltaNode;
-  int64_t offset;
-};
-
 void
 StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode)
 {

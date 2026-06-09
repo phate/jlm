@@ -6,12 +6,12 @@
 #ifndef JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 #define JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
 {
+class DeltaNode;
 class Region;
 }
 
@@ -50,8 +50,6 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  struct TracedDelta;
-
   /**
    * Traverse the given inter-procedural region
    *
@@ -76,19 +74,55 @@ private:
   void
   processLoad(rvsdg::SimpleNode & loadNode);
 
-  // FIXME: documentation
+  /**
+   * Process a \ref LoadNonVolatileOperation node with no memory states during traversal
+   *
+   * @param loadNode The \ref LoadNonVolatileOperation node to handle
+   */
   void
   processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode);
 
-  // FIXME: documentation
+  /**
+   * Process a \ref LoadNonVolatileOperation node with memory states during traversal
+   *
+   * @param loadNode The \ref LoadNonVolatileOperation node to handle
+   */
   void
   processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode);
 
-  // FIXME: documentation
+  /**
+   * Contains the information after a \ref LoadNonVolatileOperation node without memory states could
+   * successfully be traced to a \ref rvsdg::DeltaNode.
+   */
+  struct TracedDelta
+  {
+    /**
+     * The \ref rvsdg::DeltaNode the load could be traced to.
+     */
+    rvsdg::DeltaNode * deltaNode{};
+
+    /**
+     * The offset in bytes from the base pointer of the delta node that was encountered throughout
+     * tracing.
+     */
+    int64_t offset = 0;
+  };
+
+  /**
+   * Try to trace a \ref LoadNonVolatileOperation node without memory states to a delta node.
+   *
+   * @param loadNode The \ref LoadNonVolatileOperation node to handle
+   * @return The \ref TracedDelta information if tracing was successful, otherwise std::nullopt.
+   */
   std::optional<TracedDelta>
   traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loadNode);
 
-  // FIXME: documentation
+  /**
+   * Forwards a traced \ref LoadNonVolatileOperation node without memory states.
+   *
+   * @param loadNode The \ref LoadNonVolatileOperation node to handle.
+   * @param tracedDelta The \ref TracedDelta information of \p loadNode.
+   */
   void
   forwardLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode, const TracedDelta & tracedDelta);
 
