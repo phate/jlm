@@ -824,7 +824,7 @@ private:
    */
   Graph * const graph_;
   /**
-   * A region ID unique to all regions in the graph
+   * A region ID unique to all regions in the graph.
    */
   const Id id_;
   /**
@@ -837,12 +837,12 @@ private:
    */
   rvsdg::StructuralNode * const node_;
   /**
-   * The index of the region, if it is a subregion of a structural node
+   * The index of the region, if it is a subregion of a structural node.
    */
   const size_t index_;
 
   /**
-   * The ID that will be given to the next node created in this region
+   * The ID that will be given to the next node created in this region.
    */
   Node::Id nextNodeId_;
 
