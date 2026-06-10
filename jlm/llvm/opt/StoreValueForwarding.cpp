@@ -931,7 +931,25 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantAggregateZeroOperation &)
         {
-          // FIXME: handle operation
+          const auto loadedType = loadOperation->GetLoadedType();
+          if (is<PointerType>(loadedType))
+          {
+            const auto nullPtrResult =
+                ConstantPointerNullOperation::Create(loadNode.region(), PointerType::Create());
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrResult);
+          }
+          else if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
+          {
+            const auto & zeroNode =
+                IntegerConstantOperation::Create(*loadNode.region(), bitType->nbits(), 0);
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
+          }
+          else
+          {
+            throw std::logic_error("Unsupported load type");
+          }
+
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&]()
         {
