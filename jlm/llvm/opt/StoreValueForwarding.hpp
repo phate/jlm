@@ -75,14 +75,6 @@ private:
   processLoad(rvsdg::SimpleNode & loadNode);
 
   /**
-   * Process a \ref LoadNonVolatileOperation node with no memory states during traversal
-   *
-   * @param loadNode The \ref LoadNonVolatileOperation node to handle
-   */
-  void
-  processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode);
-
-  /**
    * Process a \ref LoadNonVolatileOperation node with memory states during traversal
    *
    * @param loadNode The \ref LoadNonVolatileOperation node to handle
@@ -125,6 +117,14 @@ private:
    */
   void
   forwardLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode, const TracedDelta & tracedDelta);
+
+  /**
+   * Process a \ref LoadNonVolatileOperation node with no memory states during traversal
+   *
+   * @param loadNode The \ref LoadNonVolatileOperation node to handle
+   */
+  void
+  processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode);
 
   /**
    * Performs store value forwarding to the load node represented by the given \p tracingInfo.

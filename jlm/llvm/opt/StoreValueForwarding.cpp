@@ -854,12 +854,11 @@ StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNod
 
   context_->statistics.startTracing();
   const auto tracedDelta = traceLoadWithoutMemoryStates(loadNode);
+  context_->statistics.stopTracing();
   if (!tracedDelta.has_value())
   {
-    context_->statistics.stopTracing();
     return;
   }
-  context_->statistics.stopTracing();
 
   context_->statistics.startForwarding();
   forwardLoadWithoutMemoryStates(loadNode, tracedDelta.value());
@@ -873,7 +872,7 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
   auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  const auto & tracedAddress = TracePointerOriginPrecise(loadAddress);
+  const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
   if (!tracedAddress.Offset.has_value())
   {
     return std::nullopt;
