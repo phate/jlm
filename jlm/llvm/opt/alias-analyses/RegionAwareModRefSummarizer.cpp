@@ -59,19 +59,6 @@ static const bool ENABLE_OPERATION_SIZE_BLOCKING =
 static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
     !std::getenv("JLM_DISABLE_CONSTANT_MEMORY_BLOCKING");
 
-/**
- * Some global memory is not marked as constant, but can be proven to never change.
- * Detecting this lets us treat them as constants, omitting them from memory state routing.
- */
-static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
-
-/**
- * When doing a call, any Simple Alloca that is not reachable from the arguments to the call
- * can be blocked from being added to the call's ModRefSet.
- */
-static const bool ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING =
-    !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_BLOCKING");
-
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -86,7 +73,6 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto NumCallGraphSccs_ = "#CallGraphSccs";
   static constexpr auto NumFunctionsCallingSetjmp_ = "#FunctionsCallingSetjmp";
   static constexpr auto NumCallGraphSccsCanCallExternal_ = "#CallGraphSccsCanCallExternal";
-  static constexpr auto NumReadOnlyMemoryNodesDetectedLabel_ = "#ReadOnlyMemoryNodesDetected";
 
   static constexpr auto CallGraphTimer_ = "CallGraphTimer";
   static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
@@ -94,7 +80,6 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
-  static constexpr auto ReadOnlyDetectionTimer_ = "ReadOnlyDetectionTimer";
   static constexpr auto ModRefSetMaterializationTimer_ = "ModRefSetMaterializationTimer";
 
 public:
@@ -172,19 +157,6 @@ public:
   StopSolvingStatistics()
   {
     GetTimer(SolvingTimer_).stop();
-  }
-
-  void
-  startReadOnlyMemoryDetectionStatistics()
-  {
-    AddTimer(ReadOnlyDetectionTimer_).start();
-  }
-
-  void
-  stopReadOnlyMemoryDetectionStatistics(size_t numReadOnlyMemoryNodesDetected)
-  {
-    GetTimer(ReadOnlyDetectionTimer_).stop();
-    AddMeasurement(NumReadOnlyMemoryNodesDetectedLabel_, numReadOnlyMemoryNodesDetected);
   }
 
   void
@@ -553,7 +525,7 @@ public:
   }
 
   /**
-   * Adds the given \ref ptgNode the ModRefSet with the given \p index.
+   * Adds the given \p ptgNode the ModRefSet with the given \p index.
    * Performs checks to avoid adding doubled-up memory nodes.
    *
    * @param index the index of the ModRefSet being added to
@@ -571,7 +543,7 @@ public:
   }
 
   /**
-   * Adds the given \ref ptgNode to the ModRefSet with the given \p index.
+   * Adds the given \p ptgNode to the ModRefSet with the given \p index.
    * Does not perform any checks against doubled-up memory nodes.
    *
    * @see addMemoryNodeToSet
@@ -812,13 +784,6 @@ struct RegionAwareModRefSummarizer::Context
       NonReentrantAllocas;
 
   /**
-   * Used for blocking simple allocas from being propagated to the ModRefSet of calls
-   * where none of the call's arguments can reach the simple alloca.
-   * The sets are placed in a deque, since references to elements stay valid.
-   */
-  std::deque<util::HashSet<PointsToGraph::NodeIndex>> CallBlocklists;
-
-  /**
    * Simple edges in the ModRefSet constraint graph.
    * A simple edge a -> b indicates that the ModRefSet b should contain everything in a.
    * ModRefSetSimpleEdges[a] contains b, as well as any other simple edge successors.
@@ -833,14 +798,6 @@ struct RegionAwareModRefSummarizer::Context
    */
   std::unordered_map<ModRefSetIndex, const util::HashSet<PointsToGraph::NodeIndex> *>
       ModRefSetBlocklists;
-
-  /**
-   * After solving, some memory nodes may end up being read-only.
-   * Just like memory marked constant, we can omit these memory nodes from all ModRefSets.
-   *
-   * Assigned in determineReadOnlyMemory(), remains constant after.
-   */
-  util::HashSet<PointsToGraph::NodeIndex> ReadOnlyMemoryNodes;
 };
 
 RegionAwareModRefSummarizer::~RegionAwareModRefSummarizer() noexcept = default;
@@ -894,21 +851,11 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   // std::cerr << "After solving, before materialization: " << std::endl;
   // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
 
-  if (ENABLE_READ_ONLY_DETECTION)
-  {
-    statistics->startReadOnlyMemoryDetectionStatistics();
-    determineReadOnlyMemory();
-    statistics->stopReadOnlyMemoryDetectionStatistics(Context_->ReadOnlyMemoryNodes.Size());
-  }
-
   statistics->startModRefSetMaterializationStatistics();
   materializeSets();
   statistics->stopModRefSetMaterializationStatistics();
 
   // More debug output
-  // std::cerr << "ReadOnlyMemoryNodes (PtGIndex): ";
-  // for (auto ptgNodeId : Context_->ReadOnlyMemoryNodes.Items())
-  //   std::cerr << ptgNodeId << ", ";
   // std::cerr << "After materialization: " << std::endl;
   // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
 
@@ -1594,16 +1541,6 @@ RegionAwareModRefSummarizer::AnnotateCall(
     ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
   }
 
-  if (ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING)
-  {
-    const auto reachableSimpleAllocas = getSimpleAllocasReachableFromCallArguments(callNode);
-    auto blocklist = Context_->SimpleAllocas;
-    blocklist.DifferenceWith(reachableSimpleAllocas);
-    // Move the blocklist to the deque to keep it alive during solving
-    Context_->CallBlocklists.push_back(std::move(blocklist));
-    AddModRefSetBlocklist(callModRef, Context_->CallBlocklists.back());
-  }
-
   return callModRef;
 }
 
@@ -1677,32 +1614,6 @@ RegionAwareModRefSummarizer::VerifyBlocklists() const
 }
 
 void
-RegionAwareModRefSummarizer::determineReadOnlyMemory()
-{
-  const auto externModRefSet = ModRefSummary_->getExternModRefSet();
-  for (auto [memoryNode, mayMod] : ModRefSummary_->getModRefSet(externModRefSet).getModRefNodes())
-  {
-    // Memory marked as const in the PointsToGraph should not even be in any ModRefSets
-    if (ENABLE_CONSTANT_MEMORY_BLOCKING)
-      JLM_ASSERT(!ModRefSummary_->GetPointsToGraph().isNodeConstant(memoryNode));
-
-    // If the memory is modified in this module, it is not read-only
-    if (mayMod)
-      continue;
-    // If the memory is externally accessible, it is also not read-only
-    if (ModRefSummary_->GetPointsToGraph().isExternallyAvailable(memoryNode))
-      continue;
-    // If the memory is of type Alloca, it might not actually be read-only,
-    // as non-reentrant allocas can be partially hidden from reaching the extern mod ref set
-    if (ModRefSummary_->GetPointsToGraph().getNodeKind(memoryNode)
-        == PointsToGraph::NodeKind::AllocaNode)
-      continue;
-
-    Context_->ReadOnlyMemoryNodes.insert(memoryNode);
-  }
-}
-
-void
 RegionAwareModRefSummarizer::materializeSets()
 {
   for (auto & functions : Context_->SccFunctions)
@@ -1735,10 +1646,6 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
 
   const auto markToKeep = [&](PointsToGraph::NodeIndex memoryNode)
   {
-    // Memory nodes discovered to be read-only should not be kept
-    if (Context_->ReadOnlyMemoryNodes.Contains(memoryNode))
-      return;
-
     bool inserted = keepMemoryNodes.insert(memoryNode);
     if (!inserted)
       return;
