@@ -901,7 +901,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*deltaResult.origin()))
   {
-    const auto success = rvsdg::MatchTypeWithDefault(
+    rvsdg::MatchTypeWithDefault(
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
@@ -915,27 +915,33 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           }
           LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
 
-          return true;
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
-        []()
+        [&](const ConstantStruct &)
         {
-          // FIXME: support other operations
-          return false;
+          // FIXME: handle operation
+        },
+        [&](const ConstantDataArray &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const ConstantArrayOperation &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const ConstantAggregateZeroOperation &)
+        {
+          // FIXME: handle operation
+        },
+        [&]()
+        {
+          throw std::logic_error("Unsupported operation: " + node->DebugString());
         });
-
-    // FIXME: Once we handled all nodes, this statement can be removed
-    if (!success)
-    {
-      return;
-    }
   }
   else
   {
-    // FIXME: start dealing with it
-    return;
+    throw std::logic_error("Unsupported output owner");
   }
-
-  context_->numForwardedLoadsWithoutMemoryState++;
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
