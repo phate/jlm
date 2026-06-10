@@ -3,15 +3,15 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/llvm-test-suite.git
-GIT_COMMIT=2b7fca383a67dd42e80f72937dd6ed7722e693ea
+GIT_COMMIT=261dcca4f8ed2ac9d895b0279153adb66af73ee8
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-JLM_ROOT_DIR=${SCRIPT_DIR}/..
-JLM_BIN_DIR=${JLM_ROOT_DIR}/build
+JLM_ROOT_DIR="${SCRIPT_DIR}/.."
+JLM_BIN_DIR="${JLM_ROOT_DIR}/build"
 
 # Set default path for where the benchmark will be cloned and make target for running it
-BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/llvm-test-suite
+BENCHMARK_DIR="${JLM_ROOT_DIR}/usr/llvm-test-suite"
 BENCHMARK_RUN_TARGET=llvm-run-opt
 
 function commit()
@@ -35,12 +35,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--benchmark-path)
 			shift
-			BENCHMARK_DIR=$(readlink -m "$1")
+			BENCHMARK_DIR="$(readlink -m "$1")"
 			shift
 			;;
 		--make-target)
 			shift
-			BENCHMARK_RUN_TARGET=$1
+			BENCHMARK_RUN_TARGET="$1"
 			shift
 			;;
 		--get-commit-hash)
@@ -56,12 +56,13 @@ done
 
 if [ ! -d "$BENCHMARK_DIR" ] ;
 then
-	git clone ${GIT_REPOSITORY} ${BENCHMARK_DIR}
+	git clone "${GIT_REPOSITORY}" "${BENCHMARK_DIR}"
 fi
 
-export PATH=${JLM_BIN_DIR}:${PATH}
-cd ${BENCHMARK_DIR}
-git checkout ${GIT_COMMIT}
+export PATH="${JLM_BIN_DIR}:${PATH}"
+cd "${BENCHMARK_DIR}"
+# Checkout the commit. If it fails try fetching first and then checking out
+git checkout "${GIT_COMMIT}" || (git fetch origin && git checkout "${GIT_COMMIT}")
 cd jlm
 make clean
-make ${BENCHMARK_RUN_TARGET}
+make "${BENCHMARK_RUN_TARGET}"
