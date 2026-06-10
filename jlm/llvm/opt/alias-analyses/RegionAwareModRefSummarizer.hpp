@@ -131,7 +131,7 @@ private:
    * @return the set of simple allocas reachable from region arguments
    */
   util::HashSet<PointsToGraph::NodeIndex>
-  GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+  getSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
 
   /**
    * Gets the set of simple alloca nodes that it is possible to reach from the \p call's arguments.
@@ -142,7 +142,7 @@ private:
    * @return the set of simple allocas reachable from the call's arguments
    */
   util::HashSet<PointsToGraph::NodeIndex>
-  GetSimpleAllocasReachableFromCallArguments(const rvsdg::SimpleNode & call);
+  getSimpleAllocasReachableFromCallArguments(const rvsdg::SimpleNode & call);
 
   /**
    * Uses the call graph to determine if the given function can ever be involved

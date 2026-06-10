@@ -50,8 +50,6 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  struct TracedDelta;
-
   /**
    * Traverse the given inter-procedural region
    *

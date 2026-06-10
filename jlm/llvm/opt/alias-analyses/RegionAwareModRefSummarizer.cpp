@@ -230,10 +230,10 @@ public:
 
   /**
    * The ModRefSet can be flagged as possibly referencing all externally available memory locations
-   * with a byte size >= some minimum, and all memory nodes of unknown size.
+   * with a byte size >= some minimum. (Also includes all memory nodes of unknown size.)
    * The returned value will always be <= the result of getModExeternalMinSize().
-   * If the ModRefSet is flagged as possibly calling external functions, it size will be 0,
-   * indicating that all externally available memory is possibly referenced.
+   * If the ModRefSet is flagged as possibly calling external functions, its size will always be 0,
+   * since external functions may reference all externally available memory.
    *
    * @return the minimum size where all externally available memory is referenced by this set.
    *         If the set is not flagged, nullopt is returned.
@@ -248,7 +248,7 @@ public:
 
   /**
    * The ModRefSet can be flagged as possibly modifying all externally available memory locations
-   * with a byte size >= some minimum, and all memory nodes of unknown size.
+   * with a byte size >= some minimum. (Also includes all memory nodes of unknown size.)
    * If the ModRefSet is flagged as possibly calling external functions, the size will be 0,
    * indicating that all externally available memory is possibly modified.
    *
@@ -296,7 +296,7 @@ public:
 
     if (minSize < modExternalOfSize_)
     {
-      // refExternalOfSize is always <= modExternalOfSize
+      // refExternalOfSize must always be <= modExternalOfSize, so update it as well
       refExternalOfSize_ = minSize;
       modExternalOfSize_ = minSize;
       return true;
@@ -307,6 +307,8 @@ public:
   /**
    * Helper function for checking if an externally available memory location of the given size
    * is implicitly flagged as possibly referenced by this ModRefSet.
+   * @param size the size of the externally available memory in question, or nullopt if unknown
+   * @return true if the ModRefSet is flagged as possibly referencing the memory node
    */
   [[nodiscard]] bool
   mayRefExternalOfSize(std::optional<size_t> size) const
@@ -321,6 +323,8 @@ public:
   /**
    * Helper function for checking if an externally available memory location of the given size
    * is implicitly flagged as possibly modified by this ModRefSet.
+   * @param size the size of the externally available memory in question, or nullopt if unknown
+   * @return true if the ModRefSet is flagged as possibly referencing the memory node
    */
   [[nodiscard]] bool
   mayModExternalOfSize(std::optional<size_t> size) const
@@ -333,7 +337,7 @@ public:
   }
 
   /**
-   * @return true if the ModRefSet may represent a call to an externally defined function.
+   * @return true if the ModRefSet represents possible calls to externally defined functions.
    */
   [[nodiscard]] bool
   mayCallExternalFunction() const
@@ -342,8 +346,7 @@ public:
   }
 
   /**
-   * Marks the ModRefSet as possibly containing calls to externally defined functions,
-   * as represented by the shared external mod ref set.
+   * Marks the ModRefSet as possibly containing calls to externally defined functions.
    * @return true if the ModRefSet was modified by this operation, otherwise false
    */
   bool
@@ -353,6 +356,8 @@ public:
       return false;
 
     callsExternalFunction_ = true;
+
+    // calls to external functions may reference and modify any externally available memory
     refExternalOfSize_ = 0;
     modExternalOfSize_ = 0;
     return true;
@@ -422,7 +427,7 @@ public:
    * Removes all explicit memory nodes that are not included in the given \p filter.
    */
   void
-  keepSubsetOfExplicit(const util::HashSet<PointsToGraph::NodeIndex> & filter)
+  keepSubsetOfExplicitMemoryNodes(const util::HashSet<PointsToGraph::NodeIndex> & filter)
   {
     auto it = modRefNodes_.begin();
     while (it != modRefNodes_.end())
@@ -441,24 +446,34 @@ public:
   bool
   propagateFlags(const RegionAwareModRefSet & other)
   {
-    bool changed = false;
-    if (other.refExternalOfSize_ < refExternalOfSize_)
+    // Check the most restrictive flag first
+    if (other.callsExternalFunction_)
     {
-      refExternalOfSize_ = other.refExternalOfSize_;
-      changed |= true;
+      if (callsExternalFunction_)
+        return false;
+
+      callsExternalFunction_ = true;
+      JLM_ASSERT(other.refExternalOfSize_ == 0);
+      JLM_ASSERT(other.modExternalOfSize_ == 0);
+      refExternalOfSize_ = 0;
+      modExternalOfSize_ = 0;
+      return true;
     }
+
     if (other.modExternalOfSize_ < modExternalOfSize_)
     {
       modExternalOfSize_ = other.modExternalOfSize_;
-      changed |= true;
-    }
-    if (other.callsExternalFunction_ && !callsExternalFunction_)
-    {
-      callsExternalFunction_ = other.callsExternalFunction_;
-      changed |= true;
+      refExternalOfSize_ = std::min(refExternalOfSize_, other.refExternalOfSize_);
+      return true;
     }
 
-    return changed;
+    if (other.refExternalOfSize_ < refExternalOfSize_)
+    {
+      refExternalOfSize_ = other.refExternalOfSize_;
+      return true;
+    }
+
+    return false;
   }
 
 private:
@@ -470,7 +485,7 @@ private:
   // Must be greater than or equal to \ref refExternalOfSize_
   uint32_t modExternalOfSize_ = NoneSize;
   // If true, the ModRefSet represents possibly calling externally defined functions.
-  // Implies that \ref refExternalOfSize and \ref modExternalOfSize are 0
+  // In this case, \ref refExternalOfSize and \ref modExternalOfSize must both be 0
   bool callsExternalFunction_ = false;
 };
 
@@ -482,7 +497,8 @@ public:
   explicit RegionAwareModRefSummary(const PointsToGraph & pointsToGraph)
       : pointsToGraph_(pointsToGraph)
   {
-    // Always create a ModRefSet representing external functions
+    // Create the ModRefSet representing eveything that can be referenced and modified,
+    // directly or indirectly, from external functions.
     externModRefSet_ = createModRefSet();
     // The ModRefSet representing external functions can call external functions
     markSetAsCallingExternalFunction(externModRefSet_);
@@ -567,7 +583,14 @@ public:
   }
 
   /**
-   * @return the index of the single ModRefSet representing all external functions
+   * The ModRefSummary has one set representing external functions, containing all
+   * memory nodes that can be referenced or modified by external functions.
+   * This set also includes memory operations performed in functions that can be called from
+   * external functions, in practice containing all memory operations in the translation module.
+   * The exception is operations on allocas that are provably not involved in recursion,
+   * since these will never be affected by calls to external functions.
+   *
+   * @return the index of the ModRefSet representing external functions
    */
   [[nodiscard]] ModRefSetIndex
   getExternModRefSet() const noexcept
@@ -1138,7 +1161,7 @@ RegionAwareModRefSummarizer::getReachableSimpleAllocas(std::queue<PointsToGraph:
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
+RegionAwareModRefSummarizer::getSimpleAllocasReachableFromRegionArguments(
     const rvsdg::Region & region)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
@@ -1157,7 +1180,7 @@ RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromRegionArguments(
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
-RegionAwareModRefSummarizer::GetSimpleAllocasReachableFromCallArguments(
+RegionAwareModRefSummarizer::getSimpleAllocasReachableFromCallArguments(
     const rvsdg::SimpleNode & call)
 {
   const auto & pointsToGraph = Context_->pointsToGraph;
@@ -1202,7 +1225,7 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
     {
       return it->second;
     }
-    return reachableSimpleAllocas[&region] = GetSimpleAllocasReachableFromRegionArguments(region);
+    return reachableSimpleAllocas[&region] = getSimpleAllocasReachableFromRegionArguments(region);
   };
 
   // Checks if the simple alloca represented by the given points-to graph node is non-reentrant
@@ -1272,8 +1295,8 @@ RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
   {
     // If this function can be jumped into, store operations on memory in its Mod/Ref set must be
     // sequentialized with calls to external functions, in case the trigger jumps
-    // TODO: When we separate loads and stores, this edge could in theory only propagate stores,
-    // and turn them into loads
+    // TODO: This edge could in theory only propagate Mod info, and turn it into Ref info,
+    // since calls to longjmp only need to be sequentialized with stores
     AddModRefSimpleConstraint(modRefSet, ModRefSummary_->getExternModRefSet());
   }
 
@@ -1573,7 +1596,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
 
   if (ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING)
   {
-    const auto reachableSimpleAllocas = GetSimpleAllocasReachableFromCallArguments(callNode);
+    const auto reachableSimpleAllocas = getSimpleAllocasReachableFromCallArguments(callNode);
     auto blocklist = Context_->SimpleAllocas;
     blocklist.DifferenceWith(reachableSimpleAllocas);
     // Move the blocklist to the deque to keep it alive during solving
@@ -1695,7 +1718,7 @@ void
 RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode & lambda)
 {
   const auto & pointsToGraph = ModRefSummary_->GetPointsToGraph();
-  // The mod ref set representing everying that can be modified from external functions
+  // The ModRefSet representing everying that can be modified from external functions
   const auto & externModRefNodes =
       ModRefSummary_->getModRefSet(ModRefSummary_->getExternModRefSet()).getModRefNodes();
 
@@ -1705,8 +1728,8 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
   // Among memory nodes that should be kept, the ones flagged externally available are added here.
   // When materializing sets, the flags are turned into explicit targets using this list
   std::vector<PointsToGraph::NodeIndex> materializeExternallyAvailable;
-  // When a memory node is not externally available, yet is in the ModRefSet representing
-  // extern functions, the memory node is added to this list.
+  // When a memory node we need to keep is not externally available, yet is in the
+  // ModRefSet representing extern functions, the memory node is added to this list.
   // It gets materialized in all ModRefSets flagged as possibly calling external functions.
   std::vector<std::pair<PointsToGraph::NodeIndex, bool>> materializeFromCallToExtern;
 
@@ -1740,12 +1763,15 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
     if (modRefSet.mayModExternalOfSize(std::nullopt))
       continue;
 
-    // If true, this ModRefSet will not disqualify any other ref from compression,
-    // but it can still disqualify nodes that may be modified
-    bool mayRefExternal = modRefSet.getRefExternalMinSize().has_value();
+    // If true, this ModRefSet is flagged as referencing the external memory node,
+    // but not as modifiying the external memory node.
+    // Thus, any memory node that in its Mod set will be disqualified from compression,
+    // while memory nodes that are only referenced will not be disqualified.
+    bool mayRefExternal = modRefSet.mayRefExternalOfSize(std::nullopt);
 
     for (auto [memoryNode, mayMod] : modRefSet.getModRefNodes())
     {
+      // The memory node is only referenced, so it can be compressed into the external node
       if (!mayMod && mayRefExternal)
         continue;
 
@@ -1759,7 +1785,7 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
   for (auto modRefSetIndex : allModRefSets)
   {
     auto & modRefSet = ModRefSummary_->getModRefSet(modRefSetIndex);
-    modRefSet.keepSubsetOfExplicit(keepMemoryNodes);
+    modRefSet.keepSubsetOfExplicitMemoryNodes(keepMemoryNodes);
 
     // For the common case where the set modifies everything externally available,
     // add all materializable externally available memory nodes in a tight loop

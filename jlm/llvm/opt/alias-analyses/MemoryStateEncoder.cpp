@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <cstdint>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -21,6 +20,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
+
 #include <unordered_map>
 
 namespace jlm::llvm::aa
@@ -1071,15 +1071,15 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 {
   auto region = gammaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryNodes = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
+  auto & modRefSet = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
 
   // Count the memory state arguments once per subregion
   for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
     Context_->GetInterProceduralRegionCounter().CountEntity(
         Context_->GetModRefSummary().GetPointsToGraph(),
-        memoryNodes);
+        modRefSet);
 
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
+  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, modRefSet);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
     auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
@@ -1092,8 +1092,8 @@ void
 MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryNodes = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), memoryNodes);
+  auto & modRefSet = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
+  auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), modRefSet);
 
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
