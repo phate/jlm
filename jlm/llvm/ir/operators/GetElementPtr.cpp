@@ -145,10 +145,10 @@ GetElementPtrOperation::CalculateOffset(const rvsdg::SimpleNode & gepNode)
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
 
-  const int64_t offset = *wholeTypeIndexing * GetTypeAllocSize(pointeeType);
+  const int64_t offset = *wholeTypeIndexing * GetTypeAllocSize(*pointeeType);
 
   // In addition to offsetting by whole types, a GEP can also offset within a type
-  const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, pointeeType);
+  const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, *pointeeType);
   if (!subOffset.has_value())
     return std::nullopt;
 

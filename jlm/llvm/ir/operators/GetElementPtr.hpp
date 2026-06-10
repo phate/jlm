@@ -50,10 +50,10 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const rvsdg::Type &
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
   getPointeeType() const noexcept
   {
-    return *pointeeType_.get();
+    return pointeeType_;
   }
 
   /**

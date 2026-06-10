@@ -507,7 +507,7 @@ TEST(LoopStrengthReductionTests, SimpleGEPCandidateOperation)
       dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
   EXPECT_NE(gepOperation, nullptr);
   // Check that it has the right type
-  EXPECT_EQ(gepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
+  EXPECT_EQ(*gepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
   // Check that base address of the GEP is the pre value of the new IV
   EXPECT_EQ(IVPostOrigin->input(0)->origin(), newIV.pre);
   // Check that index of the GEP is an integer constant with the step value
@@ -635,7 +635,7 @@ TEST(LoopStrengthReductionTests, GEPCandidateOperationWithNAryStart)
       dynamic_cast<const GetElementPtrOperation *>(&IVPostOrigin->GetOperation());
   EXPECT_NE(stepGepOperation, nullptr);
   // Check that it has the right type
-  EXPECT_EQ(stepGepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
+  EXPECT_EQ(*stepGepOperation->getPointeeType(), *jlm::rvsdg::BitType::Create(8));
 
   // Check that index of the GEP is an integer constant with the step value
   const auto & gepIndexInputNode =
