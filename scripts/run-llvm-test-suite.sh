@@ -61,7 +61,8 @@ fi
 
 export PATH="${JLM_BIN_DIR}:${PATH}"
 cd "${BENCHMARK_DIR}"
-git checkout "${GIT_COMMIT}"
+# Checkout the commit. If it fails try fetching first and then checking out
+git checkout "${GIT_COMMIT}" || (git fetch origin && git checkout "${GIT_COMMIT}")
 cd jlm
 make clean
 make "${BENCHMARK_RUN_TARGET}"
