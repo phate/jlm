@@ -66,6 +66,26 @@ public:
   tryGetConstantIndices(const rvsdg::Node & node) noexcept;
 
   /**
+   * Represents the \ref GetElementPtrOperation pointee type and its indices.
+   */
+  struct TypeOffset
+  {
+    std::shared_ptr<const rvsdg::Type> pointeeType;
+    std::vector<uint64_t> indices;
+  };
+
+  /**
+   * Computes the offsets of the \ref GetElementPtrOperation node \p gepNode, iff they can be
+   * statically determined.
+   *
+   * @param gepNode A \ref GetElementPtrOperation node
+   * @return If all indices can be statically determined, then a \ref TypeOffset, otherwise
+   * std::nullopt.
+   */
+  [[nodiscard]] static std::optional<TypeOffset>
+  getTypeOffset(const rvsdg::SimpleNode & gepNode);
+
+  /**
    * Returns an iterator range to the indices of a \ref GetElementPtrOperation node.
    *
    * \pre \p node is expected to have a \ref GetElementPtrOperation.

@@ -66,6 +66,20 @@ GetElementPtrOperation::tryGetConstantIndices(const rvsdg::Node & node) noexcept
   return constants;
 }
 
+std::optional<GetElementPtrOperation::TypeOffset>
+GetElementPtrOperation::getTypeOffset(const rvsdg::SimpleNode & gepNode)
+{
+  const auto gepOperation = dynamic_cast<const GetElementPtrOperation *>(&gepNode.GetOperation());
+  if (!gepOperation)
+    return std::nullopt;
+
+  const auto indicesOpt = tryGetConstantIndices(gepNode);
+  if (!indicesOpt.has_value())
+    return std::nullopt;
+
+  return TypeOffset{ gepOperation->getPointeeType(), indicesOpt.value() };
+}
+
 /**
  * Calculates the byte offset inside the given type, starting at the given offset of GEP inputs.
  * Uses recursion to handle nested types.
