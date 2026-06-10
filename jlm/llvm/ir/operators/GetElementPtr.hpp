@@ -57,13 +57,23 @@ public:
   }
 
   /**
-   * Attempts to find the constant indices of a \ref GetElementPtrOperation node.
-   *
-   * @param node The \ref GetElementPtrOperation node.
-   * @return The constant indices if all of them are found to be constant, otherwise std::nullopt.
+   * Represents a statically known \ref GetElementPtrOperation.
    */
-  static std::optional<std::vector<uint64_t>>
-  tryGetConstantIndices(const rvsdg::Node & node) noexcept;
+  struct Constant
+  {
+    std::shared_ptr<const rvsdg::Type> pointeeType;
+    std::vector<uint64_t> indices;
+  };
+
+  /**
+   * Attempts to return the \ref GetElementPtrOperation as a \ref GetElementPtrOperation::Constant.
+   *
+   * @param gepNode A \ref GetElementPtrOperation node
+   * @return If all indices are statically known, then a \ref
+   * GetElementPtrOperation::Constant is returned, otherwise std::nullopt.
+   */
+  [[nodiscard]] static std::optional<Constant>
+  tryGetAsConstant(const rvsdg::SimpleNode & gepNode);
 
   /**
    * Returns an iterator range to the indices of a \ref GetElementPtrOperation node.

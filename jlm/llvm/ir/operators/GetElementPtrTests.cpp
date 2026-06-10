@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/rvsdg/graph.hpp>
 
 TEST(GetElementPtrOperationTests, TestOperationEquality)
 {
@@ -26,4 +28,49 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
       structType2);
 
   EXPECT_NE(operation1, operation2);
+}
+
+TEST(GetElementPtrTests, TryGetAsConstantTest)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto bits8Type = BitType::Create(32);
+  const auto bits16Type = BitType::Create(32);
+  const auto bits32Type = BitType::Create(32);
+  const auto pointerType = PointerType::Create();
+
+  auto structType =
+      StructType::CreateIdentified("struct", { bits8Type, bits16Type, bits32Type }, false);
+
+  Graph rvsdg;
+  auto & baseAddress = GraphImport::Create(rvsdg, pointerType, "base");
+  auto & i32 = GraphImport::Create(rvsdg, bits8Type, "i32");
+
+  auto & zeroNode = IntegerConstantOperation::Create(rvsdg.GetRootRegion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(rvsdg.GetRootRegion(), 32, 1);
+
+  auto & gepNode0 = GetElementPtrOperation::createNode(
+      baseAddress,
+      { zeroNode.output(0), oneNode.output(0) },
+      structType);
+  auto & gepNode1 =
+      GetElementPtrOperation::createNode(baseAddress, { zeroNode.output(0), &i32 }, structType);
+  auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, structType);
+
+  // Act
+  auto gepConstant0 = GetElementPtrOperation::tryGetAsConstant(gepNode0);
+  auto gepConstant1 = GetElementPtrOperation::tryGetAsConstant(gepNode1);
+  auto gepConstant2 = GetElementPtrOperation::tryGetAsConstant(gepNode2);
+
+  // Assert
+  // We expect gepConstant0 to be present as the \ref GetElementPtrOperation is statically
+  // completely known. All others should result in std::nullopt.
+  EXPECT_TRUE(gepConstant0.has_value());
+  EXPECT_EQ(gepConstant0.value().pointeeType, structType);
+  EXPECT_EQ(gepConstant0.value().indices, std::vector<uint64_t>({ 0, 1 }));
+
+  EXPECT_FALSE(gepConstant1.has_value());
+  EXPECT_FALSE(gepConstant2.has_value());
 }

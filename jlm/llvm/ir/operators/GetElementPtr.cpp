@@ -45,17 +45,19 @@ GetElementPtrOperation::copy() const
   return std::make_unique<GetElementPtrOperation>(*this);
 }
 
-std::optional<std::vector<uint64_t>>
-GetElementPtrOperation::tryGetConstantIndices(const rvsdg::Node & node) noexcept
+std::optional<GetElementPtrOperation::Constant>
+GetElementPtrOperation::tryGetAsConstant(const rvsdg::SimpleNode & gepNode)
 {
-  JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
+  const auto gepOperation = dynamic_cast<const GetElementPtrOperation *>(&gepNode.GetOperation());
+  if (!gepOperation)
+    return std::nullopt;
 
-  std::vector<size_t> constants;
-  for (auto & input : indices(node))
+  std::vector<uint64_t> indices;
+  for (auto & input : gepOperation->indices(gepNode))
   {
-    if (auto constant = tryGetConstantSignedInteger(*input.origin()))
+    if (auto indexOpt = tryGetConstantSignedInteger(*input.origin()))
     {
-      constants.push_back(constant.value());
+      indices.push_back(indexOpt.value());
     }
     else
     {
@@ -63,7 +65,7 @@ GetElementPtrOperation::tryGetConstantIndices(const rvsdg::Node & node) noexcept
     }
   }
 
-  return constants;
+  return Constant{ gepOperation->getPointeeType(), indices };
 }
 
 /**
