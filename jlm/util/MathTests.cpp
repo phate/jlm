@@ -150,3 +150,31 @@ TEST(MathTests, TestBitWidthOfEnum)
   EXPECT_EQ(BitWidthOfEnum(TestEnum5::Four), 3);
   EXPECT_EQ(BitWidthOfEnum(TestEnum127::OneHundredAndTwentySeven), 7);
 }
+
+TEST(MathTests, truncateAndSignExtend)
+{
+  EXPECT_EQ(truncateAndSignExtend(0xFF, 8), -1);
+  EXPECT_EQ(truncateAndSignExtend(0x0F, 8), 15);
+  EXPECT_EQ(truncateAndSignExtend(1, 1), -1);
+  EXPECT_EQ(truncateAndSignExtend(0, 1), 0);
+  EXPECT_EQ(truncateAndSignExtend(1234, 64), 1234);
+  EXPECT_EQ(truncateAndSignExtend(-1, 32), -1);
+  EXPECT_EQ(truncateAndSignExtend(-1, 16), -1);
+  EXPECT_EQ(truncateAndSignExtend(-1, 8), -1);
+  EXPECT_EQ(truncateAndSignExtend(127, 8), 127);
+  EXPECT_EQ(truncateAndSignExtend(-128, 8), -128);
+}
+
+TEST(MathTests, truncateAndZeroExtend)
+{
+  EXPECT_EQ(truncateAndZeroExtend(0xFF, 8), 255);
+  EXPECT_EQ(truncateAndZeroExtend(0x0F, 8), 15);
+  EXPECT_EQ(truncateAndZeroExtend(1, 1), 1);
+  EXPECT_EQ(truncateAndZeroExtend(0, 1), 0);
+  EXPECT_EQ(truncateAndZeroExtend(1234, 64), 1234);
+  EXPECT_EQ(truncateAndZeroExtend(-1, 32), 0xFFFF'FFFF);
+  EXPECT_EQ(truncateAndZeroExtend(-1, 16), 0xFFFF);
+  EXPECT_EQ(truncateAndZeroExtend(-1, 8), 0xFF);
+  EXPECT_EQ(truncateAndZeroExtend(127, 8), 127);
+  EXPECT_EQ(truncateAndZeroExtend(-128, 8), 128);
+}
