@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -192,6 +193,7 @@ public:
   void
   SetAttributeObject(const std::string & attribute, const T & object)
   {
+    static_assert(!std::is_pointer_v<T>, "Sending a reference to a pointer is likely a bug");
     SetAttributeObject(attribute, reinterpret_cast<uintptr_t>(&object));
   }
 
