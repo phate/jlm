@@ -981,11 +981,11 @@ ScalarEvolution::GetOrCreateSCEVForOutput(rvsdg::Output & output)
       auto baseScev = GetOrCreateSCEVForOutput(*baseIndex);
 
       auto wholeTypeIndex = GetOrCreateSCEVForOutput(*simpleNode->input(1)->origin());
-      const auto wholeTypeSize = GetTypeAllocSize(pointeeType);
+      const auto wholeTypeSize = GetTypeAllocSize(*pointeeType);
 
       std::unique_ptr<SCEV> offset =
           SCEVMulExpr::Create(std::move(wholeTypeIndex), SCEVConstant::Create(wholeTypeSize));
-      if (auto innerOffset = ComputeSCEVForGepInnerOffset(*simpleNode, 2, pointeeType))
+      if (auto innerOffset = ComputeSCEVForGepInnerOffset(*simpleNode, 2, *pointeeType))
         offset = SCEVAddExpr::Create(std::move(offset), std::move(innerOffset));
 
       result = SCEVAddExpr::Create(std::move(baseScev), std::move(offset));

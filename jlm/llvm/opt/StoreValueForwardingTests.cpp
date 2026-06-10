@@ -1084,3 +1084,56 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
   // We expect all load nodes to be forwarded
   EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = BitType::Create(32);
+  const auto structType =
+      StructType::CreateIdentified("struct", { bits32Type, pointerType }, false);
+  const auto functionType = FunctionType::Create({}, { bits32Type, pointerType });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(structType, true, pointerType));
+  auto aggregateZero = ConstantAggregateZeroOperation::Create(*deltaNode->subregion(), structType);
+  auto & deltaOutput = deltaNode->finalize(aggregateZero);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
+
+  auto & gep0Node = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), zeroNode.output(0) },
+      structType);
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*gep0Node.output(0), {}, bits32Type, 4);
+
+  auto & gep1Node = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), oneNode.output(0) },
+      structType);
+  auto & loadPtrNode =
+      LoadNonVolatileOperation::CreateNode(*gep1Node.output(0), {}, pointerType, 4);
+
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
+                        &LoadOperation::LoadedValueOutput(loadPtrNode) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
