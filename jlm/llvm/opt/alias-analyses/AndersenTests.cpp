@@ -835,7 +835,7 @@ TEST(AndersenTests, TestMemcpy)
   EXPECT_EQ(ptg->numLambdaNodes(), 2u);
   EXPECT_EQ(ptg->numMappedRegisters(), 11u);
 
-  auto localArray = ptg->getNodeForDelta(test.LocalArray());
+  auto initArray = ptg->getNodeForDelta(test.InitArray());
   auto globalArray = ptg->getNodeForDelta(test.GlobalArray());
 
   auto memCpyDest = ptg->getNodeForRegister(*test.Memcpy().input(0)->origin());
@@ -845,9 +845,9 @@ TEST(AndersenTests, TestMemcpy)
   auto lambdaG = ptg->getNodeForLambda(test.LambdaG());
 
   EXPECT_TRUE(TargetsExactly(*ptg, memCpyDest, { globalArray }));
-  EXPECT_TRUE(TargetsExactly(*ptg, memCpySrc, { localArray }));
+  EXPECT_TRUE(TargetsExactly(*ptg, memCpySrc, { initArray }));
 
-  EXPECT_TRUE(EscapedIsExactly(*ptg, { globalArray, localArray, lambdaF, lambdaG }));
+  EXPECT_TRUE(EscapedIsExactly(*ptg, { globalArray, initArray, lambdaF, lambdaG }));
 }
 
 TEST(AndersenTests, TestLinkedList)

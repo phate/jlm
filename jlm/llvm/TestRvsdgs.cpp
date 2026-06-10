@@ -782,8 +782,8 @@ CallTest2::SetupRvsdg()
   this->CallCreate1_ = callCreate1;
   this->CallCreate2_ = callCreate2;
 
-  this->CallDestroy1_ = callCreate1;
-  this->CallDestroy2_ = callCreate2;
+  this->CallDestroy1_ = callDestroy1;
+  this->CallDestroy2_ = callDestroy2;
 
   return module;
 }
@@ -3211,13 +3211,13 @@ MemcpyTest::SetupRvsdg()
 
   auto arrayType = ArrayType::Create(jlm::rvsdg::BitType::Create(32), 5);
 
-  auto SetupLocalArray = [&]()
+  auto SetupInitArray = [&]()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::llvm::DeltaOperation::Create(
             arrayType,
-            "localArray",
+            "initArray",
             Linkage::externalLinkage,
             "",
             false,
@@ -3233,7 +3233,7 @@ MemcpyTest::SetupRvsdg()
 
     auto deltaOutput = &delta->finalize(constantDataArray);
 
-    GraphExport::Create(*deltaOutput, "localArray");
+    GraphExport::Create(*deltaOutput, "initArray");
 
     return deltaOutput;
   };
@@ -3342,17 +3342,17 @@ MemcpyTest::SetupRvsdg()
         &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*memcpyResults[0]));
   };
 
-  auto localArray = SetupLocalArray();
+  auto initArray = SetupInitArray();
   auto globalArray = SetupGlobalArray();
   auto lambdaF = SetupFunctionF(*globalArray);
-  auto [lambdaG, callF, memcpyNode] = SetupFunctionG(*localArray, *globalArray, *lambdaF);
+  auto [lambdaG, callF, memcpyNode] = SetupFunctionG(*initArray, *globalArray, *lambdaF);
 
   /*
    * Assign nodes
    */
   this->LambdaF_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaF);
   this->LambdaG_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaG);
-  this->LocalArray_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*localArray);
+  this->InitArray_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*initArray);
   this->GlobalArray_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*globalArray);
   this->CallF_ = callF;
   this->Memcpy_ = memcpyNode;
