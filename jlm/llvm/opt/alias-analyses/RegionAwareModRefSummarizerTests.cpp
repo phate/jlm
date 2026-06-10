@@ -1074,7 +1074,7 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto localArrayMemoryNode = pointsToGraph.getNodeForDelta(test.LocalArray());
+    auto initArrayMemoryNode = pointsToGraph.getNodeForDelta(test.InitArray());
     auto globalArrayMemoryNode = pointsToGraph.getNodeForDelta(test.GlobalArray());
 
     /*
@@ -1093,13 +1093,13 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { initArrayMemoryNode, globalArrayMemoryNode }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
       EXPECT_TRUE(setsEqual(callNodes, { globalArrayMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { localArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(setsEqual(lambdaExitNodes, { initArrayMemoryNode, globalArrayMemoryNode }));
     }
   };
 
