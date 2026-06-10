@@ -1835,6 +1835,7 @@ public:
  *  #include <string.h>
  *
  *  int globalArray[5];
+ *  int initArray[5] = {0, 1, 2, 3, 4};
  *
  *  int
  *  f()
@@ -1846,8 +1847,7 @@ public:
  *  int
  *  g()
  *  {
- *    int localArray[5] = {0, 1, 2, 3, 4};
- *    memcpy(globalArray, localArray, sizeof(int)*5);
+ *    memcpy(globalArray, initArray, sizeof(int)*5);
  *    return f();
  *  }
  * \endcode
@@ -1870,9 +1870,9 @@ public:
   }
 
   [[nodiscard]] const jlm::rvsdg::DeltaNode &
-  LocalArray() const noexcept
+  InitArray() const noexcept
   {
-    return *LocalArray_;
+    return *InitArray_;
   }
 
   [[nodiscard]] const jlm::rvsdg::DeltaNode &
@@ -1900,7 +1900,7 @@ private:
   jlm::rvsdg::LambdaNode * LambdaF_{};
   jlm::rvsdg::LambdaNode * LambdaG_{};
 
-  jlm::rvsdg::DeltaNode * LocalArray_{};
+  jlm::rvsdg::DeltaNode * InitArray_{};
   jlm::rvsdg::DeltaNode * GlobalArray_{};
 
   rvsdg::SimpleNode * CallF_{};
