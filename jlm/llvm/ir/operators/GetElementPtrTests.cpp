@@ -30,7 +30,7 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
   EXPECT_NE(operation1, operation2);
 }
 
-TEST(GetElementPtrTests, GetTypeOffsetTest)
+TEST(GetElementPtrTests, TryGetAsConstantTest)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -60,17 +60,17 @@ TEST(GetElementPtrTests, GetTypeOffsetTest)
   auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, structType);
 
   // Act
-  auto typeOffset0 = GetElementPtrOperation::getTypeOffset(gepNode0);
-  auto typeOffset1 = GetElementPtrOperation::getTypeOffset(gepNode1);
-  auto typeOffset2 = GetElementPtrOperation::getTypeOffset(gepNode2);
+  auto gepConstant0 = GetElementPtrOperation::tryGetAsConstant(gepNode0);
+  auto gepConstant1 = GetElementPtrOperation::tryGetAsConstant(gepNode1);
+  auto gepConstant2 = GetElementPtrOperation::tryGetAsConstant(gepNode2);
 
   // Assert
-  // We expect typeOffset0 to be present as the \ref GetElementPtrOperation is statically completely
-  // known. All others should result in std::nullopt.
-  EXPECT_TRUE(typeOffset0.has_value());
-  EXPECT_EQ(typeOffset0.value().pointeeType, structType);
-  EXPECT_EQ(typeOffset0.value().indices, std::vector<uint64_t>({ 0, 1 }));
+  // We expect gepConstant0 to be present as the \ref GetElementPtrOperation is statically
+  // completely known. All others should result in std::nullopt.
+  EXPECT_TRUE(gepConstant0.has_value());
+  EXPECT_EQ(gepConstant0.value().pointeeType, structType);
+  EXPECT_EQ(gepConstant0.value().indices, std::vector<uint64_t>({ 0, 1 }));
 
-  EXPECT_FALSE(typeOffset1.has_value());
-  EXPECT_FALSE(typeOffset2.has_value());
+  EXPECT_FALSE(gepConstant1.has_value());
+  EXPECT_FALSE(gepConstant2.has_value());
 }
