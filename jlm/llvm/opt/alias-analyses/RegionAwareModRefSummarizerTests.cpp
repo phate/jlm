@@ -1127,7 +1127,7 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto localArrayMemoryNode = pointsToGraph.getNodeForDelta(test.LocalArray());
+    auto initArrayMemoryNode = pointsToGraph.getNodeForDelta(test.InitArray());
     auto globalArrayMemoryNode = pointsToGraph.getNodeForDelta(test.GlobalArray());
 
     /*
@@ -1146,15 +1146,15 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG());
-      ASSERT_TRUE(
-          assertSetContains(lambdaEntryNodes, { globalArrayMemoryNode }, { localArrayMemoryNode }));
+      EXPECT_TRUE(
+          assertSetContains(lambdaEntryNodes, { globalArrayMemoryNode }, { initArrayMemoryNode }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
       ASSERT_TRUE(assertSetContains(callNodes, { globalArrayMemoryNode }, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG());
-      ASSERT_TRUE(
-          assertSetContains(lambdaExitNodes, { globalArrayMemoryNode }, { localArrayMemoryNode }));
+      EXPECT_TRUE(
+          assertSetContains(lambdaExitNodes, { globalArrayMemoryNode }, { initArrayMemoryNode }));
     }
   };
 

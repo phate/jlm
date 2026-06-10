@@ -846,13 +846,6 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
   }
 }
 
-// FIXME: documentation
-struct StoreValueForwarding::TracedDelta
-{
-  rvsdg::DeltaNode * deltaNode;
-  int64_t offset;
-};
-
 void
 StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode)
 {
@@ -863,7 +856,9 @@ StoreValueForwarding::processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNod
   const auto tracedDelta = traceLoadWithoutMemoryStates(loadNode);
   context_->statistics.stopTracing();
   if (!tracedDelta.has_value())
+  {
     return;
+  }
 
   context_->statistics.startForwarding();
   forwardLoadWithoutMemoryStates(loadNode, tracedDelta.value());
@@ -877,7 +872,7 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
   auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  const auto & tracedAddress = TracePointerOriginPrecise(loadAddress);
+  const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
   if (!tracedAddress.Offset.has_value())
   {
     return std::nullopt;
@@ -900,37 +895,53 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
-  auto loadOperation = dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+  const auto loadOperation =
+      dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
+  const auto & deltaResult = tracedDelta.deltaNode->result();
 
-  if (tracedDelta.offset != 0)
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*deltaResult.origin()))
   {
-    // FIXME: start dealing with offsets
-    return;
+    rvsdg::MatchTypeWithDefault(
+        node->GetOperation(),
+        [&](const IntegerConstantOperation &)
+        {
+          JLM_ASSERT(tracedDelta.offset == 0);
+
+          auto copiedNode = node->copy(loadNode.region(), {});
+          if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
+          {
+            copiedNode =
+                &TruncOperation::createNode(*copiedNode->output(0), loadOperation->GetLoadedType());
+          }
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+
+          context_->numForwardedLoadsWithoutMemoryState++;
+        },
+        [&](const ConstantStruct &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const ConstantDataArray &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const ConstantArrayOperation &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const ConstantAggregateZeroOperation &)
+        {
+          // FIXME: handle operation
+        },
+        [&]()
+        {
+          throw std::logic_error("Unsupported operation: " + node->DebugString());
+        });
   }
-  auto deltaSubregion = tracedDelta.deltaNode->subregion();
-  if (deltaSubregion->numNodes() != 1)
+  else
   {
-    // FIXME: start dealing with it
-    return;
+    throw std::logic_error("Unsupported output owner");
   }
-  auto & node = *deltaSubregion->Nodes().begin();
-
-  if (!is<IntegerConstantOperation>(node.GetOperation()))
-  {
-    // FIXME: We only care about integer constants right now
-    return;
-  }
-
-  if (*loadOperation->GetLoadedType() != *node.output(0)->Type())
-  {
-    // FIXME: deal with non-matching types
-    return;
-  }
-
-  auto copiedNode = node.copy(loadNode.region(), {});
-  LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-
-  context_->numForwardedLoadsWithoutMemoryState++;
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.
