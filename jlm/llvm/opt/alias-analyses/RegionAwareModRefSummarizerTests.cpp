@@ -1013,10 +1013,10 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
       ASSERT_TRUE(assertSetContains(lambdaEntryNodes, pTestCD, {}));
 
       auto & callBNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallB());
-      ASSERT_TRUE(assertSetContains(callBNodes, pTestAD, {}));
+      ASSERT_TRUE(assertSetContains(callBNodes, { paAllocaMemoryNode }, {}));
 
       auto & callDNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallD());
-      ASSERT_TRUE(assertSetContains(callDNodes, pTestAC, {}));
+      ASSERT_TRUE(assertSetContains(callDNodes, { paAllocaMemoryNode }, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaA());
       ASSERT_TRUE(assertSetContains(lambdaExitNodes, pTestCD, {}));
@@ -1027,16 +1027,16 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaB());
-      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, pTestAD, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { paAllocaMemoryNode }, {}));
 
       auto & callINodes = modRefSummary.GetSimpleNodeModRef(test.GetCallI());
       ASSERT_TRUE(assertSetContains(callINodes, {}, {}));
 
       auto & callCNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallC());
-      ASSERT_TRUE(assertSetContains(callCNodes, pTestBD, {}));
+      ASSERT_TRUE(assertSetContains(callCNodes, { pbAllocaMemoryNode }, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaB());
-      ASSERT_TRUE(assertSetContains(lambdaExitNodes, pTestAD, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { paAllocaMemoryNode }, {}));
     }
 
     /*
@@ -1044,13 +1044,13 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaC());
-      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, pTestBD, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { pbAllocaMemoryNode }, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromC());
-      ASSERT_TRUE(assertSetContains(callNodes, pTestCD, {}));
+      ASSERT_TRUE(assertSetContains(callNodes, { pcAllocaMemoryNode }, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaC());
-      ASSERT_TRUE(assertSetContains(lambdaExitNodes, pTestBD, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { pbAllocaMemoryNode }, {}));
     }
 
     /*
@@ -1058,13 +1058,13 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaD());
-      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, pTestAC, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { paAllocaMemoryNode }, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromD());
-      ASSERT_TRUE(assertSetContains(callNodes, pTestCD, {}));
+      ASSERT_TRUE(assertSetContains(callNodes, { pdAllocaMemoryNode }, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaD());
-      ASSERT_TRUE(assertSetContains(lambdaExitNodes, pTestAC, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { paAllocaMemoryNode }, {}));
     }
 
     /*
@@ -1706,9 +1706,10 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
 
   EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
-  EXPECT_TRUE(statistics.HasTimer("AllocasDeadInSccsTimer"));
   EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
   EXPECT_TRUE(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
   EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
   EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
+  EXPECT_TRUE(statistics.HasTimer("ReadOnlyDetectionTimer"));
+  EXPECT_TRUE(statistics.HasTimer("ModRefSetMaterializationTimer"));
 }

@@ -1201,10 +1201,6 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
     auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 1, 1));
 
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
-    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
-
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
     {
@@ -1222,8 +1218,10 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
-    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
-    EXPECT_EQ(node, lambdaEntrySplit);
+    // The load of g2 has a memory state input from the LambdaEntrySplit
+    auto lambdaEntrySplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 }
 
