@@ -62,27 +62,25 @@ public:
   }
 
   /**
-   * Controls if tracing is allowed to enter the subregion of a phi node from its outputs.
-   * If true, tracing can go further and reach lambda or delta nodes inside of phi nodes.
-   * It does, however, mean that the result of tracing can end up inside a region that is not
-   * an ancestor of the starting region in the region tree.
-   * @return true if tracing may enter phi nodes.
+   * Controls if tracing is allowed to enter subregions, such as the body of a theta or phi node,
+   * or a gamma subregion if it is known which subregion was executed.
+   * @return true if tracing may enter subregions.
    */
   [[nodiscard]] bool
-  isEnteringPhiNodes() const noexcept
+  isEnteringSubregions() const noexcept
   {
-    return enterPhiNodes_;
+    return enterSubregions_;
   }
 
   /**
-   * Enables or disables tracing into phi nodes from the outside.
-   * @see isEnteringPhiNodes()
+   * Enables or disables entering subregions when tracing.
+   * @see isEnteringSubregion()
    * @param value the new value
    */
   void
-  setEnterPhiNodes(bool value) noexcept
+  setEnterSubregions(bool value) noexcept
   {
-    enterPhiNodes_ = value;
+    enterSubregions_ = value;
   }
 
   /**
@@ -198,9 +196,9 @@ protected:
   // When false, values are only considered invariant if they are directly connected to arguments.
   bool traceThroughStrucutalNodes_ = true;
 
-  // When true, tracing can go from the output of a Phi node into its subregion.
-  // When false, tracing will stop at the Phi output.
-  bool enterPhiNodes_ = true;
+  // When true, tracing can go from the output of a structural node into a subregion,
+  // returning outputs from sibling regions of the traced output.
+  bool enterSubregions_ = true;
 
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments.
@@ -215,9 +213,11 @@ protected:
  * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing:
  *
  * 1. Through gamma nodes if the exit variable is invariant
- * 2. Out of gamma nodes from entry variable arguments
- * 3. Through theta nodes if the loop variable is invariant
- * 4. Out of theta nodes from the arguments, if the loop variable is invariant
+ * 2. Into gamma subregions if tracing can infer which subregion was executed
+ * 3. Out of gamma nodes from entry variable arguments
+ * 4. Through theta nodes if the loop variable is invariant
+ * 5. From theta outputs into the theta subregion
+ * 6. Out of theta nodes from the arguments, if the loop variable is invariant
  *
  * Tracing stops when a lambda function argument or context argument is reached.
  *

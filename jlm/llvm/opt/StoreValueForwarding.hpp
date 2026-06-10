@@ -109,6 +109,14 @@ private:
   connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo);
 
   /**
+   * Takes an output and routes it out of the surrounding structural node,
+   * returning an output in the parent region.
+   * Uses caching and checks for exisiting
+   */
+  [[nodiscard]] rvsdg::Output &
+  routeOutputOutOfRegion(rvsdg::Output & output);
+
+  /**
    * Helper for routing outputs that memoizes the routing to avoid creating
    * duplicate inputs and outputs in structural nodes.
    * The \p output must be in the \p region, or in an ancestor of the region.

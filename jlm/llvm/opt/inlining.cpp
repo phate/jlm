@@ -105,8 +105,8 @@ routeContextVariablesToRegion(rvsdg::Region & region, const rvsdg::LambdaNode & 
 {
   constexpr bool enableCaching = false;
   llvm::OutputTracer tracer(enableCaching);
-  // We avoid entering phi nodes, as we can not route from a sibling region
-  tracer.setEnterPhiNodes(false);
+  // We avoid entering subregion, as we can not route from a sibling region
+  tracer.setEnterSubregions(false);
 
   std::vector<rvsdg::Output *> deps;
   for (auto & ctxvar : callee.GetContextVars())

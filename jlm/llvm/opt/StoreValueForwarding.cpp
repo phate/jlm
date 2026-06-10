@@ -198,8 +198,18 @@ struct StoreValueForwarding::Context final
     }
   };
 
+  // Map containing values that have been routed into regions,
+  // with keys {outerOutput, intoRegion}.
+  // When routed into a theta, the loop variable is invariant
   std::unordered_map<std::pair<rvsdg::Output *, rvsdg::Region *>, rvsdg::Output *, OutputRegionHash>
-      routedOutputs{};
+      routedIntoRegions{};
+
+  // Map containing values that are routed out of their region,
+  // mapping to the corresponding structural node output.
+  // When routing values of out thetas, existing loop variable may be used,
+  // so the loop variable's input may either be Undef or something else.
+  std::unordered_map<rvsdg::Output *, rvsdg::Output *>
+    routedOutOfRegions{};
 
   OutputTracer outputTracer;
 
@@ -1003,6 +1013,15 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
   if (output.region() == &region)
     return output;
 
+  // If the output belongs to a deeper region, it we must route it out to the a ancestor region
+  if (output.region()->getDepth() > region.getDepth())
+  {
+    if (auto it = context_->routedOutOfRegions.find(&output); it != context_->routedOutOfRegions.end())
+    {
+      return routeOutputToRegion(*it->second, region);
+    }
+  }
+
   if (region.IsRootRegion())
     JLM_UNREACHABLE("root region reached during attempt at routing output into region");
 
@@ -1012,8 +1031,8 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     auto & outerOutput = routeOutputToRegion(output, *gammaNode->region());
 
     // If the outer output already has a corresponding EntryVar, return it
-    if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
-        it != context_->routedOutputs.end())
+    if (auto it = context_->routedIntoRegions.find({ &outerOutput, &region });
+        it != context_->routedIntoRegions.end())
     {
       // The output in the map key may have been deleted, and had its address re-used, so double
       // check
@@ -1029,7 +1048,7 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     auto entryVar = gammaNode->AddEntryVar(&outerOutput);
     for (auto branchArgument : entryVar.branchArgument)
     {
-      context_->routedOutputs[{ &outerOutput, branchArgument->region() }] = branchArgument;
+      context_->routedIntoRegions[{ &outerOutput, branchArgument->region() }] = branchArgument;
     }
 
     return *entryVar.branchArgument[region.index()];
@@ -1041,8 +1060,8 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
     auto & outerOutput = routeOutputToRegion(output, *thetaNode->region());
 
     // If the outer output already has a corresponding invariant loop variable, return it
-    if (auto it = context_->routedOutputs.find({ &outerOutput, &region });
-        it != context_->routedOutputs.end())
+    if (auto it = context_->routedIntoRegions.find({ &outerOutput, &region });
+        it != context_->routedIntoRegions.end())
     {
       // The output in the map key may have been deleted, and had its address re-used, so double
       // check
@@ -1056,7 +1075,7 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
 
     // Create an invariant LoopVar for the output and add it to the cache
     auto loopVar = thetaNode->AddLoopVar(&outerOutput);
-    context_->routedOutputs[{ &outerOutput, &region }] = loopVar.pre;
+    context_->routedIntoRegions[{ &outerOutput, &region }] = loopVar.pre;
     return *loopVar.pre;
   }
 

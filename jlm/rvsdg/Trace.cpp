@@ -173,6 +173,14 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
       return *traced;
     }
 
+    // If we are allowed to enter subregions, always go into theta nodes,
+    // since we know that the value originates from the final iteration of the theta.
+    if (enterSubregions_)
+    {
+
+      return *thetaNode->MapOutputLoopVar(output).post->origin();
+    }
+
     return output;
   }
 
@@ -228,7 +236,7 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
   // Handle phi outputs
   if (const auto phiNode = TryGetOwnerNode<PhiNode>(output))
   {
-    if (enterPhiNodes_)
+    if (enterSubregions_)
     {
       const auto fixVar = phiNode->MapOutputFixVar(output);
       return *fixVar.result->origin();
