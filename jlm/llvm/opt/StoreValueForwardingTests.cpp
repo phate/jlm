@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -1037,4 +1038,49 @@ TEST(StoreValueForwardingTests, LoadForwardingIntoTheta)
   const auto & memoryResultOrigin =
       jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin());
   EXPECT_EQ(&memoryResultOrigin, &mem1);
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits8Type = BitType::Create(8);
+  const auto bits32Type = BitType::Create(32);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          bits32Type,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(bits32Type, true, pointerType));
+  auto & four = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 4);
+  auto & deltaOutput = deltaNode->finalize(four.output(0));
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
+  auto & load8Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits8Type, 4);
+
+  auto & zextResult = ZExtOperation::create(32, *load8Node.output(0));
+  auto & addNode = IntegerAddOperation::createNode(32, *load32Node.output(0), zextResult);
+
+  lambdaNode.finalize({ addNode.output(0) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
