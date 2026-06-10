@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -19,6 +19,7 @@
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/Math.hpp>
 
 namespace jlm::llvm
 {
@@ -99,13 +100,8 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
       return std::nullopt;
 
     // When doing sign extensions, we only need to care about the size of the input type
-    const auto inputType = sextOp->argument(0);
-    const auto inputBits = util::assertedCast<const rvsdg::BitType>(inputType.get())->nbits();
-    JLM_ASSERT(inputBits <= 64);
-    const auto extendBits = 64 - inputBits;
-
-    // Shift signed value left and right again to sign extend
-    return (static_cast<int64_t>(*inputValue) << extendBits) >> extendBits;
+    const auto inputBits = sextOp->nsrcbits();
+    return util::truncateAndSignExtend(*inputValue, inputBits);
   }
 
   if (const auto [zextNode, zextOp] =
@@ -117,13 +113,8 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
       return std::nullopt;
 
     // When doing zero extensions, we only need to care about the size of the input type
-    const auto inputType = zextOp->argument(0);
-    const auto inputBits = util::assertedCast<const rvsdg::BitType>(inputType.get())->nbits();
-    JLM_ASSERT(inputBits <= 64);
-    const auto extendBits = 64 - inputBits;
-
-    // Shift unsigned value left and right again to zero extend
-    return (static_cast<uint64_t>(*inputValue) << extendBits) >> extendBits;
+    const auto inputBits = zextOp->nsrcbits();
+    return util::truncateAndZeroExtend(*inputValue, inputBits);
   }
 
   if (const auto [truncNode, truncOp] =
@@ -134,14 +125,10 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
     if (!inputValue.has_value())
       return std::nullopt;
 
-    // When truncating, we keep only the desired output bits and sign extend the rest
-    const auto outputType = truncOp->result(0);
-    const auto outputBits = util::assertedCast<const rvsdg::BitType>(outputType.get())->nbits();
-    JLM_ASSERT(outputBits <= 64);
-    const auto eraseBits = 64 - outputBits;
-
-    // Shift signed value left and right again to clear the top eraseBits with sign bits
-    return (static_cast<int64_t>(*inputValue) << eraseBits) >> eraseBits;
+    const auto outputBits = truncOp->ndstbits();
+    // When truncating, we still need to fill the high bits with something.
+    // We chose to sign extend, but this is mainly an aestetic choice
+    return util::truncateAndSignExtend(*inputValue, outputBits);
   }
 
   return std::nullopt;
