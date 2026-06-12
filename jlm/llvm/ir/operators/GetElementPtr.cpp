@@ -190,7 +190,7 @@ GetElementPtrOperation::Constant::getOffsetInBytes() const noexcept
 
   const auto wholeTypeIndex = indices[0];
   int64_t offsetInBytes = wholeTypeIndex * GetTypeAllocSize(*pointeeType);
-  offsetInBytes += computeIntraTypeOffset(2, *pointeeType);
+  offsetInBytes += computeIntraTypeOffset(1, *pointeeType);
   return offsetInBytes;
 }
 }
