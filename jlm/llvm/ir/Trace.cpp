@@ -139,6 +139,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
 {
   // The original pointer p is always equal to base + byte offset
   const rvsdg::Output * base = &p;
+  std::vector<GetElementPtrOperation::Constant> gepConstants;
   int64_t offset = 0;
 
   while (true)
@@ -156,6 +157,11 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
       if (!calculatedOffset.has_value())
         break;
 
+      auto gepConstant = GetElementPtrOperation::tryGetAsConstant(*node);
+      // The offset calculation above succeeded, so this should always succeed as well.
+      JLM_ASSERT(gepConstant.has_value());
+      gepConstants.emplace_back(gepConstant.value());
+
       base = node->input(0)->origin();
       offset += *calculatedOffset;
 
@@ -166,7 +172,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
     break;
   }
 
-  return TracedPointerOrigin{ base, offset };
+  return TracedPointerOrigin{ base, offset, gepConstants };
 }
 
 bool

@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_TRACE_HPP
 #define JLM_LLVM_IR_TRACE_HPP
 
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 
@@ -78,6 +79,8 @@ traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = n
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output);
 
+// FIXME: update documentation
+
 /**
  * Represents the result of tracing a pointer p to some origin,
  * as a traced base pointer value plus an optional byte offset.
@@ -92,6 +95,7 @@ struct TracedPointerOrigin
 {
   const rvsdg::Output * BasePointer = nullptr;
   std::optional<int64_t> Offset;
+  std::optional<std::vector<GetElementPtrOperation::Constant>> gepConstants{};
 };
 
 /**
