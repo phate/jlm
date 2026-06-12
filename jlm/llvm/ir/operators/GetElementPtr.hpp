@@ -62,9 +62,7 @@ public:
   struct Constant
   {
     /**
-     * Computes the byte offset applied by the GEP.
-     *
-     * @return the offset applied by the GEP
+     * @return The byte offset applied by the GEP
      */
     [[nodiscard]] int64_t
     getOffsetInBytes() const noexcept;
