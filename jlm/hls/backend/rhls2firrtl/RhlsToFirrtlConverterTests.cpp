@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Nordic University of Technology
+ * Copyright 2026 Magnus Sjalander <work@sjalander.com>
  * See COPYING for terms of redistribution.
  */
 
