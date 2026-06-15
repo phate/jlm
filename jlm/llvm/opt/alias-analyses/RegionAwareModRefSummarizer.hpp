@@ -7,6 +7,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 
+#include "jlm/llvm/opt/alias-analyses/ModRefSummary.hpp"
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
@@ -221,14 +222,14 @@ private:
    * @param modRefSetIndex the index of the ModRefSet representing some memory operation
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
-   * @param mayMod if true, the operation may modifiy the memory, otherwise just read
+   * @param modRefEffect the effect the operation may have one the memory targeted by origin
    */
   void
   addPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
-      bool mayMod);
+      ModRefEffect modRefEffect);
 
   ModRefSetIndex
   AnnotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
@@ -268,14 +269,6 @@ private:
    */
   bool
   VerifyBlocklists() const;
-
-  /**
-   * After solving, the ModRefSet representing all external functions is used to determine
-   * if any non-escaped variables in the module are only referenced, and never written to.
-   * These memory nodes can be considered constant, and should be omitted from all ModRefSets.
-   */
-  void
-  determineReadOnlyMemory();
 
   /**
    * Goes through the solved ModRefSets and materializes implicitly included

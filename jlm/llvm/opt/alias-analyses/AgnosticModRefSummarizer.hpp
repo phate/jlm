@@ -85,13 +85,13 @@ private:
   /**
    * Helper for adding all memory nodes the given \p output may target to a ModRefSet
    * @param output the pointer typed output
-   * @param mayMod true if the operation may modify the memory nodes
+   * @param modRefEffect the effect that is possibly performed on the targeted memory nodes
    * @param modRefSet the set of memory nodes that should be expanded with \p output's targets
    */
   void
   AddPointerTargetsToModRefSet(
       const rvsdg::Output & output,
-      bool mayMod,
+      ModRefEffect modRefEffect,
       AgnosticModRefSet & modRefSet) const;
 
   /**

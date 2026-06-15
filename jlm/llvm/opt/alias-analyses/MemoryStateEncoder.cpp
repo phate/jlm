@@ -4,6 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/opt/alias-analyses/ModRefSummary.hpp"
+#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -391,8 +393,9 @@ public:
   GetStates(const ModRefSet & modRefSet)
   {
     std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
-    for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
+    for (const auto [memoryNode, modRefEffect] : modRefSet.getModRefNodes())
     {
+      JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
       memoryNodeStatePairs.push_back(GetState(memoryNode));
     }
 
