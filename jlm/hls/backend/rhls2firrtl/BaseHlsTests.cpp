@@ -417,6 +417,28 @@ TEST(BaseHlsTests, TestJlmSize)
   // Test with 8-bit bit type for coverage
   auto bit8Type = jlm::rvsdg::BitType::Create(8);
   EXPECT_EQ(TestableBaseHLS().JlmSize(bit8Type.get()), 8);
+
+  // Test with control type (returns ceil(log2(nalternatives())))
+  auto controlType = rvsdg::ControlType::Create(4);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(controlType.get()), 2); // ceil(log2(4)) = 2
+
+  // Test with float type (32-bit)
+  auto floatType = llvm::FloatingPointType::Create(llvm::fpsize::flt);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(floatType.get()), 32);
+
+  // Test with double type (64-bit)
+  auto doubleType = llvm::FloatingPointType::Create(llvm::fpsize::dbl);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(doubleType.get()), 64);
+
+  // Test with array type
+  auto elementBitType = jlm::rvsdg::BitType::Create(32);
+  auto arrayType = llvm::ArrayType::Create(elementBitType, 4);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(arrayType.get()), 128); // 32 * 4
+
+  // Test with vector type
+  auto vectorElementType = jlm::rvsdg::BitType::Create(32);
+  auto vectorType = llvm::VectorType::Create(vectorElementType, 2);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(vectorType.get()), 64); // 32 * 2
 }
 
 // Test node name generation with forbidden characters
