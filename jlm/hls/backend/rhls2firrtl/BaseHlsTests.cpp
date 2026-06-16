@@ -179,6 +179,31 @@ TEST(BaseHlsTests, TestGetNodeName)
   EXPECT_FALSE(nodeName.empty());
 }
 
+// Test get_node_name fallback when node is not in map
+TEST(BaseHlsTests, TestGetNodeNameFallback)
+{
+  // Arrange - use BitType to ensure JlmSize works
+  auto bitType = jlm::rvsdg::BitType::Create(32);
+  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rm.Rvsdg();
+
+  // Create a node that will NOT have an entry in node_map
+  auto node = jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType });
+
+  TestableBaseHLS baseHls;
+
+  // Act - get_node_name should generate name using fallback logic
+  auto nodeName = baseHls.get_node_name(node);
+
+  // Assert - node name should be generated with expected format
+  EXPECT_FALSE(nodeName.empty());
+  // Name should start with "op_"
+  EXPECT_EQ(nodeName.substr(0, 3), "op_");
+  // Should contain the DebugString of the node (TestOperation)
+  EXPECT_NE(std::string::npos, nodeName.find("TestOperation"));
+  // Should end with _N where N is the node_map size at time of creation
+}
+
 // Test get_node_name with multiple nodes
 TEST(BaseHlsTests, TestGetNodeNameMultipleNodes)
 {
@@ -277,7 +302,7 @@ TEST(BaseHlsTests, TestGetRegArgsEmpty)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
 
   // Assert
-  EXPECT_EQ(regArgs.size(), 0);
+   EXPECT_TRUE(regArgs.empty());
 }
 
 // Test get_reg_results with only register results
@@ -327,7 +352,7 @@ TEST(BaseHlsTests, TestGetRegResultsEmpty)
   auto regResults = TestableBaseHLS().get_reg_results(*lambda);
 
   // Assert
-  EXPECT_EQ(regResults.size(), 0);
+   EXPECT_TRUE(regResults.empty());
 }
 
 // Test get_mem_reqs with no memory requests
@@ -349,7 +374,7 @@ TEST(BaseHlsTests, TestGetMemReqsNone)
   auto memReqs = TestableBaseHLS().get_mem_reqs(*lambda);
 
   // Assert
-  EXPECT_EQ(memReqs.size(), 0);
+   EXPECT_TRUE(memReqs.empty());
 }
 
 // Test get_mem_resps with no memory responses
@@ -375,7 +400,7 @@ TEST(BaseHlsTests, TestGetMemRespsNone)
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
   // Assert
-  EXPECT_EQ(memResps.size(), 0);
+   EXPECT_TRUE(memResps.empty());
 }
 
 // Test JlmSize with different types
@@ -386,8 +411,9 @@ TEST(BaseHlsTests, TestJlmSize)
   EXPECT_EQ(TestableBaseHLS().JlmSize(bitType.get()), 32);
 
   // Test with pointer type
-  auto ptrType = jlm::llvm::PointerType::Create();
-  EXPECT_EQ(TestableBaseHLS().JlmSize(ptrType.get()), 64); // Assuming 64-bit system
+   auto ptrType = jlm::llvm::PointerType::Create();
+   size_t expectedPtrSize = sizeof(void*) * 8;
+   EXPECT_EQ(TestableBaseHLS().JlmSize(ptrType.get()), expectedPtrSize);
 }
 
 // Test node name generation with forbidden characters
@@ -459,8 +485,8 @@ TEST(BaseHlsTests, TestEdgeCaseEmptyLambdaWithMemResp)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-  // Assert
-  EXPECT_EQ(regArgs.size(), 0);
+   // Assert
+   EXPECT_TRUE(regArgs.empty());
   EXPECT_EQ(memResps.size(), 1);
 }
 
@@ -492,8 +518,8 @@ TEST(BaseHlsTests, TestMemReqsWithBundleType)
   // Act
   auto memReqs = TestableBaseHLS().get_mem_reqs(*lambda);
 
-  // Assert - no memory requests since there's no BundleType results
-  EXPECT_EQ(memReqs.size(), 0);
+   // Assert - no memory requests since there's no BundleType results
+   EXPECT_TRUE(memReqs.empty());
 }
 
 // Test memory response extraction with BundleType arguments
@@ -585,8 +611,8 @@ TEST(BaseHlsTests, TestEmptyLambdaAllMemory)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-  // Assert: No register args, but has memory response
-  EXPECT_EQ(regArgs.size(), 0);  // No register args
+   // Assert: No register args, but has memory response
+   EXPECT_TRUE(regArgs.empty());  // No register args
   EXPECT_EQ(memResps.size(), 1); // But has memory response
 }
 
@@ -649,7 +675,7 @@ TEST(BaseHlsTests, TestMultipleMemResponses)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-  // Assert: No register args, two memory responses
-  EXPECT_EQ(regArgs.size(), 0);  // No register args
+    // Assert: No register args, two memory responses
+    EXPECT_TRUE(regArgs.empty());    // No register args
   EXPECT_EQ(memResps.size(), 2); // Two memory responses
 }
