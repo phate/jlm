@@ -121,6 +121,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-error=comment"
 	CIRCT_LDFLAGS_ARRAY=(
 		"-L${CIRCT_PATH}/lib"
+		"--start-group"
 		"-lCIRCTAnalysisTestPasses"
 		"-lCIRCTDependenceAnalysis"
 		"-lCIRCTExportFIRRTL"
@@ -153,6 +154,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 		"-lCIRCTSimToSV"
 		"-lCIRCTExportChiselInterface"
 		"-lCIRCTOM"
+		"--end-group"
 		"-lMLIR"
 	)
 fi
@@ -189,7 +191,7 @@ MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 LLVM_VERSION=${LLVM_VERSION}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
-GTEST_LDFLAGS=${GTEST_LDFLAGS-}
+GTEST_LDFLAGS=\${CIRCT_LDFLAGS} ${GTEST_LDFLAGS-}
 export LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
 EOF
 	if [ ! -z "${CXX-}" ] ; then
