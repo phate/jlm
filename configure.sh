@@ -121,7 +121,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CXXFLAGS_DISABLE_WARNINGS="${CXXFLAGS_DISABLE_WARNINGS:-} -Wno-error=comment"
 	CIRCT_LDFLAGS_ARRAY=(
 		"-L${CIRCT_PATH}/lib"
-		"--start-group"
+		"-Wl,--start-group"
 		"-lCIRCTAnalysisTestPasses"
 		"-lCIRCTDependenceAnalysis"
 		"-lCIRCTExportFIRRTL"
@@ -154,7 +154,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 		"-lCIRCTSimToSV"
 		"-lCIRCTExportChiselInterface"
 		"-lCIRCTOM"
-		"--end-group"
+		"-Wl,--end-group"
 		"-lMLIR"
 	)
 fi
