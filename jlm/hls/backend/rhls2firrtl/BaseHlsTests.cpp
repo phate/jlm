@@ -302,7 +302,7 @@ TEST(BaseHlsTests, TestGetRegArgsEmpty)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
 
   // Assert
-   EXPECT_TRUE(regArgs.empty());
+  EXPECT_TRUE(regArgs.empty());
 }
 
 // Test get_reg_results with only register results
@@ -352,7 +352,7 @@ TEST(BaseHlsTests, TestGetRegResultsEmpty)
   auto regResults = TestableBaseHLS().get_reg_results(*lambda);
 
   // Assert
-   EXPECT_TRUE(regResults.empty());
+  EXPECT_TRUE(regResults.empty());
 }
 
 // Test get_mem_reqs with no memory requests
@@ -374,7 +374,7 @@ TEST(BaseHlsTests, TestGetMemReqsNone)
   auto memReqs = TestableBaseHLS().get_mem_reqs(*lambda);
 
   // Assert
-   EXPECT_TRUE(memReqs.empty());
+  EXPECT_TRUE(memReqs.empty());
 }
 
 // Test get_mem_resps with no memory responses
@@ -400,7 +400,7 @@ TEST(BaseHlsTests, TestGetMemRespsNone)
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
   // Assert
-   EXPECT_TRUE(memResps.empty());
+  EXPECT_TRUE(memResps.empty());
 }
 
 // Test JlmSize with different types
@@ -411,9 +411,9 @@ TEST(BaseHlsTests, TestJlmSize)
   EXPECT_EQ(TestableBaseHLS().JlmSize(bitType.get()), 32);
 
   // Test with pointer type
-   auto ptrType = jlm::llvm::PointerType::Create();
-   size_t expectedPtrSize = sizeof(void*) * 8;
-   EXPECT_EQ(TestableBaseHLS().JlmSize(ptrType.get()), expectedPtrSize);
+  auto ptrType = jlm::llvm::PointerType::Create();
+  size_t expectedPtrSize = sizeof(void *) * 8;
+  EXPECT_EQ(TestableBaseHLS().JlmSize(ptrType.get()), expectedPtrSize);
 }
 
 // Test node name generation with forbidden characters
@@ -485,8 +485,8 @@ TEST(BaseHlsTests, TestEdgeCaseEmptyLambdaWithMemResp)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-   // Assert
-   EXPECT_TRUE(regArgs.empty());
+  // Assert
+  EXPECT_TRUE(regArgs.empty());
   EXPECT_EQ(memResps.size(), 1);
 }
 
@@ -518,8 +518,8 @@ TEST(BaseHlsTests, TestMemReqsWithBundleType)
   // Act
   auto memReqs = TestableBaseHLS().get_mem_reqs(*lambda);
 
-   // Assert - no memory requests since there's no BundleType results
-   EXPECT_TRUE(memReqs.empty());
+  // Assert - no memory requests since there's no BundleType results
+  EXPECT_TRUE(memReqs.empty());
 }
 
 // Test memory response extraction with BundleType arguments
@@ -611,8 +611,8 @@ TEST(BaseHlsTests, TestEmptyLambdaAllMemory)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-   // Assert: No register args, but has memory response
-   EXPECT_TRUE(regArgs.empty());  // No register args
+  // Assert: No register args, but has memory response
+  EXPECT_TRUE(regArgs.empty());  // No register args
   EXPECT_EQ(memResps.size(), 1); // But has memory response
 }
 
@@ -675,7 +675,7 @@ TEST(BaseHlsTests, TestMultipleMemResponses)
   auto regArgs = TestableBaseHLS().get_reg_args(*lambda);
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
-    // Assert: No register args, two memory responses
-    EXPECT_TRUE(regArgs.empty());    // No register args
+  // Assert: No register args, two memory responses
+  EXPECT_TRUE(regArgs.empty());  // No register args
   EXPECT_EQ(memResps.size(), 2); // Two memory responses
 }
