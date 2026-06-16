@@ -7,15 +7,15 @@
 
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/rvsdg/TestType.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/TestType.hpp>
 
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
-#include <llvm/IR/Instructions.h>
 
 #include <fstream>
 #include <regex>
@@ -72,10 +72,8 @@ GenerateFirrtlFromLambda(
       auto resultType = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(results[i]);
       if (resultType)
       {
-        auto & constantNode = jlm::llvm::IntegerConstantOperation::Create(
-            region,
-            resultType->nbits(),
-            0);
+        auto & constantNode =
+            jlm::llvm::IntegerConstantOperation::Create(region, resultType->nbits(), 0);
         resultOutputs.push_back(constantNode.output(0));
       }
     }
@@ -213,7 +211,8 @@ TEST(RhlsToFirrtlConverterTests, TestMultipleInputs)
   EXPECT_FALSE(firrtl.empty());
   EXPECT_TRUE(ContainsSubstring(firrtl, "module multi_inputs_lambda_mod :"))
       << "Expected module with correct name in FIRRTL output";
-  // Check for correct type on each input (UInt<32> should appear at least 3 times for 3 inputs + reset)
+  // Check for correct type on each input (UInt<32> should appear at least 3 times for 3 inputs +
+  // reset)
   int uint32Count = CountSubstring(firrtl, "UInt<32>");
   EXPECT_GE(uint32Count, 3) << "Expected at least 3 occurrences of UInt<32>";
 }
@@ -448,7 +447,7 @@ TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
 {
   // Arrange - use 1-bit type for equality comparison output
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  auto boolType = jlm::rvsdg::BitType::Create(1);  // Equality returns 1-bit result
+  auto boolType = jlm::rvsdg::BitType::Create(1); // Equality returns 1-bit result
   jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
