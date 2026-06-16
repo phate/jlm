@@ -47,6 +47,8 @@ effectToString(ModRefEffect effect)
     return "RefOnly";
   case ModRefEffect::NoEffect:
     return "NoEffect";
+  default:
+    JLM_UNREACHABLE("Unknown effect");
   }
 }
 

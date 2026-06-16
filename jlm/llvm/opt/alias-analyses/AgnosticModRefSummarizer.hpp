@@ -83,7 +83,7 @@ private:
   GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
 
   /**
-   * Helper for adding all memory nodes the given \p output may target to a ModRefSet
+   * Helper for adding all memory nodes the given \p output may target to a \ref ModRefSet
    * @param output the pointer typed output
    * @param modRefEffect the effect that is possibly performed on the targeted memory nodes
    * @param modRefSet the set of memory nodes that should be expanded with \p output's targets

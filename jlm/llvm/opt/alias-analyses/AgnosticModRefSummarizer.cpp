@@ -42,8 +42,6 @@ public:
 class AgnosticModRefSummary final : public ModRefSummary
 {
 public:
-  using SimpleNodeModRefMap = std::unordered_map<const rvsdg::SimpleNode *, AgnosticModRefSet>;
-
   ~AgnosticModRefSummary() noexcept override = default;
 
 private:
@@ -129,7 +127,7 @@ public:
 
 private:
   const PointsToGraph & PointsToGraph_;
-  SimpleNodeModRefMap SimpleNodeModRefs_;
+  std::unordered_map<const rvsdg::SimpleNode *, AgnosticModRefSet> SimpleNodeModRefs_;
   AgnosticModRefSet AllMemoryNodes_;
 };
 

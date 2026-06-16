@@ -279,7 +279,7 @@ public:
   }
 
   /**
-   * Marks the ModRefSet as possibly modifying all externally available memory of size >= minSize.
+   * Marks the set as possibly modifying all externally available memory of size >= minSize.
    * @param minSize the minimum byte size of the memory locations. 0 means all sizes.
    * @return true if the ModRefSet was modified by this operation, otherwise false
    */
@@ -348,7 +348,7 @@ public:
   }
 
   /**
-   * Adds the given memory node as an explicit member of the ModRefSet.
+   * Adds the given \p memoryNode as an explicit member of the \ref ModRefSet.
    * This function does not attempt to skip memory nodes that are already implicitly referenced.
    *
    * @param memoryNode the index of the memory node in the points-to graph.
@@ -569,9 +569,10 @@ public:
    * The ModRefSummary has one set representing external functions, containing all
    * memory nodes that can be referenced or modified by external functions.
    * This set also includes memory operations performed in functions that can be called from
-   * external functions, in practice containing all memory operations in the translation module.
-   * The exception is operations on allocas that are provably not involved in recursion,
-   * since these will never be affected by calls to external functions.
+   * external functions, so will in practice contain most memory operations in the module.
+   * The exceptions are allocas that are provably not involved in recursion,
+   * since any such alloca that is affected by a call to an external function will be dead
+   * by the time the call returns.
    *
    * @return the index of the ModRefSet representing external functions
    */
@@ -722,8 +723,9 @@ private:
   std::vector<RegionAwareModRefSet> modRefSets_;
 
   /**
-   * The ModRefSet representing everything that can be referenced/modified by external functions.
-   * This includes from making calls to functions defined in the current module.
+   * The ModRefSet representing every effect external function calls may have on memory nodes.
+   * These effects include the possibility of external functions calling into local functions.
+   * @see getExternModRefSet()
    */
   ModRefSetIndex externModRefSet_;
 
@@ -820,7 +822,7 @@ struct RegionAwareModRefSummarizer::Context
 
   /**
    * Blocklists in the \ref ModRefSet constraint graph.
-   * During solving, a \ref MemoryNode X that is about to be propagated to a \ref ModRefSet A
+   * During solving, a memory node X that is about to be propagated to a \ref ModRefSet A
    * will be skipped if X is in the blocklist associated with A.
    * The pointer to the blocklist must remain valid until solving is finished.
    */
@@ -1751,7 +1753,7 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
   }
 
   // Now go over all sets again, removing all memory nodes that are not on the keep list
-  // and materializing memory nodes that were previosly only implicit
+  // and materializing memory nodes that were previously only implicit
   for (auto modRefSetIndex : allModRefSets)
   {
     auto & modRefSet = ModRefSummary_->getModRefSet(modRefSetIndex);

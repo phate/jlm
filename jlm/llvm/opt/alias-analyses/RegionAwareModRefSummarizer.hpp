@@ -118,16 +118,19 @@ private:
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
   /**
+   * Gets the set of simple allocas that can be reached in the PointsToGraph,
+   * from the given set of \p nodes, by following points-to relations.
+   * The starting nodes must all be of register kind.
    *
+   * @param nodes the register nodes used as starting points for the reachability checks.
+   * @return the set of simple alloca nodes reachable from the nodes
    */
   util::HashSet<PointsToGraph::NodeIndex>
   getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes);
 
   /**
-   * Gets the set of simple alloca nodes that it is possible to reach from \p region's arguments.
-   * Reachability is defined in terms of the \ref PointsToGraph. A simple alloca is by definition
-   * only reachable from register nodes and other simple alloca nodes,
-   * so other types of memory nodes in the points-to graph can be ignored.
+   * Gets the set of simple alloca nodes that are reachable from \p region's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph.
    * @param region the region whose arguments are checked
    * @return the set of simple allocas reachable from region arguments
    */
@@ -135,11 +138,9 @@ private:
   getSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
 
   /**
-   * Gets the set of simple alloca nodes that it is possible to reach from the \p call's arguments.
-   * Reachability is defined in terms of the \ref PointsToGraph. A simple alloca is by definition
-   * only reachable from register nodes and other simple alloca nodes,
-   * so other types of memory nodes in the points-to graph can be ignored.
-   * @param call the region whose arguments are checked
+   * Gets the set of simple alloca nodes that are reachable from the \p call's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph.
+   * @param call the call whose arguments are checked
    * @return the set of simple allocas reachable from the call's arguments
    */
   util::HashSet<PointsToGraph::NodeIndex>
@@ -271,13 +272,22 @@ private:
   VerifyBlocklists() const;
 
   /**
-   * Goes through the solved ModRefSets and materializes implicitly included
+   * Goes through the solved \ref ModRefSet instances and materializes them.
+   * Also performs compression into the external memory node.
+   * @see materializeSetsInFunction()
    */
   void
   materializeSets();
 
   /**
+   * Materializes the \ref ModRefSet instances in the given function, by explicitly adding
+   * memory nodes that are implicitly included in the set due to flags.
    *
+   * Also determines which memory nodes can be compressed into the external node in the function:
+   * memory nodes whose effects are always a subset of the effects on the external memory node,
+   * for every \ref ModRefSet in the function.
+   *
+   * @param lambda the function whose sets should be materialized.
    */
   void
   materializeSetsInFunction(const rvsdg::LambdaNode & lambda);
