@@ -4,8 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/opt/alias-analyses/ModRefSummary.hpp"
-#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -16,11 +14,13 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <unordered_map>

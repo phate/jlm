@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/simple-node.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -21,6 +20,7 @@
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>

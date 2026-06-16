@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -16,6 +15,7 @@
 #include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/util/common.hpp>
 
 #include <unordered_map>
 

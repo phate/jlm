@@ -7,8 +7,8 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 
-#include "jlm/llvm/opt/alias-analyses/ModRefSummary.hpp"
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
 #include <queue>
