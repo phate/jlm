@@ -152,4 +152,14 @@ TransformationSequence::DumpDotGraphs(
   outputFile.close();
 }
 
+TransformationFixPoint::~TransformationFixPoint() noexcept = default;
+
+void
+TransformationFixPoint::Run(
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  size_t num
+}
+
 }

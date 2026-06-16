@@ -131,6 +131,33 @@ private:
   std::vector<std::shared_ptr<Transformation>> Transformations_;
 };
 
+class TransformationFixPoint final : public Transformation
+{
+public:
+  ~TransformationFixPoint() noexcept override;
+
+  explicit TransformationFixPoint(const size_t maxRepetitions)
+      : Transformation("TransformationFixPoint"),
+        maxRepetitions_(maxRepetitions)
+  {}
+
+  void
+  Run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(
+      RvsdgModule & rvsdgModule,
+      util::StatisticsCollector & statisticsCollector,
+      const size_t maxRepetitions)
+  {
+    TransformationFixPoint transformationFixPoint(maxRepetitions);
+    transformationFixPoint.Run(rvsdgModule, statisticsCollector);
+  }
+
+private:
+  size_t maxRepetitions_;
+};
+
 }
 
 #endif // JLM_RVSDG_TRANSFORMATION_HPP
