@@ -74,3 +74,35 @@ TEST(GetElementPtrTests, TryGetAsConstantTest)
   EXPECT_FALSE(gepConstant1.has_value());
   EXPECT_FALSE(gepConstant2.has_value());
 }
+
+TEST(GetElementPtrTests, TestGetElementPtrOperationConstant_OffestInBytes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto bits8Type = BitType::Create(32);
+  const auto bits16Type = BitType::Create(32);
+  const auto bits32Type = BitType::Create(32);
+
+  auto structType =
+      StructType::CreateIdentified("struct", { bits8Type, bits16Type, bits32Type }, false);
+
+  auto arrayType1 = ArrayType::Create(bits32Type, 4);
+  auto arrayType2 = ArrayType::Create(structType, 4);
+
+  GetElementPtrOperation::Constant constant0{ structType, { 0, 0 } };
+  GetElementPtrOperation::Constant constant1{ structType, { 0, 2 } };
+  GetElementPtrOperation::Constant constant2{ structType, { 1, 2 } };
+  GetElementPtrOperation::Constant constant3{ arrayType1, { 0, 2 } };
+  GetElementPtrOperation::Constant constant4{ arrayType1, { 1, 1 } };
+  GetElementPtrOperation::Constant constant5{ arrayType2, { 0, 2, 2 } };
+
+  // Act & Assert
+  EXPECT_EQ(constant0.getOffsetInBytes(), 0);
+  EXPECT_EQ(constant1.getOffsetInBytes(), 8);
+  EXPECT_EQ(constant2.getOffsetInBytes(), 20);
+  EXPECT_EQ(constant3.getOffsetInBytes(), 8);
+  EXPECT_EQ(constant4.getOffsetInBytes(), 20);
+  EXPECT_EQ(constant5.getOffsetInBytes(), 32);
+}

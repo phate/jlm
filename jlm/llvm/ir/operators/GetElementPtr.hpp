@@ -61,8 +61,14 @@ public:
    */
   struct Constant
   {
+    /**
+     * @return The byte offset applied by the GEP
+     */
+    [[nodiscard]] int64_t
+    getOffsetInBytes() const noexcept;
+
     std::shared_ptr<const rvsdg::Type> pointeeType;
-    std::vector<uint64_t> indices;
+    std::vector<uint64_t> indices{};
   };
 
   /**
