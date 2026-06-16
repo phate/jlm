@@ -75,8 +75,8 @@ TEST(BaseHlsTests, TestGetPortNameInput)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto & import = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "input0");
 
@@ -92,8 +92,8 @@ TEST(BaseHlsTests, TestGetPortNameOutput)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto node = jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { valueType });
 
@@ -109,8 +109,8 @@ TEST(BaseHlsTests, TestGetPortNameRegionArgument)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -131,8 +131,8 @@ TEST(BaseHlsTests, TestGetPortNameWithDifferentIndices)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -144,16 +144,14 @@ TEST(BaseHlsTests, TestGetPortNameWithDifferentIndices)
           jlm::llvm::Linkage::externalLinkage));
 
   // Finalize the lambda to create results
-  auto f =
-      lambda->finalize({ lambda->GetFunctionArguments()[0], lambda->GetFunctionArguments()[1] });
-  (void)f;
+  lambda->finalize({ lambda->GetFunctionArguments()[0], lambda->GetFunctionArguments()[1] });
 
-  // Act & Assert - use subregion() to get results
+  // Act & Assert
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[0]), "a0");
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[1]), "a1");
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[2]), "a2");
-  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->subregion()->result(0)), "r0");
-  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->subregion()->result(1)), "r1");
+  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionResults()[0]), "r0");
+  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionResults()[1]), "r1");
 }
 
 // Test get_node_name
@@ -161,8 +159,8 @@ TEST(BaseHlsTests, TestGetNodeName)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto node =
       jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType, bitType });
@@ -184,8 +182,8 @@ TEST(BaseHlsTests, TestGetNodeNameFallback)
 {
   // Arrange - use BitType to ensure JlmSize works
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create a node that will NOT have an entry in node_map
   auto node = jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType });
@@ -209,8 +207,8 @@ TEST(BaseHlsTests, TestGetNodeNameMultipleNodes)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto node1 = jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType });
 
@@ -237,8 +235,8 @@ TEST(BaseHlsTests, TestGetRegArgsOnlyRegisters)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -266,8 +264,8 @@ TEST(BaseHlsTests, TestGetRegArgsWithMemoryResponses)
   elements.emplace_back("data", valueType);
   auto memResType = std::make_shared<jlm::hls::BundleType>(std::move(elements));
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -288,8 +286,8 @@ TEST(BaseHlsTests, TestGetRegArgsWithMemoryResponses)
 TEST(BaseHlsTests, TestGetRegArgsEmpty)
 {
   // Arrange
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -310,8 +308,8 @@ TEST(BaseHlsTests, TestGetRegResultsOnlyRegisters)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -321,25 +319,23 @@ TEST(BaseHlsTests, TestGetRegResultsOnlyRegisters)
           jlm::llvm::Linkage::externalLinkage));
 
   // Finalize the lambda to create results
-  auto f =
-      lambda->finalize({ lambda->GetFunctionArguments()[0], lambda->GetFunctionArguments()[0] });
-  (void)f;
+  lambda->finalize({ lambda->GetFunctionArguments()[0], lambda->GetFunctionArguments()[0] });
 
   // Act
   auto regResults = TestableBaseHLS().get_reg_results(*lambda);
 
-  // Assert
+  // Assert - use GetFunctionResults() for consistency
   EXPECT_EQ(regResults.size(), 2);
-  EXPECT_EQ(regResults[0], lambda->subregion()->result(0));
-  EXPECT_EQ(regResults[1], lambda->subregion()->result(1));
+  EXPECT_EQ(regResults[0], lambda->GetFunctionResults()[0]);
+  EXPECT_EQ(regResults[1], lambda->GetFunctionResults()[1]);
 }
 
 // Test get_reg_results with empty lambda
 TEST(BaseHlsTests, TestGetRegResultsEmpty)
 {
   // Arrange
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -360,8 +356,8 @@ TEST(BaseHlsTests, TestGetMemReqsNone)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -382,8 +378,8 @@ TEST(BaseHlsTests, TestGetMemRespsNone)
 {
   // Arrange
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -393,8 +389,7 @@ TEST(BaseHlsTests, TestGetMemRespsNone)
           jlm::llvm::Linkage::externalLinkage));
 
   // Finalize the lambda to create results
-  auto f = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  (void)f;
+  lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
   // Act
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
@@ -414,6 +409,14 @@ TEST(BaseHlsTests, TestJlmSize)
   auto ptrType = jlm::llvm::PointerType::Create();
   size_t expectedPtrSize = sizeof(void *) * 8;
   EXPECT_EQ(TestableBaseHLS().JlmSize(ptrType.get()), expectedPtrSize);
+
+  // Test with 64-bit bit type for coverage
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(bit64Type.get()), 64);
+
+  // Test with 8-bit bit type for coverage
+  auto bit8Type = jlm::rvsdg::BitType::Create(8);
+  EXPECT_EQ(TestableBaseHLS().JlmSize(bit8Type.get()), 8);
 }
 
 // Test node name generation with forbidden characters
@@ -421,8 +424,8 @@ TEST(BaseHlsTests, TestNodeNameWithForbiddenChars)
 {
   // Arrange - use BitType instead of TestType which doesn't have JlmSize support
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create a node that will generate a name
   auto node = jlm::rvsdg::TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { bitType });
@@ -444,8 +447,8 @@ TEST(BaseHlsTests, TestPortNamingWithComplexType)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -455,12 +458,11 @@ TEST(BaseHlsTests, TestPortNamingWithComplexType)
           jlm::llvm::Linkage::externalLinkage));
 
   // Finalize the lambda to create results
-  auto f = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  (void)f;
+  lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
   // Act & Assert
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[0]), "a0");
-  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->subregion()->result(0)), "r0");
+  EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionResults()[0]), "r0");
 }
 
 // Test edge cases - empty lambda with only memory responses
@@ -471,8 +473,8 @@ TEST(BaseHlsTests, TestEdgeCaseEmptyLambdaWithMemResp)
   elements.emplace_back("addr", jlm::llvm::PointerType::Create());
   auto memResType = std::make_shared<jlm::hls::BundleType>(std::move(elements));
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -486,8 +488,8 @@ TEST(BaseHlsTests, TestEdgeCaseEmptyLambdaWithMemResp)
   auto memResps = TestableBaseHLS().get_mem_resps(*lambda);
 
   // Assert
-  EXPECT_TRUE(regArgs.empty());
-  EXPECT_EQ(memResps.size(), 1);
+  EXPECT_TRUE(regArgs.empty());  // No register args
+  EXPECT_EQ(memResps.size(), 1); // But has memory response
 }
 
 // Test memory request extraction with BundleType results
@@ -500,8 +502,8 @@ TEST(BaseHlsTests, TestMemReqsWithBundleType)
   // no memory requests exist in a typical lambda structure.
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create lambda with type (value) -> value (no memory requests)
   auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -512,8 +514,7 @@ TEST(BaseHlsTests, TestMemReqsWithBundleType)
           jlm::llvm::Linkage::externalLinkage));
 
   // Finalize to create the result
-  auto f = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  (void)f;
+  lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
   // Act
   auto memReqs = TestableBaseHLS().get_mem_reqs(*lambda);
@@ -531,8 +532,8 @@ TEST(BaseHlsTests, TestMemRespsWithBundleType)
   auto memRespType = std::make_shared<jlm::hls::BundleType>(std::move(respElements));
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create lambda with type (mem_resp) -> value
   auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -567,8 +568,8 @@ TEST(BaseHlsTests, TestPortNamingMaxIndices)
     resultTypes.push_back(valueType);
   }
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -584,8 +585,8 @@ TEST(BaseHlsTests, TestPortNamingMaxIndices)
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[3]), "a3");
   EXPECT_EQ(TestableBaseHLS().get_port_name(lambda->GetFunctionArguments()[4]), "a4");
 
-  // Note: Lambda results are created when finalize() is called in the function body,
-  // but we can still access subregion()->Results() which will have the correct indices
+  // Finalize to create results for completeness
+  lambda->finalize({ lambda->GetFunctionArguments()[0] });
 }
 
 // Test lambda with only memory responses (no register args)
@@ -596,8 +597,8 @@ TEST(BaseHlsTests, TestEmptyLambdaAllMemory)
   respElements.emplace_back("addr", jlm::llvm::PointerType::Create());
   auto memRespType = std::make_shared<jlm::hls::BundleType>(std::move(respElements));
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create lambda with type (mem_resp) -> {}
   auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -625,8 +626,8 @@ TEST(BaseHlsTests, TestMixedRegAndMemArgs)
   auto memRespType = std::make_shared<jlm::hls::BundleType>(std::move(respElements));
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create lambda with type (value, mem_resp) -> value
   auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -660,8 +661,8 @@ TEST(BaseHlsTests, TestMultipleMemResponses)
   auto memRespType2 = std::make_shared<jlm::hls::BundleType>(std::move(respElements2));
 
   auto valueType = jlm::rvsdg::TestType::createValueType();
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & rvsdg = rm.Rvsdg();
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Create lambda with type (mem_resp1, mem_resp2) -> value
   auto lambda = jlm::rvsdg::LambdaNode::Create(
