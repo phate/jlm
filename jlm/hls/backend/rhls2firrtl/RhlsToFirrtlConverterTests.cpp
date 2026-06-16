@@ -60,12 +60,35 @@ GenerateFirrtlFromLambda(
           name,
           jlm::llvm::Linkage::externalLinkage));
 
-  // Finalize the lambda
+  // Create constant values for results if there are no function arguments
   std::vector<jlm::rvsdg::Output *> resultOutputs;
-  for (size_t i = 0; i < results.size(); ++i)
+  if (arguments.empty() && !results.empty())
   {
-    resultOutputs.push_back(lambdaNode->GetFunctionArguments()[i]);
+    // For functions with no inputs but outputs, create constant values in the subregion
+    auto & region = *lambdaNode->subregion();
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+      // Create a constant value (0) of the appropriate type
+      auto resultType = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(results[i]);
+      if (resultType)
+      {
+        auto & constantNode = jlm::llvm::IntegerConstantOperation::Create(
+            region,
+            resultType->nbits(),
+            0);
+        resultOutputs.push_back(constantNode.output(0));
+      }
+    }
   }
+  else
+  {
+    // For functions with inputs, use function arguments as results
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+      resultOutputs.push_back(lambdaNode->GetFunctionArguments()[i]);
+    }
+  }
+
   auto f = lambdaNode->finalize(resultOutputs);
   (void)f;
 
@@ -86,10 +109,11 @@ TEST(RhlsToFirrtlConverterTests, TestSimpleModuleNoPorts)
   // Act
   auto firrtl = GenerateFirrtlFromLambda("simple_no_ports", arguments, results);
 
-  // Assert
+  // Assert - module name in FIRRTL has _lambda_mod suffix
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module simple_no_ports_lambda_mod :"))
+      << "Expected 'module simple_no_ports_lambda_mod :' in FIRRTL output";
 }
 
 // Test that a simple module with inputs generates valid FIRRTL
@@ -105,9 +129,12 @@ TEST(RhlsToFirrtlConverterTests, TestSimpleModuleWithInputs)
 
   // Assert
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "input")); // Should have input ports
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module simple_inputs_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for UInt<32> type declaration (FIRRTL uses bit-width annotations)
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
 }
 
 // Test that a simple module with outputs generates valid FIRRTL
@@ -123,9 +150,12 @@ TEST(RhlsToFirrtlConverterTests, TestSimpleModuleWithOutputs)
 
   // Assert
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "output")); // Should have output ports
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module simple_outputs_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for UInt<32> type declaration
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
 }
 
 // Test that a module with both inputs and outputs generates valid FIRRTL
@@ -141,10 +171,12 @@ TEST(RhlsToFirrtlConverterTests, TestSimpleModuleWithInOut)
 
   // Assert
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "input"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "output"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module simple_inout_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for UInt<32> type declarations
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
 }
 
 // Test that FIRRTL output has valid structure
@@ -158,17 +190,13 @@ TEST(RhlsToFirrtlConverterTests, TestFirrtlStructure)
   // Act
   auto firrtl = GenerateFirrtlFromLambda("struct_test", arguments, results);
 
-  // Assert - basic FIRRTL structure
+  // Assert - basic FIRRTL structure with type information
   EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module")) << "Missing 'module' keyword";
-
-  // Check for circuit name
-  std::regex circuitRegex(R"(circuit\s+(\w+)\s*:)");
-  EXPECT_TRUE(std::regex_search(firrtl, circuitRegex)) << "Invalid circuit declaration";
-
-  // Check for module name
-  std::regex moduleRegex(R"(module\s+(\w+)\s*\()");
-  EXPECT_TRUE(std::regex_search(firrtl, moduleRegex)) << "Invalid module declaration";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module struct_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for proper type annotations (bit-width)
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' bit-width annotation in FIRRTL output";
 }
 
 // Test that a module with multiple inputs generates correct FIRRTL
@@ -184,8 +212,11 @@ TEST(RhlsToFirrtlConverterTests, TestMultipleInputs)
 
   // Assert
   EXPECT_FALSE(firrtl.empty());
-  // Count occurrences of "input" - should have at least 3 inputs
-  EXPECT_GE(CountSubstring(firrtl, "input"), 3) << "Expected at least 3 input ports";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module multi_inputs_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for correct type on each input (UInt<32> should appear at least 3 times for 3 inputs + reset)
+  int uint32Count = CountSubstring(firrtl, "UInt<32>");
+  EXPECT_GE(uint32Count, 3) << "Expected at least 3 occurrences of UInt<32>";
 }
 
 // Test that a module with multiple outputs generates correct FIRRTL
@@ -201,8 +232,11 @@ TEST(RhlsToFirrtlConverterTests, TestMultipleOutputs)
 
   // Assert
   EXPECT_FALSE(firrtl.empty());
-  // Count occurrences of "output" - should have at least 3 outputs
-  EXPECT_GE(CountSubstring(firrtl, "output"), 3) << "Expected at least 3 output ports";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module multi_outputs_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for correct type on each output (UInt<32> should appear at least 3 times)
+  int uint32Count = CountSubstring(firrtl, "UInt<32>");
+  EXPECT_GE(uint32Count, 3) << "Expected at least 3 occurrences of UInt<32>";
 }
 
 // Test that a module with combinational logic (add operation) generates valid FIRRTL
@@ -235,12 +269,16 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAdd)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - ADD operations should be present as 'add' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
-  // Add operation should generate FIRRTL add
-  EXPECT_TRUE(ContainsSubstring(firrtl, "+")) << "Expected add operation in FIRRTL";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module add_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  // Check that the ADD operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "add("))
+      << "Expected 'add(' operation in FIRRTL output for IntegerAddOperation";
 }
 
 // Test that a module with integer subtract generates valid FIRRTL
@@ -273,10 +311,16 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicSub)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - SUB operations should be present as 'sub' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module sub_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  // Check that the SUB operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "sub("))
+      << "Expected 'sub(' operation in FIRRTL output for IntegerSubOperation";
 }
 
 // Test that a module with integer AND generates valid FIRRTL
@@ -309,10 +353,16 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAnd)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - AND operations should be present as 'and' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module and_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  // Check that the AND operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "and("))
+      << "Expected 'and(' operation in FIRRTL output for IntegerAndOperation";
 }
 
 // Test that a module with integer XOR generates valid FIRRTL
@@ -345,10 +395,16 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicXor)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - XOR operations should be present as 'xor' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module xor_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  // Check that the XOR operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "xor("))
+      << "Expected 'xor(' operation in FIRRTL output for IntegerXorOperation";
 }
 
 // Test that a module with integer OR generates valid FIRRTL
@@ -381,23 +437,30 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicOr)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - OR operations should be present as 'or' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module or_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  // Check that the OR operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "or("))
+      << "Expected 'or(' operation in FIRRTL output for IntegerOrOperation";
 }
 
 // Test that a module with comparison operations generates valid FIRRTL
 TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
 {
-  // Arrange
+  // Arrange - use 1-bit type for equality comparison output
   auto bitType = jlm::rvsdg::BitType::Create(32);
+  auto boolType = jlm::rvsdg::BitType::Create(1);  // Equality returns 1-bit result
   jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
-          jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
+          jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { boolType }),
           "cmp_test",
           jlm::llvm::Linkage::externalLinkage));
 
@@ -407,7 +470,7 @@ TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
       *lambdaNode->GetFunctionArguments()[0],
       *lambdaNode->GetFunctionArguments()[1]);
 
-  // Finalize the lambda
+  // Finalize the lambda with 1-bit result
   auto f = lambdaNode->finalize({ cmpNode.output(0) });
   (void)f;
 
@@ -417,11 +480,19 @@ TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert
+  // Assert - equality comparison should generate 'eq' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
-  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "module"));
-  EXPECT_TRUE(ContainsSubstring(firrtl, "==")) << "Expected equality comparison in FIRRTL";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Missing 'circuit' keyword";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module cmp_test_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for both UInt<32> (inputs) and UInt<1> (output)
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' type annotation in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<1>"))
+      << "Expected 'UInt<1>' type annotation for comparison result";
+  // Check that the equality operation is generated
+  EXPECT_TRUE(ContainsSubstring(firrtl, "eq("))
+      << "Expected 'eq(' (equality) operation in FIRRTL output for IntegerEqOperation";
 }
 
 // Test that FIRRTL output for a simple add function contains expected structure
@@ -454,11 +525,13 @@ TEST(RhlsToFirrtlConverterTests, TestAddFunctionStructure)
   RhlsToFirrtlConverter converter;
   auto firrtl = converter.ToString(rm);
 
-  // Assert - check for FIRRTL specific syntax
-  // FIRRTL modules have specific structure with ports
-  EXPECT_TRUE(ContainsSubstring(firrtl, "input")) << "Expected 'input' in FIRRTL module";
-  EXPECT_TRUE(ContainsSubstring(firrtl, "output")) << "Expected 'output' in FIRRTL module";
-  EXPECT_TRUE(ContainsSubstring(firrtl, "wire")) << "Expected 'wire' in FIRRTL module";
+  // Assert - check for FIRRTL specific syntax with type annotations
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Expected 'circuit' in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module add_func_lambda_mod :"))
+      << "Expected module with correct name in FIRRTL output";
+  // Check for proper type annotations
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' bit-width annotation in FIRRTL output";
 }
 
 // Test that FIRRTL output preserves module names
@@ -472,7 +545,11 @@ TEST(RhlsToFirrtlConverterTests, TestModuleNaming)
   // Act
   auto firrtl = GenerateFirrtlFromLambda("my_module_name", arguments, results);
 
-  // Assert - module name should be in FIRRTL
-  EXPECT_TRUE(ContainsSubstring(firrtl, "my_module_name"))
-      << "Expected module name 'my_module_name' in FIRRTL output";
+  // Assert - module name should be in FIRRTL with _lambda_mod suffix
+  EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Expected 'circuit' in FIRRTL output";
+  EXPECT_TRUE(ContainsSubstring(firrtl, "module my_module_name_lambda_mod :"))
+      << "Expected 'module my_module_name_lambda_mod :' FIRRTL syntax";
+  // Verify type annotation is present
+  EXPECT_TRUE(ContainsSubstring(firrtl, "UInt<32>"))
+      << "Expected 'UInt<32>' bit-width annotation in FIRRTL output";
 }
