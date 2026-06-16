@@ -36,7 +36,7 @@ public:
 
   // Override pure virtual GetText to make the class instantiable
   std::string
-  GetText(jlm::llvm::LlvmRvsdgModule & rm) override
+  GetText([[maybe_unused]] jlm::llvm::LlvmRvsdgModule & rm) override
   {
     return "";
   }
