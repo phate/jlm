@@ -51,10 +51,10 @@ GenerateFirrtlFromLambda(
     const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> & arguments,
     const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> & results)
 {
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create(arguments, results),
           name,
@@ -90,13 +90,12 @@ GenerateFirrtlFromLambda(
   }
 
   auto f = lambdaNode->finalize(resultOutputs);
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Convert to FIRRTL
   RhlsToFirrtlConverter converter;
-  return converter.ToString(rm);
+  return converter.ToString(rvsdgModule);
 }
 
 // Test that a simple module with no inputs/outputs generates valid FIRRTL
@@ -244,10 +243,10 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAdd)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "add_test",
@@ -261,13 +260,12 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAdd)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ addNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - ADD operations should be present as 'add' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -286,10 +284,10 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicSub)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "sub_test",
@@ -303,13 +301,12 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicSub)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ subNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - SUB operations should be present as 'sub' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -328,10 +325,10 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAnd)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "and_test",
@@ -345,13 +342,12 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicAnd)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ andNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - AND operations should be present as 'and' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -370,10 +366,10 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicXor)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "xor_test",
@@ -387,13 +383,12 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicXor)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ xorNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - XOR operations should be present as 'xor' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -412,10 +407,10 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicOr)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "or_test",
@@ -429,13 +424,12 @@ TEST(RhlsToFirrtlConverterTests, TestCombinationalLogicOr)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ orNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - OR operations should be present as 'or' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -455,10 +449,10 @@ TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
   // Arrange - use 1-bit type for equality comparison output
   auto bitType = jlm::rvsdg::BitType::Create(32);
   auto boolType = jlm::rvsdg::BitType::Create(1);  // Equality returns 1-bit result
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { boolType }),
           "cmp_test",
@@ -472,13 +466,12 @@ TEST(RhlsToFirrtlConverterTests, TestComparisonOperations)
 
   // Finalize the lambda with 1-bit result
   auto f = lambdaNode->finalize({ cmpNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - equality comparison should generate 'eq' in FIRRTL
   EXPECT_FALSE(firrtl.empty());
@@ -500,10 +493,10 @@ TEST(RhlsToFirrtlConverterTests, TestAddFunctionStructure)
 {
   // Arrange
   auto bitType = jlm::rvsdg::BitType::Create(32);
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
+      rvsdgModule.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ bitType, bitType }, { bitType }),
           "add_func",
@@ -517,13 +510,12 @@ TEST(RhlsToFirrtlConverterTests, TestAddFunctionStructure)
 
   // Finalize the lambda
   auto f = lambdaNode->finalize({ addNode.output(0) });
-  (void)f;
 
   jlm::rvsdg::GraphExport::Create(*f, "output");
 
   // Act
   RhlsToFirrtlConverter converter;
-  auto firrtl = converter.ToString(rm);
+  auto firrtl = converter.ToString(rvsdgModule);
 
   // Assert - check for FIRRTL specific syntax with type annotations
   EXPECT_TRUE(ContainsSubstring(firrtl, "circuit")) << "Expected 'circuit' in FIRRTL output";
