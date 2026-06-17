@@ -1737,8 +1737,9 @@ RegionAwareModRefSummarizer::determineReadOnlyMemory()
     // If the memory is externally accessible, it is also not read-only
     if (ModRefSummary_->GetPointsToGraph().isExternallyAvailable(memoryNode))
       continue;
-    // If the memory is of type Alloca, it might not actually be read-only,
-    // as non-reentrant allocas can be partially hidden from reaching the extern mod ref set
+    // If the memory node is of type Alloca, it might not actually be read-only,
+    // as non-reentrant allocas can be partially hidden from reaching the extern \ref ModRefSet.
+    // This is handled by never treating allocas as "effectively read-only"
     if (ModRefSummary_->GetPointsToGraph().getNodeKind(memoryNode)
         == PointsToGraph::NodeKind::AllocaNode)
       continue;

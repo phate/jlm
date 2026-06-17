@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/GetElementPtr.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -897,9 +898,9 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
   const auto loadOperation =
       dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
-  const auto & deltaResult = tracedDelta.deltaNode->result();
+  const auto & deltaResultOrigin = *tracedDelta.deltaNode->result().origin();
 
-  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*deltaResult.origin()))
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(deltaResultOrigin))
   {
     rvsdg::MatchTypeWithDefault(
         node->GetOperation(),
@@ -916,6 +917,14 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
 
           context_->numForwardedLoadsWithoutMemoryState++;
+        },
+        [&](const ConstantFP &)
+        {
+          // FIXME: handle operation
+        },
+        [&](const GetElementPtrOperation &)
+        {
+          // FIXME: handle operation
         },
         [&](const ConstantStruct &)
         {
@@ -951,10 +960,19 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 
           context_->numForwardedLoadsWithoutMemoryState++;
         },
+        [&](const ConstantPointerNullOperation &)
+        {
+          // FIXME: handle operation
+        },
         [&]()
         {
           throw std::logic_error("Unsupported operation: " + node->DebugString());
         });
+  }
+  else if (auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
+  {
+    JLM_ASSERT(deltaNode == tracedDelta.deltaNode);
+    // FIXME: Handle context variables used as global constant initializers
   }
   else
   {
