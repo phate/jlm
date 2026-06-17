@@ -8,7 +8,10 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+
+#include <queue>
 
 namespace jlm::llvm::aa
 {
@@ -27,30 +30,32 @@ using ModRefSetIndex = uint32_t;
  * This graph includes calls to external functions, and calls from external functions.
  * Each function is assigned to a strongly connected component.
  *
- * 2. Find allocas that are dead in each SCC:
- * For each SCC in the call graph, only allocas defined within the SCC,
- * or within one of its predecessors, can be live.
- * All other allocas are placed in the DeadAllocasInScc lists.
- *
- * 3. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
+ * 2. Simple Alloca Set Creation: An alloca is "simple" if its address is never stored to
  * any memory location, except for other simple allocas.
  * The PointsToGraph is used to determine which allocas are simple.
  *
- * 4. Create sets of non-reentrant allocas for each region.
+ * 3. Create sets of non-reentrant allocas for each region.
  * The requirements are:
  *  - the alloca must be simple
  *  - the alloca must not be reachable from any of the region's arguments,
  *    when following points-to edges in the \ref PointsToGraph.
  *
- * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
+ * 4. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
  * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
  * Special edges are used between function body region -> function,
  * which filter away all simple allocas defined in the function that are not recursive.
  *
- * 6. Mod/Ref Graph Solving: Mod/Ref sets are propagated along edges in the graph
+ * 5. Mod/Ref Graph Solving: Mod/Ref sets and flags are propagated along edges in the graph
  *
- * 7. Mod/Ref set compaction: Within each function, memory nodes that always
- * appear along with the external node are removed. External can represent it instead.
+ * 6. Mod/Ref set materialization, converting implicit memory nodes into explicit memory nodes.
+ * During this materialization, memory nodes are also compressed into the external memory node
+ * if possible. Compression is done on a per-function basis, and is possible when a memory node's
+ * effects is always a subset of the effects on the external node, across all sets in the function.
+ *
+ * In a previous version of this class, alloca blocking was done based on SCCs in the call graph.
+ * Given a function call where the caller is in a different SCC than the callee,
+ * any alloca defined in the callee's SCC can be blocked from being propagated to the call.
+ * In practise, this blocking only helped to remove loads from a single file in the benchmarks.
  *
  * @see ModRefSummarizer
  * @see MemoryStateEncoder
@@ -80,7 +85,7 @@ public:
    * Creates a RegionAwareModRefSummarizer and calls the SummarizeModRefs() method.
    *
    * @param rvsdgModule The RVSDG module for which the \ref ModRefSummary should be computed.
-   * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
+   * @param pointsToGraph The \ref PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
    * @return A new instance of ModRefSummary.
@@ -113,14 +118,7 @@ private:
   createCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
-   * For each SCC in the call graph, determines which allocas can be known to not be live
-   * when a function from the SCC is at the top of the call stack.
-   */
-  void
-  FindAllocasDeadInSccs();
-
-  /**
-   * Creates a set containing all simple Allocas is the PointsToGraph.
+   * Creates a set containing all simple Allocas is the \ref PointsToGraph.
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
    */
@@ -128,15 +126,33 @@ private:
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
   /**
-   * Gets the set of simple alloca nodes that it is possible to reach from \p region's arguments.
-   * Reachability is defined in terms of the \ref PointsToGraph. A simple alloca is by definition
-   * only reachable from register nodes and other simple alloca nodes,
-   * so other types of memory nodes in the points-to graph can be ignored.
+   * Gets the set of simple allocas that can be reached in the PointsToGraph,
+   * from the given set of \p nodes, by following points-to relations.
+   * The starting nodes must all be of register kind.
+   *
+   * @param nodes the register nodes used as starting points for the reachability checks.
+   * @return the set of simple alloca nodes reachable from the nodes
+   */
+  util::HashSet<PointsToGraph::NodeIndex>
+  getReachableSimpleAllocas(std::queue<PointsToGraph::NodeIndex> & nodes);
+
+  /**
+   * Gets the set of simple alloca nodes that are reachable from \p region's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph.
    * @param region the region whose arguments are checked
    * @return the set of simple allocas reachable from region arguments
    */
   util::HashSet<PointsToGraph::NodeIndex>
-  GetSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+  getSimpleAllocasReachableFromRegionArguments(const rvsdg::Region & region);
+
+  /**
+   * Gets the set of simple alloca nodes that are reachable from the \p call's arguments.
+   * Reachability is defined in terms of the \ref PointsToGraph.
+   * @param call the call whose arguments are checked
+   * @return the set of simple allocas reachable from the call's arguments
+   */
+  util::HashSet<PointsToGraph::NodeIndex>
+  getSimpleAllocasReachableFromCallArguments(const rvsdg::SimpleNode & call);
 
   /**
    * Uses the call graph to determine if the given function can ever be involved
@@ -161,13 +177,6 @@ private:
   CreateNonReentrantAllocaSets();
 
   /**
-   * Creates one ModRefSet which is responsible for representing all reads and writes
-   * that may happen in external functions.
-   */
-  void
-  CreateExternalModRefSet();
-
-  /**
    * Adds the fact that everything in the ModRefSet \p from should also be included
    * in the ModRefSet \p to.
    */
@@ -190,19 +199,24 @@ private:
       const util::HashSet<PointsToGraph::NodeIndex> & blocklist);
 
   /**
-   * Creates ModRefSets for regions and nodes within the function.
+   * Creates \ref ModRefSet%s for regions and nodes within the function.
    * The flow of MemoryNodes between sets is modeled by adding edges to the constraint graph.
    */
   void
   AnnotateFunction(const rvsdg::LambdaNode & lambda);
 
   /**
-   * Recursive call used to create ModRefSets for the given region, its nodes and its sub-regions.
-   * @param region the region to create ModRefSets for.
+   * Recursive call used to make the given region, its nodes and its subregions all
+   * be represented by the given \ref ModRefSet.
+   * @param region the region whose operations should be represented by the \ref ModRefSet
+   * @param modRefSet the index of the \ref ModRefSet used to represent the region
    * @param lambda the function this region belongs to
    */
-  ModRefSetIndex
-  AnnotateRegion(const rvsdg::Region & region, const rvsdg::LambdaNode & lambda);
+  void
+  AnnotateRegion(
+      const rvsdg::Region & region,
+      ModRefSetIndex modRefSet,
+      const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
   AnnotateStructuralNode(
@@ -217,14 +231,14 @@ private:
    * @param modRefSetIndex the index of the ModRefSet representing some memory operation
    * @param origin the output producing the pointer value being operated on
    * @param minTargetSize an optional size requirement for targeted memory locations
-   * @param lambda the function the operation is happening in
+   * @param modRefEffect the effect the operation may have on the memory targeted by origin
    */
   void
-  AddPointerOriginTargets(
+  addPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
       std::optional<size_t> minTargetSize,
-      const rvsdg::LambdaNode & lambda);
+      ModRefEffect modRefEffect);
 
   ModRefSetIndex
   AnnotateLoad(const rvsdg::SimpleNode & loadNode, const rvsdg::LambdaNode & lambda);
@@ -233,10 +247,10 @@ private:
   AnnotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
-  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
+  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
-  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
+  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
   AnnotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
@@ -266,26 +280,25 @@ private:
   VerifyBlocklists() const;
 
   /**
-   * Goes through all ModRefSets in all functions, and keeps track of memory nodes that always
-   * appear alongside the external memory node. These memory nodes are compressible,
-   * and can be removed from all ModRefSets in the function.
+   * Goes through the solved \ref ModRefSet instances and materializes them.
+   * Also performs compression into the external memory node.
+   * @see materializeSetsInFunction()
    */
   void
-  doExternalCompression();
+  materializeSets();
 
   /**
-   * Performs external compaction in the given function.
+   * Materializes the \ref ModRefSet instances in the given function, by explicitly adding
+   * memory nodes that are implicitly included in the set due to flags.
+   *
+   * Also determines which memory nodes can be compressed into the external node in the function:
+   * memory nodes whose effects are always a subset of the effects on the external memory node,
+   * for every \ref ModRefSet in the function.
+   *
+   * @param lambda the function whose sets should be materialized.
    */
   void
-  compressExternalInFunction(const rvsdg::LambdaNode & lambda);
-
-  /**
-   * Helper function for recursively finding all ModRefSets in the given node.
-   * @param node the node to traverse, including any subregions.
-   * @param modRefSets the hash set in which all found ModRefSets are placed.
-   */
-  void
-  findAllModRefSets(const rvsdg::Node & node, util::HashSet<ModRefSetIndex> & modRefSets);
+  materializeSetsInFunction(const rvsdg::LambdaNode & lambda);
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
