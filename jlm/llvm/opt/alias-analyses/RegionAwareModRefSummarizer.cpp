@@ -61,7 +61,7 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
     !std::getenv("JLM_DISABLE_CONSTANT_MEMORY_BLOCKING");
 
 /**
- * Some global memory is not marked as constant, but can be proven to never change.
+ * Some global memory is not marked as constant, but can be proven to never be written to.
  * Detecting this lets us treat them as constants, omitting them from memory state routing.
  */
 static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
