@@ -298,7 +298,7 @@ public:
   }
 
   /**
-   * Helper function for finding the implicit ModRefEffect flagged on a hypothetical
+   * Helper function for finding the implicitly flagged \ref ModRefEffect on a hypothetical
    * externally available memory node, optionally of a specific size.
    * @param size the size of the hypothetical memory node, or nullopt if unknown
    * @return the implicitly encoded ModRefEffect on the hypothetical memory node
@@ -321,7 +321,7 @@ public:
   }
 
   /**
-   * @return true if the ModRefSet represents possible calls to externally defined functions.
+   * @return true if the \ref ModRefSet represents possible calls to externally defined functions.
    */
   [[nodiscard]] bool
   mayCallExternalFunction() const
@@ -330,8 +330,8 @@ public:
   }
 
   /**
-   * Marks the ModRefSet as possibly containing calls to externally defined functions.
-   * @return true if the ModRefSet was modified by this operation, otherwise false
+   * Marks the \ref ModRefSet as possibly containing calls to externally defined functions.
+   * @return true if the \ref ModRefSet was modified by this operation, otherwise false
    */
   bool
   markAsCallingExternalFunction()
@@ -358,18 +358,20 @@ public:
   bool
   addExplicitMemoryNode(PointsToGraph::NodeIndex memoryNode, ModRefEffect modRefEffect)
   {
+    JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
+
     const auto [it, inserted] = modRefNodes_.insert({ memoryNode, modRefEffect });
     if (inserted)
       return true;
 
-    // The memory node was already present, but we may add any more effects
+    // The memory node was already present, but we may add more effects
     auto oldEffects = it->second;
     it->second = oldEffects | modRefEffect;
     return it->second != oldEffects;
   }
 
   /**
-   * Adds the given memoryNode to the ModRefSet, unless the memory node is already represented.
+   * Adds the given memoryNode to the set, unless the memory node is already represented.
    * Uses the external availability and byte size of the memory node to determine this.
    *
    * @param memoryNode the index of the memory node in the points-to graph.
@@ -527,7 +529,7 @@ public:
   }
 
   /**
-   * Adds the given \p ptgNode the ModRefSet with the given \p index.
+   * Adds the given \p ptgNode the \ref ModRefSet with the given \p index.
    * Performs checks to avoid adding doubled-up memory nodes.
    *
    * @param index the index of the \ref ModRefSet being added to
@@ -574,7 +576,7 @@ public:
    * since any such alloca that is affected by a call to an external function will be dead
    * by the time the call returns.
    *
-   * @return the index of the ModRefSet representing external functions
+   * @return the index of the \ref ModRefSet representing external functions
    */
   [[nodiscard]] ModRefSetIndex
   getExternModRefSet() const noexcept
@@ -597,9 +599,10 @@ public:
   }
 
   /**
-   * Get the ModRefSet associated with the given \p node, or creates one if none exists.
+   * Get the \ref ModRefSet associated with the given \p node, or creates one if none exists.
    * @param node the RVSDG node to be represented by a ModRefSet
    * @param lambdaNode the function the RVSDG node belongs to.
+   * @return the index of the exisiting or created \ref ModRefSet representing the node
    */
   [[nodiscard]] ModRefSetIndex
   getOrCreateSetForNode(const rvsdg::Node & node, const rvsdg::LambdaNode & lambdaNode)
@@ -723,14 +726,14 @@ private:
   std::vector<RegionAwareModRefSet> modRefSets_;
 
   /**
-   * The ModRefSet representing every effect external function calls may have on memory nodes.
+   * The \ref ModRefSet representing every effect external function calls may have on memory nodes.
    * These effects include the possibility of external functions calling into local functions.
    * @see getExternModRefSet()
    */
   ModRefSetIndex externModRefSet_;
 
   /**
-   * Lists ModRefSets grouped by the function of node they belong to.
+   * Lists \ref ModRefSet%s grouped by the function of node they belong to.
    */
   std::unordered_map<const rvsdg::LambdaNode *, std::vector<ModRefSetIndex>> modRefSetsInFunction_;
 
@@ -829,10 +832,8 @@ struct RegionAwareModRefSummarizer::Context
   std::unordered_map<ModRefSetIndex, const util::HashSet<PointsToGraph::NodeIndex> *>
       ModRefSetBlocklists;
 
-  // Statistics collected during Mod/Ref summarization
-
   /**
-   * The number of ModRefSets that go through materialization.
+   * The number of \ref ModRefSet%s that go through materialization.
    * Should be all sets except for the one representing external function calls.
    */
   size_t numModRefSetsMaterialized = 0;
@@ -1285,7 +1286,7 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
 void
 RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to)
 {
-  // We should never add outgoing edges from the ModRefSet representing all external functions
+  // We should never add outgoing edges from the set representing all external functions
   JLM_ASSERT(from != ModRefSummary_->getExternModRefSet());
   // Ensure the constraint vector is large enough
   Context_->ModRefSetSimpleConstraints.resize(ModRefSummary_->NumModRefSets());

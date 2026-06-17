@@ -19,17 +19,22 @@ namespace jlm::llvm::aa
 {
 
 /**
- * Enum representing the ways in which a ModRefSet may affect a memory node.
- * A Ref means the memory object may be loaded from.
- * A Mod means the memory object may we written to.
+ * This enum represents the ways in which a \ref ModRefSet may affect a memory node.
  *
  * The enum values are chosen such that bitwise OR results in the union of effects.
  */
 enum ModRefEffect : uint8_t
 {
+  // The set has no effect on the memory node
   NoEffect = 0,
+
+  // The set represents possibly reading from the memory
   RefOnly = 0b1,
+
+  // The set represents possibly storing to the memory
   ModOnly = 0b10,
+
+  // The set represents both reading and writing to the memory
   ModRef = 0b11
 };
 
@@ -39,6 +44,7 @@ enum ModRefEffect : uint8_t
 [[nodiscard]] inline bool
 mayEffectReference(ModRefEffect effect)
 {
+  // Bitwise AND checks for both RefOnly and ModRef
   return effect & ModRefEffect::RefOnly;
 }
 
@@ -48,6 +54,7 @@ mayEffectReference(ModRefEffect effect)
 [[nodiscard]] inline bool
 mayEffectModify(ModRefEffect effect)
 {
+  // Bitwise AND checks for both ModOnly and ModRef
   return effect & ModRefEffect::ModOnly;
 }
 
@@ -88,7 +95,7 @@ isEffectSubset(ModRefEffect subset, ModRefEffect superset)
 }
 
 /**
- * Class representing the set of memory nodes that may
+ * Class that represents the set of memory nodes that may
  * be referenced and/or modified by some operation.
  *
  * Memory nodes that are marked constant, or memory that is provably never stored to,

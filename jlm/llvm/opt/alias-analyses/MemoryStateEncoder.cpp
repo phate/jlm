@@ -36,8 +36,9 @@ struct MemoryStateTypeCounter final
   // The number of entities that have been counted
   uint64_t NumEntities = 0;
 
-  // Count of total memory states, separated by ModRef/RefOnly
+  // Count of total memory states, separated by Ref/Mod/ModRef
   uint64_t NumRefOnly = 0;
+  uint64_t NumModOnly = 0;
   uint64_t NumModRef = 0;
 
   // Count of total memory states, separated by MemoryNode type
@@ -59,6 +60,7 @@ struct MemoryStateTypeCounter final
   void
   CountEntity(
       uint64_t numRefOnly,
+      uint64_t numModOnly,
       uint64_t numModRef,
       uint64_t numAllocas,
       uint64_t numMallocs,
@@ -71,6 +73,7 @@ struct MemoryStateTypeCounter final
     NumEntities++;
 
     NumRefOnly += numRefOnly;
+    NumModOnly += numModOnly;
     NumModRef += numModRef;
 
     NumAllocas += numAllocas;
@@ -80,7 +83,7 @@ struct MemoryStateTypeCounter final
     NumLambdas += numLambdas;
     NumExternalNode += numExternalNode;
 
-    const uint64_t totalMemoryStates = numRefOnly + numModRef;
+    const uint64_t totalMemoryStates = numRefOnly + numModOnly + numModRef;
     if (totalMemoryStates > MaxMemoryStateEntity)
       MaxMemoryStateEntity = totalMemoryStates;
 
@@ -93,6 +96,7 @@ struct MemoryStateTypeCounter final
   CountEntity(const PointsToGraph & pointsToGraph, const ModRefSet & memoryNodes)
   {
     uint64_t numRefOnly = 0;
+    uint64_t numModOnly = 0;
     uint64_t numModRef = 0;
 
     uint64_t numAllocas = 0;
@@ -104,12 +108,22 @@ struct MemoryStateTypeCounter final
 
     uint64_t numNonEscaped = 0;
 
-    for (const auto [memoryNode, mayMod] : memoryNodes.getModRefNodes())
+    for (const auto [memoryNode, modRefEffect] : memoryNodes.getModRefNodes())
     {
-      if (mayMod)
-        numModRef++;
-      else
+      switch (modRefEffect)
+      {
+      case jlm::llvm::aa::ModRefEffect::RefOnly:
         numRefOnly++;
+        break;
+      case jlm::llvm::aa::ModRefEffect::ModOnly:
+        numModOnly++;
+        break;
+      case jlm::llvm::aa::ModRefEffect::ModRef:
+        numModRef++;
+        break;
+      default:
+        JLM_UNREACHABLE("Unknown ModRefEffect");
+      }
 
       if (!pointsToGraph.isExternallyAvailable(memoryNode))
         numNonEscaped++;
@@ -142,6 +156,7 @@ struct MemoryStateTypeCounter final
 
     CountEntity(
         numRefOnly,
+        numModOnly,
         numModRef,
         numAllocas,
         numMallocs,
@@ -160,6 +175,7 @@ class EncodingStatistics final : public util::Statistics
 {
   // Prefixes for statistics that count ModRef vs RefOnly
   static constexpr auto NumTotalRefOnlyStates_ = "#TotalRefOnlyState";
+  static constexpr auto NumTotalModOnlyStates_ = "#TotalModOnlyState";
   static constexpr auto NumTotalModRefStates_ = "#TotalModRefState";
   // These are prefixes for statistics that count MemoryNode types
   static constexpr auto NumTotalAllocaState_ = "#TotalAllocaState";
@@ -253,6 +269,7 @@ private:
   AddMemoryStateTypeCounter(const std::string & suffix, const MemoryStateTypeCounter & counter)
   {
     AddMeasurement(NumTotalRefOnlyStates_ + suffix, counter.NumRefOnly);
+    AddMeasurement(NumTotalModOnlyStates_ + suffix, counter.NumModOnly);
     AddMeasurement(NumTotalModRefStates_ + suffix, counter.NumModRef);
 
     AddMeasurement(NumTotalAllocaState_ + suffix, counter.NumAllocas);
