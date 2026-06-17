@@ -274,9 +274,11 @@ adjustLoopRepetitionEdge(const StronglyConnectedComponentStructure & sccStructur
   // Thus, we would expect them to also be together here. Just to be sure, we plastered the path
   // with asserts.
   auto & threeAddressCodes = exitNode->tacs();
-  JLM_ASSERT(is<BranchOperation>(threeAddressCodes.last()));
+  auto branchTac = threeAddressCodes.last();
+  JLM_ASSERT(is<BranchOperation>(branchTac));
   auto matchTac = *std::next(threeAddressCodes.rbegin(), 1);
   JLM_ASSERT(is<rvsdg::MatchOperation>(matchTac));
+  JLM_ASSERT(branchTac->operand(0) == matchTac->result(0));
   auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(&matchTac->operation());
   JLM_ASSERT(matchOperation->nalternatives() == 2);
   JLM_ASSERT(matchOperation->default_alternative() == 0);
