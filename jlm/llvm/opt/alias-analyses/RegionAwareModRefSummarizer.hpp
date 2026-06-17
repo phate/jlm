@@ -280,6 +280,14 @@ private:
   VerifyBlocklists() const;
 
   /**
+   * After solving, the \ref ModRefSet representing all external functions is used to determine
+   * if any non-escaped variables in the module are only referenced, and never written to.
+   * These memory nodes can be considered constant, and should be omitted from all ModRefSets.
+   */
+  void
+  determineReadOnlyMemory();
+
+  /**
    * Goes through the solved \ref ModRefSet instances and materializes them.
    * Also performs compression into the external memory node.
    * @see materializeSetsInFunction()
