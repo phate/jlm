@@ -1792,7 +1792,8 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
       {
         const auto memoryNodeSize = pointsToGraph.tryGetNodeSize(memoryNode);
         const auto modRefEffect = modRefSet.getImplicitModRefEffectForExternal(memoryNodeSize);
-        modRefSet.addExplicitMemoryNode(memoryNode, modRefEffect);
+        if (modRefEffect != ModRefEffect::NoEffect)
+          modRefSet.addExplicitMemoryNode(memoryNode, modRefEffect);
       }
     }
 
