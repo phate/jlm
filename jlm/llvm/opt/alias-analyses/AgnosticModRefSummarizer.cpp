@@ -19,8 +19,6 @@
 
 #include <unordered_map>
 
-#include <unordered_map>
-
 namespace jlm::llvm::aa
 {
 
