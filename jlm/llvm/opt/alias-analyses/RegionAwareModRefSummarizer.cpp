@@ -61,7 +61,7 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
     !std::getenv("JLM_DISABLE_CONSTANT_MEMORY_BLOCKING");
 
 /**
- * Some global memory is not marked as constant, but can be proven to never change.
+ * Some global memory is not marked as constant, but can be proven to never be written to.
  * Detecting this lets us treat them as constants, omitting them from memory state routing.
  */
 static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
@@ -1748,20 +1748,22 @@ void
 RegionAwareModRefSummarizer::determineReadOnlyMemory()
 {
   const auto externModRefSet = ModRefSummary_->getExternModRefSet();
-  for (auto [memoryNode, mayMod] : ModRefSummary_->getModRefSet(externModRefSet).getModRefNodes())
+  for (auto [memoryNode, modRefEffect] :
+       ModRefSummary_->getModRefSet(externModRefSet).getModRefNodes())
   {
     // Memory marked as const in the PointsToGraph should not even be in any ModRefSets
     if (ENABLE_CONSTANT_MEMORY_BLOCKING)
       JLM_ASSERT(!ModRefSummary_->GetPointsToGraph().isNodeConstant(memoryNode));
 
     // If the memory is modified in this module, it is not read-only
-    if (mayMod)
+    if (mayEffectModify(modRefEffect))
       continue;
     // If the memory is externally accessible, it is also not read-only
     if (ModRefSummary_->GetPointsToGraph().isExternallyAvailable(memoryNode))
       continue;
-    // If the memory is of type Alloca, it might not actually be read-only,
-    // as non-reentrant allocas can be partially hidden from reaching the extern mod ref set
+    // If the memory node is of type Alloca, it might not actually be read-only,
+    // as non-reentrant allocas can be partially hidden from reaching the extern \ref ModRefSet.
+    // This is handled by never treating allocas as "effectively read-only"
     if (ModRefSummary_->GetPointsToGraph().getNodeKind(memoryNode)
         == PointsToGraph::NodeKind::AllocaNode)
       continue;

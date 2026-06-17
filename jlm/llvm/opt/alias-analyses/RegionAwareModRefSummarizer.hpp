@@ -280,7 +280,7 @@ private:
   VerifyBlocklists() const;
 
   /**
-   * After solving, the ModRefSet representing all external functions is used to determine
+   * After solving, the \ref ModRefSet representing all external functions is used to determine
    * if any non-escaped variables in the module are only referenced, and never written to.
    * These memory nodes can be considered constant, and should be omitted from all ModRefSets.
    */
