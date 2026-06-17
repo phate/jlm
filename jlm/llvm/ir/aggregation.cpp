@@ -232,19 +232,21 @@ aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, AggregationMap &);
  * the subgraph.
  */
 static void
-reduce_loop(const StronglyConnectedComponentStructure & sccstruct, AggregationMap & map)
+reduceLoop(const StronglyConnectedComponentStructure & sccStruct, AggregationMap & map)
 {
-  JLM_ASSERT(sccstruct.IsTailControlledLoop());
+  JLM_ASSERT(sccStruct.IsTailControlledLoop());
 
-  auto exit = (*sccstruct.ExitEdges().begin())->source();
-  auto entry = *sccstruct.EntryNodes().begin();
+  const auto entryNode = *sccStruct.EntryNodes().begin();
+  const auto exitNode = (*sccStruct.ExitEdges().begin())->source();
 
-  auto redge = *sccstruct.RepetitionEdges().begin();
-  redge->source()->remove_outedge(redge->index());
+  const auto repetitionEdge = *sccStruct.RepetitionEdges().begin();
+  // The RVSDG theta node always expects that the repetition of its body happens on control value 1.
+  JLM_ASSERT(repetitionEdge->index() == 1);
+  repetitionEdge->source()->remove_outedge(repetitionEdge->index());
 
-  auto sese = aggregate(entry, exit, map);
-  auto loop = LoopAggregationNode::create(std::move(map.lookup(sese)));
-  map.insert(sese, std::move(loop));
+  const auto seseNode = aggregate(entryNode, exitNode, map);
+  auto loop = LoopAggregationNode::create(std::move(map.lookup(seseNode)));
+  map.insert(seseNode, std::move(loop));
 }
 
 /**
@@ -379,7 +381,7 @@ aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, Aggre
 
     if (sccStructure->IsTailControlledLoop())
     {
-      reduce_loop(*sccStructure, map);
+      reduceLoop(*sccStructure, map);
       continue;
     }
 
