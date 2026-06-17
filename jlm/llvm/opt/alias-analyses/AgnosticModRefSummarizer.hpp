@@ -13,6 +13,7 @@
 namespace jlm::llvm::aa
 {
 
+class AgnosticModRefSet;
 class AgnosticModRefSummary;
 
 /** \brief Agnostic mod/ref summarizer
@@ -78,18 +79,20 @@ private:
   /**
    * Creates a set containing all memory nodes in the given \p pointsToGraph
    */
-  [[nodiscard]] static util::HashSet<PointsToGraph::NodeIndex>
+  [[nodiscard]] static AgnosticModRefSet
   GetAllMemoryNodes(const PointsToGraph & pointsToGraph);
 
   /**
-   * Helper for adding all memory nodes the given \p output may target to a Mod/Ref set
+   * Helper for adding all memory nodes the given \p output may target to a \ref ModRefSet
    * @param output the pointer typed output
+   * @param modRefEffect the effect that is possibly performed on the targeted memory nodes
    * @param modRefSet the set of memory nodes that should be expanded with \p output's targets
    */
   void
   AddPointerTargetsToModRefSet(
       const rvsdg::Output & output,
-      util::HashSet<PointsToGraph::NodeIndex> & modRefSet) const;
+      ModRefEffect modRefEffect,
+      AgnosticModRefSet & modRefSet) const;
 
   /**
    * Recursively traverses the given \p region, creating Mod/Ref sets for simple nodes.
