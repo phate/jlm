@@ -570,9 +570,6 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto deltaG1MemoryNode = pointsToGraph.getNodeForDelta(test.GetDeltaG1());
-    auto deltaG2MemoryNode = pointsToGraph.getNodeForDelta(test.GetDeltaG2());
-
     auto allocaPxMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPx());
     auto allocaPyMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPy());
     auto allocaPzMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPz());
@@ -647,12 +644,10 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      * Validate function test()
      */
     {
+      // g1 and g2 are effectively read-only so they get omitted from the lambda's set
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      ASSERT_TRUE(assertSetContains(
-          lambdaEntryNodes,
-          { { allocaPzMemoryNode, ModRefEffect::ModOnly },
-            { deltaG1MemoryNode, ModRefEffect::RefOnly },
-            { deltaG2MemoryNode, ModRefEffect::RefOnly } }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTestCallX());
       ASSERT_TRUE(assertSetContains(
@@ -664,11 +659,8 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
       ASSERT_TRUE(assertSetContains(callYNodes, { { allocaPyMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      ASSERT_TRUE(assertSetContains(
-          lambdaExitNodes,
-          { { allocaPzMemoryNode, ModRefEffect::ModOnly },
-            { deltaG1MemoryNode, ModRefEffect::RefOnly },
-            { deltaG2MemoryNode, ModRefEffect::RefOnly } }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
