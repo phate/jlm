@@ -843,15 +843,14 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function test()
   {
-    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 15u);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 13u);
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        test.GetLambdaTest().GetFunctionArguments().back()->SingleUser());
-    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    // There is no lambda entry split, as no memory states are routed into the function body
+    EXPECT_TRUE(test.GetLambdaTest().GetFunctionArguments().back()->IsDead());
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
 
     // The variables g1 and g2 are effectively read-only, since they never get stored to.
     // This means their loads do not have any memory state edges going through them.
@@ -866,15 +865,14 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function test2()
   {
-    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 7u);
+    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5u);
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        test.GetLambdaTest2().GetFunctionArguments().back()->SingleUser());
-    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
+    // There is no lambda entry split, as no memory states are routed into the function body
+    EXPECT_TRUE(test.GetLambdaTest2().GetFunctionArguments().back()->IsDead());
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
-    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
   }
 }
 
