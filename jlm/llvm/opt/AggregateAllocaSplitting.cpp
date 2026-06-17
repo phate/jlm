@@ -232,8 +232,7 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
                   [&](const GetElementPtrOperation &)
                   {
                     JLM_ASSERT(userNode->input(0) == &user);
-                    JLM_ASSERT(
-                        GetElementPtrOperation::tryGetConstantIndices(simpleNode).has_value());
+                    JLM_ASSERT(GetElementPtrOperation::tryGetAsConstant(simpleNode).has_value());
                     allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
                     return true;
                   },
@@ -563,11 +562,11 @@ AggregateAllocaSplitting::splitAllocaNode(const AllocaTraceInfo & allocaTraceInf
         {
           JLM_ASSERT(GetElementPtrOperation::numIndices(*allocaConsumer) >= 2);
           auto & consumerRegion = *allocaConsumer->region();
-          const auto indices =
-              GetElementPtrOperation::tryGetConstantIndices(*allocaConsumer).value();
-          JLM_ASSERT(indices[0] == 0);
+          const auto gepConstant =
+              GetElementPtrOperation::tryGetAsConstant(*allocaConsumer).value();
+          JLM_ASSERT(gepConstant.indices[0] == 0);
 
-          auto elementAlloca = elementAllocaMap.at(indices);
+          auto elementAlloca = elementAllocaMap.at(gepConstant.indices);
           // FIXME: Introduce caching of routed values to avoid duplicated routing.
           auto & routedAddress = rvsdg::RouteToRegion(
               AllocaOperation::getPointerOutput(*elementAlloca),
