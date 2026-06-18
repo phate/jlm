@@ -240,6 +240,62 @@ RestructureControlFlow(
     ControlFlowGraphNode &,
     std::vector<TailControlledLoop> &);
 
+/**
+ * The RVSDG theta node expects that the repetition of its body always happens on control value 1.
+ * Thus, we need to ensure that the repetition edge of the tail-controlled
+ * loop has index 1 in order to avoid miscompilations.
+ *
+ * @param sccStructure The \ref StronglyConnectedComponentStructure that represents the
+ * tail-controlled loop.
+ */
+static void
+adjustLoopRepetitionEdge(const StronglyConnectedComponentStructure & sccStructure)
+{
+  JLM_ASSERT(sccStructure.IsTailControlledLoop());
+
+  const auto repetitionEdge = *sccStructure.RepetitionEdges().begin();
+  if (repetitionEdge->index() == 1)
+  {
+    // Nothing needs to be done. The repetition edge has already index 1.
+    return;
+  }
+
+  // The repetition edge has index 0.
+  // We need to adjust the tail-controlled loop such that the repetition edge is on index 1.
+  auto exitNode = util::assertedCast<BasicBlock>((*sccStructure.ExitEdges().begin())->source());
+  auto exitEdge = *sccStructure.ExitEdges().begin();
+  auto exitEdgeSink = exitEdge->sink();
+  auto repetitionEdgeSink = repetitionEdge->sink();
+
+  repetitionEdge->divert(exitEdgeSink);
+  exitEdge->divert(repetitionEdgeSink);
+
+  // Branch and match operations are always created together in the \ref LlvmModuleConversion
+  // Thus, we would expect them to also be together here. Just to be sure, we plastered the path
+  // with asserts.
+  auto & threeAddressCodes = exitNode->tacs();
+  auto branchTac = threeAddressCodes.last();
+  JLM_ASSERT(is<BranchOperation>(branchTac));
+  auto matchTac = *std::next(threeAddressCodes.rbegin(), 1);
+  JLM_ASSERT(is<rvsdg::MatchOperation>(matchTac));
+  JLM_ASSERT(branchTac->operand(0) == matchTac->result(0));
+  auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(&matchTac->operation());
+  JLM_ASSERT(matchOperation->nalternatives() == 2);
+  JLM_ASSERT(matchOperation->default_alternative() == 0);
+  JLM_ASSERT(matchOperation->alternative(1) == 1);
+
+  const size_t numBits = matchOperation->nbits();
+  auto newMatchOperand = matchTac->operand(0);
+  threeAddressCodes.drop_last(); // drop branch operation
+  threeAddressCodes.drop_last(); // drop match operation
+
+  auto newMatchOperation = std::unique_ptr<rvsdg::MatchOperation>(
+      new rvsdg::MatchOperation(numBits, { { 0, 1 } }, 0, 2));
+  threeAddressCodes.append_last(
+      ThreeAddressCode::create(std::move(newMatchOperation), { newMatchOperand }));
+  threeAddressCodes.append_last(BranchOperation::create(2, threeAddressCodes.last()->result(0)));
+}
+
 static void
 RestructureLoops(
     ControlFlowGraphNode & regionEntry,
@@ -258,49 +314,58 @@ RestructureLoops(
 
     if (sccStructure->IsTailControlledLoop())
     {
+      // We already have a tail-controlled loop
       auto loopEntry = *sccStructure->EntryNodes().begin();
       auto loopExit = (*sccStructure->ExitEdges().begin())->source();
       RestructureControlFlow(*loopEntry, *loopExit, loops);
+      adjustLoopRepetitionEdge(*sccStructure);
       loops.push_back(ExtractLoop(*loopEntry, *loopExit));
-      continue;
     }
-
-    auto & newEntryNode = *BasicBlock::create(cfg);
-    auto & newRepetitionNode = *BasicBlock::create(cfg);
-    auto & newExitNode = *BasicBlock::create(cfg);
-    newRepetitionNode.add_outedge(&newExitNode);
-    newRepetitionNode.add_outedge(&newEntryNode);
-
-    const ThreeAddressCodeVariable * entryVariable = nullptr;
-    if (sccStructure->NumEntryNodes() > 1)
+    else
     {
-      auto bb = GetEntryVariableBlock(&regionEntry);
-      entryVariable =
-          &CreateLoopEntryVariable(*bb, rvsdg::ControlType::Create(sccStructure->NumEntryNodes()));
+      // It is not a tail-controlled loop. We need to restructure the loop.
+      auto & newEntryNode = *BasicBlock::create(cfg);
+      auto & newRepetitionNode = *BasicBlock::create(cfg);
+      auto & newExitNode = *BasicBlock::create(cfg);
+      newRepetitionNode.add_outedge(&newExitNode);
+      newRepetitionNode.add_outedge(&newEntryNode);
+
+      const ThreeAddressCodeVariable * entryVariable = nullptr;
+      if (sccStructure->NumEntryNodes() > 1)
+      {
+        auto bb = GetEntryVariableBlock(&regionEntry);
+        entryVariable = &CreateLoopEntryVariable(
+            *bb,
+            rvsdg::ControlType::Create(sccStructure->NumEntryNodes()));
+      }
+
+      auto & repetitionVariable = CreateLoopRepetitionVariable(newEntryNode);
+
+      const ThreeAddressCodeVariable * exitVariable = nullptr;
+      if (sccStructure->NumExitNodes() > 1)
+        exitVariable = &CreateLoopExitVariable(
+            newEntryNode,
+            rvsdg::ControlType::Create(sccStructure->NumExitNodes()));
+
+      AppendBranch(newRepetitionNode, &repetitionVariable);
+
+      RestructureLoopEntry(*sccStructure, &newEntryNode, entryVariable);
+      RestructureLoopExit(
+          *sccStructure,
+          newRepetitionNode,
+          newExitNode,
+          regionExit,
+          repetitionVariable,
+          exitVariable);
+      RestructureLoopRepetition(
+          *sccStructure,
+          newRepetitionNode,
+          entryVariable,
+          repetitionVariable);
+
+      RestructureControlFlow(newEntryNode, newRepetitionNode, loops);
+      loops.push_back(ExtractLoop(newEntryNode, newRepetitionNode));
     }
-
-    auto & repetitionVariable = CreateLoopRepetitionVariable(newEntryNode);
-
-    const ThreeAddressCodeVariable * exitVariable = nullptr;
-    if (sccStructure->NumExitNodes() > 1)
-      exitVariable = &CreateLoopExitVariable(
-          newEntryNode,
-          rvsdg::ControlType::Create(sccStructure->NumExitNodes()));
-
-    AppendBranch(newRepetitionNode, &repetitionVariable);
-
-    RestructureLoopEntry(*sccStructure, &newEntryNode, entryVariable);
-    RestructureLoopExit(
-        *sccStructure,
-        newRepetitionNode,
-        newExitNode,
-        regionExit,
-        repetitionVariable,
-        exitVariable);
-    RestructureLoopRepetition(*sccStructure, newRepetitionNode, entryVariable, repetitionVariable);
-
-    RestructureControlFlow(newEntryNode, newRepetitionNode, loops);
-    loops.push_back(ExtractLoop(newEntryNode, newRepetitionNode));
   }
 }
 

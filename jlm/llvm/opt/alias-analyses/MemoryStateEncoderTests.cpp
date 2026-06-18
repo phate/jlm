@@ -843,35 +843,38 @@ TEST(MemoryStateEncoderTests, indirectCallTest2AndersenRegionAware)
 
   // validate function test()
   {
-    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 14u);
+    EXPECT_EQ(test.GetLambdaTest().subregion()->numNodes(), 15u);
+
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        test.GetLambdaTest().GetFunctionArguments().back()->SingleUser());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
-    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
+    // The variables g1 and g2 are effectively read-only, since they never get stored to.
+    // This means their loads do not have any memory state edges going through them.
     auto loadG1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetContextVars()[2].inner->SingleUser());
-    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1, 2, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1, 1, 1));
 
     auto loadG2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.GetLambdaTest().GetContextVars()[3].inner->SingleUser());
-    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2, 2, 2));
-
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        test.GetLambdaTest().GetFunctionArguments()[1]->SingleUser());
-    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2, 1, 1));
   }
 
   // validate function test2()
   {
-    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 5u);
+    EXPECT_EQ(test.GetLambdaTest2().subregion()->numNodes(), 7u);
+
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        test.GetLambdaTest2().GetFunctionArguments().back()->SingleUser());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
-    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 0, 1));
-
-    // The entry memory state is unused
-    EXPECT_EQ(test.GetLambdaTest2().GetFunctionArguments()[1]->nusers(), 0u);
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
   }
 }
 
@@ -1190,18 +1193,15 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
-    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
+    EXPECT_TRUE(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto truncNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[0]->origin());
     EXPECT_TRUE(is<TruncOperation>(*truncNode, 1, 1));
 
+    // g1 is only loaded, making it effectively constant, so no memory states are routed through
     auto loadG1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*truncNode->input(0)->origin());
-    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
-
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG1Node->input(1)->origin());
-    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
+    EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG1Node, 1, 1));
 
     jlm::rvsdg::Node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
@@ -1220,8 +1220,10 @@ TEST(MemoryStateEncoderTests, deltaTest3AndersenRegionAware)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeG2Node->input(2)->origin());
     EXPECT_TRUE(is<LoadNonVolatileOperation>(*loadG2Node, 2, 2));
 
-    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
-    EXPECT_EQ(node, lambdaEntrySplit);
+    // The load of g2 has a memory state input from the LambdaEntrySplit
+    auto lambdaEntrySplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadG2Node->input(1)->origin());
+    EXPECT_TRUE(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
   }
 }
 

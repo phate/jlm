@@ -14,11 +14,18 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>
+#include <unordered_map>
+
+using jlm::llvm::aa::ModRefEffect;
+using NodeIndex = jlm::llvm::aa::PointsToGraph::NodeIndex;
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
 RunAndersen(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
@@ -27,13 +34,72 @@ RunAndersen(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
   return andersen.Analyze(rvsdgModule);
 }
 
+static const char *
+effectToString(ModRefEffect effect)
+{
+  switch (effect)
+  {
+  case ModRefEffect::ModRef:
+    return "ModRef";
+  case ModRefEffect::ModOnly:
+    return "ModOnly";
+  case ModRefEffect::RefOnly:
+    return "RefOnly";
+  case ModRefEffect::NoEffect:
+    return "NoEffect";
+  default:
+    JLM_UNREACHABLE("Unknown effect");
+  }
+}
+
+// Helper for creating a map where all memory nodes are mapped to the same effect
+static std::unordered_map<NodeIndex, ModRefEffect>
+allWithEffect(const jlm::util::HashSet<NodeIndex> & memoryNodes, ModRefEffect effect)
+{
+  std::unordered_map<NodeIndex, ModRefEffect> expectedEffects;
+  for (auto memoryNode : memoryNodes.Items())
+    expectedEffects.emplace(memoryNode, effect);
+  return expectedEffects;
+}
+
 // Helper for comparing HashSets of MemoryNodes without needing explicit constructors
 static bool
-setsEqual(
-    const jlm::util::HashSet<jlm::llvm::aa::PointsToGraph::NodeIndex> & receivedMemoryNodes,
-    const jlm::util::HashSet<jlm::llvm::aa::PointsToGraph::NodeIndex> & expectedMemoryNodes)
+assertSetContains(
+    const jlm::llvm::aa::ModRefSet & receivedMemoryNodes,
+    std::unordered_map<NodeIndex, ModRefEffect> expectedEffects)
 {
-  return receivedMemoryNodes == expectedMemoryNodes;
+  bool result = true;
+
+  for (auto [memoryNode, modRefEffect] : receivedMemoryNodes.getModRefNodes())
+  {
+    auto it = expectedEffects.find(memoryNode);
+    if (it == expectedEffects.end())
+    {
+      result = false;
+      std::cerr << "ModRefSet contained unexpected node " << memoryNode << " with effect "
+                << effectToString(modRefEffect) << std::endl;
+      continue;
+    }
+
+    if (it->second != modRefEffect)
+    {
+      result = false;
+      std::cerr << "ModRefSet contained " << memoryNode << " with effect "
+                << effectToString(modRefEffect) << " but expected effect "
+                << effectToString(it->second) << std::endl;
+    }
+    expectedEffects.erase(it);
+  }
+
+  // Any remaining expected memory nodes indicate an error
+  for (auto [memoryNode, modRefEffect] : expectedEffects)
+  {
+    result = false;
+    std::cerr << "ModRefSet did not contain node " << memoryNode << " with expected effect "
+              << effectToString(modRefEffect) << std::endl;
+  }
+
+  return result;
 }
 
 TEST(RegionAwareModRefSummarizerTests, TestStore1)
@@ -47,25 +113,26 @@ TEST(RegionAwareModRefSummarizerTests, TestStore1)
   {
     auto allocaAMemoryNode = pointsToGraph.getNodeForAlloca(*test.alloca_a);
 
+    // Every alloca in the lambda is non-reentrant, so they are left out of the lambda ModRefSet
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
 
     auto storeANode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
     EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode));
 
     auto & storeANodes = modRefSummary.GetSimpleNodeModRef(*storeANode);
-    EXPECT_TRUE(setsEqual(storeANodes, { allocaAMemoryNode }));
+    ASSERT_TRUE(assertSetContains(storeANodes, { { allocaAMemoryNode, ModRefEffect::ModOnly } }));
   };
 
   jlm::llvm::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
-  // std::cout << jlm::llvm::aa::PointsToGraph::dumpDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::dumpDot(*pointsToGraph);
 
   /*
    * Act
@@ -101,10 +168,10 @@ TEST(RegionAwareModRefSummarizerTests, TestStore2)
                                             allocaYMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
   };
 
   jlm::llvm::StoreTest2 test;
@@ -136,11 +203,25 @@ TEST(RegionAwareModRefSummarizerTests, TestLoad1)
   {
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
-    auto lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    // Since the function only contains loads, the external memory node is RefOnly
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
+    ASSERT_TRUE(
+        assertSetContains(lambdaEntryNodes, { { externalMemoryNode, ModRefEffect::RefOnly } }));
 
-    auto lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
+    ASSERT_TRUE(
+        assertSetContains(lambdaExitNodes, { { externalMemoryNode, ModRefEffect::RefOnly } }));
+
+    // The loads from *p and **p (aka *x) should both only reference external memory nodes
+    auto & loadPModRefSet = modRefSummary.GetSimpleNodeModRef(
+        *jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(test.load_p));
+    ASSERT_TRUE(
+        assertSetContains(loadPModRefSet, { { externalMemoryNode, ModRefEffect::RefOnly } }));
+
+    auto & loadXModRefSet = modRefSummary.GetSimpleNodeModRef(
+        *jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(test.load_x));
+    ASSERT_TRUE(
+        assertSetContains(loadXModRefSet, { { externalMemoryNode, ModRefEffect::RefOnly } }));
   };
 
   jlm::llvm::LoadTest1 test;
@@ -170,10 +251,10 @@ TEST(RegionAwareModRefSummarizerTests, TestLoad2)
       [](const jlm::llvm::LoadTest2 & test, const jlm::llvm::aa::ModRefSummary & modRefSummary)
   {
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+    ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
   };
 
   jlm::llvm::LoadTest2 test;
@@ -203,11 +284,11 @@ TEST(RegionAwareModRefSummarizerTests, TestLoadFromUndef)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph &)
   {
-    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda()).Size();
-    auto numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda()).Size();
+    auto & numLambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda());
+    auto & numLambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda());
 
-    EXPECT_EQ(numLambdaEntryNodes, 0u);
-    EXPECT_EQ(numLambdaExitNodes, 0u);
+    EXPECT_EQ(numLambdaEntryNodes.getModRefNodes().size(), 0u);
+    EXPECT_EQ(numLambdaExitNodes.getModRefNodes().size(), 0u);
   };
 
   jlm::llvm::LoadFromUndefTest test;
@@ -246,10 +327,16 @@ TEST(RegionAwareModRefSummarizerTests, TestCall1)
      */
     {
       auto & lambdaFEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f);
-      EXPECT_TRUE(setsEqual(lambdaFEntryNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaFEntryNodes,
+          { { allocaXMemoryNode, ModRefEffect::RefOnly },
+            { allocaYMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaFExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f);
-      EXPECT_TRUE(setsEqual(lambdaFExitNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaFExitNodes,
+          { { allocaXMemoryNode, ModRefEffect::RefOnly },
+            { allocaYMemoryNode, ModRefEffect::RefOnly } }));
     }
 
     /*
@@ -257,10 +344,12 @@ TEST(RegionAwareModRefSummarizerTests, TestCall1)
      */
     {
       auto & lambdaGEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g);
-      EXPECT_TRUE(setsEqual(lambdaGEntryNodes, { allocaZMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaGEntryNodes, { { allocaZMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaGExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g);
-      EXPECT_TRUE(setsEqual(lambdaGExitNodes, { allocaZMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaGExitNodes, { { allocaZMemoryNode, ModRefEffect::RefOnly } }));
     }
 
     /*
@@ -268,16 +357,19 @@ TEST(RegionAwareModRefSummarizerTests, TestCall1)
      */
     {
       auto & lambdaHEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h);
-      EXPECT_TRUE(setsEqual(lambdaHEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaHEntryNodes, {}));
 
       auto & callFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
-      EXPECT_TRUE(setsEqual(callFNodes, { allocaXMemoryNode, allocaYMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          callFNodes,
+          { { allocaXMemoryNode, ModRefEffect::RefOnly },
+            { allocaYMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & callGNodes = modRefSummary.GetSimpleNodeModRef(test.CallG());
-      EXPECT_TRUE(setsEqual(callGNodes, { allocaZMemoryNode }));
+      ASSERT_TRUE(assertSetContains(callGNodes, { { allocaZMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaHExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h);
-      EXPECT_TRUE(setsEqual(lambdaHExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaHExitNodes, {}));
     }
   };
 
@@ -315,10 +407,14 @@ TEST(RegionAwareModRefSummarizerTests, TestCall2)
      */
     {
       auto & lambdaCreateEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_create);
-      EXPECT_TRUE(setsEqual(lambdaCreateEntryNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaCreateEntryNodes,
+          { { mallocMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaCreateExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_create);
-      EXPECT_TRUE(setsEqual(lambdaCreateExitNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaCreateExitNodes,
+          { { mallocMemoryNode, ModRefEffect::RefOnly } }));
     }
 
     /*
@@ -326,10 +422,14 @@ TEST(RegionAwareModRefSummarizerTests, TestCall2)
      */
     {
       auto & lambdaDestroyEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_destroy);
-      EXPECT_TRUE(setsEqual(lambdaDestroyEntryNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaDestroyEntryNodes,
+          { { mallocMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaDestroyExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_destroy);
-      EXPECT_TRUE(setsEqual(lambdaDestroyExitNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaDestroyExitNodes,
+          { { mallocMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -337,22 +437,28 @@ TEST(RegionAwareModRefSummarizerTests, TestCall2)
      */
     {
       auto & lambdaTestEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test);
-      EXPECT_TRUE(setsEqual(lambdaTestEntryNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaTestEntryNodes, { { mallocMemoryNode, ModRefEffect::ModRef } }));
 
       auto & callCreate1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate1());
-      EXPECT_TRUE(setsEqual(callCreate1Nodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(callCreate1Nodes, { { mallocMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & callCreate2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallCreate2());
-      EXPECT_TRUE(setsEqual(callCreate2Nodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(callCreate2Nodes, { { mallocMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & callDestroy1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy1());
-      EXPECT_TRUE(setsEqual(callDestroy1Nodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(callDestroy1Nodes, { { mallocMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callDestroy2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallDestroy2());
-      EXPECT_TRUE(setsEqual(callDestroy2Nodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(callDestroy2Nodes, { { mallocMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaTestExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test);
-      EXPECT_TRUE(setsEqual(lambdaTestExitNodes, { mallocMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaTestExitNodes, { { mallocMemoryNode, ModRefEffect::ModRef } }));
     }
   };
 
@@ -388,10 +494,10 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaFour());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -399,10 +505,10 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaThree());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -410,13 +516,13 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallIndcall());
-      EXPECT_TRUE(setsEqual(callNodes, {}));
+      ASSERT_TRUE(assertSetContains(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -424,16 +530,16 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & callFourNodes = modRefSummary.GetSimpleNodeModRef(test.CallFour());
-      EXPECT_TRUE(setsEqual(callFourNodes, {}));
+      ASSERT_TRUE(assertSetContains(callFourNodes, {}));
 
       auto & callThreeNodes = modRefSummary.GetSimpleNodeModRef(test.CallThree());
-      EXPECT_TRUE(setsEqual(callThreeNodes, {}));
+      ASSERT_TRUE(assertSetContains(callThreeNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
   };
 
@@ -464,39 +570,19 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto deltaG1MemoryNode = pointsToGraph.getNodeForDelta(test.GetDeltaG1());
-    auto deltaG2MemoryNode = pointsToGraph.getNodeForDelta(test.GetDeltaG2());
-
     auto allocaPxMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPx());
     auto allocaPyMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPy());
     auto allocaPzMemoryNode = pointsToGraph.getNodeForAlloca(test.GetAllocaPz());
-
-    const jlm::util::HashSet pX = {
-      allocaPxMemoryNode,
-    };
-    const jlm::util::HashSet pY = {
-      allocaPyMemoryNode,
-    };
-    const jlm::util::HashSet pZ = {
-      allocaPzMemoryNode,
-    };
-    const jlm::util::HashSet pXZ = { allocaPxMemoryNode, allocaPzMemoryNode };
-    const jlm::util::HashSet pXYZG1G2 = { allocaPxMemoryNode,
-                                          allocaPyMemoryNode,
-                                          allocaPzMemoryNode,
-                                          deltaG1MemoryNode,
-                                          deltaG2MemoryNode };
-    const jlm::util::HashSet pG1G2 = { deltaG1MemoryNode, deltaG2MemoryNode };
 
     /*
      * Validate function four()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaFour());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -504,10 +590,10 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaThree());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -515,13 +601,13 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaI());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetIndirectCall());
-      EXPECT_TRUE(setsEqual(callNodes, {}));
+      ASSERT_TRUE(assertSetContains(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaI());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -529,10 +615,16 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaX());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pXZ));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { allocaPxMemoryNode, ModRefEffect::ModOnly },
+            { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaX());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pXZ));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { allocaPxMemoryNode, ModRefEffect::ModOnly },
+            { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -540,27 +632,35 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaY());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pY));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { allocaPyMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaY());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pY));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { allocaPyMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
      * Validate function test()
      */
     {
+      // g1 and g2 are effectively read-only so they get omitted from the lambda's set
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pG1G2));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTestCallX());
-      EXPECT_TRUE(setsEqual(callXNodes, pX));
+      ASSERT_TRUE(assertSetContains(
+          callXNodes,
+          { { allocaPxMemoryNode, ModRefEffect::ModOnly },
+            { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callYNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallY());
-      EXPECT_TRUE(setsEqual(callYNodes, pY));
+      ASSERT_TRUE(assertSetContains(callYNodes, { { allocaPyMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pG1G2));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -568,13 +668,18 @@ TEST(RegionAwareModRefSummarizerTests, TestIndirectCall2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest2());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { allocaPxMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTest2CallX());
-      EXPECT_TRUE(setsEqual(callXNodes, pZ));
+      ASSERT_TRUE(assertSetContains(
+          callXNodes,
+          { { allocaPxMemoryNode, ModRefEffect::ModOnly },
+            { allocaPzMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest2());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { allocaPxMemoryNode, ModRefEffect::ModOnly } }));
     }
   };
 
@@ -608,16 +713,18 @@ TEST(RegionAwareModRefSummarizerTests, TestGamma)
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    ASSERT_TRUE(
+        assertSetContains(lambdaEntryNodes, { { externalMemoryNode, ModRefEffect::RefOnly } }));
 
-    auto gammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma);
-    EXPECT_TRUE(setsEqual(gammaEntryNodes, {}));
+    auto & gammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma);
+    ASSERT_TRUE(assertSetContains(gammaEntryNodes, {}));
 
-    auto gammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma);
-    EXPECT_TRUE(setsEqual(gammaExitNodes, {}));
+    auto & gammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma);
+    ASSERT_TRUE(assertSetContains(gammaExitNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    ASSERT_TRUE(
+        assertSetContains(lambdaExitNodes, { { externalMemoryNode, ModRefEffect::RefOnly } }));
   };
 
   jlm::llvm::GammaTest test;
@@ -650,13 +757,16 @@ TEST(RegionAwareModRefSummarizerTests, TestTheta)
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, { externalMemoryNode }));
+    ASSERT_TRUE(
+        assertSetContains(lambdaEntryNodes, { { externalMemoryNode, ModRefEffect::ModOnly } }));
 
     auto & thetaEntryExitNodes = modRefSummary.GetThetaModRef(*test.theta);
-    EXPECT_TRUE(setsEqual(thetaEntryExitNodes, { externalMemoryNode }));
+    ASSERT_TRUE(
+        assertSetContains(thetaEntryExitNodes, { { externalMemoryNode, ModRefEffect::ModOnly } }));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, { externalMemoryNode }));
+    ASSERT_TRUE(
+        assertSetContains(lambdaExitNodes, { { externalMemoryNode, ModRefEffect::ModOnly } }));
   };
 
   jlm::llvm::ThetaTest test;
@@ -692,11 +802,12 @@ TEST(RegionAwareModRefSummarizerTests, TestDelta1)
      * Validate function g
      */
     {
+      // g() only reads, and it does not get any unknown pointers
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaFNode }));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { { deltaFNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaFNode }));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { { deltaFNode, ModRefEffect::RefOnly } }));
     }
 
     /*
@@ -704,13 +815,13 @@ TEST(RegionAwareModRefSummarizerTests, TestDelta1)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaFNode }));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { { deltaFNode, ModRefEffect::ModRef } }));
 
       auto & callEntryNodes = modRefSummary.GetSimpleNodeModRef(test.CallG());
-      EXPECT_TRUE(setsEqual(callEntryNodes, { deltaFNode }));
+      ASSERT_TRUE(assertSetContains(callEntryNodes, { { deltaFNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaFNode }));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { { deltaFNode, ModRefEffect::ModRef } }));
     }
   };
 
@@ -749,10 +860,10 @@ TEST(RegionAwareModRefSummarizerTests, TestDelta2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaD1Node }));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { { deltaD1Node, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaD1Node }));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { { deltaD1Node, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -760,13 +871,17 @@ TEST(RegionAwareModRefSummarizerTests, TestDelta2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { deltaD1Node, deltaD2Node }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { deltaD1Node, ModRefEffect::ModOnly }, { deltaD2Node, ModRefEffect::ModOnly } }));
 
       auto & callEntryNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1());
-      EXPECT_TRUE(setsEqual(callEntryNodes, { deltaD1Node }));
+      ASSERT_TRUE(assertSetContains(callEntryNodes, { { deltaD1Node, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { deltaD1Node, deltaD2Node }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { deltaD1Node, ModRefEffect::ModOnly }, { deltaD2Node, ModRefEffect::ModOnly } }));
     }
   };
 
@@ -805,10 +920,10 @@ TEST(RegionAwareModRefSummarizerTests, TestImports)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f1);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { importD1Node }));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, { { importD1Node, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { importD1Node }));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, { { importD1Node, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -816,13 +931,17 @@ TEST(RegionAwareModRefSummarizerTests, TestImports)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f2);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { importD1Node, importD2Node }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { importD1Node, ModRefEffect::ModOnly }, { importD2Node, ModRefEffect::ModOnly } }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1());
-      EXPECT_TRUE(setsEqual(callNodes, { importD1Node }));
+      ASSERT_TRUE(assertSetContains(callNodes, { { importD1Node, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { importD1Node, importD2Node }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { importD1Node, ModRefEffect::ModOnly }, { importD2Node, ModRefEffect::ModOnly } }));
     }
   };
 
@@ -860,16 +979,20 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi1)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_fib);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { resultAllocaNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { resultAllocaNode, ModRefEffect::ModRef } }));
 
       auto & callFibM1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm1());
-      EXPECT_TRUE(setsEqual(callFibM1Nodes, { resultAllocaNode }));
+      ASSERT_TRUE(
+          assertSetContains(callFibM1Nodes, { { resultAllocaNode, ModRefEffect::ModRef } }));
 
       auto & callFibM2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm2());
-      EXPECT_TRUE(setsEqual(callFibM2Nodes, { resultAllocaNode }));
+      ASSERT_TRUE(
+          assertSetContains(callFibM2Nodes, { { resultAllocaNode, ModRefEffect::ModRef } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_fib);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { resultAllocaNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { resultAllocaNode, ModRefEffect::ModRef } }));
     }
 
     /*
@@ -877,13 +1000,13 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi1)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_test);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallFib());
-      EXPECT_TRUE(setsEqual(callNodes, { resultAllocaNode }));
+      ASSERT_TRUE(assertSetContains(callNodes, { { resultAllocaNode, ModRefEffect::ModRef } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
   };
 
@@ -932,10 +1055,10 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaEight());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaEight());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -943,13 +1066,13 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaI());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetIndirectCall());
-      EXPECT_TRUE(setsEqual(callNodes, {}));
+      ASSERT_TRUE(assertSetContains(callNodes, {}));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaI());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(lambdaExitNodes, {}));
     }
 
     /*
@@ -957,16 +1080,18 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaA());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestCD));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, allWithEffect(pTestCD, ModRefEffect::ModOnly)));
 
       auto & callBNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallB());
-      EXPECT_TRUE(setsEqual(callBNodes, pTestAD));
+      ASSERT_TRUE(assertSetContains(callBNodes, allWithEffect(pTestAD, ModRefEffect::ModOnly)));
 
       auto & callDNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallD());
-      EXPECT_TRUE(setsEqual(callDNodes, pTestAC));
+      ASSERT_TRUE(assertSetContains(callDNodes, allWithEffect(pTestAC, ModRefEffect::ModOnly)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaA());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestCD));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, allWithEffect(pTestCD, ModRefEffect::ModOnly)));
     }
 
     /*
@@ -974,16 +1099,22 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaB());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestAD));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, allWithEffect(pTestAD, ModRefEffect::ModOnly)));
 
       auto & callINodes = modRefSummary.GetSimpleNodeModRef(test.GetCallI());
-      EXPECT_TRUE(setsEqual(callINodes, {}));
+      ASSERT_TRUE(assertSetContains(callINodes, {}));
 
       auto & callCNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallC());
-      EXPECT_TRUE(setsEqual(callCNodes, pTestBD));
+      ASSERT_TRUE(assertSetContains(
+          callCNodes,
+          { { pTestAllocaMemoryNode, ModRefEffect::ModOnly },
+            { pbAllocaMemoryNode, ModRefEffect::ModRef },
+            { pdAllocaMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaB());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestAD));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, allWithEffect(pTestAD, ModRefEffect::ModOnly)));
     }
 
     /*
@@ -991,13 +1122,21 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaC());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestBD));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { pTestAllocaMemoryNode, ModRefEffect::ModOnly },
+            { pbAllocaMemoryNode, ModRefEffect::ModRef },
+            { pdAllocaMemoryNode, ModRefEffect::ModOnly } }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromC());
-      EXPECT_TRUE(setsEqual(callNodes, pTestCD));
+      ASSERT_TRUE(assertSetContains(callNodes, allWithEffect(pTestCD, ModRefEffect::ModOnly)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaC());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestBD));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { pTestAllocaMemoryNode, ModRefEffect::ModOnly },
+            { pbAllocaMemoryNode, ModRefEffect::ModRef },
+            { pdAllocaMemoryNode, ModRefEffect::ModOnly } }));
     }
 
     /*
@@ -1005,13 +1144,15 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaD());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, pTestAC));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, allWithEffect(pTestAC, ModRefEffect::ModOnly)));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromD());
-      EXPECT_TRUE(setsEqual(callNodes, pTestCD));
+      ASSERT_TRUE(assertSetContains(callNodes, allWithEffect(pTestCD, ModRefEffect::ModOnly)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaD());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, pTestAC));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, allWithEffect(pTestAC, ModRefEffect::ModOnly)));
     }
 
     /*
@@ -1019,13 +1160,17 @@ TEST(RegionAwareModRefSummarizerTests, TestPhi2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, {}));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          allWithEffect({ pcAllocaMemoryNode, pdAllocaMemoryNode }, ModRefEffect::ModOnly)));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromTest());
-      EXPECT_TRUE(setsEqual(callNodes, { pTestAllocaMemoryNode }));
+      ASSERT_TRUE(assertSetContains(callNodes, allWithEffect(pTestCD, ModRefEffect::ModOnly)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, {}));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          allWithEffect({ pcAllocaMemoryNode, pdAllocaMemoryNode }, ModRefEffect::ModOnly)));
     }
   };
 
@@ -1082,10 +1227,12 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaF());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { globalArrayMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaEntryNodes, { { globalArrayMemoryNode, ModRefEffect::ModRef } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaF());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { globalArrayMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(lambdaExitNodes, { { globalArrayMemoryNode, ModRefEffect::ModRef } }));
     }
 
     /*
@@ -1093,13 +1240,20 @@ TEST(RegionAwareModRefSummarizerTests, TestMemcpy)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG());
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { initArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { globalArrayMemoryNode, ModRefEffect::ModRef },
+            { initArrayMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
-      EXPECT_TRUE(setsEqual(callNodes, { globalArrayMemoryNode }));
+      ASSERT_TRUE(
+          assertSetContains(callNodes, { { globalArrayMemoryNode, ModRefEffect::ModRef } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG());
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { initArrayMemoryNode, globalArrayMemoryNode }));
+      EXPECT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { globalArrayMemoryNode, ModRefEffect::ModRef },
+            { initArrayMemoryNode, ModRefEffect::RefOnly } }));
     }
   };
 
@@ -1134,13 +1288,17 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory1)
     // Delta A, X and Y have been compressed into the external memory node
     auto externalMemoryNode = pointsToGraph.getExternalMemoryNode();
 
-    jlm::util::HashSet expectedMemoryNodes{ deltaBMemoryNode, externalMemoryNode };
-
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    ASSERT_TRUE(assertSetContains(
+        lambdaEntryNodes,
+        { { deltaBMemoryNode, ModRefEffect::ModOnly },
+          { externalMemoryNode, ModRefEffect::RefOnly } }));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.LambdaTest);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    ASSERT_TRUE(assertSetContains(
+        lambdaExitNodes,
+        { { deltaBMemoryNode, ModRefEffect::ModOnly },
+          { externalMemoryNode, ModRefEffect::RefOnly } }));
   };
 
   jlm::llvm::EscapedMemoryTest1 test;
@@ -1181,10 +1339,14 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.ReturnAddressFunction);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, { returnAddressMallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          { { returnAddressMallocMemoryNode, ModRefEffect::RefOnly } }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.ReturnAddressFunction);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, { returnAddressMallocMemoryNode }));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          { { returnAddressMallocMemoryNode, ModRefEffect::RefOnly } }));
     }
 
     /*
@@ -1196,13 +1358,18 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
                                               externalMemoryNode };
 
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.CallExternalFunction1);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.ExternalFunction1Call);
-      EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
+      ASSERT_TRUE(
+          assertSetContains(callNodes, allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.CallExternalFunction1);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
     }
 
     /*
@@ -1215,13 +1382,18 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory2)
       };
 
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.CallExternalFunction2);
-      EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+      ASSERT_TRUE(assertSetContains(
+          lambdaEntryNodes,
+          allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.ExternalFunction2Call);
-      EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
+      ASSERT_TRUE(
+          assertSetContains(callNodes, allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.CallExternalFunction2);
-      EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+      ASSERT_TRUE(assertSetContains(
+          lambdaExitNodes,
+          allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
     }
   };
 
@@ -1258,13 +1430,18 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedMemory3)
     jlm::util::HashSet expectedMemoryNodes{ externalMemoryNode };
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
-    EXPECT_TRUE(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    ASSERT_TRUE(assertSetContains(
+        lambdaEntryNodes,
+        allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
     auto & callNodes = modRefSummary.GetSimpleNodeModRef(*test.CallExternalFunction);
-    EXPECT_TRUE(setsEqual(callNodes, expectedMemoryNodes));
+    ASSERT_TRUE(
+        assertSetContains(callNodes, allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.LambdaTest);
-    EXPECT_TRUE(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    ASSERT_TRUE(assertSetContains(
+        lambdaExitNodes,
+        allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
   };
 
   jlm::llvm::EscapedMemoryTest3 test;
@@ -1506,17 +1683,17 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   const auto allocaPtgNode = ptg->getNodeForAlloca(*allocaNode);
 
   // The call to h() within g() should contain a in its Mod/Ref set
-  const auto callHModRef = modRefSummary->GetSimpleNodeModRef(*callHNode);
-  EXPECT_TRUE(callHModRef.Contains(allocaPtgNode));
+  const auto & callHModRef = modRefSummary->GetSimpleNodeModRef(*callHNode);
+  EXPECT_TRUE(callHModRef.getModRefNodes().at(allocaPtgNode));
 
   // The call to k() should NOT contain a in its Mod/Ref set
-  const auto callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
-  EXPECT_FALSE(callKModRef.Contains(allocaPtgNode));
+  const auto & callKModRef = modRefSummary->GetSimpleNodeModRef(*callKNode);
+  EXPECT_FALSE(callKModRef.getModRefNodes().count(allocaPtgNode));
 
   // The call to opaque() within h() only contains the external memory node,
   // since the memory node representing a has been compressed into it
-  const auto callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
-  EXPECT_EQ(callOpaqueModRef.Size(), 1);
+  const auto & callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
+  EXPECT_EQ(callOpaqueModRef.getModRefNodes().size(), 1);
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();
@@ -1620,7 +1797,9 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedFunction)
   const util::HashSet expectedMemoryNodes{ globalMemoryNode, externalMemoryNode };
 
   const auto & opaqueCallModRef = modRefSummary->GetSimpleNodeModRef(*opaqueCallNode);
-  EXPECT_TRUE(setsEqual(opaqueCallModRef, expectedMemoryNodes));
+  ASSERT_TRUE(assertSetContains(
+      opaqueCallModRef,
+      allWithEffect(expectedMemoryNodes, ModRefEffect::ModRef)));
 }
 
 TEST(RegionAwareModRefSummarizerTests, TestStatistics)
@@ -1653,10 +1832,9 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
 
   EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
-  EXPECT_TRUE(statistics.HasTimer("AllocasDeadInSccsTimer"));
   EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
   EXPECT_TRUE(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
-  EXPECT_TRUE(statistics.HasTimer("CreateExternalModRefSetTimer"));
   EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
   EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
+  EXPECT_TRUE(statistics.HasTimer("ModRefSetMaterializationTimer"));
 }
