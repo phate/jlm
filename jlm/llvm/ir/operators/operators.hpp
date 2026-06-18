@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_LLVM_IR_OPERATORS_OPERATORS_HPP
 
+#include "jlm/util/common.hpp"
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/tac.hpp>
@@ -831,6 +832,29 @@ public:
   createNode(rvsdg::Region & region, fpsize size, const ::llvm::APFloat & constant)
   {
     return rvsdg::CreateOpNode<ConstantFP>(region, size, constant);
+  }
+
+  /**
+   * Helper function for creating a floating point constant value 0 of the correct type.
+   */
+  [[nodiscard]] static ::llvm::APFloat
+  getZeroRepresentation(fpsize size)
+  {
+    switch (size)
+    {
+    case fpsize::half:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEhalf());
+    case fpsize::flt:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEsingle());
+    case fpsize::dbl:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEdouble());
+    case fpsize::x86fp80:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::x87DoubleExtended());
+    case fpsize::fp128:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEquad());
+    default:
+      JLM_UNREACHABLE("Unknown float size");
+    }
   }
 
 private:
@@ -2358,7 +2382,6 @@ private:
     return types;
   }
 };
-
 }
 
 #endif

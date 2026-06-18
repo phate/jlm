@@ -957,10 +957,17 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
               const auto floatType =
                   std::dynamic_pointer_cast<const llvm::FloatingPointType>(loadedType))
           {
-            const auto zero = ::llvm::APFloat::getZero(::llvm::APFloat::IEEEdouble());
+            const auto zero = ConstantFP::getZeroRepresentation(floatType->size());
             const auto & zeroNode =
                 ConstantFP::createNode(*loadNode.region(), floatType->size(), zero);
             LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
+          }
+          else if (
+              const auto vectorType =
+                  std::dynamic_pointer_cast<const llvm::FixedVectorType>(loadedType))
+          {
+            // FIXME: Handle loading of vectors of zero values
+            return;
           }
           else
           {

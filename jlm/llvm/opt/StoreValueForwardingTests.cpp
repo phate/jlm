@@ -23,6 +23,7 @@
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
+#include <llvm-18/llvm/ADT/APFloat.h>
 
 static void
 RunStoreValueForwarding(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
@@ -1238,6 +1239,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroCon
     EXPECT_NE(floatOp, nullptr);
     EXPECT_TRUE(*floatOp->result(0) == *floatType);
     EXPECT_TRUE(floatOp->constant().isZero());
+    EXPECT_EQ(&floatOp->constant().getSemantics(), &::llvm::APFloat::IEEEsingle());
   }
 
   {
@@ -1247,5 +1249,6 @@ TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroCon
     EXPECT_NE(doubleOp, nullptr);
     EXPECT_TRUE(*doubleOp->result(0) == *doubleType);
     EXPECT_TRUE(doubleOp->constant().isZero());
+    EXPECT_EQ(&doubleOp->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
   }
 }
