@@ -33,7 +33,6 @@ jobs:
       matrix:
         benchmark:
           [
-            polybench,
             perlbench,
             gcc,
             cactuBSSN,
@@ -41,6 +40,12 @@ jobs:
             blender,
             nab,
             xz,
+            emacs,
+            ghostscript,
+            gdb,
+            sendmail,
+            embench,
+            polybench,
           ]
     runs-on: ubuntu-24.04
     steps:
