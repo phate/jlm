@@ -811,15 +811,26 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  [[nodiscard]] static std::unique_ptr<ConstantFP>
   create(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!ft)
       throw util::Error("expected floating point type.");
 
-    auto op = std::make_unique<ConstantFP>(std::move(ft), constant);
-    return ThreeAddressCode::create(std::move(op), {});
+    return std::make_unique<ConstantFP>(std::move(ft), constant);
+  }
+
+  [[nodiscard]] static std::unique_ptr<llvm::ThreeAddressCode>
+  createTac(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  {
+    return ThreeAddressCode::create(create(constant, type), {});
+  }
+
+  [[nodiscard]] static rvsdg::Node &
+  createNode(rvsdg::Region & region, fpsize size, const ::llvm::APFloat & constant)
+  {
+    return rvsdg::CreateOpNode<ConstantFP>(region, size, constant);
   }
 
 private:

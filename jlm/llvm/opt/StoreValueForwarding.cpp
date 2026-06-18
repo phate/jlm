@@ -32,6 +32,7 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <llvm-18/llvm/ADT/APFloat.h>
 #include <memory>
 #include <queue>
 
@@ -951,6 +952,15 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           {
             const auto & zeroNode =
                 IntegerConstantOperation::Create(*loadNode.region(), bitType->nbits(), 0);
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
+          }
+          else if (
+              const auto floatType =
+                  std::dynamic_pointer_cast<const llvm::FloatingPointType>(loadedType))
+          {
+            const auto zero = ::llvm::APFloat::getZero(::llvm::APFloat::IEEEdouble());
+            const auto & zeroNode =
+                ConstantFP::createNode(*loadNode.region(), floatType->size(), zero);
             LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else
