@@ -63,5 +63,5 @@ jobs:
         run: ln -s ${{ github.workspace }}/build-release ${{ github.workspace }}/build
         shell: bash
       - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --apt-install-deps --benchmark ${{ matrix.benchmark }}
+        run: ./scripts/run-benchmarks.sh --apt-install-deps --ci --benchmark ${{ matrix.benchmark }}
         shell: bash
