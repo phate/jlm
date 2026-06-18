@@ -980,6 +980,10 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
+        [&](const IntegerToPointerOperation &)
+        {
+          // FIXME: handle operation
+        },
         [&]()
         {
           throw std::logic_error("Unsupported operation: " + node->DebugString());
