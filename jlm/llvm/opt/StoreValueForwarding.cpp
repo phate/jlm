@@ -32,7 +32,6 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <llvm-18/llvm/ADT/APFloat.h>
 #include <memory>
 #include <queue>
 
