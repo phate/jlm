@@ -66,6 +66,13 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
  */
 static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
 
+/**
+ * When doing a call, any Simple Alloca that is not reachable from the arguments to the call
+ * can be blocked from being added to the call's ModRefSet.
+ */
+static const bool ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING =
+    !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_BLOCKING");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -838,7 +845,14 @@ struct RegionAwareModRefSummarizer::Context
       NonReentrantAllocas;
 
   /**
-   * Simple edges in the \ref ModRefSet constraint graph.
+   * Used for blocking simple allocas from being propagated to the ModRefSet of calls
+   * where none of the call's arguments can reach the simple alloca.
+   * The sets are placed in a deque, since references to elements stay valid.
+   */
+  std::deque<util::HashSet<PointsToGraph::NodeIndex>> CallBlocklists;
+
+  /**
+   * Simple edges in the ModRefSet constraint graph.
    * A simple edge a -> b indicates that the \ref ModRefSet b should contain everything in a.
    * ModRefSetSimpleEdges[a] contains b, as well as any other simple edge successors.
    */
@@ -1646,6 +1660,16 @@ RegionAwareModRefSummarizer::AnnotateCall(
   if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
   {
     ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
+  }
+
+  if (ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING)
+  {
+    const auto reachableSimpleAllocas = getSimpleAllocasReachableFromCallArguments(callNode);
+    auto blocklist = Context_->SimpleAllocas;
+    blocklist.DifferenceWith(reachableSimpleAllocas);
+    // Move the blocklist to the deque to keep it alive during solving
+    Context_->CallBlocklists.push_back(std::move(blocklist));
+    AddModRefSetBlocklist(callModRef, Context_->CallBlocklists.back());
   }
 
   return callModRef;
