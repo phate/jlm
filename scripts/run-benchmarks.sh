@@ -47,8 +47,8 @@ function usage()
 
 while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
-		--clean)
-			CLEAN=true
+		--clean-runs)
+			CLEAN_RUNS=true
 			shift
 			;;
 		--path)
