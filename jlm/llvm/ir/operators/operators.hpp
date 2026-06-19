@@ -811,15 +811,49 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  [[nodiscard]] static std::unique_ptr<ConstantFP>
   create(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!ft)
       throw util::Error("expected floating point type.");
 
-    auto op = std::make_unique<ConstantFP>(std::move(ft), constant);
-    return ThreeAddressCode::create(std::move(op), {});
+    return std::make_unique<ConstantFP>(std::move(ft), constant);
+  }
+
+  [[nodiscard]] static std::unique_ptr<llvm::ThreeAddressCode>
+  createTac(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  {
+    return ThreeAddressCode::create(create(constant, type), {});
+  }
+
+  [[nodiscard]] static rvsdg::Node &
+  createNode(rvsdg::Region & region, fpsize size, const ::llvm::APFloat & constant)
+  {
+    return rvsdg::CreateOpNode<ConstantFP>(region, size, constant);
+  }
+
+  /**
+   * Helper function for creating a floating point constant value 0 of the correct type.
+   */
+  [[nodiscard]] static ::llvm::APFloat
+  getZeroRepresentation(fpsize size)
+  {
+    switch (size)
+    {
+    case fpsize::half:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEhalf());
+    case fpsize::flt:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEsingle());
+    case fpsize::dbl:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEdouble());
+    case fpsize::x86fp80:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::x87DoubleExtended());
+    case fpsize::fp128:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEquad());
+    default:
+      JLM_UNREACHABLE("Unknown float size");
+    }
   }
 
 private:
@@ -2347,7 +2381,6 @@ private:
     return types;
   }
 };
-
 }
 
 #endif
