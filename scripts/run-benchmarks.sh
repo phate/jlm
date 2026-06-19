@@ -3,7 +3,7 @@ set -eu +x
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
-GIT_COMMIT=c1cdce1acdc18969adc2b97710701c6dc7858336
+GIT_COMMIT=4eb47075f00299743d980acb3cabe168b1f160f4
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
