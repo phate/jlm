@@ -509,7 +509,7 @@ convert_constantFP(
   auto c = ::llvm::cast<::llvm::ConstantFP>(constant);
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(ConstantFP::create(c->getValueAPF(), type));
+  tacs.push_back(ConstantFP::createTac(c->getValueAPF(), type));
 
   return tacs.back()->result(0);
 }
