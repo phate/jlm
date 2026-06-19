@@ -118,7 +118,7 @@ fi
 
 RUN_FLAGS="${BENCHMARKS}"
 if [ "${USE_CI_CONFIGURATION}" = true ]; then
-    RUN_FLAGS="${EXTRA_FLAGS} --ci"
+    RUN_FLAGS="${RUN_FLAGS} --ci"
 fi
 
 ./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${RUN_FLAGS}
