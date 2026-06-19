@@ -33,14 +33,25 @@ jobs:
       matrix:
         benchmark:
           [
-            polybench,
+          # Programs from SPEC CPU2017 (redist version)
             perlbench,
             gcc,
             cactuBSSN,
             x264,
             blender,
+            imagick,
             nab,
             xz,
+
+          # Other benchmark suites
+            embench,
+            polybench,
+
+          # Open source programs
+            emacs,
+            gdb,
+            ghostscript,
+            sendmail,
           ]
     runs-on: ubuntu-24.04
     steps:
@@ -63,5 +74,5 @@ jobs:
         run: ln -s ${{ github.workspace }}/build-release ${{ github.workspace }}/build
         shell: bash
       - name: "Run benchmark"
-        run: ./scripts/run-benchmarks.sh --apt-install-deps --benchmark ${{ matrix.benchmark }}
+        run: ./scripts/run-benchmarks.sh --apt-install-deps --ci --benchmark ${{ matrix.benchmark }}
         shell: bash
