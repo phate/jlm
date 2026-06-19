@@ -139,8 +139,9 @@ TEST(ControlFlowRestructuringTests, DoWhileLoopWithWrongRepetitionEdge)
   auto matchTac = *std::next(bb1->tacs().rbegin(), 1);
   auto newMatchOperation = jlm::util::assertedCast<const MatchOperation>(&matchTac->operation());
   EXPECT_EQ(newMatchOperation->nalternatives(), 2u);
-  EXPECT_EQ(newMatchOperation->default_alternative(), 0u);
-  EXPECT_EQ(newMatchOperation->alternative(0), 1u);
+  EXPECT_EQ(newMatchOperation->default_alternative(), 1u);
+  EXPECT_EQ(newMatchOperation->begin()->first, 1u);
+  EXPECT_EQ(newMatchOperation->begin()->second, 0u);
 }
 
 TEST(ControlFlowRestructuringTests, WhileLoop)
