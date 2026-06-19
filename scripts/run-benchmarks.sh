@@ -3,7 +3,7 @@ set -eu +x
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
-GIT_COMMIT=bcb41d42e465981b560abb50f4c33a96c01258e9
+GIT_COMMIT=c1cdce1acdc18969adc2b97710701c6dc7858336
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -24,8 +24,8 @@ CLEAN_RUNS=false
 
 # Used for filtering to only run certain benchmarks
 BENCHMARKS=""
-# Other options to pass to the ./run.sh script
-EXTRA_RUN_OPTIONS=""
+# When set, the benchmark repository's run.sh is passed --ci
+USE_CI_CONFIGURATION=false
 
 function commit()
 {
@@ -65,7 +65,7 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--ci)
-			EXTRA_RUN_OPTIONS="${EXTRA_RUN_OPTIONS} --ci"
+			USE_CI_CONFIGURATION=true
 			shift
 			;;
 		--parallel)
@@ -116,4 +116,9 @@ if [ "${CLEAN_RUNS}" = true ]; then
 	exit 0
 fi
 
-./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${BENCHMARKS} ${EXTRA_RUN_OPTIONS}
+RUN_FLAGS="${BENCHMARKS}"
+if [ "${USE_CI_CONFIGURATION}" = true ]; then
+    RUN_FLAGS="${EXTRA_FLAGS} --ci"
+fi
+
+./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${RUN_FLAGS}

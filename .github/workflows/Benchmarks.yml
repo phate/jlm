@@ -33,6 +33,7 @@ jobs:
       matrix:
         benchmark:
           [
+          # Programs from SPEC CPU2017 (redist version)
             perlbench,
             gcc,
             cactuBSSN,
@@ -41,12 +42,16 @@ jobs:
             imagick,
             nab,
             xz,
-            emacs,
-            ghostscript,
-            gdb,
-            sendmail,
-            polybench,
+
+          # Other benchmark suites
             embench,
+            polybench,
+
+          # Open source programs
+            emacs,
+            gdb,
+            ghostscript,
+            sendmail,
           ]
     runs-on: ubuntu-24.04
     steps:
