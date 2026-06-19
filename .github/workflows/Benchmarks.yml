@@ -38,14 +38,15 @@ jobs:
             cactuBSSN,
             x264,
             blender,
+            imagick,
             nab,
             xz,
             emacs,
             ghostscript,
             gdb,
             sendmail,
-            embench,
             polybench,
+            embench,
           ]
     runs-on: ubuntu-24.04
     steps:
