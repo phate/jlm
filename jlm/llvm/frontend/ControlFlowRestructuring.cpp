@@ -241,6 +241,30 @@ RestructureControlFlow(
     std::vector<TailControlledLoop> &);
 
 /**
+ * Inverts the control values of a \ref rvsdg::MatchOperation with 2 alternatives.
+ *
+ * @param matchOperation The \ref rvsdg::MatchOperation for which to invert the control values.
+ * @return A new \ref rvsdg::MatchOperation where the control values are inverted.
+ */
+static std::unique_ptr<rvsdg::MatchOperation>
+invertMatchOperation(const rvsdg::MatchOperation & matchOperation)
+{
+  JLM_ASSERT(matchOperation.nalternatives() == 2);
+
+  const size_t numBits = matchOperation.nbits();
+  const auto oldDefaultAlternative = matchOperation.default_alternative();
+  auto [oldValue, oldAlternative] = *matchOperation.begin();
+  const auto newDefaultAlternative = oldAlternative;
+  auto newAlternative = oldDefaultAlternative;
+
+  return std::unique_ptr<rvsdg::MatchOperation>(new rvsdg::MatchOperation(
+      numBits,
+      { { oldValue, newAlternative } },
+      newDefaultAlternative,
+      matchOperation.nalternatives()));
+}
+
+/**
  * The RVSDG theta node expects that the repetition of its body always happens on control value 1.
  * Thus, we need to ensure that the repetition edge of the tail-controlled
  * loop has index 1 in order to avoid miscompilations.
@@ -281,16 +305,12 @@ adjustLoopRepetitionEdge(const StronglyConnectedComponentStructure & sccStructur
   JLM_ASSERT(branchTac->operand(0) == matchTac->result(0));
   auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(&matchTac->operation());
   JLM_ASSERT(matchOperation->nalternatives() == 2);
-  JLM_ASSERT(matchOperation->default_alternative() == 0);
-  JLM_ASSERT(matchOperation->alternative(1) == 1);
 
-  const size_t numBits = matchOperation->nbits();
+  auto newMatchOperation = invertMatchOperation(*matchOperation);
   auto newMatchOperand = matchTac->operand(0);
   threeAddressCodes.drop_last(); // drop branch operation
   threeAddressCodes.drop_last(); // drop match operation
 
-  auto newMatchOperation = std::unique_ptr<rvsdg::MatchOperation>(
-      new rvsdg::MatchOperation(numBits, { { 0, 1 } }, 0, 2));
   threeAddressCodes.append_last(
       ThreeAddressCode::create(std::move(newMatchOperation), { newMatchOperand }));
   threeAddressCodes.append_last(BranchOperation::create(2, threeAddressCodes.last()->result(0)));
