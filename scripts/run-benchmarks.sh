@@ -3,7 +3,7 @@ set -eu +x
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/haved/jlm-benchmark.git
-GIT_COMMIT=50bf014fe8dacfaad7bbbfdd620b5b839518153c
+GIT_COMMIT=bcb41d42e465981b560abb50f4c33a96c01258e9
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -21,7 +21,11 @@ fi
 
 APT_INSTALL_DEPS=false
 CLEAN_RUNS=false
-RUN_OPTIONS=""
+
+# Used for filtering to only run certain benchmarks
+BENCHMARKS=""
+# Other options to pass to the ./run.sh script
+EXTRA_RUN_OPTIONS=""
 
 function commit()
 {
@@ -36,10 +40,10 @@ function usage()
 	echo "                        Default=[${BENCHMARK_DIR}]"
 	echo "  --apt-install-deps    For CI runner or Ubuntu 24. Installs apt package dependencies before running."
 	echo "  --ci                  Use a benchmark configuration intended for running and validating in CI."
- 	echo "  --parallel #THREADS   The number of threads to run in parallel."
+	echo "  --parallel #THREADS   The number of threads to run in parallel."
 	echo "                        Default=[${NUM_PARALLEL_THREADS}]"
 	echo "  --benchmark BENCH     Only extract and build a specific benchamrk."
-	echo "                        Default=[ALL]. See list of options in benchmark's run.sh"
+	echo "                        Default=[ALL]. See list of options in the benchmark repository's run.sh"
 	echo "  --clean-runs          Delete build files and statistics from previous runs."
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
@@ -61,7 +65,7 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--ci)
-			RUN_OPTIONS="${RUN_OPTIONS} --ci"
+			EXTRA_RUN_OPTIONS="${EXTRA_RUN_OPTIONS} --ci"
 			shift
 			;;
 		--parallel)
@@ -71,7 +75,7 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--benchmark)
 			shift
-			RUN_OPTIONS="${RUN_OPTIONS} --$1"
+			BENCHMARKS="${BENCHMARKS} --$1"
 			shift
 			;;
 		--get-commit-hash)
@@ -112,4 +116,4 @@ if [ "${CLEAN_RUNS}" = true ]; then
 	exit 0
 fi
 
-./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${RUN_OPTIONS}
+./run.sh --jlm-opt "${JLM_ROOT_DIR}/build/jlm-opt" --llvm-config "${LLVMCONFIG}" --parallel "${NUM_PARALLEL_THREADS}" ${BENCHMARKS} ${EXTRA_RUN_OPTIONS}
