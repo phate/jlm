@@ -515,13 +515,15 @@ Region::toJson(
 
   if (annotationMap.HasAnnotations(&region))
   {
-    auto annotations = const_cast<std::vector<util::Annotation> &>(
-        annotationMap.GetAnnotations(&region));
+    auto annotations =
+        const_cast<std::vector<util::Annotation> &>(annotationMap.GetAnnotations(&region));
     std::sort(
         annotations.begin(),
         annotations.end(),
         [](const util::Annotation & a, const util::Annotation & b)
-        { return a.Label() < b.Label(); });
+        {
+          return a.Label() < b.Label();
+        });
 
     bool first = true;
     for (auto & annotation : annotations)
@@ -577,13 +579,15 @@ Region::toJson(
   {
     stream << ",";
 
-    auto annotations = const_cast<std::vector<util::Annotation> &>(
-        annotationMap.GetAnnotations(&structuralNode));
+    auto annotations =
+        const_cast<std::vector<util::Annotation> &>(annotationMap.GetAnnotations(&structuralNode));
     std::sort(
         annotations.begin(),
         annotations.end(),
         [](const util::Annotation & a, const util::Annotation & b)
-        { return a.Label() < b.Label(); });
+        {
+          return a.Label() < b.Label();
+        });
 
     bool first = true;
     for (auto & annotation : annotations)
