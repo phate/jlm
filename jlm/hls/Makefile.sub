@@ -96,7 +96,7 @@ run-libhls-tests_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
     jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
     jlm/hls/backend/rvsdg2rhls/ForkTests.cpp \
-    jlm/hls/backend/rvsdg2rhls/GammaTests.cpp \
+    jlm/hls/backend/rvsdg2rhls/GammaConversionTests.cpp \
     jlm/hls/backend/rvsdg2rhls/MemoryConverterTests.cpp \
     jlm/hls/backend/rvsdg2rhls/MemoryQueueTests.cpp \
     jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests.cpp \
