@@ -160,7 +160,7 @@ GetElementPtrOperation::CalculateOffset(const rvsdg::SimpleNode & gepNode)
 int64_t
 GetElementPtrOperation::Constant::getOffsetInBytes() const noexcept
 {
-  JLM_ASSERT(indices.size() >= 2);
+  JLM_ASSERT(indices.size() >= 1);
 
   std::function<uint64_t(size_t, const rvsdg::Type &)> computeIntraTypeOffset =
       [&](const size_t index, const rvsdg::Type & type)

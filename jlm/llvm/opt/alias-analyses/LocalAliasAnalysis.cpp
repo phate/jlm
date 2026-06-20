@@ -61,7 +61,9 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
   // to avoid giving up on MustAlias prematurely
   const auto p1Traced = TracePointerOriginPrecise(p1Norm);
   const auto p2Traced = TracePointerOriginPrecise(p2Norm);
-  JLM_ASSERT(p1Traced.Offset.has_value() && p2Traced.Offset.has_value());
+  auto p1OffsetInBytesOpt = p1Traced.getOffsetInBytes();
+  auto p2OffsetInBytesOpt = p2Traced.getOffsetInBytes();
+  JLM_ASSERT(p1OffsetInBytesOpt.has_value() && p2OffsetInBytesOpt.has_value());
 
   if (p1Traced.BasePointer == p2Traced.BasePointer)
   {
@@ -69,7 +71,7 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
     // p1 = base + p1Offset
     // p2 = base + p2Offset
 
-    return QueryOffsets(p1Traced.Offset, s1, p2Traced.Offset, s2);
+    return QueryOffsets(p1OffsetInBytesOpt, s1, p2OffsetInBytesOpt, s2);
   }
 
   // If the max trace collection size is set to 1,
@@ -117,12 +119,12 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
 
   // In case the trace collections contain unknown offsets, also try using the
   // precise p1Traced and p2Traced, which always have a known offset
-  if (*p1Traced.Offset > 0)
+  if (*p1OffsetInBytesOpt > 0)
     minimumP1OffsetFromStart =
-        std::max(minimumP1OffsetFromStart, static_cast<size_t>(*p1Traced.Offset));
-  if (*p2Traced.Offset > 0)
+        std::max(minimumP1OffsetFromStart, static_cast<size_t>(*p1OffsetInBytesOpt));
+  if (*p2OffsetInBytesOpt > 0)
     minimumP2OffsetFromStart =
-        std::max(minimumP2OffsetFromStart, static_cast<size_t>(*p2Traced.Offset));
+        std::max(minimumP2OffsetFromStart, static_cast<size_t>(*p2OffsetInBytesOpt));
 
   // Since we have given up on MustAlias, we can remove some targets even if they are valid.
   // Even if p1 might point to an 4-byte int foo,
@@ -264,20 +266,22 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 }
 
 std::optional<size_t>
-LocalAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
+LocalAliasAnalysis::GetRemainingSize(
+    const rvsdg::Output & basePointer,
+    const std::optional<int64_t> & offsetInBytes)
 {
-  const auto totalSize = GetOriginalOriginSize(*trace.BasePointer);
+  const auto totalSize = GetOriginalOriginSize(basePointer);
   if (!totalSize.has_value())
     return std::nullopt;
 
-  if (!trace.Offset.has_value())
+  if (!offsetInBytes.has_value())
     return *totalSize;
 
   // Avoid wrap-around by truncating remaining size to min 0
-  if (*trace.Offset > 0 && static_cast<size_t>(*trace.Offset) > *totalSize)
+  if (*offsetInBytes > 0 && static_cast<size_t>(*offsetInBytes) > *totalSize)
     return 0;
 
-  return *totalSize - *trace.Offset;
+  return *totalSize - *offsetInBytes;
 }
 
 void
@@ -286,7 +290,7 @@ LocalAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & tra
   auto it = traces.TopOrigins.begin();
   while (it != traces.TopOrigins.end())
   {
-    const auto remainingSize = GetRemainingSize({ it->first, it->second });
+    const auto remainingSize = GetRemainingSize(*it->first, it->second);
     if (remainingSize.has_value())
     {
       // This top origin leaves too little room, and can be fully removed

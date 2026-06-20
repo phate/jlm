@@ -93,8 +93,11 @@ tryGetConstantSignedInteger(const rvsdg::Output & output);
  */
 struct TracedPointerOrigin
 {
+  // FIXME: documentation
+  [[nodiscard]] std::optional<int64_t>
+  getOffsetInBytes() const noexcept;
+
   const rvsdg::Output * BasePointer = nullptr;
-  std::optional<int64_t> Offset;
   std::optional<std::vector<GetElementPtrOperation::Constant>> gepConstants{};
 };
 
