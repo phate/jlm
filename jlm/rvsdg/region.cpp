@@ -765,6 +765,76 @@ RegionObserver::RegionObserver(const Region & region)
   region.observers_ = this;
 }
 
+class RegionTreeObserver::SingleRegionObserver final : public RegionObserver
+{
+public:
+  ~SingleRegionObserver() noexcept override = default;
+
+  SingleRegionObserver(const Region & region, RegionTreeObserver & regionTreeObserver)
+      : RegionObserver(region),
+        regionTreeObserver_(&regionTreeObserver)
+  {}
+
+  void
+  onNodeCreate(Node * node) override
+  {
+    regionTreeObserver_->onNodeCreate(node);
+  }
+
+  void
+  onNodeDestroy(Node * node) override
+  {
+    regionTreeObserver_->onNodeDestroy(node);
+  }
+
+  void
+  onInputCreate(Input * input) override
+  {
+    regionTreeObserver_->onInputCreate(input);
+  }
+
+  void
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) override
+  {
+    regionTreeObserver_->onInputChange(input, old_origin, new_origin);
+  }
+
+  void
+  onInputDestroy(Input * input) override
+  {
+    regionTreeObserver_->onInputDestroy(input);
+  }
+
+private:
+  RegionTreeObserver * regionTreeObserver_;
+};
+
+RegionTreeObserver::~RegionTreeObserver() noexcept = default;
+
+RegionTreeObserver::RegionTreeObserver(const Region & rootRegion)
+{
+  createSingleRegionObservers(rootRegion);
+}
+
+void
+RegionTreeObserver::createSingleRegionObservers(const Region & region)
+{
+  for (auto & node : region.Nodes())
+  {
+    // Handle innermost regions first
+    if (const auto structuralNode = dynamic_cast<const StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        createSingleRegionObservers(subregion);
+      }
+    }
+
+    auto singleRegionObserver = std::make_unique<SingleRegionObserver>(region, *this);
+    regionObservers_.emplace_back(std::move(singleRegionObserver));
+  }
+}
+
 std::unordered_map<const Node *, size_t>
 computeDepthMap(const Region & region)
 {
