@@ -99,10 +99,10 @@ TEST(GetElementPtrTests, TestGetElementPtrOperationConstant_OffestInBytes)
   GetElementPtrOperation::Constant constant5{ arrayType2, { 0, 2, 2 } };
 
   // Act & Assert
-  EXPECT_EQ(constant0.getOffsetInBytes(), 0);
-  EXPECT_EQ(constant1.getOffsetInBytes(), 8);
-  EXPECT_EQ(constant2.getOffsetInBytes(), 20);
-  EXPECT_EQ(constant3.getOffsetInBytes(), 8);
-  EXPECT_EQ(constant4.getOffsetInBytes(), 20);
-  EXPECT_EQ(constant5.getOffsetInBytes(), 32);
+  EXPECT_EQ(constant0.getOffsetInBytes(), 0u);
+  EXPECT_EQ(constant1.getOffsetInBytes(), 8u);
+  EXPECT_EQ(constant2.getOffsetInBytes(), 20u);
+  EXPECT_EQ(constant3.getOffsetInBytes(), 8u);
+  EXPECT_EQ(constant4.getOffsetInBytes(), 20u);
+  EXPECT_EQ(constant5.getOffsetInBytes(), 32u);
 }

@@ -86,9 +86,9 @@ TEST(CallOperationTests, TestCallNodeAccessors)
   // Assert
   EXPECT_EQ(CallOperation::NumArguments(callNode), 3u);
   EXPECT_EQ(CallOperation::NumArguments(callNode), callNode.ninputs() - 1);
-  EXPECT_EQ(CallOperation::Argument(callNode, 0)->origin(), v);
-  EXPECT_EQ(CallOperation::Argument(callNode, 1)->origin(), i);
-  EXPECT_EQ(CallOperation::Argument(callNode, 2)->origin(), m);
+  EXPECT_EQ(CallOperation::Argument(callNode, 0u)->origin(), v);
+  EXPECT_EQ(CallOperation::Argument(callNode, 1u)->origin(), i);
+  EXPECT_EQ(CallOperation::Argument(callNode, 2u)->origin(), m);
 
   EXPECT_EQ(callNode.noutputs(), 3u);
   EXPECT_EQ(*callNode.output(0)->Type(), *valueType);

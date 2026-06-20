@@ -103,7 +103,7 @@ TEST(StatisticsTests, TestStatisticsCollection)
   auto numCollectedStatistics =
       std::distance(collector.CollectedStatistics().begin(), collector.CollectedStatistics().end());
 
-  EXPECT_EQ(numCollectedStatistics, 1);
+  EXPECT_EQ(numCollectedStatistics, 1u);
   for (auto & statistic : collector.CollectedStatistics())
   {
     EXPECT_EQ(statistic.GetId(), Statistics::Id::Aggregation);

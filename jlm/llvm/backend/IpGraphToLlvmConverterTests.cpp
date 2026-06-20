@@ -574,7 +574,7 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
     auto f = m.getFunction("f");
     auto & bb = f->getEntryBlock();
 
-    EXPECT_EQ(bb.sizeWithoutDebug(), 2);
+    EXPECT_EQ(bb.sizeWithoutDebug(), 2u);
     EXPECT_EQ(bb.getFirstNonPHI()->getOpcode(), llvm::Instruction::Call);
     EXPECT_EQ(bb.getTerminator()->getOpcode(), llvm::Instruction::Ret);
   };
@@ -632,7 +632,7 @@ TEST(IpGraphToLlvmConverterTests, Free)
     auto f = module.getFunction("f");
     auto & bb = f->getEntryBlock();
 
-    EXPECT_EQ(bb.sizeWithoutDebug(), 2);
+    EXPECT_EQ(bb.sizeWithoutDebug(), 2u);
     EXPECT_EQ(bb.getFirstNonPHI()->getOpcode(), Instruction::Call);
     EXPECT_EQ(bb.getTerminator()->getOpcode(), Instruction::Ret);
   };

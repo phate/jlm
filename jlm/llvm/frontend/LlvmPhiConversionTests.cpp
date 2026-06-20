@@ -145,7 +145,7 @@ TEST(LlvmPhiConversionTests, TestPhiConversion)
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
   auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  EXPECT_EQ(constant0op->Representation(), 0);
+  EXPECT_EQ(constant0op->Representation(), 0u);
   // The last operand of the popcnt phi is the result of the phi itself
   EXPECT_EQ(phiPopcnt->operand(2), phiPopcnt->result(0));
 }
@@ -239,5 +239,5 @@ TEST(LlvmPhiConversionTests, TestPhiOperandElision)
       jlm::util::assertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));
   auto constant0op = jlm::util::assertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  EXPECT_EQ(constant0op->Representation(), 0);
+  EXPECT_EQ(constant0op->Representation(), 0u);
 }

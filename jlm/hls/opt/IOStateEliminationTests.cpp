@@ -118,5 +118,5 @@ TEST(IOStateEliminationTests, testNesting)
   EXPECT_TRUE(exitVar.output->IsDead());
   EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), ioStateArgument);
 
-  EXPECT_EQ(gammaNode->GetEntryVars().size(), 3);
+  EXPECT_EQ(gammaNode->GetEntryVars().size(), 3u);
 }
