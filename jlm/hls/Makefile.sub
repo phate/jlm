@@ -92,6 +92,7 @@ libhls_HEADERS = \
 $(eval $(call common_library,libhls))
 
 run-libhls-tests_SOURCES = \
+    jlm/hls/backend/rhls2firrtl/BaseHlsTests.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
     jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
     jlm/hls/backend/rvsdg2rhls/ForkTests.cpp \
