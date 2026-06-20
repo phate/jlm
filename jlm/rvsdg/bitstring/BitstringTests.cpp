@@ -2125,14 +2125,14 @@ TEST(bitstring, test_value_representation)
 
     EXPECT_EQ(rbits.neg(), -r);
     EXPECT_EQ(rbits.shl(1), r << 1);
-    EXPECT_EQ(rbits.shl(32), 0);
+    EXPECT_EQ(rbits.shl(32), 0u);
     EXPECT_EQ(rbits.ashr(1), r >> 1);
     EXPECT_EQ(rbits.ashr(34), (r < 0 ? -1 : 0));
 
     if (r >= 0)
     {
       EXPECT_EQ(rbits.shr(1), r >> 1);
-      EXPECT_EQ(rbits.shr(34), 0);
+      EXPECT_EQ(rbits.shr(34), 0u);
     }
 
     for (ssize_t c = -4; c < 5; c++)

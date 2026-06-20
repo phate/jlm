@@ -61,15 +61,15 @@ TEST(MemoryConverterTests, TestTraceArgument)
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Assert
-  EXPECT_EQ(tracedPointerNodesVector.size(), 2);               // 2 pointer arguments
-  EXPECT_EQ(tracedPointerNodesVector[0].loadNodes.size(), 1);  // 1 load for the first pointer
-  EXPECT_EQ(tracedPointerNodesVector[0].storeNodes.size(), 0); // 0 store for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector.size(), 2u);               // 2 pointer arguments
+  EXPECT_EQ(tracedPointerNodesVector[0].loadNodes.size(), 1u);  // 1 load for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[0].storeNodes.size(), 0u); // 0 store for the first pointer
   EXPECT_EQ(
       tracedPointerNodesVector[0].decoupleNodes.size(),
-      0);                                                      // 0 decouple for the first pointer
-  EXPECT_EQ(tracedPointerNodesVector[1].loadNodes.size(), 0);  // 0 load for the first pointer
-  EXPECT_EQ(tracedPointerNodesVector[1].storeNodes.size(), 1); // 1 store for the second pointer
-  EXPECT_EQ(tracedPointerNodesVector[1].decoupleNodes.size(), 0); // 0 load for the first pointer
+      0u);                                                      // 0 decouple for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].loadNodes.size(), 0u);  // 0 load for the first pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].storeNodes.size(), 1u); // 1 store for the second pointer
+  EXPECT_EQ(tracedPointerNodesVector[1].decoupleNodes.size(), 0u); // 0 load for the first pointer
 }
 
 TEST(MemoryConverterTests, TestLoad)
@@ -111,14 +111,14 @@ TEST(MemoryConverterTests, TestLoad)
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  EXPECT_EQ(region->numNodes(), 1);
+  EXPECT_EQ(region->numNodes(), 1u);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  EXPECT_EQ(lambdaRegion->numNodes(), 3);
-  EXPECT_EQ(lambdaRegion->narguments(), 3);
-  EXPECT_EQ(lambdaRegion->nresults(), 3);
+  EXPECT_EQ(lambdaRegion->numNodes(), 3u);
+  EXPECT_EQ(lambdaRegion->narguments(), 3u);
+  EXPECT_EQ(lambdaRegion->nresults(), 3u);
 
   // Memory state
   EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(1)->origin()->Type()));
@@ -146,7 +146,7 @@ TEST(MemoryConverterTests, TestLoad)
   // Response source
   auto responseSource = responseNode->input(0)->origin();
   auto regionArgument = jlm::util::assertedCast<jlm::rvsdg::RegionArgument>(responseSource);
-  EXPECT_EQ(regionArgument->index(), 2);
+  EXPECT_EQ(regionArgument->index(), 2u);
 }
 
 TEST(MemoryConverterTests, TestStore)
@@ -188,14 +188,14 @@ TEST(MemoryConverterTests, TestStore)
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  EXPECT_EQ(region->numNodes(), 1);
+  EXPECT_EQ(region->numNodes(), 1u);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  EXPECT_EQ(lambdaRegion->numNodes(), 4);
-  EXPECT_EQ(lambdaRegion->narguments(), 4);
-  EXPECT_EQ(lambdaRegion->nresults(), 2);
+  EXPECT_EQ(lambdaRegion->numNodes(), 4u);
+  EXPECT_EQ(lambdaRegion->narguments(), 4u);
+  EXPECT_EQ(lambdaRegion->nresults(), 2u);
 
   EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
@@ -257,14 +257,14 @@ TEST(MemoryConverterTests, TestLoadStore)
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  EXPECT_EQ(region->numNodes(), 1);
+  EXPECT_EQ(region->numNodes(), 1u);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  EXPECT_EQ(lambdaRegion->numNodes(), 7);
-  EXPECT_EQ(lambdaRegion->narguments(), 5);
-  EXPECT_EQ(lambdaRegion->nresults(), 3);
+  EXPECT_EQ(lambdaRegion->numNodes(), 7u);
+  EXPECT_EQ(lambdaRegion->narguments(), 5u);
+  EXPECT_EQ(lambdaRegion->nresults(), 3u);
 
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   EXPECT_TRUE(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
@@ -376,7 +376,7 @@ TEST(MemoryConverterTests, TestThetaLoad)
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  EXPECT_EQ(region->numNodes(), 1);
+  EXPECT_EQ(region->numNodes(), 1u);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
@@ -395,7 +395,7 @@ TEST(MemoryConverterTests, TestThetaLoad)
   EXPECT_NE(dynamic_cast<const LoopNode *>(loopNode), nullptr);
   // Loop Result
   auto & thetaResult = loopOutput->results;
-  EXPECT_EQ(thetaResult.size(), 1);
+  EXPECT_EQ(thetaResult.size(), 1u);
   // Load Node
   auto loadNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
@@ -503,7 +503,7 @@ TEST(MemoryConverterTests, TestThetaStore)
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  EXPECT_EQ(region->numNodes(), 1);
+  EXPECT_EQ(region->numNodes(), 1u);
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
@@ -521,7 +521,7 @@ TEST(MemoryConverterTests, TestThetaStore)
   EXPECT_NE(dynamic_cast<const LoopNode *>(loopNode), nullptr);
   // Loop Result
   auto & thetaResult = loopOutput->results;
-  EXPECT_EQ(thetaResult.size(), 1);
+  EXPECT_EQ(thetaResult.size(), 1u);
   // Load Node
   auto storeNode =
       jlm::util::assertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();

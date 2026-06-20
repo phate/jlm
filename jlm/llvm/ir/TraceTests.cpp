@@ -125,10 +125,10 @@ TEST(TraceTests, testGetConstantSignedInteger)
   EXPECT_EQ(tryGetConstantSignedInteger(*bits64CtxVar), -37);
 
   // The 20 can be found both before, inside and after the gamma
-  EXPECT_EQ(tryGetConstantSignedInteger(*integerConstantNode.output(0)), 20);
-  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[0]), 20);
-  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[1]), 20);
-  EXPECT_EQ(tryGetConstantSignedInteger(*exitVarOutput), 20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*integerConstantNode.output(0)), 20u);
+  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[0]), 20u);
+  EXPECT_EQ(tryGetConstantSignedInteger(*entryVar.branchArgument[1]), 20u);
+  EXPECT_EQ(tryGetConstantSignedInteger(*exitVarOutput), 20u);
 
   // A match output is not a constant integer, neither is the lambda output
   EXPECT_EQ(tryGetConstantSignedInteger(*matchOutput), std::nullopt);
@@ -187,20 +187,20 @@ TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
 
   // Assert
   // c = BITS32(5), sext = SExt(32 -> 64), zext = ZExt(32 -> 64)
-  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output5), 5);
-  EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), 5);
-  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 5);
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output5), 5u);
+  EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), 5u);
+  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 5u);
 
   // c2 = BITS8(-20), sext2 = SExt(8 -> 32), zext2 = ZExt(8 -> 32)
   EXPECT_EQ(tryGetConstantSignedInteger(bits8OutputMinus20), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(sext2Output), -20);
-  EXPECT_EQ(tryGetConstantSignedInteger(zext2Output), 236);
+  EXPECT_EQ(tryGetConstantSignedInteger(zext2Output), 236u);
 
   // c3 = BITS32(1023), trunc3 = Trunc(32 -> 8), sext3 = SExt(8 -> 32), zext3 = ZExt(8 -> 32)
-  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output1023), 1023);
+  EXPECT_EQ(tryGetConstantSignedInteger(bits32Output1023), 1023u);
   EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -1);
   EXPECT_EQ(tryGetConstantSignedInteger(sext3Output), -1);
-  EXPECT_EQ(tryGetConstantSignedInteger(zext3Output), 255);
+  EXPECT_EQ(tryGetConstantSignedInteger(zext3Output), 255u);
 }
 
 TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
@@ -253,5 +253,5 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   // After extensions and truncation
   EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
-  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516);
+  EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516u);
 }

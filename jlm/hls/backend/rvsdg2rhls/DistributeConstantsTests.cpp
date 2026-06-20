@@ -65,23 +65,23 @@ TEST(DistributeConstantsTests, GammaSubregionUsage)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
 
   {
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
-    EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2);
+    EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2u);
     EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
     // check subregion 1 - we expect the constantNode to be distributed into this subregion
-    EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2);
+    EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2u);
     EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode1->input(0)->origin()));
   }
 
   {
     // check subregion 2 - we expect the constantNode to be distributed into this subregion
-    EXPECT_EQ(gammaNode->subregion(2)->numNodes(), 1);
+    EXPECT_EQ(gammaNode->subregion(2)->numNodes(), 1u);
     EXPECT_TRUE(
         IsOwnerNodeOperation<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin()));
   }
@@ -145,11 +145,11 @@ TEST(DistributeConstantsTests, NestedGammas)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3u);
 
   {
     // check gammaNodeOuter subregion 0
-    EXPECT_EQ(gammaNodeOuter->subregion(0)->numNodes(), 2);
+    EXPECT_EQ(gammaNodeOuter->subregion(0)->numNodes(), 2u);
     EXPECT_TRUE(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
@@ -157,16 +157,16 @@ TEST(DistributeConstantsTests, NestedGammas)
     // check gammaNodeOuter subregion 1
     // The constantNode was copied into this region (even though it does not have a user), so we
     // expect one more node than before the transformation.
-    EXPECT_EQ(gammaNodeOuter->subregion(1)->numNodes(), 3);
+    EXPECT_EQ(gammaNodeOuter->subregion(1)->numNodes(), 3u);
 
     {
       // check gammaNodeInner subregion 0
-      EXPECT_EQ(gammaNodeInner->subregion(0)->numNodes(), 0);
+      EXPECT_EQ(gammaNodeInner->subregion(0)->numNodes(), 0u);
     }
 
     {
       // check gammaNodeInner subregion 1
-      EXPECT_EQ(gammaNodeInner->subregion(1)->numNodes(), 0);
+      EXPECT_EQ(gammaNodeInner->subregion(1)->numNodes(), 0u);
     }
   }
 
@@ -227,10 +227,10 @@ TEST(DistributeConstantsTests, Theta)
 
   // Arrange
   // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 5u);
 
   // We expect constantNode2 to be distributed from the lambda subregion to the theta subregion
-  EXPECT_EQ(thetaNode->subregion()->numNodes(), 5);
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 5u);
 
   {
     // We expect no changes with loopVar0
@@ -253,7 +253,7 @@ TEST(DistributeConstantsTests, Theta)
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
             *lambdaNode->subregion()->result(1)->origin());
     EXPECT_TRUE(constantNode && constantOperation);
-    EXPECT_EQ(constantOperation->Representation(), 1);
+    EXPECT_EQ(constantOperation->Representation(), 1u);
   }
 
   {
@@ -270,7 +270,7 @@ TEST(DistributeConstantsTests, Theta)
     auto [constantNode, constantOperation] =
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode2->input(0)->origin());
     EXPECT_TRUE(constantNode && constantOperation);
-    EXPECT_EQ(constantOperation->Representation(), 2);
+    EXPECT_EQ(constantOperation->Representation(), 2u);
   }
 }
 
@@ -307,5 +307,5 @@ TEST(DistributeConstantsTests, Lambda)
 
   // Arrange
   // We expect no change at all in the graph
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1u);
 }

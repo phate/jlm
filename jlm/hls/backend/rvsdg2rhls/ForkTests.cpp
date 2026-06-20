@@ -59,20 +59,20 @@ TEST(ForkInsertionTests, ForkInsertion)
 
   // Assert
   {
-    EXPECT_EQ(rootRegion.numNodes(), 1);
+    EXPECT_EQ(rootRegion.numNodes(), 1u);
     auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
     EXPECT_NE(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda), nullptr);
 
     auto lambdaSubregion = lambda->subregion();
-    EXPECT_EQ(lambdaSubregion->numNodes(), 1);
+    EXPECT_EQ(lambdaSubregion->numNodes(), 1u);
     auto loop = util::assertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
     EXPECT_NE(dynamic_cast<const hls::LoopNode *>(loop), nullptr);
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());
     EXPECT_TRUE(forkNode && forkOperation);
-    EXPECT_EQ(forkNode->ninputs(), 1);
-    EXPECT_EQ(forkNode->noutputs(), 4);
+    EXPECT_EQ(forkNode->ninputs(), 1u);
+    EXPECT_EQ(forkNode->noutputs(), 4u);
     EXPECT_FALSE(forkOperation->IsConstant());
   }
 }
@@ -117,12 +117,12 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
 
   // Assert
   {
-    EXPECT_EQ(rootRegion.numNodes(), 1);
+    EXPECT_EQ(rootRegion.numNodes(), 1u);
     auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
     EXPECT_TRUE(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
-    EXPECT_EQ(lambdaRegion->numNodes(), 1);
+    EXPECT_EQ(lambdaRegion->numNodes(), 1u);
 
     const rvsdg::NodeOutput * loopOutput =
         dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin());
@@ -134,16 +134,16 @@ TEST(SinkInsertionTests, ConstantForkInsertion)
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());
     EXPECT_TRUE(forkNode && forkOperation);
-    EXPECT_EQ(forkNode->ninputs(), 1);
-    EXPECT_EQ(forkNode->noutputs(), 2);
+    EXPECT_EQ(forkNode->ninputs(), 1u);
+    EXPECT_EQ(forkNode->noutputs(), 2u);
     EXPECT_FALSE(forkOperation->IsConstant());
 
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
     auto [cForkNode, cForkOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
-    EXPECT_EQ(cForkNode->ninputs(), 1);
-    EXPECT_EQ(cForkNode->noutputs(), 2);
+    EXPECT_EQ(cForkNode->ninputs(), 1u);
+    EXPECT_EQ(cForkNode->noutputs(), 2u);
     EXPECT_TRUE(cForkOperation->IsConstant());
   }
 }

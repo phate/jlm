@@ -118,7 +118,7 @@ TEST(GraphTests, Copy)
 
   EXPECT_EQ(newGraph->GetRootRegion().numNodes(), 1u);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();
-  EXPECT_EQ(copiedNode->ninputs() == 1 && copiedNode->noutputs(), 1);
+  EXPECT_EQ(copiedNode->ninputs() == 1 && copiedNode->noutputs(), 1u);
   EXPECT_EQ(copiedNode->input(0)->origin(), copiedArgument);
 
   EXPECT_EQ(newGraph->GetRootRegion().nresults(), 1u);
