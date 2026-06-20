@@ -79,21 +79,22 @@ traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = n
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output);
 
-// FIXME: update documentation
-
 /**
  * Represents the result of tracing a pointer p to some origin,
- * as a traced base pointer value plus an optional byte offset.
+ * as a traced base pointer value plus the encountered statically known \ref GetElementPtrOperation
+ * offsets.
  *
- * If the offset is present, that means
- *  p = base pointer + offset
+ * If the offsets are present, that means
+ *  p = base pointer + offsets
  *
- * If the offset is not present, that means
+ * If the offsets are not present, that means
  *  p = base pointer + [unknown offset]
  */
 struct TracedPointerOrigin
 {
-  // FIXME: documentation
+  /**
+   * @return Return the offset in bytes of the traced pointer if possible, otherwise std::nullopt.
+   */
   [[nodiscard]] std::optional<int64_t>
   getOffsetInBytes() const noexcept;
 
