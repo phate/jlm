@@ -555,7 +555,7 @@ TEST(RegionTests, toJson_RvsdgWithStructuralNodesAndAnnotations)
       json,
       "{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\":"
       "[{},{\"StructuralNodes\":[{\"DebugString\":\"TestStructuralOperation\",\"Subregions\""
-      ":[{},{},{\"NumNodes\":0,\"NumArguments\":0}]}]}]}]}");
+      ":[{},{},{\"NumArguments\":0,\"NumNodes\":0}]}]}]}]}");
 }
 
 TEST(RegionTests, BottomNodeTests)
