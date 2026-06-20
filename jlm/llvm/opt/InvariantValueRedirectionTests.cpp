@@ -260,7 +260,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
    */
 
   // The memory node representing external has index 0, and is avoided in this test
-  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0u);
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -376,7 +376,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
   using namespace jlm::rvsdg;
 
   // The memory node representing external has index 0, and is avoided in this test
-  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0u);
 
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -541,7 +541,7 @@ TEST(InvariantValueRedirectionTests, TestCallWithDifferentExternalCompression)
    */
 
   // The memory node representing external has index 0
-  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0);
+  EXPECT_EQ(aa::PointsToGraph::externalMemoryNode, 0u);
 
   const auto ioStateType = IOStateType::Create();
   const auto memoryStateType = MemoryStateType::Create();
@@ -657,12 +657,12 @@ TEST(InvariantValueRedirectionTests, TestCallWithDifferentExternalCompression)
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  ASSERT_EQ(lambdaEntrySplitNode->noutputs(), 3);
-  ASSERT_EQ(callEntryMergeNodeA->ninputs(), 3);
-  ASSERT_EQ(callExitSplitNodeA->noutputs(), 3);
-  ASSERT_EQ(callEntryMergeNodeB->ninputs(), 3);
-  ASSERT_EQ(callExitSplitNodeB->noutputs(), 3);
-  ASSERT_EQ(lambdaExitMergeNode->ninputs(), 3);
+  ASSERT_EQ(lambdaEntrySplitNode->noutputs(), 3u);
+  ASSERT_EQ(callEntryMergeNodeA->ninputs(), 3u);
+  ASSERT_EQ(callExitSplitNodeA->noutputs(), 3u);
+  ASSERT_EQ(callEntryMergeNodeB->ninputs(), 3u);
+  ASSERT_EQ(callExitSplitNodeB->noutputs(), 3u);
+  ASSERT_EQ(lambdaExitMergeNode->ninputs(), 3u);
 
   // the memory state edge representing the external node has not been re-routed around anything
   EXPECT_EQ(callEntryMergeNodeA->input(0)->origin(), lambdaEntrySplitNode->output(0));

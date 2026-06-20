@@ -1670,7 +1670,7 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
   // The call to opaque() within h() only contains the external memory node,
   // since the memory node representing a has been compressed into it
   const auto & callOpaqueModRef = modRefSummary->GetSimpleNodeModRef(*callOpaqueNode);
-  EXPECT_EQ(callOpaqueModRef.getModRefNodes().size(), 1);
+  EXPECT_EQ(callOpaqueModRef.getModRefNodes().size(), 1u);
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();

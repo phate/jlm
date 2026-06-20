@@ -62,7 +62,7 @@ TEST(ThetaConversionTests, TestUnknownBoundaries)
   // Check that two constant buffers are created for the loop invariant variables
   EXPECT_TRUE(
       jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
-  EXPECT_EQ(lambdaRegion->argument(0)->nusers(), 1);
+  EXPECT_EQ(lambdaRegion->argument(0)->nusers(), 1u);
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {

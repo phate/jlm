@@ -48,7 +48,7 @@ TEST(ViewTests, TestDumpDot)
   auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
-  EXPECT_GT(dotOutput.size(), 0);
+  EXPECT_GT(dotOutput.size(), 0u);
   EXPECT_NE(dotOutput.find("digraph G {"), std::string::npos);
   EXPECT_NE(dotOutput.find("subgraph cluster_"), std::string::npos);
   EXPECT_NE(dotOutput.find("tooltip=\"bit32\""), std::string::npos);
@@ -95,7 +95,7 @@ TEST(ViewTests, TestDumpDotTheta)
   auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
-  EXPECT_GT(dotOutput.size(), 0);
+  EXPECT_GT(dotOutput.size(), 0u);
   EXPECT_NE(dotOutput.find("digraph G {"), std::string::npos);
   EXPECT_NE(dotOutput.find("subgraph cluster_"), std::string::npos);
   EXPECT_NE(dotOutput.find("tooltip=\"bit32\""), std::string::npos);

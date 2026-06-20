@@ -300,9 +300,9 @@ TEST(PointsToGraphTests, testMemoryNodeSize)
     const auto f = ptg->addNodeForLambda(test.LambdaF(), false);
 
     // Assert
-    EXPECT_EQ(ptg->tryGetNodeSize(deltaG1), 4);
-    EXPECT_EQ(ptg->tryGetNodeSize(deltaG2), 8);
-    EXPECT_EQ(ptg->tryGetNodeSize(f), 0);
+    EXPECT_EQ(ptg->tryGetNodeSize(deltaG1), 4u);
+    EXPECT_EQ(ptg->tryGetNodeSize(deltaG2), 8u);
+    EXPECT_EQ(ptg->tryGetNodeSize(f), 0u);
   }
 
   {
@@ -315,8 +315,8 @@ TEST(PointsToGraphTests, testMemoryNodeSize)
     const auto allocaC = ptg->addNodeForAlloca(*test.alloca_c, false);
 
     // Assert 2
-    EXPECT_EQ(ptg->tryGetNodeSize(allocaD), 4);
-    EXPECT_EQ(ptg->tryGetNodeSize(allocaC), 8); // Pointers are 8 bytes
+    EXPECT_EQ(ptg->tryGetNodeSize(allocaD), 4u);
+    EXPECT_EQ(ptg->tryGetNodeSize(allocaC), 8u); // Pointers are 8 bytes
   }
 
   {
@@ -332,12 +332,12 @@ TEST(PointsToGraphTests, testMemoryNodeSize)
     const auto importNode = ptg->addNodeForImport(test.GetImportOutput(), true);
 
     // Assert 3
-    EXPECT_EQ(ptg->tryGetNodeSize(allocaNode), 8);
-    EXPECT_EQ(ptg->tryGetNodeSize(mallocNode), 4);
-    EXPECT_EQ(ptg->tryGetNodeSize(deltaNode), 8);
-    EXPECT_EQ(ptg->tryGetNodeSize(importNode), 4);
+    EXPECT_EQ(ptg->tryGetNodeSize(allocaNode), 8u);
+    EXPECT_EQ(ptg->tryGetNodeSize(mallocNode), 4u);
+    EXPECT_EQ(ptg->tryGetNodeSize(deltaNode), 8u);
+    EXPECT_EQ(ptg->tryGetNodeSize(importNode), 4u);
     // Function nodes have size 0
-    EXPECT_EQ(ptg->tryGetNodeSize(lambdaNode), 0);
+    EXPECT_EQ(ptg->tryGetNodeSize(lambdaNode), 0u);
   }
 }
 

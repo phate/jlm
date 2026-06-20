@@ -110,12 +110,12 @@ TEST(MlirToJlmConverterTests, TestLambda)
       using namespace jlm::rvsdg;
       std::cout << "Checking the result" << std::endl;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(
           convertedLambda->subregion()->Nodes().begin().ptr()));
     }
@@ -258,7 +258,7 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
     {
       using namespace jlm::rvsdg;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
 
       // Get the lambda block
       auto convertedLambda =
@@ -266,7 +266,7 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
       EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 3);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 3u);
 
       // Traverse the rvsgd graph upwards to check connections
       NodeOutput * lambdaResultOriginNodeOutput =
@@ -274,14 +274,14 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
       EXPECT_NE(lambdaResultOriginNodeOutput, nullptr);
       Node * lambdaResultOriginNode = lambdaResultOriginNodeOutput->node();
       EXPECT_TRUE(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
-      EXPECT_EQ(lambdaResultOriginNode->ninputs(), 2);
+      EXPECT_EQ(lambdaResultOriginNode->ninputs(), 2u);
 
       // Check first input
       RegionArgument * DivInput0 =
           dynamic_cast<jlm::rvsdg::RegionArgument *>(lambdaResultOriginNode->input(0)->origin());
       EXPECT_NE(DivInput0, nullptr);
       EXPECT_TRUE(jlm::rvsdg::is<BitType>(DivInput0->Type()));
-      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(DivInput0->Type())->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(DivInput0->Type())->nbits(), 32u);
 
       // Check second input
       auto DivInput1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
@@ -290,11 +290,11 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
       EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(DivInput1Node->GetOperation()));
       auto DivInput1Constant =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&DivInput1Node->GetOperation());
-      EXPECT_EQ(DivInput1Constant->Representation().to_int(), 5);
+      EXPECT_EQ(DivInput1Constant->Representation().to_int(), 5u);
       EXPECT_TRUE(is<const BitType>(DivInput1Constant->result(0)));
       EXPECT_EQ(
           std::dynamic_pointer_cast<const BitType>(DivInput1Constant->result(0))->nbits(),
-          32);
+          32u);
     }
   }
 }
@@ -430,7 +430,7 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
 
       std::cout << "Checking the result" << std::endl;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
 
       // Get the lambda block
       auto convertedLambda =
@@ -438,7 +438,7 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
       EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 5);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 5u);
 
       // Traverse the rvsgd graph upwards to check connections
       std::cout << "Testing lambdaResultOriginNodeOuput\n";
@@ -446,12 +446,12 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
           *convertedLambda->subregion()->result(0)->origin());
       EXPECT_NE(ZExtNode, nullptr);
       EXPECT_TRUE(is<jlm::llvm::ZExtOperation>(ZExtNode->GetOperation()));
-      EXPECT_EQ(ZExtNode->ninputs(), 1);
+      EXPECT_EQ(ZExtNode->ninputs(), 1u);
 
       // Check ZExt
       auto ZExtOp = dynamic_cast<const jlm::llvm::ZExtOperation *>(&ZExtNode->GetOperation());
-      EXPECT_EQ(ZExtOp->nsrcbits(), 1);
-      EXPECT_EQ(ZExtOp->ndstbits(), 32);
+      EXPECT_EQ(ZExtOp->nsrcbits(), 1u);
+      EXPECT_EQ(ZExtOp->ndstbits(), 32u);
 
       // Check ZExt input
       std::cout << "Testing input 0\n";
@@ -464,14 +464,14 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
           dynamic_cast<const jlm::llvm::IntegerEqOperation *>(&BitEqNode->GetOperation())
               ->Type()
               .nbits(),
-          32);
-      EXPECT_EQ(BitEqNode->ninputs(), 2);
+          32u);
+      EXPECT_EQ(BitEqNode->ninputs(), 2u);
 
       // Check BitEq input 0
       auto AddNode =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*BitEqNode->input(0)->origin());
       EXPECT_TRUE(is<jlm::llvm::IntegerAddOperation>(AddNode->GetOperation()));
-      EXPECT_EQ(AddNode->ninputs(), 2);
+      EXPECT_EQ(AddNode->ninputs(), 2u);
 
       // Check BitEq input 1
       auto Const2Node =
@@ -481,20 +481,20 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
       // Check Const2
       auto Const2Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const2Node->GetOperation());
-      EXPECT_EQ(Const2Op->Representation().to_int(), 5);
+      EXPECT_EQ(Const2Op->Representation().to_int(), 5u);
       EXPECT_TRUE(is<const BitType>(Const2Op->result(0)));
-      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const2Op->result(0))->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const2Op->result(0))->nbits(), 32u);
 
       // Check add op
       auto AddOp = dynamic_cast<const jlm::llvm::IntegerAddOperation *>(&AddNode->GetOperation());
-      EXPECT_EQ(AddOp->Type().nbits(), 32);
+      EXPECT_EQ(AddOp->Type().nbits(), 32u);
 
       // Check add input0
       RegionArgument * AddInput0 =
           dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin());
       EXPECT_NE(AddInput0, nullptr);
       EXPECT_TRUE(jlm::rvsdg::is<BitType>(AddInput0->Type()));
-      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(AddInput0->Type())->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(AddInput0->Type())->nbits(), 32u);
 
       // Check add input1
       auto Const1Node =
@@ -504,9 +504,9 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
       // Check Const1
       auto Const1Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const1Node->GetOperation());
-      EXPECT_EQ(Const1Op->Representation().to_int(), 20);
+      EXPECT_EQ(Const1Op->Representation().to_int(), 20u);
       EXPECT_TRUE(is<const BitType>(Const1Op->result(0)));
-      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const1Op->result(0))->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(Const1Op->result(0))->nbits(), 32u);
     }
   }
 }
@@ -648,14 +648,14 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
       EXPECT_TRUE(is<MatchOperation>(matchNode->GetOperation()));
 
       auto matchOp = dynamic_cast<const MatchOperation *>(&matchNode->GetOperation());
-      EXPECT_EQ(matchOp->narguments(), 1);
+      EXPECT_EQ(matchOp->narguments(), 1u);
       EXPECT_TRUE(is<const BitType>(matchOp->argument(0)));
-      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(matchOp->argument(0))->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const BitType>(matchOp->argument(0))->nbits(), 32u);
 
       // 3 alternatives + default
-      EXPECT_EQ(matchOp->nalternatives(), 4);
+      EXPECT_EQ(matchOp->nalternatives(), 4u);
 
-      EXPECT_EQ(matchOp->default_alternative(), 2);
+      EXPECT_EQ(matchOp->default_alternative(), 2u);
 
       for (auto mapping : *matchOp)
       {
@@ -801,7 +801,7 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
     {
       using namespace jlm::rvsdg;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
 
       // Get the lambda block
       auto convertedLambda =
@@ -811,16 +811,16 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
       auto lambdaRegion = convertedLambda->subregion();
 
       // 2 constants + gamma
-      EXPECT_EQ(lambdaRegion->numNodes(), 3);
+      EXPECT_EQ(lambdaRegion->numNodes(), 3u);
 
       auto gammaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(
           *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking gamma operation" << std::endl;
       auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
-      EXPECT_EQ(gammaNode->ninputs(), 3);
-      EXPECT_EQ(gammaOp->nalternatives(), 3);
-      EXPECT_EQ(gammaNode->noutputs(), 2);
+      EXPECT_EQ(gammaNode->ninputs(), 3u);
+      EXPECT_EQ(gammaOp->nalternatives(), 3u);
+      EXPECT_EQ(gammaNode->noutputs(), 2u);
     }
   }
 }
@@ -925,7 +925,7 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
     {
       using namespace jlm::rvsdg;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
 
       // Get the lambda block
       auto convertedLambda =
@@ -935,20 +935,20 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
       auto lambdaRegion = convertedLambda->subregion();
 
       // Just the theta node
-      EXPECT_EQ(lambdaRegion->numNodes(), 1);
+      EXPECT_EQ(lambdaRegion->numNodes(), 1u);
 
       auto thetaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::ThetaNode>(
           *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking theta node" << std::endl;
-      EXPECT_EQ(thetaNode->ninputs(), 2);
-      EXPECT_EQ(thetaNode->GetLoopVars().size(), 2);
-      EXPECT_EQ(thetaNode->noutputs(), 2);
-      EXPECT_EQ(thetaNode->nsubregions(), 1);
+      EXPECT_EQ(thetaNode->ninputs(), 2u);
+      EXPECT_EQ(thetaNode->GetLoopVars().size(), 2u);
+      EXPECT_EQ(thetaNode->noutputs(), 2u);
+      EXPECT_EQ(thetaNode->nsubregions(), 1u);
       EXPECT_TRUE(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->Type()));
       auto predicateType =
           std::dynamic_pointer_cast<const ControlType>(thetaNode->predicate()->Type());
-      EXPECT_EQ(predicateType->nalternatives(), 2);
+      EXPECT_EQ(predicateType->nalternatives(), 2u);
       std::cout << predicate.getValue() << std::endl;
     }
   }

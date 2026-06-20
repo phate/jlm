@@ -45,10 +45,10 @@ TEST(RedundantBufferEliminationTests, BufferWithLocalLoad)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -85,10 +85,10 @@ TEST(RedundantBufferEliminationTests, BufferWithLocalStore)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -125,10 +125,10 @@ TEST(RedundantBufferEliminationTests, BufferWithLoad)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -170,10 +170,10 @@ TEST(RedundantBufferEliminationTests, BufferWithStore)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -211,10 +211,10 @@ TEST(RedundantBufferEliminationTests, BufferWithForkAndLocalLoad)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -254,10 +254,10 @@ TEST(RedundantBufferEliminationTests, BufferWithBranchAndLocalLoad)
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3u);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
 
@@ -293,11 +293,11 @@ TEST(RedundantBufferEliminationTests, BufferWithOtherNode)
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_FALSE(bufferOperation->IsPassThrough());
 }
 
@@ -335,11 +335,11 @@ TEST(RedundantBufferEliminationTests, BufferWithNonMemoryStateOperand)
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node is not of type llvm::MemoryStateType
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_FALSE(bufferOperation->IsPassThrough());
 }
 
@@ -377,10 +377,10 @@ TEST(RedundantBufferEliminationTests, PassthroughBuffer)
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the BufferOperation is already
   // marked as passthrough.
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
   EXPECT_EQ(x.origin(), bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   EXPECT_TRUE(bufferNode && bufferOperation);
-  EXPECT_EQ(bufferOperation->Capacity(), 4);
+  EXPECT_EQ(bufferOperation->Capacity(), 4u);
   EXPECT_TRUE(bufferOperation->IsPassThrough());
 }
