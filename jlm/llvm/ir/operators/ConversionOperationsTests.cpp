@@ -50,14 +50,14 @@ TEST(ConversionOperationsTests, testSextZextConstantReductions)
     auto [_, op] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(*sextExport.origin());
     EXPECT_TRUE(op);
     EXPECT_EQ(op->value().to_int(), -126);
-    EXPECT_EQ(op->value().nbits(), 32);
+    EXPECT_EQ(op->value().nbits(), 32u);
   }
 
   {
     // Check zext
     auto [_, op] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(*zextExport.origin());
     EXPECT_TRUE(op);
-    EXPECT_EQ(op->value().to_int(), 130);
-    EXPECT_EQ(op->value().nbits(), 32);
+    EXPECT_EQ(op->value().to_int(), 130u);
+    EXPECT_EQ(op->value().nbits(), 32u);
   }
 }

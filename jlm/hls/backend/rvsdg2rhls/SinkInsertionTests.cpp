@@ -52,19 +52,19 @@ TEST(SinkInsertionTests, SinkInsertion)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1);
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2);
+  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1u);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
 
   // The sink insertion pass should have inserted a SinkOperation node at output o0
   {
-    EXPECT_EQ(outputVar0.output->nusers(), 1);
+    EXPECT_EQ(outputVar0.output->nusers(), 1u);
     EXPECT_TRUE(IsOwnerNodeOperation<SinkOperation>(*outputVar0.output->Users().begin()));
   }
 
   // The sink insertion pass should have inserted a SinkOperation node at the argument of i0
   {
     auto & i0Argument = *inputVar0.argument[0];
-    EXPECT_EQ(i0Argument.nusers(), 1);
+    EXPECT_EQ(i0Argument.nusers(), 1u);
     EXPECT_TRUE(IsOwnerNodeOperation<SinkOperation>(*i0Argument.Users().begin()));
   }
 }

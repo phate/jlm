@@ -36,10 +36,10 @@ TEST(JlmToMlirToJlmTests, TestUndef)
 
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
     // 1 undef + omegaResult
-    EXPECT_EQ(omegaBlock.getOperations().size(), 2);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2u);
     EXPECT_TRUE(mlir::isa<mlir::jlm::Undef>(omegaBlock.front()));
     auto mlirUndefOp = mlir::dyn_cast<::mlir::jlm::Undef>(&omegaBlock.front());
     mlirUndefOp.dump();
@@ -54,7 +54,7 @@ TEST(JlmToMlirToJlmTests, TestUndef)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
 
       // Get the undef op
       auto convertedUndef =
@@ -64,7 +64,7 @@ TEST(JlmToMlirToJlmTests, TestUndef)
 
       auto outputType = convertedUndef->result(0);
       EXPECT_TRUE(jlm::rvsdg::is<const jlm::rvsdg::BitType>(outputType));
-      EXPECT_EQ(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(outputType)->nbits(), 32);
+      EXPECT_EQ(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(outputType)->nbits(), 32u);
     }
   }
 }
@@ -97,11 +97,11 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
 
     std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
 
     // Bit-contant + alloca + omegaResult
-    EXPECT_EQ(omegaBlock.getOperations().size(), 3);
+    EXPECT_EQ(omegaBlock.getOperations().size(), 3u);
 
     bool foundAlloca = false;
     for (auto & op : omegaBlock)
@@ -109,12 +109,12 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
       if (mlir::isa<mlir::jlm::Alloca>(op))
       {
         auto mlirAllocaOp = mlir::cast<mlir::jlm::Alloca>(op);
-        EXPECT_EQ(mlirAllocaOp.getAlignment(), 4);
-        EXPECT_EQ(mlirAllocaOp.getNumResults(), 2);
+        EXPECT_EQ(mlirAllocaOp.getAlignment(), 4u);
+        EXPECT_EQ(mlirAllocaOp.getNumResults(), 2u);
 
         auto valueType = mlir::cast<mlir::IntegerType>(mlirAllocaOp.getValueType());
         EXPECT_NE(valueType, nullptr);
-        EXPECT_EQ(valueType.getWidth(), 64);
+        EXPECT_EQ(valueType.getWidth(), 64u);
         foundAlloca = true;
       }
     }
@@ -130,28 +130,28 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 2u);
 
       bool foundAlloca = false;
       for (auto & node : region->Nodes())
       {
         if (auto allocaOp = dynamic_cast<const AllocaOperation *>(&node.GetOperation()))
         {
-          EXPECT_EQ(allocaOp->alignment(), 4);
+          EXPECT_EQ(allocaOp->alignment(), 4u);
 
           EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->allocatedType()));
           auto valueBitType =
               dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->allocatedType().get());
-          EXPECT_EQ(valueBitType->nbits(), 64);
+          EXPECT_EQ(valueBitType->nbits(), 64u);
 
-          EXPECT_EQ(allocaOp->narguments(), 1);
+          EXPECT_EQ(allocaOp->narguments(), 1u);
 
           EXPECT_TRUE(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->argument(0)));
           auto inputBitType =
               dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 32);
+          EXPECT_EQ(inputBitType->nbits(), 32u);
 
-          EXPECT_EQ(allocaOp->nresults(), 2);
+          EXPECT_EQ(allocaOp->nresults(), 2u);
 
           EXPECT_TRUE(jlm::rvsdg::is<PointerType>(allocaOp->result(0)));
           EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(allocaOp->result(1)));
@@ -211,15 +211,15 @@ TEST(JlmToMlirToJlmTests, TestLoad)
     EXPECT_TRUE(mlir::isa<mlir::jlm::Load>(mlirOp));
 
     auto mlirLoad = mlir::cast<mlir::jlm::Load>(mlirOp);
-    EXPECT_EQ(mlirLoad.getAlignment(), 4);
-    EXPECT_EQ(mlirLoad.getInputMemStates().size(), 1);
-    EXPECT_EQ(mlirLoad.getNumOperands(), 2);
-    EXPECT_EQ(mlirLoad.getNumResults(), 2);
+    EXPECT_EQ(mlirLoad.getAlignment(), 4u);
+    EXPECT_EQ(mlirLoad.getInputMemStates().size(), 1u);
+    EXPECT_EQ(mlirLoad.getNumOperands(), 2u);
+    EXPECT_EQ(mlirLoad.getNumResults(), 2u);
 
     auto outputType = mlirLoad.getOutput().getType();
     EXPECT_TRUE(mlir::isa<mlir::IntegerType>(outputType));
     auto integerType = mlir::cast<mlir::IntegerType>(outputType);
-    EXPECT_EQ(integerType.getWidth(), 32);
+    EXPECT_EQ(integerType.getWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -231,20 +231,20 @@ TEST(JlmToMlirToJlmTests, TestLoad)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<LoadNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
       auto loadOperation =
           dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
 
-      EXPECT_EQ(loadOperation->GetAlignment(), 4);
-      EXPECT_EQ(loadOperation->NumMemoryStates(), 1);
+      EXPECT_EQ(loadOperation->GetAlignment(), 4u);
+      EXPECT_EQ(loadOperation->NumMemoryStates(), 1u);
 
       EXPECT_TRUE(is<jlm::llvm::PointerType>(convertedLoad->input(0)->Type()));
       EXPECT_TRUE(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->Type()));
@@ -254,7 +254,7 @@ TEST(JlmToMlirToJlmTests, TestLoad)
 
       auto outputBitType =
           std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(convertedLoad->output(0)->Type());
-      EXPECT_EQ(outputBitType->nbits(), 32);
+      EXPECT_EQ(outputBitType->nbits(), 32u);
     }
   }
 }
@@ -306,14 +306,14 @@ TEST(JlmToMlirToJlmTests, TestStore)
     EXPECT_TRUE(mlir::isa<mlir::jlm::Store>(mlirOp));
 
     auto mlirStore = mlir::cast<mlir::jlm::Store>(mlirOp);
-    EXPECT_EQ(mlirStore.getAlignment(), 4);
-    EXPECT_EQ(mlirStore.getInputMemStates().size(), 1);
-    EXPECT_EQ(mlirStore.getNumOperands(), 3);
+    EXPECT_EQ(mlirStore.getAlignment(), 4u);
+    EXPECT_EQ(mlirStore.getInputMemStates().size(), 1u);
+    EXPECT_EQ(mlirStore.getNumOperands(), 3u);
 
     auto inputType = mlirStore.getValue().getType();
     EXPECT_TRUE(mlir::isa<mlir::IntegerType>(inputType));
     auto integerType = mlir::cast<mlir::IntegerType>(inputType);
-    EXPECT_EQ(integerType.getWidth(), 32);
+    EXPECT_EQ(integerType.getWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -325,20 +325,20 @@ TEST(JlmToMlirToJlmTests, TestStore)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<StoreNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
       auto convertedStoreOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
 
-      EXPECT_EQ(convertedStoreOperation->GetAlignment(), 4);
-      EXPECT_EQ(convertedStoreOperation->NumMemoryStates(), 1);
+      EXPECT_EQ(convertedStoreOperation->GetAlignment(), 4u);
+      EXPECT_EQ(convertedStoreOperation->NumMemoryStates(), 1u);
 
       EXPECT_TRUE(is<jlm::llvm::PointerType>(convertedStore->input(0)->Type()));
       EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedStore->input(1)->Type()));
@@ -348,7 +348,7 @@ TEST(JlmToMlirToJlmTests, TestStore)
 
       auto inputBitType =
           std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(convertedStore->input(1)->Type());
-      EXPECT_EQ(inputBitType->nbits(), 32);
+      EXPECT_EQ(inputBitType->nbits(), 32u);
     }
   }
 }
@@ -409,19 +409,19 @@ TEST(JlmToMlirToJlmTests, TestSext)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<SExtOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedSext = dynamic_cast<const SExtOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
-      EXPECT_EQ(convertedSext->ndstbits(), 64);
-      EXPECT_EQ(convertedSext->nsrcbits(), 32);
-      EXPECT_EQ(convertedSext->nresults(), 1);
+      EXPECT_EQ(convertedSext->ndstbits(), 64u);
+      EXPECT_EQ(convertedSext->nsrcbits(), 32u);
+      EXPECT_EQ(convertedSext->nresults(), 1u);
     }
   }
 }
@@ -480,10 +480,10 @@ TEST(JlmToMlirToJlmTests, TestSitofp)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(
           is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
@@ -536,10 +536,10 @@ TEST(JlmToMlirToJlmTests, TestConstantFP)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedConst = dynamic_cast<const ConstantFP *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
@@ -614,17 +614,17 @@ TEST(JlmToMlirToJlmTests, TestFpBinary)
       {
         using namespace jlm::llvm;
 
-        EXPECT_EQ(region->numNodes(), 1);
+        EXPECT_EQ(region->numNodes(), 1u);
         auto convertedLambda =
             jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-        EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+        EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
         auto convertedFpbin =
             jlm::util::assertedCast<const FBinaryOperation>(&node->GetOperation());
         EXPECT_EQ(convertedFpbin->fpop(), binOp);
-        EXPECT_EQ(convertedFpbin->nresults(), 1);
-        EXPECT_EQ(convertedFpbin->narguments(), 2);
+        EXPECT_EQ(convertedFpbin->nresults(), 1u);
+        EXPECT_EQ(convertedFpbin->narguments(), 2u);
       }
     }
   }
@@ -673,14 +673,14 @@ TEST(JlmToMlirToJlmTests, TestFMulAddOp)
 
     // Assert
     auto region = &roundTripModule->Rvsdg().GetRootRegion();
-    EXPECT_EQ(region->numNodes(), 1);
+    EXPECT_EQ(region->numNodes(), 1u);
     auto convertedLambda =
         jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-    EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+    EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
     const auto arguments = convertedLambda->GetFunctionArguments();
     const auto results = convertedLambda->GetFunctionResults();
-    EXPECT_EQ(arguments.size(), 3);
-    EXPECT_EQ(results.size(), 1);
+    EXPECT_EQ(arguments.size(), 3u);
+    EXPECT_EQ(results.size(), 1u);
 
     auto & convertedNode = *convertedLambda->subregion()->Nodes().begin();
     EXPECT_TRUE(is<jlm::llvm::FMulAddIntrinsicOperation>(&convertedNode));
@@ -735,18 +735,18 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
     auto mlirArrayType = mlir::cast<mlir::LLVM::LLVMArrayType>(mlirGep.getElemType());
 
     EXPECT_TRUE(mlir::isa<mlir::IntegerType>(mlirArrayType.getElementType()));
-    EXPECT_EQ(mlirArrayType.getNumElements(), 2);
+    EXPECT_EQ(mlirArrayType.getNumElements(), 2u);
 
     auto indices = mlirGep.getIndices();
-    EXPECT_EQ(indices.size(), 2);
+    EXPECT_EQ(indices.size(), 2u);
     auto index0 = indices[0].dyn_cast<mlir::Value>();
     auto index1 = indices[1].dyn_cast<mlir::Value>();
     EXPECT_NE(index0, nullptr);
     EXPECT_NE(index1, nullptr);
     EXPECT_TRUE(index0.getType().isa<mlir::IntegerType>());
     EXPECT_TRUE(index1.getType().isa<mlir::IntegerType>());
-    EXPECT_EQ(index0.getType().getIntOrFloatBitWidth(), 32);
-    EXPECT_EQ(index1.getType().getIntOrFloatBitWidth(), 32);
+    EXPECT_EQ(index0.getType().getIntOrFloatBitWidth(), 32u);
+    EXPECT_EQ(index1.getType().getIntOrFloatBitWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -758,10 +758,10 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
 
       auto op = convertedLambda->subregion()->Nodes().begin();
       EXPECT_TRUE(is<GetElementPtrOperation>(op->GetOperation()));
@@ -819,7 +819,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
     std::cout << "Validate MLIR" << std::endl;
 
     auto & omegaBlock = omega.getRegion().front();
-    EXPECT_EQ(omegaBlock.getOperations().size(), 3); // 2 delta nodes + 1 omegaresult
+    EXPECT_EQ(omegaBlock.getOperations().size(), 3u); // 2 delta nodes + 1 omegaresult
     for (auto & op : omegaBlock.getOperations())
     {
       auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&op);
@@ -846,7 +846,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
       EXPECT_TRUE(mlirDeltaNode.getType().isa<mlir::LLVM::LLVMPointerType>());
       auto terminator = mlirDeltaNode.getRegion().front().getTerminator();
       EXPECT_NE(terminator, nullptr);
-      EXPECT_EQ(terminator->getNumOperands(), 1);
+      EXPECT_EQ(terminator->getNumOperands(), 1u);
       EXPECT_TRUE(terminator->getOperand(0).getType().isa<mlir::IntegerType>());
     }
 
@@ -860,11 +860,11 @@ TEST(JlmToMlirToJlmTests, TestDelta)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 2u);
       for (auto & node : region->Nodes())
       {
         auto convertedDelta = jlm::util::assertedCast<jlm::rvsdg::DeltaNode>(&node);
-        EXPECT_EQ(convertedDelta->subregion()->numNodes(), 1);
+        EXPECT_EQ(convertedDelta->subregion()->numNodes(), 1u);
         auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
@@ -918,14 +918,14 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
       auto mlirConstantDataArray = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&op);
       if (mlirConstantDataArray)
       {
-        EXPECT_EQ(mlirConstantDataArray.getNumOperands(), 2);
+        EXPECT_EQ(mlirConstantDataArray.getNumOperands(), 2u);
         EXPECT_TRUE(mlirConstantDataArray.getOperand(0).getType().isa<mlir::IntegerType>());
         EXPECT_TRUE(mlirConstantDataArray.getOperand(1).getType().isa<mlir::IntegerType>());
         auto mlirConstantDataArrayResultType =
             mlirConstantDataArray.getResult().getType().dyn_cast<mlir::LLVM::LLVMArrayType>();
         EXPECT_NE(mlirConstantDataArrayResultType, nullptr);
         EXPECT_TRUE(mlirConstantDataArrayResultType.getElementType().isa<mlir::IntegerType>());
-        EXPECT_EQ(mlirConstantDataArrayResultType.getNumElements(), 2);
+        EXPECT_EQ(mlirConstantDataArrayResultType.getNumElements(), 2u);
         foundConstantDataArray = true;
       }
     }
@@ -941,20 +941,20 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 3);
+      EXPECT_EQ(region->numNodes(), 3u);
       bool foundConstantDataArray = false;
       for (auto & node : region->Nodes())
       {
         if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
         {
           foundConstantDataArray = true;
-          EXPECT_EQ(constantDataArray->nresults(), 1);
-          EXPECT_EQ(constantDataArray->narguments(), 2);
+          EXPECT_EQ(constantDataArray->nresults(), 1u);
+          EXPECT_EQ(constantDataArray->narguments(), 2u);
           auto resultType = constantDataArray->result(0);
           auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
           EXPECT_NE(arrayType, nullptr);
           EXPECT_TRUE(is<jlm::rvsdg::BitType>(arrayType->element_type()));
-          EXPECT_EQ(arrayType->nelements(), 2);
+          EXPECT_EQ(arrayType->nelements(), 2u);
           EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(0)));
           EXPECT_TRUE(is<jlm::rvsdg::BitType>(constantDataArray->argument(1)));
         }
@@ -992,7 +992,7 @@ TEST(JlmToMlirToJlmTests, TestConstantAggregateZero)
         mlirConstantAggregateZero.getType().dyn_cast<mlir::LLVM::LLVMArrayType>();
     EXPECT_NE(mlirConstantAggregateZeroResultType, nullptr);
     EXPECT_TRUE(mlirConstantAggregateZeroResultType.getElementType().isa<mlir::IntegerType>());
-    EXPECT_EQ(mlirConstantAggregateZeroResultType.getNumElements(), 2);
+    EXPECT_EQ(mlirConstantAggregateZeroResultType.getNumElements(), 2u);
 
     // // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -1004,17 +1004,17 @@ TEST(JlmToMlirToJlmTests, TestConstantAggregateZero)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto const convertedConstantAggregateZero =
           jlm::util::assertedCast<const ConstantAggregateZeroOperation>(
               &region->Nodes().begin().ptr()->GetOperation());
-      EXPECT_EQ(convertedConstantAggregateZero->nresults(), 1);
-      EXPECT_EQ(convertedConstantAggregateZero->narguments(), 0);
+      EXPECT_EQ(convertedConstantAggregateZero->nresults(), 1u);
+      EXPECT_EQ(convertedConstantAggregateZero->narguments(), 0u);
       auto resultType = convertedConstantAggregateZero->result(0);
       auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
       EXPECT_NE(arrayType, nullptr);
       EXPECT_TRUE(is<jlm::rvsdg::BitType>(arrayType->element_type()));
-      EXPECT_EQ(arrayType->nelements(), 2);
+      EXPECT_EQ(arrayType->nelements(), 2u);
     }
   }
 }
@@ -1048,7 +1048,7 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
       auto mlirVarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&op);
       if (mlirVarArgOp)
       {
-        EXPECT_EQ(mlirVarArgOp.getOperands().size(), 2);
+        EXPECT_EQ(mlirVarArgOp.getOperands().size(), 2u);
         EXPECT_TRUE(mlirVarArgOp.getOperands()[0].getType().isa<mlir::IntegerType>());
         EXPECT_TRUE(mlirVarArgOp.getOperands()[1].getType().isa<mlir::IntegerType>());
         EXPECT_TRUE(mlirVarArgOp.getResult().getType().isa<mlir::jlm::VarargListType>());
@@ -1067,7 +1067,7 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 3);
+      EXPECT_EQ(region->numNodes(), 3u);
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
@@ -1075,8 +1075,8 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
             dynamic_cast<const VariadicArgumentListOperation *>(&node.GetOperation());
         if (convertedVarArgOp)
         {
-          EXPECT_EQ(convertedVarArgOp->nresults(), 1);
-          EXPECT_EQ(convertedVarArgOp->narguments(), 2);
+          EXPECT_EQ(convertedVarArgOp->nresults(), 1u);
+          EXPECT_EQ(convertedVarArgOp->narguments(), 2u);
           auto resultType = convertedVarArgOp->result(0);
           EXPECT_TRUE(is<jlm::llvm::VariableArgumentType>(resultType));
           EXPECT_TRUE(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(0)));
@@ -1122,10 +1122,10 @@ TEST(JlmToMlirToJlmTests, TestFNeg)
       {
         auto inputFloatType = mlirFNegOp.getOperand().getType().dyn_cast<mlir::FloatType>();
         EXPECT_NE(inputFloatType, nullptr);
-        EXPECT_EQ(inputFloatType.getWidth(), 32);
+        EXPECT_EQ(inputFloatType.getWidth(), 32u);
         auto outputFloatType = mlirFNegOp.getResult().getType().dyn_cast<mlir::FloatType>();
         EXPECT_NE(outputFloatType, nullptr);
-        EXPECT_EQ(outputFloatType.getWidth(), 32);
+        EXPECT_EQ(outputFloatType.getWidth(), 32u);
         foundFNegOp = true;
       }
     }
@@ -1141,15 +1141,15 @@ TEST(JlmToMlirToJlmTests, TestFNeg)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 2u);
       bool foundFNegOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&node.GetOperation());
         if (convertedFNegOp)
         {
-          EXPECT_EQ(convertedFNegOp->nresults(), 1);
-          EXPECT_EQ(convertedFNegOp->narguments(), 1);
+          EXPECT_EQ(convertedFNegOp->nresults(), 1u);
+          EXPECT_EQ(convertedFNegOp->narguments(), 1u);
           auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFNegOp->argument(0).get());
           EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
@@ -1198,10 +1198,10 @@ TEST(JlmToMlirToJlmTests, TestFPExt)
       {
         auto inputFloatType = mlirFPExtOp.getOperand().getType().dyn_cast<mlir::FloatType>();
         EXPECT_NE(inputFloatType, nullptr);
-        EXPECT_EQ(inputFloatType.getWidth(), 32);
+        EXPECT_EQ(inputFloatType.getWidth(), 32u);
         auto outputFloatType = mlirFPExtOp.getResult().getType().dyn_cast<mlir::FloatType>();
         EXPECT_NE(outputFloatType, nullptr);
-        EXPECT_EQ(outputFloatType.getWidth(), 64);
+        EXPECT_EQ(outputFloatType.getWidth(), 64u);
         foundFPExtOp = true;
       }
     }
@@ -1217,15 +1217,15 @@ TEST(JlmToMlirToJlmTests, TestFPExt)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 2u);
       bool foundFPExtOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&node.GetOperation());
         if (convertedFPExtOp)
         {
-          EXPECT_EQ(convertedFPExtOp->nresults(), 1);
-          EXPECT_EQ(convertedFPExtOp->narguments(), 1);
+          EXPECT_EQ(convertedFPExtOp->nresults(), 1u);
+          EXPECT_EQ(convertedFPExtOp->narguments(), 1u);
           auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFPExtOp->argument(0).get());
           EXPECT_EQ(inputFloatType->size(), jlm::llvm::fpsize::flt);
@@ -1271,10 +1271,10 @@ TEST(JlmToMlirToJlmTests, TestTrunc)
       {
         auto inputBitType = mlirTruncOp.getOperand().getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(inputBitType, nullptr);
-        EXPECT_EQ(inputBitType.getWidth(), 64);
+        EXPECT_EQ(inputBitType.getWidth(), 64u);
         auto outputBitType = mlirTruncOp.getResult().getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(outputBitType, nullptr);
-        EXPECT_EQ(outputBitType.getWidth(), 32);
+        EXPECT_EQ(outputBitType.getWidth(), 32u);
         foundTruncOp = true;
       }
     }
@@ -1290,21 +1290,21 @@ TEST(JlmToMlirToJlmTests, TestTrunc)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 2);
+      EXPECT_EQ(region->numNodes(), 2u);
       bool foundTruncOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&node.GetOperation());
         if (convertedTruncOp)
         {
-          EXPECT_EQ(convertedTruncOp->nresults(), 1);
-          EXPECT_EQ(convertedTruncOp->narguments(), 1);
+          EXPECT_EQ(convertedTruncOp->nresults(), 1u);
+          EXPECT_EQ(convertedTruncOp->narguments(), 1u);
           auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedTruncOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 64);
+          EXPECT_EQ(inputBitType->nbits(), 64u);
           auto outputBitType =
               jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedTruncOp->result(0).get());
-          EXPECT_EQ(outputBitType->nbits(), 32);
+          EXPECT_EQ(outputBitType->nbits(), 32u);
           foundTruncOp = true;
         }
       }
@@ -1354,8 +1354,8 @@ TEST(JlmToMlirToJlmTests, TestFree)
     EXPECT_TRUE(mlir::isa<mlir::jlm::Free>(mlirOp));
 
     auto mlirFree = mlir::cast<mlir::jlm::Free>(mlirOp);
-    EXPECT_EQ(mlirFree.getNumOperands(), 3);
-    EXPECT_EQ(mlirFree.getNumResults(), 2);
+    EXPECT_EQ(mlirFree.getNumOperands(), 3u);
+    EXPECT_EQ(mlirFree.getNumResults(), 2u);
 
     auto inputType1 = mlirFree.getOperand(0).getType();
     auto inputType2 = mlirFree.getOperand(1).getType();
@@ -1379,18 +1379,18 @@ TEST(JlmToMlirToJlmTests, TestFree)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto convertedLambda =
           jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       EXPECT_TRUE(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
-      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1);
+      EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
       EXPECT_TRUE(is<FreeOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedFree = dynamic_cast<const FreeOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
-      EXPECT_EQ(convertedFree->narguments(), 3);
-      EXPECT_EQ(convertedFree->nresults(), 2);
+      EXPECT_EQ(convertedFree->narguments(), 3u);
+      EXPECT_EQ(convertedFree->nresults(), 2u);
 
       EXPECT_TRUE(is<jlm::llvm::PointerType>(convertedFree->argument(0)));
       EXPECT_TRUE(is<jlm::llvm::MemoryStateType>(convertedFree->argument(1)));
@@ -1447,8 +1447,8 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
     EXPECT_NE(mlirFunctionType, nullptr);
     EXPECT_NE(mlirImportedFunctionType, nullptr);
     EXPECT_EQ(mlirFunctionType, mlirImportedFunctionType);
-    EXPECT_EQ(mlirFunctionType.getNumInputs(), 3);
-    EXPECT_EQ(mlirFunctionType.getNumResults(), 2);
+    EXPECT_EQ(mlirFunctionType.getNumInputs(), 3u);
+    EXPECT_EQ(mlirFunctionType.getNumResults(), 2u);
     EXPECT_TRUE(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirFunctionType.getInput(0)));
     EXPECT_TRUE(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirFunctionType.getInput(1)));
     EXPECT_TRUE(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirFunctionType.getInput(2)));
@@ -1467,9 +1467,9 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 0);
+      EXPECT_EQ(region->numNodes(), 0u);
 
-      EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1);
+      EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1u);
       auto arg = region->graph()->GetRootRegion().argument(0);
       auto imp = dynamic_cast<jlm::llvm::LlvmGraphImport *>(arg);
       EXPECT_NE(imp, nullptr);
@@ -1523,7 +1523,7 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
 
     auto mlirIntType = valueType.dyn_cast<mlir::IntegerType>();
     EXPECT_NE(mlirIntType, nullptr);
-    EXPECT_EQ(mlirIntType.getWidth(), 32);
+    EXPECT_EQ(mlirIntType.getWidth(), 32u);
     EXPECT_EQ(linkage, "external_linkage");
     EXPECT_EQ(name, "test");
 
@@ -1537,9 +1537,9 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 0);
+      EXPECT_EQ(region->numNodes(), 0u);
 
-      EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1);
+      EXPECT_EQ(region->graph()->GetRootRegion().narguments(), 1u);
       auto arg = region->graph()->GetRootRegion().argument(0);
       auto imp = dynamic_cast<jlm::llvm::LlvmGraphImport *>(arg);
       EXPECT_NE(imp, nullptr);
@@ -1588,7 +1588,7 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
     // Validate the generated MLIR
     std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
-    EXPECT_EQ(omegaRegion.getBlocks().size(), 1);
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
     auto & mlirLambdaRegion = mlirLambda.getRegion(0);
@@ -1603,18 +1603,18 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
         foundIOBarrier = true;
 
         // Check that the IOBarrier has 2 operands (value and IO state)
-        EXPECT_EQ(ioBarrier->getNumOperands(), 2);
+        EXPECT_EQ(ioBarrier->getNumOperands(), 2u);
 
         // Check that the first operand is a 32-bit integer
         auto valueType = ioBarrier->getOperand(0).getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(valueType, nullptr);
-        EXPECT_EQ(valueType.getWidth(), 32);
+        EXPECT_EQ(valueType.getWidth(), 32u);
         EXPECT_TRUE(mlir::isa<mlir::rvsdg::IOStateEdgeType>(ioBarrier->getOperand(1).getType()));
 
         // Check that the result type matches the input value type
         auto resultType = ioBarrier->getResult(0).getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(resultType, nullptr);
-        EXPECT_EQ(resultType.getWidth(), 32);
+        EXPECT_EQ(resultType.getWidth(), 32u);
       }
     }
     EXPECT_TRUE(foundIOBarrier);
@@ -1630,7 +1630,7 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
       using namespace jlm::llvm;
 
       // Direct access to the lambda node
-      EXPECT_EQ(region->numNodes(), 1);
+      EXPECT_EQ(region->numNodes(), 1u);
       auto & lambdaNode = *region->Nodes().begin();
       auto lambdaOperation = dynamic_cast<const jlm::rvsdg::LambdaNode *>(&lambdaNode);
       EXPECT_NE(lambdaOperation, nullptr);
@@ -1645,14 +1645,14 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
           foundIOBarrier = true;
 
           // Check that it has correct number of inputs and outputs
-          EXPECT_EQ(ioBarrierOp->nresults(), 1);
-          EXPECT_EQ(ioBarrierOp->narguments(), 2);
+          EXPECT_EQ(ioBarrierOp->nresults(), 1u);
+          EXPECT_EQ(ioBarrierOp->narguments(), 2u);
 
           // Check that the first input is the 32-bit value
           auto valueType =
               dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->argument(0).get());
           EXPECT_NE(valueType, nullptr);
-          EXPECT_EQ(valueType->nbits(), 32);
+          EXPECT_EQ(valueType->nbits(), 32u);
 
           // Check that the second input is an IO state
           auto ioStateType = dynamic_cast<const IOStateType *>(ioBarrierOp->argument(1).get());
@@ -1661,7 +1661,7 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
           // Check that the output type matches the input value type
           auto outputType = dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->result(0).get());
           EXPECT_NE(outputType, nullptr);
-          EXPECT_EQ(outputType->nbits(), 32);
+          EXPECT_EQ(outputType->nbits(), 32u);
         }
       }
       EXPECT_TRUE(foundIOBarrier);
@@ -1699,7 +1699,7 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
       {
         auto inputBitType = mlirMallocOp.getOperand(0).getType().dyn_cast<mlir::IntegerType>();
         EXPECT_NE(inputBitType, nullptr);
-        EXPECT_EQ(inputBitType.getWidth(), 64);
+        EXPECT_EQ(inputBitType.getWidth(), 64u);
         EXPECT_TRUE(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirMallocOp.getResult(0).getType()));
         EXPECT_TRUE(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirMallocOp.getResult(1).getType()));
         EXPECT_TRUE(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirMallocOp.getResult(2).getType()));
@@ -1718,18 +1718,18 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 3);
+      EXPECT_EQ(region->numNodes(), 3u);
       bool foundMallocOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedMallocOp = dynamic_cast<const MallocOperation *>(&node.GetOperation());
         if (convertedMallocOp)
         {
-          EXPECT_EQ(convertedMallocOp->nresults(), 3);
-          EXPECT_EQ(convertedMallocOp->narguments(), 2);
+          EXPECT_EQ(convertedMallocOp->nresults(), 3u);
+          EXPECT_EQ(convertedMallocOp->narguments(), 2u);
           auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedMallocOp->argument(0).get());
-          EXPECT_EQ(inputBitType->nbits(), 64);
+          EXPECT_EQ(inputBitType->nbits(), 64u);
           EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));
           EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::IOStateType>(convertedMallocOp->result(1)));
           EXPECT_TRUE(jlm::rvsdg::is<jlm::llvm::MemoryStateType>(convertedMallocOp->result(2)));

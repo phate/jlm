@@ -91,15 +91,15 @@ TestIntegerBinaryOperation()
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 3);
+      EXPECT_EQ(region->numNodes(), 3u);
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedBinaryOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
         if (convertedBinaryOp)
         {
-          EXPECT_EQ(convertedBinaryOp->nresults(), 1);
-          EXPECT_EQ(convertedBinaryOp->narguments(), 2);
+          EXPECT_EQ(convertedBinaryOp->nresults(), 1u);
+          EXPECT_EQ(convertedBinaryOp->narguments(), 2u);
           auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(0).get());
           EXPECT_EQ(inputBitType1->nbits(), nbits);
@@ -198,7 +198,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
         // Check the output type is i1 (boolean)
         auto outputType = mlirCompOp.getResult().getType().dyn_cast<::mlir::IntegerType>();
         EXPECT_NE(outputType, nullptr);
-        EXPECT_EQ(outputType.getWidth(), 1);
+        EXPECT_EQ(outputType.getWidth(), 1u);
 
         // Verify the predicate is correct
         EXPECT_EQ(mlirCompOp.getPredicate(), test.predicate);
@@ -217,15 +217,15 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
     {
       using namespace jlm::llvm;
 
-      EXPECT_EQ(region->numNodes(), 3);
+      EXPECT_EQ(region->numNodes(), 3u);
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {
         auto convertedCompOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
         if (convertedCompOp)
         {
-          EXPECT_EQ(convertedCompOp->nresults(), 1);
-          EXPECT_EQ(convertedCompOp->narguments(), 2);
+          EXPECT_EQ(convertedCompOp->nresults(), 1u);
+          EXPECT_EQ(convertedCompOp->narguments(), 2u);
           auto inputBitType1 = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(0).get());
           EXPECT_EQ(inputBitType1->nbits(), nbits);
@@ -236,7 +236,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
           // Check the output type is bit1 (boolean)
           auto outputBitType =
               jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
-          EXPECT_EQ(outputBitType->nbits(), 1);
+          EXPECT_EQ(outputBitType->nbits(), 1u);
 
           foundCompOp = true;
         }
