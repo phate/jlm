@@ -874,7 +874,8 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
 
   auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
   const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
-  if (!tracedAddress.Offset.has_value())
+  auto offsetInBytesOpt = tracedAddress.getOffsetInBytes();
+  if (!offsetInBytesOpt.has_value())
   {
     return std::nullopt;
   }
@@ -886,7 +887,7 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   }
 
   context_->numLoadsTracedToDeltaNode++;
-  return std::optional<TracedDelta>({ deltaNode, tracedAddress.Offset.value() });
+  return std::optional<TracedDelta>({ deltaNode, offsetInBytesOpt.value() });
 }
 
 void

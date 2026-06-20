@@ -149,7 +149,7 @@ TEST(LlvmModuleConversionTests, FreezeConversion)
       EXPECT_EQ(*freezeOperation->result(0), *jlmInt64Type);
     }
 
-    EXPECT_EQ(numFreezeThreeAddressCodes, 1);
+    EXPECT_EQ(numFreezeThreeAddressCodes, 1u);
   }
 }
 

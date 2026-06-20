@@ -41,21 +41,21 @@ TEST(RegionTests, IteratorRanges)
 
   // Act & Assert
   auto numArguments = std::distance(subregion.Arguments().begin(), subregion.Arguments().end());
-  EXPECT_EQ(numArguments, 2);
+  EXPECT_EQ(numArguments, 2u);
   for (auto & argument : constSubregion.Arguments())
   {
     EXPECT_TRUE(argument == &argument0 || argument == &argument1);
   }
 
   auto numTopNodes = std::distance(subregion.TopNodes().begin(), subregion.TopNodes().end());
-  EXPECT_EQ(numTopNodes, 1);
+  EXPECT_EQ(numTopNodes, 1u);
   for (auto & topNode : constSubregion.TopNodes())
   {
     EXPECT_EQ(&topNode, topNode0);
   }
 
   auto numNodes = std::distance(subregion.Nodes().begin(), subregion.Nodes().end());
-  EXPECT_EQ(numNodes, 4);
+  EXPECT_EQ(numNodes, 4u);
   for (auto & node : constSubregion.Nodes())
   {
     EXPECT_TRUE(&node == topNode0 || &node == node0 || &node == node1 || &node == bottomNode0);
@@ -63,14 +63,14 @@ TEST(RegionTests, IteratorRanges)
 
   auto numBottomNodes =
       std::distance(subregion.BottomNodes().begin(), subregion.BottomNodes().end());
-  EXPECT_EQ(numBottomNodes, 1);
+  EXPECT_EQ(numBottomNodes, 1u);
   for (auto & bottomNode : constSubregion.BottomNodes())
   {
     EXPECT_EQ(&bottomNode, bottomNode0);
   }
 
   auto numResults = std::distance(subregion.Results().begin(), subregion.Results().end());
-  EXPECT_EQ(numResults, 3);
+  EXPECT_EQ(numResults, 3u);
   for (auto & result : constSubregion.Results())
   {
     EXPECT_TRUE(
@@ -419,7 +419,7 @@ TEST(RegionTests, ToTree_RvsdgWithStructuralNodes)
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
   // We should find '\n' 10 times: 1 root region + 3 structural nodes + 6 subregions
-  EXPECT_EQ(numLines, 10);
+  EXPECT_EQ(numLines, 10u);
 
   // Check that the last line printed looks accordingly
   auto lastLine = std::string("----Region[2]\n");
@@ -453,7 +453,7 @@ TEST(RegionTests, ToTree_RvsdgWithStructuralNodesAndAnnotations)
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
   // We should find '\n' 8 times: 1 root region + 2 structural nodes + 5 subregions
-  EXPECT_EQ(numLines, 8);
+  EXPECT_EQ(numLines, 8u);
 
   // Check that the last line printed looks accordingly
   auto lastLine = std::string("----Region[2] NumNodes:0 NumArguments:0\n");
@@ -667,10 +667,10 @@ TEST(RegionTests, DepthTest)
   auto innerStructuralNode = TestStructuralNode::create(structuralNode->subregion(0), 1);
 
   // Act & Assert
-  EXPECT_EQ(graph.GetRootRegion().getDepth(), 0);
-  EXPECT_EQ(structuralNode->region()->getDepth(), 0);
-  EXPECT_EQ(structuralNode->subregion(0)->getDepth(), 1);
-  EXPECT_EQ(structuralNode->subregion(1)->getDepth(), 1);
-  EXPECT_EQ(innerStructuralNode->region()->getDepth(), 1);
-  EXPECT_EQ(innerStructuralNode->subregion(0)->getDepth(), 2);
+  EXPECT_EQ(graph.GetRootRegion().getDepth(), 0u);
+  EXPECT_EQ(structuralNode->region()->getDepth(), 0u);
+  EXPECT_EQ(structuralNode->subregion(0)->getDepth(), 1u);
+  EXPECT_EQ(structuralNode->subregion(1)->getDepth(), 1u);
+  EXPECT_EQ(innerStructuralNode->region()->getDepth(), 1u);
+  EXPECT_EQ(innerStructuralNode->subregion(0)->getDepth(), 2u);
 }

@@ -55,13 +55,13 @@ TEST(MemoryStateSplitConversionTests, SplitConversion)
   view(rvsdg, stdout);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2);
-  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 2u);
+  EXPECT_EQ(structuralNode->subregion(0)->numNodes(), 1u);
 
   // The memory state split conversion pass should have replaced the
   // LambdaEntryMemoryStateSplitOperation node with a ForkOperation node
   {
-    EXPECT_EQ(outputVar0.output->nusers(), 1);
+    EXPECT_EQ(outputVar0.output->nusers(), 1u);
     EXPECT_TRUE(IsOwnerNodeOperation<ForkOperation>(*inputVar.argument[0]->Users().begin()));
   }
 

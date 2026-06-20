@@ -23,7 +23,7 @@
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <llvm-18/llvm/ADT/APFloat.h>
+#include <llvm/ADT/APFloat.h>
 
 static void
 RunStoreValueForwarding(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
@@ -140,7 +140,7 @@ TEST(StoreValueForwardingTests, NestedAllocas)
   // Verify that the return value is a constant 20
   const auto & result = *lambdaNode.GetFunctionResults()[0]->origin();
   const auto resultValue = tryGetConstantSignedInteger(result);
-  EXPECT_EQ(resultValue, 20);
+  EXPECT_EQ(resultValue, 20u);
 }
 
 TEST(StoreValueForwardingTests, GetElementPointerOffsets)
@@ -266,8 +266,8 @@ TEST(StoreValueForwardingTests, GetElementPointerOffsets)
   const auto r2 = tryGetConstantSignedInteger(*results[1]->origin());
   const auto r3 = tryGetConstantSignedInteger(*results[2]->origin());
   EXPECT_FALSE(r1.has_value());
-  EXPECT_EQ(r2, 40);
-  EXPECT_EQ(r3, 20);
+  EXPECT_EQ(r2, 40u);
+  EXPECT_EQ(r3, 20u);
 }
 
 TEST(StoreValueForwardingTests, RoutingIn)
@@ -377,7 +377,7 @@ TEST(StoreValueForwardingTests, RoutingIn)
   // The result in gamma region 0 should be the constant 40
   auto & branch0Result = *lExitVar.branchResult[0]->origin();
   auto resultValue = tryGetConstantSignedInteger(branch0Result);
-  EXPECT_EQ(resultValue, 40);
+  EXPECT_EQ(resultValue, 40u);
 
   // The result should be routed in from the constant 40 node
   auto & resultTraced = jlm::llvm::traceOutput(branch0Result);
@@ -500,7 +500,7 @@ TEST(StoreValueForwardingTests, RouteOut)
   // In the 0th subregion, the output should be a constant integer
   const auto constInteger =
       jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin());
-  EXPECT_EQ(constInteger, 20);
+  EXPECT_EQ(constInteger, 20u);
 
   // In the 1st subregion, the output should be traced back to the loop var input
   const auto & traced1stRegionOrigin = jlm::llvm::traceOutput(*exitVar.branchResult[1]->origin());
@@ -508,7 +508,7 @@ TEST(StoreValueForwardingTests, RouteOut)
   EXPECT_EQ(loopVar.pre, loopVar2.pre);
 
   const auto constInputInteger = jlm::llvm::tryGetConstantSignedInteger(*loopVar.input->origin());
-  EXPECT_EQ(constInputInteger, 40);
+  EXPECT_EQ(constInputInteger, 40u);
 }
 
 TEST(StoreValueForwardingTests, RouteAroundLoadLoop)
@@ -605,11 +605,11 @@ TEST(StoreValueForwardingTests, RouteAroundLoadLoop)
   const auto loopVar1 = thetaNode.MapOutputLoopVar(addLhsOrigin);
   const auto loopVar2 = thetaNode.MapPreLoopVar(*loopVar1.post->origin());
   EXPECT_TRUE(rvsdg::ThetaLoopVarIsInvariant(loopVar2));
-  EXPECT_EQ(tryGetConstantSignedInteger(*loopVar2.input->origin()), 40);
+  EXPECT_EQ(tryGetConstantSignedInteger(*loopVar2.input->origin()), 40u);
 
   // The value replacing l3 should come from the constant directly, not a theta output.
   const auto & addRhsOrigin = *addNode.input(1)->origin();
-  EXPECT_EQ(tryGetConstantSignedInteger(addRhsOrigin), 40);
+  EXPECT_EQ(tryGetConstantSignedInteger(addRhsOrigin), 40u);
   EXPECT_EQ(rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(addRhsOrigin), nullptr);
 }
 
@@ -702,7 +702,7 @@ TEST(StoreValueForwardingTests, RouteUninitialized)
   EXPECT_NE(rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(resultOrigin), nullptr);
 
   const auto exitVar = gammaNode.MapOutputExitVar(resultOrigin);
-  EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin()), 20);
+  EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*exitVar.branchResult[0]->origin()), 20u);
   const auto [undefNode, undefOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*exitVar.branchResult[1]->origin());
   EXPECT_TRUE(undefNode && undefOperation);
@@ -850,7 +850,7 @@ TEST(StoreValueForwardingTests, GepInLoop)
   // which takes 20 as its initial value, and loaded + 1 as its post origin
   const auto & loadedInLoopOrigin = *addLoadedOneNode.input(0)->origin();
   const auto loadedLoopVar = thetaNode.MapPreLoopVar(loadedInLoopOrigin);
-  EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*loadedLoopVar.input->origin()), 20);
+  EXPECT_EQ(jlm::llvm::tryGetConstantSignedInteger(*loadedLoopVar.input->origin()), 20u);
   EXPECT_EQ(loadedLoopVar.post->origin(), addLoadedOneNode.output(0));
 
   // Check that the final load of a[2] is replaced by the value of loaded + 1 in the loop

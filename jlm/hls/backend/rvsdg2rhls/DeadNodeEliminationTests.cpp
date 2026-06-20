@@ -37,7 +37,7 @@ TEST(DeadNodeEliminationTests, TestDeadLoopNode)
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 0);
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 0u);
 }
 
 TEST(DeadNodeEliminationTests, TestDeadLoopNodeOutput)
@@ -78,8 +78,8 @@ TEST(DeadNodeEliminationTests, TestDeadLoopNodeOutput)
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  EXPECT_EQ(loopNode->noutputs(), 1);
-  EXPECT_EQ(loopNode->ninputs(), 2); // I believe that it actually should only have one input.
+  EXPECT_EQ(loopNode->noutputs(), 1u);
+  EXPECT_EQ(loopNode->ninputs(), 2u); // I believe that it actually should only have one input.
   // FIXME: The DNE seems to already be broken for a simple dead edge through it. It removes the
   // output from the loop node, but then seems to fail to remove the corresponding input, arguments,
   // and results.

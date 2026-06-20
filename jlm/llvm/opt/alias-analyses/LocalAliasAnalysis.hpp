@@ -115,11 +115,12 @@ private:
    * If the offset is larger than the size of the target, the size 0 is returned.
    * If the offset is unknown, the size of the target is returned.
    *
-   * @param trace the traced pointer
+   * @param basePointer The base pointer of the traced pointer.
+   * @param offsetInBytes The offset in bytes of the traced pointer.
    * @return the number of bytes left after the given traced pointer, or nullopt if unknown.
    */
   [[nodiscard]] static std::optional<size_t>
-  GetRemainingSize(TracedPointerOrigin trace);
+  GetRemainingSize(const rvsdg::Output & basePointer, const std::optional<int64_t> & offsetInBytes);
 
   /**
    * For each top origin in the given trace collection, it is removed if it is deemed too small.

@@ -63,10 +63,10 @@ TEST(UnusedStateRemovalTests, TestGamma)
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  EXPECT_EQ(gammaNode->ninputs(), 7);  // gammaInput1 was removed
-  EXPECT_EQ(gammaNode->noutputs(), 4); // gammaOutput1 was removed
-  EXPECT_EQ(gammaInput2.input->index(), 1);
-  EXPECT_EQ(gammaOutput2.output->index(), 0);
+  EXPECT_EQ(gammaNode->ninputs(), 7u);  // gammaInput1 was removed
+  EXPECT_EQ(gammaNode->noutputs(), 4u); // gammaOutput1 was removed
+  EXPECT_EQ(gammaInput2.input->index(), 1u);
+  EXPECT_EQ(gammaOutput2.output->index(), 0u);
   // FIXME: The transformation is way too conservative here. The only input and output it removes
   // are gammaInput1 and gammaOutput1, respectively. However, it could also remove gammaOutput3,
   // gammaOutput4, and gammaOutput5 as they are all invariant. This in turn would also render some
@@ -113,8 +113,8 @@ TEST(UnusedStateRemovalTests, TestTheta)
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  EXPECT_EQ(thetaNode->ninputs(), 3);
-  EXPECT_EQ(thetaNode->noutputs(), 3);
+  EXPECT_EQ(thetaNode->ninputs(), 3u);
+  EXPECT_EQ(thetaNode->noutputs(), 3u);
 
   EXPECT_EQ(TryGetOwnerNode<ThetaNode>(*exportP.origin()), thetaNode);
   EXPECT_EQ(exportX.origin(), importX);
@@ -167,12 +167,12 @@ TEST(UnusedStateRemovalTests, TestLambda)
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1);
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 1u);
   auto & newLambdaNode =
       dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
-  EXPECT_EQ(newLambdaNode.ninputs(), 2);
-  EXPECT_EQ(newLambdaNode.subregion()->narguments(), 3);
-  EXPECT_EQ(newLambdaNode.subregion()->nresults(), 2);
+  EXPECT_EQ(newLambdaNode.ninputs(), 2u);
+  EXPECT_EQ(newLambdaNode.subregion()->narguments(), 3u);
+  EXPECT_EQ(newLambdaNode.subregion()->nresults(), 2u);
   // FIXME For lambdas, the transformation has the following issues:
   // 1. It works only for lambda nodes in the root region. It throws an assert for all other lambdas
   // 2. It does not check whether the lambda is only exported. Removing passthrough values works
@@ -224,7 +224,7 @@ TEST(UnusedStateRemovalTests, TestUsedMemoryState)
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
-  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_EQ(lambdaSubregion->nresults(), 1u);
   EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
 
@@ -267,8 +267,8 @@ TEST(UnusedStateRemovalTests, TestUnusedMemoryState)
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  EXPECT_EQ(lambdaSubregion->narguments(), 2);
-  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_EQ(lambdaSubregion->narguments(), 2u);
+  EXPECT_EQ(lambdaSubregion->nresults(), 1u);
   EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
 
@@ -324,8 +324,8 @@ TEST(UnusedStateRemovalTests, TestInvariantMemoryState)
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  EXPECT_EQ(lambdaSubregion->narguments(), 2);
-  EXPECT_EQ(lambdaSubregion->nresults(), 1);
+  EXPECT_EQ(lambdaSubregion->narguments(), 2u);
+  EXPECT_EQ(lambdaSubregion->nresults(), 1u);
   EXPECT_TRUE(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
   EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
       *lambdaSubregion,

@@ -133,7 +133,7 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation(), 24);
+    EXPECT_EQ(constantOperation->Representation(), 24u);
   }
   else
   {
@@ -142,7 +142,7 @@ TEST(IfConversionTests, EmptyGammaWithTwoSubregionsAndMatch)
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation(), 24);
+    EXPECT_EQ(constantOperation->Representation(), 24u);
   }
 }
 
