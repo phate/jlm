@@ -269,7 +269,7 @@ TEST(RvsdgTreePrinterTests, printAllocaNodes)
   std::cout << tree;
 
   // Assert
-  const auto expectedTree = "{\"NumAllocaNodes\":2,\"NumAggregateAllocaNodes\":1}\n";
+  const auto expectedTree = "{\"NumAggregateAllocaNodes\":1,\"NumAllocaNodes\":2}\n";
 
   EXPECT_EQ(tree, expectedTree);
 }

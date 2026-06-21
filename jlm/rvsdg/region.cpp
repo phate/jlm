@@ -14,6 +14,7 @@
 #include <jlm/util/Program.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <algorithm>
 #include <fstream>
 
 namespace jlm::rvsdg
@@ -514,8 +515,17 @@ Region::toJson(
 
   if (annotationMap.HasAnnotations(&region))
   {
+    auto annotations = annotationMap.GetAnnotations(&region);
+    std::sort(
+        annotations.begin(),
+        annotations.end(),
+        [](const util::Annotation & a, const util::Annotation & b)
+        {
+          return a.Label() < b.Label();
+        });
+
     bool first = true;
-    for (auto & annotation : annotationMap.GetAnnotations(&region))
+    for (const auto & annotation : annotations)
     {
       if (first)
         first = false;
@@ -568,8 +578,17 @@ Region::toJson(
   {
     stream << ",";
 
+    auto annotations = annotationMap.GetAnnotations(&structuralNode);
+    std::sort(
+        annotations.begin(),
+        annotations.end(),
+        [](const util::Annotation & a, const util::Annotation & b)
+        {
+          return a.Label() < b.Label();
+        });
+
     bool first = true;
-    for (auto & annotation : annotationMap.GetAnnotations(&structuralNode))
+    for (const auto & annotation : annotations)
     {
       if (first)
         first = false;
