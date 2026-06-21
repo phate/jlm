@@ -747,7 +747,7 @@ TEST_F(FirrtlTestBase, MemoryStateMergeOperation)
   auto & arg0 = *Lambda_->GetFunctionArguments()[0];
   auto & arg1 = *Lambda_->GetFunctionArguments()[1];
   auto * mergeOutput =
-      MemoryStateMergeOperation::Create(std::vector<rvsdg::Output *>{ &arg0, &arg1 });
+      MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>{ &arg0, &arg1 });
   Lambda_->finalize({ mergeOutput });
 
   TestableRhlsToFirrtlConverter converter;
