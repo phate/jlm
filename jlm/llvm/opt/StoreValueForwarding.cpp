@@ -990,11 +990,14 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           throw std::logic_error("Unsupported operation: " + node->DebugString());
         });
   }
-  else if (auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
+  else if (
+      const auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
   {
-    JLM_ASSERT(deltaNode == tracedDelta.deltaNode);
-    JLM_ASSERT(0 && "Here we are");
-    // FIXME: Handle context variables used as global constant initializers
+    auto [ctxInput, _] = deltaNode->MapBinderContextVar(deltaResultOrigin);
+    JLM_ASSERT(ctxInput->region() == &ctxInput->region()->graph()->GetRootRegion());
+    auto & routedValue = rvsdg::RouteToRegion(*ctxInput->origin(), *loadNode.region());
+    LoadOperation::LoadedValueOutput(loadNode).divert_users(&routedValue);
+    context_->numForwardedLoadsWithoutMemoryState++;
   }
   else
   {
