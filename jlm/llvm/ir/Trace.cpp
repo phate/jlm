@@ -213,19 +213,19 @@ traceAllPointerOriginsInternal(
   traceCollection.AllTracedOutputs[basePointer] = offsetInBytes;
 
   // If it is a GEP, we can trace through it, but possibly lose precise offset information
-  if (const auto [node, gep] =
+  if (const auto [gepNode, gepOperation] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*basePointer);
-      gep)
+      gepOperation)
   {
     // Update the base pointer and offset to represent the other side of the GEP
-    basePointer = node->input(0)->origin();
+    basePointer = GetElementPtrOperation::getBaseAddressInput(*gepNode).origin();
 
     // If we have precisely tracked the offset so far, try updating it with the GEPs offset
     if (offsetInBytes.has_value())
     {
-      const auto gepOffset = GetElementPtrOperation::CalculateOffset(*node);
-      if (gepOffset.has_value())
-        offsetInBytes = *offsetInBytes + *gepOffset;
+      if (const auto gepConstant = GetElementPtrOperation::tryGetAsConstant(*gepNode);
+          gepConstant.has_value())
+        offsetInBytes = *offsetInBytes + gepConstant->getOffsetInBytes();
       else
         offsetInBytes = std::nullopt;
     }
