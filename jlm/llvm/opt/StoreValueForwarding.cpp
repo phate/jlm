@@ -993,6 +993,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   else if (auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
   {
     JLM_ASSERT(deltaNode == tracedDelta.deltaNode);
+    JLM_ASSERT(0 && "Here we are");
     // FIXME: Handle context variables used as global constant initializers
   }
   else
