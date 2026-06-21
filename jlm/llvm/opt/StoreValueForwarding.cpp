@@ -994,7 +994,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
       const auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
   {
     auto [ctxInput, _] = deltaNode->MapBinderContextVar(deltaResultOrigin);
-    JLM_ASSERT(ctxInput->region() == &ctxInput->region()->graph()->GetRootRegion());
+    JLM_ASSERT(ctxInput->region()->IsRootRegion());
     auto & routedValue = rvsdg::RouteToRegion(*ctxInput->origin(), *loadNode.region());
     LoadOperation::LoadedValueOutput(loadNode).divert_users(&routedValue);
     context_->numForwardedLoadsWithoutMemoryState++;
