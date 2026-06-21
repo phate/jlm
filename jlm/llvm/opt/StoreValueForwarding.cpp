@@ -872,22 +872,21 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
-  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
-  auto offsetInBytesOpt = tracedAddress.getOffsetInBytes();
-  if (!offsetInBytesOpt.has_value())
+  const auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  const auto [basePointer, gepConstantsOpt] = TracePointerOriginPrecise(loadAddress);
+  if (!gepConstantsOpt.has_value())
   {
     return std::nullopt;
   }
 
-  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*tracedAddress.BasePointer);
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*basePointer);
   if (!deltaNode)
   {
     return std::nullopt;
   }
 
   context_->numLoadsTracedToDeltaNode++;
-  return std::optional<TracedDelta>({ deltaNode, offsetInBytesOpt.value() });
+  return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
 
 void
@@ -907,7 +906,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
 
           auto copiedNode = node->copy(loadNode.region(), {});
           if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
