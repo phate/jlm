@@ -24,6 +24,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <llvm/ADT/APFloat.h>
+#include <llvm/IR/Constants.h>
 
 static void
 RunStoreValueForwarding(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
@@ -1378,4 +1379,83 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
   // Assert
   // We expect all load nodes to be forwarded
   EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = BitType::Create(32);
+  const auto arrayType = ArrayType::Create(bits32Type, 3);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits32Type,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(arrayType, true, pointerType));
+  auto & zeroNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 2);
+  auto constantDataArrayResult =
+      ConstantDataArray::Create({ zeroNode.output(0), oneNode.output(0), twoNode.output(0) });
+  auto & deltaOutput = deltaNode->finalize(constantDataArrayResult);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto zero = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
+  auto two = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+
+  auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
+
+  auto gepOutput1 = GetElementPtrOperation::create(ctxVar.inner, { zero }, bits32Type);
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*gepOutput1, {}, bits32Type, 4);
+
+  auto gepOutput2 = GetElementPtrOperation::create(ctxVar.inner, { zero, zero }, bits32Type);
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*gepOutput2, {}, bits32Type, 4);
+
+  auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, bits32Type);
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
+
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadNode0),
+                        &LoadOperation::LoadedValueOutput(loadNode1),
+                        &LoadOperation::LoadedValueOutput(loadNode2),
+                        &LoadOperation::LoadedValueOutput(loadNode3) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[0]->origin());
+  EXPECT_NE(intOperation0, nullptr);
+  EXPECT_EQ(intOperation0->Representation().to_uint(), 0);
+
+  auto [intNode1, intOperation1] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[1]->origin());
+  EXPECT_NE(intOperation1, nullptr);
+  EXPECT_EQ(intOperation1->Representation().to_uint(), 0);
+
+  auto [intNode2, intOperation2] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[2]->origin());
+  EXPECT_NE(intOperation2, nullptr);
+  EXPECT_EQ(intOperation2->Representation().to_uint(), 0);
+
+  auto [intNode3, intOperation3] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[3]->origin());
+  EXPECT_NE(intOperation3, nullptr);
+  EXPECT_EQ(intOperation3->Representation().to_uint(), 2);
 }

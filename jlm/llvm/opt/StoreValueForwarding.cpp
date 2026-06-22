@@ -937,26 +937,20 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           JLM_ASSERT(constantDataArray.type() == *loadOperation->GetLoadedType());
 
+          size_t elementIndex = 0;
           if (!tracedDelta.gepConstants.empty())
           {
             JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
             auto & gepConstant = tracedDelta.gepConstants[0];
             JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
             JLM_ASSERT(gepConstant.indices[0] == 0);
-            auto elementIndex = gepConstant.indices.back();
-            const auto elementNode =
-                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
-            auto copiedNode = elementNode->copy(loadNode.region(), {});
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-          }
-          else
-          {
-            const auto elementNode =
-                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(0)->origin());
-            auto copiedNode = elementNode->copy(loadNode.region(), {});
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+            elementIndex = gepConstant.indices.back();
           }
 
+          const auto elementNode =
+              rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+          auto copiedNode = elementNode->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantArrayOperation &)
