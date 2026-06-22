@@ -940,9 +940,21 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           if (!tracedDelta.gepConstants.empty())
           {
             JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
-            JLM_ASSERT(tracedDelta.gepConstants[0].indices.size() == 2);
-            JLM_ASSERT(tracedDelta.gepConstants[0].indices[0] == 0);
-            const auto elementIndex = tracedDelta.gepConstants[0].indices[1];
+            auto & gepConstant = tracedDelta.gepConstants[0];
+
+            size_t elementIndex = 0;
+            JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+            if (gepConstant.indices.size() == 1)
+            {
+              JLM_ASSERT(gepConstant.indices[0] == 0);
+              elementIndex = 0;
+            }
+            else
+            {
+              JLM_ASSERT(gepConstant.indices[0] == 0);
+              elementIndex = gepConstant.indices[1];
+            }
+            
             const auto elementNode =
                 rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
             auto copiedNode = elementNode->copy(loadNode.region(), {});
