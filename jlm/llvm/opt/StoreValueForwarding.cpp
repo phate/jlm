@@ -933,9 +933,30 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantDataArray &)
+        [&](const ConstantDataArray & constantDataArray)
         {
-          JLM_ASSERT(0 && "Here we are");
+          JLM_ASSERT(constantDataArray.type() == *loadOperation->GetLoadedType());
+
+          if (!tracedDelta.gepConstants.empty())
+          {
+            JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
+            JLM_ASSERT(tracedDelta.gepConstants[0].indices.size() == 2);
+            JLM_ASSERT(tracedDelta.gepConstants[0].indices[0] == 0);
+            const auto elementIndex = tracedDelta.gepConstants[0].indices[1];
+            const auto elementNode =
+                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+            auto copiedNode = elementNode->copy(loadNode.region(), {});
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          }
+          else
+          {
+            const auto elementNode =
+                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(0)->origin());
+            auto copiedNode = elementNode->copy(loadNode.region(), {});
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          }
+
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantArrayOperation &)
         {
