@@ -4130,5 +4130,5 @@ RhlsToFirrtlConverter::MlirGenExtModule(const jlm::rvsdg::SimpleNode * node)
           Builder_->getContext(),
           circt::firrtl::Convention::Internal),
       ports);
- }
+}
 } // namespace jlm::hls
