@@ -793,9 +793,18 @@ TEST_F(FirrtlTestBase, UnimplementedSimpleNodeThrows)
   Lambda_->finalize({ testNode->output(0) });
 
   TestableRhlsToFirrtlConverter converter;
-  EXPECT_THROW(
-      { mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_)); },
-      std::logic_error);
+  bool exceptionThrown = false;
+
+  try
+  {
+    converter.TestMlirGen(Lambda_);
+  }
+  catch (const std::logic_error &)
+  {
+    exceptionThrown = true;
+  }
+
+  EXPECT_TRUE(exceptionThrown);
 }
 
 /* ================================================================== */
