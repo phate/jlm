@@ -979,7 +979,10 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantPointerNullOperation &)
         {
-          // FIXME: handle operation
+          const auto nullPtrResult =
+              ConstantPointerNullOperation::Create(loadNode.region(), PointerType::Create());
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrResult);
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const IntegerToPointerOperation &)
         {

@@ -1299,3 +1299,48 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaCtxVar)
   // We expect that deltaOutput1 has now lambdaNode as user on top of deltaNode2.
   EXPECT_EQ(deltaOutput1.nusers(), 2);
 }
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits8Type = BitType::Create(8);
+  const auto bits32Type = BitType::Create(32);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          bits32Type,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(bits32Type, true, pointerType));
+  auto & constantPointerNull = ConstantPointerNullOperation::Create(*deltaNode->subregion(), );
+  auto & deltaOutput = deltaNode->finalize(four.output(0));
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
+  auto & load8Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits8Type, 4);
+
+  auto & zextResult = ZExtOperation::create(32, *load8Node.output(0));
+  auto & addNode = IntegerAddOperation::createNode(32, *load32Node.output(0), zextResult);
+
+  lambdaNode.finalize({ addNode.output(0) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
