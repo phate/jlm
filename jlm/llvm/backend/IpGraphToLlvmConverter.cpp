@@ -713,7 +713,7 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantPointerNullOperation & operation,
+    const ConstantPointerNullOperation &,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
