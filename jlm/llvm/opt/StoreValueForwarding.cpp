@@ -979,6 +979,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantPointerNullOperation &)
         {
+          JLM_ASSERT(tracedDelta.offset == 0);
           const auto nullPtrResult =
               ConstantPointerNullOperation::Create(loadNode.region(), PointerType::Create());
           LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrResult);

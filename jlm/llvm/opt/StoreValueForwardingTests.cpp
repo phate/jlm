@@ -1310,32 +1310,27 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
   auto & graph = rvsdgModule.Rvsdg();
 
   const auto pointerType = PointerType::Create();
-  const auto bits8Type = BitType::Create(8);
-  const auto bits32Type = BitType::Create(32);
   const auto functionType = FunctionType::Create(
       {},
       {
-          bits32Type,
+          pointerType,
       });
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
-      DeltaOperation::Create(bits32Type, true, pointerType));
-  auto & constantPointerNull = ConstantPointerNullOperation::Create(*deltaNode->subregion(), );
-  auto & deltaOutput = deltaNode->finalize(four.output(0));
+      DeltaOperation::Create(pointerType, true, pointerType));
+  auto constantPointerNull =
+      ConstantPointerNullOperation::Create(deltaNode->subregion(), PointerType::Create());
+  auto & deltaOutput = deltaNode->finalize(constantPointerNull);
 
   auto & lambdaNode = *LambdaNode::Create(
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
   auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
 
-  auto & load32Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
-  auto & load8Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits8Type, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, pointerType, 4);
 
-  auto & zextResult = ZExtOperation::create(32, *load8Node.output(0));
-  auto & addNode = IntegerAddOperation::createNode(32, *load32Node.output(0), zextResult);
-
-  lambdaNode.finalize({ addNode.output(0) });
+  lambdaNode.finalize({ loadNode.output(0) });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
