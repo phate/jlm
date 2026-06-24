@@ -1019,6 +1019,75 @@ private:
 };
 
 /**
+ * \brief Proxy object to observe changes to a region tree.
+ *
+ * Subscribers can implement and instantiate this interface for
+ * a region tree to receive notifications about the regions in the tree.
+ *
+ */
+class RegionTreeObserver
+{
+  class SingleRegionObserver;
+
+public:
+  virtual ~RegionTreeObserver() noexcept;
+
+  explicit RegionTreeObserver(const Region & rootRegion);
+
+  RegionTreeObserver(const RegionTreeObserver &) = delete;
+
+  RegionTreeObserver &
+  operator=(const RegionTreeObserver &) = delete;
+
+  /**
+   * Called right after a node is added to the region tree,
+   * after the node has its inputs and output added.
+   * @param node the node being added
+   */
+  virtual void
+  onNodeCreate(Node * node) = 0;
+
+  /**
+   * Called right before a node is removed from the region tree,
+   * before the node has its inputs and outputs removed.
+   * @param node the node being removed
+   */
+  virtual void
+  onNodeDestroy(Node * node) = 0;
+
+  /**
+   * Called after a node gets a new input, or a region in the tree gets a new result.
+   * This method is not called when creating new nodes, only modifying existing nodes.
+   * @param input the new input
+   */
+  virtual void
+  onInputCreate(Input * input) = 0;
+
+  /**
+   * Called right after the given input gets a new origin.
+   * @param input the input.
+   * @param old_origin the input's old origin.
+   * @param new_origin the input's new origin.
+   */
+  virtual void
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
+
+  /**
+   * Called right before a node input or region result is removed in the tree.
+   * This method is not called when deleting nodes, only modifying existing nodes.
+   * @param input the input that is removed
+   */
+  virtual void
+  onInputDestroy(Input * input) = 0;
+
+private:
+  void
+  createSingleRegionObservers(const Region & region);
+
+  std::vector<std::unique_ptr<SingleRegionObserver>> regionObservers_{};
+};
+
+/**
  * Computes the depth for all nodes in \p region.
  *
  * @param region The region for which to compute the depth of its nodes.
