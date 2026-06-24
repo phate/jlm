@@ -1340,3 +1340,42 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantFP)
   // We expect all load nodes to be forwarded
   EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          pointerType,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(pointerType, true, pointerType));
+  auto & constantPointerNull = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
+  auto & deltaOutput = deltaNode->finalize(constantPointerNull.output(0));
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, pointerType, 4);
+
+  lambdaNode.finalize({ loadNode.output(0) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
