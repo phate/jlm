@@ -921,7 +921,10 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantFP &)
         {
-          // FIXME: handle operation
+          JLM_ASSERT(tracedDelta.offset == 0);
+          auto copiedNode = node->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const GetElementPtrOperation &)
         {
