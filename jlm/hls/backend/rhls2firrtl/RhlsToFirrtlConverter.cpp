@@ -11,6 +11,8 @@
 
 #include <llvm/ADT/SmallPtrSet.h>
 
+#include <mlir/IR/OwningOpRef.h>
+
 namespace jlm::hls
 {
 
@@ -26,7 +28,6 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
 
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
-  // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
   ::llvm::SmallVector<mlir::Value> inBundles;
@@ -415,6 +416,8 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   }
   else
   {
+    // Destroy the module to avoid leaking it on exception
+    module.erase();
     throw std::logic_error("Simple node " + node->DebugString() + " not implemented!");
   }
 
@@ -2604,6 +2607,9 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
           Builder_->getContext(),
           circt::firrtl::Convention::Internal),
       ports);
+  // Insert module into circuit body immediately so it is owned by the circuit (and cleaned up
+  // by OwningOpRef<CircuitOp> if an exception is thrown during further processing)
+  circuitBody->push_back(module);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
@@ -2688,7 +2694,6 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
     }
     Connect(body, resultSink, output_map[subRegion->result(i)->origin()]);
   }
-  circuitBody->push_back(module);
   return module;
 }
 
@@ -2731,6 +2736,8 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 circt::firrtl::CircuitOp
 RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 {
+  // Use OwningOpRef to ensure proper cleanup if an exception is thrown during generation
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuitRef;
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
@@ -2738,9 +2745,10 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   auto moduleName = Builder_->getStringAttr(
       dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode->GetOperation()).name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
-  auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
+  circuitRef = mlir::OwningOpRef<circt::firrtl::CircuitOp>(
+      Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName));
   // The body will be populated with a list of modules
-  auto circuitBody = circuit.getBodyBlock();
+  auto circuitBody = circuitRef->getBodyBlock();
 
   // Get the region of the function
   auto subRegion = lambdaNode->subregion();
@@ -2854,6 +2862,9 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
           Builder_->getContext(),
           circt::firrtl::Convention::Internal),
       ports);
+  // Insert module into circuit body immediately so it is owned by the circuit (and cleaned up
+  // by OwningOpRef<CircuitOp> if an exception is thrown during further processing)
+  circuitBody->push_back(module);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
@@ -3066,10 +3077,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     Connect(body, inst_res, mem_res);
   }
 
-  // Add the module to the body of the circuit
-  circuitBody->push_back(module);
-
-  return circuit;
+  return circuitRef.release();
 }
 
 /*
