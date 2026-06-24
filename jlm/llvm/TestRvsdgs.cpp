@@ -449,7 +449,6 @@ ConstantPointerNullTest::SetupRvsdg()
   using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
-  auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
@@ -462,7 +461,7 @@ ConstantPointerNullTest::SetupRvsdg()
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(fct->subregion(), pointerType);
+      ConstantPointerNullOperation::createNode(*fct->subregion()).output(0);
   auto st = StoreNonVolatileOperation::Create(
       fct->GetFunctionArguments()[0],
       constantPointerNullResult,
@@ -1542,7 +1541,7 @@ GammaTest2::SetupRvsdg()
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaZResults[1], memoryStateArgument });
 
-    auto nullPointer = ConstantPointerNullOperation::Create(lambda->subregion(), pointerType);
+    auto nullPointer = ConstantPointerNullOperation::createNode(*lambda->subregion()).output(0);
     auto storeZResults =
         StoreNonVolatileOperation::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
@@ -3542,7 +3541,7 @@ LinkedListTest::SetupRvsdg()
             4));
 
     auto constantPointerNullResult =
-        ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
+        ConstantPointerNullOperation::createNode(*delta->subregion()).output(0);
 
     auto deltaOutput = &delta->finalize(constantPointerNullResult);
     GraphExport::Create(*deltaOutput, "myList");
@@ -3641,7 +3640,7 @@ AllMemoryNodesTest::SetupRvsdg()
           false,
           4));
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(Delta_->subregion(), pointerType);
+      ConstantPointerNullOperation::createNode(*Delta_->subregion()).output(0);
   Delta_->finalize(constantPointerNullResult);
 
   // Start of function "f"
@@ -3849,7 +3848,7 @@ FreeNullTest::SetupRvsdg()
   auto memoryStateArgument = LambdaMain_->GetFunctionArguments()[1];
 
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(LambdaMain_->subregion(), PointerType::Create());
+      ConstantPointerNullOperation::createNode(*LambdaMain_->subregion()).output(0);
 
   auto FreeResults =
       FreeOperation::Create(constantPointerNullResult, { memoryStateArgument }, iOStateArgument);

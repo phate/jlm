@@ -434,8 +434,8 @@ class ConstantPointerNullOperation final : public rvsdg::SimpleOperation
 public:
   ~ConstantPointerNullOperation() noexcept override;
 
-  explicit ConstantPointerNullOperation(std::shared_ptr<const PointerType> pointerType)
-      : SimpleOperation({}, { std::move(pointerType) })
+  explicit ConstantPointerNullOperation()
+      : SimpleOperation({}, { PointerType::Create() })
   {}
 
   bool
@@ -447,34 +447,16 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const PointerType &
-  GetPointerType() const noexcept
+  static std::unique_ptr<ThreeAddressCode>
+  createTac()
   {
-    return *util::assertedCast<const PointerType>(result(0).get());
+    return ThreeAddressCode::create(std::make_unique<ConstantPointerNullOperation>(), {});
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(std::shared_ptr<const rvsdg::Type> type)
+  static rvsdg::Node &
+  createNode(rvsdg::Region & region)
   {
-    auto operation = std::make_unique<ConstantPointerNullOperation>(CheckAndExtractType(type));
-    return ThreeAddressCode::create(std::move(operation), {});
-  }
-
-  static jlm::rvsdg::Output *
-  Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
-  {
-    return rvsdg::CreateOpNode<ConstantPointerNullOperation>(*region, CheckAndExtractType(type))
-        .output(0);
-  }
-
-private:
-  static const std::shared_ptr<const PointerType>
-  CheckAndExtractType(std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    if (auto pointerType = std::dynamic_pointer_cast<const PointerType>(type))
-      return pointerType;
-
-    throw util::Error("expected pointer type.");
+    return rvsdg::CreateOpNode<ConstantPointerNullOperation>(region);
   }
 };
 
