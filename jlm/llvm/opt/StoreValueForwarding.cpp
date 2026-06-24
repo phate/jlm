@@ -921,7 +921,10 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantFP &)
         {
-          // FIXME: handle operation
+          JLM_ASSERT(tracedDelta.offset == 0);
+          auto copiedNode = node->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const GetElementPtrOperation &)
         {
@@ -944,9 +947,8 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           const auto loadedType = loadOperation->GetLoadedType();
           if (is<PointerType>(loadedType))
           {
-            const auto nullPtrResult =
-                ConstantPointerNullOperation::Create(loadNode.region(), PointerType::Create());
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrResult);
+            const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           }
           else if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
           {

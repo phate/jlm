@@ -225,8 +225,7 @@ ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept = default
 bool
 ConstantPointerNullOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantPointerNullOperation *>(&other);
-  return op && op->GetPointerType() == GetPointerType();
+  return dynamic_cast<const ConstantPointerNullOperation *>(&other);
 }
 
 std::string

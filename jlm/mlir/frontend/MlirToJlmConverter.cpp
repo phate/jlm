@@ -698,7 +698,7 @@ MlirToJlmConverter::ConvertOperation(
     // NULL pointers are a special case of ZeroOp
     if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
     {
-      return { llvm::ConstantPointerNullOperation::Create(&rvsdgRegion, ConvertType(type)) };
+      return { llvm::ConstantPointerNullOperation::createNode(rvsdgRegion).output(0) };
     }
     return { llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)) };
   }

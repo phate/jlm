@@ -534,7 +534,7 @@ convert_constantPointerNull(
   auto & c = *::llvm::cast<const ::llvm::ConstantPointerNull>(constant);
 
   auto t = ctx.GetTypeConverter().ConvertPointerType(*c.getType());
-  tacs.push_back(ConstantPointerNullOperation::Create(t));
+  tacs.push_back(ConstantPointerNullOperation::createTac());
 
   return tacs.back()->result(0);
 }

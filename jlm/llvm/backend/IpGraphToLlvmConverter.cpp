@@ -713,14 +713,14 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantPointerNullOperation & operation,
+    const ConstantPointerNullOperation &,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
-  auto pointerType = typeConverter.ConvertPointerType(operation.GetPointerType(), llvmContext);
+  auto pointerType = typeConverter.ConvertPointerType(*PointerType::Create(), llvmContext);
   return ::llvm::ConstantPointerNull::get(pointerType);
 }
 
