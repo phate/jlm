@@ -1360,9 +1360,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
       DeltaOperation::Create(pointerType, true, pointerType));
-  auto constantPointerNull =
-      ConstantPointerNullOperation::Create(deltaNode->subregion(), PointerType::Create());
-  auto & deltaOutput = deltaNode->finalize(constantPointerNull);
+  auto & constantPointerNull = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
+  auto & deltaOutput = deltaNode->finalize(constantPointerNull.output(0));
 
   auto & lambdaNode = *LambdaNode::Create(
       graph.GetRootRegion(),

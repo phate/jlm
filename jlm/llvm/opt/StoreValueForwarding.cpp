@@ -982,9 +982,8 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         [&](const ConstantPointerNullOperation &)
         {
           JLM_ASSERT(tracedDelta.offset == 0);
-          const auto nullPtrResult =
-              ConstantPointerNullOperation::Create(loadNode.region(), PointerType::Create());
-          LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrResult);
+          const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const IntegerToPointerOperation &)
