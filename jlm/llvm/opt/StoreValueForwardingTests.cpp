@@ -1297,5 +1297,5 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaCtxVar)
   // We expect all load nodes to be forwarded
   EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
   // We expect that deltaOutput1 has now lambdaNode as user on top of deltaNode2.
-  EXPECT_EQ(deltaOutput1.nusers(), 2);
+  EXPECT_EQ(deltaOutput1.nusers(), 2u);
 }
