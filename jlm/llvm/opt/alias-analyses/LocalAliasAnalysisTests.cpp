@@ -534,23 +534,25 @@ TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysisMultipleOrigins)
 /**
  * Creates an RVSDG corresponding to the C code:
  *
- *   int globalArray[101];
+ * \code{.c}
+ * int globalArray[101];
  *
- *   int func(int* unknown) {
+ * int func(int* unknown) {
  *     int array[101];
  *     int i = 0;
  *     int* p = &array;
  *     int* q = &globalArray;
  *
  *     do {
- *       *p = i;
- *       *q = i;
- *       p++;
- *       q++;
- *       i++;
+ *         *p = i;
+ *         *q = i;
+ *         p++;
+ *         q++;
+ *         i++;
  *     } while(i < 100);
  *     return *p + *q;
- *   }
+ * }
+ * \endcode
  */
 class LocalAliasAnalysisLoopVariantPointersTest final : public jlm::llvm::RvsdgTest
 {
