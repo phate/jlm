@@ -268,6 +268,7 @@ TEST(TraceTests, testTraceAllPointerOriginsTheta)
   /**
    * Creates an RVSDG corresponding to the C code:
    *
+   * \code{.c}
    * int func() {
    *     int array[101];
    *     int i = 0;
@@ -280,10 +281,11 @@ TEST(TraceTests, testTraceAllPointerOriginsTheta)
    *     } while(i < 100);
    *     return *p;
    * }
+   * \endcode
    *
-   * The test checks that \ref TraceAllPointerOrigins is able to trace the origin of p,
+   * The test checks that \ref jlm::llvm::TraceAllPointerOrigins is able to trace the origin of p,
    * both from within the loop, and after the loop.
-   * The resulting \ref TraceCollection should have exactly one top origin: array,
+   * The resulting \ref jlm::llvm::TraceCollection should have exactly one top origin: array,
    * and the offset should be unknown.
    */
 
