@@ -872,22 +872,21 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
-  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
-  auto offsetInBytesOpt = tracedAddress.getOffsetInBytes();
-  if (!offsetInBytesOpt.has_value())
+  const auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  const auto [basePointer, gepConstantsOpt] = TracePointerOriginPrecise(loadAddress);
+  if (!gepConstantsOpt.has_value())
   {
     return std::nullopt;
   }
 
-  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*tracedAddress.BasePointer);
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*basePointer);
   if (!deltaNode)
   {
     return std::nullopt;
   }
 
   context_->numLoadsTracedToDeltaNode++;
-  return std::optional<TracedDelta>({ deltaNode, offsetInBytesOpt.value() });
+  return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
 
 void
@@ -907,7 +906,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
 
           auto copiedNode = node->copy(loadNode.region(), {});
           if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
@@ -921,7 +920,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantFP &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           auto copiedNode = node->copy(loadNode.region(), {});
           LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
@@ -934,9 +933,25 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantDataArray &)
+        [&](const ConstantDataArray & constantDataArray)
         {
-          // FIXME: handle operation
+          JLM_ASSERT(constantDataArray.type() == *loadOperation->GetLoadedType());
+
+          size_t elementIndex = 0;
+          if (!tracedDelta.gepConstants.empty())
+          {
+            JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
+            auto & gepConstant = tracedDelta.gepConstants[0];
+            JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+            JLM_ASSERT(gepConstant.indices[0] == 0);
+            elementIndex = gepConstant.indices.back();
+          }
+
+          const auto elementNode =
+              rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+          auto copiedNode = elementNode->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantArrayOperation &)
         {
@@ -981,7 +996,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantPointerNullOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
           LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           context_->numForwardedLoadsWithoutMemoryState++;

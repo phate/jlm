@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 #define JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
@@ -94,10 +95,9 @@ private:
     rvsdg::DeltaNode * deltaNode{};
 
     /**
-     * The offset in bytes from the base pointer of the delta node that was encountered throughout
-     * tracing.
+     * The \ref GetElementPtrOperation constants that were encountered throughout tracing.
      */
-    int64_t offset = 0;
+    std::vector<GetElementPtrOperation::Constant> gepConstants;
   };
 
   /**
