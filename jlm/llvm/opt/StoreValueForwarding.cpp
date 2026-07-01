@@ -920,7 +920,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantFP &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           auto copiedNode = node->copy(loadNode.region(), {});
           LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
@@ -996,7 +996,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantPointerNullOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
           LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
