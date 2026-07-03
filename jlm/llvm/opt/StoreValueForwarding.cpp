@@ -889,6 +889,39 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
 
+static size_t
+getConstantDataArrayElementIndex(
+    const ConstantDataArray & constantDataArray,
+    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
+{
+  if (gepConstants.empty())
+    return 0;
+
+  JLM_ASSERT(gepConstants.size() == 1);
+  auto & gepConstant = gepConstants[0];
+  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+
+  if (gepConstant.indices.size() == 1)
+  {
+    if (const auto gepConstantIndex = gepConstant.indices[0]; gepConstantIndex == 0)
+      return 0;
+
+    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
+    const auto offsetInBytes = gepConstant.getOffsetInBytes();
+    const auto elementSize = GetTypeAllocSize(constantDataArray.type());
+    JLM_ASSERT(offsetInBytes % elementSize == 0);
+    return offsetInBytes / elementSize;
+  }
+
+  if (gepConstant.indices.size() == 2)
+  {
+    JLM_ASSERT(gepConstant.indices[0] == 0);
+    return gepConstant.indices.back();
+  }
+
+  throw std::logic_error("Unhandled number of GEP constant indices.");
+}
+
 void
 StoreValueForwarding::forwardLoadWithoutMemoryStates(
     rvsdg::SimpleNode & loadNode,
@@ -936,17 +969,8 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         [&](const ConstantDataArray & constantDataArray)
         {
           JLM_ASSERT(constantDataArray.type() == *loadOperation->GetLoadedType());
-
-          size_t elementIndex = 0;
-          if (!tracedDelta.gepConstants.empty())
-          {
-            JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
-            auto & gepConstant = tracedDelta.gepConstants[0];
-            JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
-            JLM_ASSERT(gepConstant.indices[0] == 0);
-            elementIndex = gepConstant.indices.back();
-          }
-
+          const auto elementIndex =
+              getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);
           const auto elementNode =
               rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
           auto copiedNode = elementNode->copy(loadNode.region(), {});
