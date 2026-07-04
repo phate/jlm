@@ -1001,7 +1001,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
               constants.push_back(constantOp->Representation());
             }
             JLM_ASSERT(constants.size() == numRequiredConstants);
-
+            // FIXME: take care of endianness
             auto & constantNode = IntegerConstantOperation::Create(
                 *loadNode.region(),
                 rvsdg::BitValueRepresentation::create(constants));
