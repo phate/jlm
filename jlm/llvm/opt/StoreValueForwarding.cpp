@@ -872,22 +872,54 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
 
-  auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
-  const auto tracedAddress = TracePointerOriginPrecise(loadAddress);
-  auto offsetInBytesOpt = tracedAddress.getOffsetInBytes();
-  if (!offsetInBytesOpt.has_value())
+  const auto & loadAddress = *LoadOperation::AddressInput(loadNode).origin();
+  const auto [basePointer, gepConstantsOpt] = TracePointerOriginPrecise(loadAddress);
+  if (!gepConstantsOpt.has_value())
   {
     return std::nullopt;
   }
 
-  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*tracedAddress.BasePointer);
+  const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*basePointer);
   if (!deltaNode)
   {
     return std::nullopt;
   }
 
   context_->numLoadsTracedToDeltaNode++;
-  return std::optional<TracedDelta>({ deltaNode, offsetInBytesOpt.value() });
+  return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
+}
+
+static size_t
+getConstantDataArrayElementIndex(
+    const ConstantDataArray & constantDataArray,
+    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
+{
+  if (gepConstants.empty())
+    return 0;
+
+  JLM_ASSERT(gepConstants.size() == 1);
+  auto & gepConstant = gepConstants[0];
+  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+
+  if (gepConstant.indices.size() == 1)
+  {
+    if (const auto gepConstantIndex = gepConstant.indices[0]; gepConstantIndex == 0)
+      return 0;
+
+    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
+    const auto offsetInBytes = gepConstant.getOffsetInBytes();
+    const auto elementSize = GetTypeAllocSize(constantDataArray.type());
+    JLM_ASSERT(offsetInBytes % elementSize == 0);
+    return offsetInBytes / elementSize;
+  }
+
+  if (gepConstant.indices.size() == 2)
+  {
+    JLM_ASSERT(gepConstant.indices[0] == 0);
+    return gepConstant.indices.back();
+  }
+
+  throw std::logic_error("Unhandled number of GEP constant indices.");
 }
 
 void
@@ -907,7 +939,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
 
           auto copiedNode = node->copy(loadNode.region(), {});
           if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
@@ -921,7 +953,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantFP &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           auto copiedNode = node->copy(loadNode.region(), {});
           LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
@@ -934,9 +966,48 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantDataArray &)
+        [&](const ConstantDataArray & constantDataArray)
         {
-          // FIXME: handle operation
+          const auto elementIndex =
+              getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);
+
+          if (constantDataArray.type() == *loadOperation->GetLoadedType())
+          {
+            const auto elementNode =
+                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+            auto copiedNode = elementNode->copy(loadNode.region(), {});
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          }
+          else
+          {
+            [[maybe_unused]] auto cdaBitType =
+                dynamic_cast<const rvsdg::BitType *>(&constantDataArray.type());
+            [[maybe_unused]] auto loadBitType =
+                dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
+            JLM_ASSERT(cdaBitType && loadBitType);
+            JLM_ASSERT(cdaBitType->nbits() < loadBitType->nbits());
+            JLM_ASSERT(loadBitType->nbits() % cdaBitType->nbits() == 0);
+            const auto numRequiredConstants = loadBitType->nbits() / cdaBitType->nbits();
+            JLM_ASSERT(numRequiredConstants > 1);
+
+            std::vector<rvsdg::BitValueRepresentation> constants;
+            constants.reserve(numRequiredConstants);
+            for (size_t n = elementIndex; n < elementIndex + numRequiredConstants; n++)
+            {
+              const auto elementNode =
+                  rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(n)->origin());
+              const auto constantOp =
+                  util::assertedCast<const IntegerConstantOperation>(&elementNode->GetOperation());
+              constants.push_back(constantOp->Representation());
+            }
+            JLM_ASSERT(constants.size() == numRequiredConstants);
+            // FIXME: take care of endianness
+            auto & constantNode = IntegerConstantOperation::Create(
+                *loadNode.region(),
+                rvsdg::BitValueRepresentation::create(constants));
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(constantNode.output(0));
+          }
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantArrayOperation &)
         {
@@ -981,7 +1052,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantPointerNullOperation &)
         {
-          JLM_ASSERT(tracedDelta.offset == 0);
+          JLM_ASSERT(tracedDelta.gepConstants.empty());
           const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
           LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
