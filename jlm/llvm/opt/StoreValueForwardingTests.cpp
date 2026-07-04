@@ -1392,6 +1392,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   const auto pointerType = PointerType::Create();
   const auto bits8Type = BitType::Create(8);
   const auto bits32Type = BitType::Create(32);
+  const auto bits64Type = BitType::Create(64);
   const auto arrayType = ArrayType::Create(bits32Type, 3);
   const auto functionType = FunctionType::Create(
       {},
@@ -1401,6 +1402,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
           bits32Type,
           bits32Type,
           bits32Type,
+          bits64Type,
       });
 
   auto deltaNode = DeltaNode::Create(
@@ -1436,12 +1438,15 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
   auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
 
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+
   lambdaNode.finalize({
       &LoadOperation::LoadedValueOutput(loadNode0),
       &LoadOperation::LoadedValueOutput(loadNode1),
       &LoadOperation::LoadedValueOutput(loadNode2),
       &LoadOperation::LoadedValueOutput(loadNode3),
       &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
   });
 
   // Act
@@ -1472,4 +1477,9 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
       *lambdaNode.GetFunctionResults()[4]->origin());
   EXPECT_NE(intOperation4, nullptr);
   EXPECT_EQ(intOperation4->Representation().to_uint(), 1);
+
+  auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[5]->origin());
+  EXPECT_NE(intOperation5, nullptr);
+  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000);
 }
