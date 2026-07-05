@@ -768,14 +768,6 @@ IntegerEqOperation::normalizeConstants(
     const std::vector<rvsdg::Output *> & operands)
 {
   return foldBinaryOperationConstants<IntegerEqOperation>(operands);
-#if 0
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.eq(r2));
-      },
-      operands);
-#endif
 }
 
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
