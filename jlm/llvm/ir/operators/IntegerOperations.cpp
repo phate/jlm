@@ -18,66 +18,79 @@ getBinaryConstantFolder()
   static_assert(std::is_base_of_v<IntegerBinaryOperation, TBinOp>);
 
   if constexpr (std::is_same_v<TBinOp, IntegerEqOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.eq(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.ne(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.sge(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.sle(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.slt(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.uge(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.ule(r2));
     };
-
-  if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
+  }
+  else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
+  {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
       return IntegerValueRepresentation::repeat(1, r1.ult(r2));
     };
-
-  throw std::logic_error("Unhandled integer binary operation!");
+  }
+  else
+  {
+    static_assert(sizeof(TBinOp) == 0, "Unsupported binary operation!");
+  }
 }
 
 /**
