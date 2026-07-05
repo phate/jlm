@@ -1411,8 +1411,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   auto & zeroNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 0);
   auto & oneNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 1);
   auto & twoNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 2);
-  auto constantDataArrayResult =
-      ConstantDataArray::Create({ zeroNode.output(0), oneNode.output(0), twoNode.output(0) });
+  auto constantDataArrayResult = ConstantDataArrayOperation::Create(
+      { zeroNode.output(0), oneNode.output(0), twoNode.output(0) });
   auto & deltaOutput = deltaNode->finalize(constantDataArrayResult);
 
   auto & lambdaNode = *LambdaNode::Create(

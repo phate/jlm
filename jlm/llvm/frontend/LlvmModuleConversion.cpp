@@ -599,7 +599,7 @@ convert_constantDataArray(
   for (size_t n = 0; n < c.getNumElements(); n++)
     elements.push_back(ConvertConstant(c.getElementAsConstant(n), tacs, ctx));
 
-  tacs.push_back(ConstantDataArray::create(elements));
+  tacs.push_back(ConstantDataArrayOperation::create(elements));
 
   return tacs.back()->result(0);
 }
