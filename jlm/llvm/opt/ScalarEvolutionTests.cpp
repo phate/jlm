@@ -1493,8 +1493,8 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
   const auto & constantArray = ConstantDataArrayOperation::Create({ arrayC1.output(0),
                                                                     arrayC2.output(0),
                                                                     arrayC3.output(0),
-                                                           arrayC4.output(0),
-                                                           arrayC5.output(0) });
+                                                                    arrayC4.output(0),
+                                                                    arrayC5.output(0) });
   delta->finalize(constantArray);
 
   const auto cv1 = lambda->AddContextVar(delta->output());
