@@ -600,14 +600,15 @@ public:
   }
 };
 
-/* Constant Data Array operator */
-
-class ConstantDataArray final : public rvsdg::SimpleOperation
+/**
+ * This operator is the Jlm equivalent of LLVM's ConstantDataArray constant.
+ */
+class ConstantDataArrayOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~ConstantDataArray() noexcept override;
+  ~ConstantDataArrayOperation() noexcept override;
 
-  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t size)
+  ConstantDataArrayOperation(const std::shared_ptr<const rvsdg::Type> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
@@ -629,13 +630,13 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::Type &
+  const rvsdg::Type &
   type() const noexcept
   {
     return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  static std::unique_ptr<ThreeAddressCode>
   create(const std::vector<const Variable *> & elements)
   {
     if (elements.size() == 0)
@@ -645,12 +646,12 @@ public:
     if (vt->Kind() != rvsdg::TypeKind::Value)
       throw util::Error("expected value type.");
 
-    auto op = std::make_unique<ConstantDataArray>(std::move(vt), elements.size());
+    auto op = std::make_unique<ConstantDataArrayOperation>(std::move(vt), elements.size());
     return ThreeAddressCode::create(std::move(op), elements);
   }
 
-  static jlm::rvsdg::Output *
-  Create(const std::vector<jlm::rvsdg::Output *> & elements)
+  static rvsdg::Output *
+  Create(const std::vector<rvsdg::Output *> & elements)
   {
     if (elements.empty())
       throw util::Error("Expected at least one element.");
@@ -661,7 +662,10 @@ public:
       throw util::Error("Expected value type.");
     }
 
-    return rvsdg::CreateOpNode<ConstantDataArray>(elements, std::move(valueType), elements.size())
+    return rvsdg::CreateOpNode<ConstantDataArrayOperation>(
+               elements,
+               std::move(valueType),
+               elements.size())
         .output(0);
   }
 };

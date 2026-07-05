@@ -41,7 +41,7 @@ class CallOperation;
 class LoadNonVolatileOperation;
 class LoadVolatileOperation;
 class StoreVolatileOperation;
-class ConstantDataArray;
+class ConstantDataArrayOperation;
 class ConstantArrayOperation;
 class ConstantAggregateZeroOperation;
 class ConstantStruct;
@@ -399,7 +399,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const ConstantDataArray & op,
+      const ConstantDataArrayOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 

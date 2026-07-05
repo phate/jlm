@@ -901,7 +901,7 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     auto bitConstant2 =
         &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 2 });
     auto bitType = jlm::rvsdg::BitType::Create(32);
-    jlm::llvm::ConstantDataArray::Create({ bitConstant1, bitConstant2 });
+    jlm::llvm::ConstantDataArrayOperation::Create({ bitConstant1, bitConstant2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -945,7 +945,8 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
       bool foundConstantDataArray = false;
       for (auto & node : region->Nodes())
       {
-        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
+        if (auto constantDataArray =
+                dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
         {
           foundConstantDataArray = true;
           EXPECT_EQ(constantDataArray->nresults(), 1u);
