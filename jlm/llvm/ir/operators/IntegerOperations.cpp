@@ -763,7 +763,7 @@ IntegerEqOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerEqOperation::normalizeConstants(
+IntegerEqOperation::foldConstants(
     const IntegerEqOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -814,7 +814,7 @@ IntegerNeOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerNeOperation::normalizeConstants(
+IntegerNeOperation::foldConstants(
     const IntegerNeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -865,7 +865,7 @@ IntegerSgeOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerSgeOperation::normalizeConstants(
+IntegerSgeOperation::foldConstants(
     const IntegerSgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -916,7 +916,7 @@ IntegerSgtOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerSgtOperation::normalizeConstants(
+IntegerSgtOperation::foldConstants(
     const IntegerSgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -967,7 +967,7 @@ IntegerSleOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerSleOperation::normalizeConstants(
+IntegerSleOperation::foldConstants(
     const IntegerSleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -1018,7 +1018,7 @@ IntegerSltOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerSltOperation::normalizeConstants(
+IntegerSltOperation::foldConstants(
     const IntegerSltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -1069,7 +1069,7 @@ IntegerUgeOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerUgeOperation::normalizeConstants(
+IntegerUgeOperation::foldConstants(
     const IntegerUgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -1120,7 +1120,7 @@ IntegerUgtOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerUgtOperation::normalizeConstants(
+IntegerUgtOperation::foldConstants(
     const IntegerUgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -1171,7 +1171,7 @@ IntegerUleOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerUleOperation::normalizeConstants(
+IntegerUleOperation::foldConstants(
     const IntegerUleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -1222,7 +1222,7 @@ IntegerUltOperation::flags() const noexcept
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-IntegerUltOperation::normalizeConstants(
+IntegerUltOperation::foldConstants(
     const IntegerUltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {

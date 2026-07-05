@@ -55,34 +55,34 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 }
 
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
-    integerEqNormalizations({ IntegerEqOperation::normalizeConstants });
+    integerEqNormalizations({ IntegerEqOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
-    integerNeNormalizations({ IntegerNeOperation::normalizeConstants });
+    integerNeNormalizations({ IntegerNeOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>>
-    integerSgeNormalizations({ IntegerSgeOperation::normalizeConstants });
+    integerSgeNormalizations({ IntegerSgeOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>>
-    integerSgtNormalizations({ IntegerSgtOperation::normalizeConstants });
+    integerSgtNormalizations({ IntegerSgtOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>>
-    integerSleNormalizations({ IntegerSleOperation::normalizeConstants });
+    integerSleNormalizations({ IntegerSleOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>>
-    integerSltNormalizations({ IntegerSltOperation::normalizeConstants });
+    integerSltNormalizations({ IntegerSltOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>>
-    integerUgeNormalizations({ IntegerUgeOperation::normalizeConstants });
+    integerUgeNormalizations({ IntegerUgeOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>>
-    integerUgtNormalizations({ IntegerUgtOperation::normalizeConstants });
+    integerUgtNormalizations({ IntegerUgtOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
-    integerUleNormalizations({ IntegerUleOperation::normalizeConstants });
+    integerUleNormalizations({ IntegerUleOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
-    integerUltNormalizations({ IntegerUltOperation::normalizeConstants });
+    integerUltNormalizations({ IntegerUltOperation::foldConstants });
 
 template<typename TOperation>
 static rvsdg::NodeNormalization<TOperation>

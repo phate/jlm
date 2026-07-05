@@ -660,7 +660,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerEqOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -707,7 +707,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerNeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -754,7 +754,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerSgeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -801,7 +801,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerSgtOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -848,7 +848,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerSleOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -895,7 +895,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerSltOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -942,7 +942,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerUgeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -989,7 +989,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerUgtOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -1036,7 +1036,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerUleOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -1083,7 +1083,7 @@ public:
 
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeConstants(
+  foldConstants(
       const IntegerUltOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
