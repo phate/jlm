@@ -10,87 +10,33 @@ namespace jlm::llvm
 {
 
 template<typename TBinOp>
-static std::function<IntegerValueRepresentation(
-    const IntegerValueRepresentation &,
-    const IntegerValueRepresentation &)>
-getBinaryConstantFolder()
+static IntegerValueRepresentation
+foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
 {
   static_assert(std::is_base_of_v<IntegerBinaryOperation, TBinOp>);
 
   if constexpr (std::is_same_v<TBinOp, IntegerEqOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
-      return IntegerValueRepresentation(r1.eq(r2));
-    };
-  }
+    return IntegerValueRepresentation(r1.eq(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.ne(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.sge(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.sgt(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.sle(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.slt(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.uge(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.ugt(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.ule(r2));
-    };
-  }
   else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
-  {
-    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-    {
       return IntegerValueRepresentation(r1.ult(r2));
-    };
-  }
   else
-  {
     static_assert(sizeof(TBinOp) == 0, "Unsupported binary operation!");
-  }
 }
 
 /**
@@ -124,9 +70,8 @@ foldBinaryOperationConstants(const std::vector<rvsdg::Output *> & operands)
 
   auto & c1Representation = c1Operation->Representation();
   auto & c2Representation = c2Operation->Representation();
-
-  auto fold = getBinaryConstantFolder<TBinOp>();
-  const auto & resultRepresentation = fold(c1Representation, c2Representation);
+  const auto & resultRepresentation =
+      foldBinaryOperation<TBinOp>(c1Representation, c2Representation);
 
   auto result =
       IntegerConstantOperation::Create(*operand1.region(), resultRepresentation).output(0);
