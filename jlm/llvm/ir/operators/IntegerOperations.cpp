@@ -4,9 +4,40 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 
 namespace jlm::llvm
 {
+
+// FIXME: documentation
+template<typename F>
+static std::optional<std::vector<rvsdg::Output *>>
+normalizeCompareConstants(const F & eval, const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  auto [c1Node, c1Operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand1);
+  if (!c1Operation)
+    return std::nullopt;
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  auto [c2Node, c2Operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand2);
+  if (!c2Operation)
+    return std::nullopt;
+
+  auto & c1Representation = c1Operation->Representation();
+  auto & c2Representation = c2Operation->Representation();
+  const auto & resultRepresentation = eval(c1Representation, c2Representation);
+  auto result =
+      IntegerConstantOperation::Create(*operand1.region(), resultRepresentation).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
+}
 
 IntegerConstantOperation::~IntegerConstantOperation() = default;
 
@@ -636,6 +667,19 @@ IntegerEqOperation::flags() const noexcept
   return flags::commutative;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerEqOperation::normalizeConstants(
+    const IntegerEqOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.eq(r2));
+      },
+      operands);
+}
+
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
 
 bool
@@ -677,6 +721,19 @@ enum rvsdg::BinaryOperation::flags
 IntegerNeOperation::flags() const noexcept
 {
   return flags::commutative;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerNeOperation::normalizeConstants(
+    const IntegerNeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.ne(r2));
+      },
+      operands);
 }
 
 IntegerSgeOperation::~IntegerSgeOperation() noexcept = default;
@@ -722,6 +779,19 @@ IntegerSgeOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSgeOperation::normalizeConstants(
+    const IntegerSgeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.sge(r2));
+      },
+      operands);
+}
+
 IntegerSgtOperation::~IntegerSgtOperation() noexcept = default;
 
 bool
@@ -763,6 +833,19 @@ enum rvsdg::BinaryOperation::flags
 IntegerSgtOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSgtOperation::normalizeConstants(
+    const IntegerSgtOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
+      },
+      operands);
 }
 
 IntegerSleOperation::~IntegerSleOperation() noexcept = default;
@@ -808,6 +891,19 @@ IntegerSleOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSleOperation::normalizeConstants(
+    const IntegerSleOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.sle(r2));
+      },
+      operands);
+}
+
 IntegerSltOperation::~IntegerSltOperation() noexcept = default;
 
 bool
@@ -849,6 +945,19 @@ enum rvsdg::BinaryOperation::flags
 IntegerSltOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSltOperation::normalizeConstants(
+    const IntegerSltOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.slt(r2));
+      },
+      operands);
 }
 
 IntegerUgeOperation::~IntegerUgeOperation() noexcept = default;
@@ -894,6 +1003,19 @@ IntegerUgeOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUgeOperation::normalizeConstants(
+    const IntegerUgeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.uge(r2));
+      },
+      operands);
+}
+
 IntegerUgtOperation::~IntegerUgtOperation() noexcept = default;
 
 bool
@@ -935,6 +1057,19 @@ enum rvsdg::BinaryOperation::flags
 IntegerUgtOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUgtOperation::normalizeConstants(
+    const IntegerUgtOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
+      },
+      operands);
 }
 
 IntegerUleOperation::~IntegerUleOperation() noexcept = default;
@@ -980,6 +1115,19 @@ IntegerUleOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUleOperation::normalizeConstants(
+    const IntegerUleOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.ule(r2));
+      },
+      operands);
+}
+
 IntegerUltOperation::~IntegerUltOperation() noexcept = default;
 
 bool
@@ -1021,6 +1169,19 @@ enum rvsdg::BinaryOperation::flags
 IntegerUltOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUltOperation::normalizeConstants(
+    const IntegerUltOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return normalizeCompareConstants(
+      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+      {
+        return IntegerValueRepresentation::repeat(1, r1.ult(r2));
+      },
+      operands);
 }
 
 }

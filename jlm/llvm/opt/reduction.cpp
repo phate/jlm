@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -175,6 +176,46 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
   }
+  if (is<IntegerEqOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerEqOperation>(normalizeIntegerEqNode, simpleNode);
+  }
+  if (is<IntegerNeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerNeOperation>(normalizeIntegerNeNode, simpleNode);
+  }
+  if (is<IntegerSgeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSgeOperation>(normalizeIntegerSgeNode, simpleNode);
+  }
+  if (is<IntegerSgtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSgtOperation>(normalizeIntegerSgtNode, simpleNode);
+  }
+  if (is<IntegerSleOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSleOperation>(normalizeIntegerSleNode, simpleNode);
+  }
+  if (is<IntegerSltOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSltOperation>(normalizeIntegerSltNode, simpleNode);
+  }
+  if (is<IntegerUgeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUgeOperation>(normalizeIntegerUgeNode, simpleNode);
+  }
+  if (is<IntegerUgtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUgtOperation>(normalizeIntegerUgtNode, simpleNode);
+  }
+  if (is<IntegerUleOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUleOperation>(normalizeIntegerUleNode, simpleNode);
+  }
+  if (is<IntegerUltOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUltOperation>(normalizeIntegerUltNode, simpleNode);
+  }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
     // FIXME: handle the unary node
@@ -328,6 +369,116 @@ NodeReduction::NormalizeLambdaExitMemoryStateMergeNode(
       normalizations,
       operation,
       operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerEqNode(
+    const IntegerEqOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>> normalizations(
+      { IntegerEqOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerEqOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerNeNode(
+    const IntegerNeOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>> normalizations(
+      { IntegerNeOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerNeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerSgeNode(
+    const IntegerSgeOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>> normalizations(
+      { IntegerSgeOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerSgeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerSgtNode(
+    const IntegerSgtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>> normalizations(
+      { IntegerSgtOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerSgtOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerSleNode(
+    const IntegerSleOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>> normalizations(
+      { IntegerSleOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerSleOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerSltNode(
+    const IntegerSltOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>> normalizations(
+      { IntegerSltOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerSltOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerUgeNode(
+    const IntegerUgeOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>> normalizations(
+      { IntegerUgeOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerUgeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerUgtNode(
+    const IntegerUgtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>> normalizations(
+      { IntegerUgtOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerUgtOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerUleNode(
+    const IntegerUleOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>> normalizations(
+      { IntegerUleOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerUleOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::normalizeIntegerUltNode(
+    const IntegerUltOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>> normalizations(
+      { IntegerUltOperation::normalizeConstants });
+
+  return rvsdg::NormalizeSequence<IntegerUltOperation>(normalizations, operation, operands);
 }
 
 }

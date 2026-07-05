@@ -657,6 +657,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerEqOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerEqOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -698,6 +704,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerNeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerNeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -739,6 +751,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSgeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerSgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -780,6 +798,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSgtOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerSgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -821,6 +845,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSleOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerSleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -862,6 +892,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSltOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerSltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -903,6 +939,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUgeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerUgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -944,6 +986,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUgtOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerUgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -985,6 +1033,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUleOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerUleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1026,6 +1080,12 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUltOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeConstants(
+      const IntegerUltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 }
