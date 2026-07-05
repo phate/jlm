@@ -21,70 +21,70 @@ getBinaryConstantFolder()
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.eq(r2));
+      return IntegerValueRepresentation(r1.eq(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.ne(r2));
+      return IntegerValueRepresentation(r1.ne(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.sge(r2));
+      return IntegerValueRepresentation(r1.sge(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
+      return IntegerValueRepresentation(r1.sgt(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.sle(r2));
+      return IntegerValueRepresentation(r1.sle(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.slt(r2));
+      return IntegerValueRepresentation(r1.slt(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.uge(r2));
+      return IntegerValueRepresentation(r1.uge(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
+      return IntegerValueRepresentation(r1.ugt(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.ule(r2));
+      return IntegerValueRepresentation(r1.ule(r2));
     };
   }
   else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
   {
     return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
     {
-      return IntegerValueRepresentation::repeat(1, r1.ult(r2));
+      return IntegerValueRepresentation(r1.ult(r2));
     };
   }
   else
