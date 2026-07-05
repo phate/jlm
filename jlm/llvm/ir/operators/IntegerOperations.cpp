@@ -9,10 +9,19 @@
 namespace jlm::llvm
 {
 
-// FIXME: documentation
+/**
+ * Performs constant folding on integer binary nodes.
+ *
+ * @tparam F A type supporting function call operator: IntegerValueRepresentation operator(const
+ * IntegerValueRepresentation&, const IntegerValueRepresentation&)
+ *
+ * @param fold Defines the folding of the constants.
+ * @param operands The operands of the integer binary operation.
+ * @return A vector with a single element if constant folding succeeded, otherwise std::nullopt.
+ */
 template<typename F>
 static std::optional<std::vector<rvsdg::Output *>>
-normalizeCompareConstants(const F & eval, const std::vector<rvsdg::Output *> & operands)
+normalizeBinaryConstants(const F & fold, const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 2);
   auto & operand1 = *operands[0];
@@ -32,7 +41,7 @@ normalizeCompareConstants(const F & eval, const std::vector<rvsdg::Output *> & o
 
   auto & c1Representation = c1Operation->Representation();
   auto & c2Representation = c2Operation->Representation();
-  const auto & resultRepresentation = eval(c1Representation, c2Representation);
+  const auto & resultRepresentation = fold(c1Representation, c2Representation);
   auto result =
       IntegerConstantOperation::Create(*operand1.region(), resultRepresentation).output(0);
 
@@ -672,7 +681,7 @@ IntegerEqOperation::normalizeConstants(
     const IntegerEqOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.eq(r2));
@@ -728,7 +737,7 @@ IntegerNeOperation::normalizeConstants(
     const IntegerNeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.ne(r2));
@@ -784,7 +793,7 @@ IntegerSgeOperation::normalizeConstants(
     const IntegerSgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.sge(r2));
@@ -840,7 +849,7 @@ IntegerSgtOperation::normalizeConstants(
     const IntegerSgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
@@ -896,7 +905,7 @@ IntegerSleOperation::normalizeConstants(
     const IntegerSleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.sle(r2));
@@ -952,7 +961,7 @@ IntegerSltOperation::normalizeConstants(
     const IntegerSltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.slt(r2));
@@ -1008,7 +1017,7 @@ IntegerUgeOperation::normalizeConstants(
     const IntegerUgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.uge(r2));
@@ -1064,7 +1073,7 @@ IntegerUgtOperation::normalizeConstants(
     const IntegerUgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
@@ -1120,7 +1129,7 @@ IntegerUleOperation::normalizeConstants(
     const IntegerUleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.ule(r2));
@@ -1176,7 +1185,7 @@ IntegerUltOperation::normalizeConstants(
     const IntegerUltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeCompareConstants(
+  return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.ult(r2));
