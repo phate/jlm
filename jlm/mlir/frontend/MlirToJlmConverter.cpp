@@ -689,7 +689,7 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    return { llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())) };
+    return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))

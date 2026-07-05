@@ -1490,11 +1490,11 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForArrayGEP)
   const auto & arrayC4 = IntegerConstantOperation::Create(*delta->subregion(), 32, 4);
   const auto & arrayC5 = IntegerConstantOperation::Create(*delta->subregion(), 32, 5);
 
-  const auto & constantArray = ConstantDataArray::Create({ arrayC1.output(0),
-                                                           arrayC2.output(0),
-                                                           arrayC3.output(0),
-                                                           arrayC4.output(0),
-                                                           arrayC5.output(0) });
+  const auto & constantArray = ConstantDataArrayOperation::Create({ arrayC1.output(0),
+                                                                    arrayC2.output(0),
+                                                                    arrayC3.output(0),
+                                                                    arrayC4.output(0),
+                                                                    arrayC5.output(0) });
   delta->finalize(constantArray);
 
   const auto cv1 = lambda->AddContextVar(delta->output());

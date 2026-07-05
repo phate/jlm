@@ -513,11 +513,11 @@ IpGraphToLlvmConverter::get_fpdata(const std::vector<const Variable *> & args)
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantDataArray & op,
+    const ConstantDataArrayOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<ConstantDataArray>(op));
+  JLM_ASSERT(is<ConstantDataArrayOperation>(op));
 
   if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
   {
@@ -1270,9 +1270,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_getelementptr(op, arguments, builder);
   }
-  if (is<ConstantDataArray>(op))
+  if (is<ConstantDataArrayOperation>(op))
   {
-    return convert<ConstantDataArray>(op, arguments, builder);
+    return convert<ConstantDataArrayOperation>(op, arguments, builder);
   }
   if (is<PtrCmpOperation>(op))
   {

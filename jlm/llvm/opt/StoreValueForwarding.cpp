@@ -891,7 +891,7 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
 
 static size_t
 getConstantDataArrayElementIndex(
-    const ConstantDataArray & constantDataArray,
+    const ConstantDataArrayOperation & constantDataArray,
     const std::vector<GetElementPtrOperation::Constant> & gepConstants)
 {
   if (gepConstants.empty())
@@ -966,7 +966,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantDataArray & constantDataArray)
+        [&](const ConstantDataArrayOperation & constantDataArray)
         {
           const auto elementIndex =
               getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);

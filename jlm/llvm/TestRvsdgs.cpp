@@ -3228,7 +3228,7 @@ MemcpyTest::SetupRvsdg()
     auto three = &BitConstantOperation::create(*delta->subregion(), { 32, 3 });
     auto four = &BitConstantOperation::create(*delta->subregion(), { 32, 4 });
 
-    auto constantDataArray = ConstantDataArray::Create({ zero, one, two, three, four });
+    auto constantDataArray = ConstantDataArrayOperation::Create({ zero, one, two, three, four });
 
     auto deltaOutput = &delta->finalize(constantDataArray);
 

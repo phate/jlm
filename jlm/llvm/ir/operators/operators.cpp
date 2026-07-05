@@ -306,25 +306,25 @@ PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *)
   JLM_UNREACHABLE("Not implemented!");
 }
 
-ConstantDataArray::~ConstantDataArray() noexcept = default;
+ConstantDataArrayOperation::~ConstantDataArrayOperation() noexcept = default;
 
 bool
-ConstantDataArray::operator==(const Operation & other) const noexcept
+ConstantDataArrayOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantDataArray *>(&other);
+  const auto op = dynamic_cast<const ConstantDataArrayOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantDataArray::debug_string() const
+ConstantDataArrayOperation::debug_string() const
 {
   return "ConstantDataArray";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantDataArray::copy() const
+ConstantDataArrayOperation::copy() const
 {
-  return std::make_unique<ConstantDataArray>(*this);
+  return std::make_unique<ConstantDataArrayOperation>(*this);
 }
 
 static const util::BijectiveMap<::llvm::CmpInst::Predicate, ICmpPredicate> &
