@@ -9,20 +9,90 @@
 namespace jlm::llvm
 {
 
+template<typename TBinOp>
+static std::function<IntegerValueRepresentation(
+    const IntegerValueRepresentation &,
+    const IntegerValueRepresentation &)>
+getBinaryConstantFolder()
+{
+  static_assert(std::is_base_of_v<IntegerBinaryOperation, TBinOp>);
+
+  if constexpr (std::is_same_v<TBinOp, IntegerEqOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.eq(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.ne(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.sge(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.sle(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.slt(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.uge(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.ule(r2));
+    };
+
+  if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
+    return [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
+    {
+      return IntegerValueRepresentation::repeat(1, r1.ult(r2));
+    };
+
+  throw std::logic_error("Unhandled integer binary operation!");
+}
+
 /**
- * Performs constant folding on integer binary nodes.
+ * Performs constant folding on integer binary operations.
  *
- * @tparam F A type supporting function call operator: IntegerValueRepresentation operator(const
- * IntegerValueRepresentation&, const IntegerValueRepresentation&)
- *
- * @param fold Defines the folding of the constants.
+ * @tparam TBinOp An integer binary operation
  * @param operands The operands of the integer binary operation.
  * @return A vector with a single element if constant folding succeeded, otherwise std::nullopt.
  */
-template<typename F>
+template<typename TBinOp>
 static std::optional<std::vector<rvsdg::Output *>>
-normalizeBinaryConstants(const F & fold, const std::vector<rvsdg::Output *> & operands)
+foldBinaryOperationConstants(const std::vector<rvsdg::Output *> & operands)
 {
+  static_assert(std::is_base_of_v<IntegerBinaryOperation, TBinOp>);
+
   JLM_ASSERT(operands.size() == 2);
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
@@ -41,7 +111,10 @@ normalizeBinaryConstants(const F & fold, const std::vector<rvsdg::Output *> & op
 
   auto & c1Representation = c1Operation->Representation();
   auto & c2Representation = c2Operation->Representation();
+
+  auto fold = getBinaryConstantFolder<TBinOp>();
   const auto & resultRepresentation = fold(c1Representation, c2Representation);
+
   auto result =
       IntegerConstantOperation::Create(*operand1.region(), resultRepresentation).output(0);
 
@@ -681,12 +754,15 @@ IntegerEqOperation::normalizeConstants(
     const IntegerEqOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
+  return foldBinaryOperationConstants<IntegerEqOperation>(operands);
+#if 0
   return normalizeBinaryConstants(
       [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
       {
         return IntegerValueRepresentation::repeat(1, r1.eq(r2));
       },
       operands);
+#endif
 }
 
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
@@ -737,12 +813,7 @@ IntegerNeOperation::normalizeConstants(
     const IntegerNeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.ne(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerNeOperation>(operands);
 }
 
 IntegerSgeOperation::~IntegerSgeOperation() noexcept = default;
@@ -793,12 +864,7 @@ IntegerSgeOperation::normalizeConstants(
     const IntegerSgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.sge(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerSgeOperation>(operands);
 }
 
 IntegerSgtOperation::~IntegerSgtOperation() noexcept = default;
@@ -849,12 +915,7 @@ IntegerSgtOperation::normalizeConstants(
     const IntegerSgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.sgt(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerSgtOperation>(operands);
 }
 
 IntegerSleOperation::~IntegerSleOperation() noexcept = default;
@@ -905,12 +966,7 @@ IntegerSleOperation::normalizeConstants(
     const IntegerSleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.sle(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerSleOperation>(operands);
 }
 
 IntegerSltOperation::~IntegerSltOperation() noexcept = default;
@@ -961,12 +1017,7 @@ IntegerSltOperation::normalizeConstants(
     const IntegerSltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.slt(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerSltOperation>(operands);
 }
 
 IntegerUgeOperation::~IntegerUgeOperation() noexcept = default;
@@ -1017,12 +1068,7 @@ IntegerUgeOperation::normalizeConstants(
     const IntegerUgeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.uge(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerUgeOperation>(operands);
 }
 
 IntegerUgtOperation::~IntegerUgtOperation() noexcept = default;
@@ -1073,12 +1119,7 @@ IntegerUgtOperation::normalizeConstants(
     const IntegerUgtOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.ugt(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerUgtOperation>(operands);
 }
 
 IntegerUleOperation::~IntegerUleOperation() noexcept = default;
@@ -1129,12 +1170,7 @@ IntegerUleOperation::normalizeConstants(
     const IntegerUleOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.ule(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerUleOperation>(operands);
 }
 
 IntegerUltOperation::~IntegerUltOperation() noexcept = default;
@@ -1185,12 +1221,7 @@ IntegerUltOperation::normalizeConstants(
     const IntegerUltOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  return normalizeBinaryConstants(
-      [](const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
-      {
-        return IntegerValueRepresentation::repeat(1, r1.ult(r2));
-      },
-      operands);
+  return foldBinaryOperationConstants<IntegerUltOperation>(operands);
 }
 
 }
