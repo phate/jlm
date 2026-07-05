@@ -25,16 +25,6 @@ namespace jlm::llvm
 {
 
 class CallExitMemoryStateSplitOperation;
-class IntegerEqOperation;
-class IntegerNeOperation;
-class IntegerSgeOperation;
-class IntegerSgtOperation;
-class IntegerSleOperation;
-class IntegerSltOperation;
-class IntegerUgeOperation;
-class IntegerUgtOperation;
-class IntegerUleOperation;
-class IntegerUltOperation;
 class LambdaEntryMemoryStateSplitOperation;
 class LambdaExitMemoryStateMergeOperation;
 class LoadNonVolatileOperation;
@@ -138,55 +128,6 @@ private:
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeLambdaExitMemoryStateMergeNode(
       const LambdaExitMemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerEqNode(
-      const IntegerEqOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerNeNode(
-      const IntegerNeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerSgeNode(
-      const IntegerSgeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerSgtNode(
-      const IntegerSgtOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerSleNode(
-      const IntegerSleOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerSltNode(
-      const IntegerSltOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerUgeNode(
-      const IntegerUgeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerUgtNode(
-      const IntegerUgtOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerUleNode(
-      const IntegerUleOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIntegerUltNode(
-      const IntegerUltOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
