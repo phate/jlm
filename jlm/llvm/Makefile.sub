@@ -30,6 +30,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/AggregateOperations.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
+    jlm/llvm/ir/operators/ControlOperations.cpp \
     jlm/llvm/ir/operators/ConversionOperations.cpp \
     jlm/llvm/ir/operators/delta.cpp \
     jlm/llvm/ir/operators/FunctionPointer.cpp \
@@ -148,6 +149,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
+    jlm/llvm/ir/operators/ControlOperations.hpp \
     jlm/llvm/ir/operators/ConversionOperations.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
@@ -192,6 +194,7 @@ run-libllvm-tests_SOURCES = \
     \
     jlm/llvm/ir/operators/CallTests.cpp \
     jlm/llvm/ir/operators/ConstantFPTests.cpp \
+    jlm/llvm/ir/operators/ControlOperationsTests.cpp \
     jlm/llvm/ir/operators/ConversionOperationsTests.cpp \
     jlm/llvm/ir/operators/DeltaTests.cpp \
     jlm/llvm/ir/operators/FreeTests.cpp \
