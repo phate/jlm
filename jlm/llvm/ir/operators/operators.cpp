@@ -556,8 +556,6 @@ ConstantStruct::copy() const
   return std::make_unique<ConstantStruct>(*this);
 }
 
-
-
 ConstantArrayOperation::~ConstantArrayOperation() noexcept = default;
 
 bool
