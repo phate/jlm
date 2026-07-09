@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/ControlOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -53,6 +54,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 
   return std::nullopt;
 }
+
+static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
+    matchOperationNormalizations({ foldMatchOperationWithConstant });
 
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
     integerEqNormalizations({ IntegerEqOperation::foldConstants });
@@ -215,6 +219,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
   {
     return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
+  }
+  if (is<rvsdg::MatchOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<rvsdg::MatchOperation>(
+        createNormalizer(matchOperationNormalizations),
+        simpleNode);
   }
   if (is<IntegerEqOperation>(&simpleNode))
   {
