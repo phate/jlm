@@ -112,7 +112,7 @@ SExtOperation::foldConstant(
     return std::nullopt;
 
   const auto & resultRepresentation =
-      constantOperation->Representation().sext(operation.ndstbits());
+      constantOperation->Representation().sext(operation.ndstbits() - operation.nsrcbits());
 
   auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
 
