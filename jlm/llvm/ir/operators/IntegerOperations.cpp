@@ -18,23 +18,23 @@ foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRep
   if constexpr (std::is_same_v<TBinOp, IntegerEqOperation>)
     return IntegerValueRepresentation(r1.eq(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerNeOperation>)
-      return IntegerValueRepresentation(r1.ne(r2));
+    return IntegerValueRepresentation(r1.ne(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerSgeOperation>)
-      return IntegerValueRepresentation(r1.sge(r2));
+    return IntegerValueRepresentation(r1.sge(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerSgtOperation>)
-      return IntegerValueRepresentation(r1.sgt(r2));
+    return IntegerValueRepresentation(r1.sgt(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerSleOperation>)
-      return IntegerValueRepresentation(r1.sle(r2));
+    return IntegerValueRepresentation(r1.sle(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerSltOperation>)
-      return IntegerValueRepresentation(r1.slt(r2));
+    return IntegerValueRepresentation(r1.slt(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUgeOperation>)
-      return IntegerValueRepresentation(r1.uge(r2));
+    return IntegerValueRepresentation(r1.uge(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUgtOperation>)
-      return IntegerValueRepresentation(r1.ugt(r2));
+    return IntegerValueRepresentation(r1.ugt(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUleOperation>)
-      return IntegerValueRepresentation(r1.ule(r2));
+    return IntegerValueRepresentation(r1.ule(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
-      return IntegerValueRepresentation(r1.ult(r2));
+    return IntegerValueRepresentation(r1.ult(r2));
   else
     static_assert(sizeof(TBinOp) == 0, "Unsupported binary operation!");
 }
