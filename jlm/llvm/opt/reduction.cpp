@@ -58,6 +58,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
     matchOperationNormalizations({ foldMatchOperationWithConstant });
 
+static std::vector<rvsdg::NodeNormalization<SExtOperation>>
+    sextOperationNormalizations({ SExtOperation::foldConstant });
+
 static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
     zextOperationNormalizations({ ZExtOperation::foldConstant });
 
@@ -197,6 +200,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return rvsdg::ReduceNode<rvsdg::MatchOperation>(
         createNormalizer(matchOperationNormalizations),
+        simpleNode);
+  }
+  if (is<SExtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<SExtOperation>(
+        createNormalizer(sextOperationNormalizations),
         simpleNode);
   }
   if (is<ZExtOperation>(&simpleNode))
