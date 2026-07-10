@@ -72,27 +72,12 @@ SExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  auto & tracedOperand = llvm::traceOutput(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOperand))
-    return rvsdg::unop_reduction_constant;
-
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
 SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
 {
-  if (path == rvsdg::unop_reduction_constant)
-  {
-    auto & tracedOutput = llvm::traceOutput(*operand);
-    auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    JLM_ASSERT(constantNode && constantOperation);
-    return &rvsdg::BitConstantOperation::create(
-        *operand->region(),
-        constantOperation->value().sext(ndstbits() - nsrcbits()));
-  }
-
   return nullptr;
 }
 
@@ -120,27 +105,12 @@ ZExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  auto & tracedOperand = llvm::traceOutput(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOperand))
-    return rvsdg::unop_reduction_constant;
-
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
 ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
 {
-  if (path == rvsdg::unop_reduction_constant)
-  {
-    auto & tracedOperand = llvm::traceOutput(*operand);
-    auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOperand);
-    JLM_ASSERT(constantOperation);
-    return &rvsdg::BitConstantOperation::create(
-        *rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
-        constantOperation->value().zext(ndstbits() - nsrcbits()));
-  }
-
   return nullptr;
 }
 
