@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/ControlOperations.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -56,6 +57,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
     matchOperationNormalizations({ foldMatchOperationWithConstant });
+
+static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
+    zextOperationNormalizations({ ZExtOperation::foldConstant });
 
 template<typename TOperation>
 static rvsdg::NodeNormalization<TOperation>
@@ -193,6 +197,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return rvsdg::ReduceNode<rvsdg::MatchOperation>(
         createNormalizer(matchOperationNormalizations),
+        simpleNode);
+  }
+  if (is<ZExtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<ZExtOperation>(
+        createNormalizer(zextOperationNormalizations),
         simpleNode);
   }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
