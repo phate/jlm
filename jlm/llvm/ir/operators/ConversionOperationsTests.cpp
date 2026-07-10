@@ -109,8 +109,6 @@ TEST(ConversionOperationsTests, SExtConstantFolding)
   }
 }
 
-}
-
 TEST(ConversionOperationsTests, ZExtConstantFolding)
 {
   using namespace jlm::rvsdg;
