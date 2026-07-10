@@ -70,13 +70,13 @@ SExtOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
+SExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
+SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -103,13 +103,13 @@ ZExtOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
+ZExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
+ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   return nullptr;
 }
