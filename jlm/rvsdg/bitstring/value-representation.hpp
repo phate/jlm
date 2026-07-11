@@ -60,6 +60,14 @@ public:
     }
   }
 
+  explicit BitValueRepresentation(const char c)
+  {
+    if (c != '0' && c != '1' && c != 'X' && c != 'D')
+      throw util::Error("Not a valid bit.");
+
+    data_.push_back(c);
+  }
+
   BitValueRepresentation(const BitValueRepresentation & other)
       : data_(other.data_)
   {}
@@ -732,7 +740,7 @@ public:
 
 private:
   /* [lsb ... msb] */
-  std::vector<char> data_;
+  std::vector<char> data_{};
 };
 
 }
