@@ -228,15 +228,33 @@ public:
     return ThreeAddressCode::create(std::move(operation), { operand });
   }
 
+  static rvsdg::SimpleNode &
+  createNode(const size_t numResultBits, rvsdg::Output & operand)
+  {
+    return rvsdg::CreateOpNode<ZExtOperation>(
+        { &operand },
+        operand.Type(),
+        rvsdg::BitType::Create(numResultBits));
+  }
+
   static rvsdg::Output &
   create(size_t ndstbits, rvsdg::Output & operand)
   {
-    return *rvsdg::CreateOpNode<ZExtOperation>(
-                { &operand },
-                operand.Type(),
-                rvsdg::BitType::Create(ndstbits))
-                .output(0);
+    return *createNode(ndstbits, operand).output(0);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref ZExtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref ZExtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref ZExtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const ZExtOperation & operation, const std::vector<rvsdg::Output *> & operands);
 };
 
 class TruncOperation final : public rvsdg::UnaryOperation
