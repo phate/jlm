@@ -137,6 +137,28 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) con
   return nullptr;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+ZExtOperation::foldConstant(
+    const ZExtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  const auto & resultRepresentation =
+      constantOperation->Representation().zext(operation.ndstbits() - operation.nsrcbits());
+
+  auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
+}
+
 TruncOperation::~TruncOperation() noexcept = default;
 
 bool

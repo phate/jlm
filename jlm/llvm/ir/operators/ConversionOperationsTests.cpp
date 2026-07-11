@@ -59,4 +59,48 @@ TEST(ConversionOperationsTests, SExtConstantFolding)
   }
 }
 
+TEST(ConversionOperationsTests, ZExtConstantFolding)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+
+  auto & zero =
+      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 0));
+  auto & one =
+      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 1));
+
+  auto & node1 = ZExtOperation::createNode(32, *zero.output(0));
+  auto & node2 = ZExtOperation::createNode(32, *one.output(0));
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*node2.output(0), "x2");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<ZExtOperation>(ZExtOperation::foldConstant, node1);
+  ReduceNode<ZExtOperation>(ZExtOperation::foldConstant, node2);
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().to_uint(), 0u);
+    EXPECT_EQ(op->Representation().nbits(), 32u);
+  }
+
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().to_int(), 1);
+    EXPECT_EQ(op->Representation().nbits(), 32u);
+  }
+}
+
 }

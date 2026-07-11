@@ -61,6 +61,9 @@ static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
 static std::vector<rvsdg::NodeNormalization<SExtOperation>>
     sextOperationNormalizations({ SExtOperation::foldConstant });
 
+static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
+    zextOperationNormalizations({ ZExtOperation::foldConstant });
+
 template<typename TOperation>
 static rvsdg::NodeNormalization<TOperation>
 createNormalizer(const std::vector<rvsdg::NodeNormalization<TOperation>> & nodeNormalizations)
@@ -203,6 +206,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return rvsdg::ReduceNode<SExtOperation>(
         createNormalizer(sextOperationNormalizations),
+        simpleNode);
+  }
+  if (is<ZExtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<ZExtOperation>(
+        createNormalizer(zextOperationNormalizations),
         simpleNode);
   }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
