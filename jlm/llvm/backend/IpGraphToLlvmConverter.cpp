@@ -1390,11 +1390,11 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPExt>(op, originalOp, arguments, builder);
   }
-  if (is<FloatingPointToSignedIntegerOperation>(op))
+  if (is<FPToSIOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPToSI>(op, originalOp, arguments, builder);
   }
-  if (is<FloatingPointToUnsignedIntegerOperation>(op))
+  if (is<FPToUIOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPToUI>(op, originalOp, arguments, builder);
   }
