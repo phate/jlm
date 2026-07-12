@@ -378,7 +378,6 @@ Bits2PtrTest::SetupRvsdg()
 
   auto setupBit2PtrFunction = [&]()
   {
-    auto pt = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
@@ -392,7 +391,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = IntegerToPointerOperation::create(valueArgument, pt);
+    auto cast = IntToPtrOperation::create(valueArgument);
 
     lambda->finalize({ cast, iOStateArgument, memoryStateArgument });
 
