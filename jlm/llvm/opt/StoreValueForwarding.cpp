@@ -1057,7 +1057,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
           context_->numForwardedLoadsWithoutMemoryState++;
         },
-        [&](const IntegerToPointerOperation &)
+        [&](const IntToPtrOperation &)
         {
           // FIXME: handle operation
         },

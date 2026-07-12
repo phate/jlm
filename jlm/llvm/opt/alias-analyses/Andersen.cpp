@@ -654,7 +654,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeBitcast(node);
       },
-      [&](const IntegerToPointerOperation &)
+      [&](const IntToPtrOperation &)
       {
         AnalyzeBits2ptr(node);
       },
@@ -865,7 +865,7 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IntegerToPointerOperation>(node.GetOperation()));
+  JLM_ASSERT(is<IntToPtrOperation>(node.GetOperation()));
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.Type()));
 

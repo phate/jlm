@@ -1402,7 +1402,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPTrunc>(op, originalOp, arguments, builder);
   }
-  if (is<IntegerToPointerOperation>(op))
+  if (is<IntToPtrOperation>(op))
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, originalOp, arguments, builder);
   }
