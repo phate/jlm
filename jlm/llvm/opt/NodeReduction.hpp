@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_REDUCTION_HPP
-#define JLM_LLVM_OPT_REDUCTION_HPP
+#ifndef JLM_LLVM_OPT_NODEREDUCTION_HPP
+#define JLM_LLVM_OPT_NODEREDUCTION_HPP
 
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
