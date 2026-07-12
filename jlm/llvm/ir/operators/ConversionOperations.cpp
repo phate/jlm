@@ -357,71 +357,68 @@ SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) c
   JLM_UNREACHABLE("Not implemented!");
 }
 
-IntegerToPointerOperation::~IntegerToPointerOperation() noexcept = default;
+IntToPtrOperation::~IntToPtrOperation() noexcept = default;
 
 bool
-IntegerToPointerOperation::operator==(const Operation & other) const noexcept
+IntToPtrOperation::operator==(const Operation & other) const noexcept
 {
-  const auto op = dynamic_cast<const IntegerToPointerOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+  const auto op = dynamic_cast<const IntToPtrOperation *>(&other);
+  return op && op->argument(0) == argument(0);
 }
 
 std::string
-IntegerToPointerOperation::debug_string() const
+IntToPtrOperation::debug_string() const
 {
   return "IntToPtr";
 }
 
 std::unique_ptr<rvsdg::Operation>
-IntegerToPointerOperation::copy() const
+IntToPtrOperation::copy() const
 {
-  return std::make_unique<IntegerToPointerOperation>(*this);
+  return std::make_unique<IntToPtrOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-IntegerToPointerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+IntToPtrOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-IntegerToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+IntToPtrOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
 
-FloatingPointToUnsignedIntegerOperation::~FloatingPointToUnsignedIntegerOperation() noexcept =
-    default;
+FPToUIOperation::~FPToUIOperation() noexcept = default;
 
 bool
-FloatingPointToUnsignedIntegerOperation::operator==(const Operation & other) const noexcept
+FPToUIOperation::operator==(const Operation & other) const noexcept
 {
-  const auto op = dynamic_cast<const FloatingPointToUnsignedIntegerOperation *>(&other);
+  const auto op = dynamic_cast<const FPToUIOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-FloatingPointToUnsignedIntegerOperation::debug_string() const
+FPToUIOperation::debug_string() const
 {
   return "FpToUInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-FloatingPointToUnsignedIntegerOperation::copy() const
+FPToUIOperation::copy() const
 {
-  return std::make_unique<FloatingPointToUnsignedIntegerOperation>(*this);
+  return std::make_unique<FPToUIOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-FloatingPointToUnsignedIntegerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+FPToUIOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-FloatingPointToUnsignedIntegerOperation::reduce_operand(
-    rvsdg::unop_reduction_path_t,
-    rvsdg::Output *) const
+FPToUIOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented");
 }

@@ -680,29 +680,27 @@ public:
   }
 };
 
-class IntegerToPointerOperation final : public rvsdg::UnaryOperation
+class IntToPtrOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~IntegerToPointerOperation() noexcept override;
+  ~IntToPtrOperation() noexcept override;
 
-  IntegerToPointerOperation(
-      std::shared_ptr<const jlm::rvsdg::BitType> btype,
-      std::shared_ptr<const PointerType> ptype)
-      : UnaryOperation(std::move(btype), std::move(ptype))
+  // FIXME: The second parameter is unused, but we need to entangled the users of the constructor
+  // first before we can eliminate it.
+  explicit IntToPtrOperation(
+      std::shared_ptr<const rvsdg::BitType> operandType,
+      std::shared_ptr<const PointerType>)
+      : UnaryOperation(std::move(operandType), PointerType::Create())
   {}
 
-  IntegerToPointerOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+  // FIXME: The second parameter is unused, but we need to entangled the users of the constructor
+  // first before we can eliminate it.
+  explicit IntToPtrOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> &)
+      : UnaryOperation(operandType, PointerType::Create())
   {
-    auto at = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
-    if (!at)
-      throw util::Error("expected bitstring type.");
-
-    auto pt = dynamic_cast<const PointerType *>(dsttype.get());
-    if (!pt)
-      throw util::Error("expected pointer type.");
+    checkAndExtractOperandType(operandType);
   }
 
   bool
@@ -714,78 +712,69 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
+  rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * output) const override;
 
-  inline size_t
+  size_t
   nbits() const noexcept
   {
-    return std::static_pointer_cast<const jlm::rvsdg::BitType>(argument(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(argument(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * argument, std::shared_ptr<const jlm::rvsdg::Type> type)
+  static std::unique_ptr<ThreeAddressCode>
+  create(const Variable * argument)
   {
-    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(argument->Type());
-    if (!at)
-      throw util::Error("expected bitstring type.");
-
-    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
-    if (!pt)
-      throw util::Error("expected pointer type.");
-
-    auto op = std::make_unique<IntegerToPointerOperation>(at, pt);
+    const auto operandType = checkAndExtractOperandType(argument->Type());
+    auto op = std::make_unique<IntToPtrOperation>(operandType, PointerType::Create());
     return ThreeAddressCode::create(std::move(op), { argument });
   }
 
-  static jlm::rvsdg::Output *
-  create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
+  static rvsdg::Output *
+  create(rvsdg::Output * operand)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!ot)
-      throw util::Error("expected bitstring type.");
+    const auto operandType = checkAndExtractOperandType(operand->Type());
+    return rvsdg::CreateOpNode<IntToPtrOperation>({ operand }, operandType, PointerType::Create())
+        .output(0);
+  }
 
-    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
-    if (!pt)
-      throw util::Error("expected pointer type.");
+private:
+  static std::shared_ptr<const rvsdg::BitType>
+  checkAndExtractOperandType(const std::shared_ptr<const rvsdg::Type> & operandType)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(operandType))
+    {
+      return bitType;
+    }
 
-    return rvsdg::CreateOpNode<IntegerToPointerOperation>({ operand }, ot, pt).output(0);
+    throw std::logic_error("expected bitstring type.");
   }
 };
 
-class FloatingPointToUnsignedIntegerOperation final : public rvsdg::UnaryOperation
+class FPToUIOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~FloatingPointToUnsignedIntegerOperation() noexcept override;
+  ~FPToUIOperation() noexcept override;
 
-  FloatingPointToUnsignedIntegerOperation(
-      const fpsize size,
-      std::shared_ptr<const rvsdg::BitType> type)
-      : UnaryOperation(FloatingPointType::Create(size), std::move(type))
+  FPToUIOperation(const fpsize size, std::shared_ptr<const rvsdg::BitType> resultType)
+      : UnaryOperation(FloatingPointType::Create(size), std::move(resultType))
   {}
 
-  FloatingPointToUnsignedIntegerOperation(
-      std::shared_ptr<const FloatingPointType> fpt,
-      std::shared_ptr<const jlm::rvsdg::BitType> type)
-      : UnaryOperation(std::move(fpt), std::move(type))
+  FPToUIOperation(
+      std::shared_ptr<const FloatingPointType> operandType,
+      std::shared_ptr<const rvsdg::BitType> resultType)
+      : UnaryOperation(std::move(operandType), std::move(resultType))
   {}
 
-  FloatingPointToUnsignedIntegerOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+  FPToUIOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected bitstring type.");
+    checkAndExtractOperandType(operandType);
+    checkAndExtractResultType(resultType);
   }
 
   bool
@@ -797,27 +786,42 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
+  rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * output) const override;
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  static std::unique_ptr<ThreeAddressCode>
+  create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
+    auto operandType = checkAndExtractOperandType(operand->Type());
+    auto bitType = checkAndExtractResultType(type);
+    auto operation = std::make_unique<FPToUIOperation>(std::move(operandType), std::move(bitType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
+  }
 
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!dt)
-      throw util::Error("expected bitstring type.");
+private:
+  static std::shared_ptr<const FloatingPointType>
+  checkAndExtractOperandType(const std::shared_ptr<const rvsdg::Type> & operandType)
+  {
+    if (auto fpType = std::dynamic_pointer_cast<const FloatingPointType>(operandType))
+    {
+      return fpType;
+    }
 
-    auto op =
-        std::make_unique<FloatingPointToUnsignedIntegerOperation>(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(std::move(op), { operand });
+    throw std::logic_error("Expected floating point type.");
+  }
+
+  static std::shared_ptr<const rvsdg::BitType>
+  checkAndExtractResultType(const std::shared_ptr<const rvsdg::Type> & resultType)
+  {
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(resultType))
+    {
+      return bitType;
+    }
+
+    throw std::logic_error("Expected bitstring type.");
   }
 };
 

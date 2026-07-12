@@ -1394,7 +1394,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPToSI>(op, originalOp, arguments, builder);
   }
-  if (is<FloatingPointToUnsignedIntegerOperation>(op))
+  if (is<FPToUIOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPToUI>(op, originalOp, arguments, builder);
   }
@@ -1402,7 +1402,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPTrunc>(op, originalOp, arguments, builder);
   }
-  if (is<IntegerToPointerOperation>(op))
+  if (is<IntToPtrOperation>(op))
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, originalOp, arguments, builder);
   }
