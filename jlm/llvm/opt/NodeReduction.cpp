@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
