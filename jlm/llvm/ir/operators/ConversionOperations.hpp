@@ -933,6 +933,82 @@ public:
   }
 };
 
+/**
+  \brief Get address of compiled function object.
+  */
+class FunctionToPointerOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~FunctionToPointerOperation() noexcept override;
+
+  explicit FunctionToPointerOperation(std::shared_ptr<const rvsdg::FunctionType> fn);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const rvsdg::Output * arg) const noexcept override;
+
+  rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg) const override;
+
+  static std::unique_ptr<FunctionToPointerOperation>
+  Create(std::shared_ptr<const rvsdg::FunctionType> fn);
+
+  const std::shared_ptr<const rvsdg::FunctionType> &
+  FunctionType() const noexcept
+  {
+    return FunctionType_;
+  }
+
+private:
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
+};
+
+/**
+  \brief Interpret pointer as callable function.
+  */
+class PointerToFunctionOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~PointerToFunctionOperation() noexcept override;
+
+  explicit PointerToFunctionOperation(std::shared_ptr<const rvsdg::FunctionType> fn);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const rvsdg::Output * arg) const noexcept override;
+
+  rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg) const override;
+
+  static std::unique_ptr<PointerToFunctionOperation>
+  Create(std::shared_ptr<const rvsdg::FunctionType> fn);
+
+  const std::shared_ptr<const rvsdg::FunctionType> &
+  FunctionType() const noexcept
+  {
+    return FunctionType_;
+  }
+
+private:
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
+};
+
 }
 
 #endif

@@ -33,7 +33,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/ControlOperations.cpp \
     jlm/llvm/ir/operators/ConversionOperations.cpp \
     jlm/llvm/ir/operators/delta.cpp \
-    jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/IntegerOperations.cpp \
     jlm/llvm/ir/operators/IOBarrier.cpp \
@@ -154,7 +153,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
     jlm/llvm/ir/operators/MemoryStateOperations.hpp \
-    jlm/llvm/ir/operators/FunctionPointer.hpp \
     jlm/llvm/ir/operators/GetElementPtr.hpp \
     jlm/llvm/ir/operators/IntegerOperations.hpp \
     jlm/llvm/ir/operators/IOBarrier.hpp \

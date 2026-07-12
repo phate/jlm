@@ -7,7 +7,7 @@
 
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
