@@ -171,6 +171,14 @@ private:
   rvsdg::Output &
   routeOutputToRegion(rvsdg::Output & output, rvsdg::Region & region);
 
+  // FIXME: documentation
+  static void
+  forwardArrayElement(
+      const rvsdg::Type & arrayElementType,
+      rvsdg::SimpleNode & loadNode,
+      rvsdg::SimpleNode & arrayNode,
+      const TracedDelta & tracedDelta);
+
   std::unique_ptr<Context> context_;
 };
 

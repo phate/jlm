@@ -923,6 +923,58 @@ getArrayElementIndex(
 }
 
 void
+StoreValueForwarding::forwardArrayElement(
+    const rvsdg::Type & arrayElementType,
+    rvsdg::SimpleNode & loadNode,
+    rvsdg::SimpleNode & arrayNode,
+    const TracedDelta & tracedDelta)
+{
+  JLM_ASSERT(
+      is<ConstantArrayOperation>(arrayNode.GetOperation())
+      || is<ConstantDataArrayOperation>(arrayNode.GetOperation()));
+  const auto loadOperation =
+      util::assertedCast<const LoadNonVolatileOperation>(&loadNode.GetOperation());
+
+  const auto elementIndex = getArrayElementIndex(arrayElementType, tracedDelta.gepConstants);
+
+  if (arrayElementType == *loadOperation->GetLoadedType())
+  {
+    const auto elementNode =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arrayNode.input(elementIndex)->origin());
+    auto copiedNode = elementNode->copy(loadNode.region(), {});
+    LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+  }
+  else
+  {
+    [[maybe_unused]] auto arrayBitType = dynamic_cast<const rvsdg::BitType *>(&arrayElementType);
+    [[maybe_unused]] auto loadBitType =
+        dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
+    JLM_ASSERT(arrayBitType && loadBitType);
+    JLM_ASSERT(arrayBitType->nbits() < loadBitType->nbits());
+    JLM_ASSERT(loadBitType->nbits() % arrayBitType->nbits() == 0);
+    const auto numRequiredConstants = loadBitType->nbits() / arrayBitType->nbits();
+    JLM_ASSERT(numRequiredConstants > 1);
+
+    std::vector<rvsdg::BitValueRepresentation> constants;
+    constants.reserve(numRequiredConstants);
+    for (size_t n = elementIndex; n < elementIndex + numRequiredConstants; n++)
+    {
+      const auto elementNode =
+          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arrayNode.input(n)->origin());
+      const auto constantOp =
+          util::assertedCast<const IntegerConstantOperation>(&elementNode->GetOperation());
+      constants.push_back(constantOp->Representation());
+    }
+    JLM_ASSERT(constants.size() == numRequiredConstants);
+    // FIXME: take care of endianness
+    auto & constantNode = IntegerConstantOperation::Create(
+        *loadNode.region(),
+        rvsdg::BitValueRepresentation::create(constants));
+    LoadOperation::LoadedValueOutput(loadNode).divert_users(constantNode.output(0));
+  }
+}
+
+void
 StoreValueForwarding::forwardLoadWithoutMemoryStates(
     rvsdg::SimpleNode & loadNode,
     const TracedDelta & tracedDelta)
@@ -968,56 +1020,13 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantDataArrayOperation & constantDataArray)
         {
-          const auto elementIndex =
-              getArrayElementIndex(constantDataArray.type(), tracedDelta.gepConstants);
-
-          if (constantDataArray.type() == *loadOperation->GetLoadedType())
-          {
-            const auto elementNode =
-                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
-            auto copiedNode = elementNode->copy(loadNode.region(), {});
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-          }
-          else
-          {
-            [[maybe_unused]] auto cdaBitType =
-                dynamic_cast<const rvsdg::BitType *>(&constantDataArray.type());
-            [[maybe_unused]] auto loadBitType =
-                dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
-            JLM_ASSERT(cdaBitType && loadBitType);
-            JLM_ASSERT(cdaBitType->nbits() < loadBitType->nbits());
-            JLM_ASSERT(loadBitType->nbits() % cdaBitType->nbits() == 0);
-            const auto numRequiredConstants = loadBitType->nbits() / cdaBitType->nbits();
-            JLM_ASSERT(numRequiredConstants > 1);
-
-            std::vector<rvsdg::BitValueRepresentation> constants;
-            constants.reserve(numRequiredConstants);
-            for (size_t n = elementIndex; n < elementIndex + numRequiredConstants; n++)
-            {
-              const auto elementNode =
-                  rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(n)->origin());
-              const auto constantOp =
-                  util::assertedCast<const IntegerConstantOperation>(&elementNode->GetOperation());
-              constants.push_back(constantOp->Representation());
-            }
-            JLM_ASSERT(constants.size() == numRequiredConstants);
-            // FIXME: take care of endianness
-            auto & constantNode = IntegerConstantOperation::Create(
-                *loadNode.region(),
-                rvsdg::BitValueRepresentation::create(constants));
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(constantNode.output(0));
-          }
+          forwardArrayElement(constantDataArray.type(), loadNode, *node, tracedDelta);
           context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantArrayOperation & constantArray)
         {
-          JLM_ASSERT(constantArray.type() == *loadOperation->GetLoadedType());
-          const auto elementIndex =
-              getArrayElementIndex(constantArray.type(), tracedDelta.gepConstants);
-          const auto elementNode =
-              rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
-          auto copiedNode = elementNode->copy(loadNode.region(), {});
-          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          forwardArrayElement(constantArray.type(), loadNode, *node, tracedDelta);
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantAggregateZeroOperation &)
         {

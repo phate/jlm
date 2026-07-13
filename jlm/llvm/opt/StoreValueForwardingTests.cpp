@@ -1504,6 +1504,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
           bits32Type,
           bits32Type,
           bits32Type,
+          bits32Type,
+          bits64Type,
       });
 
   auto deltaNode = DeltaNode::Create(
@@ -1523,6 +1525,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
 
   auto zero = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
   auto two = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+  auto four = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
 
   auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
 
@@ -1535,12 +1538,19 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
   auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, bits32Type);
   auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
 
+  auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
+  auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
+
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+
   lambdaNode.finalize({
       &LoadOperation::LoadedValueOutput(loadNode0),
       &LoadOperation::LoadedValueOutput(loadNode1),
       &LoadOperation::LoadedValueOutput(loadNode2),
       &LoadOperation::LoadedValueOutput(loadNode3),
-  });
+          &LoadOperation::LoadedValueOutput(loadNode4),
+          &LoadOperation::LoadedValueOutput(loadNode5),
+      });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
@@ -1565,4 +1575,14 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
       *lambdaNode.GetFunctionResults()[3]->origin());
   EXPECT_NE(intOperation3, nullptr);
   EXPECT_EQ(intOperation3->Representation().to_uint(), 2);
+
+  auto [intNode4, intOperation4] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[4]->origin());
+  EXPECT_NE(intOperation4, nullptr);
+  EXPECT_EQ(intOperation4->Representation().to_uint(), 1);
+
+  auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[5]->origin());
+  EXPECT_NE(intOperation5, nullptr);
+  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000);
 }
