@@ -1548,9 +1548,9 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
       &LoadOperation::LoadedValueOutput(loadNode1),
       &LoadOperation::LoadedValueOutput(loadNode2),
       &LoadOperation::LoadedValueOutput(loadNode3),
-          &LoadOperation::LoadedValueOutput(loadNode4),
-          &LoadOperation::LoadedValueOutput(loadNode5),
-      });
+      &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
