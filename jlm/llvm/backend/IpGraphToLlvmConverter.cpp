@@ -695,7 +695,7 @@ IpGraphToLlvmConverter::convert_valist(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantStruct & op,
+    const ConstantStructOperation & op,
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
@@ -1289,9 +1289,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_valist(op, arguments, builder);
   }
-  if (is<ConstantStruct>(op))
+  if (is<ConstantStructOperation>(op))
   {
-    return convert<ConstantStruct>(op, arguments, builder);
+    return convert<ConstantStructOperation>(op, arguments, builder);
   }
   if (is<ConstantPointerNullOperation>(op))
   {

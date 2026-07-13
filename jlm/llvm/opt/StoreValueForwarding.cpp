@@ -962,7 +962,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantStruct &)
+        [&](const ConstantStructOperation &)
         {
           // FIXME: handle operation
         },

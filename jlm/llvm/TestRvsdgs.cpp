@@ -2718,7 +2718,7 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
-      ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, structType);
+      ConstantStructOperation::Create(*delta->subregion(), { myArrayArgument }, structType);
   auto constantArray = ConstantArrayOperation::Create({ aggregateZero, &constantStruct });
 
   auto deltaOutput = &delta->finalize(constantArray);

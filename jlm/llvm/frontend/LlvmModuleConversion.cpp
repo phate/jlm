@@ -634,7 +634,7 @@ ConvertConstantStruct(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(ConstantStruct::create(elements, type));
+  tacs.push_back(ConstantStructOperation::create(elements, type));
 
   return tacs.back()->result(0);
 }

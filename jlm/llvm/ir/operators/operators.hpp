@@ -992,12 +992,12 @@ public:
   }
 };
 
-class ConstantStruct final : public rvsdg::SimpleOperation
+class ConstantStructOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~ConstantStruct() override;
+  ~ConstantStructOperation() noexcept override;
 
-  inline ConstantStruct(std::shared_ptr<const StructType> type)
+  explicit ConstantStructOperation(std::shared_ptr<const StructType> type)
       : SimpleOperation(create_srctypes(*type), { type })
   {}
 
@@ -1016,14 +1016,14 @@ public:
     return *std::static_pointer_cast<const StructType>(result(0));
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  static std::unique_ptr<ThreeAddressCode>
   create(
       const std::vector<const Variable *> & elements,
-      const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto structType = CheckAndExtractStructType(type);
 
-    auto op = std::make_unique<ConstantStruct>(std::move(structType));
+    auto op = std::make_unique<ConstantStructOperation>(std::move(structType));
     return ThreeAddressCode::create(std::move(op), elements);
   }
 
@@ -1034,11 +1034,11 @@ public:
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     auto structType = CheckAndExtractStructType(std::move(resultType));
-    return *rvsdg::CreateOpNode<ConstantStruct>(operands, std::move(structType)).output(0);
+    return *rvsdg::CreateOpNode<ConstantStructOperation>(operands, std::move(structType)).output(0);
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const StructType & type)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
