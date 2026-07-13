@@ -1011,7 +1011,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantArrayOperation &)
         {
-          // FIXME: handle operation
+          JLM_ASSERT(0 && "ConstantArray detected");
         },
         [&](const ConstantAggregateZeroOperation &)
         {
