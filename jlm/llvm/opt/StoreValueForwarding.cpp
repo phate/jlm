@@ -890,8 +890,8 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
 }
 
 static size_t
-getConstantDataArrayElementIndex(
-    const ConstantDataArrayOperation & constantDataArray,
+getArrayElementIndex(
+    const rvsdg::Type & arrayType,
     const std::vector<GetElementPtrOperation::Constant> & gepConstants)
 {
   if (gepConstants.empty())
@@ -908,7 +908,7 @@ getConstantDataArrayElementIndex(
 
     JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
     const auto offsetInBytes = gepConstant.getOffsetInBytes();
-    const auto elementSize = GetTypeAllocSize(constantDataArray.type());
+    const auto elementSize = GetTypeAllocSize(arrayType);
     JLM_ASSERT(offsetInBytes % elementSize == 0);
     return offsetInBytes / elementSize;
   }
@@ -969,7 +969,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         [&](const ConstantDataArrayOperation & constantDataArray)
         {
           const auto elementIndex =
-              getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);
+              getArrayElementIndex(constantDataArray.type(), tracedDelta.gepConstants);
 
           if (constantDataArray.type() == *loadOperation->GetLoadedType())
           {
@@ -1009,9 +1009,15 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           }
           context_->numForwardedLoadsWithoutMemoryState++;
         },
-        [&](const ConstantArrayOperation &)
+        [&](const ConstantArrayOperation & constantArray)
         {
-          JLM_ASSERT(0 && "ConstantArray detected");
+          JLM_ASSERT(constantArray.type() == *loadOperation->GetLoadedType());
+          const auto elementIndex =
+              getArrayElementIndex(constantArray.type(), tracedDelta.gepConstants);
+          const auto elementNode =
+              rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+          auto copiedNode = elementNode->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
         },
         [&](const ConstantAggregateZeroOperation &)
         {
