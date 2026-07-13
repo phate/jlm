@@ -964,7 +964,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantStruct &)
         {
-          // FIXME: handle operation
+          JLM_ASSERT(0 && "ConstantStruct detected");
         },
         [&](const ConstantDataArrayOperation & constantDataArray)
         {
