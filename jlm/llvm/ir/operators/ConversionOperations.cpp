@@ -512,42 +512,44 @@ FunctionToPointerOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-FunctionToPointerOperation::can_reduce_operand(const rvsdg::Output * arg) const noexcept
+FunctionToPointerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
-  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
-  {
-    if (auto op = dynamic_cast<const PointerToFunctionOperation *>(&node->GetOperation()))
-    {
-      if (*op->FunctionType() == *FunctionType())
-      {
-        return rvsdg::unop_reduction_inverse;
-      }
-    }
-  }
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-FunctionToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg)
-    const
+FunctionToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
-  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
-  {
-    if (auto op = dynamic_cast<const PointerToFunctionOperation *>(&node->GetOperation()))
-    {
-      if (*op->FunctionType() == *FunctionType() && path == rvsdg::unop_reduction_inverse)
-      {
-        return node->input(0)->origin();
-      }
-    }
-  }
-  return arg;
+  return nullptr;
 }
 
 std::unique_ptr<FunctionToPointerOperation>
 FunctionToPointerOperation::Create(std::shared_ptr<const rvsdg::FunctionType> fn)
 {
   return std::make_unique<FunctionToPointerOperation>(std::move(fn));
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FunctionToPointerOperation::invertFunctionToPointer(
+    const FunctionToPointerOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto & operand = *operands[0];
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
+  {
+    if (const auto ptrToFnOperation =
+            dynamic_cast<const PointerToFunctionOperation *>(&node->GetOperation()))
+    {
+      if (*ptrToFnOperation->FunctionType() == *operation.FunctionType())
+      {
+        return std::vector({ node->input(0)->origin() });
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 PointerToFunctionOperation::~PointerToFunctionOperation() noexcept
@@ -585,36 +587,38 @@ PointerToFunctionOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-PointerToFunctionOperation::can_reduce_operand(const rvsdg::Output * arg) const noexcept
+PointerToFunctionOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
-  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
-  {
-    if (auto op = dynamic_cast<const FunctionToPointerOperation *>(&node->GetOperation()))
-    {
-      if (*op->FunctionType() == *FunctionType())
-      {
-        return rvsdg::unop_reduction_inverse;
-      }
-    }
-  }
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-PointerToFunctionOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg)
-    const
+PointerToFunctionOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
-  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
+  return nullptr;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PointerToFunctionOperation::invertPointerToFunction(
+    const PointerToFunctionOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto & operand = *operands[0];
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
   {
-    if (auto op = dynamic_cast<const FunctionToPointerOperation *>(&node->GetOperation()))
+    if (const auto fnToPtrOperation =
+            dynamic_cast<const FunctionToPointerOperation *>(&node->GetOperation()))
     {
-      if (*op->FunctionType() == *FunctionType() && path == rvsdg::unop_reduction_inverse)
+      if (*fnToPtrOperation->FunctionType() == *operation.FunctionType())
       {
-        return node->input(0)->origin();
+        return std::vector({ node->input(0)->origin() });
       }
     }
   }
-  return arg;
+
+  return std::nullopt;
 }
 
 std::unique_ptr<PointerToFunctionOperation>
