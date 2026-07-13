@@ -1456,30 +1456,30 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[0]->origin());
   EXPECT_NE(intOperation0, nullptr);
-  EXPECT_EQ(intOperation0->Representation().to_uint(), 0);
+  EXPECT_EQ(intOperation0->Representation().to_uint(), 0u);
 
   auto [intNode1, intOperation1] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[1]->origin());
   EXPECT_NE(intOperation1, nullptr);
-  EXPECT_EQ(intOperation1->Representation().to_uint(), 0);
+  EXPECT_EQ(intOperation1->Representation().to_uint(), 0u);
 
   auto [intNode2, intOperation2] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[2]->origin());
   EXPECT_NE(intOperation2, nullptr);
-  EXPECT_EQ(intOperation2->Representation().to_uint(), 0);
+  EXPECT_EQ(intOperation2->Representation().to_uint(), 0u);
 
   auto [intNode3, intOperation3] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[3]->origin());
   EXPECT_NE(intOperation3, nullptr);
-  EXPECT_EQ(intOperation3->Representation().to_uint(), 2);
+  EXPECT_EQ(intOperation3->Representation().to_uint(), 2u);
 
   auto [intNode4, intOperation4] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[4]->origin());
   EXPECT_NE(intOperation4, nullptr);
-  EXPECT_EQ(intOperation4->Representation().to_uint(), 1);
+  EXPECT_EQ(intOperation4->Representation().to_uint(), 1u);
 
   auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
       *lambdaNode.GetFunctionResults()[5]->origin());
   EXPECT_NE(intOperation5, nullptr);
-  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000);
+  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
 }

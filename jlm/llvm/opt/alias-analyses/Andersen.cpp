@@ -689,7 +689,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeConstantArray(node);
       },
-      [&](const ConstantStruct &)
+      [&](const ConstantStructOperation &)
       {
         AnalyzeConstantStruct(node);
       },
@@ -1004,7 +1004,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantStruct>(node.GetOperation()));
+  JLM_ASSERT(is<ConstantStructOperation>(node.GetOperation()));
 
   if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
