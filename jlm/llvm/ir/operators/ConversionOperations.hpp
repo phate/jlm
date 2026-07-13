@@ -967,6 +967,26 @@ public:
     return FunctionType_;
   }
 
+  /**
+   * Performs the inversion of the \ref FunctionToPointerOperation by detecting that its operand is
+   * a \ref PointerToFunctionOperation.
+   *
+   * f = PointerToFunctionOperation x
+   * p = FunctionToPointerOperation f
+   * =>
+   * p = x
+   *
+   * @param operation The \ref FunctionToPointerOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FunctionToPointerOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref
+   * FunctionToPointerOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  invertFunctionToPointer(
+      const FunctionToPointerOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
@@ -1004,6 +1024,26 @@ public:
   {
     return FunctionType_;
   }
+
+  /**
+   * Performs the inversion of the \ref PointerToFunctionOperation by detecting that its operand is
+   * a \ref FunctionToPointerOperation.
+   *
+   * f = FunctionToPointerOperation x
+   * p = PointerToFunctionOperation f
+   * =>
+   * p = x
+   *
+   * @param operation The \ref PointerToFunctionOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PointerToFunctionOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref
+   * PointerToFunctionOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  invertPointerToFunction(
+      const PointerToFunctionOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 
 private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
