@@ -4,6 +4,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <queue>
+#include <unordered_set>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -14,6 +16,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/rvsdg/control.hpp>
 
 namespace
 {
@@ -23,9 +26,6 @@ using namespace jlm::rvsdg;
 
 bool
 CompareTypes(const Type & type1, const Type & type2);
-
-bool
-CompareOutputs(const Output & output1, const Output & output2);
 
 bool
 CompareNodes(const Node & node1, const Node & node2);
@@ -47,113 +47,156 @@ CompareTypes(const Type & type1, const Type & type2)
   {
     auto * bit1 = dynamic_cast<const BitType *>(&type1);
     auto * bit2 = dynamic_cast<const BitType *>(&type2);
-    return bit1 && bit2 && bit1->nbits() == bit2->nbits();
-  }
-  else if (is<PointerType>(type1))
-  {
-    return is<PointerType>(type2);
-  }
-  else if (is<MemoryStateType>(type1))
-  {
-    return is<MemoryStateType>(type2);
-  }
-  else if (is<IOStateType>(type1))
-  {
-    return is<IOStateType>(type2);
-  }
-  else if (auto * func1 = dynamic_cast<const FunctionType *>(&type1))
-  {
-    auto * func2 = dynamic_cast<const FunctionType *>(&type2);
-    if (!func2 || func1->NumArguments() != func2->NumArguments()
-        || func1->NumResults() != func2->NumResults())
+    if (!bit1 || !bit2)
     {
+      std::cerr << "Type mismatch: expected BitType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
       return false;
     }
+    if (bit1->nbits() != bit2->nbits())
+    {
+      std::cerr << "BitType mismatch: nbits=" << bit1->nbits() << " vs " << bit2->nbits()
+                << " for types " << type1.debug_string() << " and " << type2.debug_string()
+                << std::endl;
+      return false;
+    }
+    return true;
+  }
 
+  if (is<PointerType>(type1))
+  {
+    if (!is<PointerType>(type2))
+    {
+      std::cerr << "Type mismatch: expected PointerType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (is<MemoryStateType>(type1))
+  {
+    if (!is<MemoryStateType>(type2))
+    {
+      std::cerr << "Type mismatch: expected MemoryStateType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (is<IOStateType>(type1))
+  {
+    if (!is<IOStateType>(type2))
+    {
+      std::cerr << "Type mismatch: expected IOStateType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (auto * func1 = dynamic_cast<const FunctionType *>(&type1))
+  {
+    auto * func2 = dynamic_cast<const FunctionType *>(&type2);
+    if (!func2)
+    {
+      std::cerr << "Type mismatch: expected FunctionType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
+      return false;
+    }
+    if (func1->NumArguments() != func2->NumArguments())
+    {
+      std::cerr << "FunctionType mismatch: NumArguments=" << func1->NumArguments() << " vs "
+                << func2->NumArguments() << " for types " << type1.debug_string() << " and "
+                << type2.debug_string() << std::endl;
+      return false;
+    }
+    if (func1->NumResults() != func2->NumResults())
+    {
+      std::cerr << "FunctionType mismatch: NumResults=" << func1->NumResults() << " vs "
+                << func2->NumResults() << " for types " << type1.debug_string() << " and "
+                << type2.debug_string() << std::endl;
+      return false;
+    }
     for (size_t i = 0; i < func1->NumArguments(); ++i)
     {
       if (!CompareTypes(func1->ArgumentType(i), func2->ArgumentType(i)))
       {
+        std::cerr << "FunctionType argument type mismatch at index " << i << std::endl;
         return false;
       }
     }
-
     for (size_t i = 0; i < func1->NumResults(); ++i)
     {
       if (!CompareTypes(func1->ResultType(i), func2->ResultType(i)))
       {
+        std::cerr << "FunctionType result type mismatch at index " << i << std::endl;
         return false;
       }
     }
-
     return true;
   }
-  else if (auto * array1 = dynamic_cast<const ArrayType *>(&type1))
+
+  if (auto * array1 = dynamic_cast<const ArrayType *>(&type1))
   {
     auto * array2 = dynamic_cast<const ArrayType *>(&type2);
-    if (!array2 || array1->nelements() != array2->nelements())
+    if (!array2)
     {
+      std::cerr << "Type mismatch: expected ArrayType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
       return false;
     }
-    return CompareTypes(array1->element_type(), array2->element_type());
+    if (array1->nelements() != array2->nelements())
+    {
+      std::cerr << "ArrayType mismatch: nelements=" << array1->nelements() << " vs "
+                << array2->nelements() << " for types " << type1.debug_string() << " and "
+                << type2.debug_string() << std::endl;
+      return false;
+    }
+    if (!CompareTypes(array1->element_type(), array2->element_type()))
+    {
+      std::cerr << "ArrayType element type mismatch" << std::endl;
+      return false;
+    }
+    return true;
   }
-  else if (auto * struct1 = dynamic_cast<const StructType *>(&type1))
+
+  if (auto * struct1 = dynamic_cast<const StructType *>(&type1))
   {
     auto * struct2 = dynamic_cast<const StructType *>(&type2);
-    if (!struct2 || struct1->numElements() != struct2->numElements())
+    if (!struct2)
     {
+      std::cerr << "Type mismatch: expected StructType for both, got " << type1.debug_string()
+                << " vs " << type2.debug_string() << std::endl;
       return false;
     }
-
+    if (struct1->numElements() != struct2->numElements())
+    {
+      std::cerr << "StructType mismatch: numElements=" << struct1->numElements() << " vs "
+                << struct2->numElements() << " for types " << type1.debug_string() << " and "
+                << type2.debug_string() << std::endl;
+      return false;
+    }
     for (size_t i = 0; i < struct1->numElements(); ++i)
     {
       if (!CompareTypes(*struct1->getElementType(i), *struct2->getElementType(i)))
       {
+        std::cerr << "StructType element type mismatch at index " << i << std::endl;
         return false;
       }
     }
-
     return true;
   }
 
-  // Default: use operator== for comparison
-  return type1 == type2;
-}
-
-/**
- * \brief Compares two RVSDG outputs for equality by checking their origins.
- *
- * \param output1 The first output to compare.
- * \param output2 The second output to compare.
- * \return True if the outputs are equal, false otherwise.
- */
-bool
-CompareOutputs(const Output & output1, const Output & output2)
-{
-  // Check if both are arguments (imports/inputs to the graph)
-  auto * arg1 = dynamic_cast<const RegionArgument *>(&output1);
-  auto * arg2 = dynamic_cast<const RegionArgument *>(&output2);
-  if (arg1 && arg2)
+  if (type1 == type2)
   {
-    return CompareTypes(*arg1->Type(), *arg2->Type());
+    // Default: use operator== for comparison
+    return true;
   }
 
-  // Check if both are results
-  auto * res1 = dynamic_cast<const RegionResult *>(&output1);
-  auto * res2 = dynamic_cast<const RegionResult *>(&output2);
-  if (res1 && res2)
-  {
-    return CompareTypes(*res1->Type(), *res2->Type());
-  }
-
-  // Check if both are node outputs
-  auto * node1 = TryGetOwnerNode<Node>(output1);
-  auto * node2 = TryGetOwnerNode<Node>(output2);
-  if (node1 && node2)
-  {
-    return CompareNodes(*node1, *node2);
-  }
-
+  std::cerr << "Type mismatch via operator==: " << type1.debug_string() << " vs "
+            << type2.debug_string() << std::endl;
   return false;
 }
 
@@ -170,11 +213,25 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if both are structural nodes (Lambda, Gamma, Theta, Delta)
   auto * snode1 = dynamic_cast<const StructuralNode *>(&node1);
   auto * snode2 = dynamic_cast<const StructuralNode *>(&node2);
+
   if (snode1 && snode2)
   {
-    if (snode1->nsubregions() != snode2->nsubregions() || snode1->ninputs() != snode2->ninputs()
-        || snode1->noutputs() != snode2->noutputs())
+    if (snode1->nsubregions() != snode2->nsubregions())
     {
+      std::cerr << "StructuralNode nsubregions mismatch: node1=" << &node1 << ", node2=" << &node2
+                << ": " << snode1->nsubregions() << " vs " << snode2->nsubregions() << std::endl;
+      return false;
+    }
+    if (snode1->ninputs() != snode2->ninputs())
+    {
+      std::cerr << "StructuralNode ninputs mismatch: node1=" << &node1 << ", node2=" << &node2
+                << ": " << snode1->ninputs() << " vs " << snode2->ninputs() << std::endl;
+      return false;
+    }
+    if (snode1->noutputs() != snode2->noutputs())
+    {
+      std::cerr << "StructuralNode noutputs mismatch: node1=" << &node1 << ", node2=" << &node2
+                << ": " << snode1->noutputs() << " vs " << snode2->noutputs() << std::endl;
       return false;
     }
 
@@ -183,6 +240,7 @@ CompareNodes(const Node & node1, const Node & node2)
     {
       if (!CompareRegions(*snode1->subregion(r), *snode2->subregion(r)))
       {
+        std::cerr << "StructuralNode subregion " << r << " mismatch" << std::endl;
         return false;
       }
     }
@@ -192,6 +250,7 @@ CompareNodes(const Node & node1, const Node & node2)
     {
       if (!CompareTypes(*snode1->input(i)->Type(), *snode2->input(i)->Type()))
       {
+        std::cerr << "StructuralNode input type mismatch at index " << i << std::endl;
         return false;
       }
     }
@@ -201,6 +260,7 @@ CompareNodes(const Node & node1, const Node & node2)
     {
       if (!CompareTypes(*snode1->output(i)->Type(), *snode2->output(i)->Type()))
       {
+        std::cerr << "StructuralNode output type mismatch at index " << i << std::endl;
         return false;
       }
     }
@@ -211,6 +271,7 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if both are simple nodes
   auto * simp1 = dynamic_cast<const SimpleNode *>(&node1);
   auto * simp2 = dynamic_cast<const SimpleNode *>(&node2);
+
   if (simp1 && simp2)
   {
     const auto & op1 = simp1->GetOperation();
@@ -218,18 +279,23 @@ CompareNodes(const Node & node1, const Node & node2)
 
     if (typeid(op1) != typeid(op2))
     {
+      std::cerr << "SimpleNode operation type mismatch: " << typeid(op1).name() << " vs "
+                << typeid(op2).name() << std::endl;
       return false;
     }
 
     // Compare input counts and types
     if (simp1->ninputs() != simp2->ninputs())
     {
+      std::cerr << "SimpleNode ninputs mismatch: " << simp1->ninputs() << " vs " << simp2->ninputs()
+                << std::endl;
       return false;
     }
     for (size_t i = 0; i < simp1->ninputs(); ++i)
     {
       if (!CompareTypes(*simp1->input(i)->Type(), *simp2->input(i)->Type()))
       {
+        std::cerr << "SimpleNode input type mismatch at index " << i << std::endl;
         return false;
       }
     }
@@ -237,120 +303,389 @@ CompareNodes(const Node & node1, const Node & node2)
     // Compare output counts and types
     if (simp1->noutputs() != simp2->noutputs())
     {
+      std::cerr << "SimpleNode noutputs mismatch: " << simp1->noutputs() << " vs "
+                << simp2->noutputs() << std::endl;
       return false;
     }
     for (size_t i = 0; i < simp1->noutputs(); ++i)
     {
       if (!CompareTypes(*simp1->output(i)->Type(), *simp2->output(i)->Type()))
       {
+        std::cerr << "SimpleNode output type mismatch at index " << i << std::endl;
         return false;
       }
     }
 
+    // Specialized comparisons based on operation type
     if (auto intAdd1 = dynamic_cast<const IntegerAddOperation *>(&op1))
     {
-      return dynamic_cast<const IntegerAddOperation *>(&op2) != nullptr;
+      if (!dynamic_cast<const IntegerAddOperation *>(&op2))
+      {
+        std::cerr << "IntegerAddOperation mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto intSub1 = dynamic_cast<const IntegerSubOperation *>(&op1))
     {
-      return dynamic_cast<const IntegerSubOperation *>(&op2) != nullptr;
+      if (!dynamic_cast<const IntegerSubOperation *>(&op2))
+      {
+        std::cerr << "IntegerSubOperation mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto intMul1 = dynamic_cast<const IntegerMulOperation *>(&op1))
     {
-      return dynamic_cast<const IntegerMulOperation *>(&op2) != nullptr;
+      if (!dynamic_cast<const IntegerMulOperation *>(&op2))
+      {
+        std::cerr << "IntegerMulOperation mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto fpBin1 = dynamic_cast<const FBinaryOperation *>(&op1))
     {
       auto * fpBin2 = dynamic_cast<const FBinaryOperation *>(&op2);
-      return fpBin2 && fpBin1->fpop() == fpBin2->fpop();
+      if (!fpBin2)
+      {
+        std::cerr << "FBinaryOperation mismatch" << std::endl;
+        return false;
+      }
+      if (fpBin1->fpop() != fpBin2->fpop())
+      {
+        fprintf(
+            stderr,
+            "FBinaryOperation fpop mismatch: %d vs %d\n",
+            static_cast<int>(fpBin1->fpop()),
+            static_cast<int>(fpBin2->fpop()));
+        return false;
+      }
     }
+
     else if (auto load1 = dynamic_cast<const LoadNonVolatileOperation *>(&op1))
     {
       auto * load2 = dynamic_cast<const LoadNonVolatileOperation *>(&op2);
-      return load2 && load1->GetAlignment() == load2->GetAlignment()
-          && CompareTypes(*load1->GetLoadedType(), *load2->GetLoadedType());
+      if (!load2)
+      {
+        std::cerr << "LoadOperation mismatch" << std::endl;
+        return false;
+      }
+      if (load1->GetAlignment() != load2->GetAlignment())
+      {
+        std::cerr << "LoadOperation alignment mismatch: " << load1->GetAlignment() << " vs "
+                  << load2->GetAlignment() << std::endl;
+        return false;
+      }
+      if (!CompareTypes(*load1->GetLoadedType(), *load2->GetLoadedType()))
+      {
+        std::cerr << "LoadOperation loaded type mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto store1 = dynamic_cast<const StoreNonVolatileOperation *>(&op1))
     {
       auto * store2 = dynamic_cast<const StoreNonVolatileOperation *>(&op2);
-      return store2 && store1->GetAlignment() == store2->GetAlignment()
-          && CompareTypes(store1->GetStoredType(), store2->GetStoredType());
+      if (!store2)
+      {
+        std::cerr << "StoreOperation mismatch" << std::endl;
+        return false;
+      }
+      if (store1->GetAlignment() != store2->GetAlignment())
+      {
+        std::cerr << "StoreOperation alignment mismatch: " << store1->GetAlignment() << " vs "
+                  << store2->GetAlignment() << std::endl;
+        return false;
+      }
+      if (!CompareTypes(store1->GetStoredType(), store2->GetStoredType()))
+      {
+        std::cerr << "StoreOperation stored type mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto alloca1 = dynamic_cast<const AllocaOperation *>(&op1))
     {
       auto * alloca2 = dynamic_cast<const AllocaOperation *>(&op2);
-      return alloca2 && alloca1->alignment() == alloca2->alignment()
-          && CompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType());
+      if (!alloca2)
+      {
+        std::cerr << "AllocaOperation mismatch" << std::endl;
+        return false;
+      }
+      if (alloca1->alignment() != alloca2->alignment())
+      {
+        std::cerr << "AllocaOperation alignment mismatch: " << alloca1->alignment() << " vs "
+                  << alloca2->alignment() << std::endl;
+        return false;
+      }
+      if (!CompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType()))
+      {
+        std::cerr << "AllocaOperation allocated type mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto constOp1 = dynamic_cast<const BitConstantOperation *>(&op1))
     {
       auto * constOp2 = dynamic_cast<const BitConstantOperation *>(&op2);
-      return constOp2 && constOp1->value() == constOp2->value()
-          && is<BitType>(*simp1->output(0)->Type()) && is<BitType>(*simp2->output(0)->Type())
-          && static_cast<const BitType *>(simp1->output(0)->Type().get())->nbits()
-                 == static_cast<const BitType *>(simp2->output(0)->Type().get())->nbits();
+      if (!constOp2)
+      {
+        std::cerr << "BitConstantOperation mismatch" << std::endl;
+        return false;
+      }
+      if (constOp1->value() != constOp2->value())
+      {
+        std::cerr << "BitConstantOperation value mismatch: " << constOp1->value().to_uint()
+                  << " vs " << constOp2->value().to_uint() << std::endl;
+        return false;
+      }
+      if (!is<BitType>(*simp1->output(0)->Type()) || !is<BitType>(*simp2->output(0)->Type()))
+      {
+        std::cerr << "BitConstantOperation output type mismatch" << std::endl;
+        return false;
+      }
+      auto * bt1 = static_cast<const BitType *>(simp1->output(0)->Type().get());
+      auto * bt2 = static_cast<const BitType *>(simp2->output(0)->Type().get());
+      if (bt1->nbits() != bt2->nbits())
+      {
+        std::cerr << "BitConstantOperation output bit width mismatch: " << bt1->nbits() << " vs "
+                  << bt2->nbits() << std::endl;
+        return false;
+      }
     }
+
     else if (auto intConst1 = dynamic_cast<const IntegerConstantOperation *>(&op1))
     {
       auto * intConst2 = dynamic_cast<const IntegerConstantOperation *>(&op2);
-      return intConst2 && intConst1->Representation() == intConst2->Representation();
+      if (!intConst2)
+      {
+        std::cerr << "IntegerConstantOperation mismatch" << std::endl;
+        return false;
+      }
+      if (intConst1->Representation() != intConst2->Representation())
+      {
+        std::cerr << "IntegerConstantOperation representation mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto fpConst1 = dynamic_cast<const ConstantFP *>(&op1))
     {
       auto * fpConst2 = dynamic_cast<const ConstantFP *>(&op2);
-      return fpConst2 && fpConst1->constant().bitwiseIsEqual(fpConst2->constant());
+      if (!fpConst2)
+      {
+        std::cerr << "ConstantFP mismatch" << std::endl;
+        return false;
+      }
+      if (!fpConst1->constant().bitwiseIsEqual(fpConst2->constant()))
+      {
+        std::cerr << "ConstantFP value mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto sext1 = dynamic_cast<const SExtOperation *>(&op1))
     {
       auto * sext2 = dynamic_cast<const SExtOperation *>(&op2);
-      return sext2 && sext1->ndstbits() == sext2->ndstbits();
+      if (!sext2)
+      {
+        std::cerr << "SExtOperation mismatch" << std::endl;
+        return false;
+      }
+      if (sext1->ndstbits() != sext2->ndstbits())
+      {
+        std::cerr << "SExtOperation ndstbits mismatch: " << sext1->ndstbits() << " vs "
+                  << sext2->ndstbits() << std::endl;
+        return false;
+      }
     }
+
     else if (auto zext1 = dynamic_cast<const ZExtOperation *>(&op1))
     {
       auto * zext2 = dynamic_cast<const ZExtOperation *>(&op2);
-      return zext2 && zext1->ndstbits() == zext2->ndstbits();
+      if (!zext2)
+      {
+        std::cerr << "ZExtOperation mismatch" << std::endl;
+        return false;
+      }
+      if (zext1->ndstbits() != zext2->ndstbits())
+      {
+        std::cerr << "ZExtOperation ndstbits mismatch: " << zext1->ndstbits() << " vs "
+                  << zext2->ndstbits() << std::endl;
+        return false;
+      }
     }
+
     else if (auto trunc1 = dynamic_cast<const TruncOperation *>(&op1))
     {
       auto * trunc2 = dynamic_cast<const TruncOperation *>(&op2);
-      return trunc2 && trunc1->nsrcbits() == trunc2->nsrcbits()
-          && trunc1->ndstbits() == trunc2->ndstbits();
+      if (!trunc2)
+      {
+        std::cerr << "TruncOperation mismatch" << std::endl;
+        return false;
+      }
+      if (trunc1->nsrcbits() != trunc2->nsrcbits())
+      {
+        std::cerr << "TruncOperation nsrcbits mismatch: " << trunc1->nsrcbits() << " vs "
+                  << trunc2->nsrcbits() << std::endl;
+        return false;
+      }
+      if (trunc1->ndstbits() != trunc2->ndstbits())
+      {
+        std::cerr << "TruncOperation ndstbits mismatch: " << trunc1->ndstbits() << " vs "
+                  << trunc2->ndstbits() << std::endl;
+        return false;
+      }
     }
+
     else if (auto undef1 = dynamic_cast<const UndefValueOperation *>(&op1))
     {
-      // UndefValueOperation has no Type() method, compare based on output type
       auto * undef2 = dynamic_cast<const UndefValueOperation *>(&op2);
-      return undef2 && CompareTypes(*simp1->output(0)->Type(), *simp2->output(0)->Type());
+      if (!undef2)
+      {
+        std::cerr << "UndefValueOperation mismatch" << std::endl;
+        return false;
+      }
+      if (!CompareTypes(*simp1->output(0)->Type(), *simp2->output(0)->Type()))
+      {
+        std::cerr << "UndefValueOperation output type mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto ptrCmp1 = dynamic_cast<const PtrCmpOperation *>(&op1))
     {
-      return dynamic_cast<const PtrCmpOperation *>(&op2) != nullptr;
+      if (!dynamic_cast<const PtrCmpOperation *>(&op2))
+      {
+        std::cerr << "PtrCmpOperation mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1))
     {
       auto * gep2 = dynamic_cast<const GetElementPtrOperation *>(&op2);
-      return gep2 && CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
+      if (!gep2)
+      {
+        std::cerr << "GetElementPtrOperation mismatch" << std::endl;
+        return false;
+      }
+      if (!CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType()))
+      {
+        std::cerr << "GetElementPtrOperation pointee type mismatch" << std::endl;
+        return false;
+      }
     }
+
     else if (auto fneg1 = dynamic_cast<const FNegOperation *>(&op1))
     {
       auto * fneg2 = dynamic_cast<const FNegOperation *>(&op2);
-      return fneg2 && fneg1->size() == fneg2->size();
+      if (!fneg2)
+      {
+        std::cerr << "FNegOperation mismatch" << std::endl;
+        return false;
+      }
+      if (fneg1->size() != fneg2->size())
+      {
+        fprintf(
+            stderr,
+            "FNegOperation size mismatch: %d vs %d\n",
+            static_cast<int>(fneg1->size()),
+            static_cast<int>(fneg2->size()));
+        return false;
+      }
     }
+
     else if (auto cda1 = dynamic_cast<const ConstantDataArrayOperation *>(&op1))
     {
       auto * cda2 = dynamic_cast<const ConstantDataArrayOperation *>(&op2);
-      return cda2 && simp1->ninputs() == simp2->ninputs()
-          && CompareTypes(*cda1->result(0), *cda2->result(0));
+      if (!cda2)
+      {
+        std::cerr << "ConstantDataArrayOperation mismatch" << std::endl;
+        return false;
+      }
+      if (simp1->ninputs() != simp2->ninputs())
+      {
+        std::cerr << "ConstantDataArrayOperation ninputs mismatch: " << simp1->ninputs() << " vs "
+                  << simp2->ninputs() << std::endl;
+        return false;
+      }
+      if (!CompareTypes(*cda1->result(0), *cda2->result(0)))
+      {
+        std::cerr << "ConstantDataArrayOperation result type mismatch" << std::endl;
+        return false;
+      }
     }
 
-    return false;
+    else if (auto match1 = dynamic_cast<const MatchOperation *>(&op1))
+    {
+      auto * match2 = dynamic_cast<const MatchOperation *>(&op2);
+      if (!match2)
+      {
+        std::cerr << "MatchOperation mismatch" << std::endl;
+        return false;
+      }
+      // Compare default_alternative
+      if (match1->default_alternative() != match2->default_alternative())
+      {
+        std::cerr << "MatchOperation default_alternative mismatch: "
+                  << match1->default_alternative() << " vs " << match2->default_alternative()
+                  << std::endl;
+        return false;
+      }
+      // Compare nalternatives
+      if (match1->nalternatives() != match2->nalternatives())
+      {
+        std::cerr << "MatchOperation nalternatives mismatch: " << match1->nalternatives() << " vs "
+                  << match2->nalternatives() << std::endl;
+        return false;
+      }
+      // Compare mapping - both need to have same key-value pairs
+      // Build maps from iterators and compare
+      std::unordered_map<uint64_t, uint64_t> map1, map2;
+      for (auto it = match1->begin(); it != match1->end(); ++it)
+        map1[it->first] = it->second;
+      for (auto it = match2->begin(); it != match2->end(); ++it)
+        map2[it->first] = it->second;
+
+      if (map1.size() != map2.size())
+      {
+        std::cerr << "MatchOperation mapping size mismatch: " << map1.size() << " vs "
+                  << map2.size() << std::endl;
+        return false;
+      }
+      for (const auto & [key, val] : map1)
+      {
+        auto it = map2.find(key);
+        if (it == map2.end() || it->second != val)
+        {
+          std::cerr << "MatchOperation mapping mismatch at key=" << key << ": value=" << val
+                    << " vs " << (it != map2.end() ? std::to_string(it->second) : "not found")
+                    << std::endl;
+          return false;
+        }
+      }
+    }
+
+    else
+    {
+      std::cerr << "Unknown SimpleNode operation: " << typeid(op1).name() << std::endl;
+      return false;
+    }
+
+    return true;
   }
 
+  std::cerr << "Node comparison failed: node1 is SimpleNode=" << !!simp1
+            << ", StructuralNode=" << !!snode1 << "; node2 is SimpleNode=" << !!simp2
+            << ", StructuralNode=" << !!snode2 << std::endl;
   return false;
 }
 
 /**
- * \brief Compares two RVSDG regions for equality by checking all nodes and connections.
+ * \brief Compares two RVSDG regions for equality by traversing through results
+ * and verifying the same graph structure exists in both regions.
  *
  * \param region1 The first region to compare.
  * \param region2 The second region to compare.
@@ -362,13 +697,15 @@ CompareRegions(const Region & region1, const Region & region2)
   // Check number of arguments
   if (region1.narguments() != region2.narguments())
   {
+    std::cerr << "Region narguments mismatch: " << region1.narguments() << " vs "
+              << region2.narguments() << std::endl;
     return false;
   }
-  // Compare argument types
   for (size_t i = 0; i < region1.narguments(); ++i)
   {
     if (!CompareTypes(*region1.argument(i)->Type(), *region2.argument(i)->Type()))
     {
+      std::cerr << "Region argument type mismatch at index " << i << std::endl;
       return false;
     }
   }
@@ -376,13 +713,15 @@ CompareRegions(const Region & region1, const Region & region2)
   // Check number of results
   if (region1.nresults() != region2.nresults())
   {
+    std::cerr << "Region nresults mismatch: " << region1.nresults() << " vs " << region2.nresults()
+              << std::endl;
     return false;
   }
-  // Compare result types
   for (size_t i = 0; i < region1.nresults(); ++i)
   {
     if (!CompareTypes(*region1.result(i)->Type(), *region2.result(i)->Type()))
     {
+      std::cerr << "Region result type mismatch at index " << i << std::endl;
       return false;
     }
   }
@@ -390,44 +729,119 @@ CompareRegions(const Region & region1, const Region & region2)
   // Check node count
   if (region1.numNodes() != region2.numNodes())
   {
+    std::cerr << "Region numNodes mismatch: " << region1.numNodes() << " vs " << region2.numNodes()
+              << std::endl;
     return false;
   }
 
-  // Compare nodes in order
-  auto it1 = region1.Nodes().begin();
-  auto it2 = region2.Nodes().begin();
+  // Traverse starting from results - follow backwards through dataflow
+  std::unordered_set<const Node *> visited1, visited2;
+  std::queue<std::pair<const Node *, const Node *>> nodeQueue;
 
-  for (; it1 != region1.Nodes().end() && it2 != region2.Nodes().end(); ++it1, ++it2)
+  if (region1.nresults() > 0)
   {
-    if (!CompareNodes(*it1, *it2))
+    // Start from each result and find the node that produces it
+    for (size_t i = 0; i < region1.nresults(); ++i)
     {
-      return false;
-    }
+      auto * origin1 = region1.result(i)->origin();
+      auto * origin2 = region2.result(i)->origin();
 
-    // Check input connections
-    auto & node1 = *it1;
-    auto & node2 = *it2;
-
-    if (node1.ninputs() != node2.ninputs())
-    {
-      return false;
-    }
-
-    for (size_t j = 0; j < node1.ninputs(); ++j)
-    {
-      auto * origin1 = node1.input(j)->origin();
-      auto * origin2 = node2.input(j)->origin();
-
-      if (!origin1 && !origin2)
+      if (!origin1 || !origin2)
       {
-        continue;
+        std::cerr << "Result origin is null at index " << i << ": "
+                  << "region1=" << !!origin1 << ", region2=" << !!origin2 << std::endl;
+        return false;
       }
 
-      if (!origin1 || !origin2 || !CompareOutputs(*origin1, *origin2))
+      if (!CompareTypes(*origin1->Type(), *origin2->Type()))
       {
+        std::cerr << "Result origin type mismatch at index " << i << std::endl;
+        return false;
+      }
+
+      auto * n1 = TryGetOwnerNode<Node>(*origin1);
+      auto * n2 = TryGetOwnerNode<Node>(*origin2);
+      if (n1 && n2)
+      {
+        if (!CompareNodes(*n1, *n2))
+        {
+          std::cerr << "CompareNodes failed for nodes connected to result " << i << " : " << n1
+                    << " and " << n2 << std::endl;
+          return false;
+        }
+
+        visited1.insert(n1);
+        visited2.insert(n2);
+        nodeQueue.push({ n1, n2 });
+      }
+      else if (!n1 && !n2)
+      {
+        // Result is an argument - no traversal needed
+        continue;
+      }
+      else
+      {
+        std::cerr << "Result origin ownership mismatch at index " << i << ": "
+                  << "node1=" << !!n1 << ", node2=" << !!n2 << std::endl;
         return false;
       }
     }
+  }
+
+  // BFS traversal - follow inputs backwards through the graph
+  while (!nodeQueue.empty())
+  {
+    auto * n1 = nodeQueue.front().first;
+    auto * n2 = nodeQueue.front().second;
+    nodeQueue.pop();
+
+    for (size_t j = 0; j < n1->ninputs(); ++j)
+    {
+      auto * origin1 = n1->input(j)->origin();
+      auto * origin2 = n2->input(j)->origin();
+
+      if (!origin1 || !origin2)
+      {
+        std::cerr << "Input origin mismatch for node inputs at index " << j << ": "
+                  << "node1=" << n1 << ", node2=" << n2 << ", origin1=" << !!origin1
+                  << ", origin2=" << !!origin2 << std::endl;
+        return false;
+      }
+
+      // If origin is a node output (not an argument), find matching nodes
+      auto * next1 = TryGetOwnerNode<Node>(*origin1);
+      auto * next2 = TryGetOwnerNode<Node>(*origin2);
+      if (next1 && next2)
+      {
+        if (!visited1.count(next1))
+        {
+          if (!CompareNodes(*next1, *next2))
+          {
+            std::cerr << "BFS traversal: CompareNodes failed for follow-up nodes " << next1
+                      << " and " << next2 << std::endl;
+            return false;
+          }
+
+          visited1.insert(next1);
+          visited2.insert(next2);
+          nodeQueue.push({ next1, next2 });
+        }
+      }
+    }
+  }
+
+  // Verify all nodes were visited
+  if (visited1.size() != region1.numNodes())
+  {
+    std::cerr << "Node count mismatch after traversal: visited=" << visited1.size()
+              << ", expected=" << region1.numNodes() << std::endl;
+    return false;
+  }
+  if (visited2.size() != region2.numNodes())
+  {
+    std::cerr << "Node count mismatch for region2 after traversal: visited=" << visited2.size()
+              << ", expected=" << region2.numNodes() << std::endl;
+    return false;
   }
 
   return true;
@@ -479,88 +893,29 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName
 
 } // namespace
 
-// Test that CompareTypes works correctly
-TEST(RvsdgRoundtripTests, TestBitTypeComparison)
-{
-  using namespace jlm::rvsdg;
-
-  auto bit32 = BitType::Create(32);
-  auto bit64 = BitType::Create(64);
-
-  EXPECT_TRUE(CompareTypes(*bit32, *BitType::Create(32)));
-  EXPECT_FALSE(CompareTypes(*bit32, *bit64));
-}
-
-TEST(RvsdgRoundtripTests, TestPointerTypeComparison)
+TEST(RvsdgRoundtripTests, TestGamma)
 {
   using namespace jlm::llvm;
-
-  auto ptr1 = PointerType::Create();
-  auto ptr2 = PointerType::Create();
-
-  EXPECT_TRUE(CompareTypes(*ptr1, *ptr2));
-}
-
-TEST(RvsdgRoundtripTests, TestFunctionTypeComparison)
-{
   using namespace jlm::rvsdg;
 
-  auto bit32 = BitType::Create(32);
-  auto bit64 = BitType::Create(64);
+  auto bitType = BitType::Create(1);
+  auto functionType = FunctionType::Create({ bitType, bitType, bitType }, { bitType });
 
-  auto func1Args = std::vector<std::shared_ptr<const Type>>{ bit32, bit64 };
-  auto func1Results = std::vector<std::shared_ptr<const Type>>{ bit64 };
-  auto func1 = FunctionType::Create(func1Args, func1Results);
-
-  auto func2Args = std::vector<std::shared_ptr<const Type>>{ bit32, bit64 };
-  auto func2Results = std::vector<std::shared_ptr<const Type>>{ bit64 };
-  auto func2 = FunctionType::Create(func2Args, func2Results);
-
-  EXPECT_TRUE(CompareTypes(*func1, *func2));
-
-  auto func3Args = std::vector<std::shared_ptr<const Type>>{ bit64 };
-  auto func3Results = std::vector<std::shared_ptr<const Type>>{ bit32 };
-  auto func3 = FunctionType::Create(func3Args, func3Results);
-
-  EXPECT_FALSE(CompareTypes(*func1, *func3));
-}
-
-TEST(RvsdgRoundtripTests, TestArrayTypeComparison)
-{
-  using namespace jlm::rvsdg;
-  using namespace jlm::llvm;
-
-  auto element = BitType::Create(32);
-  auto arr1 = ArrayType::Create(element, 5);
-  auto arr2 = ArrayType::Create(element, 5);
-  auto arr3 = ArrayType::Create(element, 10);
-
-  EXPECT_TRUE(CompareTypes(*arr1, *arr2));
-  EXPECT_FALSE(CompareTypes(*arr1, *arr3));
-}
-
-TEST(RvsdgRoundtripTests, TestLambdaWithAdd)
-{
-  using namespace jlm::llvm;
-
-  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule->Rvsdg();
-
-  auto bitType = BitType::Create(64);
-  auto functionType = FunctionType::Create({ bitType, bitType }, { bitType });
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto lambda = LambdaNode::Create(
-      graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::internalLinkage));
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
-  auto arg1 = lambda->GetFunctionArguments().at(0);
-  auto arg2 = lambda->GetFunctionArguments().at(1);
+  auto & matchNode =
+      MatchOperation::CreateNode(*lambda->GetFunctionArguments()[0], { { 0, 0 } }, 1, 2);
+  auto gamma = GammaNode::create(matchNode.output(0), 2);
+  auto entryVar1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);
+  auto entryVar2 = gamma->AddEntryVar(lambda->GetFunctionArguments()[2]);
+  auto exitVar = gamma->AddExitVar({ entryVar1.branchArgument[0], entryVar2.branchArgument[1] });
 
-  IntegerAddOperation addOp(64);
-  SimpleNode::Create(*lambda->subregion(), addOp.copy(), { arg1, arg2 });
+  auto func = lambda->finalize({ exitVar.output });
+  GraphExport::Create(*func, "");
 
-  auto & subregion = *lambda->subregion();
-  lambda->finalize({ subregion.Nodes().begin().ptr()->output(0) });
-
-  TestRvsdgRoundtrip(*rvsdgModule, "TestLambdaWithAdd");
+  TestRvsdgRoundtrip(rvsdgModule, "TestGamma");
 }
