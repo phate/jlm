@@ -532,28 +532,25 @@ VariadicArgumentListOperation::copy() const
   return std::make_unique<VariadicArgumentListOperation>(*this);
 }
 
-/* ConstantStruct operator */
-
-ConstantStruct::~ConstantStruct()
-{}
+ConstantStructOperation::~ConstantStructOperation() noexcept = default;
 
 bool
-ConstantStruct::operator==(const Operation & other) const noexcept
+ConstantStructOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantStruct *>(&other);
+  auto op = dynamic_cast<const ConstantStructOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantStruct::debug_string() const
+ConstantStructOperation::debug_string() const
 {
   return "ConstantStruct";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantStruct::copy() const
+ConstantStructOperation::copy() const
 {
-  return std::make_unique<ConstantStruct>(*this);
+  return std::make_unique<ConstantStructOperation>(*this);
 }
 
 ConstantArrayOperation::~ConstantArrayOperation() noexcept = default;

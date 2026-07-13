@@ -44,7 +44,7 @@ class StoreVolatileOperation;
 class ConstantDataArrayOperation;
 class ConstantArrayOperation;
 class ConstantAggregateZeroOperation;
-class ConstantStruct;
+class ConstantStructOperation;
 class ConstantPointerNullOperation;
 class ShuffleVectorOperation;
 class VectorSelectOperation;
@@ -351,7 +351,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const ConstantStruct & op,
+      const ConstantStructOperation & op,
       const std::vector<const Variable *> & args,
       ::llvm::IRBuilder<> &);
 

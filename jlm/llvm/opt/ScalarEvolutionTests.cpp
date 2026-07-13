@@ -1605,7 +1605,7 @@ TEST(ScalarEvolutionTests, ComputeRecurrenceForStructGEP)
   const auto & structC4 = IntegerConstantOperation::Create(*delta->subregion(), 32, 4);
   const auto & structC5 = IntegerConstantOperation::Create(*delta->subregion(), 32, 5);
 
-  auto & constantStruct = ConstantStruct::Create(
+  auto & constantStruct = ConstantStructOperation::Create(
       *delta->subregion(),
       { structC1.output(0),
         structC2.output(0),
