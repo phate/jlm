@@ -922,6 +922,21 @@ getConstantDataArrayElementIndex(
   throw std::logic_error("Unhandled number of GEP constant indices.");
 }
 
+static size_t
+getConstantStructElementIndex(
+    const ConstantStructOperation &,
+    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
+{
+  if (gepConstants.empty())
+    return 0;
+
+  JLM_ASSERT(gepConstants.size() == 1);
+  auto & gepConstant = gepConstants[0];
+  JLM_ASSERT(gepConstant.indices.size() == 2);
+  JLM_ASSERT(gepConstant.indices[0] == 0);
+  return gepConstant.indices.back();
+}
+
 void
 StoreValueForwarding::forwardLoadWithoutMemoryStates(
     rvsdg::SimpleNode & loadNode,
@@ -962,9 +977,18 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         {
           // FIXME: handle operation
         },
-        [&](const ConstantStructOperation &)
+        [&](const ConstantStructOperation & constantStruct)
         {
-          JLM_ASSERT(0 && "ConstantStruct detected");
+          const auto elementIndex =
+              getConstantStructElementIndex(constantStruct, tracedDelta.gepConstants);
+          const auto elementType = constantStruct.type().getElementType(elementIndex);
+          JLM_ASSERT(*elementType == *loadOperation->GetLoadedType());
+
+          const auto elementNode =
+              rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
+          auto copiedNode = elementNode->copy(loadNode.region(), {});
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+          context_->numForwardedLoadsWithoutMemoryState++;
         },
         [&](const ConstantDataArrayOperation & constantDataArray)
         {
