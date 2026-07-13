@@ -1535,13 +1535,12 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
   auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, bits32Type);
   auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
 
-  lambdaNode.finalize(
-      {
-          &LoadOperation::LoadedValueOutput(loadNode0),
-          &LoadOperation::LoadedValueOutput(loadNode1),
-          &LoadOperation::LoadedValueOutput(loadNode2),
-          &LoadOperation::LoadedValueOutput(loadNode3),
-      });
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+      &LoadOperation::LoadedValueOutput(loadNode1),
+      &LoadOperation::LoadedValueOutput(loadNode2),
+      &LoadOperation::LoadedValueOutput(loadNode3),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
