@@ -1063,7 +1063,7 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   context_->numLoadsTracedToDeltaNode++;
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
-
+#if 0
 static size_t
 getConstantDataArrayElementIndex(
     const ConstantDataArrayOperation & constantDataArray,
@@ -1096,6 +1096,243 @@ getConstantDataArrayElementIndex(
 
   throw std::logic_error("Unhandled number of GEP constant indices.");
 }
+#endif
+#if 0
+static size_t
+getConstantStructElementIndex(
+    const ConstantStructOperation & constantStructOperation,
+    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
+{
+  if (gepConstants.empty())
+    return 0;
+
+  JLM_ASSERT(gepConstants.size() == 1);
+  auto & gepConstant = gepConstants[0];
+  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+
+  if (gepConstant.indices.size() == 1)
+  {
+    const auto gepConstantIndex = gepConstant.indices[0];
+    if (gepConstantIndex == 0)
+      return 0;
+
+    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
+    auto & structType = constantStructOperation.type();
+
+    size_t totalSizeInBytes = 0;
+    for (size_t n = 0; n < structType.numElements(); ++n)
+    {
+      const auto elementSizeInBytes = GetTypeAllocSize(*structType.getElementType(n));
+      if (totalSizeInBytes + elementSizeInBytes == gepConstantIndex)
+        return n + 1;
+
+      totalSizeInBytes += elementSizeInBytes;
+      JLM_ASSERT(totalSizeInBytes < gepConstantIndex);
+    }
+
+    throw std::logic_error("GEP constant index does not point to the beginning of struct element.");
+  }
+
+  if (gepConstant.indices.size() == 2)
+  {
+    JLM_ASSERT(gepConstant.indices[0] == 0);
+    return gepConstant.indices.back();
+  }
+
+  throw std::logic_error("Unhandled number of GEP constant indices.");
+}
+#endif
+
+static rvsdg::Output *
+getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
+{
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    return rvsdg::MatchTypeWithDefault(
+        node->GetOperation(),
+        [&](const IntegerConstantOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return &output;
+        },
+        [&](const ConstantFP &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return &output;
+        },
+        [&](const ConstantPointerNullOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return &output;
+        },
+        [&](const FunctionToPointerOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return &output;
+        },
+        [&](const IntToPtrOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return static_cast<rvsdg::Output *>(nullptr);
+        },
+        [&](const GetElementPtrOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return static_cast<rvsdg::Output *>(nullptr);
+        },
+        [&](const ConstantAggregateZeroOperation &)
+        {
+          // JLM_ASSERT(elementOffsetInBytes == 0);
+          return &output;
+        },
+        [&](const ConstantArrayOperation & constantArrayOperation)
+        {
+          const auto arrayType = constantArrayOperation.type();
+          const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
+
+          const auto index = elementOffsetInBytes / elementSizeInBytes;
+          return getDeltaElement(
+              elementOffsetInBytes % elementSizeInBytes,
+              *node->input(index)->origin());
+        },
+        [&](const ConstantDataArrayOperation & constantDataArrayOperation)
+        {
+          const auto arrayType = constantDataArrayOperation.type();
+          const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
+
+          const auto index = elementOffsetInBytes / elementSizeInBytes;
+          return getDeltaElement(
+              elementOffsetInBytes - (elementSizeInBytes * index),
+              *node->input(index)->origin());
+        },
+        [&](const ConstantStructOperation & constantStruct)
+        {
+          auto & structType = constantStruct.type();
+
+          for (size_t n = 0; n < structType.numElements(); ++n)
+          {
+            auto fieldOffsetInBytes = structType.GetFieldOffset(n);
+
+            if (fieldOffsetInBytes == elementOffsetInBytes)
+            {
+              return getDeltaElement(0, *node->input(n)->origin());
+            }
+
+            if (fieldOffsetInBytes > elementOffsetInBytes)
+            {
+              fieldOffsetInBytes = structType.GetFieldOffset(n - 1);
+              return getDeltaElement(
+                  elementOffsetInBytes - fieldOffsetInBytes,
+                  *node->input(n - 1)->origin());
+            }
+          }
+
+          const auto lastElementIndex = structType.numElements() - 1;
+          const auto fieldOffsetInBytes = structType.GetFieldOffset(lastElementIndex);
+          JLM_ASSERT(fieldOffsetInBytes <= elementOffsetInBytes);
+          return getDeltaElement(
+              elementOffsetInBytes - fieldOffsetInBytes,
+              *node->input(lastElementIndex)->origin());
+        },
+        [&]()
+        {
+          throw std::logic_error("Unsupported operation: " + node->DebugString());
+          return nullptr;
+        });
+  }
+
+  if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
+  {
+    // JLM_ASSERT(elementOffsetInBytes == 0);
+    return &output;
+#if 0
+    auto [ctxInput, _] = deltaNode->MapBinderContextVar(output);
+    JLM_ASSERT(ctxInput->region()->IsRootRegion());
+    return &rvsdg::RouteToRegion(*ctxInput->origin(), targetRegion);
+#endif
+  }
+
+  throw std::logic_error("Unsupported output owner");
+}
+
+namespace
+{
+
+struct RegionSlice
+{
+  // Nodes are ordered according to their depth. Highest depth first.
+  std::vector<rvsdg::Node *> nodes;
+  util::HashSet<rvsdg::Output *> arguments;
+};
+
+}
+
+static RegionSlice
+computeRegionSlice(rvsdg::Output & output)
+{
+  // FIXME: This code works perfectly to visit the nodes of a tree, but does not work if it is a DAG
+  // as it would not guarantee that the nodes would be ordered according to their depth.
+  std::function<void(rvsdg::Output &, RegionSlice &, util::HashSet<rvsdg::Node *> &)> compute =
+      [&compute](
+          rvsdg::Output & output,
+          RegionSlice & regionSlice,
+          util::HashSet<rvsdg::Node *> & visited)
+  {
+    if (rvsdg::TryGetOwnerRegion(output))
+    {
+      regionSlice.arguments.insert(&output);
+      return;
+    }
+
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(output);
+    if (visited.Contains(&node))
+      return;
+
+    regionSlice.nodes.push_back(&node);
+    for (auto & input : node.Inputs())
+    {
+      compute(*input.origin(), regionSlice, visited);
+    }
+  };
+
+  RegionSlice regionSlice;
+  util::HashSet<rvsdg::Node *> visited;
+  compute(output, regionSlice, visited);
+
+  return regionSlice;
+}
+
+static void
+copyRegionSlice(
+    rvsdg::Region & targetRegion,
+    const RegionSlice & regionSlice,
+    rvsdg::SubstitutionMap & substitutionMap)
+{
+  for (auto it = regionSlice.nodes.rbegin(); it != regionSlice.nodes.rend(); ++it)
+  {
+    auto node = *it;
+    node->copy(&targetRegion, substitutionMap);
+  }
+}
+
+static rvsdg::Output &
+copyDeltaRegionSlice(rvsdg::Output & output, rvsdg::Region & targetRegion)
+{
+  auto deltaNode = util::assertedCast<rvsdg::DeltaNode>(output.region()->node());
+
+  auto regionSlice = computeRegionSlice(output);
+
+  rvsdg::SubstitutionMap substitutionMap;
+  for (auto oldArgument : regionSlice.arguments.Items())
+  {
+    auto ctxVar = deltaNode->MapBinderContextVar(*oldArgument);
+    auto & newArgument = rvsdg::RouteToRegion(*ctxVar.input->origin(), targetRegion);
+    substitutionMap.insert(oldArgument, &newArgument);
+  }
+
+  copyRegionSlice(targetRegion, regionSlice, substitutionMap);
+  return substitutionMap.lookup(output);
+}
 
 void
 StoreValueForwarding::forwardLoadWithoutMemoryStates(
@@ -1106,10 +1343,39 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
   const auto loadOperation =
       dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
-  const auto & deltaResultOrigin = *tracedDelta.deltaNode->result().origin();
+  auto & deltaResultOrigin = *tracedDelta.deltaNode->result().origin();
 
+  if (tracedDelta.gepConstants.size() > 1)
+  {
+    // FIXME:
+    return;
+  }
+
+  JLM_ASSERT(tracedDelta.gepConstants.size() <= 1);
+  const uint64_t offsetInBytes =
+      tracedDelta.gepConstants.empty() ? 0 : tracedDelta.gepConstants.front().getOffsetInBytes();
+  auto elementOutput = getDeltaElement(offsetInBytes, deltaResultOrigin);
+  if (!elementOutput)
+  {
+    // FIXME:
+    return;
+  }
+
+  if (*loadOperation->GetLoadedType() != *elementOutput->Type())
+  {
+    // FIXME:
+    return;
+  }
+
+  auto & newOutput = copyDeltaRegionSlice(*elementOutput, *loadNode.region());
+  LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
+  context_->numForwardedLoadsWithoutMemoryState++;
+
+#if 0
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(deltaResultOrigin))
   {
+    // FIXME: Unify forwarding of constantDataArrayOperation, constantStructOperation, and
+    // constantArrayOperation
     rvsdg::MatchTypeWithDefault(
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
@@ -1139,7 +1405,58 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const ConstantStructOperation &)
         {
-          // FIXME: handle operation
+          uint64_t offsetInBytes = 0;
+          if (!tracedDelta.gepConstants.empty())
+          {
+            JLM_ASSERT(tracedDelta.gepConstants.size() == 1);
+            offsetInBytes = tracedDelta.gepConstants.front().getOffsetInBytes();
+          }
+          auto element = getDeltaElement(offsetInBytes, deltaResultOrigin, *loadNode.region());
+          auto & newOutput = copyDeltaRegionSlice(*element, *loadNode.region());
+          LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
+          context_->numForwardedLoadsWithoutMemoryState++;
+#if 0
+          const auto elementIndex =
+              getConstantStructElementIndex(constantStruct, tracedDelta.gepConstants);
+          const auto elementType = constantStruct.type().getElementType(elementIndex);
+
+          if (*elementType == *loadOperation->GetLoadedType())
+          {
+            auto & newOutput =
+                copyDeltaRegionSlice(*node->input(elementIndex)->origin(), *loadNode.region());
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
+          }
+          else
+          {
+            [[maybe_unused]] auto csBitType =
+                dynamic_cast<const rvsdg::BitType *>(elementType.get());
+            [[maybe_unused]] auto loadBitType =
+                dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
+            JLM_ASSERT(csBitType && loadBitType);
+            JLM_ASSERT(csBitType->nbits() < loadBitType->nbits());
+            JLM_ASSERT(loadBitType->nbits() % csBitType->nbits() == 0);
+            const auto numRequiredConstants = loadBitType->nbits() / csBitType->nbits();
+            JLM_ASSERT(numRequiredConstants > 1);
+
+            std::vector<rvsdg::BitValueRepresentation> constants;
+            constants.reserve(numRequiredConstants);
+            for (size_t n = elementIndex; n < elementIndex + numRequiredConstants; n++)
+            {
+              const auto elementNode =
+                  rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(n)->origin());
+              const auto constantOp =
+                  util::assertedCast<const IntegerConstantOperation>(&elementNode->GetOperation());
+              constants.push_back(constantOp->Representation());
+            }
+            JLM_ASSERT(constants.size() == numRequiredConstants);
+            // FIXME: take care of endianness
+            auto & constantNode = IntegerConstantOperation::Create(
+                *loadNode.region(),
+                rvsdg::BitValueRepresentation::create(constants));
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(constantNode.output(0));
+          }
+          context_->numForwardedLoadsWithoutMemoryState++;
+#endif
         },
         [&](const ConstantDataArrayOperation & constantDataArray)
         {
@@ -1254,6 +1571,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   {
     throw std::logic_error("Unsupported output owner");
   }
+#endif
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.

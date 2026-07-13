@@ -32,6 +32,7 @@ JLC_COMPILE_TESTS = \
 	tests/c-tests/test-printf \
 	tests/c-tests/test-ptr-comparison \
 	tests/c-tests/test-recfct \
+	tests/c-tests/test-static-array \
 	tests/c-tests/test-struct2 \
 	tests/c-tests/test-struct \
 	tests/c-tests/test-switch \
