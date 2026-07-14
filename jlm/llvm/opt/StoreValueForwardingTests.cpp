@@ -1547,15 +1547,14 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
 
   auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
 
-  lambdaNode.finalize(
-      {
-          &LoadOperation::LoadedValueOutput(loadNode0),
-          &LoadOperation::LoadedValueOutput(loadNode1),
-          &LoadOperation::LoadedValueOutput(loadNode2),
-          &LoadOperation::LoadedValueOutput(loadNode3),
-          &LoadOperation::LoadedValueOutput(loadNode4),
-          &LoadOperation::LoadedValueOutput(loadNode5),
-      });
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+      &LoadOperation::LoadedValueOutput(loadNode1),
+      &LoadOperation::LoadedValueOutput(loadNode2),
+      &LoadOperation::LoadedValueOutput(loadNode3),
+      &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
