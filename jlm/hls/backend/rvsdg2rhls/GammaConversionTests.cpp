@@ -21,7 +21,7 @@ using namespace jlm::hls;
 using namespace jlm::llvm;
 using namespace jlm::util;
 
-namespace
+namespace jlm::hls
 {
 
 static void
