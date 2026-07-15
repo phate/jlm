@@ -73,6 +73,19 @@ public:
   static std::optional<std::vector<Output *>>
   normalizeIdempotent(const BitSliceOperation & operation, const std::vector<Output *> & operands);
 
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref BitSliceOperation on which the transformation is performed.
+   * @param operands The operand of the \ref BitSliceOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref BitSliceOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  foldConstant(const BitSliceOperation & operation, const std::vector<Output *> & operands);
+
 private:
   size_t low_;
 };

@@ -1376,7 +1376,7 @@ TEST(bitstring, SliceOfConstant)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::foldConstant, sliceNode);
   graph.PruneNodes();
 
   view(graph, stdout);
