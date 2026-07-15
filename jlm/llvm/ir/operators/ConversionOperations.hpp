@@ -967,6 +967,18 @@ public:
     return FunctionType_;
   }
 
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand)
+  {
+    const auto functionType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(operand.Type());
+    if (!functionType)
+    {
+      throw std::logic_error("Expect function type.");
+    }
+
+    return rvsdg::CreateOpNode<FunctionToPointerOperation>({ &operand }, functionType);
+  }
+
   /**
    * Performs the inversion of the \ref FunctionToPointerOperation by detecting that its operand is
    * a \ref PointerToFunctionOperation.
