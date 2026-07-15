@@ -31,10 +31,8 @@ unop_reduction_path_t
 BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto node = TryGetOwnerNode<SimpleNode>(*arg);
-  auto & arg_type = *std::dynamic_pointer_cast<const BitType>(arg->Type());
-
-  if ((low() == 0) && (high() == arg_type.nbits()))
-    return unop_reduction_idempotent;
+  if (!node)
+    return unop_reduction_none;
 
   if (is<BitSliceOperation>(node->GetOperation()))
     return unop_reduction_narrow;
@@ -51,11 +49,6 @@ BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noex
 jlm::rvsdg::Output *
 BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
-  if (path == unop_reduction_idempotent)
-  {
-    return arg;
-  }
-
   auto & node = AssertGetOwnerNode<SimpleNode>(*arg);
 
   if (path == unop_reduction_narrow)
@@ -94,6 +87,23 @@ BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
   }
 
   return nullptr;
+}
+
+std::optional<std::vector<Output *>>
+BitSliceOperation::normalizeIdempotent(
+    const BitSliceOperation & operation,
+    const std::vector<Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto operand = operands[0];
+
+  const auto bitType = util::assertedCast<const BitType>(operand->Type().get());
+  if (operation.low() == 0 && operation.high() == bitType->nbits())
+  {
+    return std::vector{ operand };
+  }
+
+  return std::nullopt;
 }
 
 std::unique_ptr<Operation>
