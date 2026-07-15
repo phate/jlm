@@ -966,6 +966,80 @@ getConstantStructElementIndex(
   throw std::logic_error("Unhandled number of GEP constant indices.");
 }
 
+struct RegionSlice
+{
+  // Nodes are ordered according to their depth. Highest depth first.
+  std::vector<rvsdg::Node *> nodes;
+  util::HashSet<rvsdg::Output *> arguments;
+};
+
+static RegionSlice
+computeRegionSlice(rvsdg::Output & output)
+{
+  // FIXME: This code works perfectly to visit the nodes of a tree, but does not work if it is a DAG
+  // as it would not guarantee that the nodes would be ordered according to their depth.
+  std::function<void(rvsdg::Output &, RegionSlice &, util::HashSet<rvsdg::Node *> &)> compute =
+      [&compute](
+          rvsdg::Output & output,
+          RegionSlice & regionSlice,
+          util::HashSet<rvsdg::Node *> & visited)
+  {
+    if (rvsdg::TryGetOwnerRegion(output))
+    {
+      regionSlice.arguments.insert(&output);
+      return;
+    }
+
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(output);
+    if (visited.Contains(&node))
+      return;
+
+    regionSlice.nodes.push_back(&node);
+    for (auto & input : node.Inputs())
+    {
+      compute(*input.origin(), regionSlice, visited);
+    }
+  };
+
+  RegionSlice regionSlice;
+  util::HashSet<rvsdg::Node *> visited;
+  compute(output, regionSlice, visited);
+
+  return regionSlice;
+}
+
+static void
+copyRegionSlice(
+    rvsdg::Region & targetRegion,
+    const RegionSlice & regionSlice,
+    rvsdg::SubstitutionMap & substitutionMap)
+{
+  for (auto it = regionSlice.nodes.rbegin(); it != regionSlice.nodes.rend(); ++it)
+  {
+    auto node = *it;
+    node->copy(&targetRegion, substitutionMap);
+  }
+}
+
+static rvsdg::Output &
+copyDeltaRegionSlice(rvsdg::Output & output, rvsdg::Region & targetRegion)
+{
+  auto deltaNode = util::assertedCast<rvsdg::DeltaNode>(output.region()->node());
+
+  auto regionSlice = computeRegionSlice(output);
+
+  rvsdg::SubstitutionMap substitutionMap;
+  for (auto oldArgument : regionSlice.arguments.Items())
+  {
+    auto ctxVar = deltaNode->MapBinderContextVar(*oldArgument);
+    auto & newArgument = rvsdg::RouteToRegion(*ctxVar.input->origin(), targetRegion);
+    substitutionMap.insert(oldArgument, &newArgument);
+  }
+
+  copyRegionSlice(targetRegion, regionSlice, substitutionMap);
+  return substitutionMap.lookup(output);
+}
+
 void
 StoreValueForwarding::forwardLoadWithoutMemoryStates(
     rvsdg::SimpleNode & loadNode,
@@ -1016,10 +1090,9 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 
           if (*elementType == *loadOperation->GetLoadedType())
           {
-            const auto elementNode =
-                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
-            auto copiedNode = elementNode->copy(loadNode.region(), {});
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
+            auto & newOutput =
+                copyDeltaRegionSlice(*node->input(elementIndex)->origin(), *loadNode.region());
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
           }
           else
           {
