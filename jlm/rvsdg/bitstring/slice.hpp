@@ -74,7 +74,7 @@ public:
   normalizeIdempotent(const BitSliceOperation & operation, const std::vector<Output *> & operands);
 
   /**
-   * Distribute a \ref BitsliceOperation node over a \ref BitConcatOperation node:
+   * Distribute a \ref BitSliceOperation node over a \ref BitConcatOperation node:
    *
    * c = BitConcatOperation x1[3] x2[3] x3[3]
    * s = BitSliceOperation[1:4] c
