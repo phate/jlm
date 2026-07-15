@@ -96,39 +96,34 @@ static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
     integerUltNormalizations({ IntegerUltOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
-    loadNonVolatileNormalizations(
-        { LoadNonVolatileOperation::NormalizeLoadStore,
-          LoadNonVolatileOperation::NormalizeLoadAlloca,
-          LoadNonVolatileOperation::NormalizeDuplicateStates,
-          LoadNonVolatileOperation::NormalizeLoadStoreState,
-          LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
+    loadNonVolatileNormalizations({ LoadNonVolatileOperation::NormalizeLoadStore,
+                                    LoadNonVolatileOperation::NormalizeLoadAlloca,
+                                    LoadNonVolatileOperation::NormalizeDuplicateStates,
+                                    LoadNonVolatileOperation::NormalizeLoadStoreState,
+                                    LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
 
 static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>>
-    storeNonVolatileNormalizations(
-        { StoreNonVolatileOperation::NormalizeStoreMux,
-          StoreNonVolatileOperation::NormalizeStoreStore,
-          StoreNonVolatileOperation::NormalizeStoreAlloca,
-          StoreNonVolatileOperation::NormalizeDuplicateStates,
-          StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
-          StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
+    storeNonVolatileNormalizations({ StoreNonVolatileOperation::NormalizeStoreMux,
+                                     StoreNonVolatileOperation::NormalizeStoreStore,
+                                     StoreNonVolatileOperation::NormalizeStoreAlloca,
+                                     StoreNonVolatileOperation::NormalizeDuplicateStates,
+                                     StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+                                     StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
 
 static std::vector<rvsdg::NodeNormalization<MemoryStateMergeOperation>>
-    memoryStateMergeNormalizations(
-        { MemoryStateMergeOperation::NormalizeSingleOperand,
-          MemoryStateMergeOperation::NormalizeDuplicateOperands,
-          MemoryStateMergeOperation::NormalizeNestedMerges,
-          MemoryStateMergeOperation::NormalizeMergeSplit });
+    memoryStateMergeNormalizations({ MemoryStateMergeOperation::NormalizeSingleOperand,
+                                     MemoryStateMergeOperation::NormalizeDuplicateOperands,
+                                     MemoryStateMergeOperation::NormalizeNestedMerges,
+                                     MemoryStateMergeOperation::NormalizeMergeSplit });
 
 static std::vector<rvsdg::NodeNormalization<MemoryStateJoinOperation>>
-    memoryStateJoinNormalizations(
-        { MemoryStateJoinOperation::NormalizeSingleOperand,
-          MemoryStateJoinOperation::NormalizeDuplicateOperands });
+    memoryStateJoinNormalizations({ MemoryStateJoinOperation::NormalizeSingleOperand,
+                                    MemoryStateJoinOperation::NormalizeDuplicateOperands });
 
 static std::vector<rvsdg::NodeNormalization<MemoryStateSplitOperation>>
-    memoryStateSplitNormalizations(
-        { MemoryStateSplitOperation::NormalizeSingleResult,
-          MemoryStateSplitOperation::NormalizeNestedSplits,
-          MemoryStateSplitOperation::NormalizeSplitMerge });
+    memoryStateSplitNormalizations({ MemoryStateSplitOperation::NormalizeSingleResult,
+                                     MemoryStateSplitOperation::NormalizeNestedSplits,
+                                     MemoryStateSplitOperation::NormalizeSplitMerge });
 
 static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>>
     lambdaExitMemoryStateMergeNormalizations(
