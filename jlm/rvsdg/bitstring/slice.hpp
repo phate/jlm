@@ -60,6 +60,19 @@ public:
     return *std::static_pointer_cast<const BitType>(argument(0));
   }
 
+  /**
+   * Removes the \ref BitSliceOperation if its slicing boundaries align with the size of the
+   * operand, i.e., low == 0 and high = numBits.
+   *
+   * @param operation The \ref BitSliceOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitSliceOperation node.
+   *
+   * @return If the normalization could be applied, then the operand of the \ref BitSliceOperation
+   * node. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  normalizeIdempotent(const BitSliceOperation & operation, const std::vector<Output *> & operands);
+
 private:
   size_t low_;
 };
