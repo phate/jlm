@@ -3,10 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/ControlOperations.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
@@ -51,6 +54,55 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
   }
 
   return std::nullopt;
+}
+
+static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
+    matchOperationNormalizations({ foldMatchOperationWithConstant });
+
+static std::vector<rvsdg::NodeNormalization<SExtOperation>>
+    sextOperationNormalizations({ SExtOperation::foldConstant });
+
+static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
+    zextOperationNormalizations({ ZExtOperation::foldConstant });
+
+static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
+    integerEqNormalizations({ IntegerEqOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
+    integerNeNormalizations({ IntegerNeOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>>
+    integerSgeNormalizations({ IntegerSgeOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>>
+    integerSgtNormalizations({ IntegerSgtOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>>
+    integerSleNormalizations({ IntegerSleOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>>
+    integerSltNormalizations({ IntegerSltOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>>
+    integerUgeNormalizations({ IntegerUgeOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>>
+    integerUgtNormalizations({ IntegerUgtOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
+    integerUleNormalizations({ IntegerUleOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
+    integerUltNormalizations({ IntegerUltOperation::foldConstants });
+
+template<typename TOperation>
+static rvsdg::NodeNormalization<TOperation>
+createNormalizer(const std::vector<rvsdg::NodeNormalization<TOperation>> & nodeNormalizations)
+{
+  return [&](const TOperation & operation, const std::vector<rvsdg::Output *> & operands)
+  {
+    return rvsdg::NormalizeSequence<TOperation>(nodeNormalizations, operation, operands);
+  };
 }
 
 NodeReduction::~NodeReduction() noexcept = default;
@@ -174,6 +226,84 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
   {
     return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
+  }
+  if (is<rvsdg::MatchOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<rvsdg::MatchOperation>(
+        createNormalizer(matchOperationNormalizations),
+        simpleNode);
+  }
+  if (is<SExtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<SExtOperation>(
+        createNormalizer(sextOperationNormalizations),
+        simpleNode);
+  }
+  if (is<ZExtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<ZExtOperation>(
+        createNormalizer(zextOperationNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerEqOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerEqOperation>(
+        createNormalizer(integerEqNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerNeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerNeOperation>(
+        createNormalizer(integerNeNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerSgeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSgeOperation>(
+        createNormalizer(integerSgeNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerSgtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSgtOperation>(
+        createNormalizer(integerSgtNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerSleOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSleOperation>(
+        createNormalizer(integerSleNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerSltOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerSltOperation>(
+        createNormalizer(integerSltNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerUgeOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUgeOperation>(
+        createNormalizer(integerUgeNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerUgtOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUgtOperation>(
+        createNormalizer(integerUgtNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerUleOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUleOperation>(
+        createNormalizer(integerUleNormalizations),
+        simpleNode);
+  }
+  if (is<IntegerUltOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<IntegerUltOperation>(
+        createNormalizer(integerUltNormalizations),
+        simpleNode);
   }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {

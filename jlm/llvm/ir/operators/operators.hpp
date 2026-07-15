@@ -230,169 +230,6 @@ private:
   }
 };
 
-class FloatingPointToUnsignedIntegerOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~FloatingPointToUnsignedIntegerOperation() noexcept override;
-
-  FloatingPointToUnsignedIntegerOperation(
-      const fpsize size,
-      std::shared_ptr<const rvsdg::BitType> type)
-      : UnaryOperation(FloatingPointType::Create(size), std::move(type))
-  {}
-
-  FloatingPointToUnsignedIntegerOperation(
-      std::shared_ptr<const FloatingPointType> fpt,
-      std::shared_ptr<const jlm::rvsdg::BitType> type)
-      : UnaryOperation(std::move(fpt), std::move(type))
-  {}
-
-  FloatingPointToUnsignedIntegerOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected bitstring type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!dt)
-      throw util::Error("expected bitstring type.");
-
-    auto op =
-        std::make_unique<FloatingPointToUnsignedIntegerOperation>(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
-class FloatingPointToSignedIntegerOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~FloatingPointToSignedIntegerOperation() noexcept override;
-
-  FloatingPointToSignedIntegerOperation(
-      const fpsize size,
-      std::shared_ptr<const jlm::rvsdg::BitType> type)
-      : UnaryOperation(FloatingPointType::Create(size), std::move(type))
-  {}
-
-  FloatingPointToSignedIntegerOperation(
-      std::shared_ptr<const FloatingPointType> fpt,
-      std::shared_ptr<const jlm::rvsdg::BitType> type)
-      : UnaryOperation(std::move(fpt), std::move(type))
-  {}
-
-  FloatingPointToSignedIntegerOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected bitstring type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!dt)
-      throw util::Error("expected bitstring type.");
-
-    auto op = std::make_unique<FloatingPointToSignedIntegerOperation>(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
-class ControlToIntOperation final : public rvsdg::SimpleOperation
-{
-public:
-  ~ControlToIntOperation() noexcept override;
-
-  ControlToIntOperation(
-      std::shared_ptr<const rvsdg::ControlType> srctype,
-      std::shared_ptr<const jlm::rvsdg::BitType> dsttype)
-      : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const rvsdg::ControlType>(operand->Type());
-    if (!st)
-      throw util::Error("expected control type.");
-
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!dt)
-      throw util::Error("expected bitstring type.");
-
-    auto op = std::make_unique<ControlToIntOperation>(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
 class BranchOperation final : public rvsdg::SimpleOperation
 {
 public:
@@ -434,8 +271,8 @@ class ConstantPointerNullOperation final : public rvsdg::SimpleOperation
 public:
   ~ConstantPointerNullOperation() noexcept override;
 
-  explicit ConstantPointerNullOperation(std::shared_ptr<const PointerType> pointerType)
-      : SimpleOperation({}, { std::move(pointerType) })
+  explicit ConstantPointerNullOperation()
+      : SimpleOperation({}, { PointerType::Create() })
   {}
 
   bool
@@ -447,185 +284,28 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const PointerType &
-  GetPointerType() const noexcept
+  static std::unique_ptr<ThreeAddressCode>
+  createTac()
   {
-    return *util::assertedCast<const PointerType>(result(0).get());
+    return ThreeAddressCode::create(std::make_unique<ConstantPointerNullOperation>(), {});
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(std::shared_ptr<const rvsdg::Type> type)
+  static rvsdg::Node &
+  createNode(rvsdg::Region & region)
   {
-    auto operation = std::make_unique<ConstantPointerNullOperation>(CheckAndExtractType(type));
-    return ThreeAddressCode::create(std::move(operation), {});
-  }
-
-  static jlm::rvsdg::Output *
-  Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
-  {
-    return rvsdg::CreateOpNode<ConstantPointerNullOperation>(*region, CheckAndExtractType(type))
-        .output(0);
-  }
-
-private:
-  static const std::shared_ptr<const PointerType>
-  CheckAndExtractType(std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    if (auto pointerType = std::dynamic_pointer_cast<const PointerType>(type))
-      return pointerType;
-
-    throw util::Error("expected pointer type.");
+    return rvsdg::CreateOpNode<ConstantPointerNullOperation>(region);
   }
 };
 
-class IntegerToPointerOperation final : public rvsdg::UnaryOperation
+/**
+ * This operator is the Jlm equivalent of LLVM's ConstantDataArray constant.
+ */
+class ConstantDataArrayOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~IntegerToPointerOperation() noexcept override;
+  ~ConstantDataArrayOperation() noexcept override;
 
-  IntegerToPointerOperation(
-      std::shared_ptr<const jlm::rvsdg::BitType> btype,
-      std::shared_ptr<const PointerType> ptype)
-      : UnaryOperation(std::move(btype), std::move(ptype))
-  {}
-
-  IntegerToPointerOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto at = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
-    if (!at)
-      throw util::Error("expected bitstring type.");
-
-    auto pt = dynamic_cast<const PointerType *>(dsttype.get());
-    if (!pt)
-      throw util::Error("expected pointer type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  inline size_t
-  nbits() const noexcept
-  {
-    return std::static_pointer_cast<const jlm::rvsdg::BitType>(argument(0))->nbits();
-  }
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * argument, std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(argument->Type());
-    if (!at)
-      throw util::Error("expected bitstring type.");
-
-    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
-    if (!pt)
-      throw util::Error("expected pointer type.");
-
-    auto op = std::make_unique<IntegerToPointerOperation>(at, pt);
-    return ThreeAddressCode::create(std::move(op), { argument });
-  }
-
-  static jlm::rvsdg::Output *
-  create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!ot)
-      throw util::Error("expected bitstring type.");
-
-    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
-    if (!pt)
-      throw util::Error("expected pointer type.");
-
-    return rvsdg::CreateOpNode<IntegerToPointerOperation>({ operand }, ot, pt).output(0);
-  }
-};
-
-class PtrToIntOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~PtrToIntOperation() noexcept override;
-
-  PtrToIntOperation(
-      std::shared_ptr<const PointerType> ptype,
-      std::shared_ptr<const jlm::rvsdg::BitType> btype)
-      : UnaryOperation(std::move(ptype), std::move(btype))
-  {}
-
-  PtrToIntOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto pt = dynamic_cast<const PointerType *>(srctype.get());
-    if (!pt)
-      throw util::Error("expected pointer type.");
-
-    auto bt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
-    if (!bt)
-      throw util::Error("expected bitstring type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  inline size_t
-  nbits() const noexcept
-  {
-    return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
-  }
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * argument, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto pt = std::dynamic_pointer_cast<const PointerType>(argument->Type());
-    if (!pt)
-      throw util::Error("expected pointer type.");
-
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
-    if (!bt)
-      throw util::Error("expected bitstring type.");
-
-    auto op = std::make_unique<PtrToIntOperation>(std::move(pt), std::move(bt));
-    return ThreeAddressCode::create(std::move(op), { argument });
-  }
-};
-
-/* Constant Data Array operator */
-
-class ConstantDataArray final : public rvsdg::SimpleOperation
-{
-public:
-  ~ConstantDataArray() noexcept override;
-
-  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t size)
+  ConstantDataArrayOperation(const std::shared_ptr<const rvsdg::Type> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
@@ -647,13 +327,13 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::Type &
+  const rvsdg::Type &
   type() const noexcept
   {
     return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  static std::unique_ptr<ThreeAddressCode>
   create(const std::vector<const Variable *> & elements)
   {
     if (elements.size() == 0)
@@ -663,12 +343,12 @@ public:
     if (vt->Kind() != rvsdg::TypeKind::Value)
       throw util::Error("expected value type.");
 
-    auto op = std::make_unique<ConstantDataArray>(std::move(vt), elements.size());
+    auto op = std::make_unique<ConstantDataArrayOperation>(std::move(vt), elements.size());
     return ThreeAddressCode::create(std::move(op), elements);
   }
 
-  static jlm::rvsdg::Output *
-  Create(const std::vector<jlm::rvsdg::Output *> & elements)
+  static rvsdg::Output *
+  Create(const std::vector<rvsdg::Output *> & elements)
   {
     if (elements.empty())
       throw util::Error("Expected at least one element.");
@@ -679,7 +359,10 @@ public:
       throw util::Error("Expected value type.");
     }
 
-    return rvsdg::CreateOpNode<ConstantDataArray>(elements, std::move(valueType), elements.size())
+    return rvsdg::CreateOpNode<ConstantDataArrayOperation>(
+               elements,
+               std::move(valueType),
+               elements.size())
         .output(0);
   }
 };
@@ -1209,88 +892,6 @@ private:
   llvm::fpop op_;
 };
 
-class FPExtOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~FPExtOperation() noexcept override;
-
-  FPExtOperation(const fpsize & srcsize, const fpsize & dstsize)
-      : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
-  {
-    if (srcsize == fpsize::flt && dstsize == fpsize::half)
-      throw util::Error("destination type size must be bigger than source type size.");
-  }
-
-  FPExtOperation(
-      const std::shared_ptr<const FloatingPointType> & srctype,
-      const std::shared_ptr<const FloatingPointType> & dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
-      throw util::Error("destination type size must be bigger than source type size.");
-  }
-
-  FPExtOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::flt && dt->size() == fpsize::half)
-      throw util::Error("destination type size must be bigger than source type size.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  inline const fpsize &
-  srcsize() const noexcept
-  {
-    return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
-  }
-
-  inline const fpsize &
-  dstsize() const noexcept
-  {
-    return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
-  }
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPExtOperation>(std::move(st), std::move(dt));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
 class FNegOperation final : public rvsdg::UnaryOperation
 {
 public:
@@ -1334,90 +935,6 @@ public:
       throw util::Error("expected floating point type.");
 
     auto op = std::make_unique<FNegOperation>(std::move(type));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
-class FPTruncOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~FPTruncOperation() noexcept override;
-
-  FPTruncOperation(const fpsize & srcsize, const fpsize & dstsize)
-      : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
-  {
-    if (srcsize == fpsize::half || (srcsize == fpsize::flt && dstsize != fpsize::half)
-        || (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
-      throw util::Error("destination tpye size must be smaller than source size type.");
-  }
-
-  FPTruncOperation(
-      const std::shared_ptr<const FloatingPointType> & srctype,
-      const std::shared_ptr<const FloatingPointType> & dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
-      throw util::Error("destination type size must be bigger than source type size.");
-  }
-
-  FPTruncOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::half || (st->size() == fpsize::flt && dt->size() != fpsize::half)
-        || (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
-      throw util::Error("destination type size must be smaller than source size type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  inline const fpsize &
-  srcsize() const noexcept
-  {
-    return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
-  }
-
-  inline const fpsize &
-  dstsize() const noexcept
-  {
-    return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
-  }
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPTruncOperation>(std::move(st), std::move(dt));
     return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
@@ -1475,12 +992,12 @@ public:
   }
 };
 
-class ConstantStruct final : public rvsdg::SimpleOperation
+class ConstantStructOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~ConstantStruct() override;
+  ~ConstantStructOperation() noexcept override;
 
-  inline ConstantStruct(std::shared_ptr<const StructType> type)
+  explicit ConstantStructOperation(std::shared_ptr<const StructType> type)
       : SimpleOperation(create_srctypes(*type), { type })
   {}
 
@@ -1499,14 +1016,14 @@ public:
     return *std::static_pointer_cast<const StructType>(result(0));
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  static std::unique_ptr<ThreeAddressCode>
   create(
       const std::vector<const Variable *> & elements,
-      const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto structType = CheckAndExtractStructType(type);
 
-    auto op = std::make_unique<ConstantStruct>(std::move(structType));
+    auto op = std::make_unique<ConstantStructOperation>(std::move(structType));
     return ThreeAddressCode::create(std::move(op), elements);
   }
 
@@ -1517,11 +1034,11 @@ public:
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     auto structType = CheckAndExtractStructType(std::move(resultType));
-    return *rvsdg::CreateOpNode<ConstantStruct>(operands, std::move(structType)).output(0);
+    return *rvsdg::CreateOpNode<ConstantStructOperation>(operands, std::move(structType)).output(0);
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const StructType & type)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
@@ -1540,120 +1057,6 @@ private:
     }
 
     throw util::TypeError("StructType", type->debug_string());
-  }
-};
-
-class UIToFPOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~UIToFPOperation() noexcept override;
-
-  UIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::BitType> srctype,
-      std::shared_ptr<const FloatingPointType> dsttype)
-      : UnaryOperation(std::move(srctype), std::move(dsttype))
-  {}
-
-  UIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> optype,
-      std::shared_ptr<const jlm::rvsdg::Type> restype)
-      : UnaryOperation(optype, restype)
-  {
-    auto st = dynamic_cast<const jlm::rvsdg::BitType *>(optype.get());
-    if (!st)
-      throw util::Error("expected bits type.");
-
-    auto rt = dynamic_cast<const FloatingPointType *>(restype.get());
-    if (!rt)
-      throw util::Error("expected floating point type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
-      const override;
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!st)
-      throw util::Error("expected bits type.");
-
-    auto rt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!rt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<UIToFPOperation>(std::move(st), std::move(rt));
-    return ThreeAddressCode::create(std::move(op), { operand });
-  }
-};
-
-class SIToFPOperation final : public rvsdg::UnaryOperation
-{
-public:
-  ~SIToFPOperation() noexcept override;
-
-  SIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::BitType> srctype,
-      std::shared_ptr<const FloatingPointType> dsttype)
-      : UnaryOperation(std::move(srctype), std::move(dsttype))
-  {}
-
-  SIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
-  {
-    auto st = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected bits type.");
-
-    auto rt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!rt)
-      throw util::Error("expected floating point type.");
-  }
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
-  static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-  {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
-    if (!st)
-      throw util::Error("expected bits type.");
-
-    auto rt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!rt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<SIToFPOperation>(std::move(st), std::move(rt));
-    return ThreeAddressCode::create(std::move(op), { operand });
   }
 };
 

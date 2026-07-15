@@ -19,6 +19,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -528,4 +529,198 @@ TEST(LocalAliasAnalysisTests, TestLocalAliasAnalysisMultipleOrigins)
   // The select with duplicate operands should be a single origin: alloca3
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
   Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::MustAlias);
+}
+
+/**
+ * Creates an RVSDG corresponding to the C code:
+ *
+ * \code{.c}
+ * int globalArray[101];
+ *
+ * int func(int* unknown) {
+ *     int array[101];
+ *     int i = 0;
+ *     int* p = &array;
+ *     int* q = &globalArray;
+ *
+ *     do {
+ *         *p = i;
+ *         *q = i;
+ *         p++;
+ *         q++;
+ *         i++;
+ *     } while(i < 100);
+ *     return *p + *q;
+ * }
+ * \endcode
+ */
+class LocalAliasAnalysisLoopVariantPointersTest final : public jlm::llvm::RvsdgTest
+{
+  struct Outputs
+  {
+    jlm::rvsdg::Output * Func = {};
+    jlm::rvsdg::Output * Unknown = {};
+    jlm::rvsdg::Output * GlobalArray = {};
+    jlm::rvsdg::Output * Array = {};
+    jlm::rvsdg::Output * PInLoop = {};
+    jlm::rvsdg::Output * QInLoop = {};
+    jlm::rvsdg::Output * PAfterLoop = {};
+    jlm::rvsdg::Output * QAfterLoop = {};
+  };
+
+public:
+  const Outputs &
+  GetOutputs() const noexcept
+  {
+    return Outputs_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override
+  {
+    using namespace jlm;
+    using namespace jlm::llvm;
+
+    auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto & rvsdg = rvsdgModule->Rvsdg();
+
+    const auto pointerType = PointerType::Create();
+    const auto intType = rvsdg::BitType::Create(32);
+    const auto intArrayType = ArrayType::Create(intType, 101);
+    const auto memoryStateType = MemoryStateType::Create();
+
+    const auto funcType =
+        rvsdg::FunctionType::Create({ pointerType, memoryStateType }, { intType, memoryStateType });
+
+    Outputs_.GlobalArray = &LlvmGraphImport::createGlobalImport(
+        rvsdg,
+        intArrayType,
+        pointerType,
+        "globalArray",
+        Linkage::externalLinkage,
+        false,
+        4);
+
+    {
+      auto & lambdaNode = *rvsdg::LambdaNode::Create(
+          rvsdg.GetRootRegion(),
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+      Outputs_.Unknown = lambdaNode.GetFunctionArguments()[0];
+      auto memoryState = lambdaNode.GetFunctionArguments()[1];
+      const auto globalArrayCtxVar = lambdaNode.AddContextVar(*Outputs_.GlobalArray).inner;
+
+      const auto constantZero =
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 0 });
+      const auto constantOne =
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+
+      const auto allocaArrayOutputs = AllocaOperation::create(intArrayType, constantOne, 4);
+      Outputs_.Array = allocaArrayOutputs[0];
+      memoryState = MemoryStateMergeOperation::Create(
+          std::vector<jlm::rvsdg::Output *>{ memoryState, allocaArrayOutputs[1] });
+
+      const auto initialP = GetElementPtrOperation::create(
+          Outputs_.Array,
+          { constantZero, constantZero },
+          intArrayType);
+      const auto initialQ = GetElementPtrOperation::create(
+          globalArrayCtxVar,
+          { constantZero, constantZero },
+          intArrayType);
+
+      auto thetaNode = rvsdg::ThetaNode::create(lambdaNode.subregion());
+      auto i = thetaNode->AddLoopVar(constantZero);
+      auto p = thetaNode->AddLoopVar(initialP);
+      auto q = thetaNode->AddLoopVar(initialQ);
+      auto m = thetaNode->AddLoopVar(memoryState);
+
+      const auto constantOneTheta =
+          &rvsdg::BitConstantOperation::create(*thetaNode->subregion(), { 32, 1 });
+      const auto constantHundredTheta =
+          &rvsdg::BitConstantOperation::create(*thetaNode->subregion(), { 32, 100 });
+
+      Outputs_.PInLoop = p.pre;
+      Outputs_.QInLoop = q.pre;
+
+      const auto storeP = StoreNonVolatileOperation::Create(Outputs_.PInLoop, i.pre, { m.pre }, 4);
+      const auto storeQ =
+          StoreNonVolatileOperation::Create(Outputs_.QInLoop, i.pre, { storeP[0] }, 4);
+      const auto nextP = GetElementPtrOperation::create(p.pre, { constantOneTheta }, intType);
+      const auto nextQ = GetElementPtrOperation::create(q.pre, { constantOneTheta }, intType);
+      const auto increment = jlm::rvsdg::bitadd_op::create(32, i.pre, constantOneTheta);
+      const auto continueLoop = jlm::rvsdg::bitult_op::create(32, increment, constantHundredTheta);
+      auto & predicateNode = rvsdg::MatchOperation::CreateNode(*continueLoop, { { 1, 1 } }, 0, 2);
+
+      i.post->divert_to(increment);
+      p.post->divert_to(nextP);
+      q.post->divert_to(nextQ);
+      m.post->divert_to(storeQ[0]);
+      thetaNode->set_predicate(predicateNode.output(0));
+
+      Outputs_.PAfterLoop = p.output;
+      Outputs_.QAfterLoop = q.output;
+
+      const auto loadP =
+          LoadNonVolatileOperation::Create(Outputs_.PAfterLoop, { m.output }, intType, 4);
+      const auto loadQ =
+          LoadNonVolatileOperation::Create(Outputs_.QAfterLoop, { loadP[1] }, intType, 4);
+      const auto sum = jlm::rvsdg::bitadd_op::create(32, loadP[0], loadQ[0]);
+
+      lambdaNode.finalize({ sum, loadQ[1] });
+      Outputs_.Func = lambdaNode.output();
+    }
+
+    return rvsdgModule;
+  }
+
+  Outputs Outputs_ = {};
+};
+
+TEST(LocalAliasAnalysisTests, testLoopVariantPointers)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+  using namespace jlm::llvm::aa;
+
+  /**
+   * Uses the RVSDG created by the \ref LocalAliasAnalysisLoopVariantPointersTest class.
+   *
+   * The test checks that the local alias analysis responds NoAlias when queried about p and q,
+   * or between p and globalArray, or q and array.
+   * Queries between p and array, q and globalArray, should respond MayAlias.
+   * Queries between p and unknown should respond NoAlias, since array does not escape.
+   * However, queries between q and unknown should respond MayAlias.
+   * The responses are the same when using p and q from within the loop, and from outside it.
+   */
+
+  // Arrange
+  LocalAliasAnalysisLoopVariantPointersTest rvsdg;
+  rvsdg.InitializeTest();
+  const auto & outputs = rvsdg.GetOutputs();
+
+  jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
+
+  LocalAliasAnalysis aa;
+
+  // Assert for loop-internal pointers
+  Expect(aa, *outputs.PInLoop, 4, *outputs.QInLoop, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.PInLoop, 4, *outputs.GlobalArray, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.QInLoop, 4, *outputs.Array, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.PInLoop, 4, *outputs.Array, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.QInLoop, 4, *outputs.GlobalArray, 4, AliasAnalysis::MayAlias);
+  // Against the unknown pointer
+  Expect(aa, *outputs.PInLoop, 4, *outputs.Unknown, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.QInLoop, 4, *outputs.Unknown, 4, AliasAnalysis::MayAlias);
+
+  // Assert for loop-external pointers traced through the theta node
+  Expect(aa, *outputs.PAfterLoop, 4, *outputs.QAfterLoop, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.PAfterLoop, 4, *outputs.GlobalArray, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.QAfterLoop, 4, *outputs.Array, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.PAfterLoop, 4, *outputs.Array, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.QAfterLoop, 4, *outputs.GlobalArray, 4, AliasAnalysis::MayAlias);
+  // Against the unknown pointer
+  Expect(aa, *outputs.PAfterLoop, 4, *outputs.Unknown, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.QAfterLoop, 4, *outputs.Unknown, 4, AliasAnalysis::MayAlias);
 }

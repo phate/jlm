@@ -30,9 +30,9 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/AggregateOperations.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
+    jlm/llvm/ir/operators/ControlOperations.cpp \
     jlm/llvm/ir/operators/ConversionOperations.cpp \
     jlm/llvm/ir/operators/delta.cpp \
-    jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/IntegerOperations.cpp \
     jlm/llvm/ir/operators/IOBarrier.cpp \
@@ -71,10 +71,10 @@ libllvm_SOURCES = \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
+    jlm/llvm/opt/NodeReduction.cpp \
     jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
-    jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
     jlm/llvm/opt/StoreValueForwarding.cpp \
@@ -113,12 +113,12 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/AggregateAllocaSplitting.hpp \
     jlm/llvm/opt/pull.hpp \
-    jlm/llvm/opt/reduction.hpp \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopStrengthReduction.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
+    jlm/llvm/opt/NodeReduction.hpp \
     jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \
@@ -148,11 +148,11 @@ libllvm_HEADERS = \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
+    jlm/llvm/ir/operators/ControlOperations.hpp \
     jlm/llvm/ir/operators/ConversionOperations.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
     jlm/llvm/ir/operators/MemoryStateOperations.hpp \
-    jlm/llvm/ir/operators/FunctionPointer.hpp \
     jlm/llvm/ir/operators/GetElementPtr.hpp \
     jlm/llvm/ir/operators/IntegerOperations.hpp \
     jlm/llvm/ir/operators/IOBarrier.hpp \
@@ -192,10 +192,12 @@ run-libllvm-tests_SOURCES = \
     \
     jlm/llvm/ir/operators/CallTests.cpp \
     jlm/llvm/ir/operators/ConstantFPTests.cpp \
+    jlm/llvm/ir/operators/ControlOperationsTests.cpp \
     jlm/llvm/ir/operators/ConversionOperationsTests.cpp \
     jlm/llvm/ir/operators/DeltaTests.cpp \
     jlm/llvm/ir/operators/FreeTests.cpp \
     jlm/llvm/ir/operators/GetElementPtrTests.cpp \
+    jlm/llvm/ir/operators/IntegerOperationsTests.cpp \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \
     jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \

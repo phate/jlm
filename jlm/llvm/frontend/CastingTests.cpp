@@ -153,7 +153,7 @@ TEST_P(LlvmFrontendCastingFixture, AllIntegerCasts)
             EXPECT_EQ(*op.argument(0), *jlmBits32);
             EXPECT_EQ(*op.result(0), *jlmBits64);
           },
-          [&](const IntegerToPointerOperation & op)
+          [&](const IntToPtrOperation & op)
           {
             numInttoptr++;
             EXPECT_EQ(*op.argument(0), *jlmBits64);
