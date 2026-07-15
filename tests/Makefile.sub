@@ -28,6 +28,7 @@ JLC_COMPILE_TESTS = \
 	tests/c-tests/test-loop-return \
 	tests/c-tests/test-main \
 	tests/c-tests/test-memcpy \
+	tests/c-tests/test-memcpy-null \
 	tests/c-tests/test-printf \
 	tests/c-tests/test-ptr-comparison \
 	tests/c-tests/test-recfct \
