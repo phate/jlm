@@ -14,6 +14,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -145,7 +146,6 @@ CompareRegions(const Region & region1, const Region & region2)
   ASSERT_EQ(region1.numNodes(), region2.numNodes())
       << "Region numNodes mismatch: " << region1.numNodes() << " vs " << region2.numNodes();
 
-  // Traverse starting from results - follow backwards through dataflow
   std::unordered_set<const Node *> visited1, visited2;
   std::queue<std::pair<const Node *, const Node *>> nodeQueue;
 
@@ -305,4 +305,234 @@ TEST(RvsdgRoundtripTests, TestGamma)
   GraphExport::Create(*func, "");
 
   TestRvsdgRoundtrip(rvsdgModule, "TestGamma");
+}
+
+// Tests for all RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
+
+TEST(RvsdgRoundtripTests, TestTheta)
+{
+  ::jlm::llvm::ThetaTest test;
+  TestRvsdgRoundtrip(test.module(), "TestTheta");
+}
+
+TEST(RvsdgRoundtripTests, TestStoreTest1)
+{
+  ::jlm::llvm::StoreTest1 test;
+  TestRvsdgRoundtrip(test.module(), "StoreTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestStoreTest2)
+{
+  ::jlm::llvm::StoreTest2 test;
+  TestRvsdgRoundtrip(test.module(), "StoreTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestLoadTest1)
+{
+  ::jlm::llvm::LoadTest1 test;
+  TestRvsdgRoundtrip(test.module(), "LoadTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestLoadTest2)
+{
+  ::jlm::llvm::LoadTest2 test;
+  TestRvsdgRoundtrip(test.module(), "LoadTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestLoadFromUndef)
+{
+  ::jlm::llvm::LoadFromUndefTest test;
+  TestRvsdgRoundtrip(test.module(), "LoadFromUndef");
+}
+
+TEST(RvsdgRoundtripTests, TestGetElementPtr)
+{
+  ::jlm::llvm::GetElementPtrTest test;
+  TestRvsdgRoundtrip(test.module(), "GetElementPtr");
+}
+
+TEST(RvsdgRoundtripTests, TestBitCast)
+{
+  ::jlm::llvm::BitCastTest test;
+  TestRvsdgRoundtrip(test.module(), "BitCast");
+}
+
+TEST(RvsdgRoundtripTests, TestBits2Ptr)
+{
+  ::jlm::llvm::Bits2PtrTest test;
+  TestRvsdgRoundtrip(test.module(), "Bits2Ptr");
+}
+
+TEST(RvsdgRoundtripTests, TestConstantPointerNull)
+{
+  ::jlm::llvm::ConstantPointerNullTest test;
+  TestRvsdgRoundtrip(test.module(), "ConstantPointerNull");
+}
+
+TEST(RvsdgRoundtripTests, TestCallTest1)
+{
+  ::jlm::llvm::CallTest1 test;
+  TestRvsdgRoundtrip(test.module(), "CallTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestCallTest2)
+{
+  ::jlm::llvm::CallTest2 test;
+  TestRvsdgRoundtrip(test.module(), "CallTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestIndirectCallTest1)
+{
+  ::jlm::llvm::IndirectCallTest1 test;
+  TestRvsdgRoundtrip(test.module(), "IndirectCallTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestIndirectCallTest2)
+{
+  ::jlm::llvm::IndirectCallTest2 test;
+  TestRvsdgRoundtrip(test.module(), "IndirectCallTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestExternalCallTest1)
+{
+  ::jlm::llvm::ExternalCallTest1 test;
+  TestRvsdgRoundtrip(test.module(), "ExternalCallTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestExternalCallTest2)
+{
+  ::jlm::llvm::ExternalCallTest2 test;
+  TestRvsdgRoundtrip(test.module(), "ExternalCallTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestGammaTest2)
+{
+  ::jlm::llvm::GammaTest2 test;
+  TestRvsdgRoundtrip(test.module(), "GammaTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestDeltaTest1)
+{
+  ::jlm::llvm::DeltaTest1 test;
+  TestRvsdgRoundtrip(test.module(), "DeltaTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestDeltaTest2)
+{
+  ::jlm::llvm::DeltaTest2 test;
+  TestRvsdgRoundtrip(test.module(), "DeltaTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestDeltaTest3)
+{
+  ::jlm::llvm::DeltaTest3 test;
+  TestRvsdgRoundtrip(test.module(), "DeltaTest3");
+}
+
+TEST(RvsdgRoundtripTests, TestImportTest)
+{
+  ::jlm::llvm::ImportTest test;
+  TestRvsdgRoundtrip(test.module(), "ImportTest");
+}
+
+TEST(RvsdgRoundtripTests, TestPhiTest1)
+{
+  ::jlm::llvm::PhiTest1 test;
+  TestRvsdgRoundtrip(test.module(), "PhiTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestPhiTest2)
+{
+  ::jlm::llvm::PhiTest2 test;
+  TestRvsdgRoundtrip(test.module(), "PhiTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestPhiWithDelta)
+{
+  ::jlm::llvm::PhiWithDeltaTest test;
+  TestRvsdgRoundtrip(test.module(), "PhiWithDelta");
+}
+
+TEST(RvsdgRoundtripTests, TestExternalMemory)
+{
+  ::jlm::llvm::ExternalMemoryTest test;
+  TestRvsdgRoundtrip(test.module(), "ExternalMemory");
+}
+
+TEST(RvsdgRoundtripTests, TestEscapedMemoryTest1)
+{
+  ::jlm::llvm::EscapedMemoryTest1 test;
+  TestRvsdgRoundtrip(test.module(), "EscapedMemoryTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestEscapedMemoryTest2)
+{
+  ::jlm::llvm::EscapedMemoryTest2 test;
+  TestRvsdgRoundtrip(test.module(), "EscapedMemoryTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestEscapedMemoryTest3)
+{
+  ::jlm::llvm::EscapedMemoryTest3 test;
+  TestRvsdgRoundtrip(test.module(), "EscapedMemoryTest3");
+}
+
+TEST(RvsdgRoundtripTests, TestMemcpy)
+{
+  ::jlm::llvm::MemcpyTest test;
+  TestRvsdgRoundtrip(test.module(), "Memcpy");
+}
+
+TEST(RvsdgRoundtripTests, TestMemcpyTest2)
+{
+  ::jlm::llvm::MemcpyTest2 test;
+  TestRvsdgRoundtrip(test.module(), "MemcpyTest2");
+}
+
+TEST(RvsdgRoundtripTests, TestMemcpyTest3)
+{
+  ::jlm::llvm::MemcpyTest3 test;
+  TestRvsdgRoundtrip(test.module(), "MemcpyTest3");
+}
+
+TEST(RvsdgRoundtripTests, TestLinkedList)
+{
+  ::jlm::llvm::LinkedListTest test;
+  TestRvsdgRoundtrip(test.module(), "LinkedList");
+}
+
+TEST(RvsdgRoundtripTests, TestAllMemoryNodes)
+{
+  ::jlm::llvm::AllMemoryNodesTest test;
+  TestRvsdgRoundtrip(test.module(), "AllMemoryNodes");
+}
+
+TEST(RvsdgRoundtripTests, TestEscapingLocalFunction)
+{
+  ::jlm::llvm::EscapingLocalFunctionTest test;
+  TestRvsdgRoundtrip(test.module(), "EscapingLocalFunction");
+}
+
+TEST(RvsdgRoundtripTests, TestFreeNull)
+{
+  ::jlm::llvm::FreeNullTest test;
+  TestRvsdgRoundtrip(test.module(), "FreeNull");
+}
+
+TEST(RvsdgRoundtripTests, TestLambdaCallArgumentMismatch)
+{
+  ::jlm::llvm::LambdaCallArgumentMismatch test;
+  TestRvsdgRoundtrip(test.module(), "LambdaCallArgumentMismatch");
+}
+
+TEST(RvsdgRoundtripTests, TestVariadicFunctionTest1)
+{
+  ::jlm::llvm::VariadicFunctionTest1 test;
+  TestRvsdgRoundtrip(test.module(), "VariadicFunctionTest1");
+}
+
+TEST(RvsdgRoundtripTests, TestVariadicFunctionTest2)
+{
+  ::jlm::llvm::VariadicFunctionTest2 test;
+  TestRvsdgRoundtrip(test.module(), "VariadicFunctionTest2");
 }
