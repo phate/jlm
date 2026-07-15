@@ -1404,7 +1404,7 @@ TEST(bitstring, SliceOfSlice)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode2);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::narrowSlice, sliceNode2);
   graph.PruneNodes();
 
   view(graph, stdout);

@@ -34,9 +34,6 @@ BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noex
   if (!node)
     return unop_reduction_none;
 
-  if (is<BitSliceOperation>(node->GetOperation()))
-    return unop_reduction_narrow;
-
   if (is<BitConcatOperation>(node->GetOperation()))
     return unop_reduction_distribute;
 
@@ -47,12 +44,6 @@ jlm::rvsdg::Output *
 BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   auto & node = AssertGetOwnerNode<SimpleNode>(*arg);
-
-  if (path == unop_reduction_narrow)
-  {
-    auto op = static_cast<const BitSliceOperation &>(node.GetOperation());
-    return jlm::rvsdg::bitslice(node.input(0)->origin(), low() + op.low(), high() + op.low());
-  }
 
   if (path == unop_reduction_distribute)
   {
@@ -110,6 +101,26 @@ BitSliceOperation::foldConstant(
   {
     const auto slicedValue = constantOperation->value().slice(operation.low(), operation.high());
     return std::vector{ &BitConstantOperation::create(*operand->region(), slicedValue) };
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<Output *>>
+BitSliceOperation::narrowSlice(
+    const BitSliceOperation & operation,
+    const std::vector<Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto operand = operands[0];
+
+  auto [sliceNode, sliceOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitSliceOperation>(*operand);
+  if (sliceOperation)
+  {
+    const auto newLow = operation.low() + sliceOperation->low();
+    const auto newHigh = operation.high() + sliceOperation->low();
+    return std::vector{ bitslice(sliceNode->input(0)->origin(), newLow, newHigh) };
   }
 
   return std::nullopt;
