@@ -74,7 +74,7 @@ public:
   normalizeIdempotent(const BitSliceOperation & operation, const std::vector<Output *> & operands);
 
   /**
-   * Narrow a \ref BitsliceOperation node preceded by another \ref BitSliceOperation node:
+   * Narrow a \ref BitSliceOperation node preceded by another \ref BitSliceOperation node:
    *
    * b1 = BitSliceOperation[3:10] x
    * b2 = BitSliceOperation[1:4] b1
