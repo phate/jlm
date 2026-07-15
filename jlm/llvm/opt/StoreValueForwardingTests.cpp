@@ -1129,9 +1129,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & loadPtrNode =
       LoadNonVolatileOperation::CreateNode(*gep1Node.output(0), {}, pointerType, 4);
 
-  lambdaNode.finalize(
-      { &LoadOperation::LoadedValueOutput(load32Node),
-        &LoadOperation::LoadedValueOutput(loadPtrNode) });
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
+                        &LoadOperation::LoadedValueOutput(loadPtrNode) });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
@@ -1441,15 +1440,14 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
 
   auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
 
-  lambdaNode.finalize(
-      {
-          &LoadOperation::LoadedValueOutput(loadNode0),
-          &LoadOperation::LoadedValueOutput(loadNode1),
-          &LoadOperation::LoadedValueOutput(loadNode2),
-          &LoadOperation::LoadedValueOutput(loadNode3),
-          &LoadOperation::LoadedValueOutput(loadNode4),
-          &LoadOperation::LoadedValueOutput(loadNode5),
-      });
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+      &LoadOperation::LoadedValueOutput(loadNode1),
+      &LoadOperation::LoadedValueOutput(loadNode2),
+      &LoadOperation::LoadedValueOutput(loadNode3),
+      &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
@@ -1506,7 +1504,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  
+
   auto & i0 = GraphImport::Create(graph, functionType2, "fct");
 
   auto deltaNode = DeltaNode::Create(
@@ -1558,14 +1556,13 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   auto gepOutput6 = GetElementPtrOperation::create(ctxVar.inner, { zero, four }, bits32Type);
   auto & loadNode6 = LoadNonVolatileOperation::CreateNode(*gepOutput6, {}, pointerType, 4);
 
-  lambdaNode.finalize(
-      { &LoadOperation::LoadedValueOutput(loadNode0),
-        &LoadOperation::LoadedValueOutput(loadNode1),
-        &LoadOperation::LoadedValueOutput(loadNode2),
-        &LoadOperation::LoadedValueOutput(loadNode3),
-        &LoadOperation::LoadedValueOutput(loadNode4),
-        &LoadOperation::LoadedValueOutput(loadNode5),
-        &LoadOperation::LoadedValueOutput(loadNode6) });
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadNode0),
+                        &LoadOperation::LoadedValueOutput(loadNode1),
+                        &LoadOperation::LoadedValueOutput(loadNode2),
+                        &LoadOperation::LoadedValueOutput(loadNode3),
+                        &LoadOperation::LoadedValueOutput(loadNode4),
+                        &LoadOperation::LoadedValueOutput(loadNode5),
+                        &LoadOperation::LoadedValueOutput(loadNode6) });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
