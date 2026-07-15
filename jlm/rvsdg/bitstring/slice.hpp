@@ -74,6 +74,25 @@ public:
   normalizeIdempotent(const BitSliceOperation & operation, const std::vector<Output *> & operands);
 
   /**
+   * Distribute a \ref BitsliceOperation node over a \ref BitConcatOperation node:
+   *
+   * c = BitConcatOperation x1[3] x2[3] x3[3]
+   * s = BitSliceOperation[1:4] c
+   * =>
+   * s1 = BitSliceOperation[1:2]
+   * s2 = BitSliceOperation[0:1]
+   * s = BitConcatOperation s1 s2
+   *
+   * @param operation The \ref BitSliceOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitSliceOperation node.
+   *
+   * @return If the distribution could be applied, then the results of the distribution. Otherwise,
+   * std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  distributeSlice(const BitSliceOperation & operation, const std::vector<Output *> & operands);
+
+  /**
    * Performs constant folding by statically evaluating the constant operand and replacing the
    * operations result with the resulting constant.
    *
