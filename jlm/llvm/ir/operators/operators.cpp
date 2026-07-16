@@ -303,7 +303,8 @@ PtrCmpOperation::normalizeNullPointerComparison(
     return std::nullopt;
   }
 
-  JLM_ASSERT(0 && "We found a valid transformation");
+  throw std::logic_error("We found a valid transformation");
+  return std::nullopt;
 }
 
 ConstantFP::~ConstantFP() noexcept = default;
