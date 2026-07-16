@@ -76,11 +76,11 @@ public:
   /**
    * Distribute a \ref BitSliceOperation node over a \ref BitConcatOperation node:
    *
-   * c = BitConcatOperation x1[3] x2[3] x3[3]
-   * s = BitSliceOperation[1:4] c
+   * c = BitConcatOperation x1[8] x2[8]
+   * s = BitSliceOperation[4:12] c
    * =>
-   * s1 = BitSliceOperation[1:2]
-   * s2 = BitSliceOperation[0:1]
+   * s1 = BitSliceOperation[4:8] x1
+   * s2 = BitSliceOperation[0:4] x2
    * s = BitConcatOperation s1 s2
    *
    * @param operation The \ref BitSliceOperation on which the transformation is performed.
