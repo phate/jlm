@@ -605,7 +605,7 @@ TEST_F(FirrtlConversionTest, IntegerToPointerOperation)
   Lambda_ = CreateLambda({ BitType::Create(32) }, { ptrType });
 
   auto & arg0 = *Lambda_->GetFunctionArguments()[0];
-  auto * itopOutput = IntegerToPointerOperation::create(&arg0, ptrType);
+  auto * itopOutput = IntToPtrOperation::create(&arg0);
   Lambda_->finalize({ itopOutput });
 
   TestableRhlsToFirrtlConverter converter;
