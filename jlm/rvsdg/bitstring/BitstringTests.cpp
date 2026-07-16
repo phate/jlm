@@ -1303,7 +1303,7 @@ TEST(bitstring, SliceOfConcatReduction)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::distributeSlice, sliceNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1459,7 +1459,7 @@ TEST(bitstring, SliceOfConcat)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::distributeSlice, sliceNode);
   auto concatNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   ReduceNode<BitSliceOperation>(
       BitSliceOperation::normalizeIdempotent,
