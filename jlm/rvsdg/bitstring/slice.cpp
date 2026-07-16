@@ -28,13 +28,13 @@ BitSliceOperation::debug_string() const
 }
 
 unop_reduction_path_t
-BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+BitSliceOperation::can_reduce_operand(const Output *) const noexcept
 {
   return unop_reduction_none;
 }
 
 jlm::rvsdg::Output *
-BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
+BitSliceOperation::reduce_operand(unop_reduction_path_t, Output *) const
 {
   return nullptr;
 }
