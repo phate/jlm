@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
@@ -278,6 +279,9 @@ traceAllPointerOriginsInternal(
     return true;
   }
 
+  // Normalization never stops at a gamma entry variable
+  JLM_ASSERT(!rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*basePointer));
+
   // Trace into theta nodes
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*basePointer))
   {
@@ -290,6 +294,27 @@ traceAllPointerOriginsInternal(
         offsetInBytes,
         traceCollection,
         maxTraceCollectionSize);
+  }
+
+  // Trace loop variable pre arguments in theta nodes
+  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*basePointer))
+  {
+    auto loopVar = theta->MapPreLoopVar(*basePointer);
+
+    // Invariant loop variables should already have been handled by normalization
+    JLM_ASSERT(!rvsdg::ThetaLoopVarIsInvariant(loopVar));
+
+    // Trace both from the post and the loop variable input
+    return traceAllPointerOriginsInternal(
+               loopVar.post->origin(),
+               offsetInBytes,
+               traceCollection,
+               maxTraceCollectionSize)
+        && traceAllPointerOriginsInternal(
+               loopVar.input->origin(),
+               offsetInBytes,
+               traceCollection,
+               maxTraceCollectionSize);
   }
 
   // We could not trace further, add p as a TopOrigin

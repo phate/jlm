@@ -133,7 +133,7 @@ private:
         DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
     {
       const auto nullPtr =
-          ConstantPointerNullOperation::Create(globalDelta.subregion(), pointerType);
+          ConstantPointerNullOperation::createNode(*globalDelta.subregion()).output(0);
       globalDelta.finalize(nullPtr);
     }
     rvsdg::GraphExport::Create(globalDelta.output(), "global");
@@ -145,7 +145,7 @@ private:
         DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false, 4));
     {
       const auto nullPtr =
-          ConstantPointerNullOperation::Create(localDelta.subregion(), pointerType);
+          ConstantPointerNullOperation::createNode(*localDelta.subregion()).output(0);
       localDelta.finalize(nullPtr);
     }
     Outputs_.Local = &localDelta.output();

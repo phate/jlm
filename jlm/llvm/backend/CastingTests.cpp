@@ -121,7 +121,7 @@ TEST_P(LlvmBackendCastingFixture, AllIntegerCasts)
   auto & trunc = createUnary(jlm::llvm::TruncOperation(bits64, bits32), zext, bits32V);
   auto & sext = createUnary(jlm::llvm::SExtOperation(bits32, bits64), trunc, bits64V);
   auto & inttoptr =
-      createUnary(jlm::llvm::IntegerToPointerOperation(bits64, pointerType), sext, pointerTypeV);
+      createUnary(jlm::llvm::IntToPtrOperation(bits64, pointerType), sext, pointerTypeV);
   auto & ptrtoint =
       createUnary(jlm::llvm::PtrToIntOperation(pointerType, bits64), inttoptr, bits64V);
   // Bitcasts are never wrapped in VectorUnaryOperation

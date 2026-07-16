@@ -5,16 +5,20 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 #include <cassert>
 
@@ -254,4 +258,89 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516u);
+}
+
+TEST(TraceTests, testTraceAllPointerOriginsTheta)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG corresponding to the C code:
+   *
+   * \code{.c}
+   * int func() {
+   *     int array[101];
+   *     int i = 0;
+   *     int* p = &array;
+   *
+   *     do {
+   *         *p = i;
+   *         p++;
+   *         i++;
+   *     } while(i < 100);
+   *     return *p;
+   * }
+   * \endcode
+   *
+   * The test checks that \ref jlm::llvm::TraceAllPointerOrigins is able to trace the origin of p,
+   * both from within the loop, and after the loop.
+   * The resulting \ref jlm::llvm::TraceCollection should have exactly one top origin: array,
+   * and the offset should be unknown.
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  const auto int32Type = rvsdg::BitType::Create(32);
+  const auto pointerType = PointerType::Create();
+  const auto arrayType = ArrayType::Create(int32Type, 100);
+
+  auto & zero = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & one = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & allocaNode = AllocaOperation::createNode(arrayType, *one.output(0), 4);
+  auto * arrayPointer = allocaNode.output(0);
+  auto * initialPointer =
+      GetElementPtrOperation::create(arrayPointer, { zero.output(0), zero.output(0) }, arrayType);
+
+  auto * theta = rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto i = theta->AddLoopVar(zero.output(0));
+  auto p = theta->AddLoopVar(initialPointer);
+
+  auto & oneInLoop = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & hundredInLoop = IntegerConstantOperation::Create(*theta->subregion(), 32, 100);
+
+  auto * incrementedPointer =
+      GetElementPtrOperation::create(p.pre, { oneInLoop.output(0) }, int32Type);
+  auto * incrementedI =
+      rvsdg::CreateOpNode<rvsdg::bitadd_op>({ i.pre, oneInLoop.output(0) }, 32).output(0);
+  auto * isLessThanHundred =
+      rvsdg::CreateOpNode<rvsdg::bitult_op>({ incrementedI, hundredInLoop.output(0) }, 32)
+          .output(0);
+  auto & matchNode = rvsdg::MatchOperation::CreateNode(*isLessThanHundred, { { 1, 1 } }, 0, 2);
+
+  i.post->divert_to(incrementedI);
+  p.post->divert_to(incrementedPointer);
+  theta->set_predicate(matchNode.output(0));
+
+  auto * pAfterLoop = theta->output(1);
+
+  // Act
+  const auto pInLoopTraced = TracePointerOriginPrecise(*p.pre);
+  TraceCollection pInLoopTraceCollection;
+  ASSERT_TRUE(TraceAllPointerOrigins(pInLoopTraced, pInLoopTraceCollection, 16));
+
+  const auto pAfterLoopTraced = TracePointerOriginPrecise(*pAfterLoop);
+  TraceCollection pAfterLoopTraceCollection;
+  ASSERT_TRUE(TraceAllPointerOrigins(pAfterLoopTraced, pAfterLoopTraceCollection, 16));
+
+  // Assert
+  EXPECT_EQ(pInLoopTraceCollection.TopOrigins.size(), 1u);
+  EXPECT_EQ(pInLoopTraceCollection.TopOrigins.count(arrayPointer), 1u);
+  EXPECT_EQ(pInLoopTraceCollection.TopOrigins.at(arrayPointer), std::nullopt);
+
+  EXPECT_EQ(pAfterLoopTraceCollection.TopOrigins.size(), 1u);
+  EXPECT_EQ(pAfterLoopTraceCollection.TopOrigins.count(arrayPointer), 1u);
+  EXPECT_EQ(pAfterLoopTraceCollection.TopOrigins.at(arrayPointer), std::nullopt);
 }

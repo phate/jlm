@@ -13,7 +13,6 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
-#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -513,11 +512,11 @@ IpGraphToLlvmConverter::get_fpdata(const std::vector<const Variable *> & args)
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantDataArray & op,
+    const ConstantDataArrayOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<ConstantDataArray>(op));
+  JLM_ASSERT(is<ConstantDataArrayOperation>(op));
 
   if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
   {
@@ -696,7 +695,7 @@ IpGraphToLlvmConverter::convert_valist(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantStruct & op,
+    const ConstantStructOperation & op,
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
@@ -713,14 +712,14 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantPointerNullOperation & operation,
+    const ConstantPointerNullOperation &,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
-  auto pointerType = typeConverter.ConvertPointerType(operation.GetPointerType(), llvmContext);
+  auto pointerType = typeConverter.ConvertPointerType(*PointerType::Create(), llvmContext);
   return ::llvm::ConstantPointerNull::get(pointerType);
 }
 
@@ -1270,9 +1269,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_getelementptr(op, arguments, builder);
   }
-  if (is<ConstantDataArray>(op))
+  if (is<ConstantDataArrayOperation>(op))
   {
-    return convert<ConstantDataArray>(op, arguments, builder);
+    return convert<ConstantDataArrayOperation>(op, arguments, builder);
   }
   if (is<PtrCmpOperation>(op))
   {
@@ -1290,9 +1289,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_valist(op, arguments, builder);
   }
-  if (is<ConstantStruct>(op))
+  if (is<ConstantStructOperation>(op))
   {
-    return convert<ConstantStruct>(op, arguments, builder);
+    return convert<ConstantStructOperation>(op, arguments, builder);
   }
   if (is<ConstantPointerNullOperation>(op))
   {
@@ -1390,11 +1389,11 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPExt>(op, originalOp, arguments, builder);
   }
-  if (is<FloatingPointToSignedIntegerOperation>(op))
+  if (is<FPToSIOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPToSI>(op, originalOp, arguments, builder);
   }
-  if (is<FloatingPointToUnsignedIntegerOperation>(op))
+  if (is<FPToUIOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPToUI>(op, originalOp, arguments, builder);
   }
@@ -1402,7 +1401,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPTrunc>(op, originalOp, arguments, builder);
   }
-  if (is<IntegerToPointerOperation>(op))
+  if (is<IntToPtrOperation>(op))
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, originalOp, arguments, builder);
   }

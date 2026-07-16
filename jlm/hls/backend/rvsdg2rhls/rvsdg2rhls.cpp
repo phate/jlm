@@ -42,8 +42,8 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>

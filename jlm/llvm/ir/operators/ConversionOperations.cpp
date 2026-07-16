@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/common.hpp>
 
@@ -70,30 +71,37 @@ SExtOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
+SExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
-  auto & tracedOperand = llvm::traceOutput(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOperand))
-    return rvsdg::unop_reduction_constant;
-
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
+SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
-  if (path == rvsdg::unop_reduction_constant)
-  {
-    auto & tracedOutput = llvm::traceOutput(*operand);
-    auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    JLM_ASSERT(constantNode && constantOperation);
-    return &rvsdg::BitConstantOperation::create(
-        *operand->region(),
-        constantOperation->value().sext(ndstbits() - nsrcbits()));
-  }
-
   return nullptr;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+SExtOperation::foldConstant(
+    const SExtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  const auto & resultRepresentation =
+      constantOperation->Representation().sext(operation.ndstbits() - operation.nsrcbits());
+
+  auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
 }
 
 ZExtOperation::~ZExtOperation() noexcept = default;
@@ -118,30 +126,37 @@ ZExtOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
+ZExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
-  auto & tracedOperand = llvm::traceOutput(*operand);
-  if (rvsdg::IsOwnerNodeOperation<rvsdg::BitConstantOperation>(tracedOperand))
-    return rvsdg::unop_reduction_constant;
-
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
+ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
-  if (path == rvsdg::unop_reduction_constant)
-  {
-    auto & tracedOperand = llvm::traceOutput(*operand);
-    auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOperand);
-    JLM_ASSERT(constantOperation);
-    return &rvsdg::BitConstantOperation::create(
-        *rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
-        constantOperation->value().zext(ndstbits() - nsrcbits()));
-  }
-
   return nullptr;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+ZExtOperation::foldConstant(
+    const ZExtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  const auto & resultRepresentation =
+      constantOperation->Representation().zext(operation.ndstbits() - operation.nsrcbits());
+
+  auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
 }
 
 TruncOperation::~TruncOperation() noexcept = default;
@@ -175,6 +190,441 @@ rvsdg::Output *
 TruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+PtrToIntOperation::~PtrToIntOperation() noexcept = default;
+
+bool
+PtrToIntOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const PtrToIntOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+PtrToIntOperation::debug_string() const
+{
+  return "PtrToInt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+PtrToIntOperation::copy() const
+{
+  return std::make_unique<PtrToIntOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+PtrToIntOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+FPExtOperation::~FPExtOperation() noexcept = default;
+
+bool
+FPExtOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const FPExtOperation *>(&other);
+  return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
+}
+
+std::string
+FPExtOperation::debug_string() const
+{
+  return "FPExt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FPExtOperation::copy() const
+{
+  return std::make_unique<FPExtOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+FPExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+FPTruncOperation::~FPTruncOperation() noexcept = default;
+
+bool
+FPTruncOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const FPTruncOperation *>(&other);
+  return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
+}
+
+std::string
+FPTruncOperation::debug_string() const
+{
+  return "FPTrunc";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FPTruncOperation::copy() const
+{
+  return std::make_unique<FPTruncOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+FPTruncOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+UIToFPOperation::~UIToFPOperation() noexcept = default;
+
+bool
+UIToFPOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const UIToFPOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+UIToFPOperation::debug_string() const
+{
+  return "UIToFP";
+}
+
+std::unique_ptr<rvsdg::Operation>
+UIToFPOperation::copy() const
+{
+  return std::make_unique<UIToFPOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+UIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+UIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+SIToFPOperation::~SIToFPOperation() noexcept = default;
+
+bool
+SIToFPOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const SIToFPOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+SIToFPOperation::debug_string() const
+{
+  return "SIToFP";
+}
+
+std::unique_ptr<rvsdg::Operation>
+SIToFPOperation::copy() const
+{
+  return std::make_unique<SIToFPOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+SIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+IntToPtrOperation::~IntToPtrOperation() noexcept = default;
+
+bool
+IntToPtrOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const IntToPtrOperation *>(&other);
+  return op && op->argument(0) == argument(0);
+}
+
+std::string
+IntToPtrOperation::debug_string() const
+{
+  return "IntToPtr";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntToPtrOperation::copy() const
+{
+  return std::make_unique<IntToPtrOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+IntToPtrOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+IntToPtrOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+FPToUIOperation::~FPToUIOperation() noexcept = default;
+
+bool
+FPToUIOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const FPToUIOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+FPToUIOperation::debug_string() const
+{
+  return "FpToUInt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FPToUIOperation::copy() const
+{
+  return std::make_unique<FPToUIOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+FPToUIOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+FPToUIOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented");
+}
+
+FPToSIOperation::~FPToSIOperation() noexcept = default;
+
+bool
+FPToSIOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const FPToSIOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+FPToSIOperation::debug_string() const
+{
+  return "FpToSInt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+FPToSIOperation::copy() const
+{
+  return std::make_unique<FPToSIOperation>(*this);
+}
+
+rvsdg::unop_reduction_path_t
+FPToSIOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+FPToSIOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  JLM_UNREACHABLE("Not implemented!");
+}
+
+ControlToIntOperation::~ControlToIntOperation() noexcept = default;
+
+bool
+ControlToIntOperation::operator==(const Operation & other) const noexcept
+{
+  auto op = dynamic_cast<const ControlToIntOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+ControlToIntOperation::debug_string() const
+{
+  return "ControlToInt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+ControlToIntOperation::copy() const
+{
+  return std::make_unique<ControlToIntOperation>(*this);
+}
+
+FunctionToPointerOperation::~FunctionToPointerOperation() noexcept
+{}
+
+FunctionToPointerOperation::FunctionToPointerOperation(
+    std::shared_ptr<const rvsdg::FunctionType> fn)
+    : UnaryOperation(fn, PointerType::Create()),
+      FunctionType_(std::move(fn))
+{}
+
+bool
+FunctionToPointerOperation::operator==(const Operation & other) const noexcept
+{
+  if (auto o = dynamic_cast<const FunctionToPointerOperation *>(&other))
+  {
+    return *FunctionType() == *o->FunctionType();
+  }
+  else
+  {
+    return false;
+  }
+}
+
+[[nodiscard]] std::string
+FunctionToPointerOperation::debug_string() const
+{
+  return "FunPtr(" + FunctionType()->debug_string() + ")";
+}
+
+[[nodiscard]] std::unique_ptr<rvsdg::Operation>
+FunctionToPointerOperation::copy() const
+{
+  return Create(FunctionType());
+}
+
+rvsdg::unop_reduction_path_t
+FunctionToPointerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+FunctionToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  return nullptr;
+}
+
+std::unique_ptr<FunctionToPointerOperation>
+FunctionToPointerOperation::Create(std::shared_ptr<const rvsdg::FunctionType> fn)
+{
+  return std::make_unique<FunctionToPointerOperation>(std::move(fn));
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FunctionToPointerOperation::invertFunctionToPointer(
+    const FunctionToPointerOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto & operand = *operands[0];
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
+  {
+    if (const auto ptrToFnOperation =
+            dynamic_cast<const PointerToFunctionOperation *>(&node->GetOperation()))
+    {
+      if (*ptrToFnOperation->FunctionType() == *operation.FunctionType())
+      {
+        return std::vector({ node->input(0)->origin() });
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
+PointerToFunctionOperation::~PointerToFunctionOperation() noexcept
+{}
+
+PointerToFunctionOperation::PointerToFunctionOperation(
+    std::shared_ptr<const rvsdg::FunctionType> fn)
+    : UnaryOperation(PointerType::Create(), fn),
+      FunctionType_(std::move(fn))
+{}
+
+bool
+PointerToFunctionOperation::operator==(const Operation & other) const noexcept
+{
+  if (auto o = dynamic_cast<const PointerToFunctionOperation *>(&other))
+  {
+    return *FunctionType() == *o->FunctionType();
+  }
+  else
+  {
+    return false;
+  }
+}
+
+[[nodiscard]] std::string
+PointerToFunctionOperation::debug_string() const
+{
+  return "PtrFun(" + FunctionType()->debug_string() + ")";
+}
+
+[[nodiscard]] std::unique_ptr<rvsdg::Operation>
+PointerToFunctionOperation::copy() const
+{
+  return Create(FunctionType());
+}
+
+rvsdg::unop_reduction_path_t
+PointerToFunctionOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::Output *
+PointerToFunctionOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+{
+  return nullptr;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PointerToFunctionOperation::invertPointerToFunction(
+    const PointerToFunctionOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto & operand = *operands[0];
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
+  {
+    if (const auto fnToPtrOperation =
+            dynamic_cast<const FunctionToPointerOperation *>(&node->GetOperation()))
+    {
+      if (*fnToPtrOperation->FunctionType() == *operation.FunctionType())
+      {
+        return std::vector({ node->input(0)->origin() });
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
+std::unique_ptr<PointerToFunctionOperation>
+PointerToFunctionOperation::Create(std::shared_ptr<const rvsdg::FunctionType> fn)
+{
+  return std::make_unique<PointerToFunctionOperation>(std::move(fn));
 }
 
 }

@@ -283,9 +283,10 @@ adjustLoopRepetitionEdge(const StronglyConnectedComponentStructure & sccStructur
     // Nothing needs to be done. The repetition edge has already index 1.
     return;
   }
+  JLM_ASSERT(repetitionEdge->index() == 0);
 
-  // The repetition edge has index 0.
-  // We need to adjust the tail-controlled loop such that the repetition edge is on index 1.
+  // We need to adjust the tail-controlled loop such that the repetition edge is on index 1,
+  // and swapping the alternatives of the match operation accordingly
   auto exitNode = util::assertedCast<BasicBlock>((*sccStructure.ExitEdges().begin())->source());
   auto exitEdge = *sccStructure.ExitEdges().begin();
   auto exitEdgeSink = exitEdge->sink();
@@ -294,26 +295,21 @@ adjustLoopRepetitionEdge(const StronglyConnectedComponentStructure & sccStructur
   repetitionEdge->divert(exitEdgeSink);
   exitEdge->divert(repetitionEdgeSink);
 
-  // Branch and match operations are always created together in the \ref LlvmModuleConversion
-  // Thus, we would expect them to also be together here. Just to be sure, we plastered the path
-  // with asserts.
+  // The node's tac list is guaranteed to end with a branch instruction
   auto & threeAddressCodes = exitNode->tacs();
-  auto branchTac = threeAddressCodes.last();
-  JLM_ASSERT(is<BranchOperation>(branchTac));
-  auto matchTac = *std::next(threeAddressCodes.rbegin(), 1);
-  JLM_ASSERT(is<rvsdg::MatchOperation>(matchTac));
-  JLM_ASSERT(branchTac->operand(0) == matchTac->result(0));
-  auto matchOperation = util::assertedCast<const rvsdg::MatchOperation>(&matchTac->operation());
-  JLM_ASSERT(matchOperation->nalternatives() == 2);
+  auto & branchTac = *threeAddressCodes.last();
+  JLM_ASSERT(is<BranchOperation>(&branchTac));
+  // The operand of the branch instruction is always a tac variable assigned by a match instruction
+  auto & branchOperand = *util::assertedCast<const ThreeAddressCodeVariable>(branchTac.operand(0));
+  auto & matchTac = *branchOperand.tac();
+  JLM_ASSERT(is<rvsdg::MatchOperation>(&matchTac));
+  JLM_ASSERT(branchTac.operand(0) == matchTac.result(0));
+  auto & matchOperation = *util::assertedCast<const rvsdg::MatchOperation>(&matchTac.operation());
+  JLM_ASSERT(matchOperation.nalternatives() == 2);
 
-  auto newMatchOperation = invertMatchOperation(*matchOperation);
-  auto newMatchOperand = matchTac->operand(0);
-  threeAddressCodes.drop_last(); // drop branch operation
-  threeAddressCodes.drop_last(); // drop match operation
-
-  threeAddressCodes.append_last(
-      ThreeAddressCode::create(std::move(newMatchOperation), { newMatchOperand }));
-  threeAddressCodes.append_last(BranchOperation::create(2, threeAddressCodes.last()->result(0)));
+  auto newMatchOperation = invertMatchOperation(matchOperation);
+  auto newMatchOperand = matchTac.operand(0);
+  matchTac.replace(*newMatchOperation, { newMatchOperand });
 }
 
 static void

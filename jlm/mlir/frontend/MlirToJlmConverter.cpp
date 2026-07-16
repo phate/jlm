@@ -689,7 +689,7 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    return { llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())) };
+    return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
@@ -698,7 +698,7 @@ MlirToJlmConverter::ConvertOperation(
     // NULL pointers are a special case of ZeroOp
     if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
     {
-      return { llvm::ConstantPointerNullOperation::Create(&rvsdgRegion, ConvertType(type)) };
+      return { llvm::ConstantPointerNullOperation::createNode(rvsdgRegion).output(0) };
     }
     return { llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)) };
   }

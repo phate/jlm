@@ -1376,7 +1376,7 @@ TEST(bitstring, SliceOfConstant)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::foldConstant, sliceNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1432,7 +1432,7 @@ TEST(bitstring, SliceOfFullNode)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::normalizeIdempotent, sliceNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1462,7 +1462,7 @@ TEST(bitstring, SliceOfConcat)
   ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
   auto concatNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   ReduceNode<BitSliceOperation>(
-      NormalizeUnaryOperation,
+      BitSliceOperation::normalizeIdempotent,
       *TryGetOwnerNode<SimpleNode>(*concatNode->input(0)->origin()));
   concatNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, *concatNode);
@@ -1555,7 +1555,7 @@ TEST(bitstring, ConcatOfSlices)
   // Act
   ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, concatNode);
   ReduceNode<BitSliceOperation>(
-      NormalizeUnaryOperation,
+      BitSliceOperation::normalizeIdempotent,
       *TryGetOwnerNode<SimpleNode>(*ex.origin()));
   graph.PruneNodes();
 

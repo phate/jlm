@@ -29,6 +29,8 @@ namespace jlm::rvsdg
 
 class BitValueRepresentation
 {
+  BitValueRepresentation() = default;
+
 public:
   BitValueRepresentation(size_t nbits, int64_t value)
   {
@@ -58,6 +60,14 @@ public:
     }
   }
 
+  explicit BitValueRepresentation(const char c)
+  {
+    if (c != '0' && c != '1' && c != 'X' && c != 'D')
+      throw util::Error("Not a valid bit.");
+
+    data_.push_back(c);
+  }
+
   BitValueRepresentation(const BitValueRepresentation & other)
       : data_(other.data_)
   {}
@@ -70,6 +80,34 @@ public:
   repeat(size_t nbits, char bit)
   {
     return BitValueRepresentation(std::string(nbits, bit).c_str());
+  }
+
+  /**
+   * Creates a \ref BitValueRepresentation from a vector of \ref BitValueRepresentation%s by
+   * concatenating the input representations. The number of bits of the result representation is the
+   * sum of the number of bits of the input representations.
+   *
+   * @param bitValues A vector of input representations
+   * @return The concatenation of the input representations.
+   *
+   * \pre The method expects at least a single element in \p bitValues.
+   */
+  static BitValueRepresentation
+  create(const std::vector<BitValueRepresentation> & bitValues)
+  {
+    JLM_ASSERT(!bitValues.empty());
+
+    if (bitValues.size() == 1)
+      return bitValues[0];
+
+    BitValueRepresentation result;
+    for (auto bitValue : bitValues)
+    {
+      for (auto bit : bitValue.data_)
+        result.data_.push_back(bit);
+    }
+
+    return result;
   }
 
 private:
@@ -702,7 +740,7 @@ public:
 
 private:
   /* [lsb ... msb] */
-  std::vector<char> data_;
+  std::vector<char> data_{};
 };
 
 }
