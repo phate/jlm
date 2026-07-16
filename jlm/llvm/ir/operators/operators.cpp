@@ -3,13 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "alloca.hpp"
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <jlm/rvsdg/delta.hpp>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
@@ -270,12 +269,6 @@ PtrCmpOperation::reduce_operand_pair(
 {
   JLM_UNREACHABLE("Not implemented!");
 }
-
-struct PtrCmpOperands
-{
-  rvsdg::Output * constantNullPtrOperand = nullptr;
-  rvsdg::Output * allocationOperand = nullptr;
-};
 
 template<typename TOperation>
 static bool
