@@ -93,6 +93,23 @@ public:
   distributeSlice(const BitSliceOperation & operation, const std::vector<Output *> & operands);
 
   /**
+   * Narrow a \ref BitSliceOperation node preceded by another \ref BitSliceOperation node:
+   *
+   * b1 = BitSliceOperation[3:10] x
+   * b2 = BitSliceOperation[1:4] b1
+   * =>
+   * b2 = BitSliceOperation[4:7] x
+   *
+   * @param operation The \ref BitSliceOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitSliceOperation node.
+   *
+   * @return If the narrowing could be applied, then the operand of the \ref BitSliceOperation
+   * node. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  narrowSlice(const BitSliceOperation & operation, const std::vector<Output *> & operands);
+
+  /**
    * Performs constant folding by statically evaluating the constant operand and replacing the
    * operations result with the resulting constant.
    *
