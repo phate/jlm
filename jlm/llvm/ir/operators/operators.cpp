@@ -3,11 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "alloca.hpp"
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
+#include <jlm/rvsdg/delta.hpp>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
@@ -267,6 +269,48 @@ PtrCmpOperation::reduce_operand_pair(
     rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+struct PtrCmpOperands
+{
+  rvsdg::Output * constantNullPtrOperand = nullptr;
+  rvsdg::Output * allocationOperand = nullptr;
+};
+
+template<typename TOperation>
+static bool
+isOperand(rvsdg::Output & operand)
+{
+  auto [node, operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<TOperation>(operand);
+  return operation != nullptr;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PtrCmpOperation::normalizeNullPointerComparison(
+    const PtrCmpOperation & ptrCmpOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  if (ptrCmpOperation.predicate() != ICmpPredicate::Eq
+      && ptrCmpOperation.predicate() != ICmpPredicate::Ne)
+    return std::nullopt;
+
+  JLM_ASSERT(operands.size() == 2);
+  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
+  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+
+  const bool hasRequiredOperandProducers =
+      (isOperand<ConstantPointerNullOperation>(tracedOperand1)
+       && (isOperand<AllocaOperation>(tracedOperand2)
+           || rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedOperand2)))
+      || (isOperand<ConstantPointerNullOperation>(tracedOperand2)
+          && (isOperand<AllocaOperation>(tracedOperand1)
+              || rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedOperand1)));
+  if (!hasRequiredOperandProducers)
+  {
+    return std::nullopt;
+  }
+
+  JLM_ASSERT(0 && "We found a valid transformation");
 }
 
 ConstantFP::~ConstantFP() noexcept = default;

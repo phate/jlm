@@ -452,6 +452,12 @@ public:
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeNullPointerComparison(
+      const PtrCmpOperation & ptrCmpOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   ICmpPredicate predicate_;
 };
