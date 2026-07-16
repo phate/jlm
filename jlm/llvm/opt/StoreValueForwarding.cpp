@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/rvsdg/RegionPredicateTrace.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -45,6 +46,9 @@ static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRES
 // Enables the use of the PointsToGraphAliasAnalysis.
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
 static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
+
+// Enables the use of region predication checking when tracing origins of loaded values
+static const bool ENABLE_REGION_PREDICATE_CHECK = std::getenv("JLM_ENABLE_REGION_PREDICATE_CHECK");
 
 // By default, loads whose memory states can be traced to other loads attempt to forward
 // the previously loaded value, if the types match, and the addresses are the same (MustAlias).
@@ -217,6 +221,8 @@ struct StoreValueForwarding::Context final
       routedOutputs{};
 
   OutputTracer outputTracer;
+
+  rvsdg::RegionPredicateTrace regionPredicateTrace;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -400,10 +406,12 @@ public:
   LoadTracingInfo(
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
-      aa::AliasAnalysis & aliasAnalysis)
+      aa::AliasAnalysis & aliasAnalysis,
+      rvsdg::RegionPredicateTrace & regionPredicateTrace)
       : loadNode(loadNode),
         tracer(tracer),
-        aliasAnalysis(aliasAnalysis)
+        aliasAnalysis(aliasAnalysis),
+        regionPredicateTrace(regionPredicateTrace)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -558,59 +566,68 @@ private:
   {
     auto & tracedOutput = tracer.trace(*input.origin());
 
-    // If tracing reached a store operation, look up its info
-    if (auto [storeNode, storeOp] =
-            rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(tracedOutput);
-        storeNode && storeOp)
+    if (ENABLE_REGION_PREDICATE_CHECK)
     {
-      // Lookup or create a store node info entry
-      auto [it, inserted] = storeNodeInfo.emplace(storeNode, StoreNodeInfo::ClobberNoForward);
-
-      // If the store has not been encountered before, determine forwarding / clobbering
-      if (inserted)
+      // If the origin can not reach the target region, let is be uninitialized
+      if (!regionPredicateTrace.CheckPredicatesSatisfiable(*tracedOutput.region(), *loadNode.region()))
       {
-        const auto aliasReponse = queryAliasAnalysisWithStore(*storeNode);
-        switch (aliasReponse)
-        {
-        case aa::AliasAnalysis::MayAlias:
-          it->second = StoreNodeInfo::ClobberNoForward;
-          break;
-        case aa::AliasAnalysis::NoAlias:
-          it->second = StoreNodeInfo::NoClobber;
-          break;
-        case aa::AliasAnalysis::MustAlias:
-        {
-          // MustAlias means a store forwarding candidate was found,
-          // but forwarding is only possible if the type matches
-          auto storedType = StoreOperation::StoredValueInput(*storeNode).Type();
-          if (*storedType == *loadedType)
-            it->second = StoreNodeInfo::ValueForwarding;
-          else
-            it->second = StoreNodeInfo::ClobberNoForward;
-          break;
-        }
-        default:
-          JLM_UNREACHABLE("Unknown AliasAnalysis response");
-        }
-      }
-
-      switch (it->second)
-      {
-      case StoreNodeInfo::ValueForwarding:
-        return ValueOrigin::createStoreNode(*storeNode);
-      case StoreNodeInfo::ClobberNoForward:
-        return ValueOrigin::createUnknown();
-      case StoreNodeInfo::NoClobber:
-      {
-        // If the store is not clobbering, keep tracing along the memory state chain
-        auto & memoryStateInput = StoreOperation::MapMemoryStateOutputToInput(tracedOutput);
-        return getLastValueOriginBeforeInput(memoryStateInput);
-      }
-
-      default:
-        JLM_UNREACHABLE("Unknown StoreNodeInfo");
+        return ValueOrigin::createUninitialized();
       }
     }
+
+      // If tracing reached a store operation, look up its info
+      if (auto [storeNode, storeOp] =
+              rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(tracedOutput);
+          storeNode && storeOp)
+      {
+        // Lookup or create a store node info entry
+        auto [it, inserted] = storeNodeInfo.emplace(storeNode, StoreNodeInfo::ClobberNoForward);
+
+        // If the store has not been encountered before, determine forwarding / clobbering
+        if (inserted)
+        {
+          const auto aliasReponse = queryAliasAnalysisWithStore(*storeNode);
+          switch (aliasReponse)
+          {
+          case aa::AliasAnalysis::MayAlias:
+            it->second = StoreNodeInfo::ClobberNoForward;
+            break;
+          case aa::AliasAnalysis::NoAlias:
+            it->second = StoreNodeInfo::NoClobber;
+            break;
+          case aa::AliasAnalysis::MustAlias:
+          {
+            // MustAlias means a store forwarding candidate was found,
+            // but forwarding is only possible if the type matches
+            auto storedType = StoreOperation::StoredValueInput(*storeNode).Type();
+            if (*storedType == *loadedType)
+              it->second = StoreNodeInfo::ValueForwarding;
+            else
+              it->second = StoreNodeInfo::ClobberNoForward;
+            break;
+          }
+          default:
+            JLM_UNREACHABLE("Unknown AliasAnalysis response");
+          }
+        }
+
+        switch (it->second)
+        {
+        case StoreNodeInfo::ValueForwarding:
+          return ValueOrigin::createStoreNode(*storeNode);
+        case StoreNodeInfo::ClobberNoForward:
+          return ValueOrigin::createUnknown();
+        case StoreNodeInfo::NoClobber:
+        {
+          // If the store is not clobbering, keep tracing along the memory state chain
+          auto & memoryStateInput = StoreOperation::MapMemoryStateOutputToInput(tracedOutput);
+          return getLastValueOriginBeforeInput(memoryStateInput);
+        }
+
+        default:
+          JLM_UNREACHABLE("Unknown StoreNodeInfo");
+        }
+      }
 
     // If tracing reached a load operation, check if it is a perfect match
     if (auto [otherLoadNode, otherLoadOp] =
@@ -778,6 +795,7 @@ public:
 
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
+  rvsdg::RegionPredicateTrace & regionPredicateTrace;
 
   AliasQueryResponseCounter storeAAResponses;
   AliasQueryResponseCounter loadAAResponses;
@@ -832,7 +850,11 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
   context_->statistics.startTracing();
-  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer, context_->aliasAnalysis);
+  LoadTracingInfo loadTracingInfo(
+      loadNode,
+      context_->outputTracer,
+      context_->aliasAnalysis,
+      context_->regionPredicateTrace);
   const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
