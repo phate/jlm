@@ -11,7 +11,7 @@
 namespace jlm::llvm
 {
 
-static bool
+bool
 reduceStaticallyKnownPredicate(rvsdg::GammaNode & gammaNode)
 {
   const auto & tracedPredicate = llvm::traceOutput(*gammaNode.predicate()->origin());

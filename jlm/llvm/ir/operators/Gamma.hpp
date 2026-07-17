@@ -33,7 +33,7 @@ namespace jlm::llvm
  * @param gammaNode A gamma node that is supposed to be reduced.
  * @return True, if transformation was successful, otherwise false.
  */
-static bool
+bool
 reduceStaticallyKnownPredicate(rvsdg::GammaNode & gammaNode);
 
 }
