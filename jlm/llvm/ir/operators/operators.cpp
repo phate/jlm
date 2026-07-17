@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "IntegerOperations.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
