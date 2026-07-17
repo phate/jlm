@@ -452,6 +452,15 @@ public:
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
+  static rvsdg::SimpleNode &
+  createNode(const ICmpPredicate kind, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<PtrCmpOperation>(
+        { &operand1, &operand2 },
+        PointerType::Create(),
+        kind);
+  }
+
   // FIXME: documentation
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeNullPointerComparison(
