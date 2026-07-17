@@ -14,6 +14,7 @@
 
 namespace jlm::rvsdg
 {
+class GammaNode;
 class Graph;
 class Node;
 class Region;
@@ -68,7 +69,7 @@ private:
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
   [[nodiscard]] static bool
-  ReduceGammaNode(rvsdg::StructuralNode & gammaNode);
+  ReduceGammaNode(rvsdg::GammaNode & gammaNode);
 
   [[nodiscard]] static bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
