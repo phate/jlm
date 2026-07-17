@@ -7,10 +7,10 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
-#include <jlm/rvsdg/lambda.hpp>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
