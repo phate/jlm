@@ -3,12 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "IntegerOperations.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
+#include <jlm/rvsdg/lambda.hpp>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/IR/InstrTypes.h>
 #include <stdexcept>
@@ -272,10 +274,44 @@ PtrCmpOperation::reduce_operand_pair(
 
 template<typename TOperation>
 static bool
-isOperand(rvsdg::Output & operand)
+isOutputOf(rvsdg::Output & operand)
 {
   auto [node, operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<TOperation>(operand);
   return operation != nullptr;
+}
+
+static bool
+isAllocationSide(rvsdg::Output & output)
+{
+  if (isOutputOf<AllocaOperation>(output))
+  {
+    return true;
+  }
+
+  if (rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
+  {
+    return true;
+  }
+
+  if (const auto region = rvsdg::TryGetOwnerRegion(output); region && region->IsRootRegion())
+  {
+    // We have a function or global variable import
+    return true;
+  }
+
+  auto [fnToPtrNode, fnToPtrOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(output);
+  if (fnToPtrOperation != nullptr)
+  {
+    const auto & tracedOutput =
+        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin());
+    if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(tracedOutput))
+    {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 std::optional<std::vector<rvsdg::Output *>>
@@ -291,19 +327,28 @@ PtrCmpOperation::normalizeNullPointerComparison(
   auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
   auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
 
-  const bool hasRequiredOperandProducers =
-      (isOperand<ConstantPointerNullOperation>(tracedOperand1)
-       && (isOperand<AllocaOperation>(tracedOperand2)
-           || rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedOperand2)))
-      || (isOperand<ConstantPointerNullOperation>(tracedOperand2)
-          && (isOperand<AllocaOperation>(tracedOperand1)
-              || rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(tracedOperand1)));
-  if (!hasRequiredOperandProducers)
+  const bool hasRequiredOperands =
+      (isOutputOf<ConstantPointerNullOperation>(tracedOperand1) && isAllocationSide(tracedOperand2))
+      || (isOutputOf<ConstantPointerNullOperation>(tracedOperand2)
+          && isAllocationSide(tracedOperand1));
+  if (hasRequiredOperands)
   {
-    return std::nullopt;
+    auto & region = *operands[0]->region();
+    switch (ptrCmpOperation.predicate())
+    {
+    case ICmpPredicate::Eq:
+      return std::vector<rvsdg::Output *>{
+        IntegerConstantOperation::Create(region, 1, 0).output(0)
+      };
+    case ICmpPredicate::Ne:
+      return std::vector<rvsdg::Output *>{
+        IntegerConstantOperation::Create(region, 1, 1).output(0)
+      };
+    default:
+      return std::nullopt;
+    }
   }
 
-  throw std::logic_error("We found a valid transformation");
   return std::nullopt;
 }
 
