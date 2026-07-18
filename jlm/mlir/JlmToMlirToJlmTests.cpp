@@ -1741,3 +1741,187 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     }
   }
 }
+
+TEST(JlmToMlirToJlmTests, TestConstantDataArrayFloat)
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  // Setup: Create float array with 32-bit floats
+  std::cout << "Testing Float Array (32-bit)" << std::endl;
+  auto & fpConstant1 =
+      ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(1.0f));
+  auto & fpConstant2 =
+      ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(2.5f));
+
+  jlm::llvm::ConstantDataArrayOperation::Create({ fpConstant1.output(0), fpConstant2.output(0) });
+
+  // Conversion: RVSDG -> MLIR -> RVSDG
+  std::cout << "Convert to MLIR" << std::endl;
+  jlm::mlir::JlmToMlirConverter mlirgen;
+  auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+  rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+  // Assert: Verify the result
+  EXPECT_EQ(region->numNodes(), 3u); // 2 fp constants + 1 array
+  bool foundConstantDataArray = false;
+  for (auto & node : region->Nodes())
+  {
+    if (auto constantDataArray =
+            dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
+    {
+      foundConstantDataArray = true;
+      EXPECT_EQ(constantDataArray->nresults(), 1u);
+      EXPECT_EQ(constantDataArray->narguments(), 2u);
+      auto resultType = constantDataArray->result(0);
+      auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+      EXPECT_NE(arrayType, nullptr);
+      EXPECT_TRUE(is<jlm::llvm::FloatingPointType>(arrayType->element_type()));
+      auto fpElementType =
+          jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(&arrayType->element_type());
+      EXPECT_EQ(fpElementType->size(), fpsize::flt);
+      EXPECT_EQ(arrayType->nelements(), 2u);
+    }
+  }
+  EXPECT_TRUE(foundConstantDataArray);
+}
+
+TEST(JlmToMlirToJlmTests, TestConstantDataArrayDouble)
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  // Setup: Create double array with 64-bit floats
+  std::cout << "Testing Double Array (64-bit)" << std::endl;
+  auto & fpConstant1 =
+      ConstantFP::createNode(graph->GetRootRegion(), fpsize::dbl, ::llvm::APFloat(3.14));
+  auto & fpConstant2 =
+      ConstantFP::createNode(graph->GetRootRegion(), fpsize::dbl, ::llvm::APFloat(2.71));
+
+  jlm::llvm::ConstantDataArrayOperation::Create({ fpConstant1.output(0), fpConstant2.output(0) });
+
+  // Conversion: RVSDG -> MLIR -> RVSDG
+  std::cout << "Convert to MLIR" << std::endl;
+  jlm::mlir::JlmToMlirConverter mlirgen;
+  auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+  rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+  // Assert: Verify the result
+  EXPECT_EQ(region->numNodes(), 3u); // 2 fp constants + 1 array
+  bool foundConstantDataArray = false;
+  for (auto & node : region->Nodes())
+  {
+    if (auto constantDataArray =
+            dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
+    {
+      foundConstantDataArray = true;
+      EXPECT_EQ(constantDataArray->nresults(), 1u);
+      EXPECT_EQ(constantDataArray->narguments(), 2u);
+      auto resultType = constantDataArray->result(0);
+      auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+      EXPECT_NE(arrayType, nullptr);
+      EXPECT_TRUE(is<jlm::llvm::FloatingPointType>(arrayType->element_type()));
+      auto fpElementType =
+          jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(&arrayType->element_type());
+      EXPECT_EQ(fpElementType->size(), fpsize::dbl);
+    }
+  }
+  EXPECT_TRUE(foundConstantDataArray);
+}
+
+TEST(JlmToMlirToJlmTests, TestConstantDataArrayBackendIntegers)
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  // Setup: Create integer array
+  std::cout << "Testing Backend Conversion (Integers)" << std::endl;
+  auto & const1 = jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 42 });
+  auto & const2 = jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 84 });
+
+  jlm::llvm::ConstantDataArrayOperation::Create({ &const1, &const2 });
+
+  // Conversion: RVSDG -> MLIR -> RVSDG
+  std::cout << "Convert to MLIR" << std::endl;
+  jlm::mlir::JlmToMlirConverter mlirgen;
+  auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+  rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+  // Assert: Verify the result
+  EXPECT_EQ(region->numNodes(), 3u); // 2 constants + 1 array
+  bool foundConstantDataArray = false;
+  for (auto & node : region->Nodes())
+  {
+    if (auto constantDataArray =
+            dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
+    {
+      foundConstantDataArray = true;
+      EXPECT_EQ(constantDataArray->nresults(), 1u);
+      EXPECT_EQ(constantDataArray->narguments(), 2u);
+    }
+  }
+  EXPECT_TRUE(foundConstantDataArray);
+}
+
+TEST(JlmToMlirToJlmTests, TestConstantDataArrayBackendFloat)
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  // Setup: Create float array
+  std::cout << "Testing Backend Conversion (Float)" << std::endl;
+  auto & fp1 = ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(1.5f));
+  auto & fp2 = ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(2.5f));
+
+  jlm::llvm::ConstantDataArrayOperation::Create({ fp1.output(0), fp2.output(0) });
+
+  // Conversion: RVSDG -> MLIR -> RVSDG
+  std::cout << "Convert to MLIR" << std::endl;
+  jlm::mlir::JlmToMlirConverter mlirgen;
+  auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+  rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+  // Assert: Verify the result
+  EXPECT_EQ(region->numNodes(), 3u); // 2 constants + 1 array
+  bool foundConstantDataArray = false;
+  for (auto & node : region->Nodes())
+  {
+    if (auto constantDataArray =
+            dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
+    {
+      foundConstantDataArray = true;
+      auto resultType = constantDataArray->result(0);
+      auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+      EXPECT_TRUE(is<jlm::llvm::FloatingPointType>(arrayType->element_type()));
+    }
+  }
+  EXPECT_TRUE(foundConstantDataArray);
+}

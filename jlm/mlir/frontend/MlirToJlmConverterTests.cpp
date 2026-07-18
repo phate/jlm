@@ -668,6 +668,307 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
   }
 }
 
+/** \brief TestConstantDataArray
+ *
+ * This test verifies that jlm::constantDataArray in MLIR is correctly converted
+ * back to RVSDG with a ConstantDataArrayOperation.
+ */
+TEST(MlirToJlmConverterTests, TestConstantDataArray)
+{
+  {
+    using namespace mlir::rvsdg;
+    using namespace mlir::jlm;
+
+    // Setup MLIR Context and load dialects
+    std::cout << "Creating MLIR context" << std::endl;
+    auto context = std::make_unique<mlir::MLIRContext>();
+    context->getOrLoadDialect<RVSDGDialect>();
+    context->getOrLoadDialect<JLMDialect>();
+    context->getOrLoadDialect<mlir::arith::ArithDialect>();
+    context->getOrLoadDialect<mlir::LLVM::LLVMDialect>();
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
+
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
+    auto & omegaRegion = omega.getRegion();
+    auto * omegaBlock = new mlir::Block;
+    omegaRegion.push_back(omegaBlock);
+
+    // Handle function arguments
+    std::cout << "Creating function arguments" << std::endl;
+    ::llvm::SmallVector<mlir::Type> arguments;
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+
+    // Add function attributes
+    std::cout << "Creating function attributes" << std::endl;
+    ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
+    attributes.push_back(symbolName);
+    ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
+
+    // Add inputs to the function
+    ::llvm::SmallVector<mlir::Value> inputs;
+
+    // Create the lambda node and add it to the region/block it resides in
+    std::cout << "Creating LambdaNode" << std::endl;
+    auto lambda = Builder_->create<LambdaNode>(
+        Builder_->getUnknownLoc(),
+        mlir::FunctionType::get(Builder_->getContext(), arguments, {}),
+        inputs,
+        attributesRef);
+    omegaBlock->push_back(lambda);
+    auto & lambdaRegion = lambda.getRegion();
+    auto * lambdaBlock = new mlir::Block;
+    lambdaRegion.push_back(lambdaBlock);
+
+    // Add arguments to the region
+    std::cout << "Adding arguments to the region" << std::endl;
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+
+    // Create individual bit constants for each element
+    std::cout << "Creating individual bit constants" << std::endl;
+
+    auto const10 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 10, 32);
+    lambdaBlock->push_back(const10);
+
+    auto const20 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
+    lambdaBlock->push_back(const20);
+
+    auto const30 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 30, 32);
+    lambdaBlock->push_back(const30);
+
+    // Create jlm.constantDataArray with the bit constants as operands
+    std::cout << "Creating jlm.constantDataArray" << std::endl;
+
+    auto arrayType = Builder_->getType<mlir::LLVM::LLVMArrayType>(Builder_->getIntegerType(32), 3);
+    ::llvm::SmallVector<::mlir::Value> constDataArrayInputs;
+    constDataArrayInputs.push_back(const10);
+    constDataArrayInputs.push_back(const20);
+    constDataArrayInputs.push_back(const30);
+
+    auto constantDataArray = Builder_->create<::mlir::jlm::ConstantDataArray>(
+        Builder_->getUnknownLoc(),
+        arrayType,
+        constDataArrayInputs);
+    lambdaBlock->push_back(constantDataArray);
+
+    ::llvm::SmallVector<mlir::Value> regionResults;
+    regionResults.push_back(lambdaBlock->getArgument(0));
+    regionResults.push_back(lambdaBlock->getArgument(1));
+
+    // Handle the result of the lambda
+    std::cout << "Creating LambdaResult" << std::endl;
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
+    lambdaBlock->push_back(lambdaResult);
+
+    // Handle the result of the omega
+    std::cout << "Creating OmegaResult" << std::endl;
+    ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+    omegaRegionResults.push_back(lambda.getResult());
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
+    omegaBlock->push_back(omegaResult);
+
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::rvsdg;
+
+      std::cout << "Checking the result" << std::endl;
+
+      EXPECT_EQ(region->numNodes(), 1u);
+
+      // Get the lambda block
+      auto convertedLambda =
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+
+      auto & lambdaRegion = *convertedLambda->subregion();
+
+      // 3 bit constants + 1 jlm.constantDataArray
+      EXPECT_EQ(lambdaRegion.numNodes(), 4u);
+
+      // Check for ConstantDataArray node
+      size_t constDataArrayCount = 0;
+      for (auto & node : lambdaRegion.Nodes())
+      {
+        if (is<jlm::llvm::ConstantDataArrayOperation>(node.GetOperation()))
+        {
+          constDataArrayCount++;
+          auto & constantArrayOp =
+              dynamic_cast<const jlm::llvm::ConstantDataArrayOperation &>(node.GetOperation());
+
+          EXPECT_EQ(constantArrayOp.size(), 3u) << "Expected 3 elements in ConstantDataArray";
+
+          // Check that each input is an IntegerConstantOperation with the correct value
+          std::vector<uint64_t> expectedValues = { 10, 20, 30 };
+          for (size_t i = 0; i < constantArrayOp.size(); ++i)
+          {
+            auto originNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
+                jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node.input(i)->origin()));
+
+            EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(originNode->GetOperation()));
+            auto intConstOp = dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(
+                &originNode->GetOperation());
+
+            uint64_t value = intConstOp->Representation().to_uint();
+            EXPECT_EQ(value, expectedValues[i])
+                << "Expected value " << expectedValues[i] << " at index " << i;
+          }
+        }
+      }
+
+      EXPECT_EQ(constDataArrayCount, 1u) << "Expected exactly one ConstantDataArrayOperation";
+    }
+  }
+}
+
+/** \brief TestBitConstantOperationConversion
+ *
+ * This test verifies that MLIR arith::ConstantOp is correctly converted to RVSDG's
+ * BitConstantOperation, while arith::ConstantIntOp converts to IntegerConstantOperation.
+ */
+TEST(MlirToJlmConverterTests, TestBitConstantOperationConversion)
+{
+  using namespace mlir::rvsdg;
+  using namespace mlir::jlm;
+  using namespace jlm::rvsdg;
+
+  // Setup MLIR Context and load dialects
+  std::cout << "Creating MLIR context" << std::endl;
+  auto context = std::make_unique<mlir::MLIRContext>();
+  context->getOrLoadDialect<RVSDGDialect>();
+  context->getOrLoadDialect<JLMDialect>();
+  context->getOrLoadDialect<mlir::arith::ArithDialect>();
+  context->getOrLoadDialect<mlir::LLVM::LLVMDialect>();
+  auto builder = std::make_unique<mlir::OpBuilder>(context.get());
+
+  // Create LambdaNode structure (similar to other tests)
+  std::cout << "Creating LambdaNode" << std::endl;
+  auto omega = builder->create<OmegaNode>(builder->getUnknownLoc());
+  auto & omegaRegion = omega.getRegion();
+  auto * omegaBlock = new mlir::Block;
+  omegaRegion.push_back(omegaBlock);
+
+  // Create lambda with no arguments and returns three i32 values
+  std::cout << "Creating LambdaNode with results" << std::endl;
+  ::llvm::SmallVector<mlir::Type> argumentTypes;
+  ::llvm::SmallVector<mlir::Type> resultTypes;
+  resultTypes.push_back(
+      builder->getIntegerType(32)); // Result 0: bit_pattern=true (BitConstantOperation)
+  resultTypes.push_back(
+      builder->getIntegerType(32)); // Result 1: bit_pattern=false (IntegerConstantOperation)
+  resultTypes.push_back(
+      builder->getIntegerType(32)); // Result 2: no attribute (IntegerConstantOperation)
+
+  // Add function attributes including symbol name
+  ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+  auto attributeName = builder->getStringAttr("sym_name");
+  auto attributeValue = builder->getStringAttr("test_function");
+  auto symbolName = builder->getNamedAttr(attributeName, attributeValue);
+  attributes.push_back(symbolName);
+
+  auto lambda = builder->create<::mlir::rvsdg::LambdaNode>(
+      builder->getUnknownLoc(),
+      builder->getType<mlir::FunctionType>(argumentTypes, resultTypes),
+      ::llvm::SmallVector<mlir::Value>(),
+      ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
+  omegaBlock->push_back(lambda);
+  auto & mlirLambdaRegion = lambda.getRegion();
+  auto * lambdaBlock = new mlir::Block;
+  mlirLambdaRegion.push_back(lambdaBlock);
+
+  // Create ConstantIntOp with jlm.is_bit_pattern=true (should become BitConstantOperation)
+  std::cout << "Creating ConstantIntOp with bit_pattern=true" << std::endl;
+  auto constantIntOp1 =
+      builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 42, 32);
+  // Set jlm.is_bit_pattern attribute to true
+  constantIntOp1->setAttr("jlm.is_bit_pattern", builder->getBoolAttr(true));
+  lambdaBlock->push_back(constantIntOp1);
+
+  // Create ConstantIntOp with jlm.is_bit_pattern=false (should become IntegerConstantOperation)
+  std::cout << "Creating ConstantIntOp with bit_pattern=false" << std::endl;
+  auto constantIntOp2 =
+      builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 10, 32);
+  // Set jlm.is_bit_pattern attribute to false
+  constantIntOp2->setAttr("jlm.is_bit_pattern", builder->getBoolAttr(false));
+  lambdaBlock->push_back(constantIntOp2);
+
+  // Create ConstantIntOp without jlm.is_bit_pattern attribute (should become
+  // IntegerConstantOperation)
+  std::cout << "Creating ConstantIntOp without bit_pattern attribute" << std::endl;
+  auto constantIntOp3 =
+      builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 20, 32);
+  // No attribute set - defaults to IntegerConstantOperation
+  lambdaBlock->push_back(constantIntOp3);
+
+  // Set up lambda results: result(0) from constantIntOp1, result(1) from constantIntOp2, result(2)
+  // from constantIntOp3
+  std::cout << "Setting up LambdaResult" << std::endl;
+  ::llvm::SmallVector<mlir::Value> regionResults;
+  regionResults.push_back(constantIntOp1->getResult(0));
+  regionResults.push_back(constantIntOp2->getResult(0));
+  regionResults.push_back(constantIntOp3->getResult(0));
+  auto lambdaResult = builder->create<LambdaResult>(builder->getUnknownLoc(), regionResults);
+  lambdaBlock->push_back(lambdaResult);
+
+  // Set up omega result
+  std::cout << "Setting up OmegaResult" << std::endl;
+  ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+  omegaRegionResults.push_back(lambda.getResult());
+  auto omegaResult = builder->create<OmegaResult>(builder->getUnknownLoc(), omegaRegionResults);
+  omegaBlock->push_back(omegaResult);
+
+  // Convert MLIR to RVSDG
+  std::cout << "Converting MLIR to RVSDG" << std::endl;
+  jlm::mlir::MlirToJlmConverter converter;
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+  auto rvsdgModule = converter.ConvertMlir(rootBlock);
+
+  // Check the result
+  std::cout << "Checking the result" << std::endl;
+  auto & region = rvsdgModule->Rvsdg().GetRootRegion();
+
+  // We should have exactly one node: the LambdaNode
+  EXPECT_EQ(region.numNodes(), 1u);
+  auto convertedLambda =
+      jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region.Nodes().begin().ptr());
+  EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+
+  // Use lambda results to trace back to each constant node
+  auto & rvsdgLambdaRegion = *convertedLambda->subregion();
+
+  // Result 0 should come from BitConstantOperation (bit_pattern=true)
+  std::cout << "Checking result 0 (should be from BitConstantOperation)" << std::endl;
+  auto result0Origin = rvsdgLambdaRegion.result(0)->origin();
+  auto result0Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*result0Origin);
+  EXPECT_TRUE(is<jlm::rvsdg::BitConstantOperation>(result0Node->GetOperation()))
+      << "Result 0 should be from BitConstantOperation, got: " << result0Node->DebugString();
+
+  // Result 1 should come from IntegerConstantOperation (bit_pattern=false)
+  std::cout << "Checking result 1 (should be from IntegerConstantOperation)" << std::endl;
+  auto result1Origin = rvsdgLambdaRegion.result(1)->origin();
+  auto result1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*result1Origin);
+  EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(result1Node->GetOperation()))
+      << "Result 1 should be from IntegerConstantOperation, got: " << result1Node->DebugString();
+
+  // Result 2 should come from IntegerConstantOperation (no attribute)
+  std::cout << "Checking result 2 (should be from IntegerConstantOperation)" << std::endl;
+  auto result2Origin = rvsdgLambdaRegion.result(2)->origin();
+  auto result2Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*result2Origin);
+  EXPECT_TRUE(is<jlm::llvm::IntegerConstantOperation>(result2Node->GetOperation()))
+      << "Result 2 should be from IntegerConstantOperation, got: " << result2Node->DebugString();
+}
+
 /** \brief TestMatchOp
  *
  * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.

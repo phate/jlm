@@ -101,6 +101,179 @@ TEST(JlmToMlirConverterTests, TestLambda)
   }
 }
 
+/** \brief TestConstantDataArray
+ *
+ * This test verifies that ConstantDataArrayOperation in RVSDG is correctly converted
+ * to MLIR with jlm::constantDataArray taking the constants as operands.
+ */
+TEST(JlmToMlirConverterTests, TestConstantDataArray)
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    // Setup the function with a ConstantDataArray
+    using namespace jlm::rvsdg;
+
+    auto bitType = BitType::Create(32);
+    auto arrayType = ArrayType::Create(bitType, 3);
+
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(
+            FunctionType::Create(
+                { IOStateType::Create(), MemoryStateType::Create() },
+                { arrayType, IOStateType::Create(), MemoryStateType::Create() }),
+            "test",
+            Linkage::externalLinkage));
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
+
+    // Create individual constant nodes for each array element
+    auto element1 = &BitConstantOperation::create(*lambda->subregion(), { 32, 10 });
+    auto element2 = &BitConstantOperation::create(*lambda->subregion(), { 32, 20 });
+    auto element3 = &BitConstantOperation::create(*lambda->subregion(), { 32, 30 });
+
+    // Create ConstantDataArrayOperation with the individual elements
+    auto constantDataArray = ConstantDataArrayOperation::Create({ element1, element2, element3 });
+
+    lambda->finalize({ constantDataArray, iOStateArgument, memoryStateArgument });
+
+    // Convert the RVSDG to MLIR
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Checking blocks and operations count
+    auto & omegaRegion = omega.getRegion();
+    EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
+    auto & omegaBlock = omegaRegion.front();
+    // Lambda + terminating operation
+    EXPECT_EQ(omegaBlock.getOperations().size(), 2u);
+
+    // Checking lambda block operations
+    auto & mlirLambda = omegaBlock.front();
+    auto & lambdaRegion = mlirLambda.getRegion(0);
+    auto & lambdaBlock = lambdaRegion.front();
+
+    // Should have: 3 bit constants + 1 jlm.constantDataArray (the array) + lambda result
+    EXPECT_EQ(lambdaBlock.getOperations().size(), 5u);
+
+    size_t constIntOpCount = 0;
+    bool constantDataArrayFound = false;
+
+    for (auto & operation : lambdaBlock.getOperations())
+    {
+      if (mlir::isa<mlir::rvsdg::LambdaResult>(operation))
+        continue;
+
+      // Check for individual bit constants
+      if (auto constOp = mlir::dyn_cast<mlir::arith::ConstantIntOp>(&operation))
+      {
+        EXPECT_TRUE(constOp.getType().isInteger(32));
+        uint64_t value = constOp.value();
+        bool isValidValue = (value == 10 || value == 20 || value == 30);
+        EXPECT_TRUE(isValidValue) << "Unexpected constant value: " << value;
+        constIntOpCount++;
+      }
+      // Check for jlm.constantDataArray operation
+      else if (mlir::isa<mlir::jlm::ConstantDataArray>(&operation))
+      {
+        auto arrayOp = mlir::cast<mlir::jlm::ConstantDataArray>(operation);
+
+        // Should have 3 operands (one for each constant)
+        EXPECT_EQ(arrayOp.getNumOperands(), 3u) << "Expected 3 operands in jlm.constantDataArray";
+
+        // Verify each operand is one of our bit constants
+        std::vector<uint64_t> expectedValues = { 10, 20, 30 };
+        for (size_t i = 0; i < arrayOp.getNumOperands(); i++)
+        {
+          auto operand = arrayOp.getOperand(i);
+          EXPECT_TRUE(operand.getType().isInteger(32));
+
+          // Get the defining op and extract value
+          auto definingOp = operand.getDefiningOp();
+          if (auto constOp = mlir::dyn_cast<mlir::arith::ConstantIntOp>(definingOp))
+          {
+            uint64_t value = constOp.value();
+            bool found = false;
+            for (size_t j = 0; j < expectedValues.size(); j++)
+            {
+              if (expectedValues[j] == value)
+              {
+                found = true;
+                expectedValues.erase(expectedValues.begin() + j);
+                break;
+              }
+            }
+            EXPECT_TRUE(found) << "Operand " << i << " has unexpected value: " << value;
+          }
+        }
+
+        // All values should be matched
+        EXPECT_EQ(expectedValues.size(), 0u);
+
+        constantDataArrayFound = true;
+      }
+    }
+
+    EXPECT_EQ(constIntOpCount, 3u) << "Expected 3 bit constants";
+    EXPECT_TRUE(constantDataArrayFound) << "jlm.constantDataArray not found";
+
+    omega->destroy();
+  }
+}
+
+/** \brief TestBitConstantMLIROutput
+ *
+ * This test verifies that BitConstantOperation in RVSDG is correctly converted to MLIR's
+ * arith::ConstantOp with the correct bit width. The key check is that:
+ * 1. BitConstantOperation produces arith::ConstantOp (not ConstantIntOp)
+ * 2. The MLIR type preserves the nbits information from the original BitValueRepresentation
+ */
+TEST(JlmToMlirConverterTests, TestBitConstantMLIROutput)
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule->Rvsdg();
+
+  // Create a bit constant with specific nbits
+  const size_t nbits = 32;
+  const uint64_t value = 10;
+  jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { nbits, value });
+
+  // Convert to MLIR
+  jlm::mlir::JlmToMlirConverter mlirgen;
+  auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+  auto & omegaBlock = omega.getRegion().front();
+
+  // Find the constant operation and verify it's using arith::ConstantOp
+  bool foundConstantOp = false;
+  size_t constIntCount = 0;
+
+  for (auto & op : omegaBlock.getOperations())
+  {
+    if (auto constOp = mlir::dyn_cast<mlir::arith::ConstantOp>(&op))
+    {
+      // This is expected - arith::ConstantOp is used for bit patterns
+      EXPECT_EQ(constOp.getType().getIntOrFloatBitWidth(), nbits);
+      foundConstantOp = true;
+    }
+    else if (auto intConst = mlir::dyn_cast<mlir::arith::ConstantIntOp>(&op))
+    {
+      // This should NOT happen - arith::ConstantIntOp is for IntegerConstantOperation
+      constIntCount++;
+    }
+  }
+
+  EXPECT_TRUE(foundConstantOp) << "Expected to find arith::ConstantOp for BitConstantOperation";
+  EXPECT_EQ(constIntCount, 0u) << "BitConstantOperation should not produce arith::ConstantIntOp";
+}
+
 /** \brief useChainsUpTraverse
  *
  * This function checks if the given operation matches the given definingOperations use chain
