@@ -16,6 +16,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
@@ -551,6 +552,24 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
+    // Check for jlm.is_bit_pattern attribute to distinguish BitConstantOperation from IntegerConstantOperation
+    if (auto attr = mlirOperation.getAttr("jlm.is_bit_pattern"))
+    {
+      if (auto boolAttr = attr.dyn_cast<::mlir::BoolAttr>())
+      {
+        if (boolAttr.getValue())
+        {
+          // Create BitConstantOperation with bit pattern preserved
+          auto value = constant.value();
+          auto & bitOutput = jlm::rvsdg::BitConstantOperation::create(
+              rvsdgRegion,
+              jlm::rvsdg::BitValueRepresentation(integerType.getWidth(), value));
+          return { &bitOutput };
+        }
+      }
+    }
+
+    // Default: create IntegerConstantOperation
     // MLIR stores IntegerAttr values and returns signed int64_t via getInt()
     // For a 32-bit value like 0xFFFFFFFF, getInt() returns -1
     // The BitValueRepresentation constructor handles this correctly with arithmetic right shift
