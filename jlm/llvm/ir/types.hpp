@@ -12,6 +12,8 @@
 #include <jlm/util/iterator_range.hpp>
 
 #include <memory>
+#include <mutex>
+#include <unordered_map>
 #include <vector>
 
 namespace jlm::llvm
@@ -95,10 +97,7 @@ public:
   }
 
   static std::shared_ptr<const ArrayType>
-  Create(std::shared_ptr<const Type> type, size_t nelements)
-  {
-    return std::make_shared<ArrayType>(std::move(type), nelements);
-  }
+  Create(std::shared_ptr<const Type> type, size_t nelements);
 
 private:
   size_t nelements_;
@@ -307,10 +306,7 @@ public:
   CreateIdentified(
       const std::string & name,
       std::vector<std::shared_ptr<const Type>> types,
-      bool isPacked)
-  {
-    return std::make_shared<StructType>(name, std::move(types), isPacked, false);
-  }
+      bool isPacked);
 
   /**
    * Creates an identified struct, without a name.
@@ -319,10 +315,7 @@ public:
    * @return the created struct type
    */
   static std::shared_ptr<const StructType>
-  CreateIdentified(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
-  {
-    return CreateIdentified("", std::move(types), isPacked);
-  }
+  CreateIdentified(std::vector<std::shared_ptr<const Type>> types, bool isPacked);
 
   /**
    * Creates a literal struct, which is anonymous and only identified through its fields.
@@ -331,11 +324,7 @@ public:
    * @return the created struct type
    */
   static std::shared_ptr<const StructType>
-  CreateLiteral(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
-  {
-    // Literal structs don't have names, so always use the empty string
-    return std::make_shared<StructType>("", std::move(types), isPacked, true);
-  }
+  CreateLiteral(std::vector<std::shared_ptr<const Type>> types, bool isPacked);
 
 private:
   std::string name_;

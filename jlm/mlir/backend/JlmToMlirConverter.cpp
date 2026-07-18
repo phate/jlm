@@ -196,6 +196,10 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertDelta(*delta, block, inputs);
   }
+  else if (auto phi = dynamic_cast<const rvsdg::PhiNode *>(&node))
+  {
+    return ConvertPhi(*phi, block, inputs);
+  }
   else
   {
     auto message = util::strfmt("Unimplemented structural node: ", node.DebugString());
@@ -552,6 +556,57 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
+  else if (auto bitCastOp = dynamic_cast<const llvm::BitCastOperation *>(&operation))
+  {
+    auto srcType = bitCastOp->argument(0);
+    auto dstType = bitCastOp->result(0);
+
+    // BitCast on pointer types maps to LLVM::BitCastOp
+    if (dynamic_cast<const llvm::PointerType *>(srcType.get())
+        && dynamic_cast<const llvm::PointerType *>(dstType.get()))
+    {
+      MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+          Builder_->getUnknownLoc(),
+          ConvertType(*bitCastOp->result(0)),
+          inputs[0]);
+    }
+    // BitCast on integer types maps to arith::ExtUIOp or arith::TruncIOp depending on size
+    else if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      if (auto dstBitType = dynamic_cast<const rvsdg::BitType *>(dstType.get()))
+      {
+        auto srcBits = srcBitType->nbits();
+        auto dstBits = dstBitType->nbits();
+
+        if (dstBits > srcBits)
+        {
+          MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+        else if (dstBits < srcBits)
+        {
+          MlirOp = Builder_->create<::mlir::arith::TruncIOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+        else
+        {
+          // Same bit width - just pass through (same as extui for zero extension)
+          MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+      }
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unsupported bitcast type combination");
+    }
+  }
   // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
@@ -806,7 +861,48 @@ JlmToMlirConverter::ConvertSimpleNode(
         resultType,
         ::mlir::ValueRange(inputs));
   }
+  else if (auto intToPtrOp = dynamic_cast<const llvm::IntToPtrOperation *>(&operation))
+  {
+    // IntToPtr converts integer to pointer - maps to LLVM::IntToPtrOp
+    MlirOp = Builder_->create<::mlir::LLVM::IntToPtrOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*intToPtrOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto fnToPtrOp = dynamic_cast<const llvm::FunctionToPointerOperation *>(&operation))
+  {
+    // FunctionToPointerOperation converts a function reference to a pointer
+    // In MLIR, this maps to getting the address of a function - use Bitcast since we're just
+    // changing type
+    MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fnToPtrOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto ptrToFnOp = dynamic_cast<const llvm::PointerToFunctionOperation *>(&operation))
+  {
+    // PointerToFunctionOperation converts a pointer back to a function type
+    MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*ptrToFnOp->result(0)),
+        inputs[0]);
+  }
   // ** endregion structural nodes **
+
+  // ConstantArray - constant array with element values
+  else if (auto arrOp = dynamic_cast<const llvm::ConstantArrayOperation *>(&operation))
+  {
+    JLM_UNREACHABLE("ConstantArray conversion not yet implemented");
+  }
+  // ConstantStruct - constant struct with element values
+  else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
+  {
+    auto structType = ConvertType(*structOp->result(0));
+    MlirOp = Builder_->create<::mlir::jlm::ConstantStruct>(
+        Builder_->getUnknownLoc(),
+        structType,
+        inputs);
+  }
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", operation.debug_string());
@@ -957,6 +1053,37 @@ JlmToMlirConverter::ConvertDelta(
       Builder_->create<::mlir::rvsdg::DeltaResult>(Builder_->getUnknownLoc(), regionResults[0]);
   deltaBlock.push_back(deltaResult);
   return delta;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertPhi(
+    const rvsdg::PhiNode & phiNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  // Phi nodes have one output that represents the fixpoint
+  // Get all result types from the phi node's outputs
+  ::llvm::SmallVector<::mlir::Type> outputTypes;
+  for (size_t i = 0; i < phiNode.noutputs(); ++i)
+  {
+    outputTypes.push_back(ConvertType(*phiNode.output(i)->Type()));
+  }
+
+  auto phi = Builder_->create<::mlir::rvsdg::PhiNode>(
+      Builder_->getUnknownLoc(),
+      ::llvm::ArrayRef(outputTypes),
+      ::mlir::ValueRange(inputs));
+
+  block.push_back(phi);
+
+  // The subregion contains the mutually recursive definitions
+  auto & phiBlock = phi.getRegion().emplaceBlock();
+  auto regionResults = ConvertRegion(*phiNode.subregion(), phiBlock);
+  auto phiResult =
+      Builder_->create<::mlir::rvsdg::PhiResult>(Builder_->getUnknownLoc(), regionResults);
+  phiBlock.push_back(phiResult);
+
+  return phi;
 }
 
 ::mlir::FloatType

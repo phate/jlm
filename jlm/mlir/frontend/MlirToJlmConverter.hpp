@@ -131,6 +131,20 @@ private:
       size_t nbits);
 
   /**
+   * Converts an MLIR arith comparison operation to RVSDG bit comparison operations.
+   * Used when the input types are BitType (bitstring comparisons).
+   * \param CompOp The MLIR comparison operation to be converted.
+   * \param inputs The inputs for the RVSDG node.
+   * \param nbits The number of bits in the comparison.
+   * \result The converted RVSDG node.
+   */
+  rvsdg::Node *
+  ConvertCmpIOpToBitComparison(
+      ::mlir::arith::CmpIOp & CompOp,
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs,
+      size_t nbits);
+
+  /**
    * Converts an MLIR LLVM integer comparison operation into an RVSDG node.
    * \param operation The MLIR comparison operation to be converted.
    * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
@@ -221,7 +235,8 @@ private:
   ConvertLambda(
       ::mlir::Operation & mlirLambda,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs,
+      const std::unordered_map<void *, rvsdg::Output *> * outputMap = nullptr);
 
   /**
    * Converts an MLIR type into an RVSDG type.

@@ -19,8 +19,11 @@ BitConstantOperation::BitConstantOperation(BitValueRepresentation value)
 bool
 BitConstantOperation::operator==(const Operation & other) const noexcept
 {
-  const auto operation = dynamic_cast<const BitConstantOperation *>(&other);
-  return operation && operation->value_ == value_;
+  // Compare with another BitConstantOperation by value
+  if (auto * op = dynamic_cast<const BitConstantOperation *>(&other))
+    return op->value_ == value_;
+
+  return false;
 }
 
 std::string

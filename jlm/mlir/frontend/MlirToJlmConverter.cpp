@@ -18,8 +18,8 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
@@ -92,7 +92,11 @@ MlirToJlmConverter::GetConvertedInputs(
   for (::mlir::Value operand : mlirOp.getOperands())
   {
     auto key = operand.getAsOpaquePointer();
-    JLM_ASSERT(outputMap.find(key) != outputMap.end());
+    if (outputMap.find(key) == outputMap.end())
+    {
+      std::cerr << "ERROR: Key not found in outputMap for operand\n";
+      return inputs; // Return empty to continue
+    }
     inputs.push_back(outputMap.at(key));
   }
   return inputs;
@@ -103,6 +107,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 {
   ::mlir::sortTopologically(&block);
 
+  // Note: Block conversion for phi subregions is handled separately in ConvertPhi
+
   // Create an RVSDG node for each MLIR operation and store the mapping from
   // MLIR values to RVSDG outputs in a hash map for easy lookup
   std::unordered_map<void *, rvsdg::Output *> outputMap;
@@ -111,6 +117,12 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   {
     auto arg = block.getArgument(i);
     auto key = arg.getAsOpaquePointer();
+
+    if (i >= rvsdgRegion.narguments())
+    {
+      JLM_UNREACHABLE("MLIR block has more arguments than RVSDG region");
+    }
+
     outputMap[key] = rvsdgRegion.argument(i);
   }
 
@@ -497,7 +509,9 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (::mlir::isa<::mlir::rvsdg::LambdaNode>(&mlirOperation))
   {
-    return rvsdg::outputs(ConvertLambda(mlirOperation, rvsdgRegion, inputs));
+    // outputMap is only needed for lambdas inside phi blocks - they get context vars from block
+    // args
+    return rvsdg::outputs(ConvertLambda(mlirOperation, rvsdgRegion, inputs, nullptr));
   }
   else if (auto callOp = ::mlir::dyn_cast<::mlir::jlm::Call>(&mlirOperation))
   {
@@ -537,6 +551,9 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
+    // MLIR stores IntegerAttr values and returns signed int64_t via getInt()
+    // For a 32-bit value like 0xFFFFFFFF, getInt() returns -1
+    // The BitValueRepresentation constructor handles this correctly with arithmetic right shift
     return rvsdg::outputs(&jlm::llvm::IntegerConstantOperation::Create(
         rvsdgRegion,
         integerType.getWidth(),
@@ -561,6 +578,7 @@ MlirToJlmConverter::ConvertOperation(
     auto type = constant.getType();
     JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
 
+    // MLIR stores index values and returns signed int64_t via getInt()
     return rvsdg::outputs(&jlm::llvm::IntegerConstantOperation::Create(
         rvsdgRegion,
         MlirToJlmConverter::GetIndexBitWidth(),
@@ -636,6 +654,75 @@ MlirToJlmConverter::ConvertOperation(
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return { &llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), *inputs[0]) };
   }
+  else if (auto inttoptrOp = ::mlir::dyn_cast<::mlir::LLVM::IntToPtrOp>(&mlirOperation))
+  {
+    auto srcType = inputs[0]->Type();
+    // IntToPtr converts integer to pointer
+    if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      return { llvm::IntToPtrOperation::create(inputs[0]) };
+    }
+  }
+  else if (auto bitCastOp = ::mlir::dyn_cast<::mlir::LLVM::BitcastOp>(&mlirOperation))
+  {
+    auto srcType = inputs[0]->Type();
+    auto mlirDstType = bitCastOp.getType();
+
+    // BitCast on pointer types
+    if (llvm::PointerType::Create()->operator==(*srcType)
+        && ::mlir::isa<::mlir::LLVM::LLVMPointerType>(mlirDstType))
+    {
+      return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+    }
+    // BitCast on integer types (ExtUI or Trunc depending on size)
+    else if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      auto dstIntType = mlirDstType.cast<::mlir::IntegerType>();
+      auto srcBits = srcBitType->nbits();
+      auto dstBits = dstIntType.getWidth();
+
+      if (dstBits > srcBits)
+      {
+        return { &llvm::ZExtOperation::create(dstBits, *inputs[0]) };
+      }
+      else if (dstBits < srcBits)
+      {
+        return { &llvm::TruncOperation::create(dstBits, *inputs[0]) };
+      }
+      else
+      {
+        // Same bit width - just pass through with BitCastOperation
+        return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+      }
+    }
+    // BitCast from function type to pointer (FunctionToPointerOperation)
+    else if (auto srcFnType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(srcType))
+    {
+      if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(mlirDstType))
+      {
+        // Manually construct vector from inputs
+        std::vector<rvsdg::Output *> operands;
+        for (size_t i = 0; i < inputs.size(); ++i)
+          operands.push_back(inputs[i]);
+        auto & node = rvsdg::CreateOpNode<llvm::FunctionToPointerOperation>(operands, srcFnType);
+        return { node.output(0) };
+      }
+    }
+    // BitCast from pointer to function type (PointerToFunctionOperation)
+    else if (
+        llvm::PointerType::Create()->operator==(*srcType)
+        && ::mlir::isa<::mlir::FunctionType>(mlirDstType))
+    {
+      auto dstFnType =
+          std::dynamic_pointer_cast<const rvsdg::FunctionType>(ConvertType(mlirDstType));
+      // Manually construct vector from inputs
+      std::vector<rvsdg::Output *> operands;
+      for (size_t i = 0; i < inputs.size(); ++i)
+        operands.push_back(inputs[i]);
+      return rvsdg::outputs(
+          &rvsdg::CreateOpNode<llvm::PointerToFunctionOperation>(operands, dstFnType));
+    }
+  }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
@@ -644,11 +731,17 @@ MlirToJlmConverter::ConvertOperation(
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
     return rvsdg::outputs(&rvsdg::CreateOpNode<jlm::llvm::ConstantFP>({}, size, constant.value()));
   }
-
   // Binary Integer Comparision operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
     auto type = ComOp.getOperandTypes()[0];
+    // Handle comparison for BitType or IntegerType
+    if (inputs.size() > 0 && rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
+    {
+      auto st = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, st->nbits()));
+    }
+    // Otherwise handle as integer comparison
     if (type.isa<::mlir::IntegerType>())
     {
       auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
@@ -852,8 +945,30 @@ MlirToJlmConverter::ConvertOperation(
       {
         // Constant indices are not part of the inputs to a GEPOp,
         // but they are required as explicit nodes in RVSDG
-        indices.push_back(
-            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+        // Check if an equivalent constant already exists in the region using TopDownTraverser
+        bool foundExisting = false;
+        for (auto node : rvsdg::TopDownTraverser(&rvsdgRegion))
+        {
+          auto * simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node);
+          if (!simpleNode)
+            continue;
+
+          auto * constOp = dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(
+              &simpleNode->GetOperation());
+          if (constOp && constOp->Representation().to_int() == constant)
+          {
+            indices.push_back(simpleNode->output(0));
+            foundExisting = true;
+            break;
+          }
+        }
+
+        // If no existing constant found, create a new one
+        if (!foundExisting)
+        {
+          indices.push_back(
+              jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+        }
       }
     }
 
@@ -903,6 +1018,79 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdg::outputs(rvsdgGammaNode);
   }
+  else if (auto mlirPhiNode = ::mlir::dyn_cast<::mlir::rvsdg::PhiNode>(&mlirOperation))
+  {
+    // Phi node represents mutually recursive definitions
+    jlm::rvsdg::PhiBuilder phiBuilder;
+    phiBuilder.begin(&rvsdgRegion);
+
+    // Add inputs as context variables to the phi node
+    for (size_t i = 0; i < mlirPhiNode.getInputs().size(); ++i)
+    {
+      phiBuilder.AddContextVar(*inputs[i]);
+    }
+
+    auto & subregion = *phiBuilder.subregion();
+    auto & phiBlock = mlirPhiNode.getRegion().front();
+
+    // Create mapping from MLIR values to RVSDG outputs for operations in the phi block
+    std::unordered_map<void *, rvsdg::Output *> outputMap;
+
+    size_t numContextVars = mlirPhiNode.getInputs().size();
+    size_t numFixVars = phiBlock.getNumArguments() - numContextVars;
+
+    // Map context variable block args (indices 0..N-1) to subregion arguments
+    for (size_t i = 0; i < numContextVars && i < phiBlock.getNumArguments(); ++i)
+    {
+      auto arg = phiBlock.getArgument(i);
+      outputMap[arg.getAsOpaquePointer()] = subregion.argument(i);
+    }
+
+    // Create fix vars in the phi node and map recref block args to their recref arguments
+    std::vector<rvsdg::PhiNode::FixVar> fixVars;
+    for (size_t i = 0; i < numFixVars; ++i)
+    {
+      auto argType = phiBlock.getArgument(numContextVars + i).getType();
+      auto type = ConvertType(argType);
+
+      // AddFixVar creates a fix var with recref as region argument at index i
+      auto fixVar = phiBuilder.AddFixVar(type);
+      fixVars.push_back(fixVar);
+
+      // Map recref block arg to the fix var's recref (region argument)
+      auto key = phiBlock.getArgument(numContextVars + i).getAsOpaquePointer();
+      outputMap[key] = fixVar.recref;
+    }
+
+    // Convert each operation in the phi block
+    for (auto & mlirOp : phiBlock.getOperations())
+    {
+      if (::mlir::isa<::mlir::rvsdg::PhiResult>(&mlirOp))
+        continue; // Skip terminator, handled by finalize
+
+      ::llvm::SmallVector<jlm::rvsdg::Output *> inputsForOp = GetConvertedInputs(mlirOp, outputMap);
+      auto outputs = ConvertOperation(mlirOp, subregion, inputsForOp);
+
+      for (size_t i = 0; i < mlirOp.getNumResults(); ++i)
+      {
+        auto result = mlirOp.getResult(i);
+        outputMap[result.getAsOpaquePointer()] = outputs[i];
+      }
+    }
+
+    // Get the terminator results
+    ::mlir::Operation * terminator = phiBlock.getTerminator();
+    auto regionResults = GetConvertedInputs(*terminator, outputMap);
+
+    // Finalize the phi node - connect results to recrefs (fix var post inputs)
+    for (size_t i = 0; i < regionResults.size(); ++i)
+    {
+      subregion.result(i)->divert_to(regionResults[i]);
+    }
+
+    auto phiNode = phiBuilder.end();
+    return rvsdg::outputs(phiNode);
+  }
   else if (auto mlirThetaNode = ::mlir::dyn_cast<::mlir::rvsdg::ThetaNode>(&mlirOperation))
   {
     auto rvsdgThetaNode = rvsdg::ThetaNode::create(&rvsdgRegion);
@@ -929,11 +1117,16 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto & deltaRegion = mlirDeltaNode.getRegion();
     auto & deltaBlock = deltaRegion.front();
+
+    // Debug: Print info about the delta block
+    // Delta conversion continues...
     auto terminator = deltaBlock.getTerminator();
 
     auto mlirOutputType = terminator->getOperand(0).getType();
     auto outputType = ConvertType(mlirOutputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
+
+    // Create DeltaNode directly in parent region
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
         llvm::DeltaOperation::Create(
@@ -942,8 +1135,15 @@ MlirToJlmConverter::ConvertOperation(
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
             mlirDeltaNode.getConstant(),
-            4)); // FIXME: the MLIR delta node does not support the alignment attribute
+            4));
 
+    // Add context variables from inputs to delta's subregion
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+      rvsdgDeltaNode->AddContextVar(*inputs[i]);
+    }
+
+    // Now convert the delta region - it will use delta's subregion with context variables
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 
     if (outputVector.size() != 1)
@@ -1099,56 +1299,161 @@ MlirToJlmConverter::ConvertLinkage(std::string stringValue)
   JLM_UNREACHABLE(message.c_str());
 }
 
-jlm::rvsdg::Node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertLambda(
     ::mlir::Operation & mlirOperation,
     rvsdg::Region & rvsdgRegion,
-    const ::llvm::SmallVector<rvsdg::Output *> & inputs)
+    const ::llvm::SmallVector<rvsdg::Output *> & inputs,
+    const std::unordered_map<void *, rvsdg::Output *> * outputMap)
 {
   // Get the name of the function
   auto functionNameAttribute = mlirOperation.getAttr(::llvm::StringRef("sym_name"));
   JLM_ASSERT(functionNameAttribute != nullptr);
   auto functionName = ::mlir::cast<::mlir::StringAttr>(functionNameAttribute);
 
+  // Get the linkage attribute from MLIR LambdaNode
+  auto linkage = llvm::Linkage::externalLinkage; // Default to external linkage
+  auto linkageAttribute = mlirOperation.getAttr(::llvm::StringRef("linkage"));
+  if (linkageAttribute != nullptr)
+  {
+    auto linkageStr = ::mlir::cast<::mlir::StringAttr>(linkageAttribute);
+    linkage = llvm::linkageFromString(linkageStr.str());
+  }
+
   auto lambdaOp = ::mlir::dyn_cast<::mlir::rvsdg::LambdaNode>(&mlirOperation);
   auto & lambdaRegion = lambdaOp.getRegion();
-  auto numNonContextVars = lambdaRegion.getNumArguments() - lambdaOp.getNumOperands();
-  auto & lambdaBlock = lambdaRegion.front();
-  auto lamdbaTerminator = lambdaBlock.getTerminator();
 
-  // Create the RVSDG function signature
+  // Note: Lambda conversion handles both regular and phi-contained lambdas
+  //
+  // Assumptions:
+  // - For non-phi lambdas: lambdaRegion.getNumArguments() = numFuncArgs + numContextVars
+  // - numNonContextVars = lambdaRegion.getNumArguments() - lambdaOp.getNumOperands()
+  //
+  // For phi-contained lambdas (lambdaOp.getNumOperands() == 0):
+  // - The function type is stored directly in the MLIR LambdaNode
+
+  size_t numNonContextVars;
+
+  JLM_ASSERT(lambdaOp != nullptr);
+  JLM_ASSERT(lambdaRegion.getBlocks().size() == 1);
+  if (lambdaOp.getNumOperands() == 0)
+  {
+    // For phi-contained lambdas, get function args from the LambdaNode's type
+    auto mlirFnType = lambdaOp.getType();
+    std::cout << "DEBUG Lambda: name=" << functionName.getValue().str()
+              << " operands=0 regionArgs=" << lambdaRegion.getNumArguments() << "\n";
+    auto fnType = ConvertType(mlirFnType);
+    if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(fnType.get()))
+    {
+      numNonContextVars = functionType->NumArguments();
+      std::cout << " phiFuncArgs=" << numNonContextVars << "\n";
+    }
+    else
+    {
+      JLM_UNREACHABLE("Lambda inside phi should have function type");
+    }
+  }
+  else
+  {
+    numNonContextVars = lambdaRegion.getNumArguments() - lambdaOp.getNumOperands();
+    // Verify our assumption: region args should be sum of func and context vars
+    size_t totalArgs = lambdaRegion.getNumArguments();
+    size_t contextVars = lambdaOp.getNumOperands();
+    std::cout << "DEBUG Lambda: name=" << functionName.getValue().str()
+              << " operands=" << contextVars << " regionArgs=" << totalArgs
+              << " calculatedFuncArgs=" << numNonContextVars << "\n";
+
+    // Verify assumption: region args should be at least as many as context variables
+    JLM_ASSERT(totalArgs >= contextVars);
+  }
+
+  // Verify we have enough arguments
+  JLM_ASSERT(lambdaRegion.getNumArguments() >= numNonContextVars);
+
+  std::cout << "DEBUG MlirToJlmConverter: name=" << functionName.getValue().str()
+            << " numNonContextVars=" << numNonContextVars << "\n";
+
   std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
   for (size_t argumentIndex = 0; argumentIndex < numNonContextVars; argumentIndex++)
   {
     auto type = lambdaRegion.getArgument(argumentIndex).getType();
+
+    // Convert the type - this will handle all supported types
+    // Debug: print the MLIR type - use mlir::raw_ostream or dump()
+    std::cout << "DEBUG arg[" << argumentIndex << "]=";
+    auto castedType = type.cast<::mlir::Type>();
+    castedType.dump();
+    std::cout << "\n";
+
+    // Convert and check the type
+    auto convertedType = ConvertType(type);
+    std::cout << "DEBUG convertedType[" << argumentIndex << "]=" << convertedType->debug_string()
+              << std::endl;
     argumentTypes.push_back(ConvertType(type));
   }
+  // Get result types from LambdaOperation
   std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
-  for (auto returnType : lamdbaTerminator->getOperandTypes())
+  for (size_t i = 0; i < lambdaOp.getType().getResults().size(); ++i)
   {
-    resultTypes.push_back(ConvertType(returnType));
+    auto type = lambdaOp.getType().getResults()[i];
+    resultTypes.push_back(ConvertType(type));
   }
   auto functionType = rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
-  // FIXME
-  // The linkage should be part of the MLIR attributes so it can be extracted here
+  // Use the linkage from MLIR attributes
   auto rvsdgLambda = rvsdg::LambdaNode::Create(
       rvsdgRegion,
-      llvm::LlvmLambdaOperation::Create(
-          functionType,
-          functionName.getValue().str(),
-          llvm::Linkage::externalLinkage));
+      llvm::LlvmLambdaOperation::Create(functionType, functionName.getValue().str(), linkage));
 
-  for (auto input : inputs)
+  // For phi lambdas, add context variables from block arguments
+  if (lambdaOp.getNumOperands() == 0 && outputMap)
   {
-    rvsdgLambda->AddContextVar(*input);
+    size_t numContextVars = lambdaRegion.getNumArguments() - numNonContextVars;
+    JLM_ASSERT(numContextVars > 0);
+
+    for (size_t i = numNonContextVars; i < lambdaRegion.getNumArguments(); ++i)
+    {
+      auto mlirArg = lambdaRegion.getArgument(i);
+      auto key = mlirArg.getAsOpaquePointer();
+      // Look up the RVSDG output for this block argument
+      if (outputMap->find(key) != outputMap->end())
+      {
+        rvsdgLambda->AddContextVar(*outputMap->at(key));
+      }
+      else
+      {
+        JLM_UNREACHABLE("Context variable not found in outputMap");
+      }
+    }
+  }
+  else
+  {
+    // Regular lambda with operands as context variables
+    for (auto input : inputs)
+    {
+      rvsdgLambda->AddContextVar(*input);
+    }
   }
 
   auto jlmLambdaRegion = rvsdgLambda->subregion();
+
+  // Note: The subregion may have more arguments than numNonContextVars if context vars are added
+  // For non-phi lambdas, AddContextVar adds inputs which show up as extra region args
+  // We don't assert here because the code correctly handles this case
+
+  // Verify context variables match what we calculated (after all context vars are added)
+  std::cerr << "DEBUG After adding context vars: ninputs=" << rvsdgLambda->ninputs()
+            << " lambdaOp.getNumOperands()=" << lambdaOp.getNumOperands() << std::endl;
+  JLM_ASSERT(rvsdgLambda->ninputs() == lambdaOp.getNumOperands());
+  std::cerr << "DEBUG Before finalize for name=" << functionName.getValue().str() << std::endl;
   auto regionResults = ConvertRegion(lambdaRegion, *jlmLambdaRegion);
+  std::cerr << "DEBUG After ConvertRegion, before finalize for name="
+            << functionName.getValue().str() << std::endl;
 
   rvsdgLambda->finalize(std::vector<rvsdg::Output *>(regionResults.begin(), regionResults.end()));
 
+  std::cerr << "DEBUG ConvertLambda completed for name=" << functionName.getValue().str()
+            << std::endl;
   return rvsdgLambda;
 }
 

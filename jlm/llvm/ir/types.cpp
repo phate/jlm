@@ -15,7 +15,59 @@
 namespace jlm::llvm
 {
 
+/* Type canonicalization tables - initialized on first use to ensure proper ordering */
+static std::unordered_map<size_t, std::shared_ptr<const ArrayType>> &
+ArrayTypeCache()
+{
+  static std::unordered_map<size_t, std::shared_ptr<const ArrayType>> cache;
+  return cache;
+}
+
+static std::mutex &
+ArrayTypeCacheMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
+static std::unordered_map<size_t, std::shared_ptr<const StructType>> &
+StructTypeCache()
+{
+  static std::unordered_map<size_t, std::shared_ptr<const StructType>> cache;
+  return cache;
+}
+
+static std::mutex &
+StructTypeCacheMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
 PointerType::~PointerType() noexcept = default;
+
+/* ArrayType canonicalization */
+std::shared_ptr<const ArrayType>
+ArrayType::Create(std::shared_ptr<const Type> type, size_t nelements)
+{
+  /* Compute a hash from element type and number of elements */
+  auto key = util::CombineHashes(type->ComputeHash(), std::hash<size_t>()(nelements));
+
+  std::lock_guard<std::mutex> lock(ArrayTypeCacheMutex());
+
+  /* Check if we already have this type in the cache */
+  auto & cache = ArrayTypeCache();
+  auto it = cache.find(key);
+  if (it != cache.end())
+  {
+    return it->second;
+  }
+
+  /* Create new type and insert into cache */
+  auto newArrayType = std::make_shared<ArrayType>(std::move(type), nelements);
+  cache[key] = newArrayType;
+  return newArrayType;
+}
 
 std::string
 PointerType::debug_string() const
@@ -184,6 +236,53 @@ VariableArgumentType::Create()
 }
 
 StructType::~StructType() noexcept = default;
+
+/* StructType canonicalization */
+std::shared_ptr<const StructType>
+StructType::CreateIdentified(
+    const std::string & name,
+    std::vector<std::shared_ptr<const Type>> types,
+    bool isPacked)
+{
+  /* Compute a hash from type components */
+  auto key = util::CombineHashes(typeid(StructType).hash_code(), std::hash<bool>()(isPacked));
+  if (!name.empty())
+  {
+    key = util::CombineHashes(key, std::hash<std::string>()(name));
+  }
+  for (auto & t : types)
+  {
+    key = util::CombineHashes(key, t->ComputeHash());
+  }
+
+  std::lock_guard<std::mutex> lock(StructTypeCacheMutex());
+
+  /* Check if we already have this type in the cache */
+  auto & cache = StructTypeCache();
+  auto it = cache.find(key);
+  if (it != cache.end())
+  {
+    return it->second;
+  }
+
+  /* Create new type and insert into cache */
+  auto newStructType = std::make_shared<StructType>(name, std::move(types), isPacked, false);
+  cache[key] = newStructType;
+  return newStructType;
+}
+
+std::shared_ptr<const StructType>
+StructType::CreateIdentified(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
+{
+  return CreateIdentified("", std::move(types), isPacked);
+}
+
+std::shared_ptr<const StructType>
+StructType::CreateLiteral(std::vector<std::shared_ptr<const Type>> types, bool isPacked)
+{
+  /* For literal structs, we use an empty name so they're cached together by type */
+  return CreateIdentified("", std::move(types), isPacked);
+}
 
 bool
 StructType::operator==(const Type & other) const noexcept

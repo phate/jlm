@@ -16,6 +16,12 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+// Forward declarations
+namespace jlm::rvsdg
+{
+class PhiNode;
+}
+
 // MLIR RVSDG dialects
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
@@ -227,6 +233,12 @@ public:
   ::mlir::Operation *
   ConvertDelta(
       const rvsdg::DeltaNode & node,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  ::mlir::Operation *
+  ConvertPhi(
+      const rvsdg::PhiNode & phiNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
