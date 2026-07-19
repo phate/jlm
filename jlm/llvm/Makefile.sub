@@ -204,6 +204,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \
     jlm/llvm/ir/operators/MemoryStateOperationTests.cpp \
+    jlm/llvm/ir/operators/OperatorsTests.cpp \
     jlm/llvm/ir/operators/PhiTests.cpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperationsTests.cpp \
     jlm/llvm/ir/operators/StoreTests.cpp \

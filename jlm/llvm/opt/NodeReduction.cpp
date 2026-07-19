@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/rvsdg/binary.hpp>
@@ -131,6 +132,9 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
         { LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
           LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
           LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
+
+static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
+    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
 
 template<typename TOperation>
 static rvsdg::NodeNormalization<TOperation>
@@ -351,6 +355,10 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
     return rvsdg::ReduceNode<IntegerUltOperation>(
         createNormalizer(integerUltNormalizations),
         simpleNode);
+  }
+  if (is<PtrCmpOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<PtrCmpOperation>(createNormalizer(ptrCmpNormalizations), simpleNode);
   }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
