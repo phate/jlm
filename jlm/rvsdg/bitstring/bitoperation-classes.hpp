@@ -43,6 +43,20 @@ public:
 
   virtual std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const = 0;
+
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref BitUnaryOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitUnaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref BitUnaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  foldConstant(const BitUnaryOperation & operation, const std::vector<Output *> & operands);
 };
 
 /* Represents a binary operation (possibly normalized n-ary if associative)
