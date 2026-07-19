@@ -5,8 +5,6 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic-impl.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 
 namespace jlm::llvm
 {
@@ -101,16 +99,8 @@ IntegerConstantOperation::debug_string() const
 bool
 IntegerConstantOperation::operator==(const Operation & other) const noexcept
 {
-  // Compare with IntegerConstantOperation by representation
-  if (auto * constant = dynamic_cast<const IntegerConstantOperation *>(&other))
-    return constant->Representation() == Representation();
-
-  // Also compare with BitConstantOperation for roundtrip compatibility
-  using namespace rvsdg;
-  if (auto * bitConst = dynamic_cast<const BitConstantOperation *>(&other))
-    return bitConst->value() == Representation_;
-
-  return false;
+  const auto constant = dynamic_cast<const IntegerConstantOperation *>(&other);
+  return constant && constant->Representation() == Representation();
 }
 
 IntegerBinaryOperation::~IntegerBinaryOperation() noexcept = default;
@@ -120,19 +110,8 @@ IntegerAddOperation::~IntegerAddOperation() noexcept = default;
 bool
 IntegerAddOperation::operator==(const Operation & other) const noexcept
 {
-  // Compare with IntegerAddOperation by type
-  if (auto * addOp = dynamic_cast<const IntegerAddOperation *>(&other))
-    return addOp->Type() == Type();
-
-  // Also compare with bitadd_op for roundtrip compatibility
-  using namespace rvsdg;
-  if (auto * bitAdd = dynamic_cast<const MakeBitBinaryOperation<
-          reduce_add,
-          BitAddLabel,
-          BinaryOperation::flags::associative | BinaryOperation::flags::commutative> *>(&other))
-    return bitAdd->result(0) == result(0);
-
-  return false;
+  const auto addOperation = dynamic_cast<const IntegerAddOperation *>(&other);
+  return addOperation && addOperation->Type() == Type();
 }
 
 std::string

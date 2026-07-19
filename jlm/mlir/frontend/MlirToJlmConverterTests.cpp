@@ -167,9 +167,14 @@ TEST(MlirToJlmConverterTests, TestConstantDataArray)
 
     // Create the lambda node and add it to the region/block it resides in
     std::cout << "Creating LambdaNode" << std::endl;
+    // Lambda function has IOState and MemState as results (to match the terminator)
+    ::llvm::SmallVector<mlir::Type> lambdaResults;
+    lambdaResults.push_back(Builder_->getType<IOStateEdgeType>());
+    lambdaResults.push_back(Builder_->getType<MemStateEdgeType>());
+
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        mlir::FunctionType::get(Builder_->getContext(), arguments, {}),
+        mlir::FunctionType::get(Builder_->getContext(), arguments, lambdaResults),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);

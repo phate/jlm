@@ -433,6 +433,8 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         value.to_uint(),
         value.nbits());
+    // Set jlm.is_bit_pattern attribute so it converts back to BitConstantOperation
+    MlirOp->setAttr("jlm.is_bit_pattern", Builder_->getBoolAttr(true));
   }
   else if (
       auto integerConstOp = dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&operation))

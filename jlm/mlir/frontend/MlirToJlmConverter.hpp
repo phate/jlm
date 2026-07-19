@@ -6,6 +6,8 @@
 #ifndef JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 #define JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 
+#include <jlm/mlir/MLIRConverterCommon.hpp>
+
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -265,6 +267,16 @@ private:
   std::unique_ptr<::mlir::MLIRContext> Context_;
   util::BijectiveMap<::mlir::LLVM::LLVMStructType *, std::shared_ptr<const llvm::StructType>>
       StructTypeMap_;
+
+  // Cache for FunctionTypes to ensure uniqueness across conversions
+  // Note: This is static so it persists across all converter instances, allowing type comparison
+  // between RVSDG → MLIR and MLIR → RVSDG conversions to work correctly
+  static std::unordered_map<
+      std::shared_ptr<const jlm::rvsdg::FunctionType>,
+      std::shared_ptr<const jlm::rvsdg::FunctionType>,
+      FunctionTypeHash,
+      FunctionTypeEqual>
+      FunctionTypeCache_;
 };
 
 } // namespace jlm::mlir

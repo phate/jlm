@@ -5,14 +5,13 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-
-#define DEBUG_COMPARE 0
 #include <queue>
 #include <unordered_set>
 
 #include <jlm/rvsdg/lambda.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -115,88 +114,63 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return result;
   }
 
+  // Handle CallOperation - compare by function type using value comparison
+  auto * call1 = dynamic_cast<const CallOperation *>(&op1);
+  auto * call2 = dynamic_cast<const CallOperation *>(&op2);
+
+  if (call1 && call2)
+  {
+    bool typesMatch = DoCompareTypes(*call1->GetFunctionType(), *call2->GetFunctionType());
+    if (!typesMatch)
+      std::cout << "Call type mismatch: " << op1.debug_string() << " vs " << op2.debug_string()
+                << "\n";
+    return typesMatch;
+  }
+
+  // Handle GetElementPtrOperation - compare the pointee types before typeid check
+  auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1);
+  auto * gep2 = dynamic_cast<const GetElementPtrOperation *>(&op2);
+
+  if (gep1 && gep2)
+  {
+    // Compare pointee types
+    bool typesMatch = DoCompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
+
+    if (!typesMatch)
+      std::cout << "GetElementPtr type mismatch: " << op1.debug_string() << " vs "
+                << op2.debug_string() << "\n";
+
+    return typesMatch;
+  }
+
   // If same type, use the regular operator==
   if (typeid(op1) == typeid(op2))
   {
     auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1);
     auto * lambda2 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op2);
 
-    std::cout << "DEBUG SameType comparison: typeid(op1)=" << typeid(op1).name()
-              << " typeid(op2)=" << typeid(op2).name() << std::endl;
-
     if (lambda1 && lambda2)
     {
-      std::cout << "DEBUG Lambda Compare: name1='" << lambda1->name() << "' name2='"
-                << lambda2->name() << "'" << std::endl;
-
-      bool namesEqual = (lambda1->name() == lambda2->name());
-      std::cout << "DEBUG Lambda names equal: " << namesEqual << std::endl;
-      JLM_ASSERT(namesEqual);
-
-      auto linkage1 = lambda1->linkage();
-      auto linkage2 = lambda2->linkage();
-      std::cout << "DEBUG Lambda linkage1=" << (int)(uint32_t)linkage1
-                << " linkage2=" << (int)(uint32_t)linkage2 << std::endl;
-      JLM_ASSERT(linkage1 == linkage2);
-
-      std::cout << "DEBUG Lambda callingConvention1=" << (int)lambda1->callingConvention()
-                << " callingConvention2=" << (int)lambda2->callingConvention() << std::endl;
+      JLM_ASSERT(lambda1->name() == lambda2->name());
+      JLM_ASSERT(lambda1->linkage() == lambda2->linkage());
       JLM_ASSERT(lambda1->callingConvention() == lambda2->callingConvention());
 
       auto type1 = lambda1->type();
       auto type2 = lambda2->type();
 
-      std::cout << "DEBUG Lambda type1 NumArguments=" << type1.NumArguments()
-                << " NumResults=" << type1.NumResults() << std::endl;
-      for (size_t i = 0; i < type1.NumArguments(); ++i)
-        std::cout << "DEBUG Lambda type1 arg[" << i << "]=" << type1.ArgumentType(i).debug_string()
-                  << std::endl;
-
-      std::cout << "DEBUG Lambda type2 NumArguments=" << type2.NumArguments()
-                << " NumResults=" << type2.NumResults() << std::endl;
-      for (size_t i = 0; i < type2.NumArguments(); ++i)
-        std::cout << "DEBUG Lambda type2 arg[" << i << "]=" << type2.ArgumentType(i).debug_string()
-                  << std::endl;
-
-      auto name = lambda1 ? lambda1->name().c_str() : "unknown";
-      if (type1.NumArguments() != type2.NumArguments())
-        std::cerr << "Type mismatch for lambda '" << name << "': expected " << type1.NumArguments()
-                  << " args but got " << type2.NumArguments() << std::endl;
       JLM_ASSERT(type1.NumArguments() == type2.NumArguments());
-
       for (size_t i = 0; i < type1.NumArguments(); ++i)
       {
-        const auto & arg1 = type1.ArgumentType(i);
-        const auto & arg2 = type2.ArgumentType(i);
-        std::cout << "DEBUG Lambda arg[" << i << "] type1=" << arg1.debug_string()
-                  << " type2=" << arg2.debug_string() << std::endl;
-        JLM_ASSERT(DoCompareTypes(arg1, arg2));
+        JLM_ASSERT(DoCompareTypes(type1.ArgumentType(i), type2.ArgumentType(i)));
       }
 
       for (size_t i = 0; i < type1.NumResults(); ++i)
       {
-        const auto & res1 = type1.ResultType(i);
-        const auto & res2 = type2.ResultType(i);
-        std::cout << "DEBUG Lambda res[" << i << "] type1=" << res1.debug_string()
-                  << " type2=" << res2.debug_string() << std::endl;
-        JLM_ASSERT(DoCompareTypes(res1, res2));
+        JLM_ASSERT(DoCompareTypes(type1.ResultType(i), type2.ResultType(i)));
       }
-
-      // Add debug for region arguments comparison too - outside the lambda-specific block
-
-      // Lambda node comparison for region inputs happens at a higher level
     }
 
-    auto result = op1 == op2;
-    if (!result)
-    {
-      std::cout << "SameType fail: typeid(op1)=" << typeid(op1).name()
-                << " typeid(op2)=" << typeid(op2).name()
-                << " lambda1=" << (lambda1 ? lambda1->name().c_str() : "nullptr")
-                << " lambda2=" << (lambda2 ? lambda2->name().c_str() : "nullptr") << " "
-                << op1.debug_string() << " != " << op2.debug_string() << "\n";
-    }
-    return result;
+    return op1 == op2;
   }
 
   // Lambda node region argument comparison happens at CompareRegions level
@@ -255,19 +229,8 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return result;
   }
 
-  // Handle GetElementPtrOperation - compare the types and indices
-  auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1);
-  auto * gep2 = dynamic_cast<const GetElementPtrOperation *>(&op2);
-
-  if (gep1 && gep2)
-  {
-    bool result = DoCompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
-
-    if (!result)
-      std::cout << "GetElementPtr mismatch: " << op1.debug_string() << " vs " << op2.debug_string()
-                << "\n";
-    return result;
-  }
+  // Note: GetElementPtr handler is placed at the beginning of CompareOperations to handle
+  // same-type comparisons before falling through to typeid check
 
   // Handle IntegerUltOperation - compare with BitComparisonOperation
   auto * intUlt1 = dynamic_cast<const IntegerUltOperation *>(&op1);
@@ -409,23 +372,9 @@ CompareNodes(const Node & node1, const Node & node2)
 void
 CompareRegions(const Region & region1, const Region & region2)
 {
-  // Check number of arguments and results - debug output first
-  std::cout << "DEBUG CompareRegions: region1.narguments=" << region1.narguments()
-            << " region2.narguments=" << region2.narguments() << std::endl;
+  // Check number of arguments and results
+  ASSERT_EQ(region1.narguments(), region2.narguments()) << "Region narguments mismatch";
   for (size_t i = 0; i < region1.narguments(); ++i)
-  {
-    auto * arg1 = region1.argument(i);
-    auto * arg2 = region2.argument(i);
-    std::cout << "  Arg[" << i << "] type1=" << arg1->Type()->debug_string()
-              << " type2=" << arg2->Type()->debug_string() << std::endl;
-  }
-
-  size_t nargs1 = region1.narguments();
-  size_t nargs2 = region2.narguments();
-
-  ASSERT_EQ(nargs1, nargs2) << "Region narguments mismatch";
-
-  for (size_t i = 0; i < nargs1; ++i)
   {
     auto * arg1 = region1.argument(i);
     auto * arg2 = region2.argument(i);
@@ -675,49 +624,8 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName
 
   std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
   rootBlock->push_back(omega);
-  std::cerr << "DEBUG BEFORE CONVERSION" << std::endl;
+
   auto roundTripModule = MlirToJlmConverter::CreateAndConvert(rootBlock);
-  std::cerr << "DEBUG AFTER CONVERSION" << std::endl;
-
-  // Debug: immediately check what types the roundtrip module has
-  std::cerr << "DEBUG AFTER CONVERSION - RoundTrip Lambdas:" << std::endl;
-  for (const auto & node : roundTripModule->Rvsdg().GetRootRegion().Nodes())
-  {
-    if (auto * lambda = dynamic_cast<const LambdaNode *>(&node))
-    {
-      using namespace jlm::llvm;
-      auto * op = dynamic_cast<const LlvmLambdaOperation *>(&lambda->GetOperation());
-      std::cerr << "  Lambda '" << op->name() << "' type: " << op->type().debug_string()
-                << " numArgs=" << op->type().NumArguments() << std::endl;
-    }
-  }
-
-  // Debug: print the lambdas from both modules
-  std::cout << "DEBUG TestRvsdgRoundtrip for " << testName << std::endl;
-  // Debug: print the lambdas from both modules
-  std::cout << "DEBUG TestRvsdgRoundtrip for " << testName << std::endl;
-  std::cout << "Original module lambdas:" << std::endl;
-  for (const auto & node : originalModule.Rvsdg().GetRootRegion().Nodes())
-  {
-    if (auto * lambda = dynamic_cast<const LambdaNode *>(&node))
-    {
-      using namespace jlm::llvm;
-      auto * op = dynamic_cast<const LlvmLambdaOperation *>(&lambda->GetOperation());
-      std::cout << "  Lambda '" << op->name() << "' type: " << op->type().debug_string()
-                << " numArgs=" << op->type().NumArguments() << std::endl;
-    }
-  }
-  std::cout << "Roundtrip module lambdas:" << std::endl;
-  for (const auto & node : roundTripModule->Rvsdg().GetRootRegion().Nodes())
-  {
-    if (auto * lambda = dynamic_cast<const LambdaNode *>(&node))
-    {
-      using namespace jlm::llvm;
-      auto * op = dynamic_cast<const LlvmLambdaOperation *>(&lambda->GetOperation());
-      std::cout << "  Lambda '" << op->name() << "' type: " << op->type().debug_string()
-                << " numArgs=" << op->type().NumArguments() << std::endl;
-    }
-  }
 
   CompareModules(originalModule, *roundTripModule);
 }

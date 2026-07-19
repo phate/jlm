@@ -16,12 +16,16 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
+#include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/APInt.h>
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
 
@@ -95,7 +99,7 @@ MlirToJlmConverter::GetConvertedInputs(
     auto key = operand.getAsOpaquePointer();
     if (outputMap.find(key) == outputMap.end())
     {
-      std::cerr << "ERROR: Key not found in outputMap for operand\n";
+      // This shouldn't happen in normal operation - indicates a bug in conversion
       return inputs; // Return empty to continue
     }
     inputs.push_back(outputMap.at(key));
@@ -546,21 +550,22 @@ MlirToJlmConverter::ConvertOperation(
         llvm::AttributeList::createEmptyList(), // FIXME: MLIR dialect does not support attributes
         arguments);
   }
-  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
+  else if (auto constantIntOp = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {
-    auto type = constant.getType();
-    JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
-    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+    auto attr = mlirOperation.getAttr("jlm.is_bit_pattern");
 
-    // Check for jlm.is_bit_pattern attribute to distinguish BitConstantOperation from IntegerConstantOperation
-    if (auto attr = mlirOperation.getAttr("jlm.is_bit_pattern"))
+    if (attr)
     {
       if (auto boolAttr = attr.dyn_cast<::mlir::BoolAttr>())
       {
         if (boolAttr.getValue())
         {
-          // Create BitConstantOperation with bit pattern preserved
-          auto value = constant.value();
+          auto type = constantIntOp.getType();
+          JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
+          auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+
+          int64_t value = constantIntOp.value();
+
           auto & bitOutput = jlm::rvsdg::BitConstantOperation::create(
               rvsdgRegion,
               jlm::rvsdg::BitValueRepresentation(integerType.getWidth(), value));
@@ -569,14 +574,14 @@ MlirToJlmConverter::ConvertOperation(
       }
     }
 
-    // Default: create IntegerConstantOperation
-    // MLIR stores IntegerAttr values and returns signed int64_t via getInt()
-    // For a 32-bit value like 0xFFFFFFFF, getInt() returns -1
-    // The BitValueRepresentation constructor handles this correctly with arithmetic right shift
+    auto type = constantIntOp.getType();
+    JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
+    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+
     return rvsdg::outputs(&jlm::llvm::IntegerConstantOperation::Create(
         rvsdgRegion,
         integerType.getWidth(),
-        constant.value()));
+        constantIntOp.value()));
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
@@ -801,8 +806,16 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
+    auto elements = std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end());
+    return { llvm::ConstantDataArrayOperation::Create(elements) };
   }
+  // else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  // {
+  //   auto type = ConvertType(StructOp.getType());
+  //   return {
+  //     &llvm::ConstantStruct::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end()), type)
+  //   };
+  // }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
@@ -972,9 +985,19 @@ MlirToJlmConverter::ConvertOperation(
           if (!simpleNode)
             continue;
 
+          // Check for both IntegerConstantOperation and BitConstantOperation
           auto * constOp = dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(
               &simpleNode->GetOperation());
           if (constOp && constOp->Representation().to_int() == constant)
+          {
+            indices.push_back(simpleNode->output(0));
+            foundExisting = true;
+            break;
+          }
+
+          auto * bitConstOp =
+              dynamic_cast<const rvsdg::BitConstantOperation *>(&simpleNode->GetOperation());
+          if (bitConstOp && bitConstOp->value().to_uint() == static_cast<uint64_t>(constant))
           {
             indices.push_back(simpleNode->output(0));
             foundExisting = true;
@@ -1359,13 +1382,10 @@ MlirToJlmConverter::ConvertLambda(
   {
     // For phi-contained lambdas, get function args from the LambdaNode's type
     auto mlirFnType = lambdaOp.getType();
-    std::cout << "DEBUG Lambda: name=" << functionName.getValue().str()
-              << " operands=0 regionArgs=" << lambdaRegion.getNumArguments() << "\n";
     auto fnType = ConvertType(mlirFnType);
     if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(fnType.get()))
     {
       numNonContextVars = functionType->NumArguments();
-      std::cout << " phiFuncArgs=" << numNonContextVars << "\n";
     }
     else
     {
@@ -1378,9 +1398,6 @@ MlirToJlmConverter::ConvertLambda(
     // Verify our assumption: region args should be sum of func and context vars
     size_t totalArgs = lambdaRegion.getNumArguments();
     size_t contextVars = lambdaOp.getNumOperands();
-    std::cout << "DEBUG Lambda: name=" << functionName.getValue().str()
-              << " operands=" << contextVars << " regionArgs=" << totalArgs
-              << " calculatedFuncArgs=" << numNonContextVars << "\n";
 
     // Verify assumption: region args should be at least as many as context variables
     JLM_ASSERT(totalArgs >= contextVars);
@@ -1389,26 +1406,13 @@ MlirToJlmConverter::ConvertLambda(
   // Verify we have enough arguments
   JLM_ASSERT(lambdaRegion.getNumArguments() >= numNonContextVars);
 
-  std::cout << "DEBUG MlirToJlmConverter: name=" << functionName.getValue().str()
-            << " numNonContextVars=" << numNonContextVars << "\n";
-
   std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
   for (size_t argumentIndex = 0; argumentIndex < numNonContextVars; argumentIndex++)
   {
     auto type = lambdaRegion.getArgument(argumentIndex).getType();
-
-    // Convert the type - this will handle all supported types
-    // Debug: print the MLIR type - use mlir::raw_ostream or dump()
-    std::cout << "DEBUG arg[" << argumentIndex << "]=";
-    auto castedType = type.cast<::mlir::Type>();
-    castedType.dump();
-    std::cout << "\n";
-
-    // Convert and check the type
+    // Convert the type
     auto convertedType = ConvertType(type);
-    std::cout << "DEBUG convertedType[" << argumentIndex << "]=" << convertedType->debug_string()
-              << std::endl;
-    argumentTypes.push_back(ConvertType(type));
+    argumentTypes.push_back(convertedType);
   }
   // Get result types from LambdaOperation
   std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
@@ -1461,18 +1465,10 @@ MlirToJlmConverter::ConvertLambda(
   // We don't assert here because the code correctly handles this case
 
   // Verify context variables match what we calculated (after all context vars are added)
-  std::cerr << "DEBUG After adding context vars: ninputs=" << rvsdgLambda->ninputs()
-            << " lambdaOp.getNumOperands()=" << lambdaOp.getNumOperands() << std::endl;
   JLM_ASSERT(rvsdgLambda->ninputs() == lambdaOp.getNumOperands());
-  std::cerr << "DEBUG Before finalize for name=" << functionName.getValue().str() << std::endl;
   auto regionResults = ConvertRegion(lambdaRegion, *jlmLambdaRegion);
-  std::cerr << "DEBUG After ConvertRegion, before finalize for name="
-            << functionName.getValue().str() << std::endl;
 
   rvsdgLambda->finalize(std::vector<rvsdg::Output *>(regionResults.begin(), regionResults.end()));
-
-  std::cerr << "DEBUG ConvertLambda completed for name=" << functionName.getValue().str()
-            << std::endl;
   return rvsdgLambda;
 }
 
@@ -1527,7 +1523,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   {
     auto mlirElementType = arrayType.getElementType();
     std::shared_ptr<const rvsdg::Type> elementType = ConvertType(mlirElementType);
-    return llvm::ArrayType::Create(elementType, arrayType.getNumElements());
+    return std::make_shared<llvm::ArrayType>(elementType, arrayType.getNumElements());
   }
   else if (auto functionType = ::mlir::dyn_cast<::mlir::FunctionType>(type))
   {
@@ -1564,14 +1560,19 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
     std::shared_ptr<const llvm::StructType> jlmStructType;
     if (structType.isIdentified())
     {
-      jlmStructType = jlm::llvm::StructType::CreateIdentified(
+      jlmStructType = std::make_shared<llvm::StructType>(
           structType.getName().str(),
-          types,
-          structType.isPacked());
+          std::move(types),
+          structType.isPacked(),
+          false); // isLiteral = false for identified structs
     }
     else
     {
-      jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
+      jlmStructType = std::make_shared<llvm::StructType>(
+          "", // empty name for literal structs
+          std::move(types),
+          structType.isPacked(),
+          true); // isLiteral = true for literal structs
     }
 
     StructTypeMap_.Insert(&structType, jlmStructType);
