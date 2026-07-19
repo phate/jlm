@@ -200,7 +200,8 @@ private:
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs,
+      std::unordered_map<void *, jlm::rvsdg::Output *> * outputMap);
 
   /**
    * Converts a floating point size to jlm::llvm::fpsize.

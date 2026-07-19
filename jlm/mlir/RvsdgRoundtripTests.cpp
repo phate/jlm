@@ -371,9 +371,35 @@ CompareOperations(const Operation & op1, const Operation & op2)
 /**
  * \brief Compares two RVSDG types for equality.
  */
+// Debug for function type comparison failures
 void
 CompareTypes(const Type & type1, const Type & type2)
 {
+  if (!DoCompareTypes(type1, type2))
+  {
+    std::cerr << "DEBUG CompareTypes FAILED: expected=" << type1.debug_string()
+              << ", got=" << type2.debug_string() << std::endl;
+    // Print more info for function types
+    auto * fnType1 = dynamic_cast<const FunctionType *>(&type1);
+    auto * fnType2 = dynamic_cast<const FunctionType *>(&type2);
+    if (fnType1 && fnType2)
+    {
+      std::cerr << "DEBUG: FunctionType1 - numArgs=" << fnType1->NumArguments()
+                << ", numResults=" << fnType1->NumResults() << std::endl;
+      for (size_t i = 0; i < fnType1->NumArguments(); ++i)
+        std::cerr << "DEBUG:   Arg " << i << ": " << fnType1->ArgumentType(i).debug_string()
+                  << std::endl;
+    }
+    if (fnType2 && fnType2 != fnType1)
+    {
+      std::cerr << "DEBUG: FunctionType2 - numArgs=" << fnType2->NumArguments()
+                << ", numResults=" << fnType2->NumResults() << std::endl;
+      for (size_t i = 0; i < fnType2->NumArguments(); ++i)
+        std::cerr << "DEBUG:   Arg " << i << ": " << fnType2->ArgumentType(i).debug_string()
+                  << std::endl;
+    }
+  }
+
   ASSERT_TRUE(DoCompareTypes(type1, type2))
       << "Type mismatch: expected " << type1.debug_string() << " but got " << type2.debug_string();
 }
@@ -451,10 +477,14 @@ CompareNodes(const Node & node1, const Node & node2)
  * \brief Compares two RVSDG regions for equality by traversing through results
  * and verifying the same graph structure exists in both regions.
  */
+// Debug: Add counter for lambda comparisons
 void
 CompareRegions(const Region & region1, const Region & region2)
 {
   // Check number of arguments and results
+  std::cerr << "DEBUG CompareRegions: region1.nargs=" << region1.narguments()
+            << ", region2.nargs=" << region2.narguments() << ", nresults=" << region1.nresults()
+            << std::endl;
   ASSERT_EQ(region1.narguments(), region2.narguments()) << "Region narguments mismatch";
   for (size_t i = 0; i < region1.narguments(); ++i)
   {
@@ -948,11 +978,11 @@ TEST(RvsdgRoundtripTests, TestPhiTest1)
   TestRvsdgRoundtrip(test.module(), "PhiTest1");
 }
 
-// TEST(RvsdgRoundtripTests, TestPhiTest2)
-// {
-//   ::jlm::llvm::PhiTest2 test;
-//   TestRvsdgRoundtrip(test.module(), "PhiTest2");
-// }
+TEST(RvsdgRoundtripTests, TestPhiTest2)
+{
+  ::jlm::llvm::PhiTest2 test;
+  TestRvsdgRoundtrip(test.module(), "PhiTest2");
+}
 
 // TEST(RvsdgRoundtripTests, TestPhiWithDelta)
 // {

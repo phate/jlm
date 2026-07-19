@@ -161,7 +161,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     {
       ::llvm::SmallVector<jlm::rvsdg::Output *> inputs = GetConvertedInputs(mlirOp, outputMap);
 
-      auto outputs = ConvertOperation(mlirOp, rvsdgRegion, inputs);
+      auto outputs = ConvertOperation(mlirOp, rvsdgRegion, inputs, &outputMap);
       JLM_ASSERT(outputs.size() == mlirOp.getNumResults());
       for (size_t i = 0; i < mlirOp.getNumResults(); i++)
       {
@@ -448,7 +448,8 @@ std::vector<jlm::rvsdg::Output *>
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
     rvsdg::Region & rvsdgRegion,
-    const ::llvm::SmallVector<rvsdg::Output *> & inputs)
+    const ::llvm::SmallVector<rvsdg::Output *> & inputs,
+    std::unordered_map<void *, rvsdg::Output *> * outputMap)
 {
 
   // ** region Arithmetic Integer Operation **
@@ -519,8 +520,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (::mlir::isa<::mlir::rvsdg::LambdaNode>(&mlirOperation))
   {
     // outputMap is only needed for lambdas inside phi blocks - they get context vars from block
-    // args
-    return rvsdg::outputs(ConvertLambda(mlirOperation, rvsdgRegion, inputs, nullptr));
+    // args. If outputMap is null, we can't add context variables properly.
+    return rvsdg::outputs(ConvertLambda(mlirOperation, rvsdgRegion, inputs, outputMap));
   }
   else if (auto callOp = ::mlir::dyn_cast<::mlir::jlm::Call>(&mlirOperation))
   {
@@ -1156,52 +1157,49 @@ MlirToJlmConverter::ConvertOperation(
     jlm::rvsdg::PhiBuilder phiBuilder;
     phiBuilder.begin(&rvsdgRegion);
 
-    // Add inputs as context variables to the phi node
-    for (size_t i = 0; i < mlirPhiNode.getInputs().size(); ++i)
-    {
-      phiBuilder.AddContextVar(*inputs[i]);
-    }
-
-    auto & subregion = *phiBuilder.subregion();
     auto & phiBlock = mlirPhiNode.getRegion().front();
 
     // Create mapping from MLIR values to RVSDG outputs for operations in the phi block
     std::unordered_map<void *, rvsdg::Output *> outputMap;
 
-    size_t numContextVars = mlirPhiNode.getInputs().size();
-    size_t numFixVars = phiBlock.getNumArguments() - numContextVars;
+    // Use the authoritative source for fix var count per C++ PhiNode spec.
+    // Fix vars must be created FIRST so their recrefs occupy subregion arguments 0..nresults-1.
+    size_t numFixVars = mlirPhiNode.getNumResults();
 
-    // Map context variable block args (indices 0..N-1) to subregion arguments
-    for (size_t i = 0; i < numContextVars && i < phiBlock.getNumArguments(); ++i)
-    {
-      auto arg = phiBlock.getArgument(i);
-      outputMap[arg.getAsOpaquePointer()] = subregion.argument(i);
-    }
-
-    // Create fix vars in the phi node and map recref block args to their recref arguments
-    std::vector<rvsdg::PhiNode::FixVar> fixVars;
+    // Step 1: Create all fix vars first (AddFixVar inserts recref at subregion->nresults())
     for (size_t i = 0; i < numFixVars; ++i)
     {
-      auto argType = phiBlock.getArgument(numContextVars + i).getType();
+      auto argType = mlirPhiNode.getResults()[i].getType();
       auto type = ConvertType(argType);
-
-      // AddFixVar creates a fix var with recref as region argument at index i
-      auto fixVar = phiBuilder.AddFixVar(type);
-      fixVars.push_back(fixVar);
-
-      // Map recref block arg to the fix var's recref (region argument)
-      auto key = phiBlock.getArgument(numContextVars + i).getAsOpaquePointer();
-      outputMap[key] = fixVar.recref;
+      phiBuilder.AddFixVar(type);
     }
 
-    // Convert each operation in the phi block
+    // Step 2: Add inputs as context variables (AddContextVar adds after fix var args)
+    for (size_t i = 0; i < mlirPhiNode.getInputs().size(); ++i)
+    {
+      phiBuilder.AddContextVar(*inputs[i]);
+    }
+
+    // Refresh subregion reference after adding context vars
+    auto & finalSubregion = *phiBuilder.subregion();
+
+    // Step 3: Map MLIR block arguments to RVSDG subregion arguments.
+    // Block arg order (from JlmToMlirConverter): fix var recrefs (0..numFixVars-1), then context
+    // vars.
+    for (size_t i = 0; i < phiBlock.getNumArguments(); ++i)
+    {
+      auto arg = phiBlock.getArgument(i);
+      outputMap[arg.getAsOpaquePointer()] = finalSubregion.argument(i);
+    }
+
+    // Convert each operation in the phi block using finalSubregion for consistency
     for (auto & mlirOp : phiBlock.getOperations())
     {
       if (::mlir::isa<::mlir::rvsdg::PhiResult>(&mlirOp))
         continue; // Skip terminator, handled by finalize
 
       ::llvm::SmallVector<jlm::rvsdg::Output *> inputsForOp = GetConvertedInputs(mlirOp, outputMap);
-      auto outputs = ConvertOperation(mlirOp, subregion, inputsForOp);
+      auto outputs = ConvertOperation(mlirOp, finalSubregion, inputsForOp, &outputMap);
 
       for (size_t i = 0; i < mlirOp.getNumResults(); ++i)
       {
@@ -1217,7 +1215,7 @@ MlirToJlmConverter::ConvertOperation(
     // Finalize the phi node - connect results to recrefs (fix var post inputs)
     for (size_t i = 0; i < regionResults.size(); ++i)
     {
-      subregion.result(i)->divert_to(regionResults[i]);
+      finalSubregion.result(i)->divert_to(regionResults[i]);
     }
 
     auto phiNode = phiBuilder.end();
@@ -1466,16 +1464,30 @@ MlirToJlmConverter::ConvertLambda(
 
   size_t numNonContextVars;
 
+  // Debug output for lambda conversion
+  std::cerr << "DEBUG ConvertLambda: lambdaName=" << functionName.getValue().str()
+            << ", lambdaOp.getNumOperands()=" << lambdaOp.getNumOperands()
+            << ", lambdaRegion.getNumArguments()=" << lambdaRegion.getNumArguments() << std::endl;
+
   JLM_ASSERT(lambdaOp != nullptr);
   JLM_ASSERT(lambdaRegion.getBlocks().size() == 1);
   if (lambdaOp.getNumOperands() == 0)
   {
     // For phi-contained lambdas, get function args from the LambdaNode's type
     auto mlirFnType = lambdaOp.getType();
+    std::cerr << "DEBUG: phiContainedLambda - mlirFnType numArgs=" << mlirFnType.getNumInputs()
+              << ", numResults=" << mlirFnType.getNumResults() << std::endl;
     auto fnType = ConvertType(mlirFnType);
     if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(fnType.get()))
     {
       numNonContextVars = functionType->NumArguments();
+      std::cerr << "DEBUG: phiContainedLambda - Got RVSDG function type with " << numNonContextVars
+                << " args" << std::endl;
+      for (size_t i = 0; i < numNonContextVars; ++i)
+      {
+        std::cerr << "DEBUG:   Arg " << i << ": " << functionType->ArgumentType(i).debug_string()
+                  << std::endl;
+      }
     }
     else
     {
@@ -1521,9 +1533,6 @@ MlirToJlmConverter::ConvertLambda(
   // For phi lambdas, add context variables from block arguments
   if (lambdaOp.getNumOperands() == 0 && outputMap)
   {
-    size_t numContextVars = lambdaRegion.getNumArguments() - numNonContextVars;
-    JLM_ASSERT(numContextVars > 0);
-
     for (size_t i = numNonContextVars; i < lambdaRegion.getNumArguments(); ++i)
     {
       auto mlirArg = lambdaRegion.getArgument(i);
@@ -1538,6 +1547,12 @@ MlirToJlmConverter::ConvertLambda(
         JLM_UNREACHABLE("Context variable not found in outputMap");
       }
     }
+  }
+  else if (lambdaOp.getNumOperands() == 0)
+  {
+    // For phi-contained lambdas without outputMap, we can't add context variables
+    // This is a problem - the lambda should have had context vars but doesn't
+    JLM_UNREACHABLE("Phi-contained lambda needs context variables from outputMap");
   }
   else
   {

@@ -895,7 +895,13 @@ JlmToMlirConverter::ConvertSimpleNode(
   // ConstantArray - constant array with element values
   else if (auto arrOp = dynamic_cast<const llvm::ConstantArrayOperation *>(&operation))
   {
-    JLM_UNREACHABLE("ConstantArray conversion not yet implemented");
+    auto arrayType = ConvertType(*arrOp->result(0));
+
+    // Create a constantDataArray from the inputs
+    MlirOp = Builder_->create<::mlir::jlm::ConstantDataArray>(
+        Builder_->getUnknownLoc(),
+        arrayType,
+        inputs);
   }
   // ConstantStruct - constant struct with element values
   else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
@@ -976,12 +982,22 @@ JlmToMlirConverter::GetMemStateRange(size_t nresults)
   return typeRange;
 }
 
+// Debug output for lambda conversion
+static int lambdaCount = 0;
+
 ::mlir::Operation *
 JlmToMlirConverter::ConvertLambda(
     const rvsdg::LambdaNode & lambdaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
+  // Debug: Print lambda info
+  auto lambdaOp = dynamic_cast<const llvm::LlvmLambdaOperation *>(&lambdaNode.GetOperation());
+  auto functionType = lambdaOp->type();
+  std::cerr << "DEBUG ConvertLambda #" << lambdaCount++ << ": name=" << lambdaOp->name()
+            << ", ninputs=" << lambdaNode.ninputs() << ", noutputs=" << lambdaNode.noutputs()
+            << ", numFuncArgs=" << functionType.NumArguments() << std::endl;
+
   // Add function attributes, e.g., the function name and linkage
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
