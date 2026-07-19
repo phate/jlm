@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -904,6 +905,55 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         structType,
         inputs);
+  }
+  else if (
+      auto memcpyNonVolatile = dynamic_cast<const llvm::MemCpyNonVolatileOperation *>(&operation))
+  {
+    // Convert non-volatile MemCpy to MLIR jlm.memcpy
+    ::mlir::Type memoryStateType = Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
+
+    // isVolatile is now an attribute, not an operand
+    // Set attribute to false for non-volatile memcpy
+    ::llvm::SmallVector<::mlir::Value> allInputs;
+    allInputs.push_back(inputs[0]); // dst
+    allInputs.push_back(inputs[1]); // src
+    allInputs.push_back(inputs[2]); // len
+    for (size_t i = 3; i < inputs.size(); ++i)
+    {
+      allInputs.push_back(inputs[i]); // memStates
+    }
+
+    MlirOp = Builder_->create<::mlir::jlm::Memcpy>(
+        Builder_->getUnknownLoc(),
+        memoryStateType,
+        ::mlir::ValueRange(allInputs));
+    // Set isVolatile attribute to false
+    MlirOp->setAttr("isVolatile", Builder_->getBoolAttr(false));
+  }
+  else if (auto memcpyVolatile = dynamic_cast<const llvm::MemCpyVolatileOperation *>(&operation))
+  {
+    // Convert volatile MemCpy to MLIR jlm.memcpy
+    ::mlir::Type memoryStateType = Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
+
+    // isVolatile is now an attribute, not an operand
+    // Set attribute to true for volatile memcpy
+    // For volatile: dst(0), src(1), len(2), ioState(3), memState(4+)
+    ::llvm::SmallVector<::mlir::Value> allInputs;
+    allInputs.push_back(inputs[0]); // dst
+    allInputs.push_back(inputs[1]); // src
+    allInputs.push_back(inputs[2]); // len
+    allInputs.push_back(inputs[3]); // ioState (for volatile)
+    for (size_t i = 4; i < inputs.size(); ++i)
+    {
+      allInputs.push_back(inputs[i]); // memStates
+    }
+
+    MlirOp = Builder_->create<::mlir::jlm::Memcpy>(
+        Builder_->getUnknownLoc(),
+        memoryStateType,
+        ::mlir::ValueRange(allInputs));
+    // Set isVolatile attribute to true
+    MlirOp->setAttr("isVolatile", Builder_->getBoolAttr(true));
   }
   else
   {

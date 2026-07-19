@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
@@ -94,9 +95,11 @@ MlirToJlmConverter::GetConvertedInputs(
     const std::unordered_map<void *, rvsdg::Output *> & outputMap)
 {
   ::llvm::SmallVector<jlm::rvsdg::Output *> inputs;
-  for (::mlir::Value operand : mlirOp.getOperands())
+  for (size_t i = 0; i < mlirOp.getNumOperands(); ++i)
   {
+    auto operand = mlirOp.getOperand(i);
     auto key = operand.getAsOpaquePointer();
+
     if (outputMap.find(key) == outputMap.end())
     {
       // This shouldn't happen in normal operation - indicates a bug in conversion
@@ -131,6 +134,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     outputMap[key] = rvsdgRegion.argument(i);
   }
 
+  // Process operations in block
   for (auto & mlirOp : block.getOperations())
   {
     if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(mlirOp))
@@ -842,6 +846,92 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FreeOperation>(
         std::vector(inputs.begin(), inputs.end()),
         inputs.size() - 2));
+  }
+
+  else if (auto MemcpyOp = ::mlir::dyn_cast<::mlir::jlm::Memcpy>(&mlirOperation))
+  {
+    // Get the isVolatile attribute from the MLIR memcpy operation
+    bool isVolatile = false;
+    auto isVolatileAttr = MemcpyOp->getAttr("isVolatile");
+    if (isVolatileAttr)
+    {
+      isVolatile = isVolatileAttr.cast<::mlir::BoolAttr>().getValue();
+    }
+
+    // Note: with isVolatile as an attribute, inputs are simpler:
+    // dst(0), src(1), len(2), inputMemStates(3+)
+
+    if (isVolatile)
+    {
+      // Volatile memcpy: dst(0), src(1), len(2), ioState(3), inputMemStates(4+)
+
+      JLM_ASSERT(inputs.size() >= 4 && "Volatile memcpy needs at least 4 inputs");
+
+      size_t nMemoryStates =
+          inputs.size() - 4; // Total inputs minus fixed ones (dst, src, len, ioState)
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 4; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      // For volatile, we need to create a MemCpyVolatileOperation
+      auto lengthType = len->Type();
+      auto op = std::make_unique<llvm::MemCpyVolatileOperation>(
+          std::dynamic_pointer_cast<const rvsdg::BitType>(lengthType),
+          nMemoryStates);
+
+      std::vector<rvsdg::Output *> operands = { dst, src, len };
+      operands.push_back(inputs[3]); // ioState (index 3 in inputs)
+      for (auto & m : memoryStateInputs)
+        operands.push_back(m);
+
+      auto & node = llvm::MemCpyVolatileOperation::CreateNode(
+          *dst,
+          *src,
+          *len,
+          *inputs[3], // dereference pointer to get reference
+          memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
+    else
+    {
+      // Non-volatile memcpy: dst(0), src(1), len(2), inputMemStates(3+)
+
+      JLM_ASSERT(inputs.size() >= 3 && "Non-volatile memcpy needs at least 3 inputs");
+
+      size_t nMemoryStates = inputs.size() - 3; // Total inputs minus fixed ones (dst, src, len)
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 3; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      auto lengthType = len->Type();
+      auto op = std::make_unique<llvm::MemCpyNonVolatileOperation>(
+          std::dynamic_pointer_cast<const rvsdg::BitType>(lengthType),
+          nMemoryStates);
+
+      std::vector<rvsdg::Output *> operands = { dst, src, len };
+      for (auto & m : memoryStateInputs)
+        operands.push_back(m);
+
+      // For non-volatile memcpy, use the static createNode which takes destination, source, length,
+      // memoryStates
+      auto & node =
+          llvm::MemCpyNonVolatileOperation::createNode(*dst, *src, *len, memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
   }
 
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
