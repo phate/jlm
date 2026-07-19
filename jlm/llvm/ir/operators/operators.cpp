@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
@@ -293,9 +294,8 @@ isAllocationSide(rvsdg::Output & output)
     return true;
   }
 
-  if (const auto region = rvsdg::TryGetOwnerRegion(output); region && region->IsRootRegion())
+  if (dynamic_cast<const LlvmGraphImport *>(&output))
   {
-    // We have a function or global variable import
     return true;
   }
 
@@ -337,15 +337,13 @@ PtrCmpOperation::normalizeNullPointerComparison(
     switch (ptrCmpOperation.predicate())
     {
     case ICmpPredicate::Eq:
-      return std::vector<rvsdg::Output *>{
-        IntegerConstantOperation::Create(region, 1, 0).output(0)
-      };
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
     case ICmpPredicate::Ne:
       return std::vector<rvsdg::Output *>{
         IntegerConstantOperation::Create(region, 1, 1).output(0)
       };
     default:
-      return std::nullopt;
+      throw std::logic_error("Unhandled predicate!");
     }
   }
 
