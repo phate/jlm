@@ -461,7 +461,17 @@ public:
         kind);
   }
 
-  // FIXME: documentation
+  /**
+   * Checks if the comparison is between a \ref ConstantPointerNullOperation and an allocation side
+   * guaranteed to never return a nullptr, and normalizes the \ref PtrCmpOperation to an
+   * \ref IntegerConstantOperation.
+   *
+   * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PtrCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref PtrCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeNullPointerComparison(
       const PtrCmpOperation & ptrCmpOperation,
