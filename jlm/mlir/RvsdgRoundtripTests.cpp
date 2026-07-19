@@ -984,11 +984,11 @@ TEST(RvsdgRoundtripTests, TestPhiTest2)
   TestRvsdgRoundtrip(test.module(), "PhiTest2");
 }
 
-// TEST(RvsdgRoundtripTests, TestPhiWithDelta)
-// {
-//   ::jlm::llvm::PhiWithDeltaTest test;
-//   TestRvsdgRoundtrip(test.module(), "PhiWithDelta");
-// }
+TEST(RvsdgRoundtripTests, TestPhiWithDelta)
+{
+  ::jlm::llvm::PhiWithDeltaTest test;
+  TestRvsdgRoundtrip(test.module(), "PhiWithDelta");
+}
 
 TEST(RvsdgRoundtripTests, TestMemcpy)
 {

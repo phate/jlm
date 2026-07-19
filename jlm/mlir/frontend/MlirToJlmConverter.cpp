@@ -75,6 +75,9 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
       llvm::LlvmRvsdgModule::Create(util::FilePath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
+
+  // Convert all operations in the omega's region.
+  // This creates LambdaNodes, PhiNodes (with fix vars that have outputs), etc.
   ConvertRegion(omegaNode.getRegion(), root);
 
   return rvsdgModule;
@@ -814,13 +817,12 @@ MlirToJlmConverter::ConvertOperation(
     auto elements = std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end());
     return { llvm::ConstantDataArrayOperation::Create(elements) };
   }
-  // else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
-  // {
-  //   auto type = ConvertType(StructOp.getType());
-  //   return {
-  //     &llvm::ConstantStruct::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end()), type)
-  //   };
-  // }
+  else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  {
+    auto structType = ConvertType(StructOp.getType());
+    std::vector<rvsdg::Output *> elementOutputs(inputs.begin(), inputs.end());
+    return { &llvm::ConstantStructOperation::Create(rvsdgRegion, elementOutputs, structType) };
+  }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
