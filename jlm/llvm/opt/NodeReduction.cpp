@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/ControlOperations.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/Gamma.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -208,14 +209,14 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
   bool reductionPerformed = false;
 
   // Reduce structural nodes
-  if (dynamic_cast<const rvsdg::GammaNode *>(&structuralNode))
+  if (const auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
   {
-    reductionPerformed |= ReduceGammaNode(structuralNode);
+    reductionPerformed |= ReduceGammaNode(*gammaNode);
   }
 
   if (reductionPerformed)
   {
-    // We can not go through the subregions as the structural node might already have been removed.
+    // We cannot go through the subregions as the structural node might already have been removed.
     return true;
   }
 
@@ -230,14 +231,12 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 }
 
 bool
-NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
+NodeReduction::ReduceGammaNode(rvsdg::GammaNode & gammaNode)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(&gammaNode));
-
   // FIXME: We can not apply the reduction below due to a bug. See github issue #303
   // rvsdg::ReduceGammaControlConstant
 
-  return ReduceGammaWithStaticallyKnownPredicate(gammaNode);
+  return reduceStaticallyKnownPredicate(gammaNode);
 }
 
 bool
