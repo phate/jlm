@@ -44,7 +44,6 @@ public:
   virtual std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const = 0;
 
-
   /**
    * Performs constant folding by statically evaluating the two constant operands and replacing the
    * operations result with the resulting constant.

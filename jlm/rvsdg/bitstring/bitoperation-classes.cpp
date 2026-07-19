@@ -37,10 +37,9 @@ BitUnaryOperation::foldConstant(
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
   if (constantOperation)
   {
-    return std::vector(
-        { &BitConstantOperation::create(
-            *constantNode->region(),
-            operation.reduce_constant(constantOperation->value())) });
+    return std::vector({ &BitConstantOperation::create(
+        *constantNode->region(),
+        operation.reduce_constant(constantOperation->value())) });
   }
 
   return std::nullopt;
