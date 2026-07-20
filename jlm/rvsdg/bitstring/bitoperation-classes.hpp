@@ -32,12 +32,6 @@ public:
     return *std::static_pointer_cast<const BitType>(argument(0));
   }
 
-  unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
-
   virtual BitValueRepresentation
   reduce_constant(const BitValueRepresentation & arg) const = 0;
 
