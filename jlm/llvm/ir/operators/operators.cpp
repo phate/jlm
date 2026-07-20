@@ -3,8 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
@@ -269,6 +273,83 @@ PtrCmpOperation::reduce_operand_pair(
   JLM_UNREACHABLE("Not implemented!");
 }
 
+template<typename TOperation>
+static bool
+isOutputOf(rvsdg::Output & operand)
+{
+  auto [node, operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<TOperation>(operand);
+  return operation != nullptr;
+}
+
+static bool
+isAllocationSide(rvsdg::Output & output)
+{
+  if (isOutputOf<AllocaOperation>(output))
+  {
+    return true;
+  }
+
+  if (rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
+  {
+    return true;
+  }
+
+  if (dynamic_cast<const LlvmGraphImport *>(&output))
+  {
+    return true;
+  }
+
+  auto [fnToPtrNode, fnToPtrOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(output);
+  if (fnToPtrOperation != nullptr)
+  {
+    const auto & tracedOutput =
+        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin());
+    if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(tracedOutput))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PtrCmpOperation::normalizeNullPointerComparison(
+    const PtrCmpOperation & ptrCmpOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  if (ptrCmpOperation.predicate() != ICmpPredicate::Eq
+      && ptrCmpOperation.predicate() != ICmpPredicate::Ne)
+    return std::nullopt;
+
+  JLM_ASSERT(operands.size() == 2);
+  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
+  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+
+  const bool hasRequiredOperands =
+      (isOutputOf<ConstantPointerNullOperation>(tracedOperand1) && isAllocationSide(tracedOperand2))
+      || (isOutputOf<ConstantPointerNullOperation>(tracedOperand2)
+          && isAllocationSide(tracedOperand1));
+  if (hasRequiredOperands)
+  {
+    auto & region = *operands[0]->region();
+    switch (ptrCmpOperation.predicate())
+    {
+    case ICmpPredicate::Eq:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
+    case ICmpPredicate::Ne:
+      return std::vector<rvsdg::Output *>{
+        IntegerConstantOperation::Create(region, 1, 1).output(0)
+      };
+    default:
+      throw std::logic_error("Unhandled predicate!");
+    }
+  }
+
+  return std::nullopt;
+}
+
 ConstantFP::~ConstantFP() noexcept = default;
 
 bool
@@ -399,20 +480,6 @@ FreezeOperation::operator==(const Operation & other) const noexcept
   return operation && operation->getType() == getType();
 }
 
-rvsdg::unop_reduction_path_t
-FreezeOperation::can_reduce_operand([[maybe_unused]] const jlm::rvsdg::Output * arg) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-FreezeOperation::reduce_operand(
-    [[maybe_unused]] rvsdg::unop_reduction_path_t path,
-    [[maybe_unused]] jlm::rvsdg::Output * arg) const
-{
-  throw std::runtime_error("FreezeOperation does not support reductions");
-}
-
 std::string
 FreezeOperation::debug_string() const
 {
@@ -488,18 +555,6 @@ std::unique_ptr<rvsdg::Operation>
 FNegOperation::copy() const
 {
   return std::make_unique<FNegOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FNegOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;

@@ -14,6 +14,7 @@
 
 namespace jlm::rvsdg
 {
+class GammaNode;
 class Graph;
 class Node;
 class Region;
@@ -23,15 +24,6 @@ class StructuralNode;
 
 namespace jlm::llvm
 {
-
-class CallExitMemoryStateSplitOperation;
-class LambdaEntryMemoryStateSplitOperation;
-class LambdaExitMemoryStateMergeOperation;
-class LoadNonVolatileOperation;
-class MemoryStateJoinOperation;
-class MemoryStateMergeOperation;
-class MemoryStateSplitOperation;
-class StoreNonVolatileOperation;
 
 /**
  * The node reduction transformation performs a series of peephole optimizations in the RVSDG. The
@@ -77,58 +69,13 @@ private:
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
   [[nodiscard]] static bool
-  ReduceGammaNode(rvsdg::StructuralNode & gammaNode);
+  ReduceGammaNode(rvsdg::GammaNode & gammaNode);
 
   [[nodiscard]] static bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
 
   [[nodiscard]] static bool
-  ReduceLoadNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceStoreNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceMemoryStateSplitNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceLambdaExitMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::SimpleNode & simpleNode);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoadNode(
-      const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeStoreNode(
-      const StoreNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateMergeNode(
-      const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateJoinNode(
-      const MemoryStateJoinOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateSplitNode(
-      const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLambdaExitMemoryStateMergeNode(
-      const LambdaExitMemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
 };
@@ -138,6 +85,10 @@ private:
  */
 class NodeReduction::Statistics final : public util::Statistics
 {
+  static inline const char * NumRegionsLabel_ = "NumRegions";
+  static inline const char * NumTotalRegionIterationsLabel_ = "NumTotalRegionIterations";
+  static inline const char * MaxIterationsPerRegionLabel_ = "MaxIterationsPerRegion";
+
 public:
   ~Statistics() noexcept override = default;
 
@@ -156,6 +107,24 @@ public:
 
   std::optional<size_t>
   GetNumIterations(const rvsdg::Region & region) const noexcept;
+
+  /**
+   * @return The number of regions that were iterated over.
+   */
+  [[nodiscard]] size_t
+  getNumRegions() const noexcept;
+
+  /**
+   * @return The sum of all iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getTotalIterations() const noexcept;
+
+  /**
+   * @return The maximum number of iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getMaxIterationsPerRegion() const noexcept;
 
   static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)

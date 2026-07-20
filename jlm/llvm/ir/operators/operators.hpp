@@ -452,6 +452,31 @@ public:
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
+  static rvsdg::SimpleNode &
+  createNode(const ICmpPredicate kind, rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<PtrCmpOperation>(
+        { &operand1, &operand2 },
+        PointerType::Create(),
+        kind);
+  }
+
+  /**
+   * Checks if the comparison is between a \ref ConstantPointerNullOperation and an allocation side
+   * guaranteed to never return a nullptr, and normalizes the \ref PtrCmpOperation to an
+   * \ref IntegerConstantOperation.
+   *
+   * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PtrCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref PtrCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeNullPointerComparison(
+      const PtrCmpOperation & ptrCmpOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   ICmpPredicate predicate_;
 };
@@ -786,12 +811,6 @@ public:
   bool
   operator==(const Operation & other) const noexcept override;
 
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
-
   std::string
   debug_string() const override;
 
@@ -913,13 +932,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
 
   const fpsize &
   size() const noexcept

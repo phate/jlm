@@ -32,17 +32,24 @@ public:
     return *std::static_pointer_cast<const BitType>(argument(0));
   }
 
-  unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
-
   virtual BitValueRepresentation
   reduce_constant(const BitValueRepresentation & arg) const = 0;
 
   virtual std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const = 0;
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref BitUnaryOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitUnaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref BitUnaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  foldConstant(const BitUnaryOperation & operation, const std::vector<Output *> & operands);
 };
 
 /* Represents a binary operation (possibly normalized n-ary if associative)

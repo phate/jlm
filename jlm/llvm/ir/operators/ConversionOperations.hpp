@@ -47,13 +47,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
   static std::unique_ptr<llvm::ThreeAddressCode>
   createTac(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
@@ -116,12 +109,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
 
   inline size_t
   nsrcbits() const noexcept
@@ -202,13 +189,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
-      const override;
-
   inline size_t
   nsrcbits() const noexcept
   {
@@ -285,13 +265,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
-      const override;
 
   inline size_t
   nsrcbits() const noexcept
@@ -371,13 +344,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
   inline size_t
   nbits() const noexcept
   {
@@ -446,13 +412,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
 
   inline const fpsize &
   srcsize() const noexcept
@@ -531,13 +490,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
   inline const fpsize &
   srcsize() const noexcept
   {
@@ -600,13 +552,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
-      const override;
-
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
@@ -657,13 +602,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
-
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
@@ -711,12 +649,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * output) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * output) const override;
 
   size_t
   nbits() const noexcept
@@ -786,12 +718,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * output) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * output) const override;
-
   static std::unique_ptr<ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
@@ -857,12 +783,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * output) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * output) const override;
 
   static std::unique_ptr<ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
@@ -952,12 +872,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * arg) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg) const override;
-
   static std::unique_ptr<FunctionToPointerOperation>
   Create(std::shared_ptr<const rvsdg::FunctionType> fn);
 
@@ -1009,12 +923,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::Output * arg) const noexcept override;
-
-  rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * arg) const override;
 
   static std::unique_ptr<PointerToFunctionOperation>
   Create(std::shared_ptr<const rvsdg::FunctionType> fn);

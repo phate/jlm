@@ -33,6 +33,8 @@ namespace jlm::hls
 
 class RhlsToFirrtlConverter : public BaseHLS
 {
+  friend class TestableRhlsToFirrtlConverter;
+
   std::string
   extension() override
   {

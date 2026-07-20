@@ -13,30 +13,24 @@ namespace jlm::rvsdg
 
 BitUnaryOperation::~BitUnaryOperation() noexcept = default;
 
-unop_reduction_path_t
-BitUnaryOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+std::optional<std::vector<Output *>>
+BitUnaryOperation::foldConstant(
+    const BitUnaryOperation & operation,
+    const std::vector<Output *> & operands)
 {
-  auto & tracedOperand = traceOutputIntraProcedurally(*arg);
-  if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand))
-    return unop_reduction_constant;
+  JLM_ASSERT(operands.size() == 1);
 
-  return unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-BitUnaryOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
-{
-  if (path == unop_reduction_constant)
+  const auto & tracedOperand = traceOutputIntraProcedurally(*operands[0]);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
+  if (constantOperation)
   {
-    auto & tracedOperand = traceOutputIntraProcedurally(*arg);
-    auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
-    return &BitConstantOperation::create(
+    return std::vector({ &BitConstantOperation::create(
         *constantNode->region(),
-        reduce_constant(constantOperation->value()));
+        operation.reduce_constant(constantOperation->value())) });
   }
 
-  return nullptr;
+  return std::nullopt;
 }
 
 BitBinaryOperation::~BitBinaryOperation() noexcept = default;
