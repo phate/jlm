@@ -940,7 +940,7 @@ JlmToMlirConverter::ConvertDelta(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto op = util::assertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
+  auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&deltaNode.GetOperation());
   auto delta = Builder_->create<::mlir::rvsdg::DeltaNode>(
       Builder_->getUnknownLoc(),
       Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
