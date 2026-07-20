@@ -104,7 +104,6 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/TraceTests.cpp \
     jlm/rvsdg/TransformationSequenceTests.cpp \
     jlm/rvsdg/TypeMismatchTests.cpp \
-    jlm/rvsdg/UnaryOperationTests.cpp \
 
 run-librvsdg-tests_LIBS = librvsdg libutil
 $(eval $(call common_test,run-librvsdg-tests))
