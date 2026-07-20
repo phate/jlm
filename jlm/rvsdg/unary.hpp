@@ -25,8 +25,7 @@ class UnaryOperation : public SimpleOperation
 public:
   ~UnaryOperation() noexcept override;
 
-  UnaryOperation(
-      std::shared_ptr<const Type> operand, std::shared_ptr<const Type> result)
+  UnaryOperation(std::shared_ptr<const Type> operand, std::shared_ptr<const Type> result)
       : SimpleOperation({ std::move(operand) }, { std::move(result) })
   {}
 };
