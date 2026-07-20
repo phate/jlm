@@ -100,40 +100,40 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 0);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x3.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x4.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x5.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 }
 
