@@ -9,24 +9,24 @@
 namespace jlm::llvm
 {
 
-DeltaOperation::~DeltaOperation() noexcept = default;
+LlvmDeltaOperation::~LlvmDeltaOperation() noexcept = default;
 
 std::string
-DeltaOperation::debug_string() const
+LlvmDeltaOperation::debug_string() const
 {
   return util::strfmt("DELTA[", name(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-DeltaOperation::copy() const
+LlvmDeltaOperation::copy() const
 {
-  return std::make_unique<DeltaOperation>(*this);
+  return std::make_unique<LlvmDeltaOperation>(*this);
 }
 
 bool
-DeltaOperation::operator==(const Operation & other) const noexcept
+LlvmDeltaOperation::operator==(const Operation & other) const noexcept
 {
-  const auto op = dynamic_cast<const DeltaOperation *>(&other);
+  const auto op = dynamic_cast<const LlvmDeltaOperation *>(&other);
   return op && op->name_ == name_ && op->linkage_ == linkage_ && op->constant() == constant()
       && op->Section_ == Section_ && op->alignment_ == alignment_ && *op->Type() == *Type();
 }

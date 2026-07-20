@@ -811,12 +811,6 @@ public:
   bool
   operator==(const Operation & other) const noexcept override;
 
-  rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
-
   std::string
   debug_string() const override;
 
@@ -938,13 +932,6 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
-
-  jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
-      const override;
 
   const fpsize &
   size() const noexcept

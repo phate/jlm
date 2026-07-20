@@ -787,7 +787,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
 
     auto delta1 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             bitType,
             "non-constant-delta",
             Linkage::externalLinkage,
@@ -800,7 +800,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
 
     auto delta2 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             bitType,
             "constant-delta",
             Linkage::externalLinkage,
@@ -865,7 +865,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
       {
         auto convertedDelta = jlm::util::assertedCast<jlm::rvsdg::DeltaNode>(&node);
         EXPECT_EQ(convertedDelta->subregion()->numNodes(), 1u);
-        auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
+        auto dop = jlm::util::assertedCast<const LlvmDeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
         {

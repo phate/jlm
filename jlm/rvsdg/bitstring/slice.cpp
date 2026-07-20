@@ -27,18 +27,6 @@ BitSliceOperation::debug_string() const
   return jlm::util::strfmt("SLICE[", low(), ":", high(), ")");
 }
 
-unop_reduction_path_t
-BitSliceOperation::can_reduce_operand(const Output *) const noexcept
-{
-  return unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-BitSliceOperation::reduce_operand(unop_reduction_path_t, Output *) const
-{
-  return nullptr;
-}
-
 std::optional<std::vector<Output *>>
 BitSliceOperation::normalizeIdempotent(
     const BitSliceOperation & operation,

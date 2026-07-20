@@ -130,7 +130,7 @@ private:
     // Create the global pointer variable "global", that is exported
     auto & globalDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
+        LlvmDeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::createNode(*globalDelta.subregion()).output(0);
@@ -142,7 +142,7 @@ private:
     // Create the global variable "local", that is not exported
     auto & localDelta = *rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        DeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false, 4));
+        LlvmDeltaOperation::Create(pointerType, "local", Linkage::internalLinkage, "", false, 4));
     {
       const auto nullPtr =
           ConstantPointerNullOperation::createNode(*localDelta.subregion()).output(0);

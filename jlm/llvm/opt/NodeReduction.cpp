@@ -36,6 +36,9 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
 {
   AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
   AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
+  AddMeasurement(NumRegionsLabel_, getNumRegions());
+  AddMeasurement(NumTotalRegionIterationsLabel_, getTotalIterations());
+  AddMeasurement(MaxIterationsPerRegionLabel_, getMaxIterationsPerRegion());
   GetTimer(Label::Timer).stop();
 }
 
@@ -56,6 +59,37 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
   }
 
   return std::nullopt;
+}
+
+size_t
+NodeReduction::Statistics::getNumRegions() const noexcept
+{
+  return NumIterations_.size();
+}
+
+size_t
+NodeReduction::Statistics::getTotalIterations() const noexcept
+{
+  size_t sum = 0;
+  for (auto [_, numIterations] : NumIterations_)
+  {
+    sum += numIterations;
+  }
+
+  return sum;
+}
+
+size_t
+NodeReduction::Statistics::getMaxIterationsPerRegion() const noexcept
+{
+  return std::max_element(
+             NumIterations_.begin(),
+             NumIterations_.end(),
+             [](const auto & p1, const auto & p2)
+             {
+               return p1.second < p2.second;
+             })
+      ->second;
 }
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>

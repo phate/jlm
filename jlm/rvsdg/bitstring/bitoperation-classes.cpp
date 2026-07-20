@@ -13,18 +13,6 @@ namespace jlm::rvsdg
 
 BitUnaryOperation::~BitUnaryOperation() noexcept = default;
 
-unop_reduction_path_t
-BitUnaryOperation::can_reduce_operand(const Output *) const noexcept
-{
-  return unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-BitUnaryOperation::reduce_operand(unop_reduction_path_t, Output *) const
-{
-  return nullptr;
-}
-
 std::optional<std::vector<Output *>>
 BitUnaryOperation::foldConstant(
     const BitUnaryOperation & operation,

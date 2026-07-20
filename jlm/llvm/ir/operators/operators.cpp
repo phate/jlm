@@ -480,20 +480,6 @@ FreezeOperation::operator==(const Operation & other) const noexcept
   return operation && operation->getType() == getType();
 }
 
-rvsdg::unop_reduction_path_t
-FreezeOperation::can_reduce_operand([[maybe_unused]] const jlm::rvsdg::Output * arg) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-FreezeOperation::reduce_operand(
-    [[maybe_unused]] rvsdg::unop_reduction_path_t path,
-    [[maybe_unused]] jlm::rvsdg::Output * arg) const
-{
-  throw std::runtime_error("FreezeOperation does not support reductions");
-}
-
 std::string
 FreezeOperation::debug_string() const
 {
@@ -569,18 +555,6 @@ std::unique_ptr<rvsdg::Operation>
 FNegOperation::copy() const
 {
   return std::make_unique<FNegOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FNegOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;

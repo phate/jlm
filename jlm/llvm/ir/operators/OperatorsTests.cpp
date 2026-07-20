@@ -40,7 +40,7 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
-      DeltaOperation::Create(pointerType, "delta", Linkage::externalLinkage, "", true, 4));
+      LlvmDeltaOperation::Create(pointerType, "delta", Linkage::externalLinkage, "", true, 4));
   auto & ptrNullDeltaNode = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
   auto & deltaOutput = deltaNode->finalize(ptrNullDeltaNode.output(0));
 
@@ -100,40 +100,40 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 0);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x3.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x4.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 
   {
     auto [constantNode, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x5.origin());
     EXPECT_NE(constantOperation, nullptr);
-    EXPECT_EQ(constantOperation->Representation().nbits(), 1);
-    EXPECT_EQ(constantOperation->Representation().to_uint(), 1);
+    EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+    EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
   }
 }
 

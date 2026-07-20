@@ -445,13 +445,7 @@ TEST(DeadNodeEliminationTests, Delta)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          valueType,
-          "delta",
-          Linkage::externalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", false, 4));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);

@@ -85,6 +85,10 @@ private:
  */
 class NodeReduction::Statistics final : public util::Statistics
 {
+  static inline const char * NumRegionsLabel_ = "NumRegions";
+  static inline const char * NumTotalRegionIterationsLabel_ = "NumTotalRegionIterations";
+  static inline const char * MaxIterationsPerRegionLabel_ = "MaxIterationsPerRegion";
+
 public:
   ~Statistics() noexcept override = default;
 
@@ -103,6 +107,24 @@ public:
 
   std::optional<size_t>
   GetNumIterations(const rvsdg::Region & region) const noexcept;
+
+  /**
+   * @return The number of regions that were iterated over.
+   */
+  [[nodiscard]] size_t
+  getNumRegions() const noexcept;
+
+  /**
+   * @return The sum of all iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getTotalIterations() const noexcept;
+
+  /**
+   * @return The maximum number of iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getMaxIterationsPerRegion() const noexcept;
 
   static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)

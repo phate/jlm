@@ -37,18 +37,6 @@ BitCastOperation::copy() const
   return std::make_unique<BitCastOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-BitCastOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-BitCastOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 SExtOperation::~SExtOperation() noexcept = default;
 
 bool
@@ -68,18 +56,6 @@ std::unique_ptr<rvsdg::Operation>
 SExtOperation::copy() const
 {
   return std::make_unique<SExtOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-SExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  return nullptr;
 }
 
 std::optional<std::vector<rvsdg::Output *>>
@@ -125,18 +101,6 @@ ZExtOperation::copy() const
   return std::make_unique<ZExtOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-ZExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  return nullptr;
-}
-
 std::optional<std::vector<rvsdg::Output *>>
 ZExtOperation::foldConstant(
     const ZExtOperation & operation,
@@ -180,18 +144,6 @@ TruncOperation::copy() const
   return std::make_unique<TruncOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-TruncOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-TruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 PtrToIntOperation::~PtrToIntOperation() noexcept = default;
 
 bool
@@ -211,18 +163,6 @@ std::unique_ptr<rvsdg::Operation>
 PtrToIntOperation::copy() const
 {
   return std::make_unique<PtrToIntOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-PtrToIntOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 FPExtOperation::~FPExtOperation() noexcept = default;
@@ -246,18 +186,6 @@ FPExtOperation::copy() const
   return std::make_unique<FPExtOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-FPExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 FPTruncOperation::~FPTruncOperation() noexcept = default;
 
 bool
@@ -277,18 +205,6 @@ std::unique_ptr<rvsdg::Operation>
 FPTruncOperation::copy() const
 {
   return std::make_unique<FPTruncOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FPTruncOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 UIToFPOperation::~UIToFPOperation() noexcept = default;
@@ -312,18 +228,6 @@ UIToFPOperation::copy() const
   return std::make_unique<UIToFPOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-UIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-UIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 SIToFPOperation::~SIToFPOperation() noexcept = default;
 
 bool
@@ -343,18 +247,6 @@ std::unique_ptr<rvsdg::Operation>
 SIToFPOperation::copy() const
 {
   return std::make_unique<SIToFPOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-SIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 IntToPtrOperation::~IntToPtrOperation() noexcept = default;
@@ -378,18 +270,6 @@ IntToPtrOperation::copy() const
   return std::make_unique<IntToPtrOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-IntToPtrOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-IntToPtrOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 FPToUIOperation::~FPToUIOperation() noexcept = default;
 
 bool
@@ -411,18 +291,6 @@ FPToUIOperation::copy() const
   return std::make_unique<FPToUIOperation>(*this);
 }
 
-rvsdg::unop_reduction_path_t
-FPToUIOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPToUIOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented");
-}
-
 FPToSIOperation::~FPToSIOperation() noexcept = default;
 
 bool
@@ -442,18 +310,6 @@ std::unique_ptr<rvsdg::Operation>
 FPToSIOperation::copy() const
 {
   return std::make_unique<FPToSIOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FPToSIOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPToSIOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 ControlToIntOperation::~ControlToIntOperation() noexcept = default;
@@ -509,18 +365,6 @@ FunctionToPointerOperation::debug_string() const
 FunctionToPointerOperation::copy() const
 {
   return Create(FunctionType());
-}
-
-rvsdg::unop_reduction_path_t
-FunctionToPointerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FunctionToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  return nullptr;
 }
 
 std::unique_ptr<FunctionToPointerOperation>
@@ -584,18 +428,6 @@ PointerToFunctionOperation::debug_string() const
 PointerToFunctionOperation::copy() const
 {
   return Create(FunctionType());
-}
-
-rvsdg::unop_reduction_path_t
-PointerToFunctionOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-PointerToFunctionOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  return nullptr;
 }
 
 std::optional<std::vector<rvsdg::Output *>>

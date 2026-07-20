@@ -77,7 +77,7 @@ private:
    * except for those that are based on the original pointer itself.
    * The pointer is also guaranteed to be at the very beginning of the memory region.
    *
-   * For example, the output of an \ref AllocaOperation, a \ref DeltaOperation,
+   * For example, the output of an \ref AllocaOperation, a \ref LlvmDeltaOperation,
    * or a \ref rvsdg::GraphImport, are such original origins.
    *
    * @param pointer the pointer value to check

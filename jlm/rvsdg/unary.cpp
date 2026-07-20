@@ -13,21 +13,4 @@ namespace jlm::rvsdg
 UnaryOperation::~UnaryOperation() noexcept
 {}
 
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeUnaryOperation(
-    const UnaryOperation & operation,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  JLM_ASSERT(operands.size() == 1);
-  auto & operand = *operands[0];
-
-  if (const auto reduction = operation.can_reduce_operand(&operand);
-      reduction != unop_reduction_none)
-  {
-    return { { operation.reduce_operand(reduction, &operand) } };
-  }
-
-  return std::nullopt;
-}
-
 }

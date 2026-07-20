@@ -341,7 +341,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false, 4));
+        LlvmDeltaOperation::Create(vt, "delta1", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
@@ -351,7 +351,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   {
     auto delta = DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false, 4));
+        LlvmDeltaOperation::Create(vt, "delta2", Linkage::externalLinkage, "", false, 4));
     auto dep1 = delta->AddContextVar(*fixVar1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(

@@ -39,7 +39,7 @@ public:
 
   jlm::rvsdg::Output *
   reduce_operand_pair(
-      jlm::rvsdg::unop_reduction_path_t path,
+      jlm::rvsdg::binop_reduction_path_t path,
       jlm::rvsdg::Output *,
       jlm::rvsdg::Output * op2) const override
   {

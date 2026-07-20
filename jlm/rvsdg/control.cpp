@@ -128,18 +128,6 @@ MatchOperation::operator==(const Operation & other) const noexcept
       && op->nbits() == nbits() && op->nalternatives() == nalternatives();
 }
 
-unop_reduction_path_t
-MatchOperation::can_reduce_operand(const Output *) const noexcept
-{
-  return unop_reduction_none;
-}
-
-Output *
-MatchOperation::reduce_operand(unop_reduction_path_t, Output *) const
-{
-  return nullptr;
-}
-
 std::string
 MatchOperation::debug_string() const
 {

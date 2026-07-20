@@ -1285,7 +1285,7 @@ MlirToJlmConverter::ConvertOperation(
     // Create DeltaNode directly in parent region
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
-        llvm::DeltaOperation::Create(
+        llvm::LlvmDeltaOperation::Create(
             outputType,
             mlirDeltaNode.getName().str(),
             ConvertLinkage(linakgeString),
@@ -1353,7 +1353,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
       {
-        auto op = util::assertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
+        auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&delta->GetOperation());
         jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
     }

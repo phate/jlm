@@ -184,7 +184,7 @@ inline_calls(rvsdg::Region * region)
 rvsdg::DeltaNode *
 rename_delta(rvsdg::DeltaNode * odn)
 {
-  auto op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+  auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&odn->GetOperation());
   auto name = op->name();
   std::replace_if(
       name.begin(),
@@ -197,7 +197,7 @@ rename_delta(rvsdg::DeltaNode * odn)
   std::cout << "renaming delta node " << op->name() << " to " << name << "\n";
   auto db = rvsdg::DeltaNode::Create(
       odn->region(),
-      llvm::DeltaOperation::Create(
+      llvm::LlvmDeltaOperation::Create(
           odn->Type(),
           name,
           llvm::Linkage::externalLinkage,
@@ -313,12 +313,12 @@ split_hls_function(llvm::LlvmRvsdgModule & rm, const std::string & function_name
         }
         else if (auto odn = dynamic_cast<rvsdg::DeltaNode *>(orig_node))
         {
-          auto op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+          auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&odn->GetOperation());
           // modify name to not contain .
           if (op->name().find('.') != std::string::npos)
           {
             odn = rename_delta(odn);
-            op = util::assertedCast<const llvm::DeltaOperation>(&odn->GetOperation());
+            op = util::assertedCast<const llvm::LlvmDeltaOperation>(&odn->GetOperation());
           }
           std::cout << "delta node " << op->name() << ": " << op->Type()->debug_string() << "\n";
           // add import for delta to rhls
