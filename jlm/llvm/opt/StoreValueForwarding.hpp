@@ -143,13 +143,15 @@ private:
    * @param storeValueOrigin the origin of the last stored value along some memory state.
    * @param targetRegion the region the returned output should be in.
    * @param tracingInfo the metadata created during store value origin tracing.
+   * @param loopBackEdgeTaken whether a loop back edge has been taken during tracing.
    * @return the rvsdg output providing the stored value in the given region.
    */
   rvsdg::Output &
   getValueOriginOutput(
       ValueOrigin storeValueOrigin,
       rvsdg::Region & targetRegion,
-      LoadTracingInfo & tracingInfo);
+      LoadTracingInfo & tracingInfo,
+      bool loopBackEdgeTaken);
 
   /**
    * In \ref getValueOriginOutput(), all loop variables are created as invariant,
