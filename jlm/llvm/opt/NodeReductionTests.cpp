@@ -41,15 +41,13 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
 
   auto allocaResults = AllocaOperation::create(bitType, inputVar.argument[0], 4);
 
-  const auto c3 =
-      &BitConstantOperation::create(subregion, BitValueRepresentation(32, 3));
+  const auto c3 = &BitConstantOperation::create(subregion, BitValueRepresentation(32, 3));
   auto storeResults =
       StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 =
-      &BitConstantOperation::create(subregion, BitValueRepresentation(32, 5));
+  const auto c5 = &BitConstantOperation::create(subregion, BitValueRepresentation(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
   auto outputVar = testStructuralNode->addOutputWithResults({ sum });
