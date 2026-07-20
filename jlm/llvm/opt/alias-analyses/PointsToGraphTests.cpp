@@ -391,13 +391,19 @@ TEST(PointsToGraphTests, testIsMemoryNodeConstant)
 
     auto & constDelta = *jlm::rvsdg::DeltaNode::Create(
         &graph.GetRootRegion(),
-        DeltaOperation::Create(intType, "constGlobal", Linkage::internalLinkage, "data", true, 4));
+        LlvmDeltaOperation::Create(
+            intType,
+            "constGlobal",
+            Linkage::internalLinkage,
+            "data",
+            true,
+            4));
     const auto & int2 = IntegerConstantOperation::Create(*constDelta.subregion(), 32, 2);
     constDelta.finalize(int2.output(0));
 
     auto & nonConstDelta = *jlm::rvsdg::DeltaNode::Create(
         &graph.GetRootRegion(),
-        DeltaOperation::Create(intType, "global", Linkage::internalLinkage, "data", false, 4));
+        LlvmDeltaOperation::Create(intType, "global", Linkage::internalLinkage, "data", false, 4));
     const auto & int8 = IntegerConstantOperation::Create(*nonConstDelta.subregion(), 32, 8);
     nonConstDelta.finalize(int8.output(0));
 

@@ -40,7 +40,7 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
-      DeltaOperation::Create(pointerType, "delta", Linkage::externalLinkage, "", true, 4));
+      LlvmDeltaOperation::Create(pointerType, "delta", Linkage::externalLinkage, "", true, 4));
   auto & ptrNullDeltaNode = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
   auto & deltaOutput = deltaNode->finalize(ptrNullDeltaNode.output(0));
 
