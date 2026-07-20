@@ -263,9 +263,7 @@ TEST(CallSummaryTests, TestCallSummaryComputationFunctionPointerInDelta)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          functionType,
-          "fp",
+      LlvmDeltaOperation::Create(functionType, "fp",
           Linkage::externalLinkage,
           "",
           false,

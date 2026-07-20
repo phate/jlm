@@ -445,9 +445,7 @@ TEST(DeadNodeEliminationTests, Delta)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          valueType,
-          "delta",
+      LlvmDeltaOperation::Create(valueType, "delta",
           Linkage::externalLinkage,
           "",
           false,
