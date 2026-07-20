@@ -78,7 +78,31 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 
   // Convert all operations in the omega's region.
   // This creates LambdaNodes, PhiNodes (with fix vars that have outputs), etc.
-  ConvertRegion(omegaNode.getRegion(), root);
+  auto resultOutputs = ConvertRegion(omegaNode.getRegion(), root);
+
+  // Register OmegaResult outputs as RVSDG root region results for roundtrip compatibility.
+  // We only register outputs that are NOT already covered by existing region results.
+  // This is needed because ConvertOmega doesn't create a formal result registration
+  // like the MLIR backend does.
+  for (auto * output : resultOutputs)
+  {
+    // Check if this output is already covered by an existing result.
+    bool alreadyCovered = false;
+    for (auto * regionRes : root.Results())
+    {
+      if (regionRes->origin() == output)
+      {
+        alreadyCovered = true;
+        break;
+      }
+    }
+
+    // Only register as result if not already covered.
+    if (!alreadyCovered)
+    {
+      rvsdg::RegionResult::Create(root, *output, nullptr, output->Type());
+    }
+  }
 
   return rvsdgModule;
 }

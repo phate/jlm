@@ -56,15 +56,16 @@ ContainsMemcpy(const Region & region)
 }
 
 /**
- * \brief Internal comparison function - returns true if types are equivalent.
+ * \brief Internal comparison function - returns true if types are structurally equivalent.
  */
 bool
 DoCompareTypes(const Type & type1, const Type & type2)
 {
-  // If same type class, use regular equality
+  // If same type class and equal by operator==, return true immediately
   if (type1 == type2)
     return true;
 
+  using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   // Handle BitType comparison (both should be BitType in JLM's rvsdg)
@@ -73,6 +74,58 @@ DoCompareTypes(const Type & type1, const Type & type2)
 
   if (bitType1 && bitType2)
     return bitType1->nbits() == bitType2->nbits();
+
+  // Handle StructType comparison - compare by element types and properties
+  auto * structType1 = dynamic_cast<const StructType *>(&type1);
+  auto * structType2 = dynamic_cast<const StructType *>(&type2);
+
+  if (structType1 && structType2)
+  {
+    // Compare element count using numElements()
+    if (structType1->numElements() != structType2->numElements())
+      return false;
+    // Compare each element type recursively using getElementType(index)
+    for (size_t i = 0; i < structType1->numElements(); ++i)
+    {
+      if (!DoCompareTypes(*structType1->getElementType(i), *structType2->getElementType(i)))
+        return false;
+    }
+    // Compare packed status using IsPacked()
+    return structType1->IsPacked() == structType2->IsPacked();
+  }
+
+  // Handle ArrayType comparison - compare by element type and size
+  auto * arrayType1 = dynamic_cast<const ArrayType *>(&type1);
+  auto * arrayType2 = dynamic_cast<const ArrayType *>(&type2);
+
+  if (arrayType1 && arrayType2)
+  {
+    return DoCompareTypes(arrayType1->element_type(), arrayType2->element_type())
+        && arrayType1->nelements() == arrayType2->nelements();
+  }
+
+  // Handle FunctionType comparison - compare by argument and result types
+  auto * fnType1 = dynamic_cast<const FunctionType *>(&type1);
+  auto * fnType2 = dynamic_cast<const FunctionType *>(&type2);
+
+  if (fnType1 && fnType2)
+  {
+    if (fnType1->NumArguments() != fnType2->NumArguments()
+        || fnType1->NumResults() != fnType2->NumResults())
+      return false;
+    // FunctionType::ArgumentType() and ResultType() return const Type&, not shared_ptr
+    for (size_t i = 0; i < fnType1->NumArguments(); ++i)
+    {
+      if (!DoCompareTypes(fnType1->ArgumentType(i), fnType2->ArgumentType(i)))
+        return false;
+    }
+    for (size_t i = 0; i < fnType1->NumResults(); ++i)
+    {
+      if (!DoCompareTypes(fnType1->ResultType(i), fnType2->ResultType(i)))
+        return false;
+    }
+    return true;
+  }
 
   // Fallback to regular equality for any remaining types
   return type1 == type2;
@@ -135,17 +188,68 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return result;
   }
 
-  // Handle ConstantDataArrayOperation - compare by array type (size and element type)
-  auto * constArr1 = dynamic_cast<const ConstantDataArrayOperation *>(&op1);
-  auto * constArr2 = dynamic_cast<const ConstantDataArrayOperation *>(&op2);
+  // Handle ConstantDataArrayOperation and ConstantArrayOperation comparison.
+  // Both get converted to/from mlir::jlm::ConstantDataArray, so they should be considered
+  // equivalent.
+  auto * constDataArr1 = dynamic_cast<const ConstantDataArrayOperation *>(&op1);
+  auto * constDataArr2 = dynamic_cast<const ConstantDataArrayOperation *>(&op2);
+  auto * constArr1 = dynamic_cast<const ConstantArrayOperation *>(&op1);
+  auto * constArr2 = dynamic_cast<const ConstantArrayOperation *>(&op2);
 
-  if (constArr1 && constArr2)
+  // Both are ConstantDataArrayOperation - compare by array type
+  if (constDataArr1 && constDataArr2)
   {
-    // Compare result types - both should be ArrayType with same size and element type
-    bool result = DoCompareTypes(*constArr1->result(0), *constArr2->result(0));
+    bool result = DoCompareTypes(*constDataArr1->result(0), *constDataArr2->result(0));
     if (!result)
       std::cout << "ConstantDataArray mismatch: " << op1.debug_string() << " vs "
                 << op2.debug_string() << "\n";
+    return result;
+  }
+
+  // Both are ConstantArrayOperation - compare by array type
+  if (constArr1 && constArr2)
+  {
+    bool result = DoCompareTypes(*constArr1->result(0), *constArr2->result(0));
+    if (!result)
+      std::cout << "ConstantArray mismatch: " << op1.debug_string() << " vs " << op2.debug_string()
+                << "\n";
+    return result;
+  }
+
+  // One is ConstantDataArrayOperation, the other is ConstantArrayOperation.
+  // These are equivalent since both convert to/from mlir::jlm::ConstantDataArray.
+  if ((constDataArr1 != nullptr || constDataArr2 != nullptr)
+      && (constArr1 != nullptr || constArr2 != nullptr))
+  {
+    std::shared_ptr<const Type> type1, type2;
+    if (constDataArr1)
+      type1 = constDataArr1->result(0);
+    else
+      type1 = constArr1->result(0);
+    if (constDataArr2)
+      type2 = constDataArr2->result(0);
+    else
+      type2 = constArr2->result(0);
+    bool result = DoCompareTypes(*type1, *type2);
+    if (!result)
+      std::cout << "ConstantArray/ConstantDataArray mismatch: " << op1.debug_string() << " vs "
+                << op2.debug_string() << "\n";
+    return result;
+  }
+
+  // Handle ConstantStructOperation - compare by struct type only (elements are pointers to nodes
+  // in the region, not stored on the operation)
+  auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1);
+  auto * constStruct2 = dynamic_cast<const ConstantStructOperation *>(&op2);
+
+  if (constStruct1 && constStruct2)
+  {
+    bool result = DoCompareTypes(*constStruct1->result(0), *constStruct2->result(0));
+    // Also verify element counts match
+    // Note: elements are stored in the region, not on the operation itself
+    if (!result)
+      std::cout << "ConstantStruct mismatch: " << op1.debug_string() << " vs " << op2.debug_string()
+                << "\n";
     return result;
   }
 
@@ -365,6 +469,16 @@ CompareOperations(const Operation & op1, const Operation & op2)
   std::cout << "Unknown comparison: " << typeid(op1).name() << " vs " << typeid(op2).name() << ": "
             << op1.debug_string() << " vs " << op2.debug_string() << "\n";
 
+  // If same type class, they should be equal via operator== (already checked above)
+  if (typeid(op1) == typeid(op2))
+  {
+    bool result = op1 == op2;
+    if (!result)
+      std::cout << "Same-type operation inequality: " << op1.debug_string() << " vs "
+                << op2.debug_string() << "\n";
+    return result;
+  }
+
   return false;
 }
 
@@ -451,7 +565,11 @@ CompareNodes(const Node & node1, const Node & node2)
 
     bool result = CompareOperations(op1, op2);
     if (!result)
-      std::cout << "CompareNodes operations don't match!\n";
+    {
+      std::cout << "DEBUG: CompareNodes operation mismatch:\n";
+      std::cout << "  Original: " << typeid(op1).name() << " - " << op1.debug_string() << "\n";
+      std::cout << "  Converted: " << typeid(op2).name() << " - " << op2.debug_string() << "\n";
+    }
 
     ASSERT_TRUE(result) << "SimpleNode operation mismatch";
 
