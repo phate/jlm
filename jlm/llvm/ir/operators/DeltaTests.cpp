@@ -25,22 +25,14 @@ TEST(DeltaTests, TestDeltaCreation)
 
   auto delta1 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmDeltaOperation::Create(valueType, "test-delta1",
-          Linkage::externalLinkage,
-          "",
-          true,
-          4));
+      LlvmDeltaOperation::Create(valueType, "test-delta1", Linkage::externalLinkage, "", true, 4));
   auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 = &delta1->finalize(
       TestOperation::createNode(delta1->subregion(), { dep }, { valueType })->output(0));
 
   auto delta2 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmDeltaOperation::Create(valueType, "test-delta2",
-          Linkage::internalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(valueType, "test-delta2", Linkage::internalLinkage, "", false, 4));
   auto d2 = &delta2->finalize(
       TestOperation::createNode(delta2->subregion(), {}, { valueType })->output(0));
 
