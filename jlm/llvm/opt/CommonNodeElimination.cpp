@@ -940,10 +940,12 @@ static void
 markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & context)
 {
   bool anyChanges = markSubregionsFromInputs(theta, context);
-  if (!anyChanges)
-    return;
-
   const auto loopVars = theta.GetLoopVars();
+
+  // If anyChanges is false, it means no congruence sets changed within the theta node.
+  // However, the outputs of invariant loop variables belong to the congruence set of their input,
+  // which may have changed since the last time this function was called.
+  bool onlyUpdateLoopInvariants = !anyChanges;
 
   // Use the loop variable post results to refine partitioning of loop variable arguments
   while (anyChanges)
@@ -977,6 +979,9 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
       context.addFollower(inputOriginSet, *loopVar.output);
       continue;
     }
+
+    if (onlyUpdateLoopInvariants)
+      continue;
 
     // Other loop variable outputs are partitioned based on the origins of the post results.
     const auto resultSet = context.getSetFor(*loopVar.post->origin());
