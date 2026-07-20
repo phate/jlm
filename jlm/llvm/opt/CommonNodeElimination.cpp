@@ -965,6 +965,48 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
     }
   }
 
+  // Check if the given loop variable's output is loop invariant.
+  // If it is, the origin of the invariant value is returned.
+  // If it is not, nullptr is returned.
+  const auto isOutputInvariant = [&](const auto & loopVar) -> rvsdg::Output *
+  {
+    // First perform a trivial check
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    {
+      return loopVar.input->origin();
+    }
+
+    const auto resultSet = context.getSetFor(*loopVar.post->origin());
+    const auto & resultSetLeader = context.getLeader(resultSet);
+    // If the origin's leader is the loop variable's pre, the result is also invariant
+    if (&resultSetLeader == loopVar.pre)
+    {
+      return loopVar.input->origin();
+    }
+
+    // Finally check if the loop variable post takes its value from another loop variable,
+    // and if that other loop variable is invariant
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(resultSetLeader) == &theta)
+    {
+      const auto otherLoopVar = theta.MapPreLoopVar(resultSetLeader);
+      // Check if the other loop variable is trivially invariant
+      if (rvsdg::ThetaLoopVarIsInvariant(otherLoopVar))
+      {
+        return otherLoopVar.input->origin();
+      }
+
+      // Use the CNE context to check if the other loop variable is invariant
+      const auto otherLoopVarPostSet = context.getSetFor(*otherLoopVar.post->origin());
+      const auto & otherLoopVarPostLeader = context.getLeader(otherLoopVarPostSet);
+      if (&otherLoopVarPostLeader == otherLoopVar.pre)
+      {
+        return otherLoopVar.input->origin();
+      }
+    }
+
+    return nullptr;
+  };
+
   // Partition theta outputs
   std::unordered_map<
       CommonNodeElimination::Context::CongruenceSetIndex,
@@ -972,11 +1014,12 @@ markTheta(const rvsdg::ThetaNode & theta, CommonNodeElimination::Context & conte
       resultToOutputSetMapping;
   for (auto & loopVar : loopVars)
   {
-    // invariant loop variables become followers of the input origin
-    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    // If a loop variable is invariant, or its post result is congruent with
+    // another loop variable that is invariant, the output becomes a follower of the input origin.
+    if (const auto origin = isOutputInvariant(loopVar))
     {
-      const auto inputOriginSet = context.getSetFor(*loopVar.input->origin());
-      context.addFollower(inputOriginSet, *loopVar.output);
+      auto inputCongruenceSet = context.getSetFor(*origin);
+      context.addFollower(inputCongruenceSet, *loopVar.output);
       continue;
     }
 
