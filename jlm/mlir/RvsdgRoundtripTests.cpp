@@ -36,11 +36,10 @@ using namespace jlm::rvsdg;
 using namespace jlm::util;
 
 /**
- * \brief Internal comparison function - asserts if types are not structurally equivalent.
- * Uses fail-fast assertions when a mismatch is detected.
+ * \brief Compares two RVSDG types for structural equality using fail-fast assertions.
  */
 void
-DoCompareTypes(const Type & type1, const Type & type2)
+CompareTypes(const Type & type1, const Type & type2)
 {
   // If same type class and equal by operator==, return immediately
   if (type1 == type2)
@@ -74,7 +73,7 @@ DoCompareTypes(const Type & type1, const Type & type2)
     // Compare each element type recursively using getElementType(index)
     for (size_t i = 0; i < structType1->numElements(); ++i)
     {
-      DoCompareTypes(*structType1->getElementType(i), *structType2->getElementType(i));
+      CompareTypes(*structType1->getElementType(i), *structType2->getElementType(i));
     }
     // Compare packed status using IsPacked()
     ASSERT_TRUE(structType1->IsPacked() == structType2->IsPacked())
@@ -89,7 +88,7 @@ DoCompareTypes(const Type & type1, const Type & type2)
 
   if (arrayType1 && arrayType2)
   {
-    DoCompareTypes(arrayType1->element_type(), arrayType2->element_type());
+    CompareTypes(arrayType1->element_type(), arrayType2->element_type());
     ASSERT_TRUE(arrayType1->nelements() == arrayType2->nelements())
         << "ArrayType element count mismatch: expected " << type1.debug_string() << " but got "
         << type2.debug_string();
@@ -110,11 +109,11 @@ DoCompareTypes(const Type & type1, const Type & type2)
     // FunctionType::ArgumentType() and ResultType() return const Type&, not shared_ptr
     for (size_t i = 0; i < fnType1->NumArguments(); ++i)
     {
-      DoCompareTypes(fnType1->ArgumentType(i), fnType2->ArgumentType(i));
+      CompareTypes(fnType1->ArgumentType(i), fnType2->ArgumentType(i));
     }
     for (size_t i = 0; i < fnType1->NumResults(); ++i)
     {
-      DoCompareTypes(fnType1->ResultType(i), fnType2->ResultType(i));
+      CompareTypes(fnType1->ResultType(i), fnType2->ResultType(i));
     }
     return;
   }
@@ -125,9 +124,6 @@ DoCompareTypes(const Type & type1, const Type & type2)
 }
 
 // Forward declarations - functions are called before their definitions
-void
-CompareTypes(const Type & type1, const Type & type2);
-
 void
 CompareRegions(const Region & region1, const Region & region2);
 
@@ -148,7 +144,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (alloca1 && alloca2)
   {
-    DoCompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType());
+    CompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType());
     ASSERT_TRUE(alloca1->alignment() == alloca2->alignment())
         << "Alloca mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
@@ -160,7 +156,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (malloc1 && malloc2)
   {
-    DoCompareTypes(malloc1->getSizeType(), malloc2->getSizeType());
+    CompareTypes(malloc1->getSizeType(), malloc2->getSizeType());
     return;
   }
 
@@ -186,14 +182,14 @@ CompareOperations(const Operation & op1, const Operation & op2)
   // Both are ConstantDataArrayOperation - compare by array type
   if (constDataArr1 && constDataArr2)
   {
-    DoCompareTypes(*constDataArr1->result(0), *constDataArr2->result(0));
+    CompareTypes(*constDataArr1->result(0), *constDataArr2->result(0));
     return;
   }
 
   // Both are ConstantArrayOperation - compare by array type
   if (constArr1 && constArr2)
   {
-    DoCompareTypes(*constArr1->result(0), *constArr2->result(0));
+    CompareTypes(*constArr1->result(0), *constArr2->result(0));
     return;
   }
 
@@ -211,7 +207,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
       type2 = constDataArr2->result(0);
     else
       type2 = constArr2->result(0);
-    DoCompareTypes(*type1, *type2);
+    CompareTypes(*type1, *type2);
     return;
   }
 
@@ -224,7 +220,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
   {
     // Also verify element counts match
     // Note: elements are stored in the region, not on the operation itself
-    DoCompareTypes(*constStruct1->result(0), *constStruct2->result(0));
+    CompareTypes(*constStruct1->result(0), *constStruct2->result(0));
     return;
   }
 
@@ -234,7 +230,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (constAggZero1 && constAggZero2)
   {
-    DoCompareTypes(*constAggZero1->result(0), *constAggZero2->result(0));
+    CompareTypes(*constAggZero1->result(0), *constAggZero2->result(0));
     return;
   }
 
@@ -244,7 +240,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (call1 && call2)
   {
-    DoCompareTypes(*call1->GetFunctionType(), *call2->GetFunctionType());
+    CompareTypes(*call1->GetFunctionType(), *call2->GetFunctionType());
     return;
   }
 
@@ -255,7 +251,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
   if (gep1 && gep2)
   {
     // Compare pointee types
-    DoCompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
+    CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
     return;
   }
 
@@ -266,7 +262,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (memcpy1 && memcpy2)
   {
-    DoCompareTypes(memcpy1->LengthType(), memcpy2->LengthType());
+    CompareTypes(memcpy1->LengthType(), memcpy2->LengthType());
     ASSERT_TRUE(memcpy1->NumMemoryStates() == memcpy2->NumMemoryStates())
         << "MemCpyNonVolatile mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
@@ -277,7 +273,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (vmemcpy1 && vmemcpy2)
   {
-    DoCompareTypes(vmemcpy1->LengthType(), vmemcpy2->LengthType());
+    CompareTypes(vmemcpy1->LengthType(), vmemcpy2->LengthType());
     ASSERT_TRUE(vmemcpy1->NumMemoryStates() == vmemcpy2->NumMemoryStates())
         << "MemCpyVolatile mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
@@ -301,12 +297,12 @@ CompareOperations(const Operation & op1, const Operation & op2)
       JLM_ASSERT(type1.NumArguments() == type2.NumArguments());
       for (size_t i = 0; i < type1.NumArguments(); ++i)
       {
-        DoCompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
+        CompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
       }
 
       for (size_t i = 0; i < type1.NumResults(); ++i)
       {
-        DoCompareTypes(type1.ResultType(i), type2.ResultType(i));
+        CompareTypes(type1.ResultType(i), type2.ResultType(i));
       }
     }
 
@@ -349,7 +345,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (bitBinOp1 && intBinOp2)
   {
-    DoCompareTypes(*bitBinOp1->result(0), *intBinOp2->result(0));
+    CompareTypes(*bitBinOp1->result(0), *intBinOp2->result(0));
     return;
   }
 
@@ -359,7 +355,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (intBinOp1 && bitBinOpRev)
   {
-    DoCompareTypes(*intBinOp1->result(0), *bitBinOpRev->result(0));
+    CompareTypes(*intBinOp1->result(0), *bitBinOpRev->result(0));
     return;
   }
 
@@ -372,7 +368,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (intUlt1 && bitCompOp2)
   {
-    DoCompareTypes(*intUlt1->result(0), *bitCompOp2->result(0));
+    CompareTypes(*intUlt1->result(0), *bitCompOp2->result(0));
     return;
   }
 
@@ -382,17 +378,17 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (intUlt2 && bitCompOp1)
   {
-    DoCompareTypes(*bitCompOp1->result(0), *intUlt2->result(0));
+    CompareTypes(*bitCompOp1->result(0), *intUlt2->result(0));
     return;
   }
 
-  // Handle IntegerEqOperation - compare with BitCompareOperation
+  // Handle IntegerEqOperation - compare with BitComparisonOperation
   auto * intEq1 = dynamic_cast<const IntegerEqOperation *>(&op1);
   auto * bitCompEq2 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op2);
 
   if (intEq1 && bitCompEq2)
   {
-    DoCompareTypes(*intEq1->result(0), *bitCompEq2->result(0));
+    CompareTypes(*intEq1->result(0), *bitCompEq2->result(0));
     return;
   }
 
@@ -402,7 +398,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (intEq2 && bitCompEq1)
   {
-    DoCompareTypes(*bitCompEq1->result(0), *intEq2->result(0));
+    CompareTypes(*bitCompEq1->result(0), *intEq2->result(0));
     return;
   }
 
@@ -412,7 +408,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (intAdd1 && bitBinOp2)
   {
-    DoCompareTypes(*intAdd1->result(0), *bitBinOp2->result(0));
+    CompareTypes(*intAdd1->result(0), *bitBinOp2->result(0));
     return;
   }
 
@@ -423,7 +419,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
   if (memMerge1 && store2)
   {
     // Memory state merge and store both produce memory state
-    DoCompareTypes(*memMerge1->result(0), *store2->result(0));
+    CompareTypes(*memMerge1->result(0), *store2->result(0));
     return;
   }
 
@@ -432,7 +428,7 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   if (store1 && memMerge2)
   {
-    DoCompareTypes(*store1->result(0), *memMerge2->result(0));
+    CompareTypes(*store1->result(0), *memMerge2->result(0));
     return;
   }
 
@@ -449,15 +445,6 @@ CompareOperations(const Operation & op1, const Operation & op2)
   }
 
   FAIL() << "Unknown operation comparison: " << op1.debug_string() << " vs " << op2.debug_string();
-}
-
-/**
- * \brief Compares two RVSDG types for equality.
- */
-void
-CompareTypes(const Type & type1, const Type & type2)
-{
-  DoCompareTypes(type1, type2);
 }
 
 /**
