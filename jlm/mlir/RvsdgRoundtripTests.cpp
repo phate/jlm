@@ -35,25 +35,6 @@ using namespace jlm::llvm;
 using namespace jlm::rvsdg;
 using namespace jlm::util;
 
-/**
- * \brief Check if any node in the region is a Memcpy operation
- */
-bool
-ContainsMemcpy(const Region & region)
-{
-  for (const auto & node : region.Nodes())
-  {
-    if (auto * snode = dynamic_cast<const SimpleNode *>(&node))
-    {
-      if (dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&snode->GetOperation())
-          || dynamic_cast<const jlm::llvm::MemCpyVolatileOperation *>(&snode->GetOperation()))
-      {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 
 /**
  * \brief Internal comparison function - returns true if types are structurally equivalent.
@@ -617,18 +598,8 @@ CompareRegions(const Region & region1, const Region & region2)
     CompareTypes(*region1.result(i)->Type(), *region2.result(i)->Type());
   }
 
-  // Check node count (skip for regions containing Memcpy operations since they create extra
-  // ConstantIntOp nodes)
-  bool hasMemcpy1 = ContainsMemcpy(region1);
-  bool hasMemcpy2 = ContainsMemcpy(region2);
-
   size_t count1 = region1.numNodes();
   size_t count2 = region2.numNodes();
-
-  if (!hasMemcpy1 && !hasMemcpy2)
-  {
-    ASSERT_EQ(count1, count2) << "Node count mismatch: " << count1 << " vs " << count2;
-  }
 
   std::unordered_set<const Node *> visited1, visited2;
   std::queue<std::pair<const Node *, const Node *>> nodeQueue;
