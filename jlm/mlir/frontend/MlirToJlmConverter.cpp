@@ -1133,7 +1133,7 @@ MlirToJlmConverter::ConvertOperation(
 
     return { llvm::GetElementPtrOperation::create(inputs[0], indices, pointeeType) };
   }
-  // * region Structural nodes **
+  // ** region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
     JLM_ASSERT(::mlir::isa<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()));
@@ -1274,21 +1274,19 @@ MlirToJlmConverter::ConvertOperation(
     auto & deltaRegion = mlirDeltaNode.getRegion();
     auto & deltaBlock = deltaRegion.front();
 
-    // Debug: Print info about the delta block
-    // Delta conversion continues...
     auto terminator = deltaBlock.getTerminator();
 
     auto mlirOutputType = terminator->getOperand(0).getType();
     auto outputType = ConvertType(mlirOutputType);
-    auto linakgeString = mlirDeltaNode.getLinkage().str();
+    auto linkageString = mlirDeltaNode.getLinkage().str();
 
-    // Create DeltaNode directly in parent region
+    // Create DeltaNode directly in parent region.
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
         llvm::LlvmDeltaOperation::Create(
             outputType,
             mlirDeltaNode.getName().str(),
-            ConvertLinkage(linakgeString),
+            ConvertLinkage(linkageString),
             mlirDeltaNode.getSection().str(),
             mlirDeltaNode.getConstant(),
             4));
@@ -1490,30 +1488,16 @@ MlirToJlmConverter::ConvertLambda(
 
   size_t numNonContextVars;
 
-  // Debug output for lambda conversion
-  std::cerr << "DEBUG ConvertLambda: lambdaName=" << functionName.getValue().str()
-            << ", lambdaOp.getNumOperands()=" << lambdaOp.getNumOperands()
-            << ", lambdaRegion.getNumArguments()=" << lambdaRegion.getNumArguments() << std::endl;
-
   JLM_ASSERT(lambdaOp != nullptr);
   JLM_ASSERT(lambdaRegion.getBlocks().size() == 1);
   if (lambdaOp.getNumOperands() == 0)
   {
-    // For phi-contained lambdas, get function args from the LambdaNode's type
+    // For phi-contained lambdas, get function args from the LambdaNode's type.
     auto mlirFnType = lambdaOp.getType();
-    std::cerr << "DEBUG: phiContainedLambda - mlirFnType numArgs=" << mlirFnType.getNumInputs()
-              << ", numResults=" << mlirFnType.getNumResults() << std::endl;
     auto fnType = ConvertType(mlirFnType);
     if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(fnType.get()))
     {
       numNonContextVars = functionType->NumArguments();
-      std::cerr << "DEBUG: phiContainedLambda - Got RVSDG function type with " << numNonContextVars
-                << " args" << std::endl;
-      for (size_t i = 0; i < numNonContextVars; ++i)
-      {
-        std::cerr << "DEBUG:   Arg " << i << ": " << functionType->ArgumentType(i).debug_string()
-                  << std::endl;
-      }
     }
     else
     {
@@ -1523,12 +1507,8 @@ MlirToJlmConverter::ConvertLambda(
   else
   {
     numNonContextVars = lambdaRegion.getNumArguments() - lambdaOp.getNumOperands();
-    // Verify our assumption: region args should be sum of func and context vars
-    size_t totalArgs = lambdaRegion.getNumArguments();
-    size_t contextVars = lambdaOp.getNumOperands();
-
-    // Verify assumption: region args should be at least as many as context variables
-    JLM_ASSERT(totalArgs >= contextVars);
+    // Region args must be at least as many as context variables.
+    JLM_ASSERT(lambdaRegion.getNumArguments() >= lambdaOp.getNumOperands());
   }
 
   // Verify we have enough arguments
@@ -1591,11 +1571,7 @@ MlirToJlmConverter::ConvertLambda(
 
   auto jlmLambdaRegion = rvsdgLambda->subregion();
 
-  // Note: The subregion may have more arguments than numNonContextVars if context vars are added
-  // For non-phi lambdas, AddContextVar adds inputs which show up as extra region args
-  // We don't assert here because the code correctly handles this case
-
-  // Verify context variables match what we calculated (after all context vars are added)
+  // Verify context variables match what we calculated.
   JLM_ASSERT(rvsdgLambda->ninputs() == lambdaOp.getNumOperands());
   auto regionResults = ConvertRegion(lambdaRegion, *jlmLambdaRegion);
 
@@ -1716,4 +1692,4 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
 }
 
-} // jlm::mlirrvsdg
+} // namespace jlm::mlir

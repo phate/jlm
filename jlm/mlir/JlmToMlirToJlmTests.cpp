@@ -26,15 +26,12 @@ TEST(JlmToMlirToJlmTests, TestUndef)
 
   {
     // Create an undef operation
-    std::cout << "Undef Operation" << std::endl;
     UndefValueOperation::Create(graph->GetRootRegion(), jlm::rvsdg::BitType::Create(32));
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
-    std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
     EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
@@ -45,7 +42,6 @@ TEST(JlmToMlirToJlmTests, TestUndef)
     mlirUndefOp.dump();
 
     // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -79,11 +75,9 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
 
   {
     // Create a bits node for alloc size
-    std::cout << "Bit Constanr" << std::endl;
     auto bits = &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 1 });
 
     // Create alloca node
-    std::cout << "Alloca Operation" << std::endl;
     jlm::rvsdg::CreateOpNode<AllocaOperation>(
         { bits },
         jlm::rvsdg::BitType::Create(64),
@@ -91,11 +85,9 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
         4);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
-    std::cout << "Checking blocks and operations count" << std::endl;
     auto & omegaRegion = omega.getRegion();
     EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
@@ -121,7 +113,6 @@ TEST(JlmToMlirToJlmTests, TestAlloca)
     EXPECT_TRUE(foundAlloca);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -195,12 +186,10 @@ TEST(JlmToMlirToJlmTests, TestLoad)
     lambda->finalize({ iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
@@ -222,7 +211,6 @@ TEST(JlmToMlirToJlmTests, TestLoad)
     EXPECT_EQ(integerType.getWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -290,12 +278,10 @@ TEST(JlmToMlirToJlmTests, TestStore)
     lambda->finalize({ iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
@@ -316,7 +302,6 @@ TEST(JlmToMlirToJlmTests, TestStore)
     EXPECT_EQ(integerType.getWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -377,12 +362,10 @@ TEST(JlmToMlirToJlmTests, TestSext)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
@@ -401,7 +384,6 @@ TEST(JlmToMlirToJlmTests, TestSext)
     EXPECT_TRUE(mlir::cast<mlir::IntegerType>(outputType).getWidth() == 64);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -449,12 +431,10 @@ TEST(JlmToMlirToJlmTests, TestSitofp)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
@@ -472,7 +452,6 @@ TEST(JlmToMlirToJlmTests, TestSitofp)
     EXPECT_TRUE(mlir::isa<mlir::Float64Type>(outputType));
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -514,12 +493,10 @@ TEST(JlmToMlirToJlmTests, TestConstantFP)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
 
     EXPECT_TRUE(mlir::isa<mlir::arith::ConstantFloatOp>(mlirOp));
@@ -528,7 +505,6 @@ TEST(JlmToMlirToJlmTests, TestConstantFP)
     EXPECT_TRUE(mlirConst.value().isExactlyValue(2.0));
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -577,12 +553,10 @@ TEST(JlmToMlirToJlmTests, TestFpBinary)
       lambda->finalize({});
 
       // Convert the RVSDG to MLIR
-      std::cout << "Convert to MLIR" << std::endl;
       jlm::mlir::JlmToMlirConverter mlirgen;
       auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
       // Validate the generated MLIR
-      std::cout << "Validate MLIR" << std::endl;
       auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
       switch (binOp)
       {
@@ -606,7 +580,6 @@ TEST(JlmToMlirToJlmTests, TestFpBinary)
       }
 
       // Convert the MLIR to RVSDG and check the result
-      std::cout << "Converting MLIR to RVSDG" << std::endl;
       std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
       rootBlock->push_back(omega);
       auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -656,17 +629,14 @@ TEST(JlmToMlirToJlmTests, TestFMulAddOp)
     lambda->finalize({ node.output(0) });
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
     EXPECT_TRUE(mlir::isa<mlir::LLVM::FMulAddOp>(mlirOp));
 
     // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto roundTripModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -717,12 +687,10 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & op = omega.getRegion().front().front().getRegion(0).front().front();
 
     EXPECT_TRUE(mlir::isa<mlir::LLVM::GEPOp>(op));
@@ -749,7 +717,6 @@ TEST(JlmToMlirToJlmTests, TestGetElementPtr)
     EXPECT_EQ(index1.getType().getIntOrFloatBitWidth(), 32u);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -811,12 +778,10 @@ TEST(JlmToMlirToJlmTests, TestDelta)
     delta2->finalize(bitConstant2);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
 
     auto & omegaBlock = omega.getRegion().front();
     EXPECT_EQ(omegaBlock.getOperations().size(), 3u); // 2 delta nodes + 1 omegaresult
@@ -851,7 +816,6 @@ TEST(JlmToMlirToJlmTests, TestDelta)
     }
 
     // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -901,12 +865,10 @@ TEST(JlmToMlirToJlmTests, TestConstantAggregateZero)
     ConstantAggregateZeroOperation::Create(graph->GetRootRegion(), arrayType);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto mlirConstantAggregateZero = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&omegaBlock.front());
@@ -918,7 +880,6 @@ TEST(JlmToMlirToJlmTests, TestConstantAggregateZero)
     EXPECT_EQ(mlirConstantAggregateZeroResultType.getNumElements(), 2u);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -957,12 +918,10 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
     jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundVarArgOp = false;
@@ -981,7 +940,6 @@ TEST(JlmToMlirToJlmTests, TestVarArgList)
     EXPECT_TRUE(foundVarArgOp);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1029,12 +987,10 @@ TEST(JlmToMlirToJlmTests, TestFNeg)
     jlm::rvsdg::CreateOpNode<FNegOperation>({ constNode.output(0) }, jlm::llvm::fpsize::flt);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundFNegOp = false;
@@ -1055,7 +1011,6 @@ TEST(JlmToMlirToJlmTests, TestFNeg)
     EXPECT_TRUE(foundFNegOp);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1105,12 +1060,10 @@ TEST(JlmToMlirToJlmTests, TestFPExt)
     jlm::rvsdg::CreateOpNode<FPExtOperation>({ constNode.output(0) }, floatType1, floatType2);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundFPExtOp = false;
@@ -1131,7 +1084,6 @@ TEST(JlmToMlirToJlmTests, TestFPExt)
     EXPECT_TRUE(foundFPExtOp);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1178,12 +1130,10 @@ TEST(JlmToMlirToJlmTests, TestTrunc)
     jlm::rvsdg::CreateOpNode<TruncOperation>({ constOp }, bitType1, bitType2);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundTruncOp = false;
@@ -1204,7 +1154,6 @@ TEST(JlmToMlirToJlmTests, TestTrunc)
     EXPECT_TRUE(foundTruncOp);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1261,12 +1210,10 @@ TEST(JlmToMlirToJlmTests, TestFree)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirLambda = omegaBlock.front();
@@ -1293,7 +1240,6 @@ TEST(JlmToMlirToJlmTests, TestFree)
     EXPECT_TRUE(mlir::isa<mlir::rvsdg::IOStateEdgeType>(outputType2));
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1346,12 +1292,10 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
         CallingConvention::Default);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirOp = omegaBlock.front();
@@ -1381,7 +1325,6 @@ TEST(JlmToMlirToJlmTests, TestFunctionGraphImport)
     EXPECT_EQ(name, "test");
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1423,12 +1366,10 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
         4);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     auto & mlirOp = omegaBlock.front();
@@ -1451,7 +1392,6 @@ TEST(JlmToMlirToJlmTests, TestPointerGraphImport)
     EXPECT_EQ(name, "test");
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1504,12 +1444,10 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
     lambda->finalize({});
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     EXPECT_EQ(omegaRegion.getBlocks().size(), 1u);
     auto & omegaBlock = omegaRegion.front();
@@ -1543,7 +1481,6 @@ TEST(JlmToMlirToJlmTests, TestIOBarrier)
     EXPECT_TRUE(foundIOBarrier);
 
     // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto convertedRvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1606,12 +1543,10 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     MallocOperation::createNode(*constOp, *undefIOState);
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundMallocOp = false;
@@ -1632,7 +1567,6 @@ TEST(JlmToMlirToJlmTests, TestMalloc)
     EXPECT_TRUE(foundMallocOp);
 
     // // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1681,12 +1615,10 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     jlm::llvm::ConstantDataArrayOperation::Create({ bitConstant1, bitConstant2 });
 
     // Convert the RVSDG to MLIR
-    std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
     // Validate the generated MLIR - should be jlm.constantDataArray with bit constants as inputs
-    std::cout << "Validate MLIR" << std::endl;
     auto & omegaRegion = omega.getRegion();
     auto & omegaBlock = omegaRegion.front();
     bool foundJLMConstantDataArray = false;
@@ -1710,7 +1642,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     EXPECT_EQ(constantIntCount, 2u) << "Expected 2 bit constants (ConstantIntOp)";
 
     // Convert the MLIR to RVSDG and check the result
-    std::cout << "Converting MLIR to RVSDG" << std::endl;
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
@@ -1719,7 +1650,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     {
       using namespace jlm::llvm;
 
-      fprintf(stderr, "DEBUG: Region has %zu nodes\n", region->numNodes());
       for (auto & node : region->Nodes())
       {
         fprintf(stderr, "  Node debug_string: %s\n", node.GetOperation().debug_string().c_str());
@@ -1758,7 +1688,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayFloat)
   auto graph = &rvsdgModule->Rvsdg();
 
   // Setup: Create float array with 32-bit floats
-  std::cout << "Testing Float Array (32-bit)" << std::endl;
   auto & fpConstant1 =
       ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(1.0f));
   auto & fpConstant2 =
@@ -1767,7 +1696,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayFloat)
   jlm::llvm::ConstantDataArrayOperation::Create({ fpConstant1.output(0), fpConstant2.output(0) });
 
   // Conversion: RVSDG -> MLIR -> RVSDG
-  std::cout << "Convert to MLIR" << std::endl;
   jlm::mlir::JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
@@ -1809,7 +1737,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayDouble)
   auto graph = &rvsdgModule->Rvsdg();
 
   // Setup: Create double array with 64-bit floats
-  std::cout << "Testing Double Array (64-bit)" << std::endl;
   auto & fpConstant1 =
       ConstantFP::createNode(graph->GetRootRegion(), fpsize::dbl, ::llvm::APFloat(3.14));
   auto & fpConstant2 =
@@ -1818,7 +1745,6 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayDouble)
   jlm::llvm::ConstantDataArrayOperation::Create({ fpConstant1.output(0), fpConstant2.output(0) });
 
   // Conversion: RVSDG -> MLIR -> RVSDG
-  std::cout << "Convert to MLIR" << std::endl;
   jlm::mlir::JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
@@ -1859,14 +1785,12 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayBackendIntegers)
   auto graph = &rvsdgModule->Rvsdg();
 
   // Setup: Create integer array
-  std::cout << "Testing Backend Conversion (Integers)" << std::endl;
   auto & const1 = jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 42 });
   auto & const2 = jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 84 });
 
   jlm::llvm::ConstantDataArrayOperation::Create({ &const1, &const2 });
 
   // Conversion: RVSDG -> MLIR -> RVSDG
-  std::cout << "Convert to MLIR" << std::endl;
   jlm::mlir::JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(*rvsdgModule);
 
@@ -1900,14 +1824,12 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArrayBackendFloat)
   auto graph = &rvsdgModule->Rvsdg();
 
   // Setup: Create float array
-  std::cout << "Testing Backend Conversion (Float)" << std::endl;
   auto & fp1 = ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(1.5f));
   auto & fp2 = ConstantFP::createNode(graph->GetRootRegion(), fpsize::flt, ::llvm::APFloat(2.5f));
 
   jlm::llvm::ConstantDataArrayOperation::Create({ fp1.output(0), fp2.output(0) });
 
   // Conversion: RVSDG -> MLIR -> RVSDG
-  std::cout << "Convert to MLIR" << std::endl;
   jlm::mlir::JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(*rvsdgModule);
 

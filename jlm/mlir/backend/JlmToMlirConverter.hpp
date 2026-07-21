@@ -159,17 +159,17 @@ public:
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG BitCompareOperation to be converted
-   * \param inputs The inputs to the BitCompareOperation.
-   * \return The converted MLIR RVSDG operation.
+   * Converts a bitstring comparison operation to an MLIR arith::CmpIOp.
+   * \param bitOp The bitstring comparison operation to convert.
+   * \param inputs The inputs to the comparison operation.
+   * \return The converted MLIR operation.
    */
   ::mlir::Operation *
   BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
-   * \param pointerCompareOp The RVSDG BitCompareOperation to be converted
+   * Converts a pointer comparison operation to an MLIR LLVM::ICmpOp.
+   * \param pointerCompareOp The pointer comparison operation to convert.
    * \param inputs The inputs to the BitCompareOperation.
    * \return The converted MLIR RVSDG operation.
    */

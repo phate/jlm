@@ -113,8 +113,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     }
   }
 
-  // This code is used to get the results of the region
-  //! It is similar to the GetConvertedInputs function
+  // Collect and return region results.
   ::llvm::SmallVector<::mlir::Value> results;
   for (size_t i = 0; i < region.nresults(); i++)
   {
@@ -486,11 +485,6 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
-  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
-  {
-    auto type = ConvertType(*zeroOp->result(0));
-    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
-  }
   else if (
       auto constantPointerNullOp =
           dynamic_cast<const llvm::ConstantPointerNullOperation *>(&operation))
@@ -610,7 +604,7 @@ JlmToMlirConverter::ConvertSimpleNode(
       JLM_UNREACHABLE("Unsupported bitcast type combination");
     }
   }
-  // ** region structural nodes **
+  // ** region Structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
@@ -890,9 +884,9 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*ptrToFnOp->result(0)),
         inputs[0]);
   }
-  // ** endregion structural nodes **
+  // ** endregion Structural nodes **
 
-  // ConstantArray - constant array with element values
+  // ConstantArray and ConstantStruct handling
   else if (auto arrOp = dynamic_cast<const llvm::ConstantArrayOperation *>(&operation))
   {
     auto arrayType = ConvertType(*arrOp->result(0));
@@ -915,11 +909,9 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (
       auto memcpyNonVolatile = dynamic_cast<const llvm::MemCpyNonVolatileOperation *>(&operation))
   {
-    // Convert non-volatile MemCpy to MLIR jlm.memcpy
+    // Convert non-volatile MemCpy to MLIR jlm.memcpy with isVolatile=false.
     ::mlir::Type memoryStateType = Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
 
-    // isVolatile is now an attribute, not an operand
-    // Set attribute to false for non-volatile memcpy
     ::llvm::SmallVector<::mlir::Value> allInputs;
     allInputs.push_back(inputs[0]); // dst
     allInputs.push_back(inputs[1]); // src
@@ -938,12 +930,10 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto memcpyVolatile = dynamic_cast<const llvm::MemCpyVolatileOperation *>(&operation))
   {
-    // Convert volatile MemCpy to MLIR jlm.memcpy
+    // Convert volatile MemCpy to MLIR jlm.memcpy with isVolatile=true.
     ::mlir::Type memoryStateType = Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
 
-    // isVolatile is now an attribute, not an operand
-    // Set attribute to true for volatile memcpy
-    // For volatile: dst(0), src(1), len(2), ioState(3), memState(4+)
+    // For volatile memcpy: dst(0), src(1), len(2), ioState(3), memState(4+)
     ::llvm::SmallVector<::mlir::Value> allInputs;
     allInputs.push_back(inputs[0]); // dst
     allInputs.push_back(inputs[1]); // src
@@ -982,23 +972,13 @@ JlmToMlirConverter::GetMemStateRange(size_t nresults)
   return typeRange;
 }
 
-// Debug output for lambda conversion
-static int lambdaCount = 0;
-
 ::mlir::Operation *
 JlmToMlirConverter::ConvertLambda(
     const rvsdg::LambdaNode & lambdaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  // Debug: Print lambda info
-  auto lambdaOp = dynamic_cast<const llvm::LlvmLambdaOperation *>(&lambdaNode.GetOperation());
-  auto functionType = lambdaOp->type();
-  std::cerr << "DEBUG ConvertLambda #" << lambdaCount++ << ": name=" << lambdaOp->name()
-            << ", ninputs=" << lambdaNode.ninputs() << ", noutputs=" << lambdaNode.noutputs()
-            << ", numFuncArgs=" << functionType.NumArguments() << std::endl;
-
-  // Add function attributes, e.g., the function name and linkage
+  // Add function attributes (sym_name and linkage)
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
       Builder_->getStringAttr("sym_name"),
