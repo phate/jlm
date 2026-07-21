@@ -394,26 +394,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return rvsdg::ReduceNode<PtrCmpOperation>(createNormalizer(ptrCmpNormalizations), simpleNode);
   }
-  if (is<rvsdg::UnaryOperation>(&simpleNode))
-  {
-    // FIXME: handle the unary node
-    // See github issue #304
-    return false;
-  }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {
-    return ReduceBinaryNode(simpleNode);
+    return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
   }
 
   return false;
-}
-
-bool
-NodeReduction::ReduceBinaryNode(rvsdg::SimpleNode & simpleNode)
-{
-  JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
-
-  return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
 }
 
 }
