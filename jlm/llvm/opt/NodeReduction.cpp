@@ -36,9 +36,36 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
 {
   AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
   AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
+
   AddMeasurement(NumRegionsLabel_, getNumRegions());
   AddMeasurement(NumTotalRegionIterationsLabel_, getTotalIterations());
   AddMeasurement(MaxIterationsPerRegionLabel_, getMaxIterationsPerRegion());
+
+  auto & counters = getReductionCounters();
+  AddMeasurement("#LoadNonVolatileReductions", counters.numLoadNonVolatileReductions);
+  AddMeasurement("#StoreNonVolatileReductions", counters.numStoreNonVolatileReductions);
+  AddMeasurement("#MemoryStateMergeReductions", counters.numMemoryStateMergeReductions);
+  AddMeasurement("#MemoryStateJoinReductions", counters.numMemoryStateJoinReductions);
+  AddMeasurement("#MemoryStateSplitReductions", counters.numMemoryStateSplitReductions);
+  AddMeasurement(
+      "#LambdaExitMemoryStateMergeReductions",
+      counters.numLambdaExitMemoryStateMergeReductions);
+  AddMeasurement("#MatchReductions", counters.numMatchReductions);
+  AddMeasurement("#SExtReductions", counters.numSExtReductions);
+  AddMeasurement("#ZExtReductions", counters.numZExtReductions);
+  AddMeasurement("#IntegerEqReductions", counters.numIntegerEqReductions);
+  AddMeasurement("#IntegerNeReductions", counters.numIntegerNeReductions);
+  AddMeasurement("#IntegerSgeReductions", counters.numIntegerSgeReductions);
+  AddMeasurement("#IntegerSgtReductions", counters.numIntegerSgtReductions);
+  AddMeasurement("#IntegerSleReductions", counters.numIntegerSleReductions);
+  AddMeasurement("#IntegerSltReductions", counters.numIntegerSltReductions);
+  AddMeasurement("#IntegerUgeReductions", counters.numIntegerUgeReductions);
+  AddMeasurement("#IntegerUgtReductions", counters.numIntegerUgtReductions);
+  AddMeasurement("#IntegerUleReductions", counters.numIntegerUleReductions);
+  AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
+  AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
+  AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
+
   GetTimer(Label::Timer).stop();
 }
 
@@ -170,6 +197,9 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
     ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
 
+static std::vector<rvsdg::NodeNormalization<rvsdg::BinaryOperation>>
+    binaryOperationNormalizations({ rvsdg::NormalizeBinaryOperation });
+
 template<typename TOperation>
 static rvsdg::NodeNormalization<TOperation>
 createNormalizer(const std::vector<rvsdg::NodeNormalization<TOperation>> & nodeNormalizations)
@@ -178,6 +208,20 @@ createNormalizer(const std::vector<rvsdg::NodeNormalization<TOperation>> & nodeN
   {
     return rvsdg::NormalizeSequence<TOperation>(nodeNormalizations, operation, operands);
   };
+}
+
+template<class TOperation>
+static bool
+reduceSimpleNode(
+    rvsdg::SimpleNode & simpleNode,
+    const std::vector<rvsdg::NodeNormalization<TOperation>> & normalizations,
+    size_t * counter)
+{
+  auto normalizer = createNormalizer(normalizations);
+  const bool reductionPerformed = rvsdg::ReduceNode<TOperation>(normalizer, simpleNode);
+  if (reductionPerformed)
+    *counter += 1;
+  return reductionPerformed;
 }
 
 NodeReduction::~NodeReduction() noexcept = default;
@@ -220,7 +264,7 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
           {
             reductionPerformed |= ReduceStructuralNode(structuralNode);
           },
-          [&reductionPerformed](rvsdg::SimpleNode & simpleNode)
+          [this, &reductionPerformed](rvsdg::SimpleNode & simpleNode)
           {
             reductionPerformed |= ReduceSimpleNode(simpleNode);
           });
@@ -278,121 +322,143 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
 {
   if (is<LoadNonVolatileOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<LoadNonVolatileOperation>(
-        createNormalizer(loadNonVolatileNormalizations),
-        simpleNode);
+    return reduceSimpleNode<LoadNonVolatileOperation>(
+        simpleNode,
+        loadNonVolatileNormalizations,
+        &Statistics_->getReductionCounters().numLoadNonVolatileReductions);
   }
   if (is<StoreNonVolatileOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<StoreNonVolatileOperation>(
-        createNormalizer(storeNonVolatileNormalizations),
-        simpleNode);
+    return reduceSimpleNode<StoreNonVolatileOperation>(
+        simpleNode,
+        storeNonVolatileNormalizations,
+        &Statistics_->getReductionCounters().numStoreNonVolatileReductions);
   }
   if (is<MemoryStateMergeOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<MemoryStateMergeOperation>(
-        createNormalizer(memoryStateMergeNormalizations),
-        simpleNode);
+    return reduceSimpleNode<MemoryStateMergeOperation>(
+        simpleNode,
+        memoryStateMergeNormalizations,
+        &Statistics_->getReductionCounters().numMemoryStateMergeReductions);
   }
   if (is<MemoryStateJoinOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<MemoryStateJoinOperation>(
-        createNormalizer(memoryStateJoinNormalizations),
-        simpleNode);
+    return reduceSimpleNode<MemoryStateJoinOperation>(
+        simpleNode,
+        memoryStateJoinNormalizations,
+        &Statistics_->getReductionCounters().numMemoryStateJoinReductions);
   }
   if (is<MemoryStateSplitOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<MemoryStateSplitOperation>(
-        createNormalizer(memoryStateSplitNormalizations),
-        simpleNode);
+    return reduceSimpleNode<MemoryStateSplitOperation>(
+        simpleNode,
+        memoryStateSplitNormalizations,
+        &Statistics_->getReductionCounters().numMemoryStateSplitReductions);
   }
   if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
-        createNormalizer(lambdaExitMemoryStateMergeNormalizations),
-        simpleNode);
+    return reduceSimpleNode<LambdaExitMemoryStateMergeOperation>(
+        simpleNode,
+        lambdaExitMemoryStateMergeNormalizations,
+        &Statistics_->getReductionCounters().numLambdaExitMemoryStateMergeReductions);
   }
   if (is<rvsdg::MatchOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<rvsdg::MatchOperation>(
-        createNormalizer(matchOperationNormalizations),
-        simpleNode);
+    return reduceSimpleNode<rvsdg::MatchOperation>(
+        simpleNode,
+        matchOperationNormalizations,
+        &Statistics_->getReductionCounters().numMatchReductions);
   }
   if (is<SExtOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<SExtOperation>(
-        createNormalizer(sextOperationNormalizations),
-        simpleNode);
+    return reduceSimpleNode<SExtOperation>(
+        simpleNode,
+        sextOperationNormalizations,
+        &Statistics_->getReductionCounters().numSExtReductions);
   }
   if (is<ZExtOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<ZExtOperation>(
-        createNormalizer(zextOperationNormalizations),
-        simpleNode);
+    return reduceSimpleNode<ZExtOperation>(
+        simpleNode,
+        zextOperationNormalizations,
+        &Statistics_->getReductionCounters().numZExtReductions);
   }
   if (is<IntegerEqOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerEqOperation>(
-        createNormalizer(integerEqNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerEqOperation>(
+        simpleNode,
+        integerEqNormalizations,
+        &Statistics_->getReductionCounters().numIntegerEqReductions);
   }
   if (is<IntegerNeOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerNeOperation>(
-        createNormalizer(integerNeNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerNeOperation>(
+        simpleNode,
+        integerNeNormalizations,
+        &Statistics_->getReductionCounters().numIntegerNeReductions);
   }
   if (is<IntegerSgeOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerSgeOperation>(
-        createNormalizer(integerSgeNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerSgeOperation>(
+        simpleNode,
+        integerSgeNormalizations,
+        &Statistics_->getReductionCounters().numIntegerSgeReductions);
   }
   if (is<IntegerSgtOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerSgtOperation>(
-        createNormalizer(integerSgtNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerSgtOperation>(
+        simpleNode,
+        integerSgtNormalizations,
+        &Statistics_->getReductionCounters().numIntegerSgtReductions);
   }
   if (is<IntegerSleOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerSleOperation>(
-        createNormalizer(integerSleNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerSleOperation>(
+        simpleNode,
+        integerSleNormalizations,
+        &Statistics_->getReductionCounters().numIntegerSleReductions);
   }
   if (is<IntegerSltOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerSltOperation>(
-        createNormalizer(integerSltNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerSltOperation>(
+        simpleNode,
+        integerSltNormalizations,
+        &Statistics_->getReductionCounters().numIntegerSltReductions);
   }
   if (is<IntegerUgeOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerUgeOperation>(
-        createNormalizer(integerUgeNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerUgeOperation>(
+        simpleNode,
+        integerUgeNormalizations,
+        &Statistics_->getReductionCounters().numIntegerUgeReductions);
   }
   if (is<IntegerUgtOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerUgtOperation>(
-        createNormalizer(integerUgtNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerUgtOperation>(
+        simpleNode,
+        integerUgtNormalizations,
+        &Statistics_->getReductionCounters().numIntegerUgtReductions);
   }
   if (is<IntegerUleOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerUleOperation>(
-        createNormalizer(integerUleNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerUleOperation>(
+        simpleNode,
+        integerUleNormalizations,
+        &Statistics_->getReductionCounters().numIntegerUleReductions);
   }
   if (is<IntegerUltOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<IntegerUltOperation>(
-        createNormalizer(integerUltNormalizations),
-        simpleNode);
+    return reduceSimpleNode<IntegerUltOperation>(
+        simpleNode,
+        integerUltNormalizations,
+        &Statistics_->getReductionCounters().numIntegerUltReductions);
   }
   if (is<PtrCmpOperation>(&simpleNode))
   {
-    return rvsdg::ReduceNode<PtrCmpOperation>(createNormalizer(ptrCmpNormalizations), simpleNode);
+    return reduceSimpleNode<PtrCmpOperation>(
+        simpleNode,
+        ptrCmpNormalizations,
+        &Statistics_->getReductionCounters().numPtrCmpReductions);
   }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
@@ -402,7 +468,10 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {
-    return ReduceBinaryNode(simpleNode);
+    return reduceSimpleNode<rvsdg::BinaryOperation>(
+        simpleNode,
+        binaryOperationNormalizations,
+        &Statistics_->getReductionCounters().numBinaryReductions);
   }
 
   return false;

@@ -71,7 +71,7 @@ private:
   [[nodiscard]] static bool
   ReduceGammaNode(rvsdg::GammaNode & gammaNode);
 
-  [[nodiscard]] static bool
+  [[nodiscard]] bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
 
   [[nodiscard]] static bool
@@ -126,6 +126,47 @@ public:
   [[nodiscard]] size_t
   getMaxIterationsPerRegion() const noexcept;
 
+  struct ReductionCounters
+  {
+    size_t numLoadNonVolatileReductions = 0;
+    size_t numStoreNonVolatileReductions = 0;
+
+    size_t numMemoryStateMergeReductions = 0;
+    size_t numMemoryStateJoinReductions = 0;
+    size_t numMemoryStateSplitReductions = 0;
+    size_t numLambdaExitMemoryStateMergeReductions = 0;
+
+    size_t numMatchReductions = 0;
+    size_t numSExtReductions = 0;
+    size_t numZExtReductions = 0;
+
+    size_t numIntegerEqReductions = 0;
+    size_t numIntegerNeReductions = 0;
+    size_t numIntegerSgeReductions = 0;
+    size_t numIntegerSgtReductions = 0;
+    size_t numIntegerSleReductions = 0;
+    size_t numIntegerSltReductions = 0;
+    size_t numIntegerUgeReductions = 0;
+    size_t numIntegerUgtReductions = 0;
+    size_t numIntegerUleReductions = 0;
+    size_t numIntegerUltReductions = 0;
+
+    size_t numPtrCmpReductions = 0;
+    size_t numBinaryReductions = 0;
+  };
+
+  [[nodiscard]] ReductionCounters &
+  getReductionCounters() noexcept
+  {
+    return reductionCounters_;
+  }
+
+  [[nodiscard]] const ReductionCounters &
+  getReductionCounters() const noexcept
+  {
+    return reductionCounters_;
+  }
+
   static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
@@ -133,6 +174,7 @@ public:
   }
 
 private:
+  ReductionCounters reductionCounters_{};
   std::unordered_map<const rvsdg::Region *, size_t> NumIterations_;
 };
 
