@@ -74,9 +74,6 @@ private:
   [[nodiscard]] static bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
 
-  [[nodiscard]] static bool
-  ReduceBinaryNode(rvsdg::SimpleNode & simpleNode);
-
   std::unique_ptr<Statistics> Statistics_;
 };
 
