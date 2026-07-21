@@ -65,6 +65,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
+  AddMeasurement("#GammaReductions", counters.numGammaReductions);
 
   GetTimer(Label::Timer).stop();
 }
@@ -314,7 +315,11 @@ NodeReduction::ReduceGammaNode(rvsdg::GammaNode & gammaNode)
   // FIXME: We can not apply the reduction below due to a bug. See github issue #303
   // rvsdg::ReduceGammaControlConstant
 
-  return reduceStaticallyKnownPredicate(gammaNode);
+  const bool reductionPerformed = reduceStaticallyKnownPredicate(gammaNode);
+  if (reductionPerformed)
+    Statistics_->getReductionCounters().numGammaReductions++;
+
+  return reductionPerformed;
 }
 
 bool

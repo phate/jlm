@@ -65,13 +65,13 @@ private:
    * @param structuralNode The structural node that is supposed to be reduced.
    * @return True, if the structural node could be reduced, otherwise false.
    */
-  [[nodiscard]] bool
+  bool
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
-  [[nodiscard]] static bool
+  bool
   ReduceGammaNode(rvsdg::GammaNode & gammaNode);
 
-  [[nodiscard]] bool
+  bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
 
   std::unique_ptr<Statistics> Statistics_;
@@ -150,6 +150,8 @@ public:
 
     size_t numPtrCmpReductions = 0;
     size_t numBinaryReductions = 0;
+
+    size_t numGammaReductions = 0;
   };
 
   [[nodiscard]] ReductionCounters &
