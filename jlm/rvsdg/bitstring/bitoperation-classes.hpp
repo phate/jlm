@@ -140,6 +140,19 @@ public:
   {
     return *std::static_pointer_cast<const BitType>(argument(0));
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref BitCompareOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitCompareOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref BitCompareOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  foldConstants(const BitCompareOperation & operation, const std::vector<Output *> & operands);
 };
 
 }
