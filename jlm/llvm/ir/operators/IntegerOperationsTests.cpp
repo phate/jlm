@@ -61,7 +61,7 @@ TestFoldConstants(const FoldConstantsTestInput & input)
     auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
     EXPECT_TRUE(op);
     EXPECT_EQ(op->Representation().to_int(), input.expected);
-    EXPECT_EQ(op->Representation().nbits(), input.numBitsExpected);
+    EXPECT_EQ(op->Representation().nbits(), static_cast<size_t>(input.numBitsExpected));
   }
 }
 
