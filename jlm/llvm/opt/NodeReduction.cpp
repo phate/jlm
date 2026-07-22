@@ -53,6 +53,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#MatchReductions", counters.numMatchReductions);
   AddMeasurement("#SExtReductions", counters.numSExtReductions);
   AddMeasurement("#ZExtReductions", counters.numZExtReductions);
+  AddMeasurement("#TruncReductions", counters.numTruncReductions);
   AddMeasurement("#IntegerEqReductions", counters.numIntegerEqReductions);
   AddMeasurement("#IntegerNeReductions", counters.numIntegerNeReductions);
   AddMeasurement("#IntegerSgeReductions", counters.numIntegerSgeReductions);
@@ -128,6 +129,9 @@ static std::vector<rvsdg::NodeNormalization<SExtOperation>>
 
 static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
     zextOperationNormalizations({ ZExtOperation::foldConstant });
+
+static std::vector<rvsdg::NodeNormalization<TruncOperation>>
+    truncOperationNormalizations({ TruncOperation::foldConstant });
 
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
     integerEqNormalizations({ IntegerEqOperation::foldConstants });
@@ -387,6 +391,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         zextOperationNormalizations,
         Statistics_->getReductionCounters().numZExtReductions);
+  }
+  if (is<TruncOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<TruncOperation>(
+        simpleNode,
+        truncOperationNormalizations,
+        Statistics_->getReductionCounters().numTruncReductions);
   }
   if (is<IntegerEqOperation>(&simpleNode))
   {
