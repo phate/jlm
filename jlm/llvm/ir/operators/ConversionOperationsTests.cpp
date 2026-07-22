@@ -104,6 +104,52 @@ TEST(ConversionOperationsTests, ZExtConstantFolding)
   }
 }
 
+TEST(ConversionOperationsTests, TruncConstantFolding)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i1Type = BitType::Create(1);
+
+  Graph graph;
+
+  auto & eight =
+      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 8));
+  auto & one =
+      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 1));
+
+  auto & node1 = TruncOperation::createNode(*eight.output(0), i1Type);
+  auto & node2 = TruncOperation::createNode(*one.output(0), i1Type);
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*node2.output(0), "x2");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<TruncOperation>(TruncOperation::foldConstant, node1);
+  ReduceNode<TruncOperation>(TruncOperation::foldConstant, node2);
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().to_uint(), 0u);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+  }
+
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().to_uint(), 1);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+  }
+}
+
 TEST(ConversionOperationsTests, FunctionToPointerInversion)
 {
   using namespace jlm::rvsdg;

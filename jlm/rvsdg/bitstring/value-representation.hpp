@@ -405,6 +405,12 @@ public:
     return concat(BitValueRepresentation::repeat(nbits, sign()));
   }
 
+  BitValueRepresentation
+  trunc(const size_t numBits) const
+  {
+    return slice(0, numBits);
+  }
+
   inline size_t
   nbits() const noexcept
   {
