@@ -20,6 +20,8 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -203,6 +205,60 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   ::mlir::Operation * terminator = block.getTerminator();
 
   return GetConvertedInputs(*terminator, outputMap);
+}
+
+// Helper to create BitCompareOperation nodes from MLIR CmpIOp
+static rvsdg::Output *
+CreateBitCompareNode(
+    ::mlir::arith::CmpIPredicate predicate,
+    size_t nbits,
+    rvsdg::Output * op0,
+    rvsdg::Output * op1)
+{
+  if (predicate == ::mlir::arith::CmpIPredicate::eq)
+  {
+    return rvsdg::biteq_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ne)
+  {
+    return rvsdg::bitne_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sge)
+  {
+    return rvsdg::bitsge_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sgt)
+  {
+    return rvsdg::bitsgt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sle)
+  {
+    return rvsdg::bitsle_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::slt)
+  {
+    return rvsdg::bitslt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::uge)
+  {
+    return rvsdg::bituge_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ugt)
+  {
+    return rvsdg::bitugt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ule)
+  {
+    return rvsdg::bitule_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ult)
+  {
+    return rvsdg::bitult_op::create(nbits, op0, op1);
+  }
+  else
+  {
+    JLM_UNREACHABLE("frontend : Unknown comparison predicate for bit comparison.");
+  }
 }
 
 rvsdg::Node *
@@ -402,61 +458,139 @@ MlirToJlmConverter::ConvertBitBinaryNode(
     return nullptr;
   }
 
-  if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
+  // Check for jlm.op_category attribute to determine operation type
+  auto opCategoryAttr = mlirOperation.getAttr("jlm.op_category");
+  bool isBitOperation = false;
+  if (opCategoryAttr)
   {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAddOperation>({ inputs[0], inputs[1] }, width);
+    auto attrStr = opCategoryAttr.cast<::mlir::StringAttr>();
+    if (attrStr.getValue() == "bit")
+    {
+      isBitOperation = true;
+    }
   }
-  else if (::mlir::isa<::mlir::arith::SubIOp>(mlirOperation))
+
+  if (isBitOperation)
   {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSubOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::MulIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerMulOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::DivSIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSDivOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::DivUIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUDivOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::RemSIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSRemOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::RemUIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerURemOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::LLVM::ShlOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerShlOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::LLVM::AShrOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAShrOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::LLVM::LShrOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerLShrOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::AndIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAndOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::OrIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerOrOperation>({ inputs[0], inputs[1] }, width);
-  }
-  else if (::mlir::isa<::mlir::arith::XOrIOp>(mlirOperation))
-  {
-    return &rvsdg::CreateOpNode<jlm::llvm::IntegerXorOperation>({ inputs[0], inputs[1] }, width);
+    // Create BitBinaryOperation nodes
+    if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitadd_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::SubIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitsub_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::MulIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitmul_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::DivSIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitsdiv_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::DivUIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitudiv_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::RemSIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitsmod_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::RemUIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitumod_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::LLVM::ShlOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitshl_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::LLVM::AShrOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitashr_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (
+        ::mlir::isa<::mlir::LLVM::LShrOp>(mlirOperation)
+        || ::mlir::isa<::mlir::arith::ShRUIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitshr_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::AndIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitand_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::OrIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitor_op>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::XOrIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<rvsdg::bitxor_op>({ inputs[0], inputs[1] }, width);
+    }
+    else
+    {
+      return nullptr;
+    }
   }
   else
   {
-    return nullptr;
+    // Create IntegerBinaryOperation nodes (original behavior)
+    if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerAddOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::SubIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSubOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::MulIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerMulOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::DivSIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSDivOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::DivUIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerUDivOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::RemSIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSRemOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::RemUIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerURemOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::LLVM::ShlOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerShlOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::LLVM::AShrOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerAShrOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::LLVM::LShrOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerLShrOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::AndIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerAndOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::OrIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerOrOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else if (::mlir::isa<::mlir::arith::XOrIOp>(mlirOperation))
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerXorOperation>({ inputs[0], inputs[1] }, width);
+    }
+    else
+    {
+      return nullptr;
+    }
   }
 }
 
@@ -787,16 +921,37 @@ MlirToJlmConverter::ConvertOperation(
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
     return rvsdg::outputs(&rvsdg::CreateOpNode<jlm::llvm::ConstantFP>({}, size, constant.value()));
   }
-  // Binary Integer Comparision operations
+  // Binary Integer Comparison operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
     auto type = ComOp.getOperandTypes()[0];
-    // Handle comparison for BitType or IntegerType
+
+    // Check for jlm.op_category attribute to determine operation type
+    auto opCategoryAttr = mlirOperation.getAttr("jlm.op_category");
+    bool isBitComparison = false;
+    if (opCategoryAttr)
+    {
+      auto attrStr = opCategoryAttr.cast<::mlir::StringAttr>();
+      if (attrStr.getValue() == "bitcmp")
+      {
+        isBitComparison = true;
+      }
+    }
+
+    // Handle comparison for BitType with bitcmp category (from roundtrip)
+    if (isBitComparison && inputs.size() > 0 && rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
+    {
+      auto st = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
+      return { CreateBitCompareNode(ComOp.getPredicate(), st->nbits(), inputs[0], inputs[1]) };
+    }
+
+    // Handle comparison for BitType (original behavior - creates Integer operations)
     if (inputs.size() > 0 && rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
     {
       auto st = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
       return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, st->nbits()));
     }
+
     // Otherwise handle as integer comparison
     if (type.isa<::mlir::IntegerType>())
     {

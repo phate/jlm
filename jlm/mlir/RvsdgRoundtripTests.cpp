@@ -233,33 +233,6 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  // Cross-type comparison for binary ops
-  auto * bitBinOp1 = dynamic_cast<const BitBinaryOperation *>(&op1);
-  auto * intBinOp2 = dynamic_cast<const IntegerBinaryOperation *>(&op2);
-  if (bitBinOp1 && intBinOp2)
-  {
-    CompareTypes(*bitBinOp1->result(0), *intBinOp2->result(0));
-    return;
-  }
-
-  // Reverse check for integer comparison
-  auto * intUlt2 = dynamic_cast<const IntegerUltOperation *>(&op2);
-  auto * bitCompOp1 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op1);
-  if (intUlt2 && bitCompOp1)
-  {
-    CompareTypes(*bitCompOp1->result(0), *intUlt2->result(0));
-    return;
-  }
-
-  // Reverse check for equality comparison
-  auto * intEq2 = dynamic_cast<const IntegerEqOperation *>(&op2);
-  auto * bitCompEq1 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op1);
-  if (intEq2 && bitCompEq1)
-  {
-    CompareTypes(*bitCompEq1->result(0), *intEq2->result(0));
-    return;
-  }
-
   if (auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1))
   {
     auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
