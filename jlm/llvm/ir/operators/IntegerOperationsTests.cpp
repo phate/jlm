@@ -125,6 +125,12 @@ TEST(IntegerUltOperationTest, foldConstants)
   TestFoldConstants<IntegerUltOperation>({ 4, 32, -4, 32, -1, 1 });
 }
 
+TEST(IntegerAndOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerAndOperation>({ 4, 32, 4, 32, 4, 32 });
+  TestFoldConstants<IntegerAndOperation>({ 0, 32, -1, 32, 0, 32 });
+}
+
 TEST(IntegerXorOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerXorOperation>({ 4, 32, 4, 32, 0, 32 });
