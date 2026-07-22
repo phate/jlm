@@ -29,8 +29,7 @@ struct FoldConstantsTestInput
 
 template<typename Operation>
 static void
-TestFoldConstants(
-    const FoldConstantsTestInput & input)
+TestFoldConstants(const FoldConstantsTestInput & input)
 {
   using namespace jlm::rvsdg;
 
@@ -87,37 +86,37 @@ TEST(IntegerSgeOperationTest, foldConstants)
 TEST(IntegerSgtOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerSgtOperation>({ 4, 32, 4, 32, 0, 1 });
-  TestFoldConstants<IntegerSgtOperation>({ 4, 32, -4, 32, -1, 1});
+  TestFoldConstants<IntegerSgtOperation>({ 4, 32, -4, 32, -1, 1 });
 }
 
 TEST(IntegerSleOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerSleOperation>({ 4, 32, 4, 32, -1, 1 });
-  TestFoldConstants<IntegerSleOperation>({ 4, 32, -4, 32, 0, 1});
+  TestFoldConstants<IntegerSleOperation>({ 4, 32, -4, 32, 0, 1 });
 }
 
 TEST(IntegerSltOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerSltOperation>({ 4, 32, 4, 32, 0, 1 });
-  TestFoldConstants<IntegerSltOperation>({ 4, 32, -4, 32, 0, 1});
+  TestFoldConstants<IntegerSltOperation>({ 4, 32, -4, 32, 0, 1 });
 }
 
 TEST(IntegerUgeOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerUgeOperation>({ 4, 32, 4, 32, -1, 1 });
-  TestFoldConstants<IntegerUgeOperation>({ 4, 32, -4, 32, 0, 1});
+  TestFoldConstants<IntegerUgeOperation>({ 4, 32, -4, 32, 0, 1 });
 }
 
 TEST(IntegerUgtOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerUgtOperation>({ 4, 32, 4, 32, 0, 1 });
-  TestFoldConstants<IntegerUgtOperation>({ 4, 32, -4, 32, 0, 1});
+  TestFoldConstants<IntegerUgtOperation>({ 4, 32, -4, 32, 0, 1 });
 }
 
 TEST(IntegerUleOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerUleOperation>({ 4, 32, 4, 32, -1, 1 });
-  TestFoldConstants<IntegerUleOperation>({ 4, 32, -4, 32, -1, 1});
+  TestFoldConstants<IntegerUleOperation>({ 4, 32, -4, 32, -1, 1 });
 }
 
 TEST(IntegerUltOperationTest, foldConstants)
@@ -129,7 +128,7 @@ TEST(IntegerUltOperationTest, foldConstants)
 TEST(IntegerXorOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerXorOperation>({ 4, 32, 4, 32, 0, 32 });
-  TestFoldConstants<IntegerXorOperation>({ 0, 32, -1, 32, -1, 32});
+  TestFoldConstants<IntegerXorOperation>({ 0, 32, -1, 32, -1, 32 });
 }
 
 }
