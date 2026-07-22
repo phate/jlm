@@ -47,7 +47,7 @@ CompareTypes(const Type & type1, const Type & type2)
   if (type1 == type2)
     return;
 
-  if (  auto * bitType1 = dynamic_cast<const BitType *>(&type1))
+  if (auto * bitType1 = dynamic_cast<const BitType *>(&type1))
   {
     auto * bitType2 = assertedCast<const BitType>(&type2);
     ASSERT_TRUE(bitType1->nbits() == bitType2->nbits())
@@ -120,8 +120,9 @@ CompareTypes(const Type & type1, const Type & type2)
 void
 CompareOperations(const Operation & op1, const Operation & op2)
 {
-  // Handle AllocaOperation comparison first (before typeid check) since
-  // AllocaOperation uses pointer identity for its operator== which would fail
+  // Handle comparison for operations that use pointer identity for
+  // its operator== which would fail
+
   if (auto * alloca1 = dynamic_cast<const AllocaOperation *>(&op1))
   {
     auto * alloca2 = assertedCast<const AllocaOperation>(&op2);
@@ -186,27 +187,20 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  // Handle ConstantStructOperation - compare by struct type only (elements are pointers to nodes
-  // in the region, not stored on the operation)
   if (auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1))
   {
     auto * constStruct2 = assertedCast<const ConstantStructOperation>(&op2);
-
-    // Also verify element counts match
-    // Note: elements are stored in the region, not on the operation itself
     CompareTypes(*constStruct1->result(0), *constStruct2->result(0));
     return;
   }
 
-  // Handle ConstantAggregateZeroOperation - compare by type
-  if (  auto * constAggZero1 = dynamic_cast<const ConstantAggregateZeroOperation *>(&op1))
+  if (auto * constAggZero1 = dynamic_cast<const ConstantAggregateZeroOperation *>(&op1))
   {
     auto * constAggZero2 = assertedCast<const ConstantAggregateZeroOperation>(&op2);
     CompareTypes(*constAggZero1->result(0), *constAggZero2->result(0));
     return;
   }
 
-  // Handle CallOperation - compare by function type using value comparison
   if (auto * call1 = dynamic_cast<const CallOperation *>(&op1))
   {
     auto * call2 = assertedCast<const CallOperation>(&op2);
@@ -214,17 +208,13 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  // Handle GetElementPtrOperation - compare the pointee types before typeid check
   if (auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1))
   {
     auto * gep2 = assertedCast<const GetElementPtrOperation>(&op2);
-    // Compare pointee types
     CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
     return;
   }
 
-  // Handle MemCpy operations first (before typeid check) since they might have different
-  // memory state counts after conversion and need special handling
   if (auto * memcpy1 = dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&op1))
   {
     auto * memcpy2 = assertedCast<const jlm::llvm::MemCpyNonVolatileOperation>(&op2);
@@ -243,157 +233,57 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  // If same type, use the regular operator==
-  if (typeid(op1) == typeid(op2))
-  {
-    if (auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1))
-    {
-      auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
-
-      JLM_ASSERT(lambda1->name() == lambda2->name());
-      JLM_ASSERT(lambda1->linkage() == lambda2->linkage());
-      JLM_ASSERT(lambda1->callingConvention() == lambda2->callingConvention());
-
-      auto type1 = lambda1->type();
-      auto type2 = lambda2->type();
-
-      JLM_ASSERT(type1.NumArguments() == type2.NumArguments());
-      for (size_t i = 0; i < type1.NumArguments(); ++i)
-      {
-        CompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
-      }
-
-      for (size_t i = 0; i < type1.NumResults(); ++i)
-      {
-        CompareTypes(type1.ResultType(i), type2.ResultType(i));
-      }
-    }
-
-    ASSERT_TRUE(op1 == op2) << "Same-type operation inequality: " << op1.debug_string() << " vs "
-                            << op2.debug_string();
-    return;
-  }
-
-  // Handle BitConstantOperation vs IntegerConstantOperation comparison
-  auto * bitConst1 = dynamic_cast<const BitConstantOperation *>(&op1);
-  auto * intConst2 = dynamic_cast<const IntegerConstantOperation *>(&op2);
-
-  if (bitConst1 && intConst2)
-  {
-    ASSERT_TRUE(bitConst1->value() == intConst2->Representation())
-        << "BitIntConst fail: " << op1.debug_string() << " vs " << op2.debug_string();
-    return;
-  }
-
-  // Reverse check
-  auto * intConst1 = dynamic_cast<const IntegerConstantOperation *>(&op1);
-  auto * bitConst2 = dynamic_cast<const BitConstantOperation *>(&op2);
-
-  if (intConst1 && bitConst2)
-  {
-    ASSERT_TRUE(intConst1->Representation() == bitConst2->value())
-        << "IntBitConst fail: " << op1.debug_string() << " vs " << op2.debug_string();
-    return;
-  }
-
   // Cross-type comparison for binary ops
   auto * bitBinOp1 = dynamic_cast<const BitBinaryOperation *>(&op1);
   auto * intBinOp2 = dynamic_cast<const IntegerBinaryOperation *>(&op2);
-
   if (bitBinOp1 && intBinOp2)
   {
     CompareTypes(*bitBinOp1->result(0), *intBinOp2->result(0));
     return;
   }
 
-  // Reverse check for binary ops
-  auto * intBinOp1 = dynamic_cast<const IntegerBinaryOperation *>(&op1);
-  auto * bitBinOpRev = dynamic_cast<const BitBinaryOperation *>(&op2);
-
-  if (intBinOp1 && bitBinOpRev)
-  {
-    CompareTypes(*intBinOp1->result(0), *bitBinOpRev->result(0));
-    return;
-  }
-
-  // Note: GetElementPtr handler is placed at the beginning of CompareOperations to handle
-  // same-type comparisons before falling through to typeid check
-
-  // Handle IntegerUltOperation - compare with BitComparisonOperation
-  auto * intUlt1 = dynamic_cast<const IntegerUltOperation *>(&op1);
-  auto * bitCompOp2 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op2);
-
-  if (intUlt1 && bitCompOp2)
-  {
-    CompareTypes(*intUlt1->result(0), *bitCompOp2->result(0));
-    return;
-  }
-
   // Reverse check for integer comparison
   auto * intUlt2 = dynamic_cast<const IntegerUltOperation *>(&op2);
   auto * bitCompOp1 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op1);
-
   if (intUlt2 && bitCompOp1)
   {
     CompareTypes(*bitCompOp1->result(0), *intUlt2->result(0));
     return;
   }
 
-  // Handle IntegerEqOperation - compare with BitComparisonOperation
-  auto * intEq1 = dynamic_cast<const IntegerEqOperation *>(&op1);
-  auto * bitCompEq2 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op2);
-
-  if (intEq1 && bitCompEq2)
-  {
-    CompareTypes(*intEq1->result(0), *bitCompEq2->result(0));
-    return;
-  }
-
   // Reverse check for equality comparison
   auto * intEq2 = dynamic_cast<const IntegerEqOperation *>(&op2);
   auto * bitCompEq1 = dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&op1);
-
   if (intEq2 && bitCompEq1)
   {
     CompareTypes(*bitCompEq1->result(0), *intEq2->result(0));
     return;
   }
 
-  // Handle IntegerAddOperation - compare with BitBinaryOperation
-  auto * intAdd1 = dynamic_cast<const IntegerAddOperation *>(&op1);
-  auto * bitBinOp2 = dynamic_cast<const jlm::rvsdg::BitBinaryOperation *>(&op2);
-
-  if (intAdd1 && bitBinOp2)
+  if (auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1))
   {
-    CompareTypes(*intAdd1->result(0), *bitBinOp2->result(0));
-    return;
+    auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
+
+    JLM_ASSERT(lambda1->name() == lambda2->name());
+    JLM_ASSERT(lambda1->linkage() == lambda2->linkage());
+    JLM_ASSERT(lambda1->callingConvention() == lambda2->callingConvention());
+
+    auto type1 = lambda1->type();
+    auto type2 = lambda2->type();
+
+    JLM_ASSERT(type1.NumArguments() == type2.NumArguments());
+    for (size_t i = 0; i < type1.NumArguments(); ++i)
+    {
+      CompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
+    }
+
+    for (size_t i = 0; i < type1.NumResults(); ++i)
+    {
+      CompareTypes(type1.ResultType(i), type2.ResultType(i));
+    }
   }
 
-  // Handle MemoryStateMergeOperation - compare with Store operation
-  auto * memMerge1 = dynamic_cast<const jlm::llvm::MemoryStateMergeOperation *>(&op1);
-  auto * store2 = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&op2);
-
-  if (memMerge1 && store2)
-  {
-    // Memory state merge and store both produce memory state
-    CompareTypes(*memMerge1->result(0), *store2->result(0));
-    return;
-  }
-
-  auto * store1 = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&op1);
-  auto * memMerge2 = dynamic_cast<const jlm::llvm::MemoryStateMergeOperation *>(&op2);
-
-  if (store1 && memMerge2)
-  {
-    CompareTypes(*store1->result(0), *memMerge2->result(0));
-    return;
-  }
-
-  // Print what we're trying to compare - especially for Memcpy operations
-  std::cout << "Unknown comparison: " << typeid(op1).name() << " vs " << typeid(op2).name() << ": "
-            << op1.debug_string() << " vs " << op2.debug_string() << "\n";
-
-  // If same type class, they should be equal via operator== (already checked above)
+  // If same type, use the regular operator==
   if (typeid(op1) == typeid(op2))
   {
     ASSERT_TRUE(op1 == op2) << "Same-type operation inequality: " << op1.debug_string() << " vs "
