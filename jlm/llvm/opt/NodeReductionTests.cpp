@@ -85,6 +85,7 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
   EXPECT_EQ(nodeReductionStatistics.getNumRegions(), 2u);
   EXPECT_EQ(nodeReductionStatistics.getTotalIterations(), 3u);
   EXPECT_EQ(nodeReductionStatistics.getMaxIterationsPerRegion(), 2u);
+  EXPECT_EQ(nodeReductionStatistics.getReductionCounters().numLoadNonVolatileReductions, 1u);
 }
 
 }
