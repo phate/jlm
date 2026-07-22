@@ -145,7 +145,7 @@ TEST(ConversionOperationsTests, TruncConstantFolding)
   {
     auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
     EXPECT_TRUE(op);
-    EXPECT_EQ(op->Representation().to_uint(), 1);
+    EXPECT_EQ(op->Representation().to_uint(), 1u);
     EXPECT_EQ(op->Representation().nbits(), 1u);
   }
 }
