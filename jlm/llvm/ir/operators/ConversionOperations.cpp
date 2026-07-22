@@ -144,6 +144,28 @@ TruncOperation::copy() const
   return std::make_unique<TruncOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+TruncOperation::foldConstant(
+    const TruncOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  const auto & resultRepresentation =
+      constantOperation->Representation().trunc(operation.ndstbits());
+
+  auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
+}
+
 PtrToIntOperation::~PtrToIntOperation() noexcept = default;
 
 bool

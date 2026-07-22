@@ -136,6 +136,7 @@ public:
     size_t numMatchReductions = 0;
     size_t numSExtReductions = 0;
     size_t numZExtReductions = 0;
+    size_t numTruncReductions = 0;
 
     size_t numIntegerEqReductions = 0;
     size_t numIntegerNeReductions = 0;
