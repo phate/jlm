@@ -7,9 +7,11 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -848,4 +850,79 @@ TEST(CommonNodeEliminationTests, InvariantThetaInTheta)
   // The add operations should take the corresponding loop variables as input
   EXPECT_EQ(plus1Node.input(0)->origin(), loopVarX0.pre);
   EXPECT_EQ(plus2Node.input(0)->origin(), loopVarY0.pre);
+}
+
+TEST(CommonNodeEliminationTests, InvariantLoopOutputs)
+{
+  /**
+   * Creates RVSDG that looks like
+   *
+   *        undef   0   undef
+   *           |    |    |
+   *           v    v    v
+   * +-theta---------------------+
+   * |         v    v    v       |
+   * | CTR(0)       |\--------\  |
+   * |     v        v         |  |
+   * |   +-gamma---+--------+ |  |
+   * |   |    v    |    v   | |  |
+   * |   |    |    |    |   | |  |
+   * |   |    v    |    v   | |  |
+   * |   +---------+--------+ |  |
+   * |              v         |  |
+   * |             /|    /----/  |
+   * |          /-/ |    |       |
+   * | CTR(0)  /    |    |       |
+   * |  v      v    v    v       |
+   * +---------------------------+
+   *           v    v    v
+   *    export(x)   |    export(z)
+   *                v
+   *            export(y)
+   *
+   * After running CNE, the exports "x", "y" and "z" should all take their value
+   * directly from the constant 0.
+   */
+
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  auto & graph = rm.Rvsdg();
+
+  const auto bit32 = BitType::Create(32);
+
+  auto & zero = *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+  auto & undefValue = *UndefValueOperation::Create(graph.GetRootRegion(), bit32);
+
+  auto theta = ThetaNode::create(&graph.GetRootRegion());
+  auto region = theta->subregion();
+
+  auto lvX = theta->AddLoopVar(&undefValue);
+  auto lvY = theta->AddLoopVar(&zero);
+  auto lvZ = theta->AddLoopVar(&undefValue);
+
+  auto & controlGamma = ControlConstantOperation::create(*region, 2, 0);
+  auto gamma = GammaNode::create(&controlGamma, 2);
+
+  auto entryY = gamma->AddEntryVar(lvY.pre);
+  auto & exitY = *gamma->AddExitVar({ entryY.branchArgument[0], entryY.branchArgument[1] }).output;
+
+  lvX.post->divert_to(&exitY);
+  lvY.post->divert_to(&exitY);
+  lvZ.post->divert_to(lvY.pre);
+
+  auto & exportX = GraphExport::Create(*lvX.output, "x");
+  auto & exportY = GraphExport::Create(*lvY.output, "y");
+  auto & exportZ = GraphExport::Create(*lvZ.output, "z");
+
+  // Act
+  CommonNodeElimination cne;
+  cne.Run(rm, statisticsCollector);
+
+  // Assert
+  EXPECT_EQ(exportX.origin(), &zero);
+  EXPECT_EQ(exportY.origin(), &zero);
+  EXPECT_EQ(exportZ.origin(), &zero);
 }

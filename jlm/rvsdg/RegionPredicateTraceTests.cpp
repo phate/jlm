@@ -3,6 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/rvsdg/bitstring/arithmetic.hpp"
+#include "jlm/rvsdg/bitstring/constant.hpp"
+#include "jlm/rvsdg/bitstring/type.hpp"
+#include "jlm/rvsdg/simple-node.hpp"
+#include "jlm/rvsdg/theta.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/rvsdg/control.hpp>
@@ -76,4 +81,112 @@ TEST(RegionPredicateTraceTests, TestTracing)
   EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_left));
   EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g3_left));
   EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_right));
+}
+
+TEST(RegionPredicateTraceTests, TraceOutOfTheta)
+{
+  /**
+   * Creates an RVSDG graph that looks like:
+   *
+   * +-theta0------------------x-------------------------+
+   * |                                                   |
+   * | +-theta1---x-----+ +-theta3-------------x-------+ |
+   * | |                | |                    v       | |
+   * | | CTRL(0) INT(3) | |         +-theta4---x-----+ | |
+   * | |   v      v     | |         |                | | |
+   * | +----------x-----+ |         | CTRL(0) INT(7) | | |
+   * |            v       |         |   v      v     | | |
+   * | +-theta2---x-----+ | CTRL(0) +----------x-----+ | |
+   * | | CTRL(0)  v     | |   v                v       | |
+   * | +----------x-----+ +--------------------x-------+ |
+   * |            |                            |         |
+   * |            \----------\   /-------------/         |
+   * |                        v v                        |
+   * | CTRL(0)                ADD                        |
+   * |   v                     v                         |
+   * +-------------------------x-------------------------+
+   *                           v
+   *                       export("x")
+   *
+   * and checks that all regions are considered reachable from all regions above it,
+   * both parent, child and sibling regions.
+   */
+
+  using namespace jlm;
+
+  // Arrange
+  auto bit32 = rvsdg::BitType::Create(32);
+
+  rvsdg::Graph rvsdg;
+  auto theta0 = rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
+  auto undef0 =
+      rvsdg::CreateOpNode<rvsdg::TestNullaryOperation>(rvsdg.GetRootRegion(), bit32).output(0);
+  auto loopVar0 = theta0->AddLoopVar(undef0);
+
+  // theta1
+  auto theta1 = rvsdg::ThetaNode::create(theta0->subregion());
+  auto undef1 =
+      rvsdg::CreateOpNode<rvsdg::TestNullaryOperation>(*theta0->subregion(), bit32).output(0);
+  auto loopVar1 = theta1->AddLoopVar(undef1);
+  auto & int3Output = rvsdg::BitConstantOperation::create(*theta1->subregion(), { 32, 3 });
+  loopVar1.post->divert_to(&int3Output);
+
+  // theta2
+  auto theta2 = rvsdg::ThetaNode::create(theta0->subregion());
+  auto loopVar2 = theta2->AddLoopVar(loopVar1.output);
+
+  // theta3
+  auto theta3 = rvsdg::ThetaNode::create(theta0->subregion());
+  auto undef3 =
+      rvsdg::CreateOpNode<rvsdg::TestNullaryOperation>(*theta0->subregion(), bit32).output(0);
+  auto loopVar3 = theta3->AddLoopVar(undef3);
+
+  // theta4
+  auto theta4 = rvsdg::ThetaNode::create(theta3->subregion());
+  auto loopVar4 = theta4->AddLoopVar(loopVar3.pre);
+  auto & int7Output = rvsdg::BitConstantOperation::create(*theta4->subregion(), { 32, 7 });
+  loopVar4.post->divert_to(&int7Output);
+  loopVar3.post->divert_to(loopVar4.output);
+
+  // ADD inside theta0's subregion, combining outputs from theta2 and theta3/theta4
+  auto & addOutput = *rvsdg::bitadd_op::create(32, loopVar2.output, loopVar3.output);
+  loopVar0.post->divert_to(&addOutput);
+
+  rvsdg::GraphExport::Create(*loopVar0.output, "x");
+
+  // Assert
+  rvsdg::RegionPredicateTrace trace;
+
+  // Every region can be reached from the root region
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta1->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta2->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta3->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta4->subregion()));
+
+  // Every region can reach the root region
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
+
+  // theta0 can reach every region inside it
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta1->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta2->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta3->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta4->subregion()));
+
+  // theta0 can also be reached by every region inside it
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta2->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta3->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta4->subregion(), *theta0->subregion()));
+
+  // theta2 can be reached from theta1
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), *theta2->subregion()));
+
+  // theta3 and theta4 can reach each other
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta3->subregion(), *theta4->subregion()));
+  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta4->subregion(), *theta3->subregion()));
 }
