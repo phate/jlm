@@ -6,13 +6,12 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/graph.hpp>
@@ -22,6 +21,7 @@
 
 namespace jlm::llvm
 {
+
 TEST(NodeReductionTests, MultipleReductionsPerRegion)
 {
   using namespace jlm::rvsdg;
@@ -41,16 +41,16 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
 
   auto allocaResults = AllocaOperation::create(bitType, inputVar.argument[0], 4);
 
-  const auto c3 = &BitConstantOperation::create(subregion, BitValueRepresentation(32, 3));
+  auto & c3 = IntegerConstantOperation::Create(subregion, BitValueRepresentation(32, 3));
   auto storeResults =
-      StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
+      StoreNonVolatileOperation::Create(allocaResults[0], c3.output(0), { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 = &BitConstantOperation::create(subregion, BitValueRepresentation(32, 5));
-  auto sum = bitadd_op::create(32, loadResults[0], c5);
+  const auto c5 = &IntegerConstantOperation::Create(subregion, BitValueRepresentation(32, 5));
+  auto & eqNode = IntegerEqOperation::createNode(32, *loadResults[0], *c5->output(0));
 
-  auto outputVar = testStructuralNode->addOutputWithResults({ sum });
+  auto outputVar = testStructuralNode->addOutputWithResults({ eqNode.output(0) });
 
   GraphExport::Create(*outputVar.output, "sum");
 
@@ -68,14 +68,14 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
   // We expect that two reductions are applied:
   // 1. NormalizeLoadStore - This ensures that the stored constant value is directly forwarded to
   // the add operation
-  // 2. Constant folding on the add operation
+  // 2. Constant folding on the IntegerEqOperation node
   // The result is that a single constant node with value 8 is left in the graph.
   EXPECT_EQ(graph.GetRootRegion().numNodes(), 1u);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*outputVar.result[0]->origin());
   auto constantOperation =
-      dynamic_cast<const BitConstantOperation *>(&constantNode->GetOperation());
-  EXPECT_EQ(constantOperation->value().to_uint(), 8u);
+      dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
+  EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);
 
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
   auto & nodeReductionStatistics = dynamic_cast<const NodeReduction::Statistics &>(statistics);
