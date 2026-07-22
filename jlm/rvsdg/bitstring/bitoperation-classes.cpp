@@ -108,15 +108,13 @@ BitBinaryOperation::foldConstants(
 BitCompareOperation::~BitCompareOperation() noexcept = default;
 
 binop_reduction_path_t
-BitCompareOperation::can_reduce_operand_pair(
-    const Output *, const Output *) const noexcept
+BitCompareOperation::can_reduce_operand_pair(const Output *, const Output *) const noexcept
 {
   return binop_reduction_none;
 }
 
 Output *
-BitCompareOperation::reduce_operand_pair(
-    binop_reduction_path_t, Output *, Output *) const
+BitCompareOperation::reduce_operand_pair(binop_reduction_path_t, Output *, Output *) const
 {
   return nullptr;
 }
