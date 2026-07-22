@@ -616,6 +616,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerXorOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerXorOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerXorOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerXorOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerXorOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
