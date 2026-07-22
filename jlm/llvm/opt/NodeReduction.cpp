@@ -65,6 +65,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerUleReductions", counters.numIntegerUleReductions);
   AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
 
+  AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
 
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
@@ -165,6 +166,9 @@ static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
 
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
     integerUltNormalizations({ IntegerUltOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>>
+    integerOrNormalizations({ IntegerOrOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerXorOperation>>
     integerXorNormalizations({ IntegerXorOperation::foldConstants });
@@ -474,6 +478,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         integerUltNormalizations,
         Statistics_->getReductionCounters().numIntegerUltReductions);
+  }
+  if (is<IntegerOrOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerOrOperation>(
+        simpleNode,
+        integerOrNormalizations,
+        Statistics_->getReductionCounters().numIntegerOrReductions);
   }
   if (is<IntegerXorOperation>(&simpleNode))
   {
