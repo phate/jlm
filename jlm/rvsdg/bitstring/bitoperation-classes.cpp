@@ -74,6 +74,37 @@ BitBinaryOperation::reduce_operand_pair(
   return nullptr;
 }
 
+std::optional<std::vector<Output *>>
+BitBinaryOperation::foldConstants(
+    const BitBinaryOperation & operation,
+    const std::vector<Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = traceOutputIntraProcedurally(operand1);
+  auto [constantNode1, constantOperation1] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
+  if (!constantOperation1)
+  {
+    return std::nullopt;
+  }
+
+  const auto & tracedOperand2 = traceOutputIntraProcedurally(operand2);
+  auto [constantNode2, constantOperation2] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
+  if (!constantOperation2)
+  {
+    return std::nullopt;
+  }
+
+  auto & result = BitConstantOperation::create(
+      *operand1.region(),
+      operation.reduce_constants(constantOperation1->value(), constantOperation2->value()));
+  return std::vector({ &result });
+}
+
 BitCompareOperation::~BitCompareOperation() noexcept = default;
 
 binop_reduction_path_t

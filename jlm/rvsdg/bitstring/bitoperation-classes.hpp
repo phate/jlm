@@ -87,6 +87,19 @@ public:
   {
     return *std::static_pointer_cast<const BitType>(result(0));
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref BitBinaryOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitBinaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref BitBinaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<Output *>>
+  foldConstants(const BitBinaryOperation & operation, const std::vector<Output *> & operands);
 };
 
 enum class compare_result
