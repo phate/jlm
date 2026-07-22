@@ -35,6 +35,8 @@ foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRep
     return IntegerValueRepresentation(r1.ule(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
     return IntegerValueRepresentation(r1.ult(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerOrOperation>)
+    return IntegerValueRepresentation(r1.lor(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerXorOperation>)
     return IntegerValueRepresentation(r1.lxor(r2));
   else
@@ -621,6 +623,14 @@ enum rvsdg::BinaryOperation::flags
 IntegerOrOperation::flags() const noexcept
 {
   return flags::associative | flags::commutative;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerOrOperation::foldConstants(
+    const IntegerOrOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerOrOperation>(operands);
 }
 
 IntegerXorOperation::~IntegerXorOperation() noexcept = default;
