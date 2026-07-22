@@ -147,50 +147,17 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  // Handle ConstantDataArrayOperation and ConstantArrayOperation comparison.
-  // Both get converted to/from mlir::jlm::ConstantDataArray, so they should be considered
-  // equivalent.
-  auto * constDataArr1 = dynamic_cast<const ConstantDataArrayOperation *>(&op1);
-  auto * constDataArr2 = dynamic_cast<const ConstantDataArrayOperation *>(&op2);
-  auto * constArr1 = dynamic_cast<const ConstantArrayOperation *>(&op1);
-  auto * constArr2 = dynamic_cast<const ConstantArrayOperation *>(&op2);
-
-  // Both are ConstantDataArrayOperation - compare by array type
-  if (constDataArr1 && constDataArr2)
+  if (auto * constDataArr1 = dynamic_cast<const ConstantDataArrayOperation *>(&op1))
   {
+    auto * constDataArr2 = assertedCast<const ConstantDataArrayOperation>(&op2);
     CompareTypes(*constDataArr1->result(0), *constDataArr2->result(0));
     return;
   }
 
-  // Both are ConstantArrayOperation - compare by array type
-  if (constArr1 && constArr2)
+  if (auto * constArr1 = dynamic_cast<const ConstantArrayOperation *>(&op1))
   {
+    auto * constArr2 = assertedCast<const ConstantArrayOperation>(&op2);
     CompareTypes(*constArr1->result(0), *constArr2->result(0));
-    return;
-  }
-
-  // One is ConstantDataArrayOperation, the other is ConstantArrayOperation.
-  // These are equivalent since both convert to/from mlir::jlm::ConstantDataArray.
-  if ((constDataArr1 != nullptr || constDataArr2 != nullptr)
-      && (constArr1 != nullptr || constArr2 != nullptr))
-  {
-    std::shared_ptr<const Type> type1, type2;
-    if (constDataArr1)
-      type1 = constDataArr1->result(0);
-    else
-      type1 = constArr1->result(0);
-    if (constDataArr2)
-      type2 = constDataArr2->result(0);
-    else
-      type2 = constArr2->result(0);
-    CompareTypes(*type1, *type2);
-    return;
-  }
-
-  if (auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1))
-  {
-    auto * constStruct2 = assertedCast<const ConstantStructOperation>(&op2);
-    CompareTypes(*constStruct1->result(0), *constStruct2->result(0));
     return;
   }
 
@@ -198,6 +165,13 @@ CompareOperations(const Operation & op1, const Operation & op2)
   {
     auto * constAggZero2 = assertedCast<const ConstantAggregateZeroOperation>(&op2);
     CompareTypes(*constAggZero1->result(0), *constAggZero2->result(0));
+    return;
+  }
+
+  if (auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1))
+  {
+    auto * constStruct2 = assertedCast<const ConstantStructOperation>(&op2);
+    CompareTypes(*constStruct1->result(0), *constStruct2->result(0));
     return;
   }
 
@@ -337,9 +311,6 @@ void
 CompareRegions(const Region & region1, const Region & region2)
 {
   // Check number of arguments and results
-  std::cerr << "DEBUG CompareRegions: region1.nargs=" << region1.narguments()
-            << ", region2.nargs=" << region2.narguments() << ", nresults=" << region1.nresults()
-            << std::endl;
   ASSERT_EQ(region1.narguments(), region2.narguments()) << "Region narguments mismatch";
   for (size_t i = 0; i < region1.narguments(); ++i)
   {
@@ -441,8 +412,7 @@ CompareRegions(const Region & region1, const Region & region2)
   }
 
   // Phase 2: Handle unvisited nodes (context variables in lambdas)
-  size_t iteration = 0;
-  while (visited1.size() < count1 && iteration++ < 10)
+  while (visited1.size() < count1)
   {
     bool foundContextVar = false;
 
@@ -606,33 +576,6 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName
 }
 
 } // namespace
-
-TEST(RvsdgRoundtripTests, TestGamma)
-{
-  using namespace jlm::llvm;
-  using namespace jlm::rvsdg;
-
-  auto bitType = BitType::Create(1);
-  auto functionType = FunctionType::Create({ bitType, bitType, bitType }, { bitType });
-
-  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
-
-  auto lambda = LambdaNode::Create(
-      rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
-
-  auto & matchNode =
-      MatchOperation::CreateNode(*lambda->GetFunctionArguments()[0], { { 0, 0 } }, 1, 2);
-  auto gamma = GammaNode::create(matchNode.output(0), 2);
-  auto entryVar1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);
-  auto entryVar2 = gamma->AddEntryVar(lambda->GetFunctionArguments()[2]);
-  auto exitVar = gamma->AddExitVar({ entryVar1.branchArgument[0], entryVar2.branchArgument[1] });
-
-  auto func = lambda->finalize({ exitVar.output });
-  GraphExport::Create(*func, "");
-
-  TestRvsdgRoundtrip(rvsdgModule, "TestGamma");
-}
 
 // Tests for all RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
 

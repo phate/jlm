@@ -993,8 +993,30 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    auto elements = std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end());
-    return { llvm::ConstantDataArrayOperation::Create(elements) };
+    // Check for jlm.op_category attribute to determine operation type
+    auto opCategoryAttr = mlirOperation.getAttr("jlm.op_category");
+    bool isArrayElement = false;
+    if (opCategoryAttr)
+    {
+      auto attrStr = opCategoryAttr.cast<::mlir::StringAttr>();
+      if (attrStr.getValue() == "constarray")
+      {
+        isArrayElement = true;
+      }
+    }
+
+    if (isArrayElement)
+    {
+      // Convert to ConstantArrayOperation
+      std::vector<rvsdg::Output *> elementOutputs(inputs.begin(), inputs.end());
+      return { llvm::ConstantArrayOperation::Create(elementOutputs) };
+    }
+    else
+    {
+      // Default: convert to ConstantDataArrayOperation
+      auto elements = std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end());
+      return { llvm::ConstantDataArrayOperation::Create(elements) };
+    }
   }
   else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
   {

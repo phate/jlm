@@ -900,6 +900,8 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         arrayType,
         inputs);
+    // Set attribute to distinguish ConstantArrayOperation from ConstantDataArrayOperation
+    MlirOp->setAttr("jlm.op_category", Builder_->getStringAttr("constarray"));
   }
   // ConstantStruct - constant struct with element values
   else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
