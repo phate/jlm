@@ -30,10 +30,12 @@
 namespace
 {
 
-// Now we have the full type definitions - use them
 using namespace jlm::llvm;
 using namespace jlm::rvsdg;
 using namespace jlm::util;
+
+void
+CompareRegions(const Region & region1, const Region & region2);
 
 /**
  * \brief Compares two RVSDG types for structural equality using fail-fast assertions.
@@ -45,15 +47,9 @@ CompareTypes(const Type & type1, const Type & type2)
   if (type1 == type2)
     return;
 
-  using namespace jlm::llvm;
-  using namespace jlm::rvsdg;
-
-  // Handle BitType comparison (both should be BitType in JLM's rvsdg)
-  auto * bitType1 = dynamic_cast<const BitType *>(&type1);
-  auto * bitType2 = dynamic_cast<const BitType *>(&type2);
-
-  if (bitType1 && bitType2)
+  if (  auto * bitType1 = dynamic_cast<const BitType *>(&type1))
   {
+    auto * bitType2 = assertedCast<const BitType>(&type2);
     ASSERT_TRUE(bitType1->nbits() == bitType2->nbits())
         << "BitType mismatch: expected " << type1.debug_string() << " but got "
         << type2.debug_string();
@@ -61,11 +57,10 @@ CompareTypes(const Type & type1, const Type & type2)
   }
 
   // Handle StructType comparison - compare by element types and properties
-  auto * structType1 = dynamic_cast<const StructType *>(&type1);
-  auto * structType2 = dynamic_cast<const StructType *>(&type2);
-
-  if (structType1 && structType2)
+  if (auto * structType1 = dynamic_cast<const StructType *>(&type1))
   {
+    auto * structType2 = assertedCast<const StructType>(&type2);
+
     // Compare element count using numElements()
     ASSERT_TRUE(structType1->numElements() == structType2->numElements())
         << "StructType element count mismatch: expected " << type1.debug_string() << " but got "
@@ -83,11 +78,9 @@ CompareTypes(const Type & type1, const Type & type2)
   }
 
   // Handle ArrayType comparison - compare by element type and size
-  auto * arrayType1 = dynamic_cast<const ArrayType *>(&type1);
-  auto * arrayType2 = dynamic_cast<const ArrayType *>(&type2);
-
-  if (arrayType1 && arrayType2)
+  if (auto * arrayType1 = dynamic_cast<const ArrayType *>(&type1))
   {
+    auto * arrayType2 = assertedCast<const ArrayType>(&type2);
     CompareTypes(arrayType1->element_type(), arrayType2->element_type());
     ASSERT_TRUE(arrayType1->nelements() == arrayType2->nelements())
         << "ArrayType element count mismatch: expected " << type1.debug_string() << " but got "
@@ -96,17 +89,14 @@ CompareTypes(const Type & type1, const Type & type2)
   }
 
   // Handle FunctionType comparison - compare by argument and result types
-  auto * fnType1 = dynamic_cast<const FunctionType *>(&type1);
-  auto * fnType2 = dynamic_cast<const FunctionType *>(&type2);
-
-  if (fnType1 && fnType2)
+  if (auto * fnType1 = dynamic_cast<const FunctionType *>(&type1))
   {
+    auto * fnType2 = assertedCast<const FunctionType>(&type2);
     ASSERT_TRUE(
         fnType1->NumArguments() == fnType2->NumArguments()
         && fnType1->NumResults() == fnType2->NumResults())
         << "FunctionType argument/result count mismatch: expected " << type1.debug_string()
         << " but got " << type2.debug_string();
-    // FunctionType::ArgumentType() and ResultType() return const Type&, not shared_ptr
     for (size_t i = 0; i < fnType1->NumArguments(); ++i)
     {
       CompareTypes(fnType1->ArgumentType(i), fnType2->ArgumentType(i));
@@ -123,10 +113,6 @@ CompareTypes(const Type & type1, const Type & type2)
                               << type2.debug_string();
 }
 
-// Forward declarations - functions are called before their definitions
-void
-CompareRegions(const Region & region1, const Region & region2);
-
 /**
  * \brief Compares two operations for equality, handling different but equivalent
  * operation types.
@@ -134,38 +120,27 @@ CompareRegions(const Region & region1, const Region & region2);
 void
 CompareOperations(const Operation & op1, const Operation & op2)
 {
-  using namespace jlm::rvsdg;
-  using namespace jlm::llvm;
-
   // Handle AllocaOperation comparison first (before typeid check) since
   // AllocaOperation uses pointer identity for its operator== which would fail
-  auto * alloca1 = dynamic_cast<const AllocaOperation *>(&op1);
-  auto * alloca2 = dynamic_cast<const AllocaOperation *>(&op2);
-
-  if (alloca1 && alloca2)
+  if (auto * alloca1 = dynamic_cast<const AllocaOperation *>(&op1))
   {
+    auto * alloca2 = assertedCast<const AllocaOperation>(&op2);
     CompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType());
     ASSERT_TRUE(alloca1->alignment() == alloca2->alignment())
         << "Alloca mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
   }
 
-  // Handle MallocOperation comparison
-  auto * malloc1 = dynamic_cast<const MallocOperation *>(&op1);
-  auto * malloc2 = dynamic_cast<const MallocOperation *>(&op2);
-
-  if (malloc1 && malloc2)
+  if (auto * malloc1 = dynamic_cast<const MallocOperation *>(&op1))
   {
+    auto * malloc2 = assertedCast<const MallocOperation>(&op2);
     CompareTypes(malloc1->getSizeType(), malloc2->getSizeType());
     return;
   }
 
-  // Handle FreeOperation comparison
-  auto * free1 = dynamic_cast<const FreeOperation *>(&op1);
-  auto * free2 = dynamic_cast<const FreeOperation *>(&op2);
-
-  if (free1 && free2)
+  if (auto * free1 = dynamic_cast<const FreeOperation *>(&op1))
   {
+    auto * free2 = assertedCast<const FreeOperation>(&op2);
     ASSERT_TRUE(free1->narguments() == free2->narguments())
         << "Free mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
@@ -213,11 +188,10 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   // Handle ConstantStructOperation - compare by struct type only (elements are pointers to nodes
   // in the region, not stored on the operation)
-  auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1);
-  auto * constStruct2 = dynamic_cast<const ConstantStructOperation *>(&op2);
-
-  if (constStruct1 && constStruct2)
+  if (auto * constStruct1 = dynamic_cast<const ConstantStructOperation *>(&op1))
   {
+    auto * constStruct2 = assertedCast<const ConstantStructOperation>(&op2);
+
     // Also verify element counts match
     // Note: elements are stored in the region, not on the operation itself
     CompareTypes(*constStruct1->result(0), *constStruct2->result(0));
@@ -225,31 +199,25 @@ CompareOperations(const Operation & op1, const Operation & op2)
   }
 
   // Handle ConstantAggregateZeroOperation - compare by type
-  auto * constAggZero1 = dynamic_cast<const ConstantAggregateZeroOperation *>(&op1);
-  auto * constAggZero2 = dynamic_cast<const ConstantAggregateZeroOperation *>(&op2);
-
-  if (constAggZero1 && constAggZero2)
+  if (  auto * constAggZero1 = dynamic_cast<const ConstantAggregateZeroOperation *>(&op1))
   {
+    auto * constAggZero2 = assertedCast<const ConstantAggregateZeroOperation>(&op2);
     CompareTypes(*constAggZero1->result(0), *constAggZero2->result(0));
     return;
   }
 
   // Handle CallOperation - compare by function type using value comparison
-  auto * call1 = dynamic_cast<const CallOperation *>(&op1);
-  auto * call2 = dynamic_cast<const CallOperation *>(&op2);
-
-  if (call1 && call2)
+  if (auto * call1 = dynamic_cast<const CallOperation *>(&op1))
   {
+    auto * call2 = assertedCast<const CallOperation>(&op2);
     CompareTypes(*call1->GetFunctionType(), *call2->GetFunctionType());
     return;
   }
 
   // Handle GetElementPtrOperation - compare the pointee types before typeid check
-  auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1);
-  auto * gep2 = dynamic_cast<const GetElementPtrOperation *>(&op2);
-
-  if (gep1 && gep2)
+  if (auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1))
   {
+    auto * gep2 = assertedCast<const GetElementPtrOperation>(&op2);
     // Compare pointee types
     CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
     return;
@@ -257,22 +225,18 @@ CompareOperations(const Operation & op1, const Operation & op2)
 
   // Handle MemCpy operations first (before typeid check) since they might have different
   // memory state counts after conversion and need special handling
-  auto * memcpy1 = dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&op1);
-  auto * memcpy2 = dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&op2);
-
-  if (memcpy1 && memcpy2)
+  if (auto * memcpy1 = dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&op1))
   {
+    auto * memcpy2 = assertedCast<const jlm::llvm::MemCpyNonVolatileOperation>(&op2);
     CompareTypes(memcpy1->LengthType(), memcpy2->LengthType());
     ASSERT_TRUE(memcpy1->NumMemoryStates() == memcpy2->NumMemoryStates())
         << "MemCpyNonVolatile mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
     return;
   }
 
-  auto * vmemcpy1 = dynamic_cast<const jlm::llvm::MemCpyVolatileOperation *>(&op1);
-  auto * vmemcpy2 = dynamic_cast<const jlm::llvm::MemCpyVolatileOperation *>(&op2);
-
-  if (vmemcpy1 && vmemcpy2)
+  if (auto * vmemcpy1 = dynamic_cast<const jlm::llvm::MemCpyVolatileOperation *>(&op1))
   {
+    auto * vmemcpy2 = assertedCast<const jlm::llvm::MemCpyVolatileOperation>(&op2);
     CompareTypes(vmemcpy1->LengthType(), vmemcpy2->LengthType());
     ASSERT_TRUE(vmemcpy1->NumMemoryStates() == vmemcpy2->NumMemoryStates())
         << "MemCpyVolatile mismatch: " << op1.debug_string() << " vs " << op2.debug_string();
@@ -282,11 +246,10 @@ CompareOperations(const Operation & op1, const Operation & op2)
   // If same type, use the regular operator==
   if (typeid(op1) == typeid(op2))
   {
-    auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1);
-    auto * lambda2 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op2);
-
-    if (lambda1 && lambda2)
+    if (auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1))
     {
+      auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
+
       JLM_ASSERT(lambda1->name() == lambda2->name());
       JLM_ASSERT(lambda1->linkage() == lambda2->linkage());
       JLM_ASSERT(lambda1->callingConvention() == lambda2->callingConvention());
@@ -310,12 +273,6 @@ CompareOperations(const Operation & op1, const Operation & op2)
                             << op2.debug_string();
     return;
   }
-
-  // Lambda node region argument comparison happens at CompareRegions level
-
-  // If types are different, check if they're equivalent but not identical
-  using namespace jlm::rvsdg;
-  using namespace jlm::llvm;
 
   // Handle BitConstantOperation vs IntegerConstantOperation comparison
   auto * bitConst1 = dynamic_cast<const BitConstantOperation *>(&op1);
