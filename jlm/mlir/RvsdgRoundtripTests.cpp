@@ -345,16 +345,16 @@ CompareRegions(const Region & region1, const Region & region2)
 
     CompareTypes(*origin1->Type(), *origin2->Type());
 
-    if (auto * n1 = TryGetOwnerNode<Node>(*origin1))
+    if (auto * node1 = TryGetOwnerNode<Node>(*origin1))
     {
-      auto * n2 = TryGetOwnerNode<Node>(*origin2);
-      ASSERT_NE(n2, nullptr);
+      auto * node2 = TryGetOwnerNode<Node>(*origin2);
+      ASSERT_NE(node2, nullptr);
 
-      CompareNodes(*n1, *n2);
+      CompareNodes(*node1, *node2);
 
-      visited1.insert(n1);
-      visited2.insert(n2);
-      nodeQueue.push({ n1, n2 });
+      visited1.insert(node1);
+      visited2.insert(node2);
+      nodeQueue.push({ node1, node2 });
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
@@ -370,14 +370,14 @@ CompareRegions(const Region & region1, const Region & region2)
   // BFS traversal - follow inputs backwards through the graph
   while (!nodeQueue.empty())
   {
-    auto * n1 = nodeQueue.front().first;
-    auto * n2 = nodeQueue.front().second;
+    auto * node1 = nodeQueue.front().first;
+    auto * node2 = nodeQueue.front().second;
     nodeQueue.pop();
 
-    for (size_t j = 0; j < n1->ninputs(); ++j)
+    for (size_t j = 0; j < node1->ninputs(); ++j)
     {
-      auto * origin1 = n1->input(j)->origin();
-      auto * origin2 = n2->input(j)->origin();
+      auto * origin1 = node1->input(j)->origin();
+      auto * origin2 = node2->input(j)->origin();
 
       if (!origin1 || !origin2)
       {
