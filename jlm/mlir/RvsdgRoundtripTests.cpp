@@ -8,7 +8,9 @@
 #include <queue>
 #include <unordered_set>
 
+#include <jlm/rvsdg/delta.hpp> // DeltaNode::GetContextVars()
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/Phi.hpp> // PhiNode::GetContextVars()
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -303,6 +305,141 @@ CompareNodes(const Node & node1, const Node & node2)
 }
 
 /**
+ * \brief Collect context variable origin node pairs from a structural node.
+ *
+ * For LambdaNode, DeltaNode, and PhiNode, this extracts the owner nodes of all
+ * context variable inputs. This enables BFS to traverse into subregions via
+ * their context variable dependencies that are not reachable through normal
+ * input→origin edges.
+ *
+ * Context variables are realized as:
+ *   - An Input to the structural node (supplying the value)
+ *   - An Output argument in the subregion (binding the value internally)
+ */
+static std::vector<std::pair<const Node *, const Node *>>
+CollectContextVarOrigins(const Node & node1, const Node & node2)
+{
+  std::vector<std::pair<const Node *, const Node *>> origins;
+
+  // LambdaNode case
+  if (auto * lambda1 = dynamic_cast<const LambdaNode *>(&node1))
+  {
+    auto * lambda2 = assertedCast<const LambdaNode>(&node2);
+    auto cvList1 = lambda1->GetContextVars();
+    auto cvList2 = lambda2->GetContextVars();
+
+    auto it1 = cvList1.begin(), it2 = cvList2.begin();
+    while (it1 != cvList1.end() && it2 != cvList2.end())
+    {
+      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
+      {
+        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
+        if (origin2)
+          origins.push_back({ origin1, origin2 });
+      }
+      ++it1;
+      ++it2;
+    }
+
+    JLM_ASSERT(
+        std::distance(cvList1.begin(), cvList1.end())
+        == std::distance(cvList2.begin(), cvList2.end()));
+  }
+  // DeltaNode case - same pattern as LambdaNode
+  else if (auto * delta1 = dynamic_cast<const DeltaNode *>(&node1))
+  {
+    auto * delta2 = assertedCast<const DeltaNode>(&node2);
+    auto cvList1 = delta1->GetContextVars();
+    auto cvList2 = delta2->GetContextVars();
+
+    auto it1 = cvList1.begin(), it2 = cvList2.begin();
+    while (it1 != cvList1.end() && it2 != cvList2.end())
+    {
+      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
+      {
+        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
+        if (origin2)
+          origins.push_back({ origin1, origin2 });
+      }
+      ++it1;
+      ++it2;
+    }
+
+    JLM_ASSERT(
+        std::distance(cvList1.begin(), cvList1.end())
+        == std::distance(cvList2.begin(), cvList2.end()));
+  }
+  // PhiNode case - same pattern as LambdaNode
+  else if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
+  {
+    auto * phi2 = assertedCast<const PhiNode>(&node2);
+    auto cvList1 = phi1->GetContextVars();
+    auto cvList2 = phi2->GetContextVars();
+
+    auto it1 = cvList1.begin(), it2 = cvList2.begin();
+    while (it1 != cvList1.end() && it2 != cvList2.end())
+    {
+      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
+      {
+        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
+        if (origin2)
+          origins.push_back({ origin1, origin2 });
+      }
+      ++it1;
+      ++it2;
+    }
+
+    JLM_ASSERT(
+        std::distance(cvList1.begin(), cvList1.end())
+        == std::distance(cvList2.begin(), cvList2.end()));
+  }
+  // SimpleNode and other non-structural nodes have no context variables - return empty vector
+
+  return origins;
+}
+
+/**
+ * \brief Check for context variables and traverse their origin nodes into the BFS queue.
+ *
+ * When a structural node (LambdaNode, DeltaNode, PhiNode) is visited during BFS,
+ * its context variable inputs point to values that may not be reachable through
+ * normal input→origin edge traversal from region results. This function:
+ *   1. Collects all context variable origin node pairs using CollectContextVarOrigins()
+ *   2. For each unvisited origin pair, performs CompareNodes() and adds to BFS queue
+ *   3. Recursively expands from each newly discovered origin (for chains of dependencies)
+ */
+static void
+CheckForContextVariablesAndTravers(
+    const Node & node1,
+    const Node & node2,
+    std::unordered_set<const Node *> & visited1,
+    std::unordered_set<const Node *> & visited2,
+    std::queue<std::pair<const Node *, const Node *>> & nodeQueue)
+{
+  auto cvOrigins = CollectContextVarOrigins(node1, node2);
+
+  for (auto [origin1, origin2] : cvOrigins)
+  {
+    if (!visited1.count(origin1))
+    {
+      visited1.insert(origin1);
+      visited2.insert(origin2);
+
+      // Compare the context variable origin nodes structurally
+      CompareNodes(*origin1, *origin2);
+
+      // Add to BFS queue for further expansion (traverse their inputs)
+      nodeQueue.push({ origin1, origin2 });
+
+      // Recursively expand from this origin's context variables too.
+      // This handles cases like: Lambda A has context var from Lambda B,
+      // which itself has context vars we need to visit.
+      CheckForContextVariablesAndTravers(*origin1, *origin2, visited1, visited2, nodeQueue);
+    }
+  }
+}
+
+/**
  * \brief Compares two RVSDG regions for equality by traversing through results
  * and verifying the same graph structure exists in both regions.
  */
@@ -350,11 +487,11 @@ CompareRegions(const Region & region1, const Region & region2)
       auto * node2 = TryGetOwnerNode<Node>(*origin2);
       ASSERT_NE(node2, nullptr);
 
-      CompareNodes(*node1, *node2);
-
       visited1.insert(node1);
       visited2.insert(node2);
       nodeQueue.push({ node1, node2 });
+      CompareNodes(*node1, *node2);
+      CheckForContextVariablesAndTravers(*node1, *node2, visited1, visited2, nodeQueue);
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
@@ -392,11 +529,11 @@ CompareRegions(const Region & region1, const Region & region2)
 
         if (!visited1.count(next1))
         {
-          CompareNodes(*next1, *next2);
-
           visited1.insert(next1);
           visited2.insert(next2);
           nodeQueue.push({ next1, next2 });
+          CompareNodes(*next1, *next2);
+          CheckForContextVariablesAndTravers(*next1, *next2, visited1, visited2, nodeQueue);
         }
       }
       else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
@@ -411,139 +548,57 @@ CompareRegions(const Region & region1, const Region & region2)
     }
   }
 
-  // Phase 2: Handle unvisited nodes (context variables in lambdas)
+  // Phase 2: Handle any remaining unvisited nodes not reachable from results.
+  // These include nodes in nested subregions (gamma arms), structural nodes with
+  // outputs not connected to region results, etc. Match by operation type +
+  // structural properties instead of fragile debug_string comparison.
+  auto SameOpType = [](const Operation & op1, const Operation & op2) noexcept -> bool
+  {
+    return typeid(op1) == typeid(op2);
+  };
+
   while (visited1.size() < count1)
   {
-    bool foundContextVar = false;
-
-    // Find an unvisited lambda with context variables
-    for (const auto & node : region1.Nodes())
-    {
-      if (visited1.count(&node))
-        continue;
-
-      if (auto * lambda = dynamic_cast<const LambdaNode *>(&node))
-      {
-        // Get the corresponding node from region2 by matching operation type/name
-        const LambdaNode * lambda2 = nullptr;
-        for (const auto & n : region2.Nodes())
-        {
-          if (visited2.count(&n))
-            continue;
-
-          if (auto * l2 = dynamic_cast<const LambdaNode *>(&n))
-          {
-            if (lambda->GetOperation().debug_string() == l2->GetOperation().debug_string())
-            {
-              lambda2 = l2;
-              break;
-            }
-          }
-        }
-
-        if (!lambda2)
-          continue;
-
-        // Get context variables and compare their origins
-        auto cvList1 = lambda->GetContextVars();
-        auto cvList2 = lambda2->GetContextVars();
-
-        size_t cvCount1 = std::distance(cvList1.begin(), cvList1.end());
-        size_t cvCount2 = std::distance(cvList2.begin(), cvList2.end());
-
-        ASSERT_EQ(cvCount1, cvCount2)
-            << "Lambda context variable count mismatch: " << cvCount1 << " vs " << cvCount2;
-
-        auto it1 = cvList1.begin();
-        auto it2 = cvList2.begin();
-
-        while (it1 != cvList1.end() && it2 != cvList2.end())
-        {
-          // Compare the origin of this context variable
-          if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
-          {
-            if (auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin()))
-            {
-              ASSERT_NE(origin2, nullptr);
-
-              CompareNodes(*origin1, *origin2);
-
-              visited1.insert(origin1);
-              visited2.insert(origin2);
-              foundContextVar = true;
-            }
-          }
-          ++it1;
-          ++it2;
-        }
-
-        // Also visit the lambda node itself
-        visited1.insert(lambda);
-        visited2.insert(lambda2);
-        break;
-      }
-    }
-
-    if (!foundContextVar)
-      break; // No more context variables to process
-  }
-
-  // Phase 3: Visit any remaining unvisited nodes (dangling operations in subregions)
-  // These are nodes not reachable from results via normal graph edges
-  // For lambdas, also compare their context variable origins
-  while (visited1.size() < count1)
-  {
-    bool foundRemaining = false;
+    bool found = false;
 
     for (const auto & node : region1.Nodes())
     {
       if (visited1.count(&node))
         continue;
 
-      // Try to find corresponding unvisited node in region2 by operation type/name
-      const Node * matchingNode = nullptr;
+      // Find an unvisited matching node in region2 by operation type + inputs/outputs
+      const Node * matchNode = nullptr;
       for (const auto & n : region2.Nodes())
       {
         if (visited2.count(&n))
           continue;
 
-        // Use CompareOperations which handles type equivalence (e.g., BITS32 vs I32)
-        // Since CompareOperations now returns void and asserts, we need a different approach
-        // for finding matching nodes - compare by operation name/type manually
+        // Must be same concrete type, and compatible structural properties
+        if (SameOpType(node.GetOperation(), n.GetOperation()) && node.ninputs() == n.ninputs()
+            && node.noutputs() == n.noutputs())
         {
-          for (const auto & n : region2.Nodes())
-          {
-            if (visited2.count(&n))
-              continue;
-
-            // Check if operations are the same type and compatible
-            if (CompareOperations(node.GetOperation(), n.GetOperation()), true)
-            {
-              matchingNode = &n;
-              break;
-            }
-          }
+          matchNode = &n;
+          break;
         }
       }
 
-      if (!matchingNode)
+      if (!matchNode)
         continue;
 
-      CompareNodes(node, *matchingNode);
-
+      CompareNodes(node, *matchNode);
       visited1.insert(&node);
-      visited2.insert(matchingNode);
-      foundRemaining = true;
-      break; // Restart loop to find more nodes
+      visited2.insert(matchNode);
+      found = true;
+      break; // restart to find more nodes
     }
 
-    if (!foundRemaining)
+    if (!found)
       break;
   }
 
-  // Verify all nodes were visited
-  ASSERT_EQ(visited1.size(), count1) << "Node count mismatch after traversal";
-  ASSERT_EQ(visited2.size(), count2) << "Node count mismatch for region2 after traversal";
+  // Final assertion: all nodes must have been visited and compared.
+  ASSERT_EQ(visited1.size(), count1) << "Not all nodes in region1 were visited during BFS";
+  ASSERT_EQ(visited2.size(), count2) << "Not all nodes in region2 were visited during BFS";
 }
 
 /**
