@@ -335,6 +335,57 @@ CompareGammaExitVars(const GammaNode::ExitVar & ev1, const GammaNode::ExitVar & 
 }
 
 /**
+ * \brief Compares two PhiNode fixpoint variables for structural equality.
+ *
+ * This verifies the FixVar struct integrity including recref (recursive reference),
+ * result (definition input), and output (external reference) fields. These fields
+ * are crucial for defining mutually recursive functions in the RVSDG.
+ */
+static void
+ComparePhiFixVars(const PhiNode::FixVar & fv1, const PhiNode::FixVar & fv2)
+{
+  // Verify recref (recursive reference to self/other fixpoint) types match
+  ASSERT_NE(fv1.recref, nullptr) << "Phi FixVar.recref is null in graph 1";
+  ASSERT_NE(fv2.recref, nullptr) << "Phi FixVar.recref is null in graph 2";
+  if (fv1.recref && fv2.recref)
+  {
+    // Recreftype comparison: the recref is a region argument of the phi subregion.
+    // It doesn't have an origin() because it IS the value source for recursive calls.
+    CompareTypes(*fv1.recref->Type(), *fv2.recref->Type());
+  }
+
+  // Verify result (definition from phi region) types match
+  ASSERT_NE(fv1.result, nullptr) << "Phi FixVar.result is null in graph 1";
+  ASSERT_NE(fv2.result, nullptr) << "Phi FixVar.result is null in graph 2";
+  if (fv1.result && fv2.result)
+  {
+    CompareTypes(*fv1.result->Type(), *fv2.result->Type());
+
+    // The result is an Input to the phi region; follow its origin to compare definition nodes
+    auto * origin1 = TryGetOwnerNode<Node>(*fv1.result->origin());
+    auto * origin2 = TryGetOwnerNode<Node>(*fv2.result->origin());
+
+    if (origin1 && origin2)
+    {
+      CompareNodes(*origin1, *origin2);
+    }
+    else if (origin1 || origin2)
+    {
+      // One has a redirect but the other doesn't - structural mismatch
+      FAIL() << "Phi FixVar result redirect mismatch";
+    }
+  }
+
+  // Verify output (external reference to fixpoint value) types match
+  ASSERT_NE(fv1.output, nullptr) << "Phi FixVar.output is null in graph 1";
+  ASSERT_NE(fv2.output, nullptr) << "Phi FixVar.output is null in graph 2";
+  if (fv1.output && fv2.output)
+  {
+    CompareTypes(*fv1.output->Type(), *fv2.output->Type());
+  }
+}
+
+/**
  * \brief Compares two RVSDG nodes for equality.
  */
 void
@@ -408,6 +459,28 @@ CompareNodes(const Node & node1, const Node & node2)
       while (it1 != evList1.end() && it2 != evList2.end())
       {
         CompareGammaExitVars(*it1, *it2);
+        ++it1;
+        ++it2;
+      }
+    }
+
+    // PhiNode-specific: compare fixpoint variable struct fields
+    if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
+    {
+      auto * phi2 = assertedCast<const PhiNode>(&node2);
+
+      auto fvList1 = phi1->GetFixVars();
+      auto fvList2 = phi2->GetFixVars();
+
+      ASSERT_EQ(
+          std::distance(fvList1.begin(), fvList1.end()),
+          std::distance(fvList2.begin(), fvList2.end()))
+          << "PhiNode fixpoint variable count mismatch";
+
+      auto it1 = fvList1.begin(), it2 = fvList2.begin();
+      while (it1 != fvList1.end() && it2 != fvList2.end())
+      {
+        ComparePhiFixVars(*it1, *it2);
         ++it1;
         ++it2;
       }
