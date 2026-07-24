@@ -1138,7 +1138,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & loadV32Node =
       LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);
 
-  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(load32Node),
       &LoadOperation::LoadedValueOutput(loadPtrNode),
       &LoadOperation::LoadedValueOutput(loadV32Node),
   });
