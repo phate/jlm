@@ -25,8 +25,10 @@
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 namespace
 {
@@ -34,6 +36,9 @@ namespace
 using namespace jlm::llvm;
 using namespace jlm::rvsdg;
 using namespace jlm::util;
+
+void
+CompareNodes(const Node & node1, const Node & node2);
 
 void
 CompareRegions(const Region & region1, const Region & region2);
@@ -252,6 +257,84 @@ CompareOperations(const Operation & op1, const Operation & op2)
 }
 
 /**
+ * \brief Compares two ThetaNode loop variables for structural equality.
+ *
+ * This verifies the LoopVar struct integrity including input, pre, post, and output
+ * fields. It also checks that redirect chains (post->divert_to()) are structurally identical.
+ */
+static void
+CompareThetaLoopVars(const ThetaNode::LoopVar & lv1, const ThetaNode::LoopVar & lv2)
+{
+  // Verify input types match
+  CompareTypes(*lv1.input->Type(), *lv2.input->Type());
+
+  // Verify pre (loop variable value before iteration) types match
+  ASSERT_NE(lv1.pre, nullptr) << "Theta LoopVar.pre is null in graph 1";
+  ASSERT_NE(lv2.pre, nullptr) << "Theta LoopVar.pre is null in graph 2";
+  if (lv1.pre && lv2.pre)
+  {
+    CompareTypes(*lv1.pre->Type(), *lv2.pre->Type());
+  }
+
+  // Verify post (loop variable value after iteration) types match
+  ASSERT_NE(lv1.post, nullptr) << "Theta LoopVar.post is null in graph 1";
+  ASSERT_NE(lv2.post, nullptr) << "Theta LoopVar.post is null in graph 2";
+  if (lv1.post && lv2.post)
+  {
+    CompareTypes(*lv1.post->Type(), *lv2.post->Type());
+
+    // Verify redirect chain integrity: post->origin() should have same structure
+    // When post is redirected via divert_to, we need to compare the origin nodes
+    auto * origin1 = TryGetOwnerNode<Node>(*lv1.post->origin());
+    auto * origin2 = TryGetOwnerNode<Node>(*lv2.post->origin());
+
+    if (origin1 && origin2)
+    {
+      CompareNodes(*origin1, *origin2);
+    }
+    else if (origin1 || origin2)
+    {
+      // One is redirected but the other isn't - structural mismatch
+      FAIL() << "Theta LoopVar post redirect mismatch";
+    }
+  }
+
+  // Verify output (final value at loop exit) types match
+  ASSERT_NE(lv1.output, nullptr) << "Theta LoopVar.output is null in graph 1";
+  ASSERT_NE(lv2.output, nullptr) << "Theta LoopVar.output is null in graph 2";
+  if (lv1.output && lv2.output)
+  {
+    CompareTypes(*lv1.output->Type(), *lv2.output->Type());
+  }
+}
+
+/**
+ * \brief Compares two GammaNode exit variables for structural equality.
+ *
+ * This verifies that ExitVar::branchResult vectors have matching sizes and types,
+ * and that the output linkage is structurally identical.
+ */
+static void
+CompareGammaExitVars(const GammaNode::ExitVar & ev1, const GammaNode::ExitVar & ev2)
+{
+  ASSERT_EQ(ev1.branchResult.size(), ev2.branchResult.size())
+      << "Gamma ExitVar branchResult count mismatch";
+
+  for (size_t i = 0; i < ev1.branchResult.size(); ++i)
+  {
+    CompareTypes(*ev1.branchResult[i]->Type(), *ev2.branchResult[i]->Type());
+  }
+
+  // Verify output linkage integrity
+  ASSERT_NE(ev1.output, nullptr) << "Gamma ExitVar.output is null in graph 1";
+  ASSERT_NE(ev2.output, nullptr) << "Gamma ExitVar.output is null in graph 2";
+  if (ev1.output && ev2.output)
+  {
+    CompareTypes(*ev1.output->Type(), *ev2.output->Type());
+  }
+}
+
+/**
  * \brief Compares two RVSDG nodes for equality.
  */
 void
@@ -285,6 +368,51 @@ CompareNodes(const Node & node1, const Node & node2)
     {
       CompareTypes(*snode1->output(i)->Type(), *snode2->output(i)->Type());
     }
+
+    // Theta-specific: compare loop variable struct fields
+    if (auto * theta1 = dynamic_cast<const ThetaNode *>(&node1))
+    {
+      auto * theta2 = assertedCast<const ThetaNode>(&node2);
+
+      auto lvList1 = theta1->GetLoopVars();
+      auto lvList2 = theta2->GetLoopVars();
+
+      ASSERT_EQ(
+          std::distance(lvList1.begin(), lvList1.end()),
+          std::distance(lvList2.begin(), lvList2.end()))
+          << "ThetaNode loop variable count mismatch";
+
+      auto it1 = lvList1.begin(), it2 = lvList2.begin();
+      while (it1 != lvList1.end() && it2 != lvList2.end())
+      {
+        CompareThetaLoopVars(*it1, *it2);
+        ++it1;
+        ++it2;
+      }
+    }
+
+    // Gamma-specific: compare exit variable struct fields
+    if (auto * gamma1 = dynamic_cast<const GammaNode *>(&node1))
+    {
+      auto * gamma2 = assertedCast<const GammaNode>(&node2);
+
+      auto evList1 = gamma1->GetExitVars();
+      auto evList2 = gamma2->GetExitVars();
+
+      ASSERT_EQ(
+          std::distance(evList1.begin(), evList1.end()),
+          std::distance(evList2.begin(), evList2.end()))
+          << "GammaNode exit variable count mismatch";
+
+      auto it1 = evList1.begin(), it2 = evList2.begin();
+      while (it1 != evList1.end() && it2 != evList2.end())
+      {
+        CompareGammaExitVars(*it1, *it2);
+        ++it1;
+        ++it2;
+      }
+    }
+
     return;
   }
 
