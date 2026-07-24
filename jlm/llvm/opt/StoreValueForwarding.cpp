@@ -1040,7 +1040,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
               const auto vectorType =
                   std::dynamic_pointer_cast<const llvm::FixedVectorType>(loadedType))
           {
-            // FIXME: Handle loading of vectors of zero values
+            throw std::runtime_error("vector type is not supported");
             return;
           }
           else
