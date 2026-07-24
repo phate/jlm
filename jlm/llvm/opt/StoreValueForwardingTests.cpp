@@ -1098,9 +1098,10 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   const auto pointerType = PointerType::Create();
   const auto bits32Type = BitType::Create(32);
+  const auto fixedVectorType = FixedVectorType::Create(bits32Type, 4);
   const auto structType =
-      StructType::CreateIdentified("struct", { bits32Type, pointerType }, false);
-  const auto functionType = FunctionType::Create({}, { bits32Type, pointerType });
+      StructType::CreateIdentified("struct", { bits32Type, pointerType, fixedVectorType }, false);
+  const auto functionType = FunctionType::Create({}, { bits32Type, pointerType, fixedVectorType });
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
@@ -1115,6 +1116,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
   auto & oneNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2);
 
   auto & gep0Node = GetElementPtrOperation::createNode(
       *ctxVar.inner,
@@ -1129,8 +1131,17 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & loadPtrNode =
       LoadNonVolatileOperation::CreateNode(*gep1Node.output(0), {}, pointerType, 4);
 
+  auto & gep2Node = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), twoNode.output(0) },
+      structType);
+  auto & loadV32Node =
+      LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);
+
   lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
-                        &LoadOperation::LoadedValueOutput(loadPtrNode) });
+      &LoadOperation::LoadedValueOutput(loadPtrNode),
+      &LoadOperation::LoadedValueOutput(loadV32Node),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);

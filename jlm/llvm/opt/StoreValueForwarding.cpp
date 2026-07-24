@@ -1037,11 +1037,11 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
             LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else if (
-              const auto vectorType =
-                  std::dynamic_pointer_cast<const llvm::FixedVectorType>(loadedType))
+              const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
           {
-            throw std::runtime_error("vector type is not supported");
-            return;
+            auto & zeroNode =
+                ConstantAggregateZeroOperation::createNode(*loadNode.region(), vectorType);
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else
           {

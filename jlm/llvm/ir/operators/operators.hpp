@@ -1167,10 +1167,16 @@ public:
     return ThreeAddressCode::create(std::move(op), {});
   }
 
-  static jlm::rvsdg::Output *
-  Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Region & region, std::shared_ptr<const rvsdg::Type> type)
   {
-    return rvsdg::CreateOpNode<ConstantAggregateZeroOperation>(region, std::move(type)).output(0);
+    return rvsdg::CreateOpNode<ConstantAggregateZeroOperation>(region, std::move(type));
+  }
+
+  static rvsdg::Output *
+  Create(rvsdg::Region & region, const std::shared_ptr<const rvsdg::Type> & type)
+  {
+    return createNode(region, type).output(0);
   }
 };
 
