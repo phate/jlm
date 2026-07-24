@@ -1037,11 +1037,11 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
             LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else if (
-              const auto vectorType =
-                  std::dynamic_pointer_cast<const llvm::FixedVectorType>(loadedType))
+              const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
           {
-            // FIXME: Handle loading of vectors of zero values
-            return;
+            auto & zeroNode =
+                ConstantAggregateZeroOperation::createNode(*loadNode.region(), vectorType);
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else
           {
