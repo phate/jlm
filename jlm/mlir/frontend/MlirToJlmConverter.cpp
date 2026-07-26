@@ -24,6 +24,7 @@
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
@@ -80,30 +81,33 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 
   // Convert all operations in the omega's region.
   // This creates LambdaNodes, PhiNodes (with fix vars that have outputs), etc.
+  // The resultOutputs come from OmegaResult operands via ConvertBlock's terminator handling.
   auto resultOutputs = ConvertRegion(omegaNode.getRegion(), root);
 
-  // Register OmegaResult outputs as RVSDG root region results for roundtrip compatibility.
-  // We only register outputs that are NOT already covered by existing region results.
-  // This is needed because ConvertOmega doesn't create a formal result registration
-  // like the MLIR backend does.
-  for (auto * output : resultOutputs)
+  // Get the OmegaResult terminator to extract export names.
+  auto & omegaBlock = omegaNode.getRegion().front();
+  ::mlir::Operation * terminator = omegaBlock.getTerminator();
+  auto omegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(terminator);
+  JLM_ASSERT(omegaResult != nullptr);
+
+  // Get the exportNames from OmegaResult using its getExportNames() method.
+  auto exportNames = omegaResult.getExportNames();
+
+  // Register OmegaResult outputs as RVSDG root region exports (GraphExport).
+  // The resultOutputs vector is populated by ConvertBlock() which extracts the operands
+  // from the OmegaResult terminator operation.
+  for (size_t i = 0; i < resultOutputs.size(); ++i)
   {
-    // Check if this output is already covered by an existing result.
-    bool alreadyCovered = false;
-    for (auto * regionRes : root.Results())
+    std::string exportName;
+    if (i < exportNames.size())
     {
-      if (regionRes->origin() == output)
+      auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>();
+      if (nameAttr)
       {
-        alreadyCovered = true;
-        break;
+        exportName = nameAttr.getValue().str();
       }
     }
-
-    // Only register as result if not already covered.
-    if (!alreadyCovered)
-    {
-      rvsdg::RegionResult::Create(root, *output, nullptr, output->Type());
-    }
+    rvsdg::GraphExport::Create(*resultOutputs[i], exportName);
   }
 
   return rvsdgModule;
@@ -185,6 +189,12 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = &jlmArgument;
+    }
+    else if (::mlir::isa<::mlir::rvsdg::OmegaResult>(mlirOp))
+    {
+      // OmegaResult is handled as the block terminator in ConvertBlock.
+      // Skip it here to avoid processing it as a regular operation.
+      continue;
     }
     else
     {
@@ -1515,24 +1525,6 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::outputs(&rvsdg::CreateOpNode<jlm::llvm::SelectOperation>(
         std::vector(inputs.begin(), inputs.end()),
         jlmType));
-  }
-  else if (auto mlirOmegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(&mlirOperation))
-  {
-    for (auto input : inputs)
-    {
-      auto origin = rvsdg::TryGetOwnerNode<rvsdg::Node>(*input);
-      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(origin))
-      {
-        auto op = dynamic_cast<llvm::LlvmLambdaOperation *>(&lambda->GetOperation());
-        jlm::rvsdg::GraphExport::Create(*input, op->name());
-      }
-      else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
-      {
-        auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&delta->GetOperation());
-        jlm::rvsdg::GraphExport::Create(*input, op->name());
-      }
-    }
-    return {};
   }
   // ** endregion Structural nodes **
 

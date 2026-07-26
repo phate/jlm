@@ -96,7 +96,22 @@ TEST(MlirToJlmConverterTests, TestLambda)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
+
+    // Build result types from omega operands
+    ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+    for (auto & val : omegaRegionResults)
+      omegaResultTypes.push_back(val.getType());
+
+    // Create empty exportNames ArrayAttr
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+    namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+    auto omegaResult = Builder_->create<OmegaResult>(
+        Builder_->getUnknownLoc(),
+        omegaResultTypes,
+        omegaRegionResults,
+        namedAttrs);
     omegaBlock->push_back(omegaResult);
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
@@ -227,8 +242,22 @@ TEST(MlirToJlmConverterTests, TestConstantDataArray)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
@@ -410,8 +439,21 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
@@ -582,8 +624,21 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
@@ -791,8 +846,21 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -956,8 +1024,21 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda.getResult());
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -1079,9 +1160,22 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
-    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
-    omegaBlock->push_back(omegaResult);
+    omegaRegionResults.push_back(lambda.getResult());
+    {
+      ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+      for (auto & val : omegaRegionResults)
+        omegaResultTypes.push_back(val.getType());
+      auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+      ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+      namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+      auto omegaResult = Builder_->create<OmegaResult>(
+          Builder_->getUnknownLoc(),
+          omegaResultTypes,
+          omegaRegionResults,
+          namedAttrs);
+      omegaBlock->push_back(omegaResult);
+    }
 
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -1215,8 +1309,21 @@ TEST(MlirToJlmConverterTests, TestBitConstantOperationConversion)
   std::cout << "Setting up OmegaResult" << std::endl;
   ::llvm::SmallVector<mlir::Value> omegaRegionResults;
   omegaRegionResults.push_back(lambda.getResult());
-  auto omegaResult = builder->create<OmegaResult>(builder->getUnknownLoc(), omegaRegionResults);
-  omegaBlock->push_back(omegaResult);
+  {
+    ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+    for (auto & val : omegaRegionResults)
+      omegaResultTypes.push_back(val.getType());
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(builder->getContext(), {});
+    ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+    namedAttrs.push_back({ builder->getStringAttr("exportNames"), exportNamesAttr });
+
+    auto omegaResult = builder->create<OmegaResult>(
+        builder->getUnknownLoc(),
+        omegaResultTypes,
+        omegaRegionResults,
+        namedAttrs);
+    omegaBlock->push_back(omegaResult);
+  }
 
   // Convert MLIR to RVSDG
   std::cout << "Converting MLIR to RVSDG" << std::endl;

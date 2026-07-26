@@ -26,6 +26,7 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -741,6 +742,18 @@ void
 CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
 {
   CompareRegions(module1.Rvsdg().GetRootRegion(), module2.Rvsdg().GetRootRegion());
+
+  // Compare root region exports
+  ASSERT_EQ(module1.Rvsdg().GetRootRegion().nresults(), module2.Rvsdg().GetRootRegion().nresults())
+      << "Root region export count mismatch";
+  for (size_t i = 0; i < module1.Rvsdg().GetRootRegion().nresults(); ++i)
+  {
+    auto * exp1 = assertedCast<const GraphExport>(module1.Rvsdg().GetRootRegion().result(i));
+    auto * exp2 = assertedCast<const GraphExport>(module2.Rvsdg().GetRootRegion().result(i));
+
+    ASSERT_STREQ(exp1->Name().c_str(), exp2->Name().c_str())
+        << "Export name mismatch at index " << i;
+  }
 }
 
 /**
