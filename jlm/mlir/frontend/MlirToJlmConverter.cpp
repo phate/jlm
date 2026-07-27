@@ -69,7 +69,35 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
       llvm::LlvmRvsdgModule::Create(util::FilePath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
-  ConvertRegion(omegaNode.getRegion(), root);
+
+  // Convert all operations in the omega's region.
+  auto resultOutputs = ConvertRegion(omegaNode.getRegion(), root);
+
+  // Get the OmegaResult terminator to extract export names.
+  auto & omegaBlock = omegaNode.getRegion().front();
+  ::mlir::Operation * terminator = omegaBlock.getTerminator();
+  auto omegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(terminator);
+  JLM_ASSERT(omegaResult != nullptr);
+
+  // Get the exportNames from OmegaResult using its getExportNames() method.
+  auto exportNames = omegaResult.getExportNames();
+
+  // Register OmegaResult outputs as RVSDG root region exports (GraphExport).
+  // The resultOutputs vector is populated by ConvertBlock() which extracts the operands
+  // from the OmegaResult terminator operation.
+  for (size_t i = 0; i < resultOutputs.size(); ++i)
+  {
+    std::string exportName;
+    if (i < exportNames.size())
+    {
+      auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>();
+      if (nameAttr)
+      {
+        exportName = nameAttr.getValue().str();
+      }
+    }
+    rvsdg::GraphExport::Create(*resultOutputs[i], exportName);
+  }
 
   return rvsdgModule;
 }
@@ -135,6 +163,12 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = &jlmArgument;
+    }
+    else if (::mlir::isa<::mlir::rvsdg::OmegaResult>(mlirOp))
+    {
+      // OmegaResult is handled as the block terminator in ConvertBlock.
+      // Skip it here to avoid processing it as a regular operation.
+      continue;
     }
     else
     {
