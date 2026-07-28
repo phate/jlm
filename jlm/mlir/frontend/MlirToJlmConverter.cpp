@@ -88,8 +88,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
   // from the OmegaResult terminator operation.
   for (size_t i = 0; i < resultOutputs.size(); ++i)
   {
-    auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>();
-    if (nameAttr)
+    if (auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>())
     {
       rvsdg::GraphExport::Create(*resultOutputs[i], nameAttr.getValue().str());
     }
