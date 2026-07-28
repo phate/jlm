@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <unordered_map>
-
 namespace jlm::rvsdg
 {
 
