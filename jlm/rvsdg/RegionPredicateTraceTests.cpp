@@ -190,3 +190,71 @@ TEST(RegionPredicateTraceTests, TraceOutOfTheta)
   EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta3->subregion(), *theta4->subregion()));
   EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta4->subregion(), *theta3->subregion()));
 }
+
+TEST(RegionPredicateTraceTests, TraceIntoGamma)
+{
+  /**
+   * Creates an RVSDG graph that looks like:
+   *
+   * CTRL(0)
+   *   v
+   * +-gamma0------------------+---------+
+   * |                         |         |
+   * | CTRL(0)   CTRL(1)       |         |
+   * |   v  v      v           |         |
+   * | +-gamma1--+---------+   |         |
+   * | |   \     |     /   |   |         |
+   * | |    \    |    /    |   |         |
+   * | |    v    |    v    |   |         |
+   * | +---------+---------+   | CTRL(1) |
+   * |           v             |    v    |
+   * +-------------------------+---------+
+   *                    v
+   *                +-gamma2---+---------+
+   *                |          |         |
+   *                +----------+---------+
+   *
+   * Checks that the regions of gamma2 can only be reached from regions
+   * that provide the correct predicate value
+   */
+
+  using namespace jlm;
+
+  auto controlType = rvsdg::ControlType::Create(2);
+
+  rvsdg::Graph rvsdg;
+  auto & outerCtrl0 = rvsdg::ControlConstantOperation::createFalse(rvsdg.GetRootRegion());
+  auto & gamma0 = *rvsdg::GammaNode::create(&outerCtrl0, 2);
+
+  // Left subregion of gamma0
+  auto & leftCtrl0 = rvsdg::ControlConstantOperation::createFalse(*gamma0.subregion(0));
+  auto & leftCtrl1 = rvsdg::ControlConstantOperation::createTrue(*gamma0.subregion(0));
+
+  auto & gamma1 = *rvsdg::GammaNode::create(&leftCtrl0, 2);
+  auto gamma1Entry0 = gamma1.AddEntryVar(&leftCtrl0);
+  auto gamma1Entry1 = gamma1.AddEntryVar(&leftCtrl1);
+  auto gamma1Exit =
+      gamma1.AddExitVar({ gamma1Entry0.branchArgument[0], gamma1Entry1.branchArgument[1] });
+
+  // Right subregion of gamma1
+  auto & rightCtrl1 = rvsdg::ControlConstantOperation::createTrue(*gamma0.subregion(1));
+
+  auto gamma0Exit = gamma0.AddExitVar({ gamma1Exit.output, &rightCtrl1 });
+
+  auto & gamma2 = *rvsdg::GammaNode::create(gamma0Exit.output, 2);
+
+  // Assert
+  rvsdg::RegionPredicateTrace trace;
+
+  // targeting gamma2's left subregion
+  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(0), *gamma2.subregion(0)));
+  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(0), *gamma2.subregion(0)));
+  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(1), *gamma2.subregion(0)));
+
+  // targeting gamma2's right subregion
+  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(1), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(1), *gamma2.subregion(1)));
+}
