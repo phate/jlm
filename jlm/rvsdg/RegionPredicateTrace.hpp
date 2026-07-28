@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
 
+#include <unordered_map>
+
 namespace jlm::rvsdg
 {
 
@@ -187,6 +189,8 @@ public:
   CheckPredicatesSatisfiable(Region & originRegion, Region & targetRegion);
 
 private:
+  // For a given input, its RegionPredRange provides a map from regions to the
+  // set of values than can end up being routed to the input, from results of the region.
   using RegionPredRange = std::unordered_map<Region *, PredicateValueRange>;
   class Observer;
 
@@ -196,14 +200,29 @@ private:
   void
   ObserveRegion(Region & region);
 
+  /**
+   * Traces from the given \p input to find the regions that may provide its value.
+   * @param regionPredRange the resulting map of possible values provided in each region.
+   * @param input the input being traced from
+   * @param type the type of the input
+   */
   PredicateValueRange
   ComputeAndRecord(RegionPredRange & regionPredRange, Input & input, const ControlType & type);
 
+  /**
+   * Helper function for the above \ref ComputeAndRecord
+   */
   PredicateValueRange
   Compute(RegionPredRange & regionPredRange, Input & input, const ControlType & type);
 
+  // For a given input, gives the regions where we know which the set of values
+  // the region may provide to the input
   std::unordered_map<Input *, RegionPredRange> predAssignment_;
+
+  // For a given target region, what predicates must be satisfied to reach it
   std::unordered_map<Region *, PredicateSatRequired> predSat_;
+
+  // Observers registered to handle cache invalidation
   std::unordered_map<Region *, std::unique_ptr<Observer>> observers_;
 };
 

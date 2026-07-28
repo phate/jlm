@@ -9,6 +9,8 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <unordered_map>
+
 namespace jlm::rvsdg
 {
 
@@ -101,8 +103,7 @@ RegionPredicateTrace::ObserveRegion(Region & region)
 }
 
 // This function recurses through the "definition tree" of
-// predicate outputs / inputs. It records observations per
-// region.
+// predicate outputs / inputs. It records observations per region.
 PredicateValueRange
 RegionPredicateTrace::ComputeAndRecord(
     RegionPredRange & regionPredRange,
@@ -110,8 +111,23 @@ RegionPredicateTrace::ComputeAndRecord(
     const ControlType & type)
 {
   auto range = Compute(regionPredRange, input, type);
-  regionPredRange.emplace(input.region(), range);
-  ObserveRegion(*input.region());
+
+  // If the input is a region result, add its value range to the region
+  if (TryGetRegionParentNode<rvsdg::StructuralNode>(input))
+  {
+    auto it = regionPredRange.find(input.region());
+
+    if (it != regionPredRange.end())
+    {
+      it->second.UpdateUnion(range);
+    }
+    else
+    {
+      regionPredRange.emplace(input.region(), range);
+      ObserveRegion(*input.region());
+    }
+  }
+
   return range;
 }
 
