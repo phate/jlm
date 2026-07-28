@@ -231,7 +231,7 @@ private:
   // For a given target region, what predicates must be satisfied to reach it
   std::unordered_map<Region *, PredicateSatRequired> predSat_;
 
-  // Observers registered to handle cache invalidation
+  // Observers registered on region to inform the tracer when caches must be invalidated
   std::unordered_map<Region *, std::unique_ptr<Observer>> observers_;
 };
 
