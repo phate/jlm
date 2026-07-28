@@ -53,6 +53,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#MatchReductions", counters.numMatchReductions);
   AddMeasurement("#SExtReductions", counters.numSExtReductions);
   AddMeasurement("#ZExtReductions", counters.numZExtReductions);
+  AddMeasurement("#TruncReductions", counters.numTruncReductions);
   AddMeasurement("#IntegerEqReductions", counters.numIntegerEqReductions);
   AddMeasurement("#IntegerNeReductions", counters.numIntegerNeReductions);
   AddMeasurement("#IntegerSgeReductions", counters.numIntegerSgeReductions);
@@ -63,6 +64,11 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerUgtReductions", counters.numIntegerUgtReductions);
   AddMeasurement("#IntegerUleReductions", counters.numIntegerUleReductions);
   AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
+
+  AddMeasurement("#IntegerAndReductions", counters.numIntegerAndReductions);
+  AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
+  AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
+
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
@@ -129,6 +135,9 @@ static std::vector<rvsdg::NodeNormalization<SExtOperation>>
 static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
     zextOperationNormalizations({ ZExtOperation::foldConstant });
 
+static std::vector<rvsdg::NodeNormalization<TruncOperation>>
+    truncOperationNormalizations({ TruncOperation::foldConstant });
+
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
     integerEqNormalizations({ IntegerEqOperation::foldConstants });
 
@@ -158,6 +167,15 @@ static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
 
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
     integerUltNormalizations({ IntegerUltOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerAndOperation>>
+    integerAndNormalizations({ IntegerAndOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>>
+    integerOrNormalizations({ IntegerOrOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerXorOperation>>
+    integerXorNormalizations({ IntegerXorOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
     loadNonVolatileNormalizations({ LoadNonVolatileOperation::NormalizeLoadStore,
@@ -388,6 +406,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         zextOperationNormalizations,
         Statistics_->getReductionCounters().numZExtReductions);
   }
+  if (is<TruncOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<TruncOperation>(
+        simpleNode,
+        truncOperationNormalizations,
+        Statistics_->getReductionCounters().numTruncReductions);
+  }
   if (is<IntegerEqOperation>(&simpleNode))
   {
     return reduceSimpleNode<IntegerEqOperation>(
@@ -457,6 +482,27 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         integerUltNormalizations,
         Statistics_->getReductionCounters().numIntegerUltReductions);
+  }
+  if (is<IntegerAndOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerAndOperation>(
+        simpleNode,
+        integerAndNormalizations,
+        Statistics_->getReductionCounters().numIntegerAndReductions);
+  }
+  if (is<IntegerOrOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerOrOperation>(
+        simpleNode,
+        integerOrNormalizations,
+        Statistics_->getReductionCounters().numIntegerOrReductions);
+  }
+  if (is<IntegerXorOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerXorOperation>(
+        simpleNode,
+        integerXorNormalizations,
+        Statistics_->getReductionCounters().numIntegerXorReductions);
   }
   if (is<PtrCmpOperation>(&simpleNode))
   {

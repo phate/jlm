@@ -982,7 +982,7 @@ getConstantDataArrayElementIndex(
 
     JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
     const auto offsetInBytes = gepConstant.getOffsetInBytes();
-    const auto elementSize = GetTypeAllocSize(constantDataArray.type());
+    const auto elementSize = GetTypeAllocSize(constantDataArray.type()->element_type());
     JLM_ASSERT(offsetInBytes % elementSize == 0);
     return offsetInBytes / elementSize;
   }
@@ -1045,7 +1045,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           const auto elementIndex =
               getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);
 
-          if (constantDataArray.type() == *loadOperation->GetLoadedType())
+          if (constantDataArray.type()->element_type() == *loadOperation->GetLoadedType())
           {
             const auto elementNode =
                 rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
@@ -1055,7 +1055,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
           else
           {
             [[maybe_unused]] auto cdaBitType =
-                dynamic_cast<const rvsdg::BitType *>(&constantDataArray.type());
+                dynamic_cast<const rvsdg::BitType *>(&constantDataArray.type()->element_type());
             [[maybe_unused]] auto loadBitType =
                 dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
             JLM_ASSERT(cdaBitType && loadBitType);
@@ -1111,11 +1111,11 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
             LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else if (
-              const auto vectorType =
-                  std::dynamic_pointer_cast<const llvm::FixedVectorType>(loadedType))
+              const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
           {
-            // FIXME: Handle loading of vectors of zero values
-            return;
+            auto & zeroNode =
+                ConstantAggregateZeroOperation::createNode(*loadNode.region(), vectorType);
+            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
           }
           else
           {

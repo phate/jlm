@@ -534,6 +534,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerAndOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerAndOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerAndOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerAndOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerAndOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -575,6 +590,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerOrOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerOrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerOrOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerOrOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerOrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -616,6 +646,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerXorOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerXorOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerXorOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerXorOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerXorOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**

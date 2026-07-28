@@ -285,7 +285,7 @@ public:
     return ThreeAddressCode::create(std::move(truncOperation), { operand });
   }
 
-  static rvsdg::Node &
+  static rvsdg::SimpleNode &
   createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
   {
     return rvsdg::CreateOpNode<TruncOperation>({ &operand }, operand.Type(), std::move(resultType));
@@ -296,6 +296,19 @@ public:
   {
     return *createNode(operand, rvsdg::BitType::Create(ndstbits)).output(0);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref TruncOperation on which the transformation is performed.
+   * @param operands The operands of the \ref TruncOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref TruncOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const TruncOperation & operation, const std::vector<rvsdg::Output *> & operands);
 
 private:
   static std::shared_ptr<const rvsdg::BitType>
