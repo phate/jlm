@@ -518,7 +518,7 @@ IpGraphToLlvmConverter::convert(
 {
   JLM_ASSERT(is<ConstantDataArrayOperation>(op));
 
-  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()->element_type()))
   {
     if (bt->nbits() == 8)
     {
@@ -542,7 +542,7 @@ IpGraphToLlvmConverter::convert(
     }
   }
 
-  if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()->element_type()))
   {
     if (ft->size() == fpsize::half)
     {

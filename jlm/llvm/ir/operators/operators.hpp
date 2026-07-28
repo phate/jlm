@@ -327,10 +327,11 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
-  const rvsdg::Type &
+  [[nodiscard]] std::shared_ptr<const ArrayType>
   type() const noexcept
   {
-    return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
+    JLM_ASSERT(std::dynamic_pointer_cast<const ArrayType>(result(0)));
+    return std::static_pointer_cast<const ArrayType>(result(0));
   }
 
   static std::unique_ptr<ThreeAddressCode>
@@ -1099,10 +1100,11 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::Type &
+  [[nodiscard]] std::shared_ptr<const ArrayType>
   type() const noexcept
   {
-    return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
+    JLM_ASSERT(std::dynamic_pointer_cast<const ArrayType>(result(0)));
+    return std::static_pointer_cast<const ArrayType>(result(0));
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
