@@ -99,8 +99,10 @@ TEST(MlirToJlmConverterTests, TestLambda)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 
@@ -257,8 +259,10 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 
@@ -441,8 +445,10 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 
@@ -662,8 +668,10 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 
@@ -839,8 +847,10 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 
@@ -975,8 +985,10 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
     ::llvm::SmallVector<mlir::Type> omegaResultTypes;
     omegaResultTypes.push_back(lambda.getResult().getType());
 
-    // Create empty exportNames ArrayAttr
-    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), {});
+    // Create exportNames ArrayAttr
+    ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+    exportNamesList.push_back(Builder_->getStringAttr("test"));
+    auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
     ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
     namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
 

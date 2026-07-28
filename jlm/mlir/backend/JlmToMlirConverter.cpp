@@ -76,10 +76,9 @@ JlmToMlirConverter::ConvertModule(const llvm::LlvmRvsdgModule & rvsdgModule)
   // Collect export names from root region results.
   // The order of graph.GetRootRegion().results() matches regionResults.
   ::llvm::SmallVector<::mlir::Attribute> exportNames;
-  for (size_t i = 0; i < graph.GetRootRegion().nresults(); ++i)
+  for (auto & result : graph.GetRootRegion().Results())
   {
-    if (auto graphExport =
-            dynamic_cast<const rvsdg::GraphExport *>(graph.GetRootRegion().result(i)))
+    if (auto graphExport = dynamic_cast<const rvsdg::GraphExport *>(result))
     {
       exportNames.push_back(Builder_->getStringAttr(graphExport->Name()));
     }

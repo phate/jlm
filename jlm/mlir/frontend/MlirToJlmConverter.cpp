@@ -81,22 +81,22 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 
   // Get the exportNames from OmegaResult using its getExportNames() method.
   auto exportNames = omegaResult.getExportNames();
+  JLM_ASSERT(resultOutputs.size() == exportNames.size());
 
   // Register OmegaResult outputs as RVSDG root region exports (GraphExport).
   // The resultOutputs vector is populated by ConvertBlock() which extracts the operands
   // from the OmegaResult terminator operation.
   for (size_t i = 0; i < resultOutputs.size(); ++i)
   {
-    std::string exportName;
-    if (i < exportNames.size())
+    auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>();
+    if (nameAttr)
     {
-      auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>();
-      if (nameAttr)
-      {
-        exportName = nameAttr.getValue().str();
-      }
+      rvsdg::GraphExport::Create(*resultOutputs[i], nameAttr.getValue().str());
     }
-    rvsdg::GraphExport::Create(*resultOutputs[i], exportName);
+    else
+    {
+      JLM_UNREACHABLE("All omega results should have a name.");
+    }
   }
 
   return rvsdgModule;
