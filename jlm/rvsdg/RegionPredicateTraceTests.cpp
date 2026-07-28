@@ -3,20 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/bitstring/arithmetic.hpp"
-#include "jlm/rvsdg/bitstring/constant.hpp"
-#include "jlm/rvsdg/bitstring/type.hpp"
-#include "jlm/rvsdg/simple-node.hpp"
-#include "jlm/rvsdg/theta.hpp"
 #include <gtest/gtest.h>
 
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 TEST(RegionPredicateTraceTests, TestTracing)
 {
