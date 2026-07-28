@@ -79,8 +79,9 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
   auto omegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(terminator);
   JLM_ASSERT(omegaResult != nullptr);
 
-  // Get the exportNames from OmegaResult using its getExportNames() method.
+  // Get the exported names from OmegaResult
   auto exportNames = omegaResult.getExportNames();
+  // All omega results should have an exported name
   JLM_ASSERT(resultOutputs.size() == exportNames.size());
 
   // Register OmegaResult outputs as RVSDG root region exports (GraphExport).
