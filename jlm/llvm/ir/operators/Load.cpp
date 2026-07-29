@@ -347,7 +347,7 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
   {
     return GetTypeAllocSize(*allocaOperation->allocatedType());
   }
-
+#if 0
   if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
   {
     const auto deltaOperation =
@@ -359,7 +359,7 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
   {
     return GetTypeAllocSize(*llvmImport->ValueType());
   }
-
+#endif
   return std::nullopt;
 }
 
