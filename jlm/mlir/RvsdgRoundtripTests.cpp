@@ -4,6 +4,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <queue>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
