@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/Gamma.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -69,6 +70,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
 
+  AddMeasurement("#IOBarrierReductions", counters.numIOBarrierReductions);
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
@@ -212,6 +214,9 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
         { LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
           LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
           LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
+
+static std::vector<rvsdg::NodeNormalization<IOBarrierOperation>>
+    ioBarrierNormalizations({ IOBarrierOperation::normalizeDereferenceableAddressOperand });
 
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
     ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
@@ -510,6 +515,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         ptrCmpNormalizations,
         Statistics_->getReductionCounters().numPtrCmpReductions);
+  }
+  if (is<IOBarrierOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IOBarrierOperation>(
+        simpleNode,
+        ioBarrierNormalizations,
+        Statistics_->getReductionCounters().numIOBarrierReductions);
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {

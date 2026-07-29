@@ -79,6 +79,22 @@ public:
   {
     return rvsdg::CreateOpNode<IOBarrierOperation>({ &value, &ioState }, value.Type());
   }
+
+  /**
+   * Bypasses the \ref IOBarrierOperation node if its value operand can be traced to a memory
+   * allocation site, such as an \ref AllocaOperation or \ref LlvmDeltaOperation, that is guaranteed
+   * to always provide a dereferenceable address.
+   *
+   * @param operation The \ref IOBarrierOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IOBarrierOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IOBarrierOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeDereferenceableAddressOperand(
+      const IOBarrierOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 }

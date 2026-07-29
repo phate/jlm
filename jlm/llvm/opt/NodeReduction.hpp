@@ -153,6 +153,7 @@ public:
     size_t numIntegerOrReductions = 0;
     size_t numIntegerXorReductions = 0;
 
+    size_t numIOBarrierReductions = 0;
     size_t numPtrCmpReductions = 0;
     size_t numBinaryReductions = 0;
 
