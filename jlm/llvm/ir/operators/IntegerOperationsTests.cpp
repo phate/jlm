@@ -12,6 +12,7 @@
 
 namespace jlm::llvm
 {
+
 namespace
 {
 struct FoldConstantsTestInput
