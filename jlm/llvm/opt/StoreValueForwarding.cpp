@@ -3,8 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/RegionPredicateTrace.hpp"
-#include "jlm/util/Hash.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -26,11 +24,13 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
@@ -716,6 +716,10 @@ private:
       std::optional<ValueOrigin> commonValueOrigin;
       const auto addObservedValueOrigin = [&](ValueOrigin origin)
       {
+        // Ignore branches that lead to uninitialized
+        if (origin.kind == ValueOrigin::Kind::Uninitialized)
+          return;
+
         if (!commonValueOrigin.has_value())
           commonValueOrigin = origin;
         else if (commonValueOrigin.value() != origin)
@@ -750,11 +754,23 @@ private:
         addObservedValueOrigin(lastValueOrigin);
       }
 
-      JLM_ASSERT(commonValueOrigin.has_value());
-      if (commonValueOrigin->isKnown())
-        return *commonValueOrigin;
+      // If all branches lead to uninitialized memory
+      if (!commonValueOrigin.has_value())
+        return ValueOrigin::createUninitialized();
 
-      // If the last store node depends on the branch taken, return the gamma node itself
+      // If there is exactly one shared origin for all branches
+      if (commonValueOrigin->isKnown())
+      {
+        // The value origin is neither uninitialized nor unknown, so it must belong to a node
+        JLM_ASSERT(commonValueOrigin->node);
+
+        // Only return the origin if it is not inside one of the subregions
+        if (commonValueOrigin->node->region()->node() != gammaNode)
+          return *commonValueOrigin;
+      }
+
+      // The last value origin differs based on which branch is taken,
+      // or is inside one of the gamma subregions, so return the gamma node itself
       return ValueOrigin::createGammaNodeOutput(*gammaNode);
     }
 
