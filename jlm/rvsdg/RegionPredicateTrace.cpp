@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <unordered_map>
 
+#include <unordered_map>
+
 namespace jlm::rvsdg
 {
 

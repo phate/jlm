@@ -66,9 +66,40 @@ JlmToMlirConverter::ConvertModule(const llvm::LlvmRvsdgModule & rvsdgModule)
   ::llvm::SmallVector<::mlir::Value> regionResults =
       ConvertRegion(graph.GetRootRegion(), omegaBlock, true);
 
-  auto omegaResult =
-      Builder_->create<::mlir::rvsdg::OmegaResult>(Builder_->getUnknownLoc(), regionResults);
+  // Build result types from the region results
+  ::llvm::SmallVector<::mlir::Type> resultTypes;
+  for (auto & result : regionResults)
+  {
+    resultTypes.push_back(result.getType());
+  }
+
+  // Collect export names from root region results.
+  // The order of graph.GetRootRegion().results() matches regionResults.
+  ::llvm::SmallVector<::mlir::Attribute> exportNames;
+  for (auto & result : graph.GetRootRegion().Results())
+  {
+    if (auto graphExport = dynamic_cast<const rvsdg::GraphExport *>(result))
+    {
+      exportNames.push_back(Builder_->getStringAttr(graphExport->Name()));
+    }
+    else
+    {
+      JLM_UNREACHABLE("This should not happen. All omega results should be a GraphExport");
+    }
+  }
+
+  // Create OmegaResult with proper signature including export names.
+  auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNames);
+  ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+  namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+
+  auto omegaResult = Builder_->create<::mlir::rvsdg::OmegaResult>(
+      Builder_->getUnknownLoc(),
+      resultTypes,
+      regionResults,
+      namedAttrs);
   omegaBlock.push_back(omegaResult);
+
   return omega;
 }
 
