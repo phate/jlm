@@ -354,12 +354,12 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
         util::assertedCast<const LlvmDeltaOperation>(&deltaNode->GetOperation());
     return GetTypeAllocSize(*deltaOperation->Type());
   }
-#if 0
+
   if (const auto llvmImport = dynamic_cast<const LlvmGraphImport *>(&output))
   {
     return GetTypeAllocSize(*llvmImport->ValueType());
   }
-#endif
+
   return std::nullopt;
 }
 
