@@ -197,6 +197,25 @@ IntegerSubOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSubOperation::normalizeAdditiveInverse(
+    const IntegerSubOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  const auto & operand1 = *operands[0];
+  const auto & operand2 = *operands[1];
+
+  auto & tracedOperand1 = llvm::traceOutput(operand1);
+  auto & tracedOperand2 = llvm::traceOutput(operand2);
+
+  if (&tracedOperand1 != &tracedOperand2)
+    return std::nullopt;
+
+  return rvsdg::outputs(
+      &IntegerConstantOperation::Create(*operand1.region(), operation.Type().nbits(), 0));
+}
+
 IntegerMulOperation::~IntegerMulOperation() noexcept = default;
 
 bool
