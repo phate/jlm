@@ -7,6 +7,7 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 namespace jlm::llvm
@@ -142,6 +143,46 @@ TEST(IntegerXorOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerXorOperation>({ 4, 32, 4, 32, 0, 32 });
   TestFoldConstants<IntegerXorOperation>({ 0, 32, -1, 32, -1, 32 });
+}
+
+TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
+
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto inputVar = structuralNode->addInputWithArguments(i0);
+
+  auto & subNode =
+      IntegerSubOperation::createNode(32, *inputVar.argument[0], *inputVar.argument[0]);
+
+  auto outputVar = structuralNode->addOutputWithResults({ subNode.output(0) });
+
+  GraphExport::Create(*outputVar.output, "x0");
+
+  // Act
+  ReduceNode<IntegerSubOperation>(
+      IntegerSubOperation::normalizeAdditiveInverse,
+      dynamic_cast<SimpleNode &>(subNode));
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  {
+    auto [_, op] =
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*outputVar.result[0]->origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().to_int(), 0u);
+    EXPECT_EQ(op->Representation().nbits(), 32u);
+  }
 }
 
 }
