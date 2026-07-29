@@ -418,8 +418,8 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   /**
-   * \brief Redirect the address operand of the \ref LoadNonVolatileOperation node from an \ref IOBarrierOperation node
-   * when it can be determined that the address operand is dereferenceable.
+   * \brief Redirect the address operand of the \ref LoadNonVolatileOperation node from an \ref
+   * IOBarrierOperation node when it can be determined that the address operand is dereferenceable.
    *
    * For example:
    *
@@ -431,7 +431,8 @@ public:
    * a2 = IOBarrierOperation a1 ioState
    * ... = LoadNonVolatileOperation a1 ...
    *
-   * @param loadOperation The \ref LoadNonVolatileOperation on which the transformation is performed.
+   * @param loadOperation The \ref LoadNonVolatileOperation on which the transformation is
+   * performed.
    * @param operands The operands of the \ref LoadNonVolatileOperation node.
    *
    * @return If the normalization could be applied, then the results of the
