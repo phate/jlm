@@ -3,13 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/call.hpp"
-#include "jlm/rvsdg/control.hpp"
-#include "jlm/rvsdg/node.hpp"
-#include "jlm/rvsdg/region.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -19,8 +16,11 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
