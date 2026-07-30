@@ -30,14 +30,16 @@ class GetElementPtrOperation final : public rvsdg::SimpleOperation
 public:
   ~GetElementPtrOperation() noexcept override;
 
+  // FIXME: I would love to have this private. It makes no sense to have this public as it allows to
+  // create illegal getelementptr operations.
   GetElementPtrOperation(
       const std::shared_ptr<const rvsdg::Type> & baseAddressType,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes,
-      std::shared_ptr<const rvsdg::Type> pointeeType)
+      std::shared_ptr<const rvsdg::Type> gepType)
       : SimpleOperation(
             createOperandTypes(baseAddressType, indexTypes),
             { getResultType(baseAddressType, indexTypes) }),
-        pointeeType_(std::move(pointeeType))
+        gepType_(std::move(gepType))
   {
     checkBaseAddressType(*baseAddressType);
     checkIndexTypes(indexTypes);
@@ -59,7 +61,7 @@ public:
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
   getPointeeType() const noexcept
   {
-    return pointeeType_;
+    return gepType_;
   }
 
   /**
@@ -169,10 +171,7 @@ public:
   {
     auto indexTypes = extractIndexTypes<const Variable>(offsets);
 
-    auto operation = std::make_unique<GetElementPtrOperation>(
-        baseAddress->Type(),
-        indexTypes,
-        std::move(pointeeType));
+    auto operation = std::make_unique<GetElementPtrOperation>(baseAddress->Type(), indexTypes, std::move(pointeeType));
     std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -225,10 +224,31 @@ public:
   }
 
 private:
+  static std::shared_ptr<const rvsdg::Type>
+  getIndexedType(
+      const std::shared_ptr<const rvsdg::Type> & gepType,
+      const std::vector<rvsdg::Output *> & indices);
+
+  static void
+  checkIndexTypes(
+      const std::shared_ptr<const rvsdg::Type> & gepType,
+      const std::vector<rvsdg::Output *> & indices)
+  {
+    const auto indexedType = getIndexedType(gepType, indices);
+    if (indexedType == nullptr)
+    {
+      throw std::logic_error("Invalid GetElementPtrOperation indices for type!");
+    }
+  }
+
   static void
   checkBaseAddressType(const rvsdg::Type & type)
   {
-    if (!is<PointerType>(type) && !isVectorOf<PointerType>(type))
+    const auto isPointerType = is<PointerType>(type);
+    const auto vectorType = dynamic_cast<const VectorType *>(&type);
+    const auto isVectorOfPointerType = vectorType && is<PointerType>(vectorType->Type());
+
+    if (!isPointerType && !isVectorOfPointerType)
     {
       throw std::logic_error("Expected pointer type.");
     }
@@ -287,7 +307,7 @@ private:
   extractIndexTypes(const std::vector<T *> & indices)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> indexTypes;
-    for (const auto & offset : indices)
+    for (const auto & index : indices)
     {
       indexTypes.emplace_back(std::move(offset->Type()));
     }
@@ -306,7 +326,7 @@ private:
     return types;
   }
 
-  std::shared_ptr<const rvsdg::Type> pointeeType_;
+  std::shared_ptr<const rvsdg::Type> gepType_;
 };
 
 }
