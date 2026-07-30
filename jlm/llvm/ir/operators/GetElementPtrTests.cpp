@@ -11,6 +11,7 @@
 
 namespace jlm::llvm
 {
+
 TEST(GetElemenPtrOperationTests, typeChecks)
 {
   using namespace jlm::rvsdg;
