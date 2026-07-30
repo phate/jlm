@@ -20,8 +20,6 @@ namespace jlm::llvm
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#getelementptr-instruction) for more details.
  *
- * FIXME: We currently do not support vector of pointers for the baseAddress.
- *
  * FIXME: We should type check that pointeeType and the number/types of indices fit together.
  *
  */
@@ -31,11 +29,14 @@ public:
   ~GetElementPtrOperation() noexcept override;
 
   GetElementPtrOperation(
+      const std::shared_ptr<const rvsdg::Type> & baseAddressType,
       const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes,
       std::shared_ptr<const rvsdg::Type> pointeeType)
-      : SimpleOperation(createOperandTypes(indexTypes), { PointerType::Create() }),
+      : SimpleOperation(createOperandTypes(baseAddressType, indexTypes), { baseAddressType }),
         pointeeType_(std::move(pointeeType))
-  {}
+  {
+    checkBaseAddressType(*baseAddressType);
+  }
 
   GetElementPtrOperation(const GetElementPtrOperation & other) = default;
 
@@ -161,10 +162,12 @@ public:
       const std::vector<const Variable *> & offsets,
       std::shared_ptr<const rvsdg::Type> pointeeType)
   {
-    checkPointerType(baseAddress->type());
     auto offsetTypes = checkAndExtractIndexTypes<const Variable>(offsets);
 
-    auto operation = std::make_unique<GetElementPtrOperation>(offsetTypes, std::move(pointeeType));
+    auto operation = std::make_unique<GetElementPtrOperation>(
+        baseAddress->Type(),
+        offsetTypes,
+        std::move(pointeeType));
     std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -186,7 +189,6 @@ public:
       const std::vector<rvsdg::Output *> & indices,
       std::shared_ptr<const rvsdg::Type> pointeeType)
   {
-    checkPointerType(*baseAddress.Type());
     const auto indicesTypes = checkAndExtractIndexTypes<rvsdg::Output>(indices);
 
     std::vector operands(1, &baseAddress);
@@ -194,6 +196,7 @@ public:
 
     return rvsdg::CreateOpNode<GetElementPtrOperation>(
         operands,
+        baseAddress.Type(),
         indicesTypes,
         std::move(pointeeType));
   }
@@ -218,11 +221,11 @@ public:
 
 private:
   static void
-  checkPointerType(const rvsdg::Type & type)
+  checkBaseAddressType(const rvsdg::Type & type)
   {
-    if (!is<PointerType>(type))
+    if (!is<PointerType>(type) && !isVectorOf<PointerType>(type))
     {
-      throw util::Error("Expected pointer type.");
+      throw std::logic_error("Expected pointer type.");
     }
   }
 
@@ -246,9 +249,11 @@ private:
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  createOperandTypes(const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes)
+  createOperandTypes(
+      std::shared_ptr<const rvsdg::Type> baseAddressType,
+      const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
+    std::vector types({ std::move(baseAddressType) });
     types.insert(types.end(), indexTypes.begin(), indexTypes.end());
 
     return types;
