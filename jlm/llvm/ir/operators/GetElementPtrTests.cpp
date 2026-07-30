@@ -9,11 +9,34 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/graph.hpp>
 
+namespace jlm::llvm
+{
+TEST(GetElemenPtrOperationTests, typeChecks)
+{
+  using namespace jlm::rvsdg;
+
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto vectorOfPointerType = FixedVectorType::Create(pointerType, 4);
+
+  Graph graph;
+
+  auto & pointerImport = GraphImport::Create(graph, pointerType, "pointer");
+  auto & vectorOfPointerImport = GraphImport::Create(graph, vectorOfPointerType, "vectorOfPointer");
+  auto & i32Import = GraphImport::Create(graph, i32Type, "i32");
+
+  // Test base pointer type checking
+  GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
+  GetElementPtrOperation::createNode(vectorOfPointerImport, {}, i32Type);
+  EXPECT_THROW(GetElementPtrOperation::createNode(i32Import, {}, i32Type), std::logic_error);
+}
+
 TEST(GetElementPtrOperationTests, TestOperationEquality)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
+  auto pointerType = PointerType::Create();
   auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
   auto structType1 = StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
@@ -21,10 +44,12 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
       StructType::CreateIdentified("myStructType", { arrayType, BitType::Create(32) }, false);
 
   GetElementPtrOperation operation1(
-      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
       structType1);
   GetElementPtrOperation operation2(
-      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
       structType2);
 
   EXPECT_NE(operation1, operation2);
@@ -105,4 +130,6 @@ TEST(GetElementPtrTests, TestGetElementPtrOperationConstant_OffestInBytes)
   EXPECT_EQ(constant3.getOffsetInBytes(), 8u);
   EXPECT_EQ(constant4.getOffsetInBytes(), 20u);
   EXPECT_EQ(constant5.getOffsetInBytes(), 32u);
+}
+
 }
