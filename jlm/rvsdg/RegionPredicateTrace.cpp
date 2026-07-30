@@ -8,7 +8,6 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
-#include <unordered_map>
 
 #include <unordered_map>
 
