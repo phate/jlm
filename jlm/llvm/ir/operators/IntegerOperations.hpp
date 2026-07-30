@@ -165,6 +165,23 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSubOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Normalizes the additive inverse of a \ref IntegerSubOperation node:
+   *
+   * z = IntegerSubOperation x x
+   * =>
+   * z = 0
+   *
+   * @param operation The \ref IntegerSubOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSubOperation node.
+   *
+   * @return If the normalization could be applied, then 0. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeAdditiveInverse(
+      const IntegerSubOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
