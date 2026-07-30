@@ -28,8 +28,6 @@ class GetElementPtrOperation final : public rvsdg::SimpleOperation
 public:
   ~GetElementPtrOperation() noexcept override;
 
-  // FIXME: I would love to have this private. It makes no sense to have this public as it allows to
-  // create illegal getelementptr operations.
   GetElementPtrOperation(
       const std::shared_ptr<const rvsdg::Type> & baseAddressType,
       const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes,
