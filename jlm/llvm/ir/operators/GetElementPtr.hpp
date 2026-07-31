@@ -22,6 +22,8 @@ namespace jlm::llvm
  *
  * FIXME: We should type check that pointeeType and the number/types of indices fit together.
  *
+ * FIXME: We should type check that the index and baseAddress vectors (if any) fit together with
+ * each other
  */
 class GetElementPtrOperation final : public rvsdg::SimpleOperation
 {
@@ -30,12 +32,15 @@ public:
 
   GetElementPtrOperation(
       const std::shared_ptr<const rvsdg::Type> & baseAddressType,
-      const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes,
       std::shared_ptr<const rvsdg::Type> pointeeType)
-      : SimpleOperation(createOperandTypes(baseAddressType, indexTypes), { baseAddressType }),
+      : SimpleOperation(
+            createOperandTypes(baseAddressType, indexTypes),
+            { getResultType(baseAddressType, indexTypes) }),
         pointeeType_(std::move(pointeeType))
   {
     checkBaseAddressType(*baseAddressType);
+    checkIndexTypes(indexTypes);
   }
 
   GetElementPtrOperation(const GetElementPtrOperation & other) = default;
@@ -162,11 +167,11 @@ public:
       const std::vector<const Variable *> & offsets,
       std::shared_ptr<const rvsdg::Type> pointeeType)
   {
-    auto offsetTypes = checkAndExtractIndexTypes<const Variable>(offsets);
+    auto indexTypes = extractIndexTypes<const Variable>(offsets);
 
     auto operation = std::make_unique<GetElementPtrOperation>(
         baseAddress->Type(),
-        offsetTypes,
+        indexTypes,
         std::move(pointeeType));
     std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
@@ -189,7 +194,7 @@ public:
       const std::vector<rvsdg::Output *> & indices,
       std::shared_ptr<const rvsdg::Type> pointeeType)
   {
-    const auto indicesTypes = checkAndExtractIndexTypes<rvsdg::Output>(indices);
+    const auto indexTypes = extractIndexTypes<rvsdg::Output>(indices);
 
     std::vector operands(1, &baseAddress);
     operands.insert(operands.end(), indices.begin(), indices.end());
@@ -197,7 +202,7 @@ public:
     return rvsdg::CreateOpNode<GetElementPtrOperation>(
         operands,
         baseAddress.Type(),
-        indicesTypes,
+        indexTypes,
         std::move(pointeeType));
   }
 
@@ -229,29 +234,71 @@ private:
     }
   }
 
-  template<class T>
-  static std::vector<std::shared_ptr<const rvsdg::BitType>>
-  checkAndExtractIndexTypes(const std::vector<T *> & indices)
+  static void
+  checkIndexTypes(const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::BitType>> offsetTypes;
-    for (const auto & offset : indices)
+    for (auto & indexType : indexTypes)
     {
-      if (auto offsetType = std::dynamic_pointer_cast<const rvsdg::BitType>(offset->Type()))
+      if (!is<rvsdg::BitType>(indexType) && !isVectorOf<rvsdg::BitType>(*indexType))
       {
-        offsetTypes.emplace_back(std::move(offsetType));
-        continue;
+        throw std::logic_error("Expected bitstring type.");
       }
+    }
+  }
 
-      throw util::Error("Expected bitstring type.");
+  static std::shared_ptr<const rvsdg::Type>
+  getResultType(
+      const std::shared_ptr<const rvsdg::Type> & baseAddressType,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes)
+  {
+    const auto resultType = PointerType::Create();
+
+    // FIXME: Fix vector type such that it can uniformly handle fixed and scalable vector types
+    // similar to LLVM
+    if (const auto fixedVectorType =
+            std::dynamic_pointer_cast<const FixedVectorType>(baseAddressType))
+    {
+      return FixedVectorType::Create(resultType, fixedVectorType->size());
+    }
+    if (const auto scalableVectorType =
+            std::dynamic_pointer_cast<const ScalableVectorType>(baseAddressType))
+    {
+      return ScalableVectorType::Create(resultType, scalableVectorType->size());
     }
 
-    return offsetTypes;
+    for (auto & indexType : indexTypes)
+    {
+      if (const auto fixedVectorType = std::dynamic_pointer_cast<const FixedVectorType>(indexType))
+      {
+        return FixedVectorType::Create(resultType, fixedVectorType->size());
+      }
+      if (const auto scalableVectorType =
+              std::dynamic_pointer_cast<const ScalableVectorType>(indexType))
+      {
+        return ScalableVectorType::Create(resultType, scalableVectorType->size());
+      }
+    }
+
+    return resultType;
+  }
+
+  template<class T>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  extractIndexTypes(const std::vector<T *> & indices)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> indexTypes;
+    for (const auto & offset : indices)
+    {
+      indexTypes.emplace_back(std::move(offset->Type()));
+    }
+
+    return indexTypes;
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   createOperandTypes(
       std::shared_ptr<const rvsdg::Type> baseAddressType,
-      const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes)
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes)
   {
     std::vector types({ std::move(baseAddressType) });
     types.insert(types.end(), indexTypes.begin(), indexTypes.end());
