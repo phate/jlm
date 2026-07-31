@@ -3,13 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/CallingConvention.hpp"
-#include "jlm/llvm/ir/Linkage.hpp"
-#include "jlm/llvm/ir/RvsdgModule.hpp"
-#include "jlm/llvm/ir/types.hpp"
-#include "jlm/rvsdg/graph.hpp"
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/CallingConvention.hpp>
+#include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -18,12 +15,15 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
