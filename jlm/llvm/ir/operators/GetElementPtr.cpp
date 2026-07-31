@@ -24,7 +24,7 @@ GetElementPtrOperation::operator==(const Operation & other) const noexcept
 
   for (size_t n = 0; n < narguments(); n++)
   {
-    if (operation->argument(n) != argument(n))
+    if (*operation->argument(n) != *argument(n))
     {
       return false;
     }
