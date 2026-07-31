@@ -445,7 +445,7 @@ public:
       // Tracing starts at the load, so no loop back-edges have been taken yet
       auto lastValueOrigin = getLastValueOriginBeforeInput(memoryStateInput, false);
 
-      // If the memory state input can not be traced back to value origins,
+      // If the memory state input cannot be traced back to value origins,
       // or different memory state inputs lead to different value origins in the same branch,
       // forwarding is not possible
       if (!lastValueOrigin.isKnown())
@@ -471,9 +471,10 @@ public:
   /**
    * After tracing has finished, provides the last value origin before the given \p node.
    * @param node the node to trace backwards from
-   * @param loopBackEdgeMaybeTaken if true, the result of tracing with loopBackEdgeTaken=true
-   *        is attempted first, which is the most conservative traced value origin.
-   *        If \p node was never rached via any back-edges, the function falls back to false.
+   * @param loopBackEdgeMaybeTaken if true, the function uses the most conservative value origin
+   *        for the node, which does not make any assumptions about loop back-edges.
+   *        If false, or if tracing never reached the node after following a back-edge,
+   *        the value origin found under the assumption that no back-edges have been taken is used.
    * @return the last value origin before the given node, or nullopt if the node was never reached.
    */
   std::optional<ValueOrigin>
@@ -497,9 +498,10 @@ public:
    * After tracing has finished, provides the last value origin before the end of a \p region.
    * Note that this value origin may be outside the region, if the region does not clobber.
    * @param region the region whose results are traced backwards from
-   * @param loopBackEdgeMaybeTaken if true, the result of tracing with loopBackEdgeTaken=true
-   *        is attempted first, which is the most conservative traced value origin.
-   *        If \p region was never rached via any back-edges, the function falls back to false.
+   * @param loopBackEdgeMaybeTaken if true, the function uses the most conservative value origin
+   *        for the region, which does not make any assumptions about loop back-edges.
+   *        If false, or if tracing never reached the region after following a back-edge,
+   *        the value origin found under the assumption that no back-edges have been taken is used.
    * @return the last value origin in the \p region, or nullopt if the region was never reached.
    */
   std::optional<ValueOrigin>
@@ -1329,7 +1331,12 @@ StoreValueForwarding::getValueOriginOutput(
       std::vector<rvsdg::Output *> lastValueOriginPerSubregion;
       for (auto & subregion : gammaNode->Subregions())
       {
-        // If the gamma subregion has ever been traced with loopBackEdgeTaken = true, use it
+        // We only create one gamma exit variable for each load,
+        // so if tracing ever reached the gamma after following a back-edge,
+        // we can not use value origins traced under the assumption that no back-edges were taken.
+        // If the gamma output was never reached after tracing through a back-edge,
+        // the getter function will fall back to using value origins traced under the assumption
+        // that no back-edges have been followed, which is then a correct assumption.
         auto lastValueOrigin = tracingInfo.getLastValueOriginInRegion(subregion, true);
         JLM_ASSERT(lastValueOrigin.has_value() && lastValueOrigin->isKnown());
         auto & valueOriginOutput = getValueOriginOutput(*lastValueOrigin, subregion, tracingInfo);
@@ -1358,7 +1365,11 @@ StoreValueForwarding::getValueOriginOutput(
       rvsdg::Output * initialValue = nullptr;
 
       // Get the last value origin before the theta.
-      // Try with loopBackEdgeTaken = true first, then false as a backup
+      // Since we only create one loop variable for each load we forward,
+      // use the conservative assumption that back-edges may have been followed.
+      // If tracing never left the theta after following a back-edge,
+      // the getter function falls back to using the value origin found under the asumption
+      // that no back-edges have been followed, which is the a correct assumption.
       auto lastValueOrigin = tracingInfo.getLastValueOriginBeforeNode(*thetaNode, true);
       if (lastValueOrigin.has_value())
       {
@@ -1368,12 +1379,8 @@ StoreValueForwarding::getValueOriginOutput(
       }
       else
       {
-        // Tracing never left reached the loop entry, so the value must be defined inside the loop.
+        // Tracing never reached the loop entry, so the value must be defined inside the loop.
         // The created loop variable can therefore take undef as its input.
-        // Since tracing never reached the top of the loop, the loop post was never added to the
-        // list of back-edges, and possibly never traced with loopBackEdgeTaken=true.
-        // In that case, the created loop variable will use the loopBackEdgeTaken=false version
-        // of the traced ValueOrigin when routing loop post origins later.
         initialValue = UndefValueOperation::Create(*thetaNode->region(), tracingInfo.loadedType);
       }
 
@@ -1415,8 +1422,11 @@ StoreValueForwarding::connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo)
     auto post = tracingInfo.unroutedLoopVarPosts.front();
     tracingInfo.unroutedLoopVarPosts.pop();
 
-    // If the theta post has ever been traced with loopBackEdgeTaken=true, we use that
-    // otherwise fall back to the value origin reached with no back-edges taken.
+    // We only create one loop variable per theta,
+    // so if tracing ever entered the theta after following a back-edge,
+    // we conservatively use the value origin found with loopBackEdgeTaken=true.
+    // If the theta subregion was never traced after following a back-edge,
+    // it falls back to using the value origin found assuming no back-edges have been followed.
     auto lastValueOrigin = tracingInfo.getLastValueOriginInRegion(*post->region(), true);
     JLM_ASSERT(lastValueOrigin.has_value() && lastValueOrigin->isKnown());
     auto & origin = getValueOriginOutput(*lastValueOrigin, *post->region(), tracingInfo);
