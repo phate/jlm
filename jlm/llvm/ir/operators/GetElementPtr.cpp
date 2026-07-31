@@ -16,7 +16,7 @@ GetElementPtrOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const GetElementPtrOperation *>(&other);
 
-  if (operation == nullptr || getPointeeType() != operation->getPointeeType()
+  if (operation == nullptr || *getPointeeType() != *operation->getPointeeType()
       || narguments() != operation->narguments())
   {
     return false;
@@ -24,7 +24,7 @@ GetElementPtrOperation::operator==(const Operation & other) const noexcept
 
   for (size_t n = 0; n < narguments(); n++)
   {
-    if (operation->argument(n) != argument(n))
+    if (*operation->argument(n) != *argument(n))
     {
       return false;
     }

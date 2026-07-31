@@ -89,6 +89,7 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
+  // Arrange
   auto pointerType = PointerType::Create();
   auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
@@ -105,7 +106,23 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
       { BitType::Create(32), BitType::Create(32) },
       structType2);
 
+  // Assert
   EXPECT_NE(operation1, operation2);
+
+  // Arrange 2: create a new type that is structurally identical to structType1
+  auto copyOfStructType1 =
+      StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
+  GetElementPtrOperation operation3(
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
+      copyOfStructType1);
+
+  // Assert 2
+
+  // The struct types have distinct pointers
+  EXPECT_NE(structType1, copyOfStructType1);
+  // Yet the GEPs compare equal
+  EXPECT_EQ(operation1, operation3);
 }
 
 TEST(GetElementPtrTests, TryGetAsConstantTest)
