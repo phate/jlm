@@ -191,7 +191,7 @@ private:
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
 
   /**
-   * Checks if the given \p traceCollection only containts top origins that are allocas
+   * Checks if the given \p traceCollection only contains top origins that are allocas
    * in the current function.
    * @param traceCollection the \ref TraceCollection to check
    * @return true iff all top origins in \p tc are alloca outputs
@@ -200,7 +200,7 @@ private:
   hasOnlyAllocaTopOrigins(const TraceCollection & traceCollection);
 
   /**
-   * Removes all top origins form the given \p traceCollection that are arguments to the function.
+   * Removes all top origins from the given \p traceCollection that are arguments to the function.
    * @param traceCollection the \ref TraceCollection to modify
    */
   static void

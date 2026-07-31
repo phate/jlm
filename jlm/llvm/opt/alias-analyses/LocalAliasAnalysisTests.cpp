@@ -3,6 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/CallingConvention.hpp"
+#include "jlm/llvm/ir/Linkage.hpp"
+#include "jlm/llvm/ir/RvsdgModule.hpp"
+#include "jlm/llvm/ir/types.hpp"
+#include "jlm/rvsdg/graph.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -723,4 +728,142 @@ TEST(LocalAliasAnalysisTests, testLoopVariantPointers)
   // Against the unknown pointer
   Expect(aa, *outputs.PAfterLoop, 4, *outputs.Unknown, 4, AliasAnalysis::NoAlias);
   Expect(aa, *outputs.QAfterLoop, 4, *outputs.Unknown, 4, AliasAnalysis::MayAlias);
+}
+
+/**
+ * Creates an RVSDG corresponding to the C code:
+ *
+ * \code{.c}
+ *
+ * int opaque(int* p);
+ *
+ * int func(int* arg) {
+ *     int local;
+ *     opaque(&local); // alloca escapes here
+ *
+ *     // store to local and load from arg should be NoAlias,
+ *     // even though local has escaped the function
+ *     local = 20;
+ *     return *arg;
+ * }
+ * \endcode
+ */
+class LocalAliasAnalysisArgumentAllocaTest final : public jlm::llvm::RvsdgTest
+{
+  struct Outputs
+  {
+    jlm::rvsdg::Output * Func = {};
+    jlm::rvsdg::Output * Arg = {};
+    jlm::rvsdg::Output * LocalAlloca = {};
+  };
+
+public:
+  const Outputs &
+  GetOutputs() const noexcept
+  {
+    return Outputs_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override
+  {
+    using namespace jlm;
+    using namespace jlm::llvm;
+
+    auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto & rvsdg = rvsdgModule->Rvsdg();
+
+    const auto pointerType = PointerType::Create();
+    const auto intType = rvsdg::BitType::Create(32);
+    const auto ioStateType = IOStateType::Create();
+    const auto memoryStateType = MemoryStateType::Create();
+
+    const auto funcType = rvsdg::FunctionType::Create(
+        { pointerType, ioStateType, memoryStateType },
+        { intType, ioStateType, memoryStateType });
+
+    auto & opaqueImport = LlvmGraphImport::createFunctionImport(
+        rvsdg,
+        funcType,
+        "opaque",
+        Linkage::externalLinkage,
+        CallingConvention::Default);
+
+    {
+      auto & lambdaNode = *rvsdg::LambdaNode::Create(
+          rvsdg.GetRootRegion(),
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+      Outputs_.Arg = lambdaNode.GetFunctionArguments()[0];
+      auto ioState = lambdaNode.GetFunctionArguments()[1];
+      auto memoryState = lambdaNode.GetFunctionArguments()[2];
+      const auto opaqueCtxVar = lambdaNode.AddContextVar(opaqueImport);
+
+      const auto constantOne =
+          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+      const auto allocaOutputs = AllocaOperation::create(intType, constantOne, 4);
+
+      Outputs_.LocalAlloca = allocaOutputs[0];
+      memoryState = MemoryStateMergeOperation::Create(
+          std::vector<jlm::rvsdg::Output *>{ memoryState, allocaOutputs[1] });
+
+      // call opaque(&local);
+      auto & callOpaque = CallOperation::CreateNode(
+          opaqueCtxVar.inner,
+          funcType,
+          { Outputs_.LocalAlloca, ioState, memoryState });
+      ioState = &CallOperation::GetIOStateOutput(callOpaque);
+      memoryState = &CallOperation::GetMemoryStateOutput(callOpaque);
+
+      // local = 20
+      auto & constantTwenty =
+          rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 20 });
+      const auto storeLocalOutputs = StoreNonVolatileOperation::Create(
+          Outputs_.LocalAlloca,
+          &constantTwenty,
+          { memoryState },
+          4);
+      memoryState = storeLocalOutputs[0];
+
+      // return *arg
+      const auto loadArgOutputs =
+          LoadNonVolatileOperation::Create(Outputs_.Arg, { memoryState }, intType, 4);
+      auto & loadArg = *loadArgOutputs[0];
+      memoryState = loadArgOutputs[1];
+
+      lambdaNode.finalize({ &loadArg, ioState, memoryState });
+      Outputs_.Func = lambdaNode.output();
+    }
+
+    return rvsdgModule;
+  }
+
+  Outputs Outputs_ = {};
+};
+
+TEST(LocalAliasAnalysisTests, testAllocasArguments)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+  using namespace jlm::llvm::aa;
+
+  /**
+   * Uses the RVSDG created by the \ref LocalAliasAnalysisArgumentAllocaTest class.
+   *
+   * Checks that pointer arguments and allocas defined in the function do not alias,
+   * even if the alloca escapes the function.
+   */
+
+  // Arrange
+  LocalAliasAnalysisArgumentAllocaTest rvsdg;
+  rvsdg.InitializeTest();
+  const auto & outputs = rvsdg.GetOutputs();
+
+  jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
+
+  LocalAliasAnalysis aa;
+
+  // Assert
+  Expect(aa, *outputs.Arg, 4, *outputs.LocalAlloca, 4, AliasAnalysis::NoAlias);
 }
