@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <cmath>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/util/Hash.hpp>
@@ -193,30 +194,6 @@ LoopNode::addRequestOutput(rvsdg::Output * origin)
   return output;
 }
 
-void
-LoopNode::removeLoopOutput(rvsdg::StructuralOutput * output)
-{
-  JLM_ASSERT(output->node() == this);
-  JLM_ASSERT(output->IsDead());
-  JLM_ASSERT(output->results.size() == 1);
-  auto result = output->results.begin();
-
-  subregion()->RemoveResults({ result->index() });
-  RemoveOutputs({ output->index() });
-}
-
-void
-LoopNode::removeLoopInput(rvsdg::StructuralInput * input)
-{
-  JLM_ASSERT(input->node() == this);
-  JLM_ASSERT(input->arguments.size() == 1);
-  auto argument = input->arguments.begin();
-  JLM_ASSERT(argument->IsDead());
-
-  subregion()->RemoveArguments({ argument->index() });
-  RemoveInputs({ input->index() });
-}
-
 [[nodiscard]] const rvsdg::Operation &
 LoopNode::GetOperation() const noexcept
 {
@@ -224,10 +201,149 @@ LoopNode::GetOperation() const noexcept
   return singleton;
 }
 
+LoopNode::EntryVar
+LoopNode::mapInput(const rvsdg::Input & input)
+{
+  return EntryVar{ const_cast<rvsdg::Input *>(&input),
+                   const_cast<rvsdg::RegionArgument *>(
+                       &*static_cast<const rvsdg::StructuralInput &>(input).arguments.begin()) };
+}
+
+LoopNode::ExitVar
+LoopNode::mapOutput(const rvsdg::Output & output)
+{
+  return ExitVar{ const_cast<rvsdg::RegionResult *>(
+                      &*static_cast<const rvsdg::StructuralOutput &>(output).results.begin()),
+                  const_cast<rvsdg::Output *>(&output) };
+}
+
+std::variant<LoopNode::EntryVar, LoopNode::BackEdgeVar>
+LoopNode::mapArgument(const rvsdg::Output & argument)
+{
+  if (auto backedge = dynamic_cast<const BackEdgeArgument *>(&argument))
+  {
+    return BackEdgeVar{ const_cast<BackEdgeArgument *>(backedge),
+                        const_cast<BackEdgeArgument *>(backedge)->result() };
+  }
+  else if (auto entry = dynamic_cast<const EntryArgument *>(&argument))
+  {
+    return EntryVar{ entry->input(), const_cast<EntryArgument *>(entry) };
+  }
+  else
+  {
+    abort();
+  }
+}
+
+std::variant<LoopNode::ExitVar, LoopNode::BackEdgeVar>
+LoopNode::mapResult(const rvsdg::Input & result)
+{
+  if (auto backedge = dynamic_cast<const BackEdgeResult *>(&result))
+  {
+    return BackEdgeVar{ const_cast<BackEdgeResult *>(backedge)->argument(),
+                        const_cast<BackEdgeResult *>(backedge) };
+  }
+  else if (auto exit = dynamic_cast<const ExitResult *>(&result))
+  {
+    return ExitVar{ const_cast<ExitResult *>(exit), exit->output() };
+  }
+  else
+  {
+    abort();
+  }
+}
+
+std::vector<LoopNode::EntryVar>
+LoopNode::getEntryVars()
+{
+  std::vector<EntryVar> entryvars;
+  for (const auto & input : Inputs())
+  {
+    entryvars.push_back(mapInput(input));
+  }
+  return entryvars;
+}
+
+std::vector<LoopNode::ExitVar>
+LoopNode::getExitVars()
+{
+  std::vector<ExitVar> exitvars;
+  for (const auto & output : Outputs())
+  {
+    exitvars.push_back(mapOutput(output));
+  }
+  return exitvars;
+}
+
+std::vector<LoopNode::BackEdgeVar>
+LoopNode::getBackEdgeVars()
+{
+  std::vector<BackEdgeVar> backedges;
+  for (const auto & argument : subregion()->Arguments())
+  {
+    auto var = mapArgument(*argument);
+    if (auto backedge = std::get_if<BackEdgeVar>(&var))
+    {
+      backedges.push_back(*backedge);
+    }
+  }
+  return backedges;
+}
+
+void
+LoopNode::removeEntryVars(std::vector<EntryVar> vars)
+{
+  jlm::util::HashSet<std::size_t> inputs;
+  jlm::util::HashSet<std::size_t> arguments;
+  for (const auto & var : vars)
+  {
+    JLM_ASSERT(dynamic_cast<rvsdg::StructuralInput *>(var.input)->node() == this);
+    JLM_ASSERT(dynamic_cast<EntryArgument *>(var.inner)->input() == var.input);
+    JLM_ASSERT(var.inner->IsDead());
+    inputs.insert(var.input->index());
+    arguments.insert(var.inner->index());
+  }
+  subregion()->RemoveArguments(arguments);
+  RemoveInputs(inputs);
+}
+
+void
+LoopNode::removeExitVars(std::vector<ExitVar> vars)
+{
+  jlm::util::HashSet<std::size_t> results;
+  jlm::util::HashSet<std::size_t> outputs;
+  for (const auto & var : vars)
+  {
+    JLM_ASSERT(dynamic_cast<rvsdg::StructuralOutput *>(var.output)->node() == this);
+    JLM_ASSERT(dynamic_cast<ExitResult *>(var.inner)->output() == var.output);
+    JLM_ASSERT(var.output->IsDead());
+    results.insert(var.inner->index());
+    outputs.insert(var.output->index());
+  }
+  subregion()->RemoveResults(results);
+  RemoveOutputs(outputs);
+}
+
+void
+LoopNode::removeBackEdgeVars(std::vector<BackEdgeVar> vars)
+{
+  jlm::util::HashSet<std::size_t> arguments;
+  jlm::util::HashSet<std::size_t> results;
+  for (const auto & var : vars)
+  {
+    JLM_ASSERT(dynamic_cast<BackEdgeArgument *>(var.pre)->region() == subregion());
+    JLM_ASSERT(dynamic_cast<BackEdgeResult *>(var.post)->region() == subregion());
+    arguments.insert(var.pre->index());
+    results.insert(var.post->index());
+  }
+  subregion()->RemoveArguments(arguments);
+  subregion()->RemoveResults(results);
+}
+
 LoopNode *
 LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto loop = create(region, false);
+  auto loop = new LoopNode(region);
 
   for (size_t i = 0; i < ninputs(); ++i)
   {
@@ -291,19 +407,16 @@ LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 }
 
 LoopNode *
-LoopNode::create(rvsdg::Region * parent, bool init)
+LoopNode::create(rvsdg::Region * parent)
 {
   auto ln = new LoopNode(parent);
-  if (init)
-  {
-    auto predicate = &rvsdg::ControlConstantOperation::createFalse(*ln->subregion());
-    auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
-    pred_arg->result()->divert_to(predicate);
-    // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
-    // signals
-    auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
-    ln->PredicateBuffer_ = PredicateBufferOperation::create(*pre_buffer)[0];
-  }
+  auto predicate = &rvsdg::ControlConstantOperation::createFalse(*ln->subregion());
+  auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
+  pred_arg->result()->divert_to(predicate);
+  // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
+  // signals
+  auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
+  ln->PredicateBuffer_ = PredicateBufferOperation::create(*pre_buffer)[0];
   return ln;
 }
 
