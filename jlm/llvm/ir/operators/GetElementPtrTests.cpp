@@ -16,20 +16,72 @@ TEST(GetElemenPtrOperationTests, typeChecks)
 {
   using namespace jlm::rvsdg;
 
+  // Assert
   auto i32Type = BitType::Create(32);
+  auto i32FixedVectorType = FixedVectorType::Create(i32Type, 4);
+  auto i32ScalableVectorType = ScalableVectorType::Create(i32Type, 4);
+
   auto pointerType = PointerType::Create();
-  auto vectorOfPointerType = FixedVectorType::Create(pointerType, 4);
+  auto ptrFixedVectorType = FixedVectorType::Create(pointerType, 4);
+  auto ptrScalableVectorType = ScalableVectorType::Create(pointerType, 4);
 
   Graph graph;
 
-  auto & pointerImport = GraphImport::Create(graph, pointerType, "pointer");
-  auto & vectorOfPointerImport = GraphImport::Create(graph, vectorOfPointerType, "vectorOfPointer");
-  auto & i32Import = GraphImport::Create(graph, i32Type, "i32");
+  auto & i32Import = GraphImport::Create(graph, i32Type, "");
+  auto & i32FixedVectorImport = GraphImport::Create(graph, i32FixedVectorType, "");
+  auto & i32ScalableVectorImport = GraphImport::Create(graph, i32ScalableVectorType, "");
 
-  // Test base pointer type checking
-  GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
-  GetElementPtrOperation::createNode(vectorOfPointerImport, {}, i32Type);
-  EXPECT_THROW(GetElementPtrOperation::createNode(i32Import, {}, i32Type), std::logic_error);
+  auto & pointerImport = GraphImport::Create(graph, pointerType, "");
+  auto & ptrFixedVectorImport = GraphImport::Create(graph, ptrFixedVectorType, "");
+  auto & ptrScalableVectorImport = GraphImport::Create(graph, ptrScalableVectorType, "");
+
+  // Act & Assert
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
+    EXPECT_TRUE(is<PointerType>(gepNode.output(0)->Type()));
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(ptrFixedVectorImport, {}, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<FixedVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(ptrScalableVectorImport, {}, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<ScalableVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    // The base address must be a pointer or vector of pointers
+    EXPECT_THROW(GetElementPtrOperation::createNode(i32Import, {}, i32Type), std::logic_error);
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(pointerImport, { &i32Import }, i32Type);
+    EXPECT_TRUE(is<PointerType>(gepNode.output(0)->Type()));
+  }
+
+  {
+    // One of the indices is a vector, so the result type must be a vector type
+    auto & gepNode =
+        GetElementPtrOperation::createNode(pointerImport, { &i32FixedVectorImport }, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<FixedVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    // One of the indices is a vector, so the result type must be a vector type
+    auto & gepNode =
+        GetElementPtrOperation::createNode(pointerImport, { &i32ScalableVectorImport }, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<ScalableVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
 }
 
 TEST(GetElementPtrOperationTests, TestOperationEquality)
