@@ -201,7 +201,7 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     {
       // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
       // node
-      return targetRegion;
+      return *node.region();
     }
 
     // If we already have a common target region that is lower, keep it
