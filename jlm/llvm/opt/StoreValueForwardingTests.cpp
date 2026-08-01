@@ -1445,10 +1445,10 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   auto gepOutput1 = GetElementPtrOperation::create(ctxVar.inner, { zero }, bits32Type);
   auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*gepOutput1, {}, bits32Type, 4);
 
-  auto gepOutput2 = GetElementPtrOperation::create(ctxVar.inner, { zero, zero }, bits32Type);
+  auto gepOutput2 = GetElementPtrOperation::create(ctxVar.inner, { zero, zero }, arrayType);
   auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*gepOutput2, {}, bits32Type, 4);
 
-  auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, bits32Type);
+  auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, arrayType);
   auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
 
   auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);

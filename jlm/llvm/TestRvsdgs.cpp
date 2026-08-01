@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -17,7 +18,6 @@
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -305,8 +305,8 @@ GetElementPtrTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
-  auto one = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto one = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto gepx =
       GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
@@ -3527,8 +3527,8 @@ LinkedListTest::SetupRvsdg()
 
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
     auto mergedMemoryState = MemoryStateMergeOperation::Create(
