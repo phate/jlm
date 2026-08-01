@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "IntegerOperations.hpp"
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 
 namespace jlm::llvm

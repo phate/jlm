@@ -180,7 +180,7 @@ public:
     // 1. Validate that the base address is a pointer or vector of pointers
     checkBaseAddressType(*baseAddressType);
 
-    // 2. Validate that the index types are pointers or vector of integers
+    // 2. Validate that the index types are integers or vector of integers
     checkIndexTypes(indexTypes);
 
     // FIXME: Validate vector components align such as uniform lane count, etc.
