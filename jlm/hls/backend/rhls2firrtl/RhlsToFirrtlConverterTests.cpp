@@ -880,3 +880,327 @@ TEST_F(FirrtlTestBase, GetElementPtrOperationArrayType)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::MulPrimOp>(circuit));
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AddPrimOp>(circuit));
 }
+
+/* ================================================================== */
+/*  HLS SinkOperation FIRRTL conversion test                           */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, SinkOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto functionType = FunctionType::Create({ bitType }, {});
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & arg0 = *Lambda_->GetFunctionArguments()[0];
+  auto sinkOutputs = SinkOperation::create(arg0);
+  Lambda_->finalize({});
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::ConstantOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS TriggerOperation FIRRTL conversion test                       */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, TriggerOperation)
+{
+  auto triggerType = TriggerType::Create();
+  auto bitType = BitType::Create(32);
+  auto functionType = FunctionType::Create({ triggerType, bitType }, { bitType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & tg = *Lambda_->GetFunctionArguments()[0];
+  auto & value = *Lambda_->GetFunctionArguments()[1];
+  auto triggerOutputs = TriggerOperation::create(tg, value);
+  Lambda_->finalize({ triggerOutputs[0] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AndPrimOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS BranchOperation FIRRTL conversion test                        */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, BranchOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({ controlType, bitType }, { bitType, bitType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & predicate = *Lambda_->GetFunctionArguments()[0];
+  auto & value = *Lambda_->GetFunctionArguments()[1];
+  auto branchOutputs = ::jlm::hls::BranchOperation::create(predicate, value);
+  Lambda_->finalize({ branchOutputs[0], branchOutputs[1] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::EQPrimOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS MuxOperation (NDMux) FIRRTL conversion test                   */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, NDMuxOperation)
+{
+  auto controlType = ControlType::Create(3);
+  auto bitType = BitType::Create(32);
+  auto functionType = FunctionType::Create({ controlType, bitType, bitType, bitType }, { bitType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & tag = *Lambda_->GetFunctionArguments()[0];
+  auto & val0 = *Lambda_->GetFunctionArguments()[1];
+  auto & val1 = *Lambda_->GetFunctionArguments()[2];
+  auto & val2 = *Lambda_->GetFunctionArguments()[3];
+  auto muxOutputs = MuxOperation::create(tag, { &val0, &val1, &val2 }, false, false);
+  Lambda_->finalize({ muxOutputs[0] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::EQPrimOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AndPrimOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS ForkOperation FIRRTL conversion tests                         */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, ForkOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto functionType = FunctionType::Create({ bitType }, { bitType, bitType, bitType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & arg0 = *Lambda_->GetFunctionArguments()[0];
+  auto forkOutputs = ForkOperation::create(3, arg0, false);
+  Lambda_->finalize({ forkOutputs[0], forkOutputs[1], forkOutputs[2] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS StateGateOperation FIRRTL conversion test                     */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, StateGateOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto memStateType = MemoryStateType::Create();
+  auto functionType = FunctionType::Create({ bitType, memStateType }, { bitType, memStateType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & arg0 = *Lambda_->GetFunctionArguments()[0];
+  auto & state = *Lambda_->GetFunctionArguments()[1];
+  auto stateGateOutputs = StateGateOperation::create(arg0, { &state });
+  Lambda_->finalize({ stateGateOutputs[0], stateGateOutputs[1] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS PredicateBufferOperation FIRRTL conversion test               */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, PredicateBufferOperation)
+{
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({ controlType }, { controlType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & arg0 = *Lambda_->GetFunctionArguments()[0];
+  auto predBufOutputs = PredicateBufferOperation::create(arg0);
+  Lambda_->finalize({ predBufOutputs[0] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::MuxPrimOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS AddressQueueOperation FIRRTL conversion test                  */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, AddressQueueOperation)
+{
+  auto ptrType = PointerType::Create();
+  auto memStateType = MemoryStateType::Create();
+  auto functionType = FunctionType::Create({ ptrType, ptrType, memStateType }, { ptrType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & check = *Lambda_->GetFunctionArguments()[0];
+  auto & enq = *Lambda_->GetFunctionArguments()[1];
+  auto & deq = *Lambda_->GetFunctionArguments()[2];
+  auto addrQueueOutput = AddressQueueOperation::create(check, enq, deq, false, 4);
+  Lambda_->finalize({ addrQueueOutput });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WireOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS LoadOperation FIRRTL conversion test                          */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, JlmHlsLoadOperation)
+{
+  auto ptrType = PointerType::Create();
+  auto bitType = BitType::Create(32);
+  auto memStateType = MemoryStateType::Create();
+  // HLS LoadOperation: inputs {Pointer addr, MemoryState*, ValueType load_result}
+  //                     outputs {ValueType data, ...MemoryState*, Pointer addr}
+  auto functionType =
+      FunctionType::Create({ ptrType, memStateType, bitType }, { bitType, memStateType, ptrType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & addr = *Lambda_->GetFunctionArguments()[0];
+  auto & state = *Lambda_->GetFunctionArguments()[1];
+  auto & loadResult = *Lambda_->GetFunctionArguments()[2];
+  auto loadOutputs = ::jlm::hls::LoadOperation::create(addr, { &state }, loadResult);
+  Lambda_->finalize({ loadOutputs[0], loadOutputs[1], loadOutputs[2] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS StoreOperation FIRRTL conversion test                         */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, HlsStoreOperation)
+{
+  auto ptrType = PointerType::Create();
+  auto bitType = BitType::Create(32);
+  auto memStateType = MemoryStateType::Create();
+  // HLS StoreOperation: inputs {Pointer addr, ValueType value, ...MemoryState*, MemoryState* resp}
+  //                    outputs {MemoryState*, PointerType, ValueType data}
+  auto functionType =
+      FunctionType::Create({ ptrType, bitType, memStateType }, { memStateType, ptrType, bitType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & addr = *Lambda_->GetFunctionArguments()[0];
+  auto & value = *Lambda_->GetFunctionArguments()[1];
+  auto & state = *Lambda_->GetFunctionArguments()[2];
+  auto storeOutputs = ::jlm::hls::StoreOperation::create(addr, value, { &state }, state);
+  Lambda_->finalize({ storeOutputs[0], storeOutputs[1], storeOutputs[2] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS DecoupledLoadOperation FIRRTL conversion test                 */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, DecoupledLoadOperation)
+{
+  auto ptrType = PointerType::Create();
+  auto bitType = BitType::Create(32);
+  auto functionType = FunctionType::Create({ ptrType, bitType }, { bitType, ptrType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & addr = *Lambda_->GetFunctionArguments()[0];
+  auto & loadResult = *Lambda_->GetFunctionArguments()[1];
+  auto dloadOutputs = DecoupledLoadOperation::create(addr, loadResult, 4);
+  Lambda_->finalize({ dloadOutputs[0], dloadOutputs[1] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::FExtModuleOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS LocalLoadOperation FIRRTL conversion test                     */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, LocalLoadOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto memStateType = MemoryStateType::Create();
+  // LocalLoadOperation: inputs {Bit(64) index, MemoryState*, ValueType load_result}
+  //                    outputs {ValueType data, ...MemoryState*, Bit(64) addr}
+  auto functionType = FunctionType::Create(
+      { BitType::Create(64), memStateType, bitType },
+      { bitType, memStateType, BitType::Create(64) });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & index = *Lambda_->GetFunctionArguments()[0];
+  auto & state = *Lambda_->GetFunctionArguments()[1];
+  auto & loadResult = *Lambda_->GetFunctionArguments()[2];
+  auto loadOutputs = ::jlm::hls::LocalLoadOperation::create(index, { &state }, loadResult);
+  Lambda_->finalize({ loadOutputs[0], loadOutputs[1], loadOutputs[2] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::RegResetOp>(circuit));
+  EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
+}
+
+/* ================================================================== */
+/*  HLS LocalStoreOperation FIRRTL conversion test                    */
+/* ================================================================== */
+
+TEST_F(FirrtlTestBase, LocalStoreOperation)
+{
+  auto bitType = BitType::Create(32);
+  auto memStateType = MemoryStateType::Create();
+  // LocalStoreOperation: inputs {Bit(64) index, ValueType value, MemoryState*}
+  //                    outputs {...MemoryState*, Bit(64) addr}
+  auto functionType =
+      FunctionType::Create({ BitType::Create(64), bitType, memStateType }, { memStateType });
+  Lambda_ = LambdaNode::Create(
+      Module_->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto & index = *Lambda_->GetFunctionArguments()[0];
+  auto & value = *Lambda_->GetFunctionArguments()[1];
+  auto & state = *Lambda_->GetFunctionArguments()[2];
+  auto storeOutputs = ::jlm::hls::LocalStoreOperation::create(index, value, { &state });
+  Lambda_->finalize({ storeOutputs[0] });
+
+  TestableRhlsToFirrtlConverter converter;
+  mlir::OwningOpRef<circt::firrtl::CircuitOp> circuit(converter.TestMlirGen(Lambda_));
+  EXPECT_TRUE(circuit);
+}
