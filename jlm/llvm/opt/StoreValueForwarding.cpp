@@ -41,9 +41,8 @@
 namespace jlm::llvm
 {
 
-// Makes the LocalAA try harder, by tracing along all possible paths,
-// and checking if allocas provably do not escape the function.
-static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRESSIVE_LOCALAA");
+// Makes the LocalAA give up earlier
+static const bool USE_TRIVIAL_LOCALAA = std::getenv("JLM_SVF_USE_TRIVIAL_LOCALAA");
 
 // Enables the use of the PointsToGraphAliasAnalysis.
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
@@ -1507,7 +1506,7 @@ createAliasAnalysis(rvsdg::RvsdgModule & module, util::StatisticsCollector & sta
 {
   auto localAA = std::make_unique<aa::LocalAliasAnalysis>();
 
-  if (!ENABLE_AGGRESSIVE_LOCALAA)
+  if (USE_TRIVIAL_LOCALAA)
   {
     // Setting the trace collection size to 1 limits the analysis to only the most trivial tracing
     localAA->setMaxTraceCollectionSize(1);
