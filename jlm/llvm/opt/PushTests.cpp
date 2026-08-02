@@ -3,9 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/types.hpp"
-#include "jlm/rvsdg/bitstring/type.hpp"
-#include "jlm/rvsdg/node.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -13,7 +10,9 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/push.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
