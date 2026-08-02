@@ -45,9 +45,9 @@ public:
 };
 }
 
-/* ================================================================== */
-/*  Base fixture: module + assert helpers                             */
-/* ================================================================== */
+// ==================================================================
+//  Base fixture: module + assert helpers
+// ==================================================================
 
 class FirrtlTestBase : public ::testing::Test
 {
@@ -84,9 +84,9 @@ protected:
   }
 };
 
-/* ================================================================== */
-/*  Fixture: default lambda with 2x32-bit inputs, 32-bit output       */
-/* ================================================================== */
+// ==================================================================
+//  Fixture: default lambda with 2x32-bit inputs, 32-bit output
+// ==================================================================
 
 class FirrtlConversionTest : public FirrtlTestBase
 {
@@ -120,9 +120,9 @@ protected:
   }
 };
 
-/* ================================================================== */
-/*  IsIdentityMapping tests                                           */
-/* ================================================================== */
+// ==================================================================
+//  IsIdentityMapping tests
+// ==================================================================
 
 class IdentityMappingTest : public ::testing::Test
 {
@@ -170,9 +170,9 @@ TEST_F(IdentityMappingTest, MixedMappingOneViolates)
   EXPECT_FALSE(Converter_.TestIsIdentityMapping(*matchOp));
 }
 
-/* ================================================================== */
-/*  MatchOperation semantic tests                                     */
-/* ================================================================== */
+// ==================================================================
+//  MatchOperation semantic tests
+// ==================================================================
 
 TEST_F(IdentityMappingTest, MappedAlternative)
 {
@@ -239,9 +239,9 @@ TEST_F(IdentityMappingTest, Inequality)
   EXPECT_NE(*matchOp1, *matchOp2);
 }
 
-/* ================================================================== */
-/*  Binary operation FIRRTL conversion tests                          */
-/* ================================================================== */
+// ==================================================================
+//  Binary operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, AddOperation)
 {
@@ -303,9 +303,9 @@ TEST_F(FirrtlConversionTest, XorOperation)
   ExpectFirrtlOp<circt::firrtl::XorPrimOp>();
 }
 
-/* ================================================================== */
-/*  Shift operation FIRRTL conversion tests                           */
-/* ================================================================== */
+// ==================================================================
+//  Shift operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, ShlOperation)
 {
@@ -327,9 +327,9 @@ TEST_F(FirrtlConversionTest, LShrOperation)
   ExpectFirrtlOp<circt::firrtl::DShrPrimOp>();
 }
 
-/* ================================================================== */
-/*  Signed arithmetic operation FIRRTL conversion tests               */
-/* ================================================================== */
+// ==================================================================
+//  Signed arithmetic operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, SDivOperation)
 {
@@ -373,9 +373,9 @@ TEST_F(FirrtlConversionTest, SRemOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AsUIntPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  Comparison operation FIRRTL conversion tests                      */
-/* ================================================================== */
+// ==================================================================
+//  Comparison operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, ComparisonEqualOperation)
 {
@@ -509,9 +509,9 @@ TEST_F(FirrtlConversionTest, ComparisonUgeOperation)
   ExpectFirrtlOp<circt::firrtl::GEQPrimOp>();
 }
 
-/* ================================================================== */
-/*  Unary operation FIRRTL conversion tests                           */
-/* ================================================================== */
+// ==================================================================
+//  Unary operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, UnaryTruncOperation)
 {
@@ -539,9 +539,9 @@ TEST_F(FirrtlConversionTest, UnarySExtOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AsUIntPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  Constant operation FIRRTL conversion tests                         */
-/* ================================================================== */
+// ==================================================================
+//  Constant operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, ConstantIntegerOperation)
 {
@@ -565,9 +565,9 @@ TEST_F(FirrtlConversionTest, ConstantUndefValueOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::InvalidValueOp>(circuit));
 }
 
-/* ================================================================== */
-/*  Pass-through operation FIRRTL conversion tests                    */
-/* ================================================================== */
+// ==================================================================
+//  Pass-through operation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, PassThroughBitCastOperation)
 {
@@ -595,9 +595,9 @@ TEST_F(FirrtlConversionTest, PassThroughZExtOperation)
   EXPECT_TRUE(circuit);
 }
 
-/* ================================================================== */
-/*  IntegerToPointerOperation FIRRTL conversion test                  */
-/* ================================================================== */
+// ==================================================================
+//  IntegerToPointerOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlConversionTest, IntegerToPointerOperation)
 {
@@ -613,9 +613,9 @@ TEST_F(FirrtlConversionTest, IntegerToPointerOperation)
   EXPECT_TRUE(circuit);
 }
 
-/* ================================================================== */
-/*  MatchOperation non-identity FIRRTL conversion tests               */
-/* ================================================================== */
+// ==================================================================
+//  MatchOperation non-identity FIRRTL conversion tests
+// ==================================================================
 
 class FirrtlMatchConversionTest : public FirrtlTestBase
 {
@@ -703,9 +703,9 @@ TEST_F(FirrtlMatchConversionTest, MatchOperationIdentityEqualSizes)
   EXPECT_FALSE(AssertFirrtlOpExists<circt::firrtl::MuxPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  ControlConstantOperation FIRRTL conversion test                   */
-/* ================================================================== */
+// ==================================================================
+//  ControlConstantOperation FIRRTL conversion test
+// ==================================================================
 
 class FirrtlControlConstantTest : public FirrtlTestBase
 {
@@ -731,9 +731,9 @@ TEST_F(FirrtlControlConstantTest, ControlConstantOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::ConstantOp>(circuit));
 }
 
-/* ================================================================== */
-/*  Memory state pass-through FIRRTL conversion tests                 */
-/* ================================================================== */
+// ==================================================================
+//  Memory state pass-through FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlTestBase, MemoryStateMergeOperation)
 {
@@ -777,9 +777,9 @@ TEST_F(FirrtlTestBase, LambdaExitMemoryStateMergeOperation)
   EXPECT_TRUE(circuit);
 }
 
-/* ================================================================== */
-/*  Error handling tests                                              */
-/* ================================================================== */
+// ==================================================================
+//  Error handling tests
+// ==================================================================
 
 TEST_F(FirrtlTestBase, UnimplementedSimpleNodeThrows)
 {
@@ -807,9 +807,9 @@ TEST_F(FirrtlTestBase, UnimplementedSimpleNodeThrows)
   EXPECT_TRUE(exceptionThrown);
 }
 
-/* ================================================================== */
-/*  MuxOperation FIRRTL conversion tests                               */
-/* ================================================================== */
+// ==================================================================
+//  MuxOperation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlTestBase, MuxOperationTwoAlternatives)
 {
@@ -854,9 +854,9 @@ TEST_F(FirrtlTestBase, MuxOperationThreeAlternatives)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::EQPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  GetElementPtrOperation FIRRTL conversion test                     */
-/* ================================================================== */
+// ==================================================================
+//  GetElementPtrOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, GetElementPtrOperationArrayType)
 {
@@ -881,9 +881,9 @@ TEST_F(FirrtlTestBase, GetElementPtrOperationArrayType)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AddPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS SinkOperation FIRRTL conversion test                           */
-/* ================================================================== */
+// ==================================================================
+//  HLS SinkOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, SinkOperation)
 {
@@ -902,9 +902,9 @@ TEST_F(FirrtlTestBase, SinkOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::ConstantOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS TriggerOperation FIRRTL conversion test                       */
-/* ================================================================== */
+// ==================================================================
+//  HLS TriggerOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, TriggerOperation)
 {
@@ -925,9 +925,9 @@ TEST_F(FirrtlTestBase, TriggerOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::AndPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS BranchOperation FIRRTL conversion test                        */
-/* ================================================================== */
+// ==================================================================
+//  HLS BranchOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, BranchOperation)
 {
@@ -949,9 +949,9 @@ TEST_F(FirrtlTestBase, BranchOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS MuxOperation (NDMux) FIRRTL conversion test                   */
-/* ================================================================== */
+// ==================================================================
+//  HLS MuxOperation (NDMux) FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, NDMuxOperation)
 {
@@ -976,9 +976,9 @@ TEST_F(FirrtlTestBase, NDMuxOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS ForkOperation FIRRTL conversion tests                         */
-/* ================================================================== */
+// ==================================================================
+//  HLS ForkOperation FIRRTL conversion tests
+// ==================================================================
 
 TEST_F(FirrtlTestBase, ForkOperation)
 {
@@ -998,9 +998,9 @@ TEST_F(FirrtlTestBase, ForkOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS StateGateOperation FIRRTL conversion test                     */
-/* ================================================================== */
+// ==================================================================
+//  HLS StateGateOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, StateGateOperation)
 {
@@ -1022,9 +1022,9 @@ TEST_F(FirrtlTestBase, StateGateOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS PredicateBufferOperation FIRRTL conversion test               */
-/* ================================================================== */
+// ==================================================================
+//  HLS PredicateBufferOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, PredicateBufferOperation)
 {
@@ -1044,9 +1044,9 @@ TEST_F(FirrtlTestBase, PredicateBufferOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::MuxPrimOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS AddressQueueOperation FIRRTL conversion test                  */
-/* ================================================================== */
+// ==================================================================
+//  HLS AddressQueueOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, AddressQueueOperation)
 {
@@ -1069,17 +1069,15 @@ TEST_F(FirrtlTestBase, AddressQueueOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WireOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS LoadOperation FIRRTL conversion test                          */
-/* ================================================================== */
+// ==================================================================
+//  HLS LoadOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, JlmHlsLoadOperation)
 {
   auto ptrType = PointerType::Create();
   auto bitType = BitType::Create(32);
   auto memStateType = MemoryStateType::Create();
-  // HLS LoadOperation: inputs {Pointer addr, MemoryState*, ValueType load_result}
-  //                     outputs {ValueType data, ...MemoryState*, Pointer addr}
   auto functionType =
       FunctionType::Create({ ptrType, memStateType, bitType }, { bitType, memStateType, ptrType });
   Lambda_ = LambdaNode::Create(
@@ -1098,17 +1096,15 @@ TEST_F(FirrtlTestBase, JlmHlsLoadOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS StoreOperation FIRRTL conversion test                         */
-/* ================================================================== */
+// ==================================================================
+//  HLS StoreOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, HlsStoreOperation)
 {
   auto ptrType = PointerType::Create();
   auto bitType = BitType::Create(32);
   auto memStateType = MemoryStateType::Create();
-  // HLS StoreOperation: inputs {Pointer addr, ValueType value, ...MemoryState*, MemoryState* resp}
-  //                    outputs {MemoryState*, PointerType, ValueType data}
   auto functionType =
       FunctionType::Create({ ptrType, bitType, memStateType }, { memStateType, ptrType, bitType });
   Lambda_ = LambdaNode::Create(
@@ -1126,9 +1122,9 @@ TEST_F(FirrtlTestBase, HlsStoreOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS DecoupledLoadOperation FIRRTL conversion test                 */
-/* ================================================================== */
+// ==================================================================
+//  HLS DecoupledLoadOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, DecoupledLoadOperation)
 {
@@ -1149,16 +1145,14 @@ TEST_F(FirrtlTestBase, DecoupledLoadOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::FExtModuleOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS LocalLoadOperation FIRRTL conversion test                     */
-/* ================================================================== */
+// ==================================================================
+//  HLS LocalLoadOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, LocalLoadOperation)
 {
   auto bitType = BitType::Create(32);
   auto memStateType = MemoryStateType::Create();
-  // LocalLoadOperation: inputs {Bit(64) index, MemoryState*, ValueType load_result}
-  //                    outputs {ValueType data, ...MemoryState*, Bit(64) addr}
   auto functionType = FunctionType::Create(
       { BitType::Create(64), memStateType, bitType },
       { bitType, memStateType, BitType::Create(64) });
@@ -1178,16 +1172,14 @@ TEST_F(FirrtlTestBase, LocalLoadOperation)
   EXPECT_TRUE(AssertFirrtlOpExists<circt::firrtl::WhenOp>(circuit));
 }
 
-/* ================================================================== */
-/*  HLS LocalStoreOperation FIRRTL conversion test                    */
-/* ================================================================== */
+// ==================================================================
+//  HLS LocalStoreOperation FIRRTL conversion test
+// ==================================================================
 
 TEST_F(FirrtlTestBase, LocalStoreOperation)
 {
   auto bitType = BitType::Create(32);
   auto memStateType = MemoryStateType::Create();
-  // LocalStoreOperation: inputs {Bit(64) index, ValueType value, MemoryState*}
-  //                    outputs {...MemoryState*, Bit(64) addr}
   auto functionType =
       FunctionType::Create({ BitType::Create(64), bitType, memStateType }, { memStateType });
   Lambda_ = LambdaNode::Create(
