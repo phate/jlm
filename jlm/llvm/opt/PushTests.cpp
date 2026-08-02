@@ -459,7 +459,8 @@ TEST(NodeHoistingTests, controlConstants)
   // Control constants must stay in their original regions and not be hoisted.
   // Bit constants (Int32) should be hoisted to the lambda subregion.
 
-  // Lambda subregion: theta node + gamma1 + gamma2 + CTL(0) (loop var entry) + two hoisted Int32 constants
+  // Lambda subregion: theta node + gamma1 + gamma2 + CTL(0) (loop var entry) + two hoisted Int32
+  // constants
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 6u);
 
   // Theta subregion: The Ctrl(0) and Ctrl(1) remain inside the theta
