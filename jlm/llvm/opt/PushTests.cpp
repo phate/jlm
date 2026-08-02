@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/types.hpp"
+#include "jlm/rvsdg/bitstring/type.hpp"
+#include "jlm/rvsdg/node.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -360,4 +363,126 @@ TEST(NodeHoistingTests, statefulOperations)
 
   EXPECT_EQ(gammaNode2->subregion(0)->numNodes(), 0u);
   EXPECT_EQ(gammaNode2->subregion(1)->numNodes(), 0u);
+}
+
+TEST(NodeHoistingTests, controlConstants)
+{
+  /**
+   * Creates an RVSDG that looks like
+   *
+   * +-lambda-----------------------x-x-+
+   * |           undef              | | |
+   * |             v                | | |
+   * | +-theta-----x--------+       | | |
+   * | |                    |       | | |
+   * | | Ctrl(0) Ctrl(1)    |       | | |
+   * | |   v       v        |       | | |
+   * | +---x-------x--------+       | | |
+   * |             v                | | |
+   * | +-gamma1----+-----------+    | | |
+   * | |           |           |    | | |
+   * | |  Ctrl(1)  |  Ctrl(0)  |    | | |
+   * | |    v      |     v     |    | | |
+   * | +----x------+-----x-----+    | | |
+   * |      v                       | | |
+   * | +-gamma2----+-----------+    | | |
+   * | |           |           |    | | |
+   * | | Int32(3)  |  Int32(7) |    | | |
+   * | |    v      |     v     |    | | |
+   * | +----x------+-----x-----+    | | |
+   * |      v                       v v |
+   * +------x-----------------------x-x-+
+   *
+   * and checks that none of the control constants are moved by the node hoisting pass.
+   */
+
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto controlType = ControlType::Create(2);
+  auto int32Type = BitType::Create(32);
+  auto memoryStateType = MemoryStateType::Create();
+  auto ioStateType = IOStateType::Create();
+  const auto functionType = FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { int32Type, ioStateType, memoryStateType });
+
+  jlm::llvm::LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::externalLinkage));
+
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[0];
+  auto memStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  // Theta node
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto thetaUndef = UndefValueOperation::Create(*lambdaNode->subregion(), controlType);
+  auto thetaCtrlLoopVar = thetaNode->AddLoopVar(thetaUndef);
+  auto & thetaInnerCtrl1 = ControlConstantOperation::create(*thetaNode->subregion(), 2, 1);
+  thetaCtrlLoopVar.post->divert_to(&thetaInnerCtrl1);
+
+  // gamma1: takes theta's control loop var output as its predicate
+  auto & gamma1 = GammaNode::Create(*thetaCtrlLoopVar.output, 2, {});
+
+  // gamma1 exit variable taking Ctrl(0) and Ctrl(1) in the respective subregions
+  auto & gamma1Ctrl1 = ControlConstantOperation::create(*gamma1.subregion(0), 2, 1);
+  auto & gamma1Ctrl0 = ControlConstantOperation::create(*gamma1.subregion(1), 2, 0);
+  auto gamma1Exit = gamma1.AddExitVar({ &gamma1Ctrl1, &gamma1Ctrl0 });
+
+  // gamma2: takes gamma1's exit (control) as its predicate
+  auto & gamma2 = GammaNode::Create(*gamma1Exit.output, 2, {});
+
+  // gamma2 exit variable takes integer constants
+  auto & gamma2Int3 =
+      BitConstantOperation::create(*gamma2.subregion(0), BitValueRepresentation(32, 3));
+  auto & gamma2Int7 =
+      BitConstantOperation::create(*gamma2.subregion(1), BitValueRepresentation(32, 7));
+
+  auto gamma2Exit = gamma2.AddExitVar({ &gamma2Int3, &gamma2Int7 });
+
+  lambdaNode->finalize({ gamma2Exit.output, ioStateArgument, memStateArgument });
+
+  view(rvsdg, stdout);
+
+  // Act
+  NodeHoisting nodeHoisting;
+  jlm::util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // Control constants must stay in their original regions and not be hoisted.
+  // Bit constants (Int32) should be hoisted to the lambda subregion.
+
+  // Lambda subregion: theta node + gamma1 + gamma2 + CTL(0) (loop var entry) + two hoisted Int32 constants
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 6u);
+
+  // Theta subregion: The Ctrl(0) and Ctrl(1) remain inside the theta
+  EXPECT_EQ(thetaNode->subregion()->numNodes(), 2u);
+  auto thetaPredicateOwner = TryGetOwnerNode<SimpleNode>(*thetaNode->predicate()->origin());
+  EXPECT_TRUE(thetaPredicateOwner);
+  EXPECT_EQ(thetaPredicateOwner->region(), thetaNode->subregion());
+  auto thetaPostOwner = TryGetOwnerNode<SimpleNode>(*thetaCtrlLoopVar.post->origin());
+  EXPECT_TRUE(thetaPostOwner);
+  EXPECT_EQ(thetaPostOwner->region(), thetaNode->subregion());
+
+  // Gamma1 subregions: control constants stay in place (no structural nodes inside)
+  EXPECT_EQ(gamma1.subregion(0)->numNodes(), 1u); // Ctrl(1) only
+  auto gamma1LeftCtrlOwner = TryGetOwnerNode<SimpleNode>(*gamma1Exit.branchResult[0]->origin());
+  EXPECT_TRUE(gamma1LeftCtrlOwner);
+  EXPECT_EQ(gamma1LeftCtrlOwner->region(), gamma1.subregion(0));
+
+  EXPECT_EQ(gamma1.subregion(1)->numNodes(), 1u); // Ctrl(0) only
+  auto gamma1RightCtrlOwner = TryGetOwnerNode<SimpleNode>(*gamma1Exit.branchResult[1]->origin());
+  EXPECT_TRUE(gamma1RightCtrlOwner);
+  EXPECT_EQ(gamma1RightCtrlOwner->region(), gamma1.subregion(1));
+
+  // Gamma2 subregions: Int32 constants should have been hoisted out to lambda level
+  EXPECT_EQ(gamma2.subregion(0)->numNodes(), 0u);
+  EXPECT_EQ(gamma2.subregion(1)->numNodes(), 0u);
 }
