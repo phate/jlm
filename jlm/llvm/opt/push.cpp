@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -183,12 +184,17 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 {
   if (node.ninputs() == 0)
   {
-    // Nodes that can only produce states, such as UndefValueOperation, will be removed in the
-    // back-end. There is no need to hoist them.
+    // All nullary operations to date have exactly one output
     JLM_ASSERT(node.noutputs() == 1);
-    return node.output(0)->Type()->Kind() == rvsdg::TypeKind::State
-             ? *node.region()
-             : context_->getLambdaSubregion();
+
+    // Control constants are used to instruct the control flow graph creation,
+    // and will be removed in the back-end, so there is no need to hoist them.
+    const auto outputType = node.output(0)->Type();
+    if (is<rvsdg::ControlType>(outputType))
+      return *node.region();
+
+    // Other constants should be moved to the top-level of the function
+    return context_->getLambdaSubregion();
   }
 
   // Compute target regions for all the inputs of the node
