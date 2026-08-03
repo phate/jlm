@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -436,10 +437,8 @@ TEST(NodeHoistingTests, controlConstants)
   auto & gamma2 = GammaNode::Create(*gamma1Exit.output, 2, {});
 
   // gamma2 exit variable takes integer constants
-  auto & gamma2Int3 =
-      BitConstantOperation::create(*gamma2.subregion(0), BitValueRepresentation(32, 3));
-  auto & gamma2Int7 =
-      BitConstantOperation::create(*gamma2.subregion(1), BitValueRepresentation(32, 7));
+  auto & gamma2Int3 = *IntegerConstantOperation::Create(*gamma2.subregion(0), 32, 3).output(0);
+  auto & gamma2Int7 = *IntegerConstantOperation::Create(*gamma2.subregion(1), 32, 7).output(0);
 
   auto gamma2Exit = gamma2.AddExitVar({ &gamma2Int3, &gamma2Int7 });
 
