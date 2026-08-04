@@ -20,29 +20,23 @@ namespace jlm::llvm
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#getelementptr-instruction) for more details.
  *
- * FIXME: We should type check that pointeeType and the number/types of indices fit together.
- *
- * FIXME: We should type check that the index and baseAddress vectors (if any) fit together with
- * each other
  */
 class GetElementPtrOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~GetElementPtrOperation() noexcept override;
 
+private:
   GetElementPtrOperation(
       const std::shared_ptr<const rvsdg::Type> & baseAddressType,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes,
-      std::shared_ptr<const rvsdg::Type> pointeeType)
-      : SimpleOperation(
-            createOperandTypes(baseAddressType, indexTypes),
-            { getResultType(baseAddressType, indexTypes) }),
-        pointeeType_(std::move(pointeeType))
-  {
-    checkBaseAddressType(*baseAddressType);
-    checkIndexTypes(indexTypes);
-  }
+      std::shared_ptr<const rvsdg::Type> gepType,
+      std::shared_ptr<const rvsdg::Type> resultType)
+      : SimpleOperation(createOperandTypes(baseAddressType, indexTypes), { resultType }),
+        gepType_(std::move(gepType))
+  {}
 
+public:
   GetElementPtrOperation(const GetElementPtrOperation & other) = default;
 
   GetElementPtrOperation(GetElementPtrOperation && other) noexcept = default;
@@ -59,7 +53,7 @@ public:
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
   getPointeeType() const noexcept
   {
-    return pointeeType_;
+    return gepType_;
   }
 
   /**
@@ -157,7 +151,7 @@ public:
    *
    * @param baseAddress The base address for the pointer calculation.
    * @param offsets The offsets from the base address.
-   * @param pointeeType The type the base address points to.
+   * @param gepType The type used for address calculation.
    *
    * @return A getElementPtr three address code.
    */
@@ -165,18 +159,36 @@ public:
   createTAC(
       const Variable * baseAddress,
       const std::vector<const Variable *> & offsets,
-      std::shared_ptr<const rvsdg::Type> pointeeType)
+      std::shared_ptr<const rvsdg::Type> gepType)
   {
     auto indexTypes = extractIndexTypes<const Variable>(offsets);
+    auto operation = createOperation(baseAddress->Type(), indexTypes, std::move(gepType));
 
-    auto operation = std::make_unique<GetElementPtrOperation>(
-        baseAddress->Type(),
-        indexTypes,
-        std::move(pointeeType));
     std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
+    // FIXME: Validate structural integrity of GEP type
     return ThreeAddressCode::create(std::move(operation), operands);
+  }
+
+  static std::unique_ptr<GetElementPtrOperation>
+  createOperation(
+      const std::shared_ptr<const rvsdg::Type> & baseAddressType,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & indexTypes,
+      const std::shared_ptr<const rvsdg::Type> & gepType)
+  {
+    // 1. Validate that the base address is a pointer or vector of pointers
+    checkBaseAddressType(*baseAddressType);
+
+    // 2. Validate that the index types are integers or vector of integers
+    checkIndexTypes(indexTypes);
+
+    // FIXME: Validate vector components align such as uniform lane count, etc.
+
+    auto resultType = getResultType(baseAddressType, indexTypes);
+
+    return std::unique_ptr<GetElementPtrOperation>(
+        new GetElementPtrOperation(baseAddressType, indexTypes, gepType, std::move(resultType)));
   }
 
   /**
@@ -184,7 +196,7 @@ public:
    *
    * @param baseAddress The base address for the pointer calculation.
    * @param indices The offsets from the base address.
-   * @param pointeeType The type the base address points to.
+   * @param gepType The type used for address calculation.
    *
    * @return The created GetElementPtr RVSDG node.
    */
@@ -192,18 +204,18 @@ public:
   createNode(
       rvsdg::Output & baseAddress,
       const std::vector<rvsdg::Output *> & indices,
-      std::shared_ptr<const rvsdg::Type> pointeeType)
+      const std::shared_ptr<const rvsdg::Type> & gepType)
   {
-    const auto indexTypes = extractIndexTypes<rvsdg::Output>(indices);
-
-    std::vector operands(1, &baseAddress);
+    std::vector operands({ &baseAddress });
     operands.insert(operands.end(), indices.begin(), indices.end());
 
-    return rvsdg::CreateOpNode<GetElementPtrOperation>(
-        operands,
-        baseAddress.Type(),
-        indexTypes,
-        std::move(pointeeType));
+    auto indexTypes = extractIndexTypes(indices);
+    auto gepOperation = createOperation(baseAddress.Type(), indexTypes, gepType);
+
+    // 4. Validate structural integrity of GEP type
+    checkIndexedType(gepType, indices);
+
+    return rvsdg::SimpleNode::Create(*baseAddress.region(), std::move(gepOperation), operands);
   }
 
   /**
@@ -211,7 +223,7 @@ public:
    *
    * @param baseAddress The base address for the pointer calculation.
    * @param indices The offsets from the base address.
-   * @param pointeeType The type the base address points to.
+   * @param gepType The type used for address calculation.
    *
    * @return The output of the created GetElementPtr RVSDG node.
    */
@@ -219,16 +231,37 @@ public:
   create(
       rvsdg::Output * baseAddress,
       const std::vector<rvsdg::Output *> & indices,
-      std::shared_ptr<const rvsdg::Type> pointeeType)
+      std::shared_ptr<const rvsdg::Type> gepType)
   {
-    return createNode(*baseAddress, indices, std::move(pointeeType)).output(0);
+    return createNode(*baseAddress, indices, std::move(gepType)).output(0);
   }
 
 private:
+  static std::shared_ptr<const rvsdg::Type>
+  getIndexedType(
+      const std::shared_ptr<const rvsdg::Type> & gepType,
+      const std::vector<rvsdg::Output *> & indices);
+
+  static void
+  checkIndexedType(
+      const std::shared_ptr<const rvsdg::Type> & gepType,
+      const std::vector<rvsdg::Output *> & indices)
+  {
+    const auto indexedType = getIndexedType(gepType, indices);
+    if (indexedType == nullptr)
+    {
+      throw std::logic_error("Invalid GetElementPtrOperation indices for type!");
+    }
+  }
+
   static void
   checkBaseAddressType(const rvsdg::Type & type)
   {
-    if (!is<PointerType>(type) && !isVectorOf<PointerType>(type))
+    const auto isPointerType = is<PointerType>(type);
+    const auto vectorType = dynamic_cast<const VectorType *>(&type);
+    const auto isVectorOfPointerType = vectorType && is<PointerType>(vectorType->Type());
+
+    if (!isPointerType && !isVectorOfPointerType)
     {
       throw std::logic_error("Expected pointer type.");
     }
@@ -287,9 +320,9 @@ private:
   extractIndexTypes(const std::vector<T *> & indices)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> indexTypes;
-    for (const auto & offset : indices)
+    for (const auto & index : indices)
     {
-      indexTypes.emplace_back(std::move(offset->Type()));
+      indexTypes.emplace_back(std::move(index->Type()));
     }
 
     return indexTypes;
@@ -306,7 +339,7 @@ private:
     return types;
   }
 
-  std::shared_ptr<const rvsdg::Type> pointeeType_;
+  std::shared_ptr<const rvsdg::Type> gepType_;
 };
 
 }

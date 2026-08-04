@@ -89,6 +89,7 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
+  // Arrange
   auto pointerType = PointerType::Create();
   auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
@@ -96,16 +97,33 @@ TEST(GetElementPtrOperationTests, TestOperationEquality)
   auto structType2 =
       StructType::CreateIdentified("myStructType", { arrayType, BitType::Create(32) }, false);
 
-  GetElementPtrOperation operation1(
+  auto operation1 = GetElementPtrOperation::createOperation(
       pointerType,
       { BitType::Create(32), BitType::Create(32) },
       structType1);
-  GetElementPtrOperation operation2(
+
+  auto operation2 = GetElementPtrOperation::createOperation(
       pointerType,
       { BitType::Create(32), BitType::Create(32) },
       structType2);
 
+  // Assert
   EXPECT_NE(operation1, operation2);
+
+  // Arrange 2: create a new type that is structurally identical to structType1
+  auto copyOfStructType1 =
+      StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
+  auto operation3 = GetElementPtrOperation::createOperation(
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
+      copyOfStructType1);
+
+  // Assert 2
+
+  // The struct types have distinct pointers
+  EXPECT_NE(structType1, copyOfStructType1);
+  // Yet the GEPs compare equal
+  EXPECT_EQ(*operation1, *operation3);
 }
 
 TEST(GetElementPtrTests, TryGetAsConstantTest)
@@ -121,6 +139,7 @@ TEST(GetElementPtrTests, TryGetAsConstantTest)
 
   auto structType =
       StructType::CreateIdentified("struct", { bits8Type, bits16Type, bits32Type }, false);
+  auto arrayType = ArrayType::Create(BitType::Create(32), 11);
 
   Graph rvsdg;
   auto & baseAddress = GraphImport::Create(rvsdg, pointerType, "base");
@@ -134,8 +153,8 @@ TEST(GetElementPtrTests, TryGetAsConstantTest)
       { zeroNode.output(0), oneNode.output(0) },
       structType);
   auto & gepNode1 =
-      GetElementPtrOperation::createNode(baseAddress, { zeroNode.output(0), &i32 }, structType);
-  auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, structType);
+      GetElementPtrOperation::createNode(baseAddress, { zeroNode.output(0), &i32 }, arrayType);
+  auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, arrayType);
 
   // Act
   auto gepConstant0 = GetElementPtrOperation::tryGetAsConstant(gepNode0);
