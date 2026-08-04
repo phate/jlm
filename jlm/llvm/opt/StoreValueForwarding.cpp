@@ -41,6 +41,9 @@
 namespace jlm::llvm
 {
 
+static const bool USE_OLD_UNCREACHABLE_CHECK = std::getenv("USE_OLD_UNCREACHABLE_CHECK");
+static const bool USE_ALT_UNCREACHABLE_CHECK = std::getenv("USE_ALT_UNCREACHABLE_CHECK");
+
 // Makes the LocalAA give up earlier
 static const bool USE_TRIVIAL_LOCALAA = std::getenv("JLM_SVF_USE_TRIVIAL_LOCALAA");
 
@@ -225,6 +228,7 @@ struct StoreValueForwarding::Context final
   OutputTracer outputTracer;
 
   rvsdg::RegionPredicateTrace regionPredicateTrace;
+  rvsdg::AlternativeRegionPredicateTracer altRegionPredicateTracer;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -412,11 +416,13 @@ public:
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
       aa::AliasAnalysis & aliasAnalysis,
-      rvsdg::RegionPredicateTrace & regionPredicateTrace)
+      rvsdg::RegionPredicateTrace & regionPredicateTrace,
+      rvsdg::AlternativeRegionPredicateTracer & altRegionPredicateTracer)
       : loadNode(loadNode),
         tracer(tracer),
         aliasAnalysis(aliasAnalysis),
-        regionPredicateTrace(regionPredicateTrace)
+        regionPredicateTrace(regionPredicateTrace),
+        altRegionPredicateTracer(altRegionPredicateTracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -801,7 +807,17 @@ private:
           JLM_ASSERT(ENABLE_REGION_PREDICATE_CHECK);
 
           auto & fromRegion = *branchResult->region();
-          if (!regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region()))
+
+          const bool oldUnreachable = !regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region());
+          const bool altUnreachable = !altRegionPredicateTracer.canRegionReachRegion(fromRegion, *loadNode.region());
+
+          bool unreachable = false;
+          if (USE_OLD_UNCREACHABLE_CHECK)
+            unreachable |= oldUnreachable;
+          if (USE_ALT_UNCREACHABLE_CHECK)
+            unreachable |= altUnreachable;
+
+          if (unreachable)
           {
             // Mark the region as providing uninitialized memory, since it is never reached
             auto valueOrigin = ValueOrigin::createUninitialized();
@@ -927,6 +943,7 @@ private:
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
   rvsdg::RegionPredicateTrace & regionPredicateTrace;
+  rvsdg::AlternativeRegionPredicateTracer & altRegionPredicateTracer;
 
   // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -1007,7 +1024,8 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
       loadNode,
       context_->outputTracer,
       context_->aliasAnalysis,
-      context_->regionPredicateTrace);
+      context_->regionPredicateTrace,
+      context_->altRegionPredicateTracer);
   const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 

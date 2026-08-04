@@ -3,6 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/rvsdg/Trace.hpp"
+#include "jlm/rvsdg/control.hpp"
+#include "jlm/rvsdg/node.hpp"
+#include "jlm/rvsdg/region.hpp"
+#include "jlm/rvsdg/simple-node.hpp"
+#include "jlm/util/common.hpp"
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
 
 #include <jlm/rvsdg/gamma.hpp>
@@ -328,6 +334,166 @@ RegionPredicateTrace::CheckPredicatesSatisfiable(Region & originRegion, Region &
     }
   }
 
+  return true;
+}
+
+AlternativeRegionPredicateTracer::AlternativeRegionPredicateTracer() = default;
+
+void AlternativeRegionPredicateTracer::setTargetRegion(Region & targetRegion)
+{
+  if (targetRegion_ == &targetRegion)
+    return;
+
+  targetRegion_ = &targetRegion;
+  targetRegionAncestors_.Clear();
+  targetRegionAncestors_.insert(targetRegion_);
+  topSeenTargetAncestor_ = targetRegion_;
+}
+
+bool AlternativeRegionPredicateTracer::setRequiredPredicateValue(rvsdg::Output & output, size_t value)
+{
+  // By default assume this output is able to provide the required value
+  const auto [it, inserted] = processedOutputs_.emplace(std::make_pair(&output, true));
+
+  // We have already processed this output
+  if (!inserted)
+    return it->second;
+
+  // gamma output
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  {
+    // output is the output of a gamma exit variable
+    // continue inside each of the gamma subregions
+    auto exitVar = gamma->MapOutputExitVar(output);
+
+    bool anyReachable = false;
+    for (auto result : exitVar.branchResult)
+    {
+      anyReachable |= setRequiredPredicateValue(*result->origin(), value);
+    }
+
+    if (!anyReachable)
+    {
+      impossibleOriginRegions_.insert(output.region());
+      it->second = false;
+      return false;
+    }
+
+    return true;
+  }
+
+  // theta output
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  {
+    // output is the output of a theta loop variable
+    // continue from the loop variable post
+    auto loopVar = theta->MapOutputLoopVar(output);
+
+    bool loopCanTerminate = setRequiredPredicateValue(*loopVar.post->origin(), value);
+    if (!loopCanTerminate)
+    {
+      impossibleOriginRegions_.insert(output.region());
+      it->second = false;
+      return false;
+    }
+
+    return true;
+  }
+
+  // The predicate output is not the output of a structural node.
+  // It can still be the input of a structural node, but we can not continue
+  // calling setRequiredPredicateValue out of the structural nodes.
+  // The input may for example be used in only some subregions of a gamma,
+  // or only the first iteration of a theta.
+  // We can therefore not be sure that the value is actually required.
+  // Also, RVSDG (pretty much) never routes ControlType values into structural nodes.
+
+  // Use regular tracing to see if we are able to determine the value of the node
+  auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(output);
+
+  // If the value comes from a ControlConstant with the wrong alternative,
+  // the output's region is not a possible origin region
+  auto [_, ctrlCnstOp] = TryGetSimpleNodeAndOptionalOp<ControlConstantOperation>(tracedOutput);
+  if (ctrlCnstOp && ctrlCnstOp->value().alternative() != value)
+  {
+    impossibleOriginRegions_.insert(output.region());
+    it->second = false;
+    return false;
+  }
+
+  return true;
+}
+
+void AlternativeRegionPredicateTracer::visitNextTargetRegionAncestor()
+{
+  JLM_ASSERT(!topSeenTargetAncestor_->IsRootRegion());
+
+  // When leaving a gamma node, mark the predicate as known
+  if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(topSeenTargetAncestor_->node()))
+  {
+    auto subregionIndex = topSeenTargetAncestor_->index();
+    setRequiredPredicateValue(*gamma->predicate()->origin(), subregionIndex);
+  }
+
+  // Update top seen target ancestor and add it to the set
+  topSeenTargetAncestor_ = topSeenTargetAncestor_->node()->region();
+  targetRegionAncestors_.insert(topSeenTargetAncestor_);
+}
+
+bool
+AlternativeRegionPredicateTracer::canRegionReachRegion(Region & originRegion, Region & targetRegion)
+{
+  setTargetRegion(targetRegion);
+
+  // If any new region are marked as impossible during traversal,
+  // we must re-do traversal again afterwards
+  size_t numImpossibleRegions = impossibleOriginRegions_.Size();
+
+  // Move up the region tree to find the lowest common ancestor region
+  Region * originRegionAncestor = &originRegion;
+
+  while (true)
+  {
+    // Make sure the region tree has been tarversed high enough on the target side
+    while (topSeenTargetAncestor_->getDepth() > originRegionAncestor->getDepth())
+    {
+      visitNextTargetRegionAncestor();
+    }
+
+    if (impossibleOriginRegions_.Contains(originRegionAncestor))
+      return false;
+
+    // If the origin region ancestor has reached a target region ancestor,
+    // we have reached the lowest common ancestor
+    if (targetRegionAncestors_.Contains(originRegionAncestor))
+      break;
+
+    // Otherwise keep traversing to the next ancestor of the origin region
+    JLM_ASSERT(!originRegionAncestor->IsRootRegion());
+
+    // If the origin is in a theta subregion, require that the theta predicate is 0
+    if (auto theta = dynamic_cast<rvsdg::GammaNode *>(originRegionAncestor->node()))
+    {
+      setRequiredPredicateValue(*theta->predicate()->origin(), 0);
+    }
+    originRegionAncestor = originRegionAncestor->node()->region();
+  }
+
+  // The target and origin regions have been traced to each other,
+  // so if no new regions were determined to be impossible, we are done
+  if (impossibleOriginRegions_.Size() == numImpossibleRegions)
+    return true;
+
+  // Try checking all regions between the originRegion and the common ancestor again
+  Region * retraceOriginRegion = &originRegion;
+  while (retraceOriginRegion != originRegionAncestor)
+  {
+    if (impossibleOriginRegions_.Contains(retraceOriginRegion))
+      return false;
+    retraceOriginRegion = retraceOriginRegion->node()->region();
+  }
+
+  // No proof of unreachability was found
   return true;
 }
 

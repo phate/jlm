@@ -235,6 +235,64 @@ private:
   std::unordered_map<Region *, std::unique_ptr<Observer>> observers_;
 };
 
+class AlternativeRegionPredicateTracer final
+{
+  public:
+    AlternativeRegionPredicateTracer();
+
+    /**
+     * Determines if it is possible for control flow to go from the given
+     * \p originRegion to the given \p targetRegion.
+     * The method assuemes that control flow does not follow any back-edges
+     * in any theta node that contains the \p originRegion.
+     * No assumptions are made about theta nodes surrounding the \p targetRegion,
+     * or control flow entering theta nodes between the two regions.
+     */
+    [[nodiscard]] bool
+    canRegionReachRegion(Region & originRegion, Region & targetRegion);
+
+  private:
+
+    /**
+     * Updates the internal target region and clears caches if it is new.
+     */
+    void
+    setTargetRegion(Region & targetRegion);
+
+    /**
+     * Adds the fact that a given output needs to have a specific value in order to
+     * reach the target region without following back-edges around its origin region.
+     * If the value is not possible to achieve in a region, that region is marked
+     * as an impossible origin region.
+     * @param output an output of type ControlType
+     * @param value the value the output must have.
+     * @return false if the output can not satisfy the requirement
+     */
+    bool
+    setRequiredPredicateValue(rvsdg::Output & output, size_t value);
+
+    /**
+     * Traces the target region one step further up the region tree,
+     * and traces region predicate requirements when leaving gamma nodes.
+     */
+    void
+    visitNextTargetRegionAncestor();
+
+    // The target region of the last query.
+    // All caches are cleared when the target region changes
+    Region * targetRegion_ = nullptr;
+
+    util::HashSet<Region*> targetRegionAncestors_;
+    Region * topSeenTargetAncestor_ = nullptr;
+
+    // Outputs that have been processed by \ref setRequiredPredicateValue.
+    // Maps to the ability of the output to provide the required value.
+    std::unordered_map<Output*, bool> processedOutputs_;
+
+    // Regions that are known to never be origin regions
+    util::HashSet<Region*> impossibleOriginRegions_;
+};
+
 }
 
 #endif // JLM_RVSDG_REGIONTRACE_HPP
