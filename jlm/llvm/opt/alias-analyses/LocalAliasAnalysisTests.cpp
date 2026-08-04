@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -801,7 +802,7 @@ private:
       const auto opaqueCtxVar = lambdaNode.AddContextVar(opaqueImport);
 
       const auto constantOne =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
       const auto allocaOutputs = AllocaOperation::create(intType, constantOne, 4);
 
       Outputs_.LocalAlloca = allocaOutputs[0];
@@ -817,11 +818,11 @@ private:
       memoryState = &CallOperation::GetMemoryStateOutput(callOpaque);
 
       // local = 20
-      auto & constantTwenty =
-          rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 20 });
+      const auto constantTwenty =
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 20).output(0);
       const auto storeLocalOutputs = StoreNonVolatileOperation::Create(
           Outputs_.LocalAlloca,
-          &constantTwenty,
+          constantTwenty,
           { memoryState },
           4);
       memoryState = storeLocalOutputs[0];
