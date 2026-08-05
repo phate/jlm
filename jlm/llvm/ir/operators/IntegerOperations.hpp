@@ -124,6 +124,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerAddOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerAddOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -182,6 +190,14 @@ public:
   normalizeAdditiveInverse(
       const IntegerSubOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSubOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -223,6 +239,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerMulOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerMulOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -264,6 +288,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSDivOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSDivOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -305,6 +337,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUDivOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerUDivOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -346,6 +386,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSRemOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSRemOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -387,6 +435,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerURemOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerURemOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -428,6 +484,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerAShrOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerAShrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -469,6 +533,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerShlOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerShlOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -510,6 +582,14 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerLShrOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   *  // FIXME:
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerLShrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**

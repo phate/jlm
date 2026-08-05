@@ -149,7 +149,16 @@ public:
     size_t numIntegerUleReductions = 0;
     size_t numIntegerUltReductions = 0;
 
+    size_t numIntegerAddReductions = 0;
     size_t numIntegerSubReductions = 0;
+    size_t numIntegerMulReductions = 0;
+    size_t numIntegerSDivReductions = 0;
+    size_t numIntegerUDivReductions = 0;
+    size_t numIntegerSRemReductions = 0;
+    size_t numIntegerURemReductions = 0;
+    size_t numIntegerAShrReductions = 0;
+    size_t numIntegerShlReductions = 0;
+    size_t numIntegerLShrReductions = 0;
     size_t numIntegerAndReductions = 0;
     size_t numIntegerOrReductions = 0;
     size_t numIntegerXorReductions = 0;
