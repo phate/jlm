@@ -552,5 +552,5 @@ TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
   // Assert
   // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
   // bigger than one.
-  EXPECT_TRUE(Region::ContainsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+  EXPECT_TRUE(Region::containsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
 }

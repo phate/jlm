@@ -1169,7 +1169,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroConstant)
@@ -1263,7 +1263,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroCon
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert - Check that both loads were forwarded to float zero constants
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 
   {
     auto floatResult = getFloatLambdaNode.GetFunctionResults()[0];
@@ -1328,7 +1328,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaCtxVar)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
   // We expect that deltaOutput1 has now lambdaNode as user on top of deltaNode2.
   EXPECT_EQ(deltaOutput1.nusers(), 2u);
 }
@@ -1371,7 +1371,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantFP)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
@@ -1410,7 +1410,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)

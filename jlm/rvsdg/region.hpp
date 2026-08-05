@@ -665,28 +665,32 @@ public:
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.
-   * @tparam Operation The operation to check for.
+   *
+   * @tparam TOperation The operation to check for.
    * @param region The region to check.
    * @param checkSubregions If true, then the subregions of all contained structural nodes will be
    * checked as well.
+   *
    * @return True, if the operation is found. Otherwise, false.
    */
-  template<class Operation>
-  static inline bool
-  ContainsOperation(const rvsdg::Region & region, bool checkSubregions);
+  template<class TOperation>
+  static bool
+  containsOperation(const Region & region, bool checkSubregions);
 
   /**
    * Checks if a node type is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.
-   * @tparam Operation The operation to check for.
+   *
+   * @tparam TNodeType The node type to check for.
    * @param region The region to check.
    * @param checkSubregions If true, then the subregions of all contained structural nodes will be
    * checked as well.
-   * @return True, if the operation is found. Otherwise, false.
+   *
+   * @return True, if the node type is found. Otherwise, false.
    */
-  template<class NodeType>
-  static inline bool
-  ContainsNodeType(const rvsdg::Region & region, bool checkSubregions);
+  template<class TNodeType>
+  static bool
+  containsNodeType(const Region & region, bool checkSubregions);
 
   /**
    * Counts the number of (sub-)regions contained within \p region. The count includes \p region,

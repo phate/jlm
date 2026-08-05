@@ -158,10 +158,14 @@ StructuralNode::addOutput(std::unique_ptr<StructuralOutput> output)
   return static_cast<StructuralOutput *>(Node::addOutput(std::move(output)));
 }
 
-template<class Operation>
+template<class TOperation>
 bool
-Region::ContainsOperation(const rvsdg::Region & region, bool checkSubregions)
+Region::containsOperation(const Region & region, bool checkSubregions)
 {
+  static_assert(
+      std::is_base_of_v<Operation, TOperation>,
+      "Template parameter TOperation must be derived from rvsdg::Operation.");
+
   for (auto & node : region.Nodes())
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(&node))
@@ -181,7 +185,7 @@ Region::ContainsOperation(const rvsdg::Region & region, bool checkSubregions)
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        if (ContainsOperation<Operation>(*structuralNode->subregion(n), checkSubregions))
+        if (containsOperation<Operation>(*structuralNode->subregion(n), checkSubregions))
         {
           return true;
         }
@@ -192,13 +196,17 @@ Region::ContainsOperation(const rvsdg::Region & region, bool checkSubregions)
   return false;
 }
 
-template<class NodeType>
+template<class TNodeType>
 bool
-Region::ContainsNodeType(const rvsdg::Region & region, bool checkSubregions)
+Region::containsNodeType(const Region & region, bool checkSubregions)
 {
+  static_assert(
+      std::is_base_of_v<Node, TNodeType>,
+      "Template parameter TNodeType must be derived from rvsdg::Node.");
+
   for (auto & node : region.Nodes())
   {
-    if (dynamic_cast<const NodeType *>(&node))
+    if (dynamic_cast<const TNodeType *>(&node))
     {
       return true;
     }
@@ -212,7 +220,7 @@ Region::ContainsNodeType(const rvsdg::Region & region, bool checkSubregions)
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        if (ContainsNodeType<NodeType>(*structuralNode->subregion(n), checkSubregions))
+        if (containsNodeType<TNodeType>(*structuralNode->subregion(n), checkSubregions))
         {
           return true;
         }

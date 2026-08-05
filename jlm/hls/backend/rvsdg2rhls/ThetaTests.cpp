@@ -54,14 +54,14 @@ TEST(ThetaConversionTests, TestUnknownBoundaries)
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<PredicateBufferOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<PredicateBufferOperation>(*lambdaRegion, true));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MuxOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<MuxOperation>(*lambdaRegion, true));
   // Check that two constant buffers are created for the loop invariant variables
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
   EXPECT_EQ(lambdaRegion->argument(0)->nusers(), 1u);
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
