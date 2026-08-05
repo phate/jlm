@@ -165,8 +165,8 @@ TEST(FunctionInliningTests, testSimpleInlining)
 
   // Assert
   // Check that the call has been replaced by the test operation inside f1
-  EXPECT_FALSE(Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
-  EXPECT_TRUE(Region::ContainsOperation<TestOperation>(*gammaRegion0, true));
+  EXPECT_FALSE(Region::containsOperation<CallOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(Region::containsOperation<TestOperation>(*gammaRegion0, true));
 
   // Check that the statistics match what we expect. f2 is technically inlineable
   EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 2u);
@@ -302,13 +302,13 @@ TEST(FunctionInliningTests, testInliningWithAlloca)
 
   // Assert
   // Check that the call is gone
-  EXPECT_FALSE(Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<CallOperation>(graph.GetRootRegion(), true));
   // A store should have taken its place in the gamma subregion
-  EXPECT_TRUE(Region::ContainsOperation<StoreNonVolatileOperation>(*gammaRegion0, true));
+  EXPECT_TRUE(Region::containsOperation<StoreNonVolatileOperation>(*gammaRegion0, true));
   // Check that the alloca operation is not inside the gamma subregion
-  EXPECT_FALSE(Region::ContainsOperation<AllocaOperation>(*gammaRegion0, true));
+  EXPECT_FALSE(Region::containsOperation<AllocaOperation>(*gammaRegion0, true));
   // The alloca should have been moved to the top level of f2
-  EXPECT_TRUE(Region::ContainsOperation<AllocaOperation>(*f2Region, false));
+  EXPECT_TRUE(Region::containsOperation<AllocaOperation>(*f2Region, false));
 }
 
 TEST(FunctionInliningTests, testIndirectCall)
