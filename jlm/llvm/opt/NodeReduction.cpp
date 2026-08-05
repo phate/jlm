@@ -183,8 +183,7 @@ static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
     integerAddNormalizations({ IntegerAddOperation::foldConstants });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>>
-    integerSubNormalizations(
+static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>> integerSubNormalizations(
     { IntegerSubOperation::normalizeAdditiveInverse, IntegerSubOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerMulOperation>>
