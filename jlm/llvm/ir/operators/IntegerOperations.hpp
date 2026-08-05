@@ -126,7 +126,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerAddOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerAddOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerAddOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -192,7 +199,14 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSubOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSubOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSubOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -241,7 +255,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerMulOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerMulOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerMulOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -290,7 +311,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSDivOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSDivOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSDivOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -339,7 +367,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerUDivOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUDivOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUDivOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -388,7 +423,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSRemOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSRemOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSRemOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -437,7 +479,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerURemOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerURemOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerURemOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -486,7 +535,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerAShrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerAShrOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerAShrOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -535,7 +591,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerShlOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerShlOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerShlOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
@@ -584,7 +647,14 @@ public:
   }
 
   /**
-   *  // FIXME:
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operation's result with the resulting constant.
+   *
+   * @param operation The \ref IntegerLShrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerLShrOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerLShrOperation
+   * after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
