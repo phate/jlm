@@ -79,6 +79,15 @@ traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = n
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output);
 
+// FIXME: documentation
+template<int64_t Value>
+static bool
+isIntegerConstant(const rvsdg::Output & output)
+{
+  auto intOpt = tryGetConstantSignedInteger(output);
+  return intOpt.has_value() && intOpt.value() == Value;
+}
+
 /**
  * Represents the result of tracing a pointer p to some origin,
  * as a traced base pointer value plus the encountered statically known \ref GetElementPtrOperation

@@ -236,6 +236,14 @@ public:
     return createNode(*baseAddress, indices, std::move(gepType)).output(0);
   }
 
+  /**
+   * FIXME
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdempotent(
+      const GetElementPtrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   static std::shared_ptr<const rvsdg::Type>
   getIndexedType(
