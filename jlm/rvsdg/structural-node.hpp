@@ -170,7 +170,7 @@ Region::containsOperation(const Region & region, bool checkSubregions)
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(&node))
     {
-      if (is<Operation>(simpleNode->GetOperation()))
+      if (is<TOperation>(simpleNode->GetOperation()))
       {
         return true;
       }
@@ -185,7 +185,7 @@ Region::containsOperation(const Region & region, bool checkSubregions)
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        if (containsOperation<Operation>(*structuralNode->subregion(n), checkSubregions))
+        if (containsOperation<TOperation>(*structuralNode->subregion(n), checkSubregions))
         {
           return true;
         }
