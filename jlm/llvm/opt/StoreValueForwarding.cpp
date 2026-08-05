@@ -1262,7 +1262,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
 
   if (tracedDelta.gepConstants.size() > 1)
   {
-    // FIXME:
+    // FIXME: Add support for more than one GEP constant
     return;
   }
 
@@ -1272,13 +1272,13 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   auto elementOutput = getDeltaElement(offsetInBytes, deltaResultOrigin);
   if (!elementOutput)
   {
-    // FIXME:
+    // FIXME: Add support for missing operations
     return;
   }
 
   if (*loadOperation->GetLoadedType() != *elementOutput->Type())
   {
-    // FIXME:
+    // FIXME: Add support for type mismatches
     return;
   }
 
