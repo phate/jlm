@@ -1062,6 +1062,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
       {},
       {
           bits32Type,
+          bits8Type,
       });
 
   auto deltaNode = DeltaNode::Create(
@@ -1078,17 +1079,32 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
   auto & load32Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
   auto & load8Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits8Type, 4);
 
-  auto & zextResult = ZExtOperation::create(32, *load8Node.output(0));
-  auto & addNode = IntegerAddOperation::createNode(32, *load32Node.output(0), zextResult);
-
-  lambdaNode.finalize({ addNode.output(0) });
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
+                        &LoadOperation::LoadedValueOutput(load8Node) });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert
-  // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  {
+    auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intOperation0, nullptr);
+    EXPECT_EQ(intOperation0->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation0->Representation().to_uint(), 4u);
+  }
+
+  {
+    auto [truncNode, truncOperation] = TryGetSimpleNodeAndOptionalOp<TruncOperation>(
+        *lambdaNode.GetFunctionResults()[1]->origin());
+    EXPECT_NE(truncOperation, nullptr);
+
+    auto [intNode1, intOperation1] =
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*truncNode->input(0)->origin());
+    EXPECT_NE(intOperation1, nullptr);
+    EXPECT_EQ(intOperation1->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation1->Representation().to_uint(), 4u);
+  }
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant)
