@@ -164,21 +164,15 @@ GetElementPtrOperation::normalizeIdempotent(
   JLM_ASSERT(operands.size() >= 1);
   auto baseAddress = operands[0];
 
-  if (operands.size() == 1)
-  {
-    // The GEP only has the base address as operand. No offset is computed.
-    return std::vector({ baseAddress });
-  }
-
   for (size_t n = 1; n < operands.size(); ++n)
   {
-    auto indexOperand = operands[n];
-
-    if (!isIntegerConstant<0>(*indexOperand))
+    auto intOpt = tryGetConstantSignedInteger(*operands[n]);
+    if (!intOpt.has_value() || intOpt.value() != 0)
       return std::nullopt;
   }
 
-  // At this point we know that the offset is 0. We can just return the base address.
+  // At this point we know that either there are no index operands or that all indices are zero. We
+  // can just return the base address.
   return std::vector({ baseAddress });
 }
 
