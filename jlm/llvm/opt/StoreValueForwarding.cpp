@@ -1152,37 +1152,37 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const ConstantFP &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const ConstantPointerNullOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const FunctionToPointerOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const IntToPtrOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return static_cast<rvsdg::Output *>(nullptr);
         },
         [&](const GetElementPtrOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return static_cast<rvsdg::Output *>(nullptr);
         },
         [&](const ConstantAggregateZeroOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const ConstantArrayOperation & constantArrayOperation)
@@ -1243,7 +1243,7 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
-    // JLM_ASSERT(elementOffsetInBytes == 0);
+    JLM_ASSERT(elementOffsetInBytes == 0);
     return &output;
 #if 0
     auto [ctxInput, _] = deltaNode->MapBinderContextVar(output);
