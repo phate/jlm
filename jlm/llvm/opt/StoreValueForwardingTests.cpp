@@ -1219,7 +1219,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
     auto [floatNode, floatOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[0]->origin());
     EXPECT_NE(floatOperation, nullptr);
-    EXPECT_EQ(&floatOperation->constant().getSemantics(), &llvm::APFloat::IEEEsingle());
+    EXPECT_TRUE(&floatOperation->constant().getSemantics() == &llvm::APFloat::IEEEsingle());
     EXPECT_TRUE(floatOperation->constant().isZero());
   }
 
@@ -1227,7 +1227,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
     auto [doubleNode, doubleOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[0]->origin());
     EXPECT_NE(doubleOperation, nullptr);
-    EXPECT_EQ(&doubleOperation->constant().getSemantics(), &llvm::APFloat::IEEEdouble());
+    EXPECT_TRUE(&doubleOperation->constant().getSemantics() == &llvm::APFloat::IEEEdouble());
     EXPECT_TRUE(doubleOperation->constant().isZero());
   }
 }
