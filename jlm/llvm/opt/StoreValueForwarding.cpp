@@ -1234,7 +1234,7 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
         },
         [&](const IntToPtrOperation &)
         {
-          // FIXME: handle operation
+          throw std::logic_error("Here we are");
         },
         [&]()
         {
