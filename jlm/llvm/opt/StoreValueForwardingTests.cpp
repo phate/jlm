@@ -1204,30 +1204,30 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   {
     auto [nullPtrNode, nullPtrOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantPointerNullOperation>(
-            *lambdaNode.GetFunctionResults()[0]->origin());
+            *lambdaNode.GetFunctionResults()[1]->origin());
     EXPECT_NE(nullPtrOperation, nullptr);
   }
 
   {
     auto [aggZeroNode, aggZeroOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantAggregateZeroOperation>(
-            *lambdaNode.GetFunctionResults()[0]->origin());
+            *lambdaNode.GetFunctionResults()[2]->origin());
     EXPECT_NE(aggZeroOperation, nullptr);
   }
 
   {
     auto [floatNode, floatOperation] =
-        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[0]->origin());
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[3]->origin());
     EXPECT_NE(floatOperation, nullptr);
-    EXPECT_TRUE(&floatOperation->constant().getSemantics() == &llvm::APFloat::IEEEsingle());
+    EXPECT_EQ(&floatOperation->constant().getSemantics(), &llvm::APFloat::IEEEsingle());
     EXPECT_TRUE(floatOperation->constant().isZero());
   }
 
   {
     auto [doubleNode, doubleOperation] =
-        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[0]->origin());
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[4]->origin());
     EXPECT_NE(doubleOperation, nullptr);
-    EXPECT_TRUE(&doubleOperation->constant().getSemantics() == &llvm::APFloat::IEEEdouble());
+    EXPECT_EQ(&doubleOperation->constant().getSemantics(), &llvm::APFloat::IEEEdouble());
     EXPECT_TRUE(doubleOperation->constant().isZero());
   }
 }
