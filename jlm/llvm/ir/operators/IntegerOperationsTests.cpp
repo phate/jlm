@@ -145,6 +145,66 @@ TEST(IntegerXorOperationTest, foldConstants)
   TestFoldConstants<IntegerXorOperation>({ 0, 32, -1, 32, -1, 32 });
 }
 
+TEST(IntegerAddOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerAddOperation>({ 12, 32, 7, 32, 19, 32 });
+  TestFoldConstants<IntegerAddOperation>({ -1, 32, 2, 32, 1, 32 });
+}
+
+TEST(IntegerSubOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSubOperation>({ 12, 32, 7, 32, 5, 32 });
+  TestFoldConstants<IntegerSubOperation>({ 0, 32, 1, 32, -1, 32 });
+}
+
+TEST(IntegerMulOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerMulOperation>({ 6, 32, 7, 32, 42, 32 });
+  TestFoldConstants<IntegerMulOperation>({ -6, 32, 7, 32, -42, 32 });
+}
+
+TEST(IntegerSDivOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSDivOperation>({ -13, 32, 3, 32, -4, 32 });
+  TestFoldConstants<IntegerSDivOperation>({ 13, 32, -3, 32, -4, 32 });
+}
+
+TEST(IntegerUDivOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerUDivOperation>({ 13, 32, 3, 32, 4, 32 });
+  TestFoldConstants<IntegerUDivOperation>({ -1, 32, 2, 32, 2147483647, 32 });
+}
+
+TEST(IntegerSRemOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSRemOperation>({ -13, 32, 3, 32, -1, 32 });
+  TestFoldConstants<IntegerSRemOperation>({ 13, 32, -3, 32, 1, 32 });
+}
+
+TEST(IntegerURemOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerURemOperation>({ 13, 32, 3, 32, 1, 32 });
+  TestFoldConstants<IntegerURemOperation>({ -1, 32, 10, 32, 5, 32 });
+}
+
+TEST(IntegerAShrOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerAShrOperation>({ -0x10, 32, 2, 32, -0x4, 32 });
+  TestFoldConstants<IntegerAShrOperation>({ 0x10, 32, 2, 32, 0x4, 32 });
+}
+
+TEST(IntegerShlOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerShlOperation>({ 0x3, 32, 2, 32, 0xc, 32 });
+  TestFoldConstants<IntegerShlOperation>({ 0x400, 32, 2, 32, 0x1000, 32 });
+}
+
+TEST(IntegerLShrOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerLShrOperation>({ -0x1, 32, 2, 32, 0x3fffffff, 32 });
+  TestFoldConstants<IntegerLShrOperation>({ 0x10, 32, 2, 32, 0x4, 32 });
+}
+
 TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
 {
   using namespace jlm::rvsdg;
