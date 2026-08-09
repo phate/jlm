@@ -744,6 +744,7 @@ void
 TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName)
 {
   using namespace jlm::mlir;
+  (void)testName;
 
   JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(originalModule);
