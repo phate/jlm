@@ -16,13 +16,12 @@
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+namespace jlm::hls
+{
+
 using namespace jlm::rvsdg;
-using namespace jlm::hls;
 using namespace jlm::llvm;
 using namespace jlm::util;
-
-namespace
-{
 
 static void
 TestGammaConversion(RvsdgModule & rvsdgModule, size_t expectedMuxCount)
@@ -35,7 +34,7 @@ TestGammaConversion(RvsdgModule & rvsdgModule, size_t expectedMuxCount)
   JLM_ASSERT(rootRegion.numNodes() == 1);
   auto * lambda = dynamic_cast<LambdaNode *>(&*rootRegion.Nodes().begin());
   JLM_ASSERT(lambda != nullptr);
-  EXPECT_FALSE(Region::ContainsOperation<GammaOperation>(rootRegion, true));
+  EXPECT_FALSE(Region::containsOperation<GammaOperation>(rootRegion, true));
 
   size_t muxCount = 0;
   for (auto & subnode : TopDownTraverser(lambda->subregion()))
@@ -47,8 +46,6 @@ TestGammaConversion(RvsdgModule & rvsdgModule, size_t expectedMuxCount)
   }
   EXPECT_EQ(muxCount, expectedMuxCount);
 }
-
-} // namespace
 
 TEST(GammaConversionTests, WithMatchOperation)
 {
@@ -316,3 +313,5 @@ TEST(GammaConversionTests, NonSpeculativeModeUsesBranches)
   }
   EXPECT_GE(branchCount, 1u);
 }
+
+} // namespace
