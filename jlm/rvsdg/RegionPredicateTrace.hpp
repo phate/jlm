@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
 
+#include <unordered_map>
+
 namespace jlm::rvsdg
 {
 
@@ -202,16 +204,25 @@ private:
    * Traces from the given \p input to find the regions that may provide its value.
    * @param regionPredRange the resulting map of possible values provided in each region.
    * @param input the input being traced from
+   * @param visitedInputs set of seen inputs, to avoid re-visiting
    * @param type the type of the input
    */
-  PredicateValueRange
-  ComputeAndRecord(RegionPredRange & regionPredRange, Input & input, const ControlType & type);
+  const PredicateValueRange &
+  ComputeAndRecord(
+      RegionPredRange & regionPredRange,
+      Input & input,
+      std::unordered_map<Input *, PredicateValueRange> & visitedInputs,
+      const ControlType & type);
 
   /**
    * Helper function for the above \ref ComputeAndRecord
    */
   PredicateValueRange
-  Compute(RegionPredRange & regionPredRange, Input & input, const ControlType & type);
+  Compute(
+      RegionPredRange & regionPredRange,
+      Input & input,
+      std::unordered_map<Input *, PredicateValueRange> & visitedInputs,
+      const ControlType & type);
 
   // For a given input, gives the regions where we know which the set of values
   // the region may provide to the input

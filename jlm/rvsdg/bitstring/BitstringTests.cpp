@@ -2124,13 +2124,16 @@ TEST(bitstring, test_value_representation)
     BitValueRepresentation rbits(32, r);
 
     EXPECT_EQ(rbits.neg(), -r);
+    EXPECT_EQ(rbits.shl(0), r);
     EXPECT_EQ(rbits.shl(1), r << 1);
     EXPECT_EQ(rbits.shl(32), 0u);
+    EXPECT_EQ(rbits.ashr(0), r);
     EXPECT_EQ(rbits.ashr(1), r >> 1);
     EXPECT_EQ(rbits.ashr(34), (r < 0 ? -1 : 0));
 
     if (r >= 0)
     {
+      EXPECT_EQ(rbits.shr(0), r);
       EXPECT_EQ(rbits.shr(1), r >> 1);
       EXPECT_EQ(rbits.shr(34), 0u);
     }

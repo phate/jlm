@@ -8,26 +8,123 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
+
+namespace jlm::llvm
+{
+
+TEST(GetElemenPtrOperationTests, typeChecks)
+{
+  using namespace jlm::rvsdg;
+
+  // Assert
+  auto i32Type = BitType::Create(32);
+  auto i32FixedVectorType = FixedVectorType::Create(i32Type, 4);
+  auto i32ScalableVectorType = ScalableVectorType::Create(i32Type, 4);
+
+  auto pointerType = PointerType::Create();
+  auto ptrFixedVectorType = FixedVectorType::Create(pointerType, 4);
+  auto ptrScalableVectorType = ScalableVectorType::Create(pointerType, 4);
+
+  Graph graph;
+
+  auto & i32Import = GraphImport::Create(graph, i32Type, "");
+  auto & i32FixedVectorImport = GraphImport::Create(graph, i32FixedVectorType, "");
+  auto & i32ScalableVectorImport = GraphImport::Create(graph, i32ScalableVectorType, "");
+
+  auto & pointerImport = GraphImport::Create(graph, pointerType, "");
+  auto & ptrFixedVectorImport = GraphImport::Create(graph, ptrFixedVectorType, "");
+  auto & ptrScalableVectorImport = GraphImport::Create(graph, ptrScalableVectorType, "");
+
+  // Act & Assert
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
+    EXPECT_TRUE(is<PointerType>(gepNode.output(0)->Type()));
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(ptrFixedVectorImport, {}, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<FixedVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(ptrScalableVectorImport, {}, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<ScalableVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    // The base address must be a pointer or vector of pointers
+    EXPECT_THROW(GetElementPtrOperation::createNode(i32Import, {}, i32Type), std::logic_error);
+  }
+
+  {
+    auto & gepNode = GetElementPtrOperation::createNode(pointerImport, { &i32Import }, i32Type);
+    EXPECT_TRUE(is<PointerType>(gepNode.output(0)->Type()));
+  }
+
+  {
+    // One of the indices is a vector, so the result type must be a vector type
+    auto & gepNode =
+        GetElementPtrOperation::createNode(pointerImport, { &i32FixedVectorImport }, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<FixedVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+
+  {
+    // One of the indices is a vector, so the result type must be a vector type
+    auto & gepNode =
+        GetElementPtrOperation::createNode(pointerImport, { &i32ScalableVectorImport }, i32Type);
+    auto resultType = gepNode.output(0)->Type();
+    EXPECT_TRUE(is<ScalableVectorType>(resultType));
+    EXPECT_TRUE(isVectorOf<PointerType>(*resultType));
+  }
+}
 
 TEST(GetElementPtrOperationTests, TestOperationEquality)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
+  // Arrange
+  auto pointerType = PointerType::Create();
   auto arrayType = ArrayType::Create(BitType::Create(8), 11);
 
   auto structType1 = StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
   auto structType2 =
       StructType::CreateIdentified("myStructType", { arrayType, BitType::Create(32) }, false);
 
-  GetElementPtrOperation operation1(
-      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
+  auto operation1 = GetElementPtrOperation::createOperation(
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
       structType1);
-  GetElementPtrOperation operation2(
-      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) },
+
+  auto operation2 = GetElementPtrOperation::createOperation(
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
       structType2);
 
+  // Assert
   EXPECT_NE(operation1, operation2);
+
+  // Arrange 2: create a new type that is structurally identical to structType1
+  auto copyOfStructType1 =
+      StructType::CreateLiteral({ BitType::Create(64), BitType::Create(64) }, false);
+  auto operation3 = GetElementPtrOperation::createOperation(
+      pointerType,
+      { BitType::Create(32), BitType::Create(32) },
+      copyOfStructType1);
+
+  // Assert 2
+
+  // The struct types have distinct pointers
+  EXPECT_NE(structType1, copyOfStructType1);
+  // Yet the GEPs compare equal
+  EXPECT_EQ(*operation1, *operation3);
 }
 
 TEST(GetElementPtrTests, TryGetAsConstantTest)
@@ -43,6 +140,7 @@ TEST(GetElementPtrTests, TryGetAsConstantTest)
 
   auto structType =
       StructType::CreateIdentified("struct", { bits8Type, bits16Type, bits32Type }, false);
+  auto arrayType = ArrayType::Create(BitType::Create(32), 11);
 
   Graph rvsdg;
   auto & baseAddress = GraphImport::Create(rvsdg, pointerType, "base");
@@ -56,8 +154,8 @@ TEST(GetElementPtrTests, TryGetAsConstantTest)
       { zeroNode.output(0), oneNode.output(0) },
       structType);
   auto & gepNode1 =
-      GetElementPtrOperation::createNode(baseAddress, { zeroNode.output(0), &i32 }, structType);
-  auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, structType);
+      GetElementPtrOperation::createNode(baseAddress, { zeroNode.output(0), &i32 }, arrayType);
+  auto & gepNode2 = GetElementPtrOperation::createNode(baseAddress, { &i32, &i32 }, arrayType);
 
   // Act
   auto gepConstant0 = GetElementPtrOperation::tryGetAsConstant(gepNode0);
@@ -105,4 +203,62 @@ TEST(GetElementPtrTests, TestGetElementPtrOperationConstant_OffestInBytes)
   EXPECT_EQ(constant3.getOffsetInBytes(), 8u);
   EXPECT_EQ(constant4.getOffsetInBytes(), 20u);
   EXPECT_EQ(constant5.getOffsetInBytes(), 32u);
+}
+
+TEST(GetElementPtrTests, normalizeIdempotentReduction)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto structType = StructType::CreateLiteral({ i32Type, i32Type }, false);
+
+  Graph graph;
+
+  auto & pointerImport = GraphImport::Create(graph, pointerType, "");
+
+  auto & zero = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & one = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & gepNode1 = GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
+
+  auto & gepNode2 = GetElementPtrOperation::createNode(
+      pointerImport,
+      { zero.output(0), zero.output(0) },
+      structType);
+
+  auto & gepNode3 = GetElementPtrOperation::createNode(
+      pointerImport,
+      { zero.output(0), one.output(0) },
+      structType);
+
+  auto & x1 = GraphExport::Create(*gepNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*gepNode2.output(0), "x2");
+  auto & x3 = GraphExport::Create(*gepNode3.output(0), "x3");
+
+  // Act
+  rvsdg::ReduceNode<GetElementPtrOperation>(GetElementPtrOperation::normalizeIdempotent, gepNode1);
+  rvsdg::ReduceNode<GetElementPtrOperation>(GetElementPtrOperation::normalizeIdempotent, gepNode2);
+  const auto successReductionGepNode3 = rvsdg::ReduceNode<GetElementPtrOperation>(
+      GetElementPtrOperation::normalizeIdempotent,
+      gepNode3);
+
+  // Assert
+  {
+    EXPECT_EQ(x1.origin(), &pointerImport);
+  }
+
+  {
+    EXPECT_EQ(x2.origin(), &pointerImport);
+  }
+
+  {
+    EXPECT_FALSE(successReductionGepNode3);
+    auto [gepNode, gepOperation] =
+        TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*x3.origin());
+    EXPECT_NE(gepOperation, nullptr);
+  }
+}
+
 }

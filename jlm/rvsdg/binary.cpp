@@ -246,7 +246,7 @@ FlattenedBinaryOperation::reduce(
     }
   }
 
-  JLM_ASSERT(!Region::ContainsOperation<FlattenedBinaryOperation>(*region, true));
+  JLM_ASSERT(!Region::containsOperation<FlattenedBinaryOperation>(*region, true));
 }
 
 std::optional<std::vector<rvsdg::Output *>>

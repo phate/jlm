@@ -149,11 +149,13 @@ public:
     size_t numIntegerUleReductions = 0;
     size_t numIntegerUltReductions = 0;
 
+    size_t numIntegerSubReductions = 0;
     size_t numIntegerAndReductions = 0;
     size_t numIntegerOrReductions = 0;
     size_t numIntegerXorReductions = 0;
 
     size_t numPtrCmpReductions = 0;
+    size_t numGetElementPtrReductions = 0;
     size_t numBinaryReductions = 0;
 
     size_t numGammaReductions = 0;

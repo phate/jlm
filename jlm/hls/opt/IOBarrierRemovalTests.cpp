@@ -50,5 +50,5 @@ TEST(IOBarrierRemovalTests, IOBarrierRemoval)
   ioBarrierRemoval.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  EXPECT_FALSE(Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }

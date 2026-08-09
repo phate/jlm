@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/ControlOperations.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/Gamma.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -65,11 +66,13 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerUleReductions", counters.numIntegerUleReductions);
   AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
 
+  AddMeasurement("#IntegerSubReductions", counters.numIntegerSubReductions);
   AddMeasurement("#IntegerAndReductions", counters.numIntegerAndReductions);
   AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
 
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
+  AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
 
@@ -168,6 +171,9 @@ static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
     integerUltNormalizations({ IntegerUltOperation::foldConstants });
 
+static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>>
+    integerSubNormalizations({ IntegerSubOperation::normalizeAdditiveInverse });
+
 static std::vector<rvsdg::NodeNormalization<IntegerAndOperation>>
     integerAndNormalizations({ IntegerAndOperation::foldConstants });
 
@@ -215,6 +221,9 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
 
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
     ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
+
+static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
+    getElementPtrNormalizations({ GetElementPtrOperation::normalizeIdempotent });
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::BinaryOperation>>
     binaryOperationNormalizations({ rvsdg::NormalizeBinaryOperation });
@@ -483,6 +492,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         integerUltNormalizations,
         Statistics_->getReductionCounters().numIntegerUltReductions);
   }
+  if (is<IntegerSubOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerSubOperation>(
+        simpleNode,
+        integerSubNormalizations,
+        Statistics_->getReductionCounters().numIntegerSubReductions);
+  }
   if (is<IntegerAndOperation>(&simpleNode))
   {
     return reduceSimpleNode<IntegerAndOperation>(
@@ -510,6 +526,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         ptrCmpNormalizations,
         Statistics_->getReductionCounters().numPtrCmpReductions);
+  }
+  if (is<GetElementPtrOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<GetElementPtrOperation>(
+        simpleNode,
+        getElementPtrNormalizations,
+        Statistics_->getReductionCounters().numGetElementPtrReductions);
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {

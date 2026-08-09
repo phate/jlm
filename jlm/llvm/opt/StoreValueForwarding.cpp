@@ -24,27 +24,33 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 #include <memory>
+#include <optional>
 #include <queue>
 
 namespace jlm::llvm
 {
 
-// Makes the LocalAA try harder, by tracing along all possible paths,
-// and checking if allocas provably do not escape the function.
-static const bool ENABLE_AGGRESSIVE_LOCALAA = std::getenv("JLM_ENABLE_SVF_AGGRESSIVE_LOCALAA");
+// Makes the LocalAA give up earlier
+static const bool USE_TRIVIAL_LOCALAA = std::getenv("JLM_SVF_USE_TRIVIAL_LOCALAA");
 
 // Enables the use of the PointsToGraphAliasAnalysis.
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
 static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
+
+// Enables the use of region predication checking when tracing origins of loaded values
+static const bool ENABLE_REGION_PREDICATE_CHECK =
+    !std::getenv("JLM_DISABLE_REGION_PREDICATE_CHECK");
 
 // By default, loads whose memory states can be traced to other loads attempt to forward
 // the previously loaded value, if the types match, and the addresses are the same (MustAlias).
@@ -218,6 +224,8 @@ struct StoreValueForwarding::Context final
 
   OutputTracer outputTracer;
 
+  rvsdg::RegionPredicateTrace regionPredicateTrace;
+
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
 
@@ -328,6 +336,9 @@ struct ValueOrigin
   Kind kind;
   rvsdg::Node * node;
 
+  // No default constructor
+  ValueOrigin() = delete;
+
   [[nodiscard]] bool
   isKnown() const
   {
@@ -400,10 +411,12 @@ public:
   LoadTracingInfo(
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
-      aa::AliasAnalysis & aliasAnalysis)
+      aa::AliasAnalysis & aliasAnalysis,
+      rvsdg::RegionPredicateTrace & regionPredicateTrace)
       : loadNode(loadNode),
         tracer(tracer),
-        aliasAnalysis(aliasAnalysis)
+        aliasAnalysis(aliasAnalysis),
+        regionPredicateTrace(regionPredicateTrace)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -428,9 +441,12 @@ public:
     // Perform tracing from each memory state input to find exactly what store it leads to
     for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(loadNode))
     {
-      // If the memory state input can not be traced back to store nodes,
-      // or different memory state inputs lead to different store nodes, we give up
-      auto lastValueOrigin = getLastValueOriginBeforeInput(memoryStateInput);
+      // Tracing starts at the load, so no loop back-edges have been taken yet
+      auto lastValueOrigin = getLastValueOriginBeforeInput(memoryStateInput, false);
+
+      // If the memory state input cannot be traced back to value origins,
+      // or different memory state inputs lead to different value origins in the same branch,
+      // forwarding is not possible
       if (!lastValueOrigin.isKnown())
         return false;
     }
@@ -440,7 +456,8 @@ public:
     while (!loopVarPostsToTrace.IsEmpty())
     {
       auto loopVarPost = *loopVarPostsToTrace.Items().begin();
-      auto lastValueOrigin = getLastValueOriginBeforeInput(*loopVarPost);
+      // A loop back-edge has been followed, so pass in true
+      auto lastValueOrigin = getLastValueOriginBeforeInput(*loopVarPost, true);
       if (!lastValueOrigin.isKnown())
         return false;
 
@@ -448,6 +465,59 @@ public:
     }
 
     return true;
+  }
+
+  /**
+   * After tracing has finished, provides the last value origin before the given \p node.
+   * @param node the node to trace backwards from
+   * @param loopBackEdgeMaybeTaken if true, the function uses the most conservative value origin
+   *        for the node, which does not make any assumptions about loop back-edges.
+   *        If false, or if tracing never reached the node after following a back-edge,
+   *        the value origin found under the assumption that no back-edges have been taken is used.
+   * @return the last value origin before the given node, or nullopt if the node was never reached.
+   */
+  std::optional<ValueOrigin>
+  getLastValueOriginBeforeNode(rvsdg::Node & node, bool loopBackEdgeMaybeTaken)
+  {
+    if (loopBackEdgeMaybeTaken)
+    {
+      auto it = lastValueOriginBeforeNode.find({ &node, true });
+      if (it != lastValueOriginBeforeNode.end())
+        return it->second;
+    }
+
+    auto it = lastValueOriginBeforeNode.find({ &node, false });
+    if (it != lastValueOriginBeforeNode.end())
+      return it->second;
+
+    return std::nullopt;
+  }
+
+  /**
+   * After tracing has finished, provides the last value origin before the end of a \p region.
+   * Note that this value origin may be outside the region, if the region does not clobber.
+   * @param region the region whose results are traced backwards from
+   * @param loopBackEdgeMaybeTaken if true, the function uses the most conservative value origin
+   *        for the region, which does not make any assumptions about loop back-edges.
+   *        If false, or if tracing never reached the region after following a back-edge,
+   *        the value origin found under the assumption that no back-edges have been taken is used.
+   * @return the last value origin in the \p region, or nullopt if the region was never reached.
+   */
+  std::optional<ValueOrigin>
+  getLastValueOriginInRegion(rvsdg::Region & region, bool loopBackEdgeMaybeTaken)
+  {
+    if (loopBackEdgeMaybeTaken)
+    {
+      auto it = lastValueOriginInRegion.find({ &region, true });
+      if (it != lastValueOriginInRegion.end())
+        return it->second;
+    }
+
+    auto it = lastValueOriginInRegion.find({ &region, false });
+    if (it != lastValueOriginInRegion.end())
+      return it->second;
+
+    return std::nullopt;
   }
 
 private:
@@ -514,25 +584,29 @@ private:
    * store forwarding is not possible, and unknown is returned to terminate early.
    *
    * @param input the memory state input to trace from
+   * @param loopBackEdgeTaken true if any loop back edge has been traced on the way to this input
    * @return the last node that stores to the memory loaded by the loadNode, before the input.
    */
   ValueOrigin
-  getLastValueOriginBeforeInput(rvsdg::Input & input)
+  getLastValueOriginBeforeInput(rvsdg::Input & input, bool loopBackEdgeTaken)
   {
     // If the input has already been traced, return the last result
-    if (const auto it = lastValueOriginBeforeInput.find(&input);
+    if (const auto it = lastValueOriginBeforeInput.find({ &input, loopBackEdgeTaken });
         it != lastValueOriginBeforeInput.end())
       return it->second;
 
-    auto result = getLastValueOriginBeforeInputInternal(input);
+    auto result = getLastValueOriginBeforeInputInternal(input, loopBackEdgeTaken);
 
     // Add the result to the tracing maps
-    lastValueOriginBeforeInput[&input] = result;
+    const auto [_, inserted] =
+        lastValueOriginBeforeInput.emplace(std::make_pair(&input, loopBackEdgeTaken), result);
+    JLM_ASSERT(inserted);
 
     // If the input is on a node, add the result to the node map
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(input))
     {
-      const auto [it, inserted] = lastValueOriginBeforeNode.emplace(node, result);
+      const auto [it, inserted] =
+          lastValueOriginBeforeNode.emplace(std::make_pair(node, loopBackEdgeTaken), result);
 
       // If the node already had a different last store value, give up
       if (!inserted && it->second != result)
@@ -543,7 +617,8 @@ private:
     if (auto regionResult = dynamic_cast<rvsdg::RegionResult *>(&input))
     {
       const auto region = regionResult->region();
-      const auto [it, inserted] = lastValueOriginInRegion.emplace(region, result);
+      const auto [it, inserted] =
+          lastValueOriginInRegion.emplace(std::make_pair(region, loopBackEdgeTaken), result);
 
       // If the region already had a different last store value, give up
       if (!inserted && it->second != result)
@@ -554,8 +629,11 @@ private:
   }
 
   ValueOrigin
-  getLastValueOriginBeforeInputInternal(rvsdg::Input & input)
+  getLastValueOriginBeforeInputInternal(rvsdg::Input & input, bool loopBackEdgeTaken)
   {
+    // If region predication checking is disabled, always assume loop back-edges have been followed
+    loopBackEdgeTaken |= !ENABLE_REGION_PREDICATE_CHECK;
+
     auto & tracedOutput = tracer.trace(*input.origin());
 
     // If tracing reached a store operation, look up its info
@@ -604,7 +682,7 @@ private:
       {
         // If the store is not clobbering, keep tracing along the memory state chain
         auto & memoryStateInput = StoreOperation::MapMemoryStateOutputToInput(tracedOutput);
-        return getLastValueOriginBeforeInput(memoryStateInput);
+        return getLastValueOriginBeforeInput(memoryStateInput, loopBackEdgeTaken);
       }
 
       default:
@@ -654,7 +732,7 @@ private:
       {
         // If the load can not be forwarded, keep tracing along the memory state chain
         auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(tracedOutput);
-        return getLastValueOriginBeforeInput(memoryStateInput);
+        return getLastValueOriginBeforeInput(memoryStateInput, loopBackEdgeTaken);
       }
 
       default:
@@ -672,15 +750,17 @@ private:
 
       for (auto & input : joinNode->Inputs())
       {
-        auto result = getLastValueOriginBeforeInput(input);
+        auto result = getLastValueOriginBeforeInput(input, loopBackEdgeTaken);
         if (!result.isKnown())
           return ValueOrigin::createUnknown();
       }
 
       // If none of the calls returned nullptr, there must a shared last store before the join
-      const auto sharedLastStore = lastValueOriginBeforeNode[joinNode];
-      JLM_ASSERT(sharedLastStore.isKnown());
-      return sharedLastStore;
+      const auto sharedLastValueOrigin =
+          lastValueOriginBeforeNode.find({ joinNode, loopBackEdgeTaken });
+      JLM_ASSERT(sharedLastValueOrigin != lastValueOriginBeforeNode.end());
+      JLM_ASSERT(sharedLastValueOrigin->second.isKnown());
+      return sharedLastValueOrigin->second;
     }
 
     // if tracing reaches an alloca, the value is uninitialized, so we can pick our own value
@@ -696,31 +776,71 @@ private:
     {
       const auto exitVar = gammaNode->MapOutputExitVar(tracedOutput);
 
-      // If all branches lead to the same store node, return it directly.
-      // If different last store nodes have been observed, this becomes nullptr
-      std::optional<ValueOrigin> commonStoreValueOrigin;
+      // If all branches lead to the same value origin, return it directly.
+      // If different last value origins have been observed, this becomes unknown
+      std::optional<ValueOrigin> commonValueOrigin;
+      const auto addObservedValueOrigin = [&](ValueOrigin origin)
+      {
+        // Ignore branches that lead to uninitialized
+        if (origin.kind == ValueOrigin::Kind::Uninitialized)
+          return;
+
+        if (!commonValueOrigin.has_value())
+          commonValueOrigin = origin;
+        else if (commonValueOrigin.value() != origin)
+          commonValueOrigin = ValueOrigin::createUnknown();
+      };
 
       for (auto branchResult : exitVar.branchResult)
       {
-        auto lastStoreNode = getLastValueOriginBeforeInput(*branchResult);
+        // Check if this gamma subregion was provably not taken before reaching the load node
+        // We can only do this check if no back-edges have been taken.
+        if (!loopBackEdgeTaken)
+        {
+          // If region predication checks has been disabled, loopBackEdgeTaken is always true
+          JLM_ASSERT(ENABLE_REGION_PREDICATE_CHECK);
+
+          auto & fromRegion = *branchResult->region();
+          if (!regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region()))
+          {
+            // Mark the region as providing uninitialized memory, since it is never reached
+            auto valueOrigin = ValueOrigin::createUninitialized();
+            lastValueOriginInRegion.emplace(
+                std::make_pair(&fromRegion, loopBackEdgeTaken),
+                valueOrigin);
+            addObservedValueOrigin(valueOrigin);
+            continue;
+          }
+        }
+
+        auto lastValueOrigin = getLastValueOriginBeforeInput(*branchResult, loopBackEdgeTaken);
 
         // If any of the gamma branches is impossible to trace back to a last store,
         // give up on forwarding entirely
-        if (!lastStoreNode.isKnown())
+        if (!lastValueOrigin.isKnown())
           return ValueOrigin::createUnknown();
 
         // Keep track if there is a single shared last store in all branches
-        if (!commonStoreValueOrigin.has_value())
-          commonStoreValueOrigin = lastStoreNode;
-        else if (commonStoreValueOrigin.value() != lastStoreNode)
-          commonStoreValueOrigin = ValueOrigin::createUnknown();
+        addObservedValueOrigin(lastValueOrigin);
       }
 
-      JLM_ASSERT(commonStoreValueOrigin.has_value());
-      if (commonStoreValueOrigin->isKnown())
-        return *commonStoreValueOrigin;
+      // If all branches lead to uninitialized memory
+      if (!commonValueOrigin.has_value())
+        return ValueOrigin::createUninitialized();
 
-      // If the last store node depends on the branch taken, return the gamma node itself
+      // If there is exactly one shared origin for all branches
+      if (commonValueOrigin->isKnown())
+      {
+        // The value origin is neither uninitialized nor unknown, so it must belong to a node
+        JLM_ASSERT(commonValueOrigin->node);
+
+        // Only return the origin if it is not inside one of the subregions
+        if (commonValueOrigin->node->region()->node() != gammaNode)
+          return *commonValueOrigin;
+      }
+
+      // The last value origin differs based on which branch is taken,
+      // or is inside one of the gamma subregions, so return the gamma node itself
       return ValueOrigin::createGammaNodeOutput(*gammaNode);
     }
 
@@ -728,24 +848,45 @@ private:
     if (auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(tracedOutput))
     {
       const auto loopVar = thetaNode->MapOutputLoopVar(tracedOutput);
-      auto lastStoreNode = getLastValueOriginBeforeInput(*loopVar.post);
 
-      if (!lastStoreNode.isKnown())
+      // We continue tracing from the loop var post, but we have not taken a back-edge to get there,
+      // so we keep passing the loopBackEdgeTaken parameter unmodified.
+      auto lastValueOrigin = getLastValueOriginBeforeInput(*loopVar.post, loopBackEdgeTaken);
+      if (!lastValueOrigin.isKnown())
         return ValueOrigin::createUnknown();
 
-      // if the last store before the end of the theta subregion is the pre of the same theta,
-      // the loaded memory is loop invariant, and we can load from the last store before the theta.
-      if (lastStoreNode.kind == ValueOrigin::Kind::ThetaNodePre && lastStoreNode.node == thetaNode)
+      // if the last value before the end of the theta subregion is the pre of the same theta,
+      // the loaded memory may be loop invariant, and tracing can continue from before the theta.
+      if (lastValueOrigin.kind == ValueOrigin::Kind::ThetaNodePre
+          && lastValueOrigin.node == thetaNode)
       {
-        return getLastValueOriginBeforeInput(*loopVar.input);
+        // A trace that assumes no back-edges have been taken may skip regions,
+        // so unless loopBackEdgeTaken=true, we must do an additional check
+
+        // No additional check needed
+        if (loopBackEdgeTaken)
+          return getLastValueOriginBeforeInput(*loopVar.input, true);
+
+        // Trace again, this time with loopBackEdgeTaken=true
+        lastValueOrigin = getLastValueOriginBeforeInput(*loopVar.post, true);
+        if (!lastValueOrigin.isKnown())
+          return ValueOrigin::createUnknown();
+
+        if (lastValueOrigin.kind == ValueOrigin::Kind::ThetaNodePre
+            && lastValueOrigin.node == thetaNode)
+        {
+          // The theta was determined to not affect the loaded value, so keep tracing.
+          // Since we are leaving a theta, we still let loopBackEdgeTaken=true
+          return getLastValueOriginBeforeInput(*loopVar.input, true);
+        }
       }
 
-      // if the reached store node is inside the theta, it must be routed out of it
-      if (lastStoreNode.node->region() == thetaNode->subregion())
-        return ValueOrigin::createThetaNodeOutput(*thetaNode);
-
-      // The last store node is outside the theta, so point to it directly
-      return lastStoreNode;
+      // We ended up with some value origin inside the theta, so return theta output
+      // to signal that it needs to be routed out
+      JLM_ASSERT(
+          lastValueOrigin.kind == ValueOrigin::Kind::Uninitialized
+          || lastValueOrigin.node->region() == thetaNode->subregion());
+      return ValueOrigin::createThetaNodeOutput(*thetaNode);
     }
 
     // If we found a loop pre variable in a theta node, trace both inside and outside
@@ -753,15 +894,15 @@ private:
     {
       const auto loopVar = thetaNode->MapPreLoopVar(tracedOutput);
 
-      // Trace from the theta input first
-      auto inputLastStoreNode = getLastValueOriginBeforeInput(*loopVar.input);
-      if (!inputLastStoreNode.isKnown())
+      // Trace from the theta input first.
+      // When tracing from a theta input, we always set loopBackEdgeTaken=true
+      auto inputLastValueOrigin = getLastValueOriginBeforeInput(*loopVar.input, true);
+      if (!inputLastValueOrigin.isKnown())
         return ValueOrigin::createUnknown();
 
-      // If the loop variables' post result is not traced, add it to the list.
+      // Since the loop value may also originte from a back-edge, add the back-edge to the list.
       // Using a list prevents visiting the loop body multiple times during recursion.
-      if (lastValueOriginBeforeInput.count(loopVar.post) == 0)
-        loopVarPostsToTrace.insert(loopVar.post);
+      loopVarPostsToTrace.insert(loopVar.post);
 
       return ValueOrigin::createThetaNodePre(*thetaNode);
     }
@@ -776,29 +917,59 @@ public:
   std::shared_ptr<const rvsdg::Type> loadedType;
   size_t loadedTypeSize;
 
-  OutputTracer & tracer;
-  aa::AliasAnalysis & aliasAnalysis;
-
+  // Used for statistics
   AliasQueryResponseCounter storeAAResponses;
   AliasQueryResponseCounter loadAAResponses;
+
+private:
+  // Variables used during tracing
+
+  OutputTracer & tracer;
+  aa::AliasAnalysis & aliasAnalysis;
+  rvsdg::RegionPredicateTrace & regionPredicateTrace;
 
   // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
   // Map containing info about each load node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, LoadNodeInfo> loadNodeInfo;
 
-  // The last value origin on the memory state chain before the given input.
-  std::unordered_map<rvsdg::Input *, ValueOrigin> lastValueOriginBeforeInput;
-  // The last value origin before the given node.
-  std::unordered_map<rvsdg::Node *, ValueOrigin> lastValueOriginBeforeNode;
-  // The last value origin node before the end of the given region.
-  // It can also be outside the region if no clobber occurs inside the region.
-  std::unordered_map<rvsdg::Region *, ValueOrigin> lastValueOriginInRegion;
+  /* The last value origin on the memory state chain before the given input.
+   * The boolean in the key is true if any loop back-edges have been taken.
+   */
+  std::unordered_map<
+      std::pair<rvsdg::Input *, bool>,
+      ValueOrigin,
+      util::Hash<std::pair<rvsdg::Input *, bool>>>
+      lastValueOriginBeforeInput;
+
+  /* The last value origin before the given node.
+   * The boolean in the key is true if any loop back-edges have been taken.
+   * @see getLastValueOriginBeforeNode()
+   */
+  std::unordered_map<
+      std::pair<rvsdg::Node *, bool>,
+      ValueOrigin,
+      util::Hash<std::pair<rvsdg::Node *, bool>>>
+      lastValueOriginBeforeNode;
+
+  /* The last value origin before the end of the given region.
+   * Note that it can be outside the region if no clobber occurs inside the region.
+   * The boolean in the key is true if any loop back-edges have been taken.
+   * @see getLastValueOriginInRegion()
+   */
+  std::unordered_map<
+      std::pair<rvsdg::Region *, bool>,
+      ValueOrigin,
+      util::Hash<std::pair<rvsdg::Region *, bool>>>
+      lastValueOriginInRegion;
 
   // When tracing reaches a loop var pre argument, tracing does not continue through the post.
   // The loop var post result is instead added to this set, to ensure that tracing happens later.
   // Only loop vars that have yet to be traced are added here.
   util::HashSet<rvsdg::Input *> loopVarPostsToTrace;
+
+public:
+  // Variables used during routing
 
   // During routing, at most one exit variable need to be created per gamma
   std::unordered_map<rvsdg::GammaNode *, rvsdg::Output *> createdExitVars;
@@ -832,7 +1003,11 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) != 0);
 
   context_->statistics.startTracing();
-  LoadTracingInfo loadTracingInfo(loadNode, context_->outputTracer, context_->aliasAnalysis);
+  LoadTracingInfo loadTracingInfo(
+      loadNode,
+      context_->outputTracer,
+      context_->aliasAnalysis,
+      context_->regionPredicateTrace);
   const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
@@ -1091,16 +1266,16 @@ StoreValueForwarding::forwardValueOrigins(LoadTracingInfo & tracingInfo)
   auto & loadedValueOutput = LoadOperation::LoadedValueOutput(loadNode);
   auto & loadRegion = *loadNode.region();
 
-  // There must be a node providing the last value stored before the load
-  const auto lastStoreNode = tracingInfo.lastValueOriginBeforeNode[&loadNode];
-  JLM_ASSERT(lastStoreNode.isKnown());
-  auto & storedValueOutput = getValueOriginOutput(lastStoreNode, loadRegion, tracingInfo);
+  // Since tracing starts from the load node, we know no loop back-edges have been taken
+  const auto lastValueOrigin = tracingInfo.getLastValueOriginBeforeNode(loadNode, false);
+  JLM_ASSERT(lastValueOrigin.has_value() && lastValueOrigin->isKnown());
+  auto & valueOriginOutput = getValueOriginOutput(*lastValueOrigin, loadRegion, tracingInfo);
 
   // Fixup all loop variables that were created during the above routing
   connectUnroutedLoopPosts(tracingInfo);
 
-  // Divert users of the load to the routed stored value
-  loadedValueOutput.divert_users(&storedValueOutput);
+  // Divert users of the load to the routed value origin output
+  loadedValueOutput.divert_users(&valueOriginOutput);
 
   // Make the load node dead by routing all memory state users around it
   for (auto & memoryStateOutput : LoadNonVolatileOperation::MemoryStateOutputs(loadNode))
@@ -1152,16 +1327,22 @@ StoreValueForwarding::getValueOriginOutput(
     auto [it, inserted] = tracingInfo.createdExitVars.emplace(gammaNode, nullptr);
     if (inserted)
     {
-      std::vector<rvsdg::Output *> lastStorePerSubregion;
+      std::vector<rvsdg::Output *> lastValueOriginPerSubregion;
       for (auto & subregion : gammaNode->Subregions())
       {
-        JLM_ASSERT(tracingInfo.lastValueOriginInRegion.count(&subregion));
-        auto lastValueOrigin = tracingInfo.lastValueOriginInRegion[&subregion];
-        auto & valueOriginOutput = getValueOriginOutput(lastValueOrigin, subregion, tracingInfo);
-        lastStorePerSubregion.push_back(&valueOriginOutput);
+        // We only create one gamma exit variable for each load,
+        // so if tracing ever reached the gamma after following a back-edge,
+        // we can not use value origins traced under the assumption that no back-edges were taken.
+        // If the gamma output was never reached after tracing through a back-edge,
+        // the getter function will fall back to using value origins traced under the assumption
+        // that no back-edges have been followed, which is then a correct assumption.
+        auto lastValueOrigin = tracingInfo.getLastValueOriginInRegion(subregion, true);
+        JLM_ASSERT(lastValueOrigin.has_value() && lastValueOrigin->isKnown());
+        auto & valueOriginOutput = getValueOriginOutput(*lastValueOrigin, subregion, tracingInfo);
+        lastValueOriginPerSubregion.push_back(&valueOriginOutput);
       }
 
-      auto exitVar = gammaNode->AddExitVar(lastStorePerSubregion);
+      auto exitVar = gammaNode->AddExitVar(lastValueOriginPerSubregion);
       it->second = exitVar.output;
     }
     JLM_ASSERT(it->second);
@@ -1176,40 +1357,29 @@ StoreValueForwarding::getValueOriginOutput(
     auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(valueOrigin.node);
     JLM_ASSERT(thetaNode);
 
-    // If the theta output is being requested, and no clobber happens inside the theta,
-    // skip making a loop variable and return the last store before the theta instead
-    if (valueOrigin.kind == ValueOrigin::Kind::ThetaNodeOutput)
-    {
-      auto lastStoreInRegion = tracingInfo.lastValueOriginInRegion.find(thetaNode->subregion());
-      JLM_ASSERT(lastStoreInRegion != tracingInfo.lastValueOriginInRegion.end());
-      JLM_ASSERT(lastStoreInRegion->second.isKnown());
-
-      // If the last store is the theta pre, the loop body never clobbers
-      if (lastStoreInRegion->second.kind == ValueOrigin::Kind::ThetaNodePre)
-      {
-        auto lastStoreBeforeTheta = tracingInfo.lastValueOriginBeforeNode.find(thetaNode);
-        JLM_ASSERT(lastStoreBeforeTheta != tracingInfo.lastValueOriginBeforeNode.end());
-        return getValueOriginOutput(lastStoreBeforeTheta->second, targetRegion, tracingInfo);
-      }
-    }
-
     // If the loop variable has not yet been created in this theta, create it now
     auto loopVarSlot = tracingInfo.createdLoopVars.find(thetaNode);
     if (loopVarSlot == tracingInfo.createdLoopVars.end())
     {
       rvsdg::Output * initialValue = nullptr;
 
-      if (auto lastStoreBeforeTheta = tracingInfo.lastValueOriginBeforeNode.find(thetaNode);
-          lastStoreBeforeTheta != tracingInfo.lastValueOriginBeforeNode.end())
+      // Get the last value origin before the theta.
+      // Since we only create one loop variable for each load we forward,
+      // use the conservative assumption that back-edges may have been followed.
+      // If tracing never left the theta after following a back-edge,
+      // the getter function falls back to using the value origin found under the asumption
+      // that no back-edges have been followed, which is the a correct assumption.
+      auto lastValueOrigin = tracingInfo.getLastValueOriginBeforeNode(*thetaNode, true);
+      if (lastValueOrigin.has_value())
       {
-        JLM_ASSERT(lastStoreBeforeTheta->second.isKnown());
+        JLM_ASSERT(lastValueOrigin->isKnown());
         auto & outerRegion = *thetaNode->region();
-        initialValue =
-            &getValueOriginOutput(lastStoreBeforeTheta->second, outerRegion, tracingInfo);
+        initialValue = &getValueOriginOutput(*lastValueOrigin, outerRegion, tracingInfo);
       }
       else
       {
-        // the loop variable is only used as a theta output, so give it undef as input
+        // Tracing never reached the loop entry, so the value must be defined inside the loop.
+        // The created loop variable can therefore take undef as its input.
         initialValue = UndefValueOperation::Create(*thetaNode->region(), tracingInfo.loadedType);
       }
 
@@ -1251,9 +1421,14 @@ StoreValueForwarding::connectUnroutedLoopPosts(LoadTracingInfo & tracingInfo)
     auto post = tracingInfo.unroutedLoopVarPosts.front();
     tracingInfo.unroutedLoopVarPosts.pop();
 
-    auto lastStore = tracingInfo.lastValueOriginInRegion.find(post->region());
-    JLM_ASSERT(lastStore != tracingInfo.lastValueOriginInRegion.end());
-    auto & origin = getValueOriginOutput(lastStore->second, *post->region(), tracingInfo);
+    // We only create one loop variable per theta,
+    // so if tracing ever entered the theta after following a back-edge,
+    // we conservatively use the value origin found with loopBackEdgeTaken=true.
+    // If the theta subregion was never traced after following a back-edge,
+    // it falls back to using the value origin found assuming no back-edges have been followed.
+    auto lastValueOrigin = tracingInfo.getLastValueOriginInRegion(*post->region(), true);
+    JLM_ASSERT(lastValueOrigin.has_value() && lastValueOrigin->isKnown());
+    auto & origin = getValueOriginOutput(*lastValueOrigin, *post->region(), tracingInfo);
     post->divert_to(&origin);
   }
 }
@@ -1263,6 +1438,8 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
 {
   if (output.region() == &region)
     return output;
+
+  JLM_ASSERT(rvsdg::Region::isAncestor(region, *output.region()));
 
   if (region.IsRootRegion())
     JLM_UNREACHABLE("root region reached during attempt at routing output into region");
@@ -1329,7 +1506,7 @@ createAliasAnalysis(rvsdg::RvsdgModule & module, util::StatisticsCollector & sta
 {
   auto localAA = std::make_unique<aa::LocalAliasAnalysis>();
 
-  if (!ENABLE_AGGRESSIVE_LOCALAA)
+  if (USE_TRIVIAL_LOCALAA)
   {
     // Setting the trace collection size to 1 limits the analysis to only the most trivial tracing
     localAA->setMaxTraceCollectionSize(1);
