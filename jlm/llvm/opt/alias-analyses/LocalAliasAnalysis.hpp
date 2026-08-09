@@ -77,7 +77,7 @@ private:
    * except for those that are based on the original pointer itself.
    * The pointer is also guaranteed to be at the very beginning of the memory region.
    *
-   * For example, the output of an \ref AllocaOperation, a \ref DeltaOperation,
+   * For example, the output of an \ref AllocaOperation, a \ref LlvmDeltaOperation,
    * or a \ref rvsdg::GraphImport, are such original origins.
    *
    * @param pointer the pointer value to check
@@ -189,6 +189,22 @@ private:
    */
   [[nodiscard]] static bool
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
+
+  /**
+   * Checks if the given \p traceCollection only contains top origins that are allocas
+   * in the current function.
+   * @param traceCollection the \ref TraceCollection to check
+   * @return true iff all top origins in \p tc are alloca outputs
+   */
+  [[nodiscard]] static bool
+  hasOnlyAllocaTopOrigins(const TraceCollection & traceCollection);
+
+  /**
+   * Removes all top origins from the given \p traceCollection that are arguments to the function.
+   * @param traceCollection the \ref TraceCollection to modify
+   */
+  static void
+  removeArgumentTopOrigins(TraceCollection & traceCollection);
 
   /**
    * Checks if the given pointer is the output of an original memory location,

@@ -93,6 +93,7 @@ $(eval $(call common_library,libhls))
 
 run-libhls-tests_SOURCES = \
     jlm/hls/backend/rhls2firrtl/BaseHlsTests.cpp \
+    jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverterTests.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests.cpp \
     jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests.cpp \
     jlm/hls/backend/rvsdg2rhls/ForkTests.cpp \
@@ -110,5 +111,5 @@ run-libhls-tests_SOURCES = \
     jlm/hls/util/ViewTests.cpp \
 
 run-libhls-tests_LIBS = libhls libllvm librvsdg libutil
-run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+run-libhls-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) $(CIRCT_LDFLAGS)
 $(eval $(call common_test,run-libhls-tests))

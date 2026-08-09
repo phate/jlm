@@ -3,8 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
@@ -108,97 +112,6 @@ VectorSelectOperation::copy() const
   return std::make_unique<VectorSelectOperation>(*this);
 }
 
-FloatingPointToUnsignedIntegerOperation::~FloatingPointToUnsignedIntegerOperation() noexcept =
-    default;
-
-bool
-FloatingPointToUnsignedIntegerOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const FloatingPointToUnsignedIntegerOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-FloatingPointToUnsignedIntegerOperation::debug_string() const
-{
-  return "FpToUInt";
-}
-
-std::unique_ptr<rvsdg::Operation>
-FloatingPointToUnsignedIntegerOperation::copy() const
-{
-  return std::make_unique<FloatingPointToUnsignedIntegerOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FloatingPointToUnsignedIntegerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FloatingPointToUnsignedIntegerOperation::reduce_operand(
-    rvsdg::unop_reduction_path_t,
-    rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented");
-}
-
-FloatingPointToSignedIntegerOperation::~FloatingPointToSignedIntegerOperation() noexcept = default;
-
-bool
-FloatingPointToSignedIntegerOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const FloatingPointToSignedIntegerOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-FloatingPointToSignedIntegerOperation::debug_string() const
-{
-  return "FpToSInt";
-}
-
-std::unique_ptr<rvsdg::Operation>
-FloatingPointToSignedIntegerOperation::copy() const
-{
-  return std::make_unique<FloatingPointToSignedIntegerOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FloatingPointToSignedIntegerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FloatingPointToSignedIntegerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *)
-    const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
-ControlToIntOperation::~ControlToIntOperation() noexcept = default;
-
-bool
-ControlToIntOperation::operator==(const Operation & other) const noexcept
-{
-  auto op = dynamic_cast<const ControlToIntOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-ControlToIntOperation::debug_string() const
-{
-  return "ControlToInt";
-}
-
-std::unique_ptr<rvsdg::Operation>
-ControlToIntOperation::copy() const
-{
-  return std::make_unique<ControlToIntOperation>(*this);
-}
-
 BranchOperation::~BranchOperation() noexcept = default;
 
 bool
@@ -225,8 +138,7 @@ ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept = default
 bool
 ConstantPointerNullOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantPointerNullOperation *>(&other);
-  return op && op->GetPointerType() == GetPointerType();
+  return dynamic_cast<const ConstantPointerNullOperation *>(&other);
 }
 
 std::string
@@ -241,91 +153,25 @@ ConstantPointerNullOperation::copy() const
   return std::make_unique<ConstantPointerNullOperation>(*this);
 }
 
-IntegerToPointerOperation::~IntegerToPointerOperation() noexcept = default;
+ConstantDataArrayOperation::~ConstantDataArrayOperation() noexcept = default;
 
 bool
-IntegerToPointerOperation::operator==(const Operation & other) const noexcept
+ConstantDataArrayOperation::operator==(const Operation & other) const noexcept
 {
-  const auto op = dynamic_cast<const IntegerToPointerOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-IntegerToPointerOperation::debug_string() const
-{
-  return "IntToPtr";
-}
-
-std::unique_ptr<rvsdg::Operation>
-IntegerToPointerOperation::copy() const
-{
-  return std::make_unique<IntegerToPointerOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-IntegerToPointerOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-IntegerToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
-PtrToIntOperation::~PtrToIntOperation() noexcept = default;
-
-bool
-PtrToIntOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const PtrToIntOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-PtrToIntOperation::debug_string() const
-{
-  return "PtrToInt";
-}
-
-std::unique_ptr<rvsdg::Operation>
-PtrToIntOperation::copy() const
-{
-  return std::make_unique<PtrToIntOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-PtrToIntOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
-ConstantDataArray::~ConstantDataArray() noexcept = default;
-
-bool
-ConstantDataArray::operator==(const Operation & other) const noexcept
-{
-  auto op = dynamic_cast<const ConstantDataArray *>(&other);
+  const auto op = dynamic_cast<const ConstantDataArrayOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantDataArray::debug_string() const
+ConstantDataArrayOperation::debug_string() const
 {
   return "ConstantDataArray";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantDataArray::copy() const
+ConstantDataArrayOperation::copy() const
 {
-  return std::make_unique<ConstantDataArray>(*this);
+  return std::make_unique<ConstantDataArrayOperation>(*this);
 }
 
 static const util::BijectiveMap<::llvm::CmpInst::Predicate, ICmpPredicate> &
@@ -425,6 +271,83 @@ PtrCmpOperation::reduce_operand_pair(
     rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+template<typename TOperation>
+static bool
+isOutputOf(rvsdg::Output & operand)
+{
+  auto [node, operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<TOperation>(operand);
+  return operation != nullptr;
+}
+
+static bool
+isAllocationSide(rvsdg::Output & output)
+{
+  if (isOutputOf<AllocaOperation>(output))
+  {
+    return true;
+  }
+
+  if (rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
+  {
+    return true;
+  }
+
+  if (dynamic_cast<const LlvmGraphImport *>(&output))
+  {
+    return true;
+  }
+
+  auto [fnToPtrNode, fnToPtrOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(output);
+  if (fnToPtrOperation != nullptr)
+  {
+    const auto & tracedOutput =
+        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin());
+    if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(tracedOutput))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PtrCmpOperation::normalizeNullPointerComparison(
+    const PtrCmpOperation & ptrCmpOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  if (ptrCmpOperation.predicate() != ICmpPredicate::Eq
+      && ptrCmpOperation.predicate() != ICmpPredicate::Ne)
+    return std::nullopt;
+
+  JLM_ASSERT(operands.size() == 2);
+  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
+  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+
+  const bool hasRequiredOperands =
+      (isOutputOf<ConstantPointerNullOperation>(tracedOperand1) && isAllocationSide(tracedOperand2))
+      || (isOutputOf<ConstantPointerNullOperation>(tracedOperand2)
+          && isAllocationSide(tracedOperand1));
+  if (hasRequiredOperands)
+  {
+    auto & region = *operands[0]->region();
+    switch (ptrCmpOperation.predicate())
+    {
+    case ICmpPredicate::Eq:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
+    case ICmpPredicate::Ne:
+      return std::vector<rvsdg::Output *>{
+        IntegerConstantOperation::Create(region, 1, 1).output(0)
+      };
+    default:
+      throw std::logic_error("Unhandled predicate!");
+    }
+  }
+
+  return std::nullopt;
 }
 
 ConstantFP::~ConstantFP() noexcept = default;
@@ -557,20 +480,6 @@ FreezeOperation::operator==(const Operation & other) const noexcept
   return operation && operation->getType() == getType();
 }
 
-rvsdg::unop_reduction_path_t
-FreezeOperation::can_reduce_operand([[maybe_unused]] const jlm::rvsdg::Output * arg) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-FreezeOperation::reduce_operand(
-    [[maybe_unused]] rvsdg::unop_reduction_path_t path,
-    [[maybe_unused]] jlm::rvsdg::Output * arg) const
-{
-  throw std::runtime_error("FreezeOperation does not support reductions");
-}
-
 std::string
 FreezeOperation::debug_string() const
 {
@@ -627,39 +536,6 @@ FBinaryOperation::reduce_operand_pair(
   JLM_UNREACHABLE("Not implemented!");
 }
 
-FPExtOperation::~FPExtOperation() noexcept = default;
-
-bool
-FPExtOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const FPExtOperation *>(&other);
-  return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
-}
-
-std::string
-FPExtOperation::debug_string() const
-{
-  return "FPExt";
-}
-
-std::unique_ptr<rvsdg::Operation>
-FPExtOperation::copy() const
-{
-  return std::make_unique<FPExtOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FPExtOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
 FNegOperation::~FNegOperation() noexcept = default;
 
 bool
@@ -679,51 +555,6 @@ std::unique_ptr<rvsdg::Operation>
 FNegOperation::copy() const
 {
   return std::make_unique<FNegOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FNegOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
-FPTruncOperation::~FPTruncOperation() noexcept = default;
-
-bool
-FPTruncOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const FPTruncOperation *>(&other);
-  return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
-}
-
-std::string
-FPTruncOperation::debug_string() const
-{
-  return "FPTrunc";
-}
-
-std::unique_ptr<rvsdg::Operation>
-FPTruncOperation::copy() const
-{
-  return std::make_unique<FPTruncOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-FPTruncOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
 }
 
 VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;
@@ -756,94 +587,26 @@ VariadicArgumentListOperation::copy() const
   return std::make_unique<VariadicArgumentListOperation>(*this);
 }
 
-/* ConstantStruct operator */
-
-ConstantStruct::~ConstantStruct()
-{}
+ConstantStructOperation::~ConstantStructOperation() noexcept = default;
 
 bool
-ConstantStruct::operator==(const Operation & other) const noexcept
+ConstantStructOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantStruct *>(&other);
+  auto op = dynamic_cast<const ConstantStructOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantStruct::debug_string() const
+ConstantStructOperation::debug_string() const
 {
-  return "ConstantStruct";
+  const auto name = type().IsLiteral() ? "" : type().GetName();
+  return util::strfmt("ConstantStruct[", name, "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantStruct::copy() const
+ConstantStructOperation::copy() const
 {
-  return std::make_unique<ConstantStruct>(*this);
-}
-
-UIToFPOperation::~UIToFPOperation() noexcept = default;
-
-bool
-UIToFPOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const UIToFPOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-UIToFPOperation::debug_string() const
-{
-  return "UIToFP";
-}
-
-std::unique_ptr<rvsdg::Operation>
-UIToFPOperation::copy() const
-{
-  return std::make_unique<UIToFPOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-UIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-UIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
-}
-
-SIToFPOperation::~SIToFPOperation() noexcept = default;
-
-bool
-SIToFPOperation::operator==(const Operation & other) const noexcept
-{
-  const auto op = dynamic_cast<const SIToFPOperation *>(&other);
-  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
-}
-
-std::string
-SIToFPOperation::debug_string() const
-{
-  return "SIToFP";
-}
-
-std::unique_ptr<rvsdg::Operation>
-SIToFPOperation::copy() const
-{
-  return std::make_unique<SIToFPOperation>(*this);
-}
-
-rvsdg::unop_reduction_path_t
-SIToFPOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
-{
-  return rvsdg::unop_reduction_none;
-}
-
-rvsdg::Output *
-SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
-{
-  JLM_UNREACHABLE("Not implemented!");
+  return std::make_unique<ConstantStructOperation>(*this);
 }
 
 ConstantArrayOperation::~ConstantArrayOperation() noexcept = default;

@@ -445,13 +445,7 @@ TEST(DeadNodeEliminationTests, Delta)
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          valueType,
-          "delta",
-          Linkage::externalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(valueType, "delta", Linkage::externalLinkage, "", false, 4));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);
@@ -541,6 +535,6 @@ TEST(DeadNodeEliminationTests, LoadNodes)
   // Assert
   // We expect that both load nodes have been removed.
   EXPECT_FALSE(
-      Region::ContainsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
+      Region::containsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 4u);
 }

@@ -1046,7 +1046,7 @@ ConvertDataNode(
      */
     auto deltaNode = rvsdg::DeltaNode::Create(
         &region,
-        DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             dataNode.GetValueType(),
             dataNode.name(),
             dataNode.linkage(),

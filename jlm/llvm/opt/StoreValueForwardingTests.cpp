@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -15,8 +16,11 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -24,6 +28,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <llvm/ADT/APFloat.h>
+#include <llvm/IR/Constants.h>
 
 static void
 RunStoreValueForwarding(jlm::llvm::LlvmRvsdgModule & rvsdgModule)
@@ -1057,6 +1062,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
       {},
       {
           bits32Type,
+          bits8Type,
       });
 
   auto deltaNode = DeltaNode::Create(
@@ -1073,17 +1079,32 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
   auto & load32Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
   auto & load8Node = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits8Type, 4);
 
-  auto & zextResult = ZExtOperation::create(32, *load8Node.output(0));
-  auto & addNode = IntegerAddOperation::createNode(32, *load32Node.output(0), zextResult);
-
-  lambdaNode.finalize({ addNode.output(0) });
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
+                        &LoadOperation::LoadedValueOutput(load8Node) });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert
-  // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  {
+    auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intOperation0, nullptr);
+    EXPECT_EQ(intOperation0->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation0->Representation().to_uint(), 4u);
+  }
+
+  {
+    auto [truncNode, truncOperation] = TryGetSimpleNodeAndOptionalOp<TruncOperation>(
+        *lambdaNode.GetFunctionResults()[1]->origin());
+    EXPECT_NE(truncOperation, nullptr);
+
+    auto [intNode1, intOperation1] =
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*truncNode->input(0)->origin());
+    EXPECT_NE(intOperation1, nullptr);
+    EXPECT_EQ(intOperation1->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation1->Representation().to_uint(), 4u);
+  }
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant)
@@ -1097,9 +1118,15 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   const auto pointerType = PointerType::Create();
   const auto bits32Type = BitType::Create(32);
-  const auto structType =
-      StructType::CreateIdentified("struct", { bits32Type, pointerType }, false);
-  const auto functionType = FunctionType::Create({}, { bits32Type, pointerType });
+  const auto fixedVectorType = FixedVectorType::Create(bits32Type, 4);
+  const auto floatType = FloatingPointType::Create(fpsize::flt);
+  const auto doubleType = FloatingPointType::Create(fpsize::dbl);
+  const auto structType = StructType::CreateIdentified(
+      "struct",
+      { bits32Type, pointerType, fixedVectorType, floatType, doubleType },
+      false);
+  const auto functionType =
+      FunctionType::Create({}, { bits32Type, pointerType, fixedVectorType, floatType, doubleType });
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
@@ -1114,6 +1141,9 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
   auto & oneNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2);
+  auto & threeNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3);
+  auto & fourNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4);
 
   auto & gep0Node = GetElementPtrOperation::createNode(
       *ctxVar.inner,
@@ -1128,128 +1158,77 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & loadPtrNode =
       LoadNonVolatileOperation::CreateNode(*gep1Node.output(0), {}, pointerType, 4);
 
-  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(load32Node),
-                        &LoadOperation::LoadedValueOutput(loadPtrNode) });
+  auto & gep2Node = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), twoNode.output(0) },
+      structType);
+  auto & loadV32Node =
+      LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);
+
+  auto & gepFloatNode = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), threeNode.output(0) },
+      structType);
+  auto & loadFloatNode =
+      LoadNonVolatileOperation::CreateNode(*gepFloatNode.output(0), {}, floatType, 4);
+
+  auto & gepDoubleNode = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), fourNode.output(0) },
+      structType);
+  auto & loadDoubleNode =
+      LoadNonVolatileOperation::CreateNode(*gepDoubleNode.output(0), {}, doubleType, 8);
+
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(load32Node),
+      &LoadOperation::LoadedValueOutput(loadPtrNode),
+      &LoadOperation::LoadedValueOutput(loadV32Node),
+      &LoadOperation::LoadedValueOutput(loadFloatNode),
+      &LoadOperation::LoadedValueOutput(loadDoubleNode),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
-}
-
-TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroConstant)
-{
-  using namespace jlm::llvm;
-  using namespace jlm::rvsdg;
-
-  /**
-   * Creates RVSDG corresponding to the C code:
-   *
-   * struct S {
-   *   float f;
-   *   double d;
-   * };
-   *
-   * static const struct S myS;
-   *
-   * float getFloat() {
-   *   return myS.f;
-   * }
-   * double getDouble() {
-   *   return myS.d;
-   * }
-   *
-   * where the loads in the functions have no memory state going through them,
-   * since they are loading from constant memory.
-   *
-   * The test checks that StoreValueForwarding is able to replace the loads in the functions
-   * with floating point 0.0 constants.
-   */
-
-  // Arrange - Create a single lambda with two return values for simplicity
-  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-
-  const auto pointerType = PointerType::Create();
-  const auto floatType = FloatingPointType::Create(fpsize::flt);
-  const auto doubleType = FloatingPointType::Create(fpsize::dbl);
-  const auto structType = StructType::CreateIdentified("struct", { floatType, doubleType }, false);
-
-  auto deltaNode = DeltaNode::Create(
-      &graph.GetRootRegion(),
-      DeltaOperation::Create(structType, true, pointerType));
-  auto aggregateZero = ConstantAggregateZeroOperation::Create(*deltaNode->subregion(), structType);
-  auto & deltaOutput = deltaNode->finalize(aggregateZero);
-
-  // function types for getFloat() and getDouble()
-  const auto getFloatFunctionType = FunctionType::Create({}, { floatType });
-  const auto getDoubleFunctionType = FunctionType::Create({}, { doubleType });
-
-  // Create getFloat()
-  auto & getFloatLambdaNode = *LambdaNode::Create(
-      graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(getFloatFunctionType, "getFloat", Linkage::internalLinkage));
-  {
-    auto ctxVar = getFloatLambdaNode.AddContextVar(deltaOutput);
-
-    // Load float field (offset 0)
-    auto & zeroNode = IntegerConstantOperation::Create(*getFloatLambdaNode.subregion(), 32, 0);
-    auto & gepFloatNode = GetElementPtrOperation::createNode(
-        *ctxVar.inner,
-        { zeroNode.output(0), zeroNode.output(0) },
-        structType);
-    auto & loadFloatNode =
-        LoadNonVolatileOperation::CreateNode(*gepFloatNode.output(0), {}, floatType, 4);
-    getFloatLambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadFloatNode) });
-  }
-
-  // Create getDouble()
-  auto & getDoubleFunctionNode = *LambdaNode::Create(
-      graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(getDoubleFunctionType, "getDouble", Linkage::internalLinkage));
-  {
-    auto ctxVar = getDoubleFunctionNode.AddContextVar(deltaOutput);
-
-    // Load double field (offset 1)
-    auto & zeroNode = IntegerConstantOperation::Create(*getDoubleFunctionNode.subregion(), 32, 0);
-    auto & oneNode = IntegerConstantOperation::Create(*getDoubleFunctionNode.subregion(), 32, 1);
-    auto & gepDoubleNode = GetElementPtrOperation::createNode(
-        *ctxVar.inner,
-        { zeroNode.output(0), oneNode.output(0) },
-        structType);
-    auto & loadDoubleNode =
-        LoadNonVolatileOperation::CreateNode(*gepDoubleNode.output(0), {}, doubleType, 8);
-    getDoubleFunctionNode.finalize({ &LoadOperation::LoadedValueOutput(loadDoubleNode) });
-  }
-
-  // std::cout << jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion()) << std::endl;
-
-  // Act
-  RunStoreValueForwarding(rvsdgModule);
-
-  // Assert - Check that both loads were forwarded to float zero constants
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 
   {
-    auto floatResult = getFloatLambdaNode.GetFunctionResults()[0];
-    const auto [_, floatOp] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*floatResult->origin());
-    EXPECT_NE(floatOp, nullptr);
-    EXPECT_TRUE(*floatOp->result(0) == *floatType);
-    EXPECT_TRUE(floatOp->constant().isZero());
-    EXPECT_EQ(&floatOp->constant().getSemantics(), &::llvm::APFloat::IEEEsingle());
+    auto [intNode, intOperation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intOperation, nullptr);
+    EXPECT_EQ(intOperation->Representation().to_uint(), 0u);
   }
 
   {
-    auto doubleResult = getDoubleFunctionNode.GetFunctionResults()[0];
-    const auto [_, doubleOp] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*doubleResult->origin());
-    EXPECT_NE(doubleOp, nullptr);
-    EXPECT_TRUE(*doubleOp->result(0) == *doubleType);
-    EXPECT_TRUE(doubleOp->constant().isZero());
-    EXPECT_EQ(&doubleOp->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
+    auto [nullPtrNode, nullPtrOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantPointerNullOperation>(
+            *lambdaNode.GetFunctionResults()[1]->origin());
+    EXPECT_NE(nullPtrOperation, nullptr);
+  }
+
+  {
+    auto [aggZeroNode, aggZeroOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantAggregateZeroOperation>(
+            *lambdaNode.GetFunctionResults()[2]->origin());
+    EXPECT_NE(aggZeroOperation, nullptr);
+  }
+
+  {
+    auto [floatNode, floatOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[3]->origin());
+    EXPECT_NE(floatOperation, nullptr);
+    EXPECT_EQ(&floatOperation->constant().getSemantics(), &llvm::APFloat::IEEEsingle());
+    EXPECT_TRUE(floatOperation->constant().isZero());
+  }
+
+  {
+    auto [doubleNode, doubleOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[4]->origin());
+    EXPECT_NE(doubleOperation, nullptr);
+    EXPECT_EQ(&doubleOperation->constant().getSemantics(), &llvm::APFloat::IEEEdouble());
+    EXPECT_TRUE(doubleOperation->constant().isZero());
   }
 }
 
@@ -1295,7 +1274,596 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaCtxVar)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
   // We expect that deltaOutput1 has now lambdaNode as user on top of deltaNode2.
   EXPECT_EQ(deltaOutput1.nusers(), 2u);
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantFP)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto floatType = FloatingPointType::Create(fpsize::flt);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          floatType,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(floatType, true, pointerType));
+  auto & fourNode =
+      ConstantFP::createNode(*deltaNode->subregion(), fpsize::flt, llvm::APFloat(4.0f));
+  auto & deltaOutput = deltaNode->finalize(fourNode.output(0));
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, floatType, 4);
+
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadNode) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          pointerType,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(pointerType, true, pointerType));
+  auto & constantPointerNull = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
+  auto & deltaOutput = deltaNode->finalize(constantPointerNull.output(0));
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, pointerType, 4);
+
+  lambdaNode.finalize({ loadNode.output(0) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // We expect all load nodes to be forwarded
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits8Type = BitType::Create(8);
+  const auto bits32Type = BitType::Create(32);
+  const auto bits64Type = BitType::Create(64);
+  const auto arrayType = ArrayType::Create(bits32Type, 3);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits64Type,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(arrayType, true, pointerType));
+  auto & zeroNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 2);
+  auto constantDataArrayResult = ConstantDataArrayOperation::Create(
+      { zeroNode.output(0), oneNode.output(0), twoNode.output(0) });
+  auto & deltaOutput = deltaNode->finalize(constantDataArrayResult);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto zero = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
+  auto two = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+  auto four = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
+
+  auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
+
+  auto gepOutput1 = GetElementPtrOperation::create(ctxVar.inner, { zero }, bits32Type);
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*gepOutput1, {}, bits32Type, 4);
+
+  auto gepOutput2 = GetElementPtrOperation::create(ctxVar.inner, { zero, zero }, arrayType);
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*gepOutput2, {}, bits32Type, 4);
+
+  auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, arrayType);
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
+
+  auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
+  auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
+
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+      &LoadOperation::LoadedValueOutput(loadNode1),
+      &LoadOperation::LoadedValueOutput(loadNode2),
+      &LoadOperation::LoadedValueOutput(loadNode3),
+      &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
+  });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[0]->origin());
+  EXPECT_NE(intOperation0, nullptr);
+  EXPECT_EQ(intOperation0->Representation().to_uint(), 0u);
+
+  auto [intNode1, intOperation1] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[1]->origin());
+  EXPECT_NE(intOperation1, nullptr);
+  EXPECT_EQ(intOperation1->Representation().to_uint(), 0u);
+
+  auto [intNode2, intOperation2] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[2]->origin());
+  EXPECT_NE(intOperation2, nullptr);
+  EXPECT_EQ(intOperation2->Representation().to_uint(), 0u);
+
+  auto [intNode3, intOperation3] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[3]->origin());
+  EXPECT_NE(intOperation3, nullptr);
+  EXPECT_EQ(intOperation3->Representation().to_uint(), 2u);
+
+  auto [intNode4, intOperation4] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[4]->origin());
+  EXPECT_NE(intOperation4, nullptr);
+  EXPECT_EQ(intOperation4->Representation().to_uint(), 1u);
+
+  auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[5]->origin());
+  EXPECT_NE(intOperation5, nullptr);
+  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
+}
+
+TEST(StoreValueForwardingTests, RegionPredicatedValueForwarding)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates the following RVSDG:
+   *
+   *   +-int func(int* p)------x----x--------------+
+   *   |                      / \   |              |
+   *   | /-------------------/  |   |              |
+   *   | |   CTRL(0)            |   |              |
+   *   | |     v                v   v              |
+   *   | | +-gamma1---x------x----+---x-----x--+   |
+   *   | | |          |  40  |    |         |  |   |
+   *   | | |          v  v   v    |         |  |   |
+   *   | | | CTRL(0) STORE(int32) | CTRL(1) |  |   |
+   *   | | |    v            v    |      v  v  |   |
+   *   | | +----x------------x----+------x--x--+   |
+   *   | |         |          |                    |
+   *   | \---------|------\   |                    |
+   *   |           v      v   v                    |
+   *   |  +-gamma2-x----x--+----x----x-----+       |
+   *   |  |        v    v  |    v    v     |       |
+   *   |  |    LOAD(int32) |  LOAD(int32)  |       |
+   *   |  |        v    v  |    v    v     |       |
+   *   |  +--------x----x--+----x----x-----+       |
+   *   |                  |  |                     |
+   *   |                  v  v                     |
+   *   +------------------x--x---------------------+
+   *
+   * After StoreValueForwarding, the LOAD in the left subregion of gamma2 should be gone,
+   * replaced by an entry variable that takes 40 from the left subregion of gamma1,
+   * and undef from the right subregion.
+   * The other LOAD should remain untouched.
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bit32Type = rvsdg::BitType::Create(32);
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType =
+      rvsdg::FunctionType::Create({ pointerType, memoryStateType }, { bit32Type, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & p = *lambdaNode.GetFunctionArguments()[0];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[1];
+
+  // gamma1
+  auto & ctrlZero = rvsdg::ControlConstantOperation::create(*lambdaNode.subregion(), 2, 0);
+  auto & gamma1 = *rvsdg::GammaNode::create(&ctrlZero, 2);
+
+  auto gamma1PEntry = gamma1.AddEntryVar(&p);
+  auto gamma1MemEntr = gamma1.AddEntryVar(&mem0);
+
+  // Left subregion of gamma1
+  auto & constantForty = IntegerConstantOperation::Create(*gamma1.subregion(0), 32, 40);
+  auto & storeP40Node = StoreNonVolatileOperation::CreateNode(
+      *gamma1PEntry.branchArgument[0],
+      *constantForty.output(0),
+      { gamma1MemEntr.branchArgument[0] },
+      4);
+  auto & gamma1LeftMem = *StoreOperation::MemoryStateOutputs(storeP40Node).begin();
+  auto & gamma1LeftCtrl = rvsdg::ControlConstantOperation::create(*gamma1.subregion(0), 2, 0);
+
+  // Right subregion of gamma1
+  auto & gamma1RightCtrl = rvsdg::ControlConstantOperation::create(*gamma1.subregion(1), 2, 1);
+
+  // Exit variables of gamma1
+  auto gamma1CtrlExit = gamma1.AddExitVar({ &gamma1LeftCtrl, &gamma1RightCtrl });
+  auto gamma1MemExit = gamma1.AddExitVar({ &gamma1LeftMem, gamma1MemEntr.branchArgument[1] });
+
+  // gamma2 after gamma1
+  auto & gamma2 = *rvsdg::GammaNode::create(gamma1CtrlExit.output, 2);
+
+  auto gamma2PEntry = gamma2.AddEntryVar(&p);
+  auto gamma2MemEntry = gamma2.AddEntryVar(gamma1MemExit.output);
+
+  // Left subregion of gamma2
+  auto & loadPLeft = LoadNonVolatileOperation::CreateNode(
+      *gamma2PEntry.branchArgument[0],
+      { gamma2MemEntry.branchArgument[0] },
+      bit32Type,
+      4);
+  auto & loadedPLeft = LoadNonVolatileOperation::LoadedValueOutput(loadPLeft);
+  auto & memLeft = *LoadNonVolatileOperation::MemoryStateOutputs(loadPLeft).begin();
+
+  // Right subregion of gamma2
+  auto & loadPRight = LoadNonVolatileOperation::CreateNode(
+      *gamma2PEntry.branchArgument[1],
+      { gamma2MemEntry.branchArgument[1] },
+      bit32Type,
+      4);
+  auto & loadedPRight = LoadNonVolatileOperation::LoadedValueOutput(loadPRight);
+  auto & memRight = *LoadNonVolatileOperation::MemoryStateOutputs(loadPRight).begin();
+
+  // Exit variables of gamma2
+  auto gamma2ExitLoadedP = gamma2.AddExitVar({ &loadedPLeft, &loadedPRight });
+  auto gamma2ExitMem = gamma2.AddExitVar({ &memLeft, &memRight });
+
+  // Finalize lambda with the merged result from gamma2
+  lambdaNode.finalize({ gamma2ExitLoadedP.output, gamma2ExitMem.output });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+
+  // The LOAD in the left subregion of gamma2 should be gone,
+  // and replaced by a value that originates from an entry variable into gamma2.
+  const auto & leftPOrigin = *gamma2ExitLoadedP.branchResult[0]->origin();
+  const auto & tracedLeftPOrigin = jlm::llvm::traceOutput(leftPOrigin);
+  // the value of p should come from gamma1
+  auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(tracedLeftPOrigin);
+  ASSERT_EQ(gamma, &gamma1);
+
+  auto exitVarP = gamma->MapOutputExitVar(tracedLeftPOrigin);
+  // The left branch should give 40
+  auto & leftG1Origin = *exitVarP.branchResult[0]->origin();
+  ASSERT_TRUE(rvsdg::IsOwnerNodeOperation<IntegerConstantOperation>(leftG1Origin));
+  ASSERT_EQ(jlm::llvm::tryGetConstantSignedInteger(leftG1Origin), 40);
+
+  // The right branch should be undef
+  auto & rightG1Origin = *exitVarP.branchResult[1]->origin();
+  ASSERT_TRUE(rvsdg::IsOwnerNodeOperation<UndefValueOperation>(rightG1Origin));
+
+  // The LOAD in the right subregion of gamma2 should still be untouched
+  const auto & rightPOrigin = *gamma2ExitLoadedP.branchResult[1]->origin();
+  ASSERT_TRUE(rvsdg::IsOwnerNodeOperation<LoadNonVolatileOperation>(rightPOrigin));
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromLoopExiting)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG corresponding to the C code
+   *
+   * \code{.c}
+   *     void opaque();
+   *     int func(int* p, int* q) {
+   *          while(1) {
+   *              opaque();
+   *              if(*p) {
+   *                  return *p;
+   *              }
+   *              else {
+   *                  if(*q)
+   *                      return *q;
+   *                  else
+   *                      ; //continue
+   *              }
+   *          }
+   *     }
+   * \endcode
+   *
+   * The return statements are placed in a gamma node outside the loop.
+   * The RVSDG looks like:
+   *
+   * opaque0 = import[void opaque()]
+   *
+   * lambda(int func(int* p, int* q)) opaque0
+   * [p, q, io0, mem0, opaque1]{
+   *     exitPred, _, _, mem8, io3, _ = theta undef, p, q, io0, mem0, opaque1
+   *     [_, p1, q1, io1, mem1, opaque2] {
+   *         mem2, io2 = CALL opaque2 io1, mem1
+   *         pLoad, mem3 = LOAD p1, mem2
+   *         zero = IntegerConstant32(0)
+   *         gamma1Cond = NEq pLoad, zero
+   *         gamma1Pred = MATCH[1->1, 0] gamma1Cond
+   *         loopPred, exitPred1, mem7 = gamma gamma1Pred, q1, mem3
+   *         [_, mem4]{
+   *             ctrlZero = ControlConstant(0)
+   *         }[ctrlZero, ctrlZero, mem4]
+   *         [q2, mem5]{
+   *             qLoad, mem6 = LOAD q2, mem5
+   *             zero = IntegerConstant32(0)
+   *             gamma2Cond = NEq qLoad, zero
+   *             gamma2Pred = MATCH[1->1, 0] gamma2Cond
+   *             loopPred1, exitPred1 = gamma gamma2Pred
+   *             []{
+   *                 ctrlZero1 = ControlConstant(0)
+   *                 ctrlOne1 = ControlConstant(1)
+   *             }[ctrlZero1, ctrlOne1]
+   *             []{
+   *                 ctrlOne2 = ControlConstant(1)
+   *             }[ctrlOne2, ctrlOne2]
+   *         }[ctrlZero, ctrlZero, mem6]
+   *     }[loopPred, exitPred1, p1, q1, mem7, io2, opaque2]
+   *
+   *     ret, mem13 = gamma exitPred, p, q, mem8
+   *     [p2, _, mem9]{
+   *         pLoad2, mem10 = LOAD p2, mem9
+   *     }[pLoad2, mem10]
+   *     [_, q2, mem11]{
+   *         qLoad2, mem12 = LOAD q2, mem11
+   *     }[qLoad2, mem12]
+   * }[ret, io3, mem13]
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto unitType = rvsdg::UnitType::Create();
+  const auto controlType = rvsdg::ControlType::Create(2);
+
+  // opaque function type: void opaque()
+  const auto opaqueFuncType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  auto & opaqueImport = LlvmGraphImport::createFunctionImport(
+      graph,
+      opaqueFuncType,
+      "opaque",
+      Linkage::externalLinkage,
+      CallingConvention::Default);
+
+  // func function type: int func(int* p, int* q)
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & p = *lambdaNode.GetFunctionArguments()[0];
+  auto & q = *lambdaNode.GetFunctionArguments()[1];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[2];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[3];
+
+  // Add opaque import as context variable for use inside the lambda
+  auto opaqueCtxVar = lambdaNode.AddContextVar(opaqueImport);
+
+  // theta node:
+  // exitPred, _, _, mem8, io3, _ = theta undef, p, q, mem0, io0, opaque1
+  auto & thetaNode = *rvsdg::ThetaNode::create(lambdaNode.subregion());
+
+  auto exitPredInit = UndefValueOperation::Create(*lambdaNode.subregion(), controlType);
+  auto exitPredLoopVar = thetaNode.AddLoopVar(exitPredInit);
+  auto pLoopVar = thetaNode.AddLoopVar(&p);
+  auto qLoopVar = thetaNode.AddLoopVar(&q);
+  auto memLoopVar = thetaNode.AddLoopVar(&mem0);
+  auto ioLoopVar = thetaNode.AddLoopVar(&io0);
+  auto opaqueLoopVar = thetaNode.AddLoopVar(opaqueCtxVar.inner);
+
+  // Inside theta subregion:
+  // io2, mem2 = CALL opaque2 io1, mem1
+  auto & callOpqNode = CallOperation::CreateNode(
+      opaqueLoopVar.pre,
+      opaqueFuncType,
+      { ioLoopVar.pre, memLoopVar.pre });
+  auto & io2 = CallOperation::GetIOStateOutput(callOpqNode);
+  auto & mem2 = CallOperation::GetMemoryStateOutput(callOpqNode);
+
+  // pLoad, mem3 = LOAD p1, mem2
+  auto & loadPNode = LoadNonVolatileOperation::CreateNode(*pLoopVar.pre, { &mem2 }, bits32Type, 4);
+  auto & pLoad = LoadOperation::LoadedValueOutput(loadPNode);
+  auto & mem3 = *LoadOperation::MemoryStateOutputs(loadPNode).begin();
+
+  // zero = IntegerConstant32(0)
+  auto & constantZero = IntegerConstantOperation::Create(*thetaNode.subregion(), 32, 0);
+
+  // gamma1Cond = NEq pLoad, zero
+  auto & neqCondNode =
+      rvsdg::CreateOpNode<IntegerNeOperation>({ &pLoad, constantZero.output(0) }, 32);
+  auto & gamma1Cond = *neqCondNode.output(0);
+
+  // gamma1Pred = MATCH[1->1, 0] gamma1Cond (maps 1 -> 1 (exit), default 0 (continue))
+  const auto matchMapping = std::unordered_map<uint64_t, uint64_t>{ { 1, 1 } };
+  auto & gamma1PredNode =
+      rvsdg::CreateOpNode<rvsdg::MatchOperation>({ &gamma1Cond }, 1, matchMapping, 0, 2);
+  auto & gamma1Pred = *gamma1PredNode.output(0);
+
+  // loopPred, exitPred1, mem7 = gamma gamma1Pred, q1, mem3
+  // 2 branches: branch 0 (pLoad==0, continue), branch 1 (pLoad!=0, exit)
+  auto & outerGammaNode = rvsdg::GammaNode::Create(gamma1Pred, 2, { unitType, unitType });
+  auto qEntryVar = outerGammaNode.AddEntryVar(qLoopVar.pre);
+  auto memEntryVar = outerGammaNode.AddEntryVar(&mem3);
+
+  // Branch 0 (exit loop and load *p): [_, mem4] {
+  //     ctrlZero = ControlConstant(0)
+  // }[ctrlZero, ctrlZero, mem4]
+  auto & gammaSubregion0 = *outerGammaNode.subregion(0);
+  auto & ctrlZeroOuter = rvsdg::ControlConstantOperation::create(gammaSubregion0, 2, 0);
+
+  // Branch 1 (pLoad!=0, check *q): [q2, mem5] {
+  auto & gammaSubregion1 = *outerGammaNode.subregion(1);
+
+  // qLoad, mem6 = LOAD q2, mem5
+  auto & loadQNode = LoadNonVolatileOperation::CreateNode(
+      *qEntryVar.branchArgument[1],
+      { memEntryVar.branchArgument[1] },
+      bits32Type,
+      4);
+  auto & qLoad = LoadOperation::LoadedValueOutput(loadQNode);
+  auto & mem6 = *LoadOperation::MemoryStateOutputs(loadQNode).begin();
+
+  // zero = IntegerConstant32(0)
+  auto & constantZeroInner = IntegerConstantOperation::Create(gammaSubregion1, 32, 0);
+
+  // gamma2Cond = NEq qLoad, zero
+  auto & neqCondInnerNode =
+      rvsdg::CreateOpNode<IntegerNeOperation>({ &qLoad, constantZeroInner.output(0) }, 32);
+  auto & gamma2Cond = *neqCondInnerNode.output(0);
+
+  // gamma2Pred = MATCH[1->1, 0] gamma2Cond (maps 1 -> 1 (exit), default 0 (continue))
+  auto & gamma2PredNode =
+      rvsdg::CreateOpNode<rvsdg::MatchOperation>({ &gamma2Cond }, 1, matchMapping, 0, 2);
+  auto & gamma2Pred = *gamma2PredNode.output(0);
+
+  // loopPred1, exitPred1 = gamma gamma2Pred (inner gamma with no entry vars)
+  // Branch 0: exit loop to load *q again (loopPred=0, exitPred=1)
+  // Branch 1: continue loop (loopPred=1, exitPred=DONTCARE)
+  auto & innerGammaNode = rvsdg::GammaNode::Create(gamma2Pred, 2, {});
+
+  // Inner gamma branch 0 (continue): ctrlZero for loopPred, ctrlOne for exitPred...
+  auto & innerGammaBranch0 = *innerGammaNode.subregion(0);
+  auto & ctrlZero1 = rvsdg::ControlConstantOperation::create(innerGammaBranch0, 2, 0);
+  auto & ctrlOne1 = rvsdg::ControlConstantOperation::create(innerGammaBranch0, 2, 1);
+
+  auto & innerGammaBranch1 = *innerGammaNode.subregion(1);
+  auto & ctrlOne2 = rvsdg::ControlConstantOperation::create(innerGammaBranch1, 2, 1);
+
+  auto innerLoopPredExitVar = innerGammaNode.AddExitVar({ &ctrlZero1, &ctrlOne2 });
+  auto innerExitPredExitVar = innerGammaNode.AddExitVar({ &ctrlOne1, &ctrlOne2 });
+
+  // Create exit variables for outer loop
+  auto outerLoopPredExitVar =
+      outerGammaNode.AddExitVar({ &ctrlZeroOuter, innerLoopPredExitVar.output });
+  auto outerExitPredExitVar =
+      outerGammaNode.AddExitVar({ &ctrlZeroOuter, innerExitPredExitVar.output });
+
+  // mem7: branch0 -> mem4 (memEntryVar.branchArgument[0]),
+  //       branch1 -> mem6
+  auto memExitVar = outerGammaNode.AddExitVar({ memEntryVar.branchArgument[0], &mem6 });
+
+  // Wire up theta loop variable posts:
+  thetaNode.predicate()->divert_to(outerLoopPredExitVar.output);
+  exitPredLoopVar.post->divert_to(outerLoopPredExitVar.output);
+  memLoopVar.post->divert_to(memExitVar.output);
+  ioLoopVar.post->divert_to(&io2);
+  opaqueLoopVar.post->divert_to(opaqueLoopVar.pre);
+
+  // Outside theta: gamma on exitPred for return values
+  // ret, mem13 = gamma exitPred, p1, q1, mem8
+  // [p2, _, mem9]{ pLoad2, mem10 = LOAD p2, mem9 }[pLoad2, mem10]
+  // [_, q2, mem11]{ qLoad2, mem12 = LOAD q2, mem11 }[qLoad2, mem12]
+
+  auto & exitGammaNode = *rvsdg::GammaNode::create(exitPredLoopVar.output, 2);
+  auto pEntryVarExit = exitGammaNode.AddEntryVar(&p);
+  auto qEntryVarExit = exitGammaNode.AddEntryVar(&q);
+  auto memEntryVarExit = exitGammaNode.AddEntryVar(memLoopVar.output);
+
+  // Branch 0: *p is true, return *p
+  auto & loadP2Node = LoadNonVolatileOperation::CreateNode(
+      *pEntryVarExit.branchArgument[0],
+      { memEntryVarExit.branchArgument[0] },
+      bits32Type,
+      4);
+  auto & pLoad2 = LoadOperation::LoadedValueOutput(loadP2Node);
+  auto & mem10 = *LoadOperation::MemoryStateOutputs(loadP2Node).begin();
+
+  // Branch 1: *q is true, return *q
+  auto & loadQ2Node = LoadNonVolatileOperation::CreateNode(
+      *qEntryVarExit.branchArgument[1],
+      { memEntryVarExit.branchArgument[1] },
+      bits32Type,
+      4);
+  auto & qLoad2 = LoadOperation::LoadedValueOutput(loadQ2Node);
+  auto & mem12 = *LoadOperation::MemoryStateOutputs(loadQ2Node).begin();
+
+  auto retExitVar = exitGammaNode.AddExitVar({ &pLoad2, &qLoad2 });
+  auto memFinalExitVar = exitGammaNode.AddExitVar({ &mem10, &mem12 });
+
+  // Finalize lambda: [ret, mem13, io3]
+  lambdaNode.finalize({ retExitVar.output, ioLoopVar.output, memFinalExitVar.output });
+
+  std::cout << rvsdg::view(&graph.GetRootRegion()) << std::endl;
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // After StoreValueForwarding, the two LOADs outside the loop should be gone
+  ASSERT_TRUE(
+      rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*retExitVar.branchResult[0]->origin()));
+  ASSERT_TRUE(
+      rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*retExitVar.branchResult[1]->origin()));
+  // The LOADs inside the loop should have two users each
+  ASSERT_EQ(pLoad.nusers(), 2);
+  ASSERT_EQ(qLoad.nusers(), 2);
 }

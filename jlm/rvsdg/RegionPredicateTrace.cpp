@@ -9,6 +9,8 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <unordered_map>
+
 namespace jlm::rvsdg
 {
 
@@ -101,18 +103,39 @@ RegionPredicateTrace::ObserveRegion(Region & region)
 }
 
 // This function recurses through the "definition tree" of
-// predicate outputs / inputs. It records observations per
-// region.
-PredicateValueRange
+// predicate outputs / inputs. It records observations per region.
+const PredicateValueRange &
 RegionPredicateTrace::ComputeAndRecord(
     RegionPredRange & regionPredRange,
     Input & input,
+    std::unordered_map<Input *, PredicateValueRange> & visitedInputs,
     const ControlType & type)
 {
-  auto range = Compute(regionPredRange, input, type);
-  regionPredRange.emplace(input.region(), range);
-  ObserveRegion(*input.region());
-  return range;
+  if (auto it = visitedInputs.find(&input); it != visitedInputs.end())
+    return it->second;
+
+  auto range = Compute(regionPredRange, input, visitedInputs, type);
+
+  // If the input is a region result, add its value range to the region
+  if (TryGetRegionParentNode<rvsdg::StructuralNode>(input))
+  {
+    auto it = regionPredRange.find(input.region());
+
+    if (it != regionPredRange.end())
+    {
+      it->second.UpdateUnion(range);
+    }
+    else
+    {
+      regionPredRange.emplace(input.region(), range);
+      ObserveRegion(*input.region());
+    }
+  }
+
+  auto [it, inserted] = visitedInputs.emplace(&input, std::move(range));
+  JLM_ASSERT(inserted);
+
+  return it->second;
 }
 
 // Second part of the recursion, helper to the function above:
@@ -122,6 +145,7 @@ PredicateValueRange
 RegionPredicateTrace::Compute(
     RegionPredRange & regionPredRange,
     Input & input,
+    std::unordered_map<Input *, PredicateValueRange> & visitedInputs,
     const ControlType & type)
 {
   // Given a predicate use site, record the predicate definition
@@ -159,7 +183,7 @@ RegionPredicateTrace::Compute(
           auto range = PredicateValueRange::CreateEmpty(type);
           for (auto res : exitVar.branchResult)
           {
-            range.UpdateUnion(ComputeAndRecord(regionPredRange, *res, type));
+            range.UpdateUnion(ComputeAndRecord(regionPredRange, *res, visitedInputs, type));
           }
 
           return range;
@@ -172,11 +196,11 @@ RegionPredicateTrace::Compute(
           auto loopVar = node.MapOutputLoopVar(*origin);
           if (loopVar.post->origin() == loopVar.pre)
           {
-            return ComputeAndRecord(regionPredRange, *loopVar.input, type);
+            return ComputeAndRecord(regionPredRange, *loopVar.input, visitedInputs, type);
           }
           else
           {
-            return ComputeAndRecord(regionPredRange, *loopVar.post, type);
+            return ComputeAndRecord(regionPredRange, *loopVar.post, visitedInputs, type);
           }
         },
         [&]()
@@ -197,7 +221,7 @@ RegionPredicateTrace::Compute(
 
           if (auto entry = std::get_if<GammaNode::EntryVar>(&argVar))
           {
-            return ComputeAndRecord(regionPredRange, *entry->input, type);
+            return ComputeAndRecord(regionPredRange, *entry->input, visitedInputs, type);
           }
           else
           {
@@ -209,7 +233,7 @@ RegionPredicateTrace::Compute(
           auto loopVar = node.MapPreLoopVar(*origin);
           if (loopVar.post->origin() == loopVar.pre)
           {
-            return ComputeAndRecord(regionPredRange, *loopVar.input, type);
+            return ComputeAndRecord(regionPredRange, *loopVar.input, visitedInputs, type);
           }
           else
           {
@@ -244,7 +268,8 @@ RegionPredicateTrace::GetRegionPredicateAssignConstraints(Region & region, Input
     // definition sites in different regions. Record predicate
     // assignments per region.
     RegionPredRange range;
-    ComputeAndRecord(range, predUse, *controlType);
+    std::unordered_map<Input *, PredicateValueRange> visitedInputs;
+    ComputeAndRecord(range, predUse, visitedInputs, *controlType);
     i = predAssignment_.emplace(&predUse, std::move(range)).first;
   }
 

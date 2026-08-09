@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -64,19 +65,6 @@ public:
   }
 
   void
-  addRegionDepth(const rvsdg::Region & region, const size_t depth) noexcept
-  {
-    JLM_ASSERT(RegionDepth_.find(&region) == RegionDepth_.end());
-    RegionDepth_[&region] = depth;
-  }
-
-  size_t
-  getRegionDeph(const rvsdg::Region & region) const noexcept
-  {
-    return RegionDepth_.at(&region);
-  }
-
-  void
   addTargetRegion(const rvsdg::Node & node, rvsdg::Region & region) noexcept
   {
     JLM_ASSERT(TargetRegion_.find(&node) == TargetRegion_.end());
@@ -97,7 +85,6 @@ public:
 
 private:
   rvsdg::Region * LambdaSubregion_;
-  std::unordered_map<const rvsdg::Region *, size_t> RegionDepth_{};
   std::unordered_map<const rvsdg::Node *, rvsdg::Region *> TargetRegion_{};
 };
 
@@ -106,18 +93,6 @@ NodeHoisting::~NodeHoisting() noexcept = default;
 NodeHoisting::NodeHoisting()
     : Transformation("NodeHoisting")
 {}
-
-size_t
-NodeHoisting::computeRegionDepth(const rvsdg::Region & region) const
-{
-  if (dynamic_cast<const rvsdg::LambdaNode *>(region.node()))
-  {
-    return 0;
-  }
-
-  const auto parentRegion = region.node()->region();
-  return context_->getRegionDeph(*parentRegion) + 1;
-}
 
 bool
 NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar)
@@ -209,16 +184,22 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 {
   if (node.ninputs() == 0)
   {
-    // Nodes that can only produce states, such as UndefValueOperation, will be removed in the
-    // back-end. There is no need to hoist them.
+    // All nullary operations to date have exactly one output
     JLM_ASSERT(node.noutputs() == 1);
-    return node.output(0)->Type()->Kind() == rvsdg::TypeKind::State
-             ? *node.region()
-             : context_->getLambdaSubregion();
+
+    // Control constants are used to instruct the control flow graph creation,
+    // and will be removed in the back-end, so there is no need to hoist them.
+    const auto outputType = node.output(0)->Type();
+    if (is<rvsdg::ControlType>(outputType))
+      return *node.region();
+
+    // Other constants should be moved to the top-level of the function
+    return context_->getLambdaSubregion();
   }
 
   // Compute target regions for all the inputs of the node
-  std::vector<rvsdg::Region *> targetRegions;
+  rvsdg::Region * greatestCommonTargetRegion = nullptr;
+
   for (auto & input : node.Inputs())
   {
     auto & targetRegion = computeTargetRegion(*input.origin());
@@ -229,25 +210,21 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
       return *node.region();
     }
 
-    targetRegions.push_back(&targetRegion);
+    // If we already have a common target region that is lower, keep it
+    if (greatestCommonTargetRegion
+        && greatestCommonTargetRegion->getDepth() >= targetRegion.getDepth())
+      continue;
+    greatestCommonTargetRegion = &targetRegion;
   }
 
-  // Compute the lowermost target region in the region tree
-  return **std::max_element(
-      targetRegions.begin(),
-      targetRegions.end(),
-      [&](const rvsdg::Region * region1, const rvsdg::Region * region2)
-      {
-        return context_->getRegionDeph(*region1) < context_->getRegionDeph(*region2);
-      });
+  // Return the lowestmost common target region in the region tree among all inputs
+  JLM_ASSERT(greatestCommonTargetRegion);
+  return *greatestCommonTargetRegion;
 }
 
 void
 NodeHoisting::markNodes(const rvsdg::Region & region)
 {
-  const auto regionDepth = computeRegionDepth(region);
-  context_->addRegionDepth(region, regionDepth);
-
   for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
     rvsdg::MatchTypeWithDefault(

@@ -1520,7 +1520,7 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
 
   auto & bufGlobal = *rvsdg::DeltaNode::Create(
       &rootRegion,
-      DeltaOperation::Create(jmpBufType, "buf", Linkage::externalLinkage, "", false, 4));
+      LlvmDeltaOperation::Create(jmpBufType, "buf", Linkage::externalLinkage, "", false, 4));
   bufGlobal.finalize(UndefValueOperation::Create(*bufGlobal.subregion(), jmpBufType));
 
   rvsdg::SimpleNode * callOpaqueNode = nullptr;
@@ -1726,7 +1726,7 @@ TEST(RegionAwareModRefSummarizerTests, TestEscapedFunction)
 
   auto & global = *rvsdg::DeltaNode::Create(
       &rootRegion,
-      DeltaOperation::Create(int32Type, "global", Linkage::internalLinkage, "", false, 4));
+      LlvmDeltaOperation::Create(int32Type, "global", Linkage::internalLinkage, "", false, 4));
   global.finalize(IntegerConstantOperation::Create(*global.subregion(), 32, 0).output(0));
 
   rvsdg::SimpleNode * opaqueCallNode = nullptr;

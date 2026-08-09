@@ -54,12 +54,6 @@ public:
   bool
   operator==(const Operation & other) const noexcept override;
 
-  unop_reduction_path_t
-  can_reduce_operand(const Output * operand) const noexcept override;
-
-  Output *
-  reduce_operand(unop_reduction_path_t path, Output * operand) const override;
-
   [[nodiscard]] std::string
   debug_string() const override;
 
@@ -113,7 +107,7 @@ public:
   can_reduce_operand_pair(const Output * op1, const Output * op2) const noexcept override;
 
   Output *
-  reduce_operand_pair(unop_reduction_path_t path, Output * op1, Output * op2) const override;
+  reduce_operand_pair(binop_reduction_path_t path, Output * op1, Output * op2) const override;
 
   enum BinaryOperation::flags
   flags() const noexcept override;

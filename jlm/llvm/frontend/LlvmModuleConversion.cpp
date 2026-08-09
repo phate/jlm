@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
-#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -534,7 +533,7 @@ convert_constantPointerNull(
   auto & c = *::llvm::cast<const ::llvm::ConstantPointerNull>(constant);
 
   auto t = ctx.GetTypeConverter().ConvertPointerType(*c.getType());
-  tacs.push_back(ConstantPointerNullOperation::Create(t));
+  tacs.push_back(ConstantPointerNullOperation::createTac());
 
   return tacs.back()->result(0);
 }
@@ -599,7 +598,7 @@ convert_constantDataArray(
   for (size_t n = 0; n < c.getNumElements(); n++)
     elements.push_back(ConvertConstant(c.getElementAsConstant(n), tacs, ctx));
 
-  tacs.push_back(ConstantDataArray::create(elements));
+  tacs.push_back(ConstantDataArrayOperation::create(elements));
 
   return tacs.back()->result(0);
 }
@@ -635,7 +634,7 @@ ConvertConstantStruct(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(ConstantStruct::create(elements, type));
+  tacs.push_back(ConstantStructOperation::create(elements, type));
 
   return tacs.back()->result(0);
 }
@@ -1741,10 +1740,10 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
             { ::llvm::Instruction::SIToFP, create_unop<SIToFPOperation> },
             { ::llvm::Instruction::SExt, create_unop<SExtOperation> },
             { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
-            { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },
+            { ::llvm::Instruction::IntToPtr, create_unop<IntToPtrOperation> },
             { ::llvm::Instruction::FPTrunc, create_unop<FPTruncOperation> },
-            { ::llvm::Instruction::FPToSI, create_unop<FloatingPointToSignedIntegerOperation> },
-            { ::llvm::Instruction::FPToUI, create_unop<FloatingPointToUnsignedIntegerOperation> },
+            { ::llvm::Instruction::FPToSI, create_unop<FPToSIOperation> },
+            { ::llvm::Instruction::FPToUI, create_unop<FPToUIOperation> },
             { ::llvm::Instruction::FPExt, create_unop<FPExtOperation> },
             { ::llvm::Instruction::BitCast, create_unop<BitCastOperation> } });
 

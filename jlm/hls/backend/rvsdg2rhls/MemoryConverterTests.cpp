@@ -355,18 +355,18 @@ TEST(MemoryConverterTests, TestThetaLoad)
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<StateGateOperation>(*lambdaRegion, true));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -380,8 +380,8 @@ TEST(MemoryConverterTests, TestThetaLoad)
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryResponseOperation>(*lambdaRegion, true));
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<MemoryResponseOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
@@ -483,7 +483,7 @@ TEST(MemoryConverterTests, TestThetaStore)
   ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -491,9 +491,9 @@ TEST(MemoryConverterTests, TestThetaStore)
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
+      jlm::rvsdg::Region::containsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
@@ -507,7 +507,7 @@ TEST(MemoryConverterTests, TestThetaStore)
   lambda = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  EXPECT_TRUE(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
+  EXPECT_TRUE(jlm::rvsdg::Region::containsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =

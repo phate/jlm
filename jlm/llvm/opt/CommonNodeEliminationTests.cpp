@@ -5,10 +5,13 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -739,4 +742,187 @@ TEST(CommonNodeEliminationTests, GammaInTheta)
   // Assert
   const auto & user1Origin = *user1->input(0)->origin();
   EXPECT_EQ(TryGetOwnerNode<GammaNode>(user1Origin), gammaNode);
+}
+
+TEST(CommonNodeEliminationTests, InvariantThetaInTheta)
+{
+  /**
+   * Creates an RVSDG graph corresponding to the C code:
+   *
+   * \code{.c}
+   * int f() {
+   *   int x = 0;
+   *   int y = 0;
+   *   do {
+   *     int z = 5;
+   *     do {
+   *       // z and y are routed through this inner loop
+   *     } while(0);
+   *
+   *     x += 1;
+   *     y += 2;
+   *   } while(y < 10);
+   *
+   *   return y;
+   * }
+   * \endcode
+   *
+   *
+   * The RVSDG looks like this:
+   *
+   * zero := IntegerConstant(0)
+   * xOut0, yOut0 = theta zero, zero
+   *   [xPre0, yPre0] {
+   *     five = IntegerConstant(5);
+   *     zOut1, yOut1 = theta five, yPre0
+   *       [zPre1, yPre1] {
+   *         predicate1 = CTRL(0)
+   *       } [predicate1, zPre1, yPre1]
+   *
+   *     one = IntegerConstant(1)
+   *     xPlus1 = IntegerAdd xPre0, one
+   *
+   *     two = IntegerConstant(2)
+   *     yPlus2 = IntegerAdd yOut1, two
+   *
+   *     ten = IntegerConstant(10)
+   *     slt = signedLessThan xPlus1, ten
+   *     predicate0 = MATCH[1->1, 0] slt
+   *   }[predicate0, xPlus1, yPlus2]
+   *
+   * The test performs common node elimination on the code,
+   * which should route value of y around the inner theta,
+   * without mixing up x and y in the outer theta.
+   */
+
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  auto & graph = rm.Rvsdg();
+
+  auto controlType = ControlType::Create(2);
+
+  auto & zero = *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+
+  auto & theta0 = *ThetaNode::create(&graph.GetRootRegion());
+  auto loopVarX0 = theta0.AddLoopVar(&zero);
+  auto loopVarY0 = theta0.AddLoopVar(&zero);
+
+  // Create the inner theta
+  auto & five = *IntegerConstantOperation::Create(*theta0.subregion(), 32, 5).output(0);
+  auto & theta1 = *ThetaNode::create(theta0.subregion());
+  auto loopVarZ1 = theta1.AddLoopVar(&five);
+  auto loopVarY1 = theta1.AddLoopVar(loopVarY0.pre);
+  auto & predicate1 = ControlConstantOperation::create(*theta1.subregion(), 2, 0);
+  theta1.set_predicate(&predicate1);
+
+  auto & one = *IntegerConstantOperation::Create(*theta0.subregion(), 32, 1).output(0);
+  auto & plus1Node = IntegerAddOperation::createNode(32, *loopVarX0.pre, one);
+  auto & xPlus1 = *plus1Node.output(0);
+
+  auto & two = *IntegerConstantOperation::Create(*theta0.subregion(), 32, 2).output(0);
+  auto & plus2Node = IntegerAddOperation::createNode(32, *loopVarY1.output, two);
+  auto & yPlus2 = *plus2Node.output(0);
+
+  auto & ten = *IntegerConstantOperation::Create(*theta0.subregion(), 32, 10).output(0);
+  auto & slt = *IntegerSltOperation::createNode(32, xPlus1, ten).output(0);
+  auto & predicate0 = *MatchOperation::CreateNode(slt, { { 1, 1 } }, 0, 2).output(0);
+
+  theta0.set_predicate(&predicate0);
+  loopVarX0.post->divert_to(&xPlus1);
+  loopVarY0.post->divert_to(&yPlus2);
+
+  jlm::rvsdg::GraphExport::Create(*loopVarX0.output, "x");
+  jlm::rvsdg::GraphExport::Create(*loopVarY0.output, "y");
+
+  // Act
+  CommonNodeElimination cne;
+  cne.Run(rm, statisticsCollector);
+
+  // Assert
+
+  // The inner theta's loop varibales should have no users
+  EXPECT_TRUE(loopVarZ1.output->IsDead());
+  EXPECT_TRUE(loopVarY1.output->IsDead());
+
+  // The add operations should take the corresponding loop variables as input
+  EXPECT_EQ(plus1Node.input(0)->origin(), loopVarX0.pre);
+  EXPECT_EQ(plus2Node.input(0)->origin(), loopVarY0.pre);
+}
+
+TEST(CommonNodeEliminationTests, InvariantLoopOutputs)
+{
+  /**
+   * Creates RVSDG that looks like
+   *
+   *        undef   0   undef
+   *           |    |    |
+   *           v    v    v
+   * +-theta---------------------+
+   * |         v    v    v       |
+   * | CTR(0)       |\--------\  |
+   * |     v        v         |  |
+   * |   +-gamma---+--------+ |  |
+   * |   |    v    |    v   | |  |
+   * |   |    |    |    |   | |  |
+   * |   |    v    |    v   | |  |
+   * |   +---------+--------+ |  |
+   * |              v         |  |
+   * |             /|    /----/  |
+   * |          /-/ |    |       |
+   * | CTR(0)  /    |    |       |
+   * |  v      v    v    v       |
+   * +---------------------------+
+   *           v    v    v
+   *    export(x)   |    export(z)
+   *                v
+   *            export(y)
+   *
+   * After running CNE, the exports "x", "y" and "z" should all take their value
+   * directly from the constant 0.
+   */
+
+  // Arrange
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  auto & graph = rm.Rvsdg();
+
+  const auto bit32 = BitType::Create(32);
+
+  auto & zero = *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+  auto & undefValue = *UndefValueOperation::Create(graph.GetRootRegion(), bit32);
+
+  auto theta = ThetaNode::create(&graph.GetRootRegion());
+  auto region = theta->subregion();
+
+  auto lvX = theta->AddLoopVar(&undefValue);
+  auto lvY = theta->AddLoopVar(&zero);
+  auto lvZ = theta->AddLoopVar(&undefValue);
+
+  auto & controlGamma = ControlConstantOperation::create(*region, 2, 0);
+  auto gamma = GammaNode::create(&controlGamma, 2);
+
+  auto entryY = gamma->AddEntryVar(lvY.pre);
+  auto & exitY = *gamma->AddExitVar({ entryY.branchArgument[0], entryY.branchArgument[1] }).output;
+
+  lvX.post->divert_to(&exitY);
+  lvY.post->divert_to(&exitY);
+  lvZ.post->divert_to(lvY.pre);
+
+  auto & exportX = GraphExport::Create(*lvX.output, "x");
+  auto & exportY = GraphExport::Create(*lvY.output, "y");
+  auto & exportZ = GraphExport::Create(*lvZ.output, "z");
+
+  // Act
+  CommonNodeElimination cne;
+  cne.Run(rm, statisticsCollector);
+
+  // Assert
+  EXPECT_EQ(exportX.origin(), &zero);
+  EXPECT_EQ(exportY.origin(), &zero);
+  EXPECT_EQ(exportZ.origin(), &zero);
 }

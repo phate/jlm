@@ -124,7 +124,7 @@ LlvmDotWriter::AnnotateGraphNode(
 
   if (const auto delta = dynamic_cast<const rvsdg::DeltaNode *>(&rvsdgNode))
   {
-    if (auto op = dynamic_cast<const llvm::DeltaOperation *>(&delta->GetOperation()))
+    if (auto op = dynamic_cast<const LlvmDeltaOperation *>(&delta->GetOperation()))
     {
       node.SetAttribute("linkage", std::string(linkageToString(op->linkage())));
       node.SetAttribute("constant", op->constant() ? "true" : "false");

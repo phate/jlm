@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_REDUCTION_HPP
-#define JLM_LLVM_OPT_REDUCTION_HPP
+#ifndef JLM_LLVM_OPT_NODEREDUCTION_HPP
+#define JLM_LLVM_OPT_NODEREDUCTION_HPP
 
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
@@ -14,6 +14,7 @@
 
 namespace jlm::rvsdg
 {
+class GammaNode;
 class Graph;
 class Node;
 class Region;
@@ -23,15 +24,6 @@ class StructuralNode;
 
 namespace jlm::llvm
 {
-
-class CallExitMemoryStateSplitOperation;
-class LambdaEntryMemoryStateSplitOperation;
-class LambdaExitMemoryStateMergeOperation;
-class LoadNonVolatileOperation;
-class MemoryStateJoinOperation;
-class MemoryStateMergeOperation;
-class MemoryStateSplitOperation;
-class StoreNonVolatileOperation;
 
 /**
  * The node reduction transformation performs a series of peephole optimizations in the RVSDG. The
@@ -73,62 +65,14 @@ private:
    * @param structuralNode The structural node that is supposed to be reduced.
    * @return True, if the structural node could be reduced, otherwise false.
    */
-  [[nodiscard]] bool
+  bool
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
-  [[nodiscard]] static bool
-  ReduceGammaNode(rvsdg::StructuralNode & gammaNode);
+  bool
+  ReduceGammaNode(rvsdg::GammaNode & gammaNode);
 
-  [[nodiscard]] static bool
+  bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceLoadNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceStoreNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceMemoryStateSplitNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceLambdaExitMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode);
-
-  [[nodiscard]] static bool
-  ReduceBinaryNode(rvsdg::SimpleNode & simpleNode);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoadNode(
-      const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeStoreNode(
-      const StoreNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateMergeNode(
-      const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateJoinNode(
-      const MemoryStateJoinOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeMemoryStateSplitNode(
-      const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLambdaExitMemoryStateMergeNode(
-      const LambdaExitMemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
 };
@@ -138,6 +82,10 @@ private:
  */
 class NodeReduction::Statistics final : public util::Statistics
 {
+  static inline const char * NumRegionsLabel_ = "NumRegions";
+  static inline const char * NumTotalRegionIterationsLabel_ = "NumTotalRegionIterations";
+  static inline const char * MaxIterationsPerRegionLabel_ = "MaxIterationsPerRegion";
+
 public:
   ~Statistics() noexcept override = default;
 
@@ -157,6 +105,74 @@ public:
   std::optional<size_t>
   GetNumIterations(const rvsdg::Region & region) const noexcept;
 
+  /**
+   * @return The number of regions that were iterated over.
+   */
+  [[nodiscard]] size_t
+  getNumRegions() const noexcept;
+
+  /**
+   * @return The sum of all iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getTotalIterations() const noexcept;
+
+  /**
+   * @return The maximum number of iterations of all regions.
+   */
+  [[nodiscard]] size_t
+  getMaxIterationsPerRegion() const noexcept;
+
+  struct ReductionCounters
+  {
+    size_t numLoadNonVolatileReductions = 0;
+    size_t numStoreNonVolatileReductions = 0;
+
+    size_t numMemoryStateMergeReductions = 0;
+    size_t numMemoryStateJoinReductions = 0;
+    size_t numMemoryStateSplitReductions = 0;
+    size_t numLambdaExitMemoryStateMergeReductions = 0;
+
+    size_t numMatchReductions = 0;
+    size_t numSExtReductions = 0;
+    size_t numZExtReductions = 0;
+    size_t numTruncReductions = 0;
+
+    size_t numIntegerEqReductions = 0;
+    size_t numIntegerNeReductions = 0;
+    size_t numIntegerSgeReductions = 0;
+    size_t numIntegerSgtReductions = 0;
+    size_t numIntegerSleReductions = 0;
+    size_t numIntegerSltReductions = 0;
+    size_t numIntegerUgeReductions = 0;
+    size_t numIntegerUgtReductions = 0;
+    size_t numIntegerUleReductions = 0;
+    size_t numIntegerUltReductions = 0;
+
+    size_t numIntegerSubReductions = 0;
+    size_t numIntegerAndReductions = 0;
+    size_t numIntegerOrReductions = 0;
+    size_t numIntegerXorReductions = 0;
+
+    size_t numPtrCmpReductions = 0;
+    size_t numGetElementPtrReductions = 0;
+    size_t numBinaryReductions = 0;
+
+    size_t numGammaReductions = 0;
+  };
+
+  [[nodiscard]] ReductionCounters &
+  getReductionCounters() noexcept
+  {
+    return reductionCounters_;
+  }
+
+  [[nodiscard]] const ReductionCounters &
+  getReductionCounters() const noexcept
+  {
+    return reductionCounters_;
+  }
+
   static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
@@ -164,6 +180,7 @@ public:
   }
 
 private:
+  ReductionCounters reductionCounters_{};
   std::unordered_map<const rvsdg::Region *, size_t> NumIterations_;
 };
 

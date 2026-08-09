@@ -69,7 +69,35 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
       llvm::LlvmRvsdgModule::Create(util::FilePath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
-  ConvertRegion(omegaNode.getRegion(), root);
+
+  // Convert all operations in the omega's region.
+  auto resultOutputs = ConvertRegion(omegaNode.getRegion(), root);
+
+  // Get the OmegaResult terminator to extract export names.
+  auto & omegaBlock = omegaNode.getRegion().front();
+  ::mlir::Operation * terminator = omegaBlock.getTerminator();
+  auto omegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(terminator);
+  JLM_ASSERT(omegaResult != nullptr);
+
+  // Get the exported names from OmegaResult
+  auto exportNames = omegaResult.getExportNames();
+  // All omega results should have an exported name
+  JLM_ASSERT(resultOutputs.size() == exportNames.size());
+
+  // Register OmegaResult outputs as RVSDG root region exports (GraphExport).
+  // The resultOutputs vector is populated by ConvertBlock() which extracts the operands
+  // from the OmegaResult terminator operation.
+  for (size_t i = 0; i < resultOutputs.size(); ++i)
+  {
+    if (auto nameAttr = exportNames[i].dyn_cast_or_null<::mlir::StringAttr>())
+    {
+      rvsdg::GraphExport::Create(*resultOutputs[i], nameAttr.getValue().str());
+    }
+    else
+    {
+      JLM_UNREACHABLE("All omega results should have a name.");
+    }
+  }
 
   return rvsdgModule;
 }
@@ -135,6 +163,12 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = &jlmArgument;
+    }
+    else if (::mlir::isa<::mlir::rvsdg::OmegaResult>(mlirOp))
+    {
+      // OmegaResult is handled as the block terminator in ConvertBlock.
+      // Skip it here to avoid processing it as a regular operation.
+      continue;
     }
     else
     {
@@ -689,7 +723,7 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    return { llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())) };
+    return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
@@ -698,7 +732,7 @@ MlirToJlmConverter::ConvertOperation(
     // NULL pointers are a special case of ZeroOp
     if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
     {
-      return { llvm::ConstantPointerNullOperation::Create(&rvsdgRegion, ConvertType(type)) };
+      return { llvm::ConstantPointerNullOperation::createNode(rvsdgRegion).output(0) };
     }
     return { llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)) };
   }
@@ -936,7 +970,7 @@ MlirToJlmConverter::ConvertOperation(
     auto linakgeString = mlirDeltaNode.getLinkage().str();
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
-        llvm::DeltaOperation::Create(
+        llvm::LlvmDeltaOperation::Create(
             outputType,
             mlirDeltaNode.getName().str(),
             ConvertLinkage(linakgeString),
@@ -997,7 +1031,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
       {
-        auto op = util::assertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
+        auto op = util::assertedCast<const llvm::LlvmDeltaOperation>(&delta->GetOperation());
         jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
     }

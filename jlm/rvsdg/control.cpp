@@ -128,36 +128,6 @@ MatchOperation::operator==(const Operation & other) const noexcept
       && op->nbits() == nbits() && op->nalternatives() == nalternatives();
 }
 
-unop_reduction_path_t
-MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
-{
-  auto & tracedOutput = traceOutputIntraProcedurally(*arg);
-  if (auto node = rvsdg::TryGetOwnerNode<SimpleNode>(tracedOutput))
-  {
-    if (dynamic_cast<const BitConstantOperation *>(&node->GetOperation()))
-      return unop_reduction_constant;
-  }
-
-  return unop_reduction_none;
-}
-
-jlm::rvsdg::Output *
-MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
-{
-  if (path == unop_reduction_constant)
-  {
-    auto & tracedOutput = traceOutputIntraProcedurally(*arg);
-    auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOutput);
-    JLM_ASSERT(constantOperation);
-    return &ControlConstantOperation::create(
-        *arg->region(),
-        nalternatives(),
-        alternative(constantOperation->value().to_uint()));
-  }
-
-  return nullptr;
-}
-
 std::string
 MatchOperation::debug_string() const
 {

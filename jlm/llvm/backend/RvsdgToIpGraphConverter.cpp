@@ -471,7 +471,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     }
     else if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(origin))
     {
-      auto op = util::assertedCast<const llvm::DeltaOperation>(&deltaNode->GetOperation());
+      auto op = util::assertedCast<const LlvmDeltaOperation>(&deltaNode->GetOperation());
       const auto dataNode = DataNode::Create(
           ipGraph,
           op->name(),
@@ -546,7 +546,7 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const rvsdg::DeltaNode & deltaNode)
 {
   auto & ipGraphModule = Context_->GetIpGraphModule();
 
-  auto op = util::assertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
+  auto op = util::assertedCast<const LlvmDeltaOperation>(&deltaNode.GetOperation());
 
   const auto dataNode = DataNode::Create(
       ipGraphModule.ipgraph(),

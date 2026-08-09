@@ -787,7 +787,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
 
     auto delta1 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             bitType,
             "non-constant-delta",
             Linkage::externalLinkage,
@@ -800,7 +800,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
 
     auto delta2 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             bitType,
             "constant-delta",
             Linkage::externalLinkage,
@@ -865,7 +865,7 @@ TEST(JlmToMlirToJlmTests, TestDelta)
       {
         auto convertedDelta = jlm::util::assertedCast<jlm::rvsdg::DeltaNode>(&node);
         EXPECT_EQ(convertedDelta->subregion()->numNodes(), 1u);
-        auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
+        auto dop = jlm::util::assertedCast<const LlvmDeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
         {
@@ -901,7 +901,7 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
     auto bitConstant2 =
         &jlm::rvsdg::BitConstantOperation::create(graph->GetRootRegion(), { 32, 2 });
     auto bitType = jlm::rvsdg::BitType::Create(32);
-    jlm::llvm::ConstantDataArray::Create({ bitConstant1, bitConstant2 });
+    jlm::llvm::ConstantDataArrayOperation::Create({ bitConstant1, bitConstant2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -945,7 +945,8 @@ TEST(JlmToMlirToJlmTests, TestConstantDataArray)
       bool foundConstantDataArray = false;
       for (auto & node : region->Nodes())
       {
-        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
+        if (auto constantDataArray =
+                dynamic_cast<const ConstantDataArrayOperation *>(&node.GetOperation()))
         {
           foundConstantDataArray = true;
           EXPECT_EQ(constantDataArray->nresults(), 1u);

@@ -165,6 +165,23 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSubOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Normalizes the additive inverse of a \ref IntegerSubOperation node:
+   *
+   * z = IntegerSubOperation x x
+   * =>
+   * z = 0
+   *
+   * @param operation The \ref IntegerSubOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSubOperation node.
+   *
+   * @return If the normalization could be applied, then 0. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeAdditiveInverse(
+      const IntegerSubOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -534,6 +551,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerAndOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerAndOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerAndOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerAndOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerAndOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -575,6 +607,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerOrOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerOrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerOrOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerOrOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerOrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -616,6 +663,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerXorOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerXorOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerXorOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerXorOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerXorOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -657,6 +719,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerEqOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerEqOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerEqOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerEqOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerEqOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -698,6 +775,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerNeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerNeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerNeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerNeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerNeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -739,6 +831,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSgeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSgeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSgeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSgeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -780,6 +887,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSgtOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSgtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSgtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSgtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -821,6 +943,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSleOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSleOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSleOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSleOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -862,6 +999,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerSltOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerSltOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSltOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSltOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerSltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -903,6 +1055,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUgeOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerUgeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUgeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUgeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerUgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -944,6 +1111,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUgtOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerUgtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUgtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUgtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerUgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -985,6 +1167,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUleOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerUleOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUleOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUleOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerUleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1026,6 +1223,21 @@ public:
   {
     return rvsdg::CreateOpNode<IntegerUltOperation>({ &operand1, &operand2 }, numBits);
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref IntegerUltOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUltOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUltOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(
+      const IntegerUltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 }

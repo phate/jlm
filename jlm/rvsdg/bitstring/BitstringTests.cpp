@@ -31,8 +31,8 @@ TEST(bitstring, arithmetic_test_bitand)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitand_op>(NormalizeBinaryOperation, and0);
-  ReduceNode<bitand_op>(NormalizeBinaryOperation, and1);
+  ReduceNode<bitand_op>(BitBinaryOperation::foldConstants, and0);
+  ReduceNode<bitand_op>(BitBinaryOperation::foldConstants, and1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -73,11 +73,11 @@ TEST(bitstring, arithmetic_test_bitashr)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr0);
-  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr1);
-  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr2);
-  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr3);
-  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr4);
+  ReduceNode<bitashr_op>(BitBinaryOperation::foldConstants, ashr0);
+  ReduceNode<bitashr_op>(BitBinaryOperation::foldConstants, ashr1);
+  ReduceNode<bitashr_op>(BitBinaryOperation::foldConstants, ashr2);
+  ReduceNode<bitashr_op>(BitBinaryOperation::foldConstants, ashr3);
+  ReduceNode<bitashr_op>(BitBinaryOperation::foldConstants, ashr4);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -143,9 +143,9 @@ TEST(bitstring, arithmetic_test_bitnegate)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitneg_op>(NormalizeUnaryOperation, neg0);
-  ReduceNode<bitneg_op>(NormalizeUnaryOperation, neg1);
-  ReduceNode<bitneg_op>(NormalizeUnaryOperation, neg2);
+  ReduceNode<bitneg_op>(BitUnaryOperation::foldConstant, neg0);
+  ReduceNode<bitneg_op>(BitUnaryOperation::foldConstant, neg1);
+  ReduceNode<bitneg_op>(BitUnaryOperation::foldConstant, neg2);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -180,9 +180,9 @@ TEST(bitstring, arithmetic_test_bitnot)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitnot_op>(NormalizeUnaryOperation, not0);
-  ReduceNode<bitnot_op>(NormalizeUnaryOperation, not1);
-  ReduceNode<bitnot_op>(NormalizeUnaryOperation, not2);
+  ReduceNode<bitnot_op>(BitUnaryOperation::foldConstant, not0);
+  ReduceNode<bitnot_op>(BitUnaryOperation::foldConstant, not1);
+  ReduceNode<bitnot_op>(BitUnaryOperation::foldConstant, not2);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -218,8 +218,8 @@ TEST(bitstring, arithmetic_test_bitor)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitor_op>(NormalizeBinaryOperation, or0);
-  ReduceNode<bitor_op>(NormalizeBinaryOperation, or1);
+  ReduceNode<bitor_op>(BitBinaryOperation::foldConstants, or0);
+  ReduceNode<bitor_op>(BitBinaryOperation::foldConstants, or1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -252,8 +252,8 @@ TEST(bitstring, arithmetic_test_bitproduct)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitmul_op>(NormalizeBinaryOperation, product0);
-  ReduceNode<bitmul_op>(NormalizeBinaryOperation, product1);
+  ReduceNode<bitmul_op>(BitBinaryOperation::foldConstants, product0);
+  ReduceNode<bitmul_op>(BitBinaryOperation::foldConstants, product1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -314,9 +314,9 @@ TEST(bitstring, arithmetic_test_bitshl)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl0);
-  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl1);
-  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl2);
+  ReduceNode<bitshl_op>(BitBinaryOperation::foldConstants, shl0);
+  ReduceNode<bitshl_op>(BitBinaryOperation::foldConstants, shl1);
+  ReduceNode<bitshl_op>(BitBinaryOperation::foldConstants, shl2);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -355,9 +355,9 @@ TEST(bitstring, arithmetic_test_bitshr)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr0);
-  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr1);
-  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr2);
+  ReduceNode<bitshr_op>(BitBinaryOperation::foldConstants, shr0);
+  ReduceNode<bitshr_op>(BitBinaryOperation::foldConstants, shr1);
+  ReduceNode<bitshr_op>(BitBinaryOperation::foldConstants, shr2);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -393,8 +393,8 @@ TEST(bitstring, arithmetic_test_bitsmod)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitsmod_op>(NormalizeBinaryOperation, smod0);
-  ReduceNode<bitsmod_op>(NormalizeBinaryOperation, smod1);
+  ReduceNode<bitsmod_op>(BitBinaryOperation::foldConstants, smod0);
+  ReduceNode<bitsmod_op>(BitBinaryOperation::foldConstants, smod1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -427,8 +427,8 @@ TEST(bitstring, arithmetic_test_bitsquotient)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitsdiv_op>(NormalizeBinaryOperation, squot0);
-  ReduceNode<bitsdiv_op>(NormalizeBinaryOperation, squot1);
+  ReduceNode<bitsdiv_op>(BitBinaryOperation::foldConstants, squot0);
+  ReduceNode<bitsdiv_op>(BitBinaryOperation::foldConstants, squot1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -461,8 +461,8 @@ TEST(bitstring, arithmetic_test_bitsum)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitadd_op>(NormalizeBinaryOperation, sum0);
-  ReduceNode<bitadd_op>(NormalizeBinaryOperation, sum1);
+  ReduceNode<bitadd_op>(BitBinaryOperation::foldConstants, sum0);
+  ReduceNode<bitadd_op>(BitBinaryOperation::foldConstants, sum1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -520,8 +520,8 @@ TEST(bitstring, arithmetic_test_bitumod)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitumod_op>(NormalizeBinaryOperation, umod0);
-  ReduceNode<bitumod_op>(NormalizeBinaryOperation, umod1);
+  ReduceNode<bitumod_op>(BitBinaryOperation::foldConstants, umod0);
+  ReduceNode<bitumod_op>(BitBinaryOperation::foldConstants, umod1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -554,8 +554,8 @@ TEST(bitstring, arithmetic_test_bituquotient)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitudiv_op>(NormalizeBinaryOperation, uquot0);
-  ReduceNode<bitudiv_op>(NormalizeBinaryOperation, uquot1);
+  ReduceNode<bitudiv_op>(BitBinaryOperation::foldConstants, uquot0);
+  ReduceNode<bitudiv_op>(BitBinaryOperation::foldConstants, uquot1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -588,8 +588,8 @@ TEST(bitstring, arithmetic_test_bitxor)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitxor_op>(NormalizeBinaryOperation, xor0);
-  ReduceNode<bitxor_op>(NormalizeBinaryOperation, xor1);
+  ReduceNode<bitxor_op>(BitBinaryOperation::foldConstants, xor0);
+  ReduceNode<bitxor_op>(BitBinaryOperation::foldConstants, xor1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -646,10 +646,10 @@ TEST(bitstring, comparison_test_bitequal)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<biteq_op>(NormalizeBinaryOperation, equal0);
-  ReduceNode<biteq_op>(NormalizeBinaryOperation, equal1);
-  ReduceNode<biteq_op>(NormalizeBinaryOperation, equal2);
-  ReduceNode<biteq_op>(NormalizeBinaryOperation, equal3);
+  ReduceNode<biteq_op>(BitCompareOperation::foldConstants, equal0);
+  ReduceNode<biteq_op>(BitCompareOperation::foldConstants, equal1);
+  ReduceNode<biteq_op>(BitCompareOperation::foldConstants, equal2);
+  ReduceNode<biteq_op>(BitCompareOperation::foldConstants, equal3);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -686,10 +686,10 @@ TEST(bitstring, comparison_test_bitnotequal)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitne_op>(NormalizeBinaryOperation, nequal0);
-  ReduceNode<bitne_op>(NormalizeBinaryOperation, nequal1);
-  ReduceNode<bitne_op>(NormalizeBinaryOperation, nequal2);
-  ReduceNode<bitne_op>(NormalizeBinaryOperation, nequal3);
+  ReduceNode<bitne_op>(BitCompareOperation::foldConstants, nequal0);
+  ReduceNode<bitne_op>(BitCompareOperation::foldConstants, nequal1);
+  ReduceNode<bitne_op>(BitCompareOperation::foldConstants, nequal2);
+  ReduceNode<bitne_op>(BitCompareOperation::foldConstants, nequal3);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -730,11 +730,11 @@ TEST(bitstring, comparison_test_bitsgreater)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitsgt_op>(NormalizeBinaryOperation, sgreater0);
-  ReduceNode<bitsgt_op>(NormalizeBinaryOperation, sgreater1);
-  ReduceNode<bitsgt_op>(NormalizeBinaryOperation, sgreater2);
-  ReduceNode<bitsgt_op>(NormalizeBinaryOperation, sgreater3);
-  ReduceNode<bitsgt_op>(NormalizeBinaryOperation, sgreater4);
+  ReduceNode<bitsgt_op>(BitCompareOperation::foldConstants, sgreater0);
+  ReduceNode<bitsgt_op>(BitCompareOperation::foldConstants, sgreater1);
+  ReduceNode<bitsgt_op>(BitCompareOperation::foldConstants, sgreater2);
+  ReduceNode<bitsgt_op>(BitCompareOperation::foldConstants, sgreater3);
+  ReduceNode<bitsgt_op>(BitCompareOperation::foldConstants, sgreater4);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -777,12 +777,12 @@ TEST(bitstring, comparison_test_bitsgreatereq)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq0);
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq1);
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq2);
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq3);
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq4);
-  ReduceNode<bitsge_op>(NormalizeBinaryOperation, sgreatereq5);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq0);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq1);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq2);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq3);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq4);
+  ReduceNode<bitsge_op>(BitCompareOperation::foldConstants, sgreatereq5);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -825,11 +825,11 @@ TEST(bitstring, comparison_test_bitsless)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitslt_op>(NormalizeBinaryOperation, sless0);
-  ReduceNode<bitslt_op>(NormalizeBinaryOperation, sless1);
-  ReduceNode<bitslt_op>(NormalizeBinaryOperation, sless2);
-  ReduceNode<bitslt_op>(NormalizeBinaryOperation, sless3);
-  ReduceNode<bitslt_op>(NormalizeBinaryOperation, sless4);
+  ReduceNode<bitslt_op>(BitCompareOperation::foldConstants, sless0);
+  ReduceNode<bitslt_op>(BitCompareOperation::foldConstants, sless1);
+  ReduceNode<bitslt_op>(BitCompareOperation::foldConstants, sless2);
+  ReduceNode<bitslt_op>(BitCompareOperation::foldConstants, sless3);
+  ReduceNode<bitslt_op>(BitCompareOperation::foldConstants, sless4);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -873,12 +873,12 @@ TEST(bitstring, comparison_test_bitslesseq)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq0);
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq1);
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq2);
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq3);
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq4);
-  ReduceNode<bitsle_op>(NormalizeBinaryOperation, slesseq5);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq0);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq1);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq2);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq3);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq4);
+  ReduceNode<bitsle_op>(BitCompareOperation::foldConstants, slesseq5);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -920,11 +920,11 @@ TEST(bitstring, comparison_test_bitugreater)
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  ReduceNode<bitugt_op>(NormalizeBinaryOperation, ugreater0);
-  ReduceNode<bitugt_op>(NormalizeBinaryOperation, ugreater1);
-  ReduceNode<bitugt_op>(NormalizeBinaryOperation, ugreater2);
-  ReduceNode<bitugt_op>(NormalizeBinaryOperation, ugreater3);
-  ReduceNode<bitugt_op>(NormalizeBinaryOperation, ugreater4);
+  ReduceNode<bitugt_op>(BitCompareOperation::foldConstants, ugreater0);
+  ReduceNode<bitugt_op>(BitCompareOperation::foldConstants, ugreater1);
+  ReduceNode<bitugt_op>(BitCompareOperation::foldConstants, ugreater2);
+  ReduceNode<bitugt_op>(BitCompareOperation::foldConstants, ugreater3);
+  ReduceNode<bitugt_op>(BitCompareOperation::foldConstants, ugreater4);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -967,12 +967,12 @@ TEST(bitstring, comparison_test_bitugreatereq)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq0);
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq1);
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq2);
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq3);
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq4);
-  ReduceNode<bituge_op>(NormalizeBinaryOperation, ugreatereq5);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq0);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq1);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq2);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq3);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq4);
+  ReduceNode<bituge_op>(BitCompareOperation::foldConstants, ugreatereq5);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1015,11 +1015,11 @@ TEST(bitstring, bitstring_comparison_test_bituless)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitult_op>(NormalizeBinaryOperation, uless0);
-  ReduceNode<bitult_op>(NormalizeBinaryOperation, uless1);
-  ReduceNode<bitult_op>(NormalizeBinaryOperation, uless2);
-  ReduceNode<bitult_op>(NormalizeBinaryOperation, uless3);
-  ReduceNode<bitult_op>(NormalizeBinaryOperation, uless4);
+  ReduceNode<bitult_op>(BitCompareOperation::foldConstants, uless0);
+  ReduceNode<bitult_op>(BitCompareOperation::foldConstants, uless1);
+  ReduceNode<bitult_op>(BitCompareOperation::foldConstants, uless2);
+  ReduceNode<bitult_op>(BitCompareOperation::foldConstants, uless3);
+  ReduceNode<bitult_op>(BitCompareOperation::foldConstants, uless4);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1063,12 +1063,12 @@ TEST(bitstring, bitstring_comparison_test_bitulesseq)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq0);
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq1);
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq2);
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq3);
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq4);
-  ReduceNode<bitule_op>(NormalizeBinaryOperation, ulesseq5);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq0);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq1);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq2);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq3);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq4);
+  ReduceNode<bitule_op>(BitCompareOperation::foldConstants, ulesseq5);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1260,14 +1260,14 @@ TEST(bitstring, test_reduction)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitand_op>(NormalizeBinaryOperation, bitAndNode);
-  ReduceNode<bitor_op>(NormalizeBinaryOperation, bitOrNode);
-  ReduceNode<bitxor_op>(NormalizeBinaryOperation, bitXorNode);
-  ReduceNode<bitadd_op>(NormalizeBinaryOperation, bitAddNode);
-  ReduceNode<bitmul_op>(NormalizeBinaryOperation, bitMulNode);
+  ReduceNode<bitand_op>(BitBinaryOperation::foldConstants, bitAndNode);
+  ReduceNode<bitor_op>(BitBinaryOperation::foldConstants, bitOrNode);
+  ReduceNode<bitxor_op>(BitBinaryOperation::foldConstants, bitXorNode);
+  ReduceNode<bitadd_op>(BitBinaryOperation::foldConstants, bitAddNode);
+  ReduceNode<bitmul_op>(BitBinaryOperation::foldConstants, bitMulNode);
   ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, bitConcatNode);
-  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode1);
-  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode2);
+  ReduceNode<bitneg_op>(BitUnaryOperation::foldConstant, bitNegNode1);
+  ReduceNode<bitneg_op>(BitUnaryOperation::foldConstant, bitNegNode2);
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -1303,7 +1303,7 @@ TEST(bitstring, SliceOfConcatReduction)
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::distributeSlice, sliceNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1376,7 +1376,7 @@ TEST(bitstring, SliceOfConstant)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::foldConstant, sliceNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1404,7 +1404,7 @@ TEST(bitstring, SliceOfSlice)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode2);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::narrowSlice, sliceNode2);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1432,7 +1432,7 @@ TEST(bitstring, SliceOfFullNode)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::normalizeIdempotent, sliceNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1459,10 +1459,10 @@ TEST(bitstring, SliceOfConcat)
   view(graph, stdout);
 
   // Act
-  ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, sliceNode);
+  ReduceNode<BitSliceOperation>(BitSliceOperation::distributeSlice, sliceNode);
   auto concatNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   ReduceNode<BitSliceOperation>(
-      NormalizeUnaryOperation,
+      BitSliceOperation::normalizeIdempotent,
       *TryGetOwnerNode<SimpleNode>(*concatNode->input(0)->origin()));
   concatNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, *concatNode);
@@ -1555,7 +1555,7 @@ TEST(bitstring, ConcatOfSlices)
   // Act
   ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, concatNode);
   ReduceNode<BitSliceOperation>(
-      NormalizeUnaryOperation,
+      BitSliceOperation::normalizeIdempotent,
       *TryGetOwnerNode<SimpleNode>(*ex.origin()));
   graph.PruneNodes();
 
@@ -2124,13 +2124,16 @@ TEST(bitstring, test_value_representation)
     BitValueRepresentation rbits(32, r);
 
     EXPECT_EQ(rbits.neg(), -r);
+    EXPECT_EQ(rbits.shl(0), r);
     EXPECT_EQ(rbits.shl(1), r << 1);
     EXPECT_EQ(rbits.shl(32), 0u);
+    EXPECT_EQ(rbits.ashr(0), r);
     EXPECT_EQ(rbits.ashr(1), r >> 1);
     EXPECT_EQ(rbits.ashr(34), (r < 0 ? -1 : 0));
 
     if (r >= 0)
     {
+      EXPECT_EQ(rbits.shr(0), r);
       EXPECT_EQ(rbits.shr(1), r >> 1);
       EXPECT_EQ(rbits.shr(34), 0u);
     }

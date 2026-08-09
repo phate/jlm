@@ -170,12 +170,6 @@ public:
   bool
   operator==(const Operation & other) const noexcept override;
 
-  unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
-
-  jlm::rvsdg::Output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
-
   [[nodiscard]] std::string
   debug_string() const override;
 

@@ -9,43 +9,41 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/ir/variable.hpp>
 #include <jlm/rvsdg/delta.hpp>
-#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/util/iterator_range.hpp>
 
 namespace jlm::llvm
 {
 
 /** \brief Delta operation
  */
-class DeltaOperation final : public rvsdg::DeltaOperation
+class LlvmDeltaOperation final : public rvsdg::DeltaOperation
 {
 public:
-  ~DeltaOperation() noexcept override;
+  ~LlvmDeltaOperation() noexcept override;
 
-  DeltaOperation(
+  LlvmDeltaOperation(
       const std::shared_ptr<const rvsdg::Type> & type,
       const std::string & name,
       const Linkage & linkage,
       std::string section,
       const bool constant,
       const size_t alignment)
-      : rvsdg::DeltaOperation(type, constant, PointerType::Create()),
+      : DeltaOperation(type, constant, PointerType::Create()),
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
         alignment_(alignment)
   {}
 
-  DeltaOperation(const DeltaOperation & other) = default;
+  LlvmDeltaOperation(const LlvmDeltaOperation & other) = default;
 
-  DeltaOperation(DeltaOperation && other) noexcept = default;
+  LlvmDeltaOperation(LlvmDeltaOperation && other) noexcept = default;
 
-  DeltaOperation &
-  operator=(const DeltaOperation &) = delete;
+  LlvmDeltaOperation &
+  operator=(const LlvmDeltaOperation &) = delete;
 
-  DeltaOperation &
-  operator=(DeltaOperation &&) = delete;
+  LlvmDeltaOperation &
+  operator=(LlvmDeltaOperation &&) = delete;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -80,7 +78,7 @@ public:
     return alignment_;
   }
 
-  static std::unique_ptr<DeltaOperation>
+  static std::unique_ptr<LlvmDeltaOperation>
   Create(
       std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
@@ -89,7 +87,7 @@ public:
       bool constant,
       const size_t alignment)
   {
-    return std::make_unique<DeltaOperation>(
+    return std::make_unique<LlvmDeltaOperation>(
         std::move(type),
         name,
         linkage,

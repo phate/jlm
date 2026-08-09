@@ -28,7 +28,7 @@ protected:
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
       : SimpleOperation(operandTypes, resultTypes)
   {
-    JLM_ASSERT(operandTypes.size() >= 4);
+    JLM_ASSERT(operandTypes.size() >= 3);
 
     auto & dstAddressType = *operandTypes[0];
     JLM_ASSERT(is<PointerType>(dstAddressType));
@@ -40,12 +40,6 @@ protected:
     if (lengthType != *rvsdg::BitType::Create(32) && lengthType != *rvsdg::BitType::Create(64))
     {
       throw util::Error("Expected 32 bit or 64 bit integer type.");
-    }
-
-    auto & memoryStateType = *operandTypes.back();
-    if (!is<MemoryStateType>(memoryStateType))
-    {
-      throw util::Error("Number of memory states cannot be zero.");
     }
   }
 
@@ -346,7 +340,7 @@ protected:
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
       : SimpleOperation(operandTypes, resultTypes)
   {
-    JLM_ASSERT(operandTypes.size() >= 4);
+    JLM_ASSERT(operandTypes.size() >= 3);
 
     auto & dstAddressType = *operandTypes[0];
     JLM_ASSERT(is<PointerType>(dstAddressType));
@@ -360,11 +354,6 @@ protected:
         lengthType != *rvsdg::BitType::Create(32) && lengthType != *rvsdg::BitType::Create(64))
     {
       throw util::Error("Expected 32 bit or 64 bit integer type.");
-    }
-
-    if (auto & memoryStateType = *operandTypes.back(); !is<MemoryStateType>(memoryStateType))
-    {
-      throw util::Error("Number of memory states cannot be zero.");
     }
   }
 

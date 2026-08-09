@@ -7,8 +7,8 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
-#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -18,7 +18,6 @@
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -306,8 +305,8 @@ GetElementPtrTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
-  auto one = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto one = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto gepx =
       GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
@@ -378,7 +377,6 @@ Bits2PtrTest::SetupRvsdg()
 
   auto setupBit2PtrFunction = [&]()
   {
-    auto pt = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
@@ -392,7 +390,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = IntegerToPointerOperation::create(valueArgument, pt);
+    auto cast = IntToPtrOperation::create(valueArgument);
 
     lambda->finalize({ cast, iOStateArgument, memoryStateArgument });
 
@@ -449,7 +447,6 @@ ConstantPointerNullTest::SetupRvsdg()
   using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
-  auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
@@ -462,7 +459,7 @@ ConstantPointerNullTest::SetupRvsdg()
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(fct->subregion(), pointerType);
+      ConstantPointerNullOperation::createNode(*fct->subregion()).output(0);
   auto st = StoreNonVolatileOperation::Create(
       fct->GetFunctionArguments()[0],
       constantPointerNullResult,
@@ -926,7 +923,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto delta = rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "g1",
             Linkage::externalLinkage,
@@ -943,7 +940,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto delta = rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "g2",
             Linkage::externalLinkage,
@@ -1542,7 +1539,7 @@ GammaTest2::SetupRvsdg()
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaZResults[1], memoryStateArgument });
 
-    auto nullPointer = ConstantPointerNullOperation::Create(lambda->subregion(), pointerType);
+    auto nullPointer = ConstantPointerNullOperation::createNode(*lambda->subregion()).output(0);
     auto storeZResults =
         StoreNonVolatileOperation::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
@@ -1717,7 +1714,7 @@ DeltaTest1::SetupRvsdg()
   {
     auto dfNode = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "f",
             Linkage::externalLinkage,
@@ -1816,7 +1813,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "d1",
             Linkage::externalLinkage,
@@ -1833,7 +1830,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "d2",
             Linkage::externalLinkage,
@@ -1934,7 +1931,7 @@ DeltaTest3::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "g1",
             Linkage::externalLinkage,
@@ -1953,13 +1950,7 @@ DeltaTest3::SetupRvsdg()
 
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
-            pointerType,
-            "g2",
-            Linkage::externalLinkage,
-            "",
-            false,
-            4));
+        LlvmDeltaOperation::Create(pointerType, "g2", Linkage::externalLinkage, "", false, 4));
 
     auto ctxVar = delta->AddContextVar(g1);
 
@@ -2710,18 +2701,12 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto delta = jlm::rvsdg::DeltaNode::Create(
       pb.subregion(),
-      jlm::llvm::DeltaOperation::Create(
-          arrayType,
-          "myArray",
-          Linkage::externalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(arrayType, "myArray", Linkage::externalLinkage, "", false, 4));
   auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
-      ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, structType);
+      ConstantStructOperation::Create(*delta->subregion(), { myArrayArgument }, structType);
   auto constantArray = ConstantArrayOperation::Create({ aggregateZero, &constantStruct });
 
   auto deltaOutput = &delta->finalize(constantArray);
@@ -2784,7 +2769,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "a",
             Linkage::externalLinkage,
@@ -2801,7 +2786,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "b",
             Linkage::externalLinkage,
@@ -2820,13 +2805,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
-            pointerType,
-            "x",
-            Linkage::externalLinkage,
-            "",
-            false,
-            4));
+        LlvmDeltaOperation::Create(pointerType, "x", Linkage::externalLinkage, "", false, 4));
 
     auto contextVariableA = deltaNode->AddContextVar(deltaA).inner;
 
@@ -2839,13 +2818,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
-            pointerType,
-            "y",
-            Linkage::externalLinkage,
-            "",
-            false,
-            4));
+        LlvmDeltaOperation::Create(pointerType, "y", Linkage::externalLinkage, "", false, 4));
 
     auto contextVariableX = deltaNode->AddContextVar(deltaX).inner;
 
@@ -3130,7 +3103,7 @@ EscapedMemoryTest3::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             jlm::rvsdg::BitType::Create(32),
             "global",
             Linkage::externalLinkage,
@@ -3215,13 +3188,7 @@ MemcpyTest::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
-            arrayType,
-            "initArray",
-            Linkage::externalLinkage,
-            "",
-            false,
-            4));
+        LlvmDeltaOperation::Create(arrayType, "initArray", Linkage::externalLinkage, "", false, 4));
 
     auto zero = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
     auto one = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
@@ -3229,7 +3196,7 @@ MemcpyTest::SetupRvsdg()
     auto three = &BitConstantOperation::create(*delta->subregion(), { 32, 3 });
     auto four = &BitConstantOperation::create(*delta->subregion(), { 32, 4 });
 
-    auto constantDataArray = ConstantDataArray::Create({ zero, one, two, three, four });
+    auto constantDataArray = ConstantDataArrayOperation::Create({ zero, one, two, three, four });
 
     auto deltaOutput = &delta->finalize(constantDataArray);
 
@@ -3242,7 +3209,7 @@ MemcpyTest::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
+        LlvmDeltaOperation::Create(
             arrayType,
             "globalArray",
             Linkage::externalLinkage,
@@ -3533,16 +3500,10 @@ LinkedListTest::SetupRvsdg()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        jlm::llvm::DeltaOperation::Create(
-            pointerType,
-            "MyList",
-            Linkage::externalLinkage,
-            "",
-            false,
-            4));
+        LlvmDeltaOperation::Create(pointerType, "MyList", Linkage::externalLinkage, "", false, 4));
 
     auto constantPointerNullResult =
-        ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
+        ConstantPointerNullOperation::createNode(*delta->subregion()).output(0);
 
     auto deltaOutput = &delta->finalize(constantPointerNullResult);
     GraphExport::Create(*deltaOutput, "myList");
@@ -3566,8 +3527,8 @@ LinkedListTest::SetupRvsdg()
 
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
     auto mergedMemoryState = MemoryStateMergeOperation::Create(
@@ -3633,15 +3594,9 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create global variable "global"
   Delta_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          pointerType,
-          "global",
-          Linkage::externalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(pointerType, "global", Linkage::externalLinkage, "", false, 4));
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(Delta_->subregion(), pointerType);
+      ConstantPointerNullOperation::createNode(*Delta_->subregion()).output(0);
   Delta_->finalize(constantPointerNullResult);
 
   // Start of function "f"
@@ -3771,13 +3726,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   Global_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          uint32Type,
-          "global",
-          Linkage::internalLinkage,
-          "",
-          false,
-          4));
+      LlvmDeltaOperation::Create(uint32Type, "global", Linkage::internalLinkage, "", false, 4));
   const auto constantZero = &BitConstantOperation::create(*Global_->subregion(), { 32, 0 });
   const auto deltaOutput = &Global_->finalize(constantZero);
 
@@ -3849,7 +3798,7 @@ FreeNullTest::SetupRvsdg()
   auto memoryStateArgument = LambdaMain_->GetFunctionArguments()[1];
 
   auto constantPointerNullResult =
-      ConstantPointerNullOperation::Create(LambdaMain_->subregion(), PointerType::Create());
+      ConstantPointerNullOperation::createNode(*LambdaMain_->subregion()).output(0);
 
   auto FreeResults =
       FreeOperation::Create(constantPointerNullResult, { memoryStateArgument }, iOStateArgument);

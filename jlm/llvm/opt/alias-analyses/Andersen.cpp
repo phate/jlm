@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -654,7 +653,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeBitcast(node);
       },
-      [&](const IntegerToPointerOperation &)
+      [&](const IntToPtrOperation &)
       {
         AnalyzeBits2ptr(node);
       },
@@ -690,7 +689,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeConstantArray(node);
       },
-      [&](const ConstantStruct &)
+      [&](const ConstantStructOperation &)
       {
         AnalyzeConstantStruct(node);
       },
@@ -865,7 +864,7 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IntegerToPointerOperation>(node.GetOperation()));
+  JLM_ASSERT(is<IntToPtrOperation>(node.GetOperation()));
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.Type()));
 
@@ -1005,7 +1004,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantStruct>(node.GetOperation()));
+  JLM_ASSERT(is<ConstantStructOperation>(node.GetOperation()));
 
   if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
