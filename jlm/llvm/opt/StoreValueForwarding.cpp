@@ -1063,85 +1063,6 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
   context_->numLoadsTracedToDeltaNode++;
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
-#if 0
-static size_t
-getConstantDataArrayElementIndex(
-    const ConstantDataArrayOperation & constantDataArray,
-    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
-{
-  if (gepConstants.empty())
-    return 0;
-
-  JLM_ASSERT(gepConstants.size() == 1);
-  auto & gepConstant = gepConstants[0];
-  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
-
-  if (gepConstant.indices.size() == 1)
-  {
-    if (const auto gepConstantIndex = gepConstant.indices[0]; gepConstantIndex == 0)
-      return 0;
-
-    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
-    const auto offsetInBytes = gepConstant.getOffsetInBytes();
-    const auto elementSize = GetTypeAllocSize(constantDataArray.type()->element_type());
-    JLM_ASSERT(offsetInBytes % elementSize == 0);
-    return offsetInBytes / elementSize;
-  }
-
-  if (gepConstant.indices.size() == 2)
-  {
-    JLM_ASSERT(gepConstant.indices[0] == 0);
-    return gepConstant.indices.back();
-  }
-
-  throw std::logic_error("Unhandled number of GEP constant indices.");
-}
-#endif
-#if 0
-static size_t
-getConstantStructElementIndex(
-    const ConstantStructOperation & constantStructOperation,
-    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
-{
-  if (gepConstants.empty())
-    return 0;
-
-  JLM_ASSERT(gepConstants.size() == 1);
-  auto & gepConstant = gepConstants[0];
-  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
-
-  if (gepConstant.indices.size() == 1)
-  {
-    const auto gepConstantIndex = gepConstant.indices[0];
-    if (gepConstantIndex == 0)
-      return 0;
-
-    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
-    auto & structType = constantStructOperation.type();
-
-    size_t totalSizeInBytes = 0;
-    for (size_t n = 0; n < structType.numElements(); ++n)
-    {
-      const auto elementSizeInBytes = GetTypeAllocSize(*structType.getElementType(n));
-      if (totalSizeInBytes + elementSizeInBytes == gepConstantIndex)
-        return n + 1;
-
-      totalSizeInBytes += elementSizeInBytes;
-      JLM_ASSERT(totalSizeInBytes < gepConstantIndex);
-    }
-
-    throw std::logic_error("GEP constant index does not point to the beginning of struct element.");
-  }
-
-  if (gepConstant.indices.size() == 2)
-  {
-    JLM_ASSERT(gepConstant.indices[0] == 0);
-    return gepConstant.indices.back();
-  }
-
-  throw std::logic_error("Unhandled number of GEP constant indices.");
-}
-#endif
 
 static rvsdg::Output *
 getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
@@ -1152,32 +1073,32 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
         node->GetOperation(),
         [&](const IntegerConstantOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const ConstantFP &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const ConstantPointerNullOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const FunctionToPointerOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return &output;
         },
         [&](const IntToPtrOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return static_cast<rvsdg::Output *>(nullptr);
         },
         [&](const GetElementPtrOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          JLM_ASSERT(elementOffsetInBytes == 0);
           return static_cast<rvsdg::Output *>(nullptr);
         },
         [&](const ConstantAggregateZeroOperation &)
@@ -1243,13 +1164,8 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
-    // JLM_ASSERT(elementOffsetInBytes == 0);
+    JLM_ASSERT(elementOffsetInBytes == 0);
     return &output;
-#if 0
-    auto [ctxInput, _] = deltaNode->MapBinderContextVar(output);
-    JLM_ASSERT(ctxInput->region()->IsRootRegion());
-    return &rvsdg::RouteToRegion(*ctxInput->origin(), targetRegion);
-#endif
   }
 
   throw std::logic_error("Unsupported output owner");
