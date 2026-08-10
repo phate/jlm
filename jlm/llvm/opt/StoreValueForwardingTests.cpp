@@ -1171,7 +1171,9 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
       { zeroNode.output(0), twoNode.output(0) },
       structType);
   auto & loadV32Node =
-      LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);  auto & gepFloatNode = GetElementPtrOperation::createNode(
+      LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);
+
+  auto & gepFloatNode = GetElementPtrOperation::createNode(
       *ctxVar.inner,
       { zeroNode.output(0), threeNode.output(0) },
       structType);
