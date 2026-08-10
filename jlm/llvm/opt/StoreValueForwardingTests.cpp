@@ -1901,7 +1901,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   auto functionType1 = FunctionType::Create({}, {});
   const auto functionType2 = FunctionType::Create(
       {},
-      { bits32Type, bits32Type, bits32Type, bits32Type, bits32Type, /*bits64Type,*/ pointerType });
+      { bits32Type, bits32Type, bits32Type, bits32Type, bits32Type, bits64Type, pointerType });
 
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -1952,7 +1952,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
   auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
 
-  // auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
 
   auto gepOutput6 = GetElementPtrOperation::create(ctxVar.inner, { zero, four }, structType);
   auto & loadNode6 = LoadNonVolatileOperation::CreateNode(*gepOutput6, {}, pointerType, 4);
@@ -1962,7 +1962,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
                         &LoadOperation::LoadedValueOutput(loadNode2),
                         &LoadOperation::LoadedValueOutput(loadNode3),
                         &LoadOperation::LoadedValueOutput(loadNode4),
-                        // &LoadOperation::LoadedValueOutput(loadNode5),
+                        &LoadOperation::LoadedValueOutput(loadNode5),
                         &LoadOperation::LoadedValueOutput(loadNode6) });
 
   // Act
@@ -1994,13 +1994,17 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   EXPECT_NE(intOperation4, nullptr);
   EXPECT_EQ(intOperation4->Representation().to_uint(), 1u);
 
-  // FIXME: the types do not align
+  {
+    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(loadOperation, nullptr);
 #if 0
-  auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
-      *lambdaNode.GetFunctionResults()[5]->origin());
-  EXPECT_NE(intOperation5, nullptr);
-  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
+    auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(intOperation5, nullptr);
+    EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
 #endif
+  }
 
   auto [fnToPtrNode, fnToPtrOperation] = TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(
       *lambdaNode.GetFunctionResults()[5]->origin());
