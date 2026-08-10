@@ -1463,13 +1463,18 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   EXPECT_NE(intOperation4, nullptr);
   EXPECT_EQ(intOperation4->Representation().to_uint(), 1u);
 
-  // FIXME: The types do not lign up.
+  {
+    // FIXME: Does currently not work at the types do not align
+    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(loadOperation, nullptr);
 #if 0
-  auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
-      *lambdaNode.GetFunctionResults()[5]->origin());
-  EXPECT_NE(intOperation5, nullptr);
-  EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
+    auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(intOperation5, nullptr);
+    EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000u);
 #endif
+  }
 }
 
 TEST(StoreValueForwardingTests, RegionPredicatedValueForwarding)
