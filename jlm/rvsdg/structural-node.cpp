@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/util/strfmt.hpp"
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
@@ -59,7 +60,7 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
 std::string
 StructuralNode::DebugString() const
 {
-  return GetOperation().debug_string();
+  return util::strfmt(GetOperation().debug_string(), "\nNodeID:", GetNodeId());
 }
 
 }

@@ -78,7 +78,7 @@ SimpleNode::copy(Region * region, SubstitutionMap & smap) const
 std::string
 SimpleNode::DebugString() const
 {
-  return GetOperation().debug_string();
+  return util::strfmt(GetOperation().debug_string(), "\nNodeID:", GetNodeId());
 }
 
 std::optional<std::vector<rvsdg::Output *>>
