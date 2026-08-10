@@ -1995,6 +1995,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   EXPECT_EQ(intOperation4->Representation().to_uint(), 1u);
 
   {
+    // FIXME: Does currently not work at the types do not align
     auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
         *lambdaNode.GetFunctionResults()[5]->origin());
     EXPECT_NE(loadOperation, nullptr);
