@@ -1113,7 +1113,7 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
 
           const auto index = elementOffsetInBytes / elementSizeInBytes;
           return getDeltaElement(
-              elementOffsetInBytes % elementSizeInBytes,
+              elementOffsetInBytes - (elementSizeInBytes * index),
               *node->input(index)->origin());
         },
         [&](const ConstantDataArrayOperation & constantDataArrayOperation)
