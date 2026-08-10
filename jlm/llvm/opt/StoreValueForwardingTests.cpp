@@ -1387,7 +1387,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
           bits32Type,
           bits32Type,
           bits32Type,
-          // bits64Type,
+          bits64Type,
       });
 
   auto deltaNode = DeltaNode::Create(
@@ -1423,7 +1423,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
   auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
   auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
 
-  //  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
 
   lambdaNode.finalize({
       &LoadOperation::LoadedValueOutput(loadNode0),
@@ -1431,7 +1431,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
       &LoadOperation::LoadedValueOutput(loadNode2),
       &LoadOperation::LoadedValueOutput(loadNode3),
       &LoadOperation::LoadedValueOutput(loadNode4),
-      //&LoadOperation::LoadedValueOutput(loadNode5),
+      &LoadOperation::LoadedValueOutput(loadNode5),
   });
 
   // Act
