@@ -83,8 +83,6 @@ private:
   void
   processLoadWithoutMemoryStates(rvsdg::SimpleNode & loadNode);
 
-  // FIXME:
-public:
   /**
    * Contains the information after a \ref LoadNonVolatileOperation node without memory states could
    * successfully be traced to a \ref rvsdg::DeltaNode.
