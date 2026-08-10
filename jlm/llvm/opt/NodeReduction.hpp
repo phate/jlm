@@ -155,6 +155,7 @@ public:
     size_t numIntegerXorReductions = 0;
 
     size_t numPtrCmpReductions = 0;
+    size_t numGetElementPtrReductions = 0;
     size_t numBinaryReductions = 0;
 
     size_t numGammaReductions = 0;

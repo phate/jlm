@@ -236,6 +236,21 @@ public:
     return createNode(*baseAddress, indices, std::move(gepType)).output(0);
   }
 
+  /**
+   * Removes all \ref GetElementPtrOperation nodes that either have no index operands or where all
+   * indices are constant zero.
+   *
+   * @param operation The \ref GetElementPtrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref GetElementPtrOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the \ref
+   * GetElementPtrOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdempotent(
+      const GetElementPtrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   static std::shared_ptr<const rvsdg::Type>
   getIndexedType(
