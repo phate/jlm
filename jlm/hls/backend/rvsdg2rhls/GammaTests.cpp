@@ -52,7 +52,7 @@ TEST(GammaConversionTests, TestWithMatch)
 
   // Assert
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
+      jlm::rvsdg::Region::containsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
 
 TEST(GammaConversionTests, TestWithoutMatch)
@@ -90,5 +90,5 @@ TEST(GammaConversionTests, TestWithoutMatch)
 
   // Assert
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
+      jlm::rvsdg::Region::containsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }

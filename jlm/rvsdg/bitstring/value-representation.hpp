@@ -628,6 +628,9 @@ public:
   BitValueRepresentation
   shl(size_t shift) const
   {
+    if (shift == 0)
+      return *this;
+
     if (shift >= nbits())
       return repeat(nbits(), '0');
 

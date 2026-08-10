@@ -1119,9 +1119,14 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   const auto pointerType = PointerType::Create();
   const auto bits32Type = BitType::Create(32);
   const auto fixedVectorType = FixedVectorType::Create(bits32Type, 4);
-  const auto structType =
-      StructType::CreateIdentified("struct", { bits32Type, pointerType, fixedVectorType }, false);
-  const auto functionType = FunctionType::Create({}, { bits32Type, pointerType, fixedVectorType });
+  const auto floatType = FloatingPointType::Create(fpsize::flt);
+  const auto doubleType = FloatingPointType::Create(fpsize::dbl);
+  const auto structType = StructType::CreateIdentified(
+      "struct",
+      { bits32Type, pointerType, fixedVectorType, floatType, doubleType },
+      false);
+  const auto functionType =
+      FunctionType::Create({}, { bits32Type, pointerType, fixedVectorType, floatType, doubleType });
 
   auto deltaNode = DeltaNode::Create(
       &graph.GetRootRegion(),
@@ -1137,6 +1142,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
   auto & oneNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1);
   auto & twoNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2);
+  auto & threeNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3);
+  auto & fourNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4);
 
   auto & gep0Node = GetElementPtrOperation::createNode(
       *ctxVar.inner,
@@ -1158,10 +1165,26 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
   auto & loadV32Node =
       LoadNonVolatileOperation::CreateNode(*gep2Node.output(0), {}, fixedVectorType, 4);
 
+  auto & gepFloatNode = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), threeNode.output(0) },
+      structType);
+  auto & loadFloatNode =
+      LoadNonVolatileOperation::CreateNode(*gepFloatNode.output(0), {}, floatType, 4);
+
+  auto & gepDoubleNode = GetElementPtrOperation::createNode(
+      *ctxVar.inner,
+      { zeroNode.output(0), fourNode.output(0) },
+      structType);
+  auto & loadDoubleNode =
+      LoadNonVolatileOperation::CreateNode(*gepDoubleNode.output(0), {}, doubleType, 8);
+
   lambdaNode.finalize({
       &LoadOperation::LoadedValueOutput(load32Node),
       &LoadOperation::LoadedValueOutput(loadPtrNode),
       &LoadOperation::LoadedValueOutput(loadV32Node),
+      &LoadOperation::LoadedValueOutput(loadFloatNode),
+      &LoadOperation::LoadedValueOutput(loadDoubleNode),
   });
 
   // Act
@@ -1169,120 +1192,43 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
-}
-
-TEST(StoreValueForwardingTests, LoadForwardingFloatFromDeltaWithAggregateZeroConstant)
-{
-  using namespace jlm::llvm;
-  using namespace jlm::rvsdg;
-
-  /**
-   * Creates RVSDG corresponding to the C code:
-   *
-   * struct S {
-   *   float f;
-   *   double d;
-   * };
-   *
-   * static const struct S myS;
-   *
-   * float getFloat() {
-   *   return myS.f;
-   * }
-   * double getDouble() {
-   *   return myS.d;
-   * }
-   *
-   * where the loads in the functions have no memory state going through them,
-   * since they are loading from constant memory.
-   *
-   * The test checks that StoreValueForwarding is able to replace the loads in the functions
-   * with floating point 0.0 constants.
-   */
-
-  // Arrange - Create a single lambda with two return values for simplicity
-  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-
-  const auto pointerType = PointerType::Create();
-  const auto floatType = FloatingPointType::Create(fpsize::flt);
-  const auto doubleType = FloatingPointType::Create(fpsize::dbl);
-  const auto structType = StructType::CreateIdentified("struct", { floatType, doubleType }, false);
-
-  auto deltaNode = DeltaNode::Create(
-      &graph.GetRootRegion(),
-      DeltaOperation::Create(structType, true, pointerType));
-  auto aggregateZero = ConstantAggregateZeroOperation::Create(*deltaNode->subregion(), structType);
-  auto & deltaOutput = deltaNode->finalize(aggregateZero);
-
-  // function types for getFloat() and getDouble()
-  const auto getFloatFunctionType = FunctionType::Create({}, { floatType });
-  const auto getDoubleFunctionType = FunctionType::Create({}, { doubleType });
-
-  // Create getFloat()
-  auto & getFloatLambdaNode = *LambdaNode::Create(
-      graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(getFloatFunctionType, "getFloat", Linkage::internalLinkage));
-  {
-    auto ctxVar = getFloatLambdaNode.AddContextVar(deltaOutput);
-
-    // Load float field (offset 0)
-    auto & zeroNode = IntegerConstantOperation::Create(*getFloatLambdaNode.subregion(), 32, 0);
-    auto & gepFloatNode = GetElementPtrOperation::createNode(
-        *ctxVar.inner,
-        { zeroNode.output(0), zeroNode.output(0) },
-        structType);
-    auto & loadFloatNode =
-        LoadNonVolatileOperation::CreateNode(*gepFloatNode.output(0), {}, floatType, 4);
-    getFloatLambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadFloatNode) });
-  }
-
-  // Create getDouble()
-  auto & getDoubleFunctionNode = *LambdaNode::Create(
-      graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(getDoubleFunctionType, "getDouble", Linkage::internalLinkage));
-  {
-    auto ctxVar = getDoubleFunctionNode.AddContextVar(deltaOutput);
-
-    // Load double field (offset 1)
-    auto & zeroNode = IntegerConstantOperation::Create(*getDoubleFunctionNode.subregion(), 32, 0);
-    auto & oneNode = IntegerConstantOperation::Create(*getDoubleFunctionNode.subregion(), 32, 1);
-    auto & gepDoubleNode = GetElementPtrOperation::createNode(
-        *ctxVar.inner,
-        { zeroNode.output(0), oneNode.output(0) },
-        structType);
-    auto & loadDoubleNode =
-        LoadNonVolatileOperation::CreateNode(*gepDoubleNode.output(0), {}, doubleType, 8);
-    getDoubleFunctionNode.finalize({ &LoadOperation::LoadedValueOutput(loadDoubleNode) });
-  }
-
-  // std::cout << jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion()) << std::endl;
-
-  // Act
-  RunStoreValueForwarding(rvsdgModule);
-
-  // Assert - Check that both loads were forwarded to float zero constants
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 
   {
-    auto floatResult = getFloatLambdaNode.GetFunctionResults()[0];
-    const auto [_, floatOp] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*floatResult->origin());
-    EXPECT_NE(floatOp, nullptr);
-    EXPECT_TRUE(*floatOp->result(0) == *floatType);
-    EXPECT_TRUE(floatOp->constant().isZero());
-    EXPECT_EQ(&floatOp->constant().getSemantics(), &::llvm::APFloat::IEEEsingle());
+    auto [intNode, intOperation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intOperation, nullptr);
+    EXPECT_EQ(intOperation->Representation().to_uint(), 0u);
   }
 
   {
-    auto doubleResult = getDoubleFunctionNode.GetFunctionResults()[0];
-    const auto [_, doubleOp] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*doubleResult->origin());
-    EXPECT_NE(doubleOp, nullptr);
-    EXPECT_TRUE(*doubleOp->result(0) == *doubleType);
-    EXPECT_TRUE(doubleOp->constant().isZero());
-    EXPECT_EQ(&doubleOp->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
+    auto [nullPtrNode, nullPtrOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantPointerNullOperation>(
+            *lambdaNode.GetFunctionResults()[1]->origin());
+    EXPECT_NE(nullPtrOperation, nullptr);
+  }
+
+  {
+    auto [aggZeroNode, aggZeroOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantAggregateZeroOperation>(
+            *lambdaNode.GetFunctionResults()[2]->origin());
+    EXPECT_NE(aggZeroOperation, nullptr);
+  }
+
+  {
+    auto [floatNode, floatOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[3]->origin());
+    EXPECT_NE(floatOperation, nullptr);
+    EXPECT_EQ(&floatOperation->constant().getSemantics(), &llvm::APFloat::IEEEsingle());
+    EXPECT_TRUE(floatOperation->constant().isZero());
+  }
+
+  {
+    auto [doubleNode, doubleOperation] =
+        TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[4]->origin());
+    EXPECT_NE(doubleOperation, nullptr);
+    EXPECT_EQ(&doubleOperation->constant().getSemantics(), &llvm::APFloat::IEEEdouble());
+    EXPECT_TRUE(doubleOperation->constant().isZero());
   }
 }
 
@@ -1328,7 +1274,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaCtxVar)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
   // We expect that deltaOutput1 has now lambdaNode as user on top of deltaNode2.
   EXPECT_EQ(deltaOutput1.nusers(), 2u);
 }
@@ -1371,7 +1317,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantFP)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
@@ -1410,7 +1356,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantPointerNull)
 
   // Assert
   // We expect all load nodes to be forwarded
-  EXPECT_FALSE(Region::ContainsNodeType<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantDataArray)
