@@ -1103,7 +1103,7 @@ getDeltaElement(const uint64_t elementOffsetInBytes, rvsdg::Output & output)
         },
         [&](const ConstantAggregateZeroOperation &)
         {
-          // JLM_ASSERT(elementOffsetInBytes == 0);
+          // FIXME: all the ConstantAggregateZeroOperation fail right now due to type mismatches
           return &output;
         },
         [&](const ConstantArrayOperation & constantArrayOperation)
