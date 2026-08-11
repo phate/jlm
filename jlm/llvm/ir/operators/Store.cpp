@@ -172,6 +172,13 @@ StoreNonVolatileOperation::normalizeStoreStore(
     const StoreNonVolatileOperation & store2Op,
     const std::vector<rvsdg::Output *> & operands)
 {
+  if (store2Op.NumMemoryStates() == 0)
+  {
+    // We have a store node without memory state edges. This can happen if the compiler can
+    // statically prove that the store node's address is a null pointer.
+    return std::nullopt;
+  }
+
   JLM_ASSERT(operands.size() > 2);
   auto & store2Address = *operands[0];
   auto & store2Value = *operands[1];
