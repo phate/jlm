@@ -2008,6 +2008,6 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   }
 
   auto [fnToPtrNode, fnToPtrOperation] = TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(
-      *lambdaNode.GetFunctionResults()[5]->origin());
+      *lambdaNode.GetFunctionResults()[6]->origin());
   EXPECT_NE(fnToPtrOperation, nullptr);
 }
