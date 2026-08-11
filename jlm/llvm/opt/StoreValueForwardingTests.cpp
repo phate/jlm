@@ -1090,7 +1090,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
     auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
         *lambdaNode.GetFunctionResults()[0]->origin());
     EXPECT_NE(intOperation0, nullptr);
-    EXPECT_EQ(intOperation0->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation0->Representation().nbits(), 32u);
     EXPECT_EQ(intOperation0->Representation().to_uint(), 4u);
   }
 
@@ -1107,7 +1107,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
     auto [intNode1, intOperation1] =
         TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*truncNode->input(0)->origin());
     EXPECT_NE(intOperation1, nullptr);
-    EXPECT_EQ(intOperation1->Representation().nbits(), 32);
+    EXPECT_EQ(intOperation1->Representation().nbits(), 32u);
     EXPECT_EQ(intOperation1->Representation().to_uint(), 4u);
 #endif
   }
@@ -1909,8 +1909,8 @@ TEST(StoreValueForwardingTests, LoadForwardingFromLoopExiting)
   ASSERT_TRUE(
       rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*retExitVar.branchResult[1]->origin()));
   // The LOADs inside the loop should have two users each
-  ASSERT_EQ(pLoad.nusers(), 2);
-  ASSERT_EQ(qLoad.nusers(), 2);
+  ASSERT_EQ(pLoad.nusers(), 2u);
+  ASSERT_EQ(qLoad.nusers(), 2u);
 }
 
 TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
