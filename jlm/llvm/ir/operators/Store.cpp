@@ -188,15 +188,14 @@ StoreNonVolatileOperation::normalizeStoreStore(
   if (&llvm::traceOutput(store1Address) != &llvm::traceOutput(store2Address))
     return std::nullopt;
 
-  // Check that all memory state inputs come from store1Node, and have no other users
-  // Skip the first memory state as we already checked it above
-  for (size_t n = 3; n < operands.size(); n++)
+  // Check that all memory state inputs originate from store1 AND have no other users
+  for (size_t n = 2; n < operands.size(); n++)
   {
     auto & memoryState = *operands[n];
     JLM_ASSERT(is<MemoryStateType>(memoryState.Type()));
 
-    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != store1Node
-        || operands[n]->nusers() != 1)
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(memoryState) != store1Node
+        || memoryState.nusers() != 1)
       return std::nullopt;
   }
 
@@ -206,11 +205,11 @@ StoreNonVolatileOperation::normalizeStoreStore(
   if (GetTypeStoreSize(store2Type) < GetTypeStoreSize(store1Type))
     return std::nullopt;
 
-  std::vector<rvsdg::Output *> memoryStates;
-  for (auto & input : getMemoryStateInputs(*store1Node))
-    memoryStates.push_back(input.origin());
-
-  return Create(&store2Address, &store2Value, memoryStates, store2Op.GetAlignment());
+  return Create(
+      &store2Address,
+      &store2Value,
+      getMemoryStateOperands(*store1Node),
+      store2Op.GetAlignment());
 }
 
 std::optional<std::vector<rvsdg::Output *>>

@@ -128,6 +128,24 @@ public:
   }
 
   /**
+   * Returns the memory state operands of \p node.
+   *
+   * \pre \p node is expected to have a \ref StoreOperation.
+   *
+   * @param node A \ref StoreOperation node
+   * @return A vector with the memory state operands.
+   */
+  [[nodiscard]] static std::vector<rvsdg::Output *>
+  getMemoryStateOperands(const rvsdg::Node & node) noexcept
+  {
+    std::vector<rvsdg::Output *> operands;
+    for (auto & input : getMemoryStateInputs(node))
+      operands.push_back(input.origin());
+
+    return operands;
+  }
+
+  /**
    * Maps a memory state output to a store operation to its corresponding memory state input.
    */
   [[nodiscard]] static rvsdg::Input &
