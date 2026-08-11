@@ -208,15 +208,15 @@ public:
    * =>
    * sx1 sx2 = StoreNonVolatileOperation a v2 si1 si2
    *
-   * @param operation The operation of the second StoreNonVolatile node.
+   * @param store2Op The operation of the second StoreNonVolatile node.
    * @param operands The operands of the second StoreNonVolatile node.
    *
    * @return If the normalization could be applied, the results of the
    * remaining store operation are returned. Otherwise std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeStoreStore(
-      const StoreNonVolatileOperation & operation,
+  normalizeStoreStore(
+      const StoreNonVolatileOperation & store2Op,
       const std::vector<rvsdg::Output *> & operands);
 
   /**
