@@ -35,6 +35,26 @@ foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRep
     return IntegerValueRepresentation(r1.ule(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerUltOperation>)
     return IntegerValueRepresentation(r1.ult(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerAddOperation>)
+    return IntegerValueRepresentation(r1.add(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerSubOperation>)
+    return IntegerValueRepresentation(r1.sub(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerMulOperation>)
+    return IntegerValueRepresentation(r1.mul(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerSDivOperation>)
+    return IntegerValueRepresentation(r1.sdiv(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerUDivOperation>)
+    return IntegerValueRepresentation(r1.udiv(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerSRemOperation>)
+    return IntegerValueRepresentation(r1.smod(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerURemOperation>)
+    return IntegerValueRepresentation(r1.umod(r2));
+  else if constexpr (std::is_same_v<TBinOp, IntegerAShrOperation>)
+    return IntegerValueRepresentation(r1.ashr(r2.to_uint()));
+  else if constexpr (std::is_same_v<TBinOp, IntegerShlOperation>)
+    return IntegerValueRepresentation(r1.shl(r2.to_uint()));
+  else if constexpr (std::is_same_v<TBinOp, IntegerLShrOperation>)
+    return IntegerValueRepresentation(r1.shr(r2.to_uint()));
   else if constexpr (std::is_same_v<TBinOp, IntegerOrOperation>)
     return IntegerValueRepresentation(r1.lor(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerAndOperation>)
@@ -154,6 +174,14 @@ IntegerAddOperation::flags() const noexcept
   return flags::associative | flags::commutative;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerAddOperation::foldConstants(
+    const IntegerAddOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerAddOperation>(operands);
+}
+
 IntegerSubOperation::~IntegerSubOperation() noexcept = default;
 
 bool
@@ -216,6 +244,14 @@ IntegerSubOperation::normalizeAdditiveInverse(
       &IntegerConstantOperation::Create(*operand1.region(), operation.Type().nbits(), 0));
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSubOperation::foldConstants(
+    const IntegerSubOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerSubOperation>(operands);
+}
+
 IntegerMulOperation::~IntegerMulOperation() noexcept = default;
 
 bool
@@ -257,6 +293,14 @@ enum rvsdg::BinaryOperation::flags
 IntegerMulOperation::flags() const noexcept
 {
   return flags::associative | flags::commutative;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerMulOperation::foldConstants(
+    const IntegerMulOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerMulOperation>(operands);
 }
 
 IntegerSDivOperation::~IntegerSDivOperation() noexcept = default;
@@ -302,6 +346,14 @@ IntegerSDivOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSDivOperation::foldConstants(
+    const IntegerSDivOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerSDivOperation>(operands);
+}
+
 IntegerUDivOperation::~IntegerUDivOperation() noexcept = default;
 
 bool
@@ -343,6 +395,14 @@ enum rvsdg::BinaryOperation::flags
 IntegerUDivOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUDivOperation::foldConstants(
+    const IntegerUDivOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerUDivOperation>(operands);
 }
 
 IntegerSRemOperation::~IntegerSRemOperation() noexcept = default;
@@ -388,6 +448,14 @@ IntegerSRemOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSRemOperation::foldConstants(
+    const IntegerSRemOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerSRemOperation>(operands);
+}
+
 IntegerURemOperation::~IntegerURemOperation() noexcept = default;
 
 bool
@@ -429,6 +497,14 @@ enum rvsdg::BinaryOperation::flags
 IntegerURemOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerURemOperation::foldConstants(
+    const IntegerURemOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerURemOperation>(operands);
 }
 
 IntegerAShrOperation::~IntegerAShrOperation() noexcept = default;
@@ -474,6 +550,14 @@ IntegerAShrOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerAShrOperation::foldConstants(
+    const IntegerAShrOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerAShrOperation>(operands);
+}
+
 IntegerShlOperation::~IntegerShlOperation() noexcept = default;
 
 bool
@@ -517,6 +601,14 @@ IntegerShlOperation::flags() const noexcept
   return flags::none;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerShlOperation::foldConstants(
+    const IntegerShlOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerShlOperation>(operands);
+}
+
 IntegerLShrOperation::~IntegerLShrOperation() noexcept = default;
 
 bool
@@ -558,6 +650,14 @@ enum rvsdg::BinaryOperation::flags
 IntegerLShrOperation::flags() const noexcept
 {
   return flags::none;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerLShrOperation::foldConstants(
+    const IntegerLShrOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return foldBinaryOperationConstants<IntegerLShrOperation>(operands);
 }
 
 IntegerAndOperation::~IntegerAndOperation() noexcept = default;

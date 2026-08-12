@@ -66,7 +66,16 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerUleReductions", counters.numIntegerUleReductions);
   AddMeasurement("#IntegerUltReductions", counters.numIntegerUltReductions);
 
+  AddMeasurement("#IntegerAddReductions", counters.numIntegerAddReductions);
   AddMeasurement("#IntegerSubReductions", counters.numIntegerSubReductions);
+  AddMeasurement("#IntegerMulReductions", counters.numIntegerMulReductions);
+  AddMeasurement("#IntegerSDivReductions", counters.numIntegerSDivReductions);
+  AddMeasurement("#IntegerUDivReductions", counters.numIntegerUDivReductions);
+  AddMeasurement("#IntegerSRemReductions", counters.numIntegerSRemReductions);
+  AddMeasurement("#IntegerURemReductions", counters.numIntegerURemReductions);
+  AddMeasurement("#IntegerAShrReductions", counters.numIntegerAShrReductions);
+  AddMeasurement("#IntegerShlReductions", counters.numIntegerShlReductions);
+  AddMeasurement("#IntegerLShrReductions", counters.numIntegerLShrReductions);
   AddMeasurement("#IntegerAndReductions", counters.numIntegerAndReductions);
   AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
@@ -171,8 +180,35 @@ static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
     integerUltNormalizations({ IntegerUltOperation::foldConstants });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>>
-    integerSubNormalizations({ IntegerSubOperation::normalizeAdditiveInverse });
+static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
+    integerAddNormalizations({ IntegerAddOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>> integerSubNormalizations(
+    { IntegerSubOperation::normalizeAdditiveInverse, IntegerSubOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerMulOperation>>
+    integerMulNormalizations({ IntegerMulOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSDivOperation>>
+    integerSDivNormalizations({ IntegerSDivOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUDivOperation>>
+    integerUDivNormalizations({ IntegerUDivOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerSRemOperation>>
+    integerSRemNormalizations({ IntegerSRemOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerURemOperation>>
+    integerURemNormalizations({ IntegerURemOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerAShrOperation>>
+    integerAShrNormalizations({ IntegerAShrOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerShlOperation>>
+    integerShlNormalizations({ IntegerShlOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<IntegerLShrOperation>>
+    integerLShrNormalizations({ IntegerLShrOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<IntegerAndOperation>>
     integerAndNormalizations({ IntegerAndOperation::foldConstants });
@@ -492,12 +528,75 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         integerUltNormalizations,
         Statistics_->getReductionCounters().numIntegerUltReductions);
   }
+  if (is<IntegerAddOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerAddOperation>(
+        simpleNode,
+        integerAddNormalizations,
+        Statistics_->getReductionCounters().numIntegerAddReductions);
+  }
   if (is<IntegerSubOperation>(&simpleNode))
   {
     return reduceSimpleNode<IntegerSubOperation>(
         simpleNode,
         integerSubNormalizations,
         Statistics_->getReductionCounters().numIntegerSubReductions);
+  }
+  if (is<IntegerMulOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerMulOperation>(
+        simpleNode,
+        integerMulNormalizations,
+        Statistics_->getReductionCounters().numIntegerMulReductions);
+  }
+  if (is<IntegerSDivOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerSDivOperation>(
+        simpleNode,
+        integerSDivNormalizations,
+        Statistics_->getReductionCounters().numIntegerSDivReductions);
+  }
+  if (is<IntegerUDivOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerUDivOperation>(
+        simpleNode,
+        integerUDivNormalizations,
+        Statistics_->getReductionCounters().numIntegerUDivReductions);
+  }
+  if (is<IntegerSRemOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerSRemOperation>(
+        simpleNode,
+        integerSRemNormalizations,
+        Statistics_->getReductionCounters().numIntegerSRemReductions);
+  }
+  if (is<IntegerURemOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerURemOperation>(
+        simpleNode,
+        integerURemNormalizations,
+        Statistics_->getReductionCounters().numIntegerURemReductions);
+  }
+  if (is<IntegerAShrOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerAShrOperation>(
+        simpleNode,
+        integerAShrNormalizations,
+        Statistics_->getReductionCounters().numIntegerAShrReductions);
+  }
+  if (is<IntegerShlOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerShlOperation>(
+        simpleNode,
+        integerShlNormalizations,
+        Statistics_->getReductionCounters().numIntegerShlReductions);
+  }
+  if (is<IntegerLShrOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerLShrOperation>(
+        simpleNode,
+        integerLShrNormalizations,
+        Statistics_->getReductionCounters().numIntegerLShrReductions);
   }
   if (is<IntegerAndOperation>(&simpleNode))
   {
