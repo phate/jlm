@@ -355,7 +355,6 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
     return GetTypeAllocSize(*deltaOperation->Type());
   }
 
-  // FIXME: It should also work without isConstant()
   if (const auto llvmImport = dynamic_cast<const LlvmGraphImport *>(&output))
   {
     return GetTypeAllocSize(*llvmImport->ValueType());
