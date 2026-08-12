@@ -1198,74 +1198,43 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithAggregateZeroConstant
 
   // Assert
   // We expect all load nodes to be forwarded
-  // FIXME: ConstantAggregateZero operations are currently not handled properly
-  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
 
   {
-    // FIXME: ConstantAggregateZero operations are currently not handled properly
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[0]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [intNode, intOperation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
         *lambdaNode.GetFunctionResults()[0]->origin());
     EXPECT_NE(intOperation, nullptr);
     EXPECT_EQ(intOperation->Representation().to_uint(), 0u);
-#endif
   }
 
   {
-    // FIXME: ConstantAggregateZero operations are currently not handled properly
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[0]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [nullPtrNode, nullPtrOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantPointerNullOperation>(
             *lambdaNode.GetFunctionResults()[1]->origin());
     EXPECT_NE(nullPtrOperation, nullptr);
-#endif
   }
 
   {
-    // FIXME: ConstantAggregateZero operations are currently not handled properly
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[0]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [aggZeroNode, aggZeroOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantAggregateZeroOperation>(
             *lambdaNode.GetFunctionResults()[2]->origin());
     EXPECT_NE(aggZeroOperation, nullptr);
-#endif
   }
 
   {
-    // FIXME: ConstantAggregateZero operations are currently not handled properly
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[0]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [floatNode, floatOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[3]->origin());
     EXPECT_NE(floatOperation, nullptr);
     EXPECT_EQ(&floatOperation->constant().getSemantics(), &llvm::APFloat::IEEEsingle());
     EXPECT_TRUE(floatOperation->constant().isZero());
-#endif
   }
 
   {
-    // FIXME: ConstantAggregateZero operations are currently not handled properly
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[0]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [doubleNode, doubleOperation] =
         TryGetSimpleNodeAndOptionalOp<ConstantFP>(*lambdaNode.GetFunctionResults()[4]->origin());
     EXPECT_NE(doubleOperation, nullptr);
     EXPECT_EQ(&doubleOperation->constant().getSemantics(), &llvm::APFloat::IEEEdouble());
     EXPECT_TRUE(doubleOperation->constant().isZero());
-#endif
   }
 }
 
@@ -2038,4 +2007,125 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantStruct)
   auto [fnToPtrNode, fnToPtrOperation] = TryGetSimpleNodeAndOptionalOp<FunctionToPointerOperation>(
       *lambdaNode.GetFunctionResults()[6]->origin());
   EXPECT_NE(fnToPtrOperation, nullptr);
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto bits8Type = BitType::Create(8);
+  const auto bits32Type = BitType::Create(32);
+  const auto bits64Type = BitType::Create(64);
+  const auto arrayType = ArrayType::Create(bits32Type, 3);
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits32Type,
+          bits64Type,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(arrayType, true, pointerType));
+  auto & zeroNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 1);
+  auto & twoNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 2);
+  auto constantDataArrayResult =
+      ConstantArrayOperation::Create({ zeroNode.output(0), oneNode.output(0), twoNode.output(0) });
+  auto & deltaOutput = deltaNode->finalize(constantDataArrayResult);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto zero = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
+  auto two = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+  auto four = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
+
+  auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits32Type, 4);
+
+  auto gepOutput1 = GetElementPtrOperation::create(ctxVar.inner, { zero }, arrayType);
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*gepOutput1, {}, bits32Type, 4);
+
+  auto gepOutput2 = GetElementPtrOperation::create(ctxVar.inner, { zero, zero }, arrayType);
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*gepOutput2, {}, bits32Type, 4);
+
+  auto gepOutput3 = GetElementPtrOperation::create(ctxVar.inner, { zero, two }, arrayType);
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(*gepOutput3, {}, bits32Type, 4);
+
+  auto gepOutput4 = GetElementPtrOperation::create(ctxVar.inner, { four }, bits8Type);
+  auto & loadNode4 = LoadNonVolatileOperation::CreateNode(*gepOutput4, {}, bits32Type, 4);
+
+  auto & loadNode5 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, bits64Type, 4);
+
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+      &LoadOperation::LoadedValueOutput(loadNode1),
+      &LoadOperation::LoadedValueOutput(loadNode2),
+      &LoadOperation::LoadedValueOutput(loadNode3),
+      &LoadOperation::LoadedValueOutput(loadNode4),
+      &LoadOperation::LoadedValueOutput(loadNode5),
+  });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  {
+    auto [intNode0, intOperation0] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intOperation0, nullptr);
+    EXPECT_EQ(intOperation0->Representation().to_uint(), 0);
+  }
+
+  {
+    auto [intNode1, intOperation1] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[1]->origin());
+    EXPECT_NE(intOperation1, nullptr);
+    EXPECT_EQ(intOperation1->Representation().to_uint(), 0);
+  }
+
+  {
+    auto [intNode2, intOperation2] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[2]->origin());
+    EXPECT_NE(intOperation2, nullptr);
+    EXPECT_EQ(intOperation2->Representation().to_uint(), 0);
+  }
+
+  {
+    auto [intNode3, intOperation3] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[3]->origin());
+    EXPECT_NE(intOperation3, nullptr);
+    EXPECT_EQ(intOperation3->Representation().to_uint(), 2);
+  }
+
+  {
+    auto [intNode4, intOperation4] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[4]->origin());
+    EXPECT_NE(intOperation4, nullptr);
+    EXPECT_EQ(intOperation4->Representation().to_uint(), 1);
+  }
+
+  {
+    // FIXME: Does currently not work at the types do not align
+    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(loadOperation, nullptr);
+#if 0
+    auto [intNode5, intOperation5] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+        *lambdaNode.GetFunctionResults()[5]->origin());
+    EXPECT_NE(intOperation5, nullptr);
+    EXPECT_EQ(intOperation5->Representation().to_uint(), 0x0000000100000000);
+#endif
+  }
 }
