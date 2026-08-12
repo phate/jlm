@@ -364,7 +364,7 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-LoadNonVolatileOperation::NormalizeIOBarrierAddress(
+LoadNonVolatileOperation::normalizeIOBarrierAddress(
     const LoadNonVolatileOperation & loadOperation,
     const std::vector<rvsdg::Output *> & operands)
 {

@@ -325,11 +325,11 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
 
   // Act
   const auto successLoadNode1 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode1);
 
   const auto successLoadNode2 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode2);
   graph.PruneNodes();
 
@@ -393,7 +393,7 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
 
   // Act
   const auto successLoadNode = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode);
 
   graph.PruneNodes();

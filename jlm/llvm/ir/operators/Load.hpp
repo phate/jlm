@@ -439,7 +439,7 @@ public:
    * LoadNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeIOBarrierAddress(
+  normalizeIOBarrierAddress(
       const LoadNonVolatileOperation & loadOperation,
       const std::vector<rvsdg::Output *> & operands);
 
