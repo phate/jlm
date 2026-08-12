@@ -1143,7 +1143,7 @@ copyDeltaRegionSlice(rvsdg::Output & output, rvsdg::Region & targetRegion)
   return substitutionMap.lookup(output);
 }
 
-static rvsdg::Output *
+static rvsdg::Output &
 copyDeltaElement(
     const uint64_t elementOffsetInBytes,
     rvsdg::Output & output,
@@ -1154,62 +1154,62 @@ copyDeltaElement(
   {
     return rvsdg::MatchTypeWithDefault(
         node->GetOperation(),
-        [&](const IntegerConstantOperation &)
+        [&](const IntegerConstantOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const ConstantFP &)
+        [&](const ConstantFP &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const ConstantPointerNullOperation &)
+        [&](const ConstantPointerNullOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const FunctionToPointerOperation &)
+        [&](const FunctionToPointerOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const IntToPtrOperation &)
+        [&](const IntToPtrOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const GetElementPtrOperation &)
+        [&](const GetElementPtrOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return &copyDeltaRegionSlice(output, targetRegion);
+          return copyDeltaRegionSlice(output, targetRegion);
         },
-        [&](const ConstantAggregateZeroOperation &) -> rvsdg::Output *
+        [&](const ConstantAggregateZeroOperation &) -> rvsdg::Output &
         {
           if (is<PointerType>(loadedType))
           {
-            return ConstantPointerNullOperation::createNode(targetRegion).output(0);
+            return *ConstantPointerNullOperation::createNode(targetRegion).output(0);
           }
 
           if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
           {
-            return IntegerConstantOperation::Create(targetRegion, bitType->nbits(), 0).output(0);
+            return *IntegerConstantOperation::Create(targetRegion, bitType->nbits(), 0).output(0);
           }
 
           if (const auto floatType = std::dynamic_pointer_cast<const FloatingPointType>(loadedType))
           {
             const auto zero = ConstantFP::getZeroRepresentation(floatType->size());
-            return ConstantFP::createNode(targetRegion, floatType->size(), zero).output(0);
+            return *ConstantFP::createNode(targetRegion, floatType->size(), zero).output(0);
           }
 
           if (const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
           {
-            return ConstantAggregateZeroOperation::createNode(targetRegion, vectorType).output(0);
+            return *ConstantAggregateZeroOperation::createNode(targetRegion, vectorType).output(0);
           }
 
           throw std::logic_error("Unsupported load type");
         },
-        [&](const ConstantArrayOperation & constantArrayOperation)
+        [&](const ConstantArrayOperation & constantArrayOperation) -> rvsdg::Output &
         {
           const auto arrayType = constantArrayOperation.type();
           const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
@@ -1221,7 +1221,7 @@ copyDeltaElement(
               targetRegion,
               loadedType);
         },
-        [&](const ConstantDataArrayOperation & constantDataArrayOperation)
+        [&](const ConstantDataArrayOperation & constantDataArrayOperation) -> rvsdg::Output &
         {
           const auto arrayType = constantDataArrayOperation.type();
           const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
@@ -1233,7 +1233,7 @@ copyDeltaElement(
               targetRegion,
               loadedType);
         },
-        [&](const ConstantStructOperation & constantStruct)
+        [&](const ConstantStructOperation & constantStruct) -> rvsdg::Output &
         {
           auto & structType = constantStruct.type();
 
@@ -1266,17 +1266,16 @@ copyDeltaElement(
               targetRegion,
               loadedType);
         },
-        [&]()
+        [&]() -> rvsdg::Output &
         {
           throw std::logic_error("Unsupported operation: " + node->DebugString());
-          return nullptr;
         });
   }
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
     JLM_ASSERT(elementOffsetInBytes == 0);
-    return &copyDeltaRegionSlice(output, targetRegion);
+    return copyDeltaRegionSlice(output, targetRegion);
   }
 
   throw std::logic_error("Unsupported output owner");
@@ -1302,24 +1301,19 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   JLM_ASSERT(tracedDelta.gepConstants.size() <= 1);
   const uint64_t offsetInBytes =
       tracedDelta.gepConstants.empty() ? 0 : tracedDelta.gepConstants.front().getOffsetInBytes();
-  auto newOutput = copyDeltaElement(
+  auto & newOutput = copyDeltaElement(
       offsetInBytes,
       deltaResultOrigin,
       *loadNode.region(),
       loadOperation->GetLoadedType());
-  if (!newOutput)
+
+  if (*loadOperation->GetLoadedType() != *newOutput.Type())
   {
     // FIXME:
     return;
   }
 
-  if (*loadOperation->GetLoadedType() != *newOutput->Type())
-  {
-    // FIXME:
-    return;
-  }
-
-  LoadOperation::LoadedValueOutput(loadNode).divert_users(newOutput);
+  LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
   context_->numForwardedLoadsWithoutMemoryState++;
 }
 
