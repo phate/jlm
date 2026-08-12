@@ -2159,10 +2159,9 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntToPtr)
 
   auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, pointerType, 4);
 
-  lambdaNode.finalize(
-      {
-          &LoadOperation::LoadedValueOutput(loadNode0),
-      });
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+  });
 
   // Act
   RunStoreValueForwarding(rvsdgModule);
