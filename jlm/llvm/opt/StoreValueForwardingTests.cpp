@@ -2129,3 +2129,47 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantArray)
 #endif
   }
 }
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntToPtr)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto pointerType = PointerType::Create();
+  const auto functionType = FunctionType::Create(
+      {},
+      {
+          pointerType,
+      });
+
+  auto deltaNode = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(pointerType, true, pointerType));
+  auto & oneNode = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 1);
+  auto intToPtr = IntToPtrOperation::create(oneNode.output(0));
+  auto & deltaOutput = deltaNode->finalize(intToPtr);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto ctxVar = lambdaNode.AddContextVar(deltaOutput);
+
+  auto & loadNode0 = LoadNonVolatileOperation::CreateNode(*ctxVar.inner, {}, pointerType, 4);
+
+  lambdaNode.finalize({
+      &LoadOperation::LoadedValueOutput(loadNode0),
+  });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  {
+    auto [intToPtrNode, intToPtrOp] = TryGetSimpleNodeAndOptionalOp<IntToPtrOperation>(
+        *lambdaNode.GetFunctionResults()[0]->origin());
+    EXPECT_NE(intToPtrOp, nullptr);
+  }
+}

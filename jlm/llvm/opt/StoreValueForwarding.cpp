@@ -1177,7 +1177,7 @@ copyDeltaElement(
         [&](const IntToPtrOperation &)
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return static_cast<rvsdg::Output *>(nullptr);
+          return &copyDeltaRegionSlice(output, targetRegion);
         },
         [&](const GetElementPtrOperation &)
         {
