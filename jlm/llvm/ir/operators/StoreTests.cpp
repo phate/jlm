@@ -378,11 +378,23 @@ TEST(StoreOperationTests, testStoreStoreReduction)
       StoreNonVolatileOperation::CreateNode(*addressImport1, *i64Import2, outputs(&storeNode9), 4);
   GraphExport::Create(*outputs(&storeNode9).front(), "");
 
+  auto & storeNode11 = StoreNonVolatileOperation::CreateNode(
+      *addressImport1,
+      *i64Import1,
+      { memoryStateImport1, memoryStateImport2 },
+      4);
+  auto & storeNode12 = StoreNonVolatileOperation::CreateNode(
+      *addressImport1,
+      *i64Import2,
+      { storeNode11.output(0) },
+      4);
+
   auto & ex1 = GraphExport::Create(*storeNode2.output(0), "ex1");
   auto & ex2 = GraphExport::Create(*storeNode4.output(0), "ex2");
   auto & ex3 = GraphExport::Create(*storeNode6.output(0), "ex3");
   auto & ex4 = GraphExport::Create(*storeNode8.output(0), "ex4");
   auto & ex5 = GraphExport::Create(*storeNode10.output(0), "ex5");
+  auto & ex6 = GraphExport::Create(*storeNode12.output(0), "ex6");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -406,6 +418,10 @@ TEST(StoreOperationTests, testStoreStoreReduction)
   auto success5 = ReduceNode<StoreNonVolatileOperation>(
       StoreNonVolatileOperation::normalizeStoreStore,
       storeNode10);
+
+  auto success6 = ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreStore,
+      storeNode12);
 
   graph.PruneNodes();
 
@@ -472,6 +488,20 @@ TEST(StoreOperationTests, testStoreStoreReduction)
     auto [sndStoreNode, sndStoreOp] = TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(
         *StoreOperation::getMemoryStateInputs(*fstStoreNode).begin()->origin());
     EXPECT_EQ(sndStoreNode, &storeNode9);
+  }
+
+  {
+    // We expect the storeNode11 - storeNode12 chain to be reduced to a single store node.
+    EXPECT_TRUE(success6);
+    auto [storeNode, storeOp] =
+        TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*ex6.origin());
+    EXPECT_NE(storeOp, nullptr);
+    EXPECT_EQ(StoreOperation::AddressInput(*storeNode).origin(), addressImport1);
+    EXPECT_EQ(StoreOperation::StoredValueInput(*storeNode).origin(), i64Import2);
+    EXPECT_EQ(storeOp->NumMemoryStates(), 1u);
+    EXPECT_EQ(
+        StoreOperation::getMemoryStateInputs(*storeNode).begin()->origin(),
+        memoryStateImport1);
   }
 }
 
