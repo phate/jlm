@@ -192,7 +192,7 @@ static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
 
 static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>>
     storeNonVolatileNormalizations({ StoreNonVolatileOperation::NormalizeStoreMux,
-                                     StoreNonVolatileOperation::NormalizeStoreStore,
+                                     StoreNonVolatileOperation::normalizeStoreStore,
                                      StoreNonVolatileOperation::NormalizeStoreAlloca,
                                      StoreNonVolatileOperation::NormalizeDuplicateStates,
                                      StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
