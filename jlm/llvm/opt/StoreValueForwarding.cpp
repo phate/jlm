@@ -1157,7 +1157,23 @@ copyDeltaElement(
         [&](const IntegerConstantOperation &) -> rvsdg::Output &
         {
           JLM_ASSERT(elementOffsetInBytes == 0);
-          return copyDeltaRegionSlice(output, targetRegion);
+          auto copiedOutput = &copyDeltaRegionSlice(output, targetRegion);
+
+          const auto loadBitType = util::assertedCast<const rvsdg::BitType>(loadedType.get());
+          const auto copiedBitType =
+              util::assertedCast<const rvsdg::BitType>(copiedOutput->Type().get());
+          if (copiedBitType->nbits() == loadBitType->nbits())
+          {
+            return *copiedOutput;
+          }
+
+          if (loadBitType->nbits() < copiedBitType->nbits())
+          {
+            return *TruncOperation::createNode(*copiedOutput, loadedType).output(0);
+          }
+
+          // FIXME: In this case, we would need to concat multiple integers.
+          return *copiedOutput;
         },
         [&](const ConstantFP &) -> rvsdg::Output &
         {
