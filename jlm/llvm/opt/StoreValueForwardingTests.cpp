@@ -2173,3 +2173,73 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntToPtr)
     EXPECT_NE(intToPtrOp, nullptr);
   }
 }
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantGep)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  //   %struct.s = type { i32, i32 }
+  //   @v  = global ptr getelementptr (i8, ptr @s0, i64 4)
+  //   @s0 = global %struct.s { i32 1, i32 2 }
+  //   %p = load ptr, ptr @v
+  //   %x = load i32, ptr %p
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits8Type = BitType::Create(8);
+  const auto bits32Type = BitType::Create(32);
+  const auto structType =
+      StructType::CreateIdentified("struct.s", { bits32Type, bits32Type }, false);
+
+  // @s0 = { 1, 2 }
+  auto s0 = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(structType, true, pointerType));
+  auto & one = IntegerConstantOperation::Create(*s0->subregion(), 32, 1);
+  auto & two = IntegerConstantOperation::Create(*s0->subregion(), 32, 2);
+  auto & s0Value = ConstantStructOperation::Create(
+      *s0->subregion(),
+      { one.output(0), two.output(0) },
+      structType);
+  auto & s0Output = s0->finalize(&s0Value);
+
+  // @v = getelementptr i8, ptr @s0, i64 4
+  auto v = DeltaNode::Create(
+      &graph.GetRootRegion(),
+      DeltaOperation::Create(pointerType, true, pointerType));
+  auto vContext = v->AddContextVar(s0Output);
+  auto four = IntegerConstantOperation::Create(*v->subregion(), 64, 4).output(0);
+  auto vValue = GetElementPtrOperation::create(vContext.inner, { four }, bits8Type);
+  auto & vOutput = v->finalize(vValue);
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          FunctionType::Create({}, { bits32Type }),
+          "f",
+          Linkage::internalLinkage));
+  auto vContextVar = lambdaNode.AddContextVar(vOutput);
+
+  // %p = load ptr, ptr @v
+  auto & pointerLoad = LoadNonVolatileOperation::CreateNode(*vContextVar.inner, {}, pointerType, 8);
+  // %x = load i32, ptr %p
+  auto & valueLoad =
+      LoadNonVolatileOperation::CreateNode(*pointerLoad.output(0), {}, bits32Type, 4);
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(valueLoad) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(graph.GetRootRegion(), true));
+
+  auto [intNode, intOperation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode.GetFunctionResults()[0]->origin());
+  EXPECT_NE(intNode, nullptr);
+  EXPECT_NE(intOperation, nullptr);
+  EXPECT_EQ(intOperation->Representation().to_uint(), 2u);
+}
