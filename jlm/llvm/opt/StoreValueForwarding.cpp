@@ -1147,7 +1147,8 @@ static rvsdg::Output *
 copyDeltaElement(
     const uint64_t elementOffsetInBytes,
     rvsdg::Output & output,
-    rvsdg::Region & targetRegion)
+    rvsdg::Region & targetRegion,
+    const std::shared_ptr<const rvsdg::Type> & loadedType)
 {
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
@@ -1183,10 +1184,30 @@ copyDeltaElement(
           JLM_ASSERT(elementOffsetInBytes == 0);
           return static_cast<rvsdg::Output *>(nullptr);
         },
-        [&](const ConstantAggregateZeroOperation &)
+        [&](const ConstantAggregateZeroOperation &) -> rvsdg::Output *
         {
-          // FIXME: all the ConstantAggregateZeroOperation fail right now due to type mismatches
-          return &copyDeltaRegionSlice(output, targetRegion);
+          if (is<PointerType>(loadedType))
+          {
+            return ConstantPointerNullOperation::createNode(targetRegion).output(0);
+          }
+
+          if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
+          {
+            return IntegerConstantOperation::Create(targetRegion, bitType->nbits(), 0).output(0);
+          }
+
+          if (const auto floatType = std::dynamic_pointer_cast<const FloatingPointType>(loadedType))
+          {
+            const auto zero = ConstantFP::getZeroRepresentation(floatType->size());
+            return ConstantFP::createNode(targetRegion, floatType->size(), zero).output(0);
+          }
+
+          if (const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
+          {
+            return ConstantAggregateZeroOperation::createNode(targetRegion, vectorType).output(0);
+          }
+
+          throw std::logic_error("Unsupported load type");
         },
         [&](const ConstantArrayOperation & constantArrayOperation)
         {
@@ -1197,7 +1218,8 @@ copyDeltaElement(
           return copyDeltaElement(
               elementOffsetInBytes - (elementSizeInBytes * index),
               *node->input(index)->origin(),
-              targetRegion);
+              targetRegion,
+              loadedType);
         },
         [&](const ConstantDataArrayOperation & constantDataArrayOperation)
         {
@@ -1208,7 +1230,8 @@ copyDeltaElement(
           return copyDeltaElement(
               elementOffsetInBytes - (elementSizeInBytes * index),
               *node->input(index)->origin(),
-              targetRegion);
+              targetRegion,
+              loadedType);
         },
         [&](const ConstantStructOperation & constantStruct)
         {
@@ -1220,7 +1243,7 @@ copyDeltaElement(
 
             if (fieldOffsetInBytes == elementOffsetInBytes)
             {
-              return copyDeltaElement(0, *node->input(n)->origin(), targetRegion);
+              return copyDeltaElement(0, *node->input(n)->origin(), targetRegion, loadedType);
             }
 
             if (fieldOffsetInBytes > elementOffsetInBytes)
@@ -1229,7 +1252,8 @@ copyDeltaElement(
               return copyDeltaElement(
                   elementOffsetInBytes - fieldOffsetInBytes,
                   *node->input(n - 1)->origin(),
-                  targetRegion);
+                  targetRegion,
+                  loadedType);
             }
           }
 
@@ -1239,7 +1263,8 @@ copyDeltaElement(
           return copyDeltaElement(
               elementOffsetInBytes - fieldOffsetInBytes,
               *node->input(lastElementIndex)->origin(),
-              targetRegion);
+              targetRegion,
+              loadedType);
         },
         [&]()
         {
@@ -1277,7 +1302,11 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   JLM_ASSERT(tracedDelta.gepConstants.size() <= 1);
   const uint64_t offsetInBytes =
       tracedDelta.gepConstants.empty() ? 0 : tracedDelta.gepConstants.front().getOffsetInBytes();
-  auto newOutput = copyDeltaElement(offsetInBytes, deltaResultOrigin, *loadNode.region());
+  auto newOutput = copyDeltaElement(
+      offsetInBytes,
+      deltaResultOrigin,
+      *loadNode.region(),
+      loadOperation->GetLoadedType());
   if (!newOutput)
   {
     // FIXME:
