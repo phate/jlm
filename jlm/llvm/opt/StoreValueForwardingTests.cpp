@@ -1095,11 +1095,6 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
   }
 
   {
-    // FIXME: Does currently not work at the types do not align
-    auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-        *lambdaNode.GetFunctionResults()[1]->origin());
-    EXPECT_NE(loadOperation, nullptr);
-#if 0
     auto [truncNode, truncOperation] = TryGetSimpleNodeAndOptionalOp<TruncOperation>(
         *lambdaNode.GetFunctionResults()[1]->origin());
     EXPECT_NE(truncOperation, nullptr);
@@ -1109,7 +1104,6 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithIntegerConstant)
     EXPECT_NE(intOperation1, nullptr);
     EXPECT_EQ(intOperation1->Representation().nbits(), 32u);
     EXPECT_EQ(intOperation1->Representation().to_uint(), 4u);
-#endif
   }
 }
 
