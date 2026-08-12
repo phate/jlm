@@ -293,7 +293,6 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::rvsdg::TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
@@ -305,7 +304,7 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
   auto memoryStateImport = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState");
   auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
 
-  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+  auto allocaResults = AllocaOperation::create(bit32Type, sizeImport, 4);
   auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
       { allocaResults[0], ioStateImport },
       pointerType);
@@ -313,11 +312,11 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
   auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
       *ioBarrierNode.output(0),
       { allocaResults[1] },
-      valueType,
+      bit32Type,
       4);
 
   auto & loadNode2 =
-      LoadNonVolatileOperation::CreateNode(*addressImport, { memoryStateImport }, valueType, 4);
+      LoadNonVolatileOperation::CreateNode(*addressImport, { memoryStateImport }, bit32Type, 4);
 
   auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode1.output(0), "store1");
   auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode2.output(0), "store2");
@@ -326,11 +325,11 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization)
 
   // Act
   const auto successLoadNode1 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode1);
 
   const auto successLoadNode2 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode2);
   graph.PruneNodes();
 
@@ -356,7 +355,6 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
@@ -367,9 +365,9 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
   const auto controlImport = &jlm::rvsdg::GraphImport::Create(graph, controlType, "control");
   auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
-  auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
 
-  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+  auto allocaResults = AllocaOperation::create(bit32Type, sizeImport, 4);
 
   auto gammaNode = GammaNode::create(controlImport, 2);
   auto addressEntryVar = gammaNode->AddEntryVar(allocaResults[0]);
@@ -384,7 +382,7 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   auto & loadNode = LoadNonVolatileOperation::CreateNode(
       *ioBarrierNode.output(0),
       { memoryStateEntryVar.branchArgument[0] },
-      valueType,
+      bit32Type,
       4);
 
   auto exitVar = gammaNode->AddExitVar({ loadNode.output(0), valueEntryVar.branchArgument[1] });
@@ -395,7 +393,7 @@ TEST(LoadOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
 
   // Act
   const auto successLoadNode = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      LoadNonVolatileOperation::normalizeIOBarrierAddress,
       loadNode);
 
   graph.PruneNodes();
