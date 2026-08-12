@@ -383,7 +383,7 @@ LoadNonVolatileOperation::NormalizeIOBarrierAddress(
     return std::nullopt;
 
   // This transformation is only valid if the affected bytes by the load operation are within the
-  // allocation site.
+  // size of the allocation site.
   if (GetTypeStoreSize(*loadOperation.GetLoadedType()) > allocationSizeInBytes.value())
     return std::nullopt;
 
