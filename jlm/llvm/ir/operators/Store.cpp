@@ -196,14 +196,22 @@ StoreNonVolatileOperation::normalizeStoreStore(
     return std::nullopt;
 
   // Check that all memory state inputs originate from store1 AND have no other users
+  std::vector<rvsdg::Output *> newMemoryStates;
   for (size_t n = 2; n < operands.size(); n++)
   {
     auto & memoryState = *operands[n];
     JLM_ASSERT(is<MemoryStateType>(memoryState.Type()));
 
-    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(memoryState) != store1Node
-        || memoryState.nusers() != 1)
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(memoryState) == store1Node
+        && memoryState.nusers() == 1)
+    {
+      auto & memoryStateInput = MapMemoryStateOutputToInput(memoryState);
+      newMemoryStates.push_back(memoryStateInput.origin());
+    }
+    else
+    {
       return std::nullopt;
+    }
   }
 
   // Check that store2 fully overwrites store1
@@ -212,11 +220,7 @@ StoreNonVolatileOperation::normalizeStoreStore(
   if (GetTypeStoreSize(store2Type) < GetTypeStoreSize(store1Type))
     return std::nullopt;
 
-  return Create(
-      &store2Address,
-      &store2Value,
-      getMemoryStateOperands(*store1Node),
-      store2Op.GetAlignment());
+  return Create(&store2Address, &store2Value, newMemoryStates, store2Op.GetAlignment());
 }
 
 std::optional<std::vector<rvsdg::Output *>>
