@@ -599,7 +599,8 @@ ConstantStructOperation::operator==(const Operation & other) const noexcept
 std::string
 ConstantStructOperation::debug_string() const
 {
-  return "ConstantStruct";
+  const auto name = type().IsLiteral() ? "" : type().GetName();
+  return util::strfmt("ConstantStruct[", name, "]");
 }
 
 std::unique_ptr<rvsdg::Operation>

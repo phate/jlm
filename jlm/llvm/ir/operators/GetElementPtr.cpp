@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 
 namespace jlm::llvm
@@ -16,7 +17,7 @@ GetElementPtrOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const GetElementPtrOperation *>(&other);
 
-  if (operation == nullptr || getPointeeType() != operation->getPointeeType()
+  if (operation == nullptr || *getPointeeType() != *operation->getPointeeType()
       || narguments() != operation->narguments())
   {
     return false;
@@ -24,7 +25,7 @@ GetElementPtrOperation::operator==(const Operation & other) const noexcept
 
   for (size_t n = 0; n < narguments(); n++)
   {
-    if (operation->argument(n) != argument(n))
+    if (*operation->argument(n) != *argument(n))
     {
       return false;
     }
@@ -104,4 +105,75 @@ GetElementPtrOperation::Constant::getOffsetInBytes() const noexcept
   offsetInBytes += computeIntraTypeOffset(1, *pointeeType);
   return offsetInBytes;
 }
+
+std::shared_ptr<const rvsdg::Type>
+GetElementPtrOperation::getIndexedType(
+    const std::shared_ptr<const rvsdg::Type> & gepType,
+    const std::vector<rvsdg::Output *> & indices)
+{
+  if (indices.empty())
+    return gepType;
+
+  auto currentType = gepType;
+
+  // We skip the first index as it always just steps through the container
+  for (size_t n = 1; n < indices.size(); ++n)
+  {
+    if (auto structType = std::dynamic_pointer_cast<const StructType>(currentType))
+    {
+      auto index = indices[n];
+      auto & tracedIndex = llvm::traceOutput(*index);
+      auto [constantNode, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedIndex);
+      if (!constantOperation)
+      {
+        return nullptr;
+      }
+
+      if (constantOperation->Representation().nbits() != 32)
+        return nullptr;
+
+      auto idx = constantOperation->Representation().to_uint();
+      if (idx > structType->numElements())
+        return nullptr;
+
+      currentType = structType->getElementType(idx);
+    }
+    else if (const auto arrayType = std::dynamic_pointer_cast<const ArrayType>(currentType))
+    {
+      currentType = arrayType->GetElementType();
+    }
+    else if (const auto vectorType = std::dynamic_pointer_cast<const VectorType>(currentType))
+    {
+      currentType = vectorType->Type();
+    }
+    else
+    {
+      return nullptr;
+    }
+  }
+
+  return currentType;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+GetElementPtrOperation::normalizeIdempotent(
+    const GetElementPtrOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() >= 1);
+  auto baseAddress = operands[0];
+
+  for (size_t n = 1; n < operands.size(); ++n)
+  {
+    auto intOpt = tryGetConstantSignedInteger(*operands[n]);
+    if (!intOpt.has_value() || intOpt.value() != 0)
+      return std::nullopt;
+  }
+
+  // At this point we know that either there are no index operands or that all indices are zero. We
+  // can just return the base address.
+  return std::vector({ baseAddress });
+}
+
 }

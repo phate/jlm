@@ -21,8 +21,7 @@ remove_unused_loop_backedges(LoopNode * loopNode)
   const auto subregion = loopNode->subregion();
   for (const auto argument : subregion->Arguments())
   {
-    if ((dynamic_cast<BackEdgeArgument *>(argument) && argument->nusers() == 1)
-        || argument->IsDead())
+    if ((dynamic_cast<BackEdgeArgument *>(argument) && argument->nusers() == 1))
     {
       auto & user = *argument->Users().begin();
       if (const auto result = dynamic_cast<BackEdgeResult *>(&user))

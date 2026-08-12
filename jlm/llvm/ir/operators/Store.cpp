@@ -57,43 +57,6 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 }
 
 static bool
-is_store_store_reducible(
-    const StoreNonVolatileOperation & store2Op,
-    const std::vector<jlm::rvsdg::Output *> & operands)
-{
-  JLM_ASSERT(operands.size() > 2);
-
-  // Try tracing a memory state edge to a previous store
-  const auto [store1Node, store1Op] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*operands[2]);
-  if (!store1Op)
-    return false;
-
-  const auto & store1Address = *StoreOperation::AddressInput(*store1Node).origin();
-  const auto & store2Address = *operands[0];
-
-  // only continue if store1 and store2 have the same address
-  if (&llvm::traceOutput(store1Address) != &llvm::traceOutput(store2Address))
-    return false;
-
-  // Check that all memory state inputs come from store1Node, and have no other users
-  for (size_t n = 2; n < operands.size(); n++)
-  {
-    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != store1Node
-        || operands[n]->nusers() != 1)
-      return false;
-  }
-
-  // Check that store2 fully overwrites store1
-  const auto & store1Type = store1Op->GetStoredType();
-  const auto & store2Type = store2Op.GetStoredType();
-  if (GetTypeStoreSize(store2Type) < GetTypeStoreSize(store1Type))
-    return false;
-
-  return true;
-}
-
-static bool
 is_store_alloca_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 {
   if (operands.size() == 3)
@@ -134,19 +97,6 @@ perform_store_mux_reduction(
       memStateMergeOperands,
       op.GetAlignment());
   return { MemoryStateMergeOperation::Create(states) };
-}
-
-static std::vector<jlm::rvsdg::Output *>
-perform_store_store_reduction(
-    const StoreNonVolatileOperation & op,
-    const std::vector<jlm::rvsdg::Output *> & operands)
-{
-  JLM_ASSERT(is_store_store_reducible(op, operands));
-  const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
-
-  auto storeops = jlm::rvsdg::operands(storeNode);
-  std::vector<jlm::rvsdg::Output *> states(std::next(std::next(storeops.begin())), storeops.end());
-  return StoreNonVolatileOperation::Create(operands[0], operands[1], states, op.GetAlignment());
 }
 
 static std::vector<jlm::rvsdg::Output *>
@@ -218,14 +168,59 @@ StoreNonVolatileOperation::NormalizeStoreMux(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-StoreNonVolatileOperation::NormalizeStoreStore(
-    const StoreNonVolatileOperation & operation,
+StoreNonVolatileOperation::normalizeStoreStore(
+    const StoreNonVolatileOperation & store2Op,
     const std::vector<rvsdg::Output *> & operands)
 {
-  if (is_store_store_reducible(operation, operands))
-    return perform_store_store_reduction(operation, operands);
+  if (store2Op.NumMemoryStates() == 0)
+  {
+    // We have a store node without memory state edges. This can happen if the compiler can
+    // statically prove that the store node's address is a null pointer.
+    return std::nullopt;
+  }
 
-  return std::nullopt;
+  JLM_ASSERT(operands.size() > 2);
+  auto & store2Address = *operands[0];
+  auto & store2Value = *operands[1];
+  const auto & store2FirstMemoryState = *operands[2];
+
+  // Try tracing a memory state edge to a previous store
+  const auto [store1Node, store1Op] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(store2FirstMemoryState);
+  if (!store1Op)
+    return std::nullopt;
+
+  // Store1 and store2 must have the same address
+  auto & store1Address = *AddressInput(*store1Node).origin();
+  if (&llvm::traceOutput(store1Address) != &llvm::traceOutput(store2Address))
+    return std::nullopt;
+
+  // Check that all memory state inputs originate from store1 AND have no other users
+  std::vector<rvsdg::Output *> newMemoryStates;
+  for (size_t n = 2; n < operands.size(); n++)
+  {
+    auto & memoryState = *operands[n];
+    JLM_ASSERT(is<MemoryStateType>(memoryState.Type()));
+
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(memoryState) == store1Node
+        && memoryState.nusers() == 1)
+    {
+      auto & memoryStateInput = MapMemoryStateOutputToInput(memoryState);
+      newMemoryStates.push_back(memoryStateInput.origin());
+    }
+    else
+    {
+      return std::nullopt;
+    }
+  }
+
+  // Check that store2 fully overwrites store1
+  const auto & store1Type = store1Op->GetStoredType();
+  const auto & store2Type = store2Op.GetStoredType();
+  if (GetTypeStoreSize(store2Type) < GetTypeStoreSize(store1Type))
+    return std::nullopt;
+
+  return Create(&store2Address, &store2Value, newMemoryStates, store2Op.GetAlignment());
 }
 
 std::optional<std::vector<rvsdg::Output *>>

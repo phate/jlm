@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -17,7 +18,6 @@
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -41,7 +41,7 @@ StoreTest1::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto constantOne = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto constantOne = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto d = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
   auto c = AllocaOperation::create(pointerType, constantOne, 4);
@@ -96,7 +96,7 @@ StoreTest2::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto constantOne = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto constantOne = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
   auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
@@ -198,7 +198,7 @@ LoadTest2::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto constantOne = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto constantOne = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
   auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
@@ -305,8 +305,8 @@ GetElementPtrTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
-  auto one = &BitConstantOperation::create(*fct->subregion(), { 32, 1 });
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto one = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
   auto gepx =
       GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
@@ -581,7 +581,7 @@ CallTest1::SetupRvsdg()
     auto cvf = lambda->AddContextVar(*f->output()).inner;
     auto cvg = lambda->AddContextVar(*g->output()).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto x = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto y = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
@@ -592,9 +592,9 @@ CallTest1::SetupRvsdg()
     auto my = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>({ y[1], mx }));
     auto mz = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>({ z[1], my }));
 
-    auto five = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
-    auto six = &BitConstantOperation::create(*lambda->subregion(), { 32, 6 });
-    auto seven = &BitConstantOperation::create(*lambda->subregion(), { 32, 7 });
+    auto five = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
+    auto six = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 6 }).output(0);
+    auto seven = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 7 }).output(0);
 
     auto stx = StoreNonVolatileOperation::Create(x[0], five, { mz }, 4);
     auto sty = StoreNonVolatileOperation::Create(y[0], six, { stx[0] }, 4);
@@ -672,7 +672,7 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto four = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
+    auto four = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 4 }).output(0);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
     auto & mallocNode = MallocOperation::createNode(*prod, *iOStateArgument);
@@ -727,8 +727,8 @@ CallTest2::SetupRvsdg()
     auto create_cv = lambda->AddContextVar(*lambdaCreate->output()).inner;
     auto destroy_cv = lambda->AddContextVar(*lambdaDestroy->output()).inner;
 
-    auto six = &BitConstantOperation::create(*lambda->subregion(), { 32, 6 });
-    auto seven = &BitConstantOperation::create(*lambda->subregion(), { 32, 7 });
+    auto six = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 6 }).output(0);
+    auto seven = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 7 }).output(0);
 
     auto & create1 = CallOperation::CreateNode(
         create_cv,
@@ -809,7 +809,7 @@ IndirectCallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = &BitConstantOperation::create(*lambda->subregion(), { 32, n });
+    auto constant = IntegerConstantOperation::Create(*lambda->subregion(), { 32, n }).output(0);
 
     return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
@@ -931,7 +931,7 @@ IndirectCallTest2::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 1 }).output(0);
 
     return &delta->finalize(constant);
   };
@@ -948,7 +948,7 @@ IndirectCallTest2::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 2 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 2 }).output(0);
 
     return &delta->finalize(constant);
   };
@@ -961,7 +961,7 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = &BitConstantOperation::create(*lambda->subregion(), { 32, n });
+    auto constant = IntegerConstantOperation::Create(*lambda->subregion(), { 32, n }).output(0);
 
     return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
@@ -1018,7 +1018,7 @@ IndirectCallTest2::SetupRvsdg()
                                    constantFunctionType)
                                    .output(0);
 
-    auto five = &BitConstantOperation::create(*lambda->subregion(), { 32, n });
+    auto five = IntegerConstantOperation::Create(*lambda->subregion(), { 32, n }).output(0);
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, five, { memoryStateArgument }, 4);
 
@@ -1052,7 +1052,7 @@ IndirectCallTest2::SetupRvsdg()
     auto globalG1Cv = lambda->AddContextVar(globalG1).inner;
     auto globalG2Cv = lambda->AddContextVar(globalG2).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto pxAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pyAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
@@ -1116,7 +1116,7 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto pzAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pzMerge = MemoryStateMergeOperation::Create(
@@ -1228,7 +1228,7 @@ ExternalCallTest1::SetupRvsdg()
 
     auto functionGCv = lambda->AddContextVar(*functionG).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto allocaPath = AllocaOperation::create(pointerType, constantOne, 4);
     auto allocaMode = AllocaOperation::create(pointerType, constantOne, 4);
@@ -1334,8 +1334,8 @@ ExternalCallTest2::SetupRvsdg()
   auto llvmLifetimeEndArgument = LambdaG_->AddContextVar(*llvmLifetimeEnd).inner;
   auto lambdaFArgument = LambdaG_->AddContextVar(*ExternalFArgument_).inner;
 
-  auto constantOne = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 64, 1 });
-  auto twentyFour = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 64, 24 });
+  auto constantOne = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 64, 1 }).output(0);
+  auto twentyFour = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 64, 24 }).output(0);
 
   auto allocaResults = AllocaOperation::create(structType, constantOne, 16);
   auto memoryState = MemoryStateMergeOperation::Create(
@@ -1353,9 +1353,9 @@ ExternalCallTest2::SetupRvsdg()
         &CallOperation::GetIOStateOutput(callLLvmLifetimeStart),
         &CallOperation::GetMemoryStateOutput(callLLvmLifetimeStart) });
 
-  auto zero = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 64, 0 });
-  auto one = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 1 });
-  auto two = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 2 });
+  auto zero = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 64, 0 }).output(0);
+  auto one = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 1 }).output(0);
+  auto two = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 2 }).output(0);
 
   auto gepResult1 = GetElementPtrOperation::create(allocaResults[0], { zero, one }, structType);
   auto loadResults1 = LoadNonVolatileOperation::Create(
@@ -1417,7 +1417,7 @@ GammaTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
   auto biteq = jlm::rvsdg::biteq_op::create(32, fct->GetFunctionArguments()[0], zero);
   auto & predicateNode = MatchOperation::CreateNode(*biteq, { { 0, 1 } }, 0, 2);
 
@@ -1483,7 +1483,7 @@ GammaTest2::SetupRvsdg()
           jlm::rvsdg::BitType::Create(32),
           4);
 
-      auto one = &BitConstantOperation::create(*gammaNode->subregion(0), { 32, 1 });
+      auto one = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 32, 1 }).output(0);
       auto storeZRegion0Results = StoreNonVolatileOperation::Create(
           gammaInputZ.branchArgument[0],
           one,
@@ -1497,7 +1497,7 @@ GammaTest2::SetupRvsdg()
           jlm::rvsdg::BitType::Create(32),
           4);
 
-      auto two = &BitConstantOperation::create(*gammaNode->subregion(1), { 32, 2 });
+      auto two = IntegerConstantOperation::Create(*gammaNode->subregion(1), { 32, 2 }).output(0);
       auto storeZRegion1Results = StoreNonVolatileOperation::Create(
           gammaInputZ.branchArgument[1],
           two,
@@ -1532,7 +1532,7 @@ GammaTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[3];
     auto memoryStateArgument = lambda->GetFunctionArguments()[4];
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto allocaZResults = AllocaOperation::create(pointerType, constantOne, 4);
 
@@ -1543,7 +1543,7 @@ GammaTest2::SetupRvsdg()
     auto storeZResults =
         StoreNonVolatileOperation::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
     auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
     auto & predicateNode = MatchOperation::CreateNode(*bitEq, { { 0, 1 } }, 0, 2);
 
@@ -1586,7 +1586,7 @@ GammaTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto lambdaFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 4 }).output(0);
 
     auto allocaXResults = AllocaOperation::create(rvsdg::BitType::Create(32), constantOne, 4);
     auto allocaYResults = AllocaOperation::create(pointerType, constantOne, 4);
@@ -1596,9 +1596,10 @@ GammaTest2::SetupRvsdg()
     memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ allocaYResults[1], memoryState }));
 
-    auto predicate = &BitConstantOperation::create(*lambda->subregion(), { 32, cValue });
-    auto x = &BitConstantOperation::create(*lambda->subregion(), { 32, xValue });
-    auto y = &BitConstantOperation::create(*lambda->subregion(), { 32, yValue });
+    auto predicate =
+        IntegerConstantOperation::Create(*lambda->subregion(), { 32, cValue }).output(0);
+    auto x = IntegerConstantOperation::Create(*lambda->subregion(), { 32, xValue }).output(0);
+    auto y = IntegerConstantOperation::Create(*lambda->subregion(), { 32, yValue }).output(0);
 
     auto storeXResults =
         StoreNonVolatileOperation::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
@@ -1666,7 +1667,7 @@ ThetaTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = &BitConstantOperation::create(*fct->subregion(), { 32, 0 });
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
 
   auto thetanode = jlm::rvsdg::ThetaNode::create(fct->subregion());
 
@@ -1679,7 +1680,7 @@ ThetaTest::SetupRvsdg()
   auto gepnode = GetElementPtrOperation::create(a.pre, { n.pre }, BitType::Create(32));
   auto store = StoreNonVolatileOperation::Create(gepnode, c.pre, { s.pre }, 4);
 
-  auto one = &BitConstantOperation::create(*thetanode->subregion(), { 32, 1 });
+  auto one = IntegerConstantOperation::Create(*thetanode->subregion(), { 32, 1 }).output(0);
   auto sum = jlm::rvsdg::bitadd_op::create(32, n.pre, one);
   auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l.pre);
   auto & predicateNode = MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
@@ -1722,7 +1723,7 @@ DeltaTest1::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*dfNode->subregion(), { 32, 0 });
+    auto constant = IntegerConstantOperation::Create(*dfNode->subregion(), { 32, 0 }).output(0);
 
     return &dfNode->finalize(constant);
   };
@@ -1769,7 +1770,7 @@ DeltaTest1::SetupRvsdg()
     auto cvf = lambda->AddContextVar(*f).inner;
     auto cvg = lambda->AddContextVar(*g).inner;
 
-    auto five = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
+    auto five = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
     auto st = StoreNonVolatileOperation::Create(cvf, five, { memoryStateArgument }, 4);
     auto & callG = CallOperation::CreateNode(
         cvg,
@@ -1821,7 +1822,7 @@ DeltaTest2::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 0 }).output(0);
 
     return &delta->finalize(constant);
   };
@@ -1838,7 +1839,7 @@ DeltaTest2::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 0 }).output(0);
 
     return &delta->finalize(constant);
   };
@@ -1858,7 +1859,7 @@ DeltaTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto cvd1 = lambda->AddContextVar(*d1).inner;
-    auto b2 = &BitConstantOperation::create(*lambda->subregion(), { 32, 2 });
+    auto b2 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 2 }).output(0);
     auto st = StoreNonVolatileOperation::Create(cvd1, b2, { memoryStateArgument }, 4);
 
     return lambda->finalize({ iOStateArgument, st[0] });
@@ -1882,8 +1883,8 @@ DeltaTest2::SetupRvsdg()
     auto cvd2 = lambda->AddContextVar(*d2).inner;
     auto cvf1 = lambda->AddContextVar(*f1).inner;
 
-    auto b5 = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
-    auto b42 = &BitConstantOperation::create(*lambda->subregion(), { 32, 42 });
+    auto b5 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
+    auto b42 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 42 }).output(0);
     auto st = StoreNonVolatileOperation::Create(cvd1, b5, { memoryStateArgument }, 4);
     auto & call = CallOperation::CreateNode(
         cvf1,
@@ -1939,7 +1940,7 @@ DeltaTest3::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 1 }).output(0);
 
     return &delta->finalize(constant);
   };
@@ -2063,7 +2064,7 @@ ImportTest::SetupRvsdg()
 
     auto cvd1 = lambda->AddContextVar(*d1).inner;
 
-    auto b5 = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
+    auto b5 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
     auto st = StoreNonVolatileOperation::Create(cvd1, b5, { memoryStateArgument }, 4);
 
     return lambda->finalize({ iOStateArgument, st[0] });
@@ -2086,8 +2087,8 @@ ImportTest::SetupRvsdg()
     auto cvd1 = lambda->AddContextVar(*d1).inner;
     auto cvd2 = lambda->AddContextVar(*d2).inner;
     auto cvf1 = lambda->AddContextVar(*f1).inner;
-    auto b2 = &BitConstantOperation::create(*lambda->subregion(), { 32, 2 });
-    auto b21 = &BitConstantOperation::create(*lambda->subregion(), { 32, 21 });
+    auto b2 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 2 }).output(0);
+    auto b21 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 21 }).output(0);
     auto st = StoreNonVolatileOperation::Create(cvd1, b2, { memoryStateArgument }, 4);
     auto & call = CallOperation::CreateNode(
         cvf1,
@@ -2172,7 +2173,7 @@ PhiTest1::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
     auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
-    auto two = &BitConstantOperation::create(*lambda->subregion(), { 64, 2 });
+    auto two = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 2 }).output(0);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
     auto & predicateNode = MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
@@ -2184,7 +2185,7 @@ PhiTest1::SetupRvsdg()
     auto gIMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
 
     /* gamma subregion 0 */
-    auto one = &BitConstantOperation::create(*gammaNode->subregion(0), { 64, 1 });
+    auto one = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 1 }).output(0);
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
     auto & callFibm1 = CallOperation::CreateNode(
         fibev.branchArgument[0],
@@ -2194,7 +2195,7 @@ PhiTest1::SetupRvsdg()
           gIIoState.branchArgument[0],
           gIMemoryState.branchArgument[0] });
 
-    two = &BitConstantOperation::create(*gammaNode->subregion(0), { 64, 2 });
+    two = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 2 }).output(0);
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
     auto & callFibm2 = CallOperation::CreateNode(
         fibev.branchArgument[0],
@@ -2261,14 +2262,14 @@ PhiTest1::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto fibcv = lambda->AddContextVar(*phiNode->output(0)).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 64, 1 });
-    auto constantTen = &BitConstantOperation::create(*lambda->subregion(), { 64, 10 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 1 }).output(0);
+    auto constantTen = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 10 }).output(0);
 
     auto allocaResults = AllocaOperation::create(at, constantOne, 16);
     auto state = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 64, 0 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 0 }).output(0);
     auto gep = GetElementPtrOperation::create(allocaResults[0], { zero, zero }, at);
 
     auto & call = CallOperation::CreateNode(
@@ -2343,7 +2344,7 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto constant = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
+    auto constant = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 8 }).output(0);
 
     return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
@@ -2384,11 +2385,11 @@ PhiTest2::SetupRvsdg()
     auto functionBCv = lambda->AddContextVar(functionB).inner;
     auto functionDCv = lambda->AddContextVar(functionD).inner;
 
-    auto one = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto one = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto paAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto paMerge = MemoryStateMergeOperation::Create(
@@ -2436,11 +2437,11 @@ PhiTest2::SetupRvsdg()
     auto functionCCv = lambda->AddContextVar(functionC).inner;
     auto functionEightCv = lambda->AddContextVar(functionEight).inner;
 
-    auto two = &BitConstantOperation::create(*lambda->subregion(), { 32, 2 });
+    auto two = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 2 }).output(0);
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto pbAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pbMerge = MemoryStateMergeOperation::Create(
@@ -2486,11 +2487,11 @@ PhiTest2::SetupRvsdg()
 
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
-    auto three = &BitConstantOperation::create(*lambda->subregion(), { 32, 3 });
+    auto three = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 3 }).output(0);
     auto storeNode =
         StoreNonVolatileOperation::Create(xArgument, three, { memoryStateArgument }, 4);
 
-    auto constanOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constanOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
     auto pcAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constanOne, 4);
     auto pcMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pcAlloca[1], storeNode[0] }));
@@ -2529,10 +2530,10 @@ PhiTest2::SetupRvsdg()
 
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
-    auto four = &BitConstantOperation::create(*lambda->subregion(), { 32, 4 });
+    auto four = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 4 }).output(0);
     auto storeNode = StoreNonVolatileOperation::Create(xArgument, four, { memoryStateArgument }, 4);
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
     auto pdAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pdMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pdAlloca[1], storeNode[0] }));
@@ -2612,7 +2613,7 @@ PhiTest2::SetupRvsdg()
 
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
     auto pTestAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantOne, 4);
     auto pTestMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pTestAlloca[1], memoryStateArgument }));
@@ -2744,8 +2745,8 @@ ExternalMemoryTest::SetupRvsdg()
   auto y = LambdaF->GetFunctionArguments()[1];
   auto state = LambdaF->GetFunctionArguments()[2];
 
-  auto one = &BitConstantOperation::create(*LambdaF->subregion(), { 32, 1 });
-  auto two = &BitConstantOperation::create(*LambdaF->subregion(), { 32, 2 });
+  auto one = IntegerConstantOperation::Create(*LambdaF->subregion(), { 32, 1 }).output(0);
+  auto two = IntegerConstantOperation::Create(*LambdaF->subregion(), { 32, 2 }).output(0);
 
   auto storeOne = StoreNonVolatileOperation::Create(x, one, { state }, 4);
   auto storeTwo = StoreNonVolatileOperation::Create(y, two, { storeOne[0] }, 4);
@@ -2777,7 +2778,7 @@ EscapedMemoryTest1::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*deltaNode->subregion(), { 32, 1 });
+    auto constant = IntegerConstantOperation::Create(*deltaNode->subregion(), { 32, 1 }).output(0);
 
     return &deltaNode->finalize(constant);
   };
@@ -2794,7 +2795,7 @@ EscapedMemoryTest1::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*deltaNode->subregion(), { 32, 2 });
+    auto constant = IntegerConstantOperation::Create(*deltaNode->subregion(), { 32, 2 }).output(0);
 
     return &deltaNode->finalize(constant);
   };
@@ -2854,7 +2855,7 @@ EscapedMemoryTest1::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto five = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
+    auto five = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
     auto storeResults =
         StoreNonVolatileOperation::Create(contextVariableB, five, { loadResults2[1] }, 4);
 
@@ -2945,7 +2946,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
+    auto eight = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 8 }).output(0);
 
     auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResults = MemoryStateMergeOperation::Create(
@@ -2979,7 +2980,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto externalFunction1 = lambda->AddContextVar(*externalFunction1Argument).inner;
 
-    auto eight = &BitConstantOperation::create(*lambda->subregion(), { 32, 8 });
+    auto eight = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 8 }).output(0);
 
     auto & mallocNode = MallocOperation::createNode(*eight, *iOStateArgument);
     auto mergeResult = MemoryStateMergeOperation::Create(
@@ -3111,7 +3112,7 @@ EscapedMemoryTest3::SetupRvsdg()
             false,
             4));
 
-    auto constant = &BitConstantOperation::create(*delta->subregion(), { 32, 4 });
+    auto constant = IntegerConstantOperation::Create(*delta->subregion(), { 32, 4 }).output(0);
 
     auto deltaOutput = &delta->finalize(constant);
 
@@ -3190,11 +3191,11 @@ MemcpyTest::SetupRvsdg()
         &rvsdg->GetRootRegion(),
         LlvmDeltaOperation::Create(arrayType, "initArray", Linkage::externalLinkage, "", false, 4));
 
-    auto zero = &BitConstantOperation::create(*delta->subregion(), { 32, 0 });
-    auto one = &BitConstantOperation::create(*delta->subregion(), { 32, 1 });
-    auto two = &BitConstantOperation::create(*delta->subregion(), { 32, 2 });
-    auto three = &BitConstantOperation::create(*delta->subregion(), { 32, 3 });
-    auto four = &BitConstantOperation::create(*delta->subregion(), { 32, 4 });
+    auto zero = IntegerConstantOperation::Create(*delta->subregion(), { 32, 0 }).output(0);
+    auto one = IntegerConstantOperation::Create(*delta->subregion(), { 32, 1 }).output(0);
+    auto two = IntegerConstantOperation::Create(*delta->subregion(), { 32, 2 }).output(0);
+    auto three = IntegerConstantOperation::Create(*delta->subregion(), { 32, 3 }).output(0);
+    auto four = IntegerConstantOperation::Create(*delta->subregion(), { 32, 4 }).output(0);
 
     auto constantDataArray = ConstantDataArrayOperation::Create({ zero, one, two, three, four });
 
@@ -3243,9 +3244,9 @@ MemcpyTest::SetupRvsdg()
 
     auto globalArrayArgument = lambda->AddContextVar(globalArray).inner;
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
-    auto two = &BitConstantOperation::create(*lambda->subregion(), { 32, 2 });
-    auto six = &BitConstantOperation::create(*lambda->subregion(), { 32, 6 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto two = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 2 }).output(0);
+    auto six = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 6 }).output(0);
 
     auto gep = GetElementPtrOperation::create(globalArrayArgument, { zero, two }, arrayType);
 
@@ -3286,7 +3287,7 @@ MemcpyTest::SetupRvsdg()
     auto bcLocalArray = BitCastOperation::create(localArrayArgument, PointerType::Create());
     auto bcGlobalArray = BitCastOperation::create(globalArrayArgument, PointerType::Create());
 
-    auto twenty = &BitConstantOperation::create(*lambda->subregion(), { 32, 20 });
+    auto twenty = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 20 }).output(0);
 
     auto memcpyResults = MemCpyNonVolatileOperation::create(
         bcGlobalArray,
@@ -3359,8 +3360,8 @@ MemcpyTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[2];
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
 
-    auto c0 = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
-    auto c128 = &BitConstantOperation::create(*lambda->subregion(), { 64, 128 });
+    auto c0 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto c128 = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 128 }).output(0);
 
     auto gepS21 = GetElementPtrOperation::create(s2Argument, { c0, c0 }, structTypeB);
     auto gepS22 = GetElementPtrOperation::create(gepS21, { c0, c0 }, arrayType);
@@ -3398,7 +3399,7 @@ MemcpyTest2::SetupRvsdg()
 
     auto functionFArgument = lambda->AddContextVar(functionF).inner;
 
-    auto c0 = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
+    auto c0 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
 
     auto gepS1 = GetElementPtrOperation::create(s1Argument, { c0, c0 }, structTypeB);
     auto ldS1 = LoadNonVolatileOperation::Create(gepS1, { memoryStateArgument }, pointerType, 8);
@@ -3454,12 +3455,12 @@ MemcpyTest3::SetupRvsdg()
   auto iOStateArgument = Lambda_->GetFunctionArguments()[1];
   auto memoryStateArgument = Lambda_->GetFunctionArguments()[2];
 
-  auto eight = &BitConstantOperation::create(*Lambda_->subregion(), { 64, 8 });
-  auto zero = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 0 });
-  auto minusFive = &BitConstantOperation::create(*Lambda_->subregion(), { 64, -5 });
-  auto three = &BitConstantOperation::create(*Lambda_->subregion(), { 64, 3 });
+  auto eight = IntegerConstantOperation::Create(*Lambda_->subregion(), { 64, 8 }).output(0);
+  auto zero = IntegerConstantOperation::Create(*Lambda_->subregion(), { 32, 0 }).output(0);
+  auto minusFive = IntegerConstantOperation::Create(*Lambda_->subregion(), { 64, -5 }).output(0);
+  auto three = IntegerConstantOperation::Create(*Lambda_->subregion(), { 64, 3 }).output(0);
 
-  auto constantOne = &BitConstantOperation::create(*Lambda_->subregion(), { 64, 1 });
+  auto constantOne = IntegerConstantOperation::Create(*Lambda_->subregion(), { 64, 1 }).output(0);
   auto allocaResults = AllocaOperation::create(structType, constantOne, 8);
   auto memoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
@@ -3527,8 +3528,8 @@ LinkedListTest::SetupRvsdg()
 
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
-    auto zero = &BitConstantOperation::create(*lambda->subregion(), { 32, 0 });
-    auto constantOne = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
     auto mergedMemoryState = MemoryStateMergeOperation::Create(
@@ -3609,7 +3610,7 @@ AllMemoryNodesTest::SetupRvsdg()
   auto importContextVar = Lambda_->AddContextVar(*Import_).inner;
 
   // Create alloca node
-  auto allocaSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 1 });
+  auto allocaSize = IntegerConstantOperation::Create(*Lambda_->subregion(), { 32, 1 }).output(0);
   auto allocaOutputs = AllocaOperation::create(pointerType, allocaSize, 8);
   Alloca_ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*allocaOutputs[0]);
 
@@ -3617,7 +3618,7 @@ AllMemoryNodesTest::SetupRvsdg()
       std::vector<jlm::rvsdg::Output *>{ entryMemoryState, allocaOutputs[1] });
 
   // Create malloc node
-  auto mallocSize = &BitConstantOperation::create(*Lambda_->subregion(), { 32, 4 });
+  auto mallocSize = IntegerConstantOperation::Create(*Lambda_->subregion(), { 32, 4 }).output(0);
   Malloc_ = &MallocOperation::createNode(*mallocSize, *ioStateArgument);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
@@ -3682,7 +3683,7 @@ NAllocaNodesTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto constantOne = &BitConstantOperation::create(*Function_->subregion(), { 32, 1 });
+  auto constantOne = IntegerConstantOperation::Create(*Function_->subregion(), { 32, 1 }).output(0);
 
   jlm::rvsdg::Output * latestMemoryState = Function_->GetFunctionArguments()[0];
 
@@ -3727,7 +3728,8 @@ EscapingLocalFunctionTest::SetupRvsdg()
   Global_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
       LlvmDeltaOperation::Create(uint32Type, "global", Linkage::internalLinkage, "", false, 4));
-  const auto constantZero = &BitConstantOperation::create(*Global_->subregion(), { 32, 0 });
+  const auto constantZero =
+      IntegerConstantOperation::Create(*Global_->subregion(), { 32, 0 }).output(0);
   const auto deltaOutput = &Global_->finalize(constantZero);
 
   LocalFunc_ = rvsdg::LambdaNode::Create(
@@ -3736,7 +3738,8 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   LocalFuncParam_ = LocalFunc_->GetFunctionArguments()[0];
 
-  const auto constantOne = &BitConstantOperation::create(*LocalFunc_->subregion(), { 32, 1 });
+  const auto constantOne =
+      IntegerConstantOperation::Create(*LocalFunc_->subregion(), { 32, 1 }).output(0);
   const auto allocaOutputs = AllocaOperation::create(uint32Type, constantOne, 4);
   LocalFuncParamAllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
@@ -3841,7 +3844,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
-    auto five = &BitConstantOperation::create(*lambda->subregion(), { 32, 5 });
+    auto five = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 5 }).output(0);
 
     return lambda->finalize({ five, iOStateArgument, memoryStateArgument });
   };
@@ -3862,8 +3865,8 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
     auto lambdaGArgument = lambda->AddContextVar(lambdaG).inner;
 
-    auto one = &BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
-    auto six = &BitConstantOperation::create(*lambda->subregion(), { 32, 6 });
+    auto one = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
+    auto six = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 6 }).output(0);
 
     auto vaList = VariadicArgumentListOperation::Create(*lambda->subregion(), {});
 
@@ -3953,8 +3956,8 @@ VariadicFunctionTest1::SetupRvsdg()
     auto memoryStateArgument = LambdaF_->GetFunctionArguments()[2];
     auto lambdaHArgument = LambdaF_->AddContextVar(*ImportH_).inner;
 
-    auto one = &rvsdg::BitConstantOperation::create(*LambdaF_->subregion(), { 32, 1 });
-    auto three = &rvsdg::BitConstantOperation::create(*LambdaF_->subregion(), { 32, 3 });
+    auto one = IntegerConstantOperation::Create(*LambdaF_->subregion(), { 32, 1 }).output(0);
+    auto three = IntegerConstantOperation::Create(*LambdaF_->subregion(), { 32, 3 }).output(0);
 
     auto varArgList = VariadicArgumentListOperation::Create(*LambdaF_->subregion(), { iArgument });
 
@@ -3981,8 +3984,8 @@ VariadicFunctionTest1::SetupRvsdg()
     auto memoryStateArgument = LambdaG_->GetFunctionArguments()[1];
     auto lambdaFArgument = LambdaG_->AddContextVar(*LambdaF_->output()).inner;
 
-    auto one = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 1 });
-    auto five = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 5 });
+    auto one = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 1 }).output(0);
+    auto five = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 5 }).output(0);
 
     auto allocaResults = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), one, 4);
     auto merge = MemoryStateMergeOperation::Create(
@@ -4084,9 +4087,11 @@ VariadicFunctionTest2::SetupRvsdg()
     auto llvmVaStartArgument = LambdaFst_->AddContextVar(*llvmVaStart).inner;
     auto llvmVaEndArgument = LambdaFst_->AddContextVar(*llvmVaEnd).inner;
 
-    auto one = &rvsdg::BitConstantOperation::create(*LambdaFst_->subregion(), { 32, 1 });
-    auto twentyFour = &rvsdg::BitConstantOperation::create(*LambdaFst_->subregion(), { 64, 24 });
-    auto fortyOne = &rvsdg::BitConstantOperation::create(*LambdaFst_->subregion(), { 32, 41 });
+    auto one = IntegerConstantOperation::Create(*LambdaFst_->subregion(), { 32, 1 }).output(0);
+    auto twentyFour =
+        IntegerConstantOperation::Create(*LambdaFst_->subregion(), { 64, 24 }).output(0);
+    auto fortyOne =
+        IntegerConstantOperation::Create(*LambdaFst_->subregion(), { 32, 41 }).output(0);
 
     auto allocaResults = AllocaOperation::create(arrayType, one, 16);
     auto memoryState = MemoryStateMergeOperation::Create(
@@ -4118,9 +4123,9 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gammaMemoryState = gammaNode->AddEntryVar(loadResults[1]);
 
     // gamma subregion 0
-    auto zero = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 0 });
-    auto two = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 32, 2 });
-    auto eight = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 8 });
+    auto zero = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 0 }).output(0);
+    auto two = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 32, 2 }).output(0);
+    auto eight = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 8 }).output(0);
     auto gepResult1 =
         GetElementPtrOperation::create(gammaVaAddress.branchArgument[0], { zero, two }, structType);
     auto loadResultsGamma0 = LoadNonVolatileOperation::Create(
@@ -4134,9 +4139,10 @@ VariadicFunctionTest2::SetupRvsdg()
         StoreNonVolatileOperation::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
 
     // gamma subregion 1
-    zero = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(1), { 64, 0 });
-    auto eightBit32 = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(1), { 32, 8 });
-    auto three = &rvsdg::BitConstantOperation::create(*gammaNode->subregion(1), { 32, 3 });
+    zero = IntegerConstantOperation::Create(*gammaNode->subregion(1), { 64, 0 }).output(0);
+    auto eightBit32 =
+        IntegerConstantOperation::Create(*gammaNode->subregion(1), { 32, 8 }).output(0);
+    auto three = IntegerConstantOperation::Create(*gammaNode->subregion(1), { 32, 3 }).output(0);
     gepResult1 = GetElementPtrOperation::create(
         gammaVaAddress.branchArgument[1],
         { zero, three },
@@ -4193,10 +4199,10 @@ VariadicFunctionTest2::SetupRvsdg()
     auto memoryStateArgument = LambdaG_->GetFunctionArguments()[1];
     auto lambdaFstArgument = LambdaG_->AddContextVar(*LambdaFst_->output()).inner;
 
-    auto zero = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 0 });
-    auto one = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 1 });
-    auto two = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 2 });
-    auto three = &rvsdg::BitConstantOperation::create(*LambdaG_->subregion(), { 32, 3 });
+    auto zero = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 0 }).output(0);
+    auto one = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 1 }).output(0);
+    auto two = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 2 }).output(0);
+    auto three = IntegerConstantOperation::Create(*LambdaG_->subregion(), { 32, 3 }).output(0);
 
     auto vaListResult =
         VariadicArgumentListOperation::Create(*LambdaG_->subregion(), { zero, one, two });

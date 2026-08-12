@@ -59,7 +59,7 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
   auto & gepXNode = GetElementPtrOperation::createNode(
       *allocaNode.output(0),
       { zero32Node.output(0), zero32Node.output(0) },
-      bit32Type);
+      structType);
   auto & storeGepXNode = StoreNonVolatileOperation::CreateNode(
       *gepXNode.output(0),
       *zero32Node.output(0),
@@ -69,7 +69,7 @@ TEST(AggregateAllocaSplittingTests, getElementPtrTest)
   auto & gepYNode = GetElementPtrOperation::createNode(
       *allocaNode.output(0),
       { zero32Node.output(0), one32Node.output(0) },
-      bit64Type);
+      structType);
   auto & storeGepYNode = StoreNonVolatileOperation::CreateNode(
       *gepYNode.output(0),
       *zero64Node.output(0),
@@ -144,7 +144,7 @@ TEST(AggregateAllocaSplittingTests, gammaTest)
     auto & gep0Node = GetElementPtrOperation::createNode(
         *baseAddressEntryVar.branchArgument[0],
         { zero32Node.output(0), zero32Node.output(0) },
-        bit16Type);
+        structType);
     storeGep0Node = &StoreNonVolatileOperation::CreateNode(
         *gep0Node.output(0),
         *zero16Node.output(0),
@@ -160,7 +160,7 @@ TEST(AggregateAllocaSplittingTests, gammaTest)
     auto & gep1Node = GetElementPtrOperation::createNode(
         *baseAddressEntryVar.branchArgument[1],
         { zero32Node.output(0), one32Node.output(0) },
-        bit32Type);
+        structType);
     storeGep1Node = &StoreNonVolatileOperation::CreateNode(
         *gep1Node.output(0),
         *zero32Node.output(0),
@@ -174,7 +174,7 @@ TEST(AggregateAllocaSplittingTests, gammaTest)
   auto & gep2Node = GetElementPtrOperation::createNode(
       *baseAddressExitVar.output,
       { zero.output(0), two.output(0) },
-      bit64Type);
+      structType);
 
   auto & zero64Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 0);
   auto & storeGep2Node = StoreNonVolatileOperation::CreateNode(
@@ -257,7 +257,7 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
     auto & gep0Node = GetElementPtrOperation::createNode(
         *addressLoopVar.pre,
         { zero32Node.output(0), zero32Node.output(0) },
-        bit16Type);
+        structType);
 
     storeGep0Node = &StoreNonVolatileOperation::CreateNode(
         *gep0Node.output(0),
@@ -272,7 +272,7 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
   auto & gep1Node = GetElementPtrOperation::createNode(
       *addressLoopVar.output,
       { zero32Node.output(0), one.output(0) },
-      bit32Type);
+      structType);
   auto & storeGep1Node = StoreNonVolatileOperation::CreateNode(
       *gep1Node.output(0),
       *zero32Node.output(0),
@@ -353,7 +353,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit8Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), zeroNode.output(0) },
-      bit8Type);
+      structType);
   auto & bit8ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 8, 8);
   auto storeGepBit8Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit8Node.output(0),
@@ -364,7 +364,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit12Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), oneNode.output(0), zeroNode.output(0) },
-      bit12Type);
+      structType);
   auto & bit12ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 12, 12);
   auto storeGepBit12Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit12Node.output(0),
@@ -375,7 +375,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit16Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), oneNode.output(0), oneNode.output(0) },
-      bit16Type);
+      structType);
   auto & bit16ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 16, 16);
   auto storeGepBit16Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit16Node.output(0),
@@ -386,7 +386,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit20Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), twoNode.output(0) },
-      bit20Type);
+      structType);
   auto & bit20ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 20, 20);
   auto storeGepBit20Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit20Node.output(0),
@@ -397,7 +397,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit32Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), threeNode.output(0), zeroNode.output(0) },
-      bit32Type);
+      structType);
   auto & bit32ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 32);
   auto storeGepBit32Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit32Node.output(0),
@@ -408,7 +408,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit64Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), threeNode.output(0), oneNode.output(0) },
-      bit64Type);
+      structType);
   auto & bit64ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 64);
   auto storeGepBit64Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit64Node.output(0),
@@ -419,7 +419,7 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   auto & gepBit128Node = GetElementPtrOperation::createNode(
       AllocaOperation::getPointerOutput(allocaNode),
       { zeroNode.output(0), fourNode.output(0) },
-      bit64Type);
+      structType);
   auto & bit128ConstantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 128, 128);
   auto storeGepBit128Node = &StoreNonVolatileOperation::CreateNode(
       *gepBit128Node.output(0),
@@ -527,14 +527,14 @@ TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
 
   auto & zero32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
   auto & zero64Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 0);
-  auto & one32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & one32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
   auto & two32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
   auto & allocaNode = AllocaOperation::createNode(structType, *two32Node.output(0), 4);
 
   auto & gepNode = GetElementPtrOperation::createNode(
       *allocaNode.output(0),
       { zero32Node.output(0), one32Node.output(0) },
-      bit64Type);
+      structType);
   auto & storeGepNode = StoreNonVolatileOperation::CreateNode(
       *gepNode.output(0),
       *zero64Node.output(0),
@@ -552,5 +552,5 @@ TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
   // Assert
   // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
   // bigger than one.
-  EXPECT_TRUE(Region::ContainsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+  EXPECT_TRUE(Region::containsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
 }
