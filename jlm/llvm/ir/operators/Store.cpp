@@ -295,7 +295,7 @@ StoreNonVolatileOperation::normalizeIOBarrierAddress(
   if (!allocationSizeInBytes.has_value())
     return std::nullopt;
 
-  // This transformation is only valid if the affected bytes by the load operation are within the
+  // This transformation is only valid if the affected bytes by the store operation are within the
   // size of the allocation site.
   if (GetTypeStoreSize(storeOperation.GetStoredType()) > allocationSizeInBytes.value())
     return std::nullopt;
