@@ -231,7 +231,7 @@ static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>>
                                      StoreNonVolatileOperation::normalizeStoreStore,
                                      StoreNonVolatileOperation::NormalizeStoreAlloca,
                                      StoreNonVolatileOperation::NormalizeDuplicateStates,
-                                     StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+                                     StoreNonVolatileOperation::normalizeIOBarrierAddress,
                                      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
 
 static std::vector<rvsdg::NodeNormalization<MemoryStateMergeOperation>>

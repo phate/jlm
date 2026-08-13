@@ -279,8 +279,10 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   /**
-   * \brief Redirect the address operand of the StoreNonVolatileOperation from an IOBarrierOperation
-   * when it can be determined that it originates from an AllocaOperation.
+   * \brief Redirect the address operand of the \ref StoreNonVolatileOperation node from an \ref
+   * IOBarrierOperation node when it can be determined that the address operand is dereferenceable.
+   *
+   * For example:
    *
    * a1 memState = AllocaOperation ...
    * a2 = IOBarrierOperation a1 ioState
@@ -290,15 +292,16 @@ public:
    * a2 = IOBarrierOperation a1 ioState
    * ... = StoreNonVolatileOperation a1 ...
    *
-   * @param operation The StoreNonVolatileOperation on which the transformation is performed.
-   * @param operands The operands of the StoreNonVolatileOperation node.
+   * @param storeOperation The \ref StoreNonVolatileOperation on which the transformation is
+   * performed.
+   * @param operands The operands of the \ref StoreNonVolatileOperation node.
    *
    * @return If the normalization could be applied, then the results of the
-   * StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
+   * \ref StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeIOBarrierAllocaAddress(
-      const StoreNonVolatileOperation & operation,
+  normalizeIOBarrierAddress(
+      const StoreNonVolatileOperation & storeOperation,
       const std::vector<rvsdg::Output *> & operands);
 
   /**
