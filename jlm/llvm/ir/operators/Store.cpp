@@ -290,14 +290,21 @@ StoreNonVolatileOperation::normalizeIOBarrierAddress(
     return std::nullopt;
 
   auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedBarredAddress = llvm::traceOutput(barredAddress);
-  const auto allocationSizeInBytes = getAllocationSizeInBytes(tracedBarredAddress);
+  const auto & pointerOrigin = TracePointerOriginPrecise(barredAddress);
+  const auto allocationSizeInBytes = getAllocationSizeInBytes(*pointerOrigin.BasePointer);
   if (!allocationSizeInBytes.has_value())
     return std::nullopt;
 
+  size_t offsetInBytes = 0;
+  if (const auto offsetInBytesOpt = pointerOrigin.getOffsetInBytes(); offsetInBytesOpt.has_value())
+  {
+    offsetInBytes = offsetInBytesOpt.value();
+  }
+
   // This transformation is only valid if the affected bytes by the store operation are within the
   // size of the allocation site.
-  if (GetTypeStoreSize(storeOperation.GetStoredType()) > allocationSizeInBytes.value())
+  if (offsetInBytes + GetTypeStoreSize(storeOperation.GetStoredType())
+      > allocationSizeInBytes.value())
     return std::nullopt;
 
   auto & storeNode = CreateNode(
