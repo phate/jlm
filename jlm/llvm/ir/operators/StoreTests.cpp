@@ -511,20 +511,19 @@ TEST(StoreOperationTests, IOBarrierAllocaAddressNormalization)
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
 
-  jlm::rvsdg::Graph graph;
-  const auto addressImport = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address");
-  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
-  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
-  auto memoryStateImport = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState");
-  auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
+  Graph graph;
+  const auto addressImport = &GraphImport::Create(graph, pointerType, "address");
+  const auto valueImport = &GraphImport::Create(graph, bit32Type, "value");
+  const auto sizeImport = &GraphImport::Create(graph, bit32Type, "value");
+  auto memoryStateImport = &GraphImport::Create(graph, memoryStateType, "memState");
+  auto ioStateImport = &GraphImport::Create(graph, ioStateType, "ioState");
 
-  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+  auto allocaResults = AllocaOperation::create(bit32Type, sizeImport, 4);
   auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
       { allocaResults[0], ioStateImport },
       pointerType);
@@ -541,19 +540,19 @@ TEST(StoreOperationTests, IOBarrierAllocaAddressNormalization)
   auto & ex1 = GraphExport::Create(*storeNode1.output(0), "store1");
   auto & ex2 = GraphExport::Create(*storeNode2.output(0), "store2");
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto successStoreNode1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      StoreNonVolatileOperation::normalizeIOBarrierAddress,
       storeNode1);
 
   const auto successStoreNode2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      StoreNonVolatileOperation::normalizeIOBarrierAddress,
       storeNode2);
   graph.PruneNodes();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   EXPECT_TRUE(successStoreNode1);
@@ -575,19 +574,18 @@ TEST(StoreOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = TestType::createValueType();
   const auto pointerType = PointerType::Create();
   const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
   const auto controlTye = ControlType::Create(2);
 
   Graph graph;
-  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
-  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
-  auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
-  const auto controlImport = &jlm::rvsdg::GraphImport::Create(graph, controlTye, "control");
+  const auto valueImport = &GraphImport::Create(graph, bit32Type, "value");
+  const auto sizeImport = &GraphImport::Create(graph, bit32Type, "value");
+  auto ioStateImport = &GraphImport::Create(graph, ioStateType, "ioState");
+  const auto controlImport = &GraphImport::Create(graph, controlTye, "control");
 
-  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+  auto allocaResults = AllocaOperation::create(bit32Type, sizeImport, 4);
 
   auto gammaNode = GammaNode::create(controlImport, 2);
   auto addressEntryVar = gammaNode->AddEntryVar(allocaResults[0]);
@@ -614,7 +612,7 @@ TEST(StoreOperationTests, IOBarrierAllocaAddressNormalization_Gamma)
 
   // Act
   const auto successStoreNode = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      StoreNonVolatileOperation::normalizeIOBarrierAddress,
       storeNode);
   graph.PruneNodes();
 
