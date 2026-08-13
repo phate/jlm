@@ -377,14 +377,21 @@ LoadNonVolatileOperation::normalizeIOBarrierAddress(
     return std::nullopt;
 
   auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedBarredAddress = llvm::traceOutput(barredAddress);
-  const auto allocationSizeInBytes = getAllocationSizeInBytes(tracedBarredAddress);
+  const auto & pointerOrigin = TracePointerOriginPrecise(barredAddress);
+  const auto allocationSizeInBytes = getAllocationSizeInBytes(*pointerOrigin.BasePointer);
   if (!allocationSizeInBytes.has_value())
     return std::nullopt;
 
+  size_t offsetInBytes = 0;
+  if (const auto offsetInBytesOpt = pointerOrigin.getOffsetInBytes(); offsetInBytesOpt.has_value())
+  {
+    offsetInBytes = offsetInBytesOpt.value();
+  }
+
   // This transformation is only valid if the affected bytes by the load operation are within the
   // size of the allocation site.
-  if (GetTypeStoreSize(*loadOperation.GetLoadedType()) > allocationSizeInBytes.value())
+  if (offsetInBytes + GetTypeStoreSize(*loadOperation.GetLoadedType())
+      > allocationSizeInBytes.value())
     return std::nullopt;
 
   auto & loadNode = CreateNode(
