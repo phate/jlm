@@ -4,11 +4,14 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/HashSet.hpp>
 
@@ -245,9 +248,36 @@ StoreNonVolatileOperation::NormalizeDuplicateStates(
   return std::nullopt;
 }
 
+// FIXME: We have exactly the same function for the
+// LoadNonVolatileOperation::normalizeIOBarrierAddress
+static std::optional<size_t>
+getAllocationSizeInBytes(const rvsdg::Output & output)
+{
+  auto [allocaNode, allocaOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(output);
+  if (allocaOperation)
+  {
+    return GetTypeAllocSize(*allocaOperation->allocatedType());
+  }
+
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
+  {
+    const auto deltaOperation =
+        util::assertedCast<const LlvmDeltaOperation>(&deltaNode->GetOperation());
+    return GetTypeAllocSize(*deltaOperation->Type());
+  }
+
+  if (const auto llvmImport = dynamic_cast<const LlvmGraphImport *>(&output))
+  {
+    return GetTypeAllocSize(*llvmImport->ValueType());
+  }
+
+  return std::nullopt;
+}
+
 std::optional<std::vector<rvsdg::Output *>>
-StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
-    const StoreNonVolatileOperation & operation,
+StoreNonVolatileOperation::normalizeIOBarrierAddress(
+    const StoreNonVolatileOperation & storeOperation,
     const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() >= 2);
@@ -260,15 +290,21 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     return std::nullopt;
 
   auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedAddress = llvm::traceOutput(barredAddress);
-  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
+  const auto & tracedBarredAddress = llvm::traceOutput(barredAddress);
+  const auto allocationSizeInBytes = getAllocationSizeInBytes(tracedBarredAddress);
+  if (!allocationSizeInBytes.has_value())
+    return std::nullopt;
+
+  // This transformation is only valid if the affected bytes by the store operation are within the
+  // size of the allocation site.
+  if (GetTypeStoreSize(storeOperation.GetStoredType()) > allocationSizeInBytes.value())
     return std::nullopt;
 
   auto & storeNode = CreateNode(
       barredAddress,
       *value,
       { std::next(operands.begin(), 2), operands.end() },
-      operation.GetAlignment());
+      storeOperation.GetAlignment());
 
   return { outputs(&storeNode) };
 }
