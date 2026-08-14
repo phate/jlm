@@ -1483,12 +1483,11 @@ IpGraphToLlvmConverter::convert_operation(
   }
   if (is<FloorOperation>(op))
   {
-    auto operand1 = Context_->value(arguments[0]);
-    auto operand2 = Context_->value(arguments[1]);
+    auto operand = Context_->value(arguments[0]);
 
     auto type =
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
-    return builder.CreateIntrinsic(::llvm::Intrinsic::floor, { type }, { operand1, operand2 });
+    return builder.CreateIntrinsic(::llvm::Intrinsic::floor, { type }, { operand });
   }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
