@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -1479,6 +1480,19 @@ IpGraphToLlvmConverter::convert_operation(
         ::llvm::Intrinsic::fmuladd,
         { type },
         { multiplier, multiplicand, summand });
+  }
+  if (is<FShlOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+    auto operand3 = Context_->value(arguments[2]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::fshl,
+        { type },
+        { operand1, operand2, operand3 });
   }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());

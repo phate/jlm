@@ -29,6 +29,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/AggregateOperations.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
+    jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/ControlOperations.cpp \
     jlm/llvm/ir/operators/ConversionOperations.cpp \
@@ -149,6 +150,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
+    jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp \
     jlm/llvm/ir/operators/ControlOperations.hpp \
     jlm/llvm/ir/operators/ConversionOperations.hpp \
     jlm/llvm/ir/operators/Gamma.hpp \
