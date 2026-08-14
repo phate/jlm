@@ -116,7 +116,7 @@ UMinOperation::copy() const
 void
 UMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
 {
-  if (!is<const rvsdg::BitType>(type) || !isVectorOf<const rvsdg::BitType>(*type))
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
   {
     throw std::runtime_error("UMinOperation::checkType: Expected integer type.");
   }
