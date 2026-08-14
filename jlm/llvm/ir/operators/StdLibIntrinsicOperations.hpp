@@ -545,7 +545,7 @@ private:
 };
 
 /**
- * Represents LLVM's llvm.FAbs.* intrinsic
+ * Represents LLVM's llvm.fabs.* intrinsic
  *
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#llvm-fabs-intrinsic) for more details.
