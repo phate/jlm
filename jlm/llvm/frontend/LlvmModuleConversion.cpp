@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -1276,6 +1277,16 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(FloorOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1413,6 +1424,8 @@ convertIntrinsicInstruction(
 
   switch (intrinsicInstruction.getIntrinsicID())
   {
+  case ::llvm::Intrinsic::floor:
+    return convertFloorIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::memcpy:
