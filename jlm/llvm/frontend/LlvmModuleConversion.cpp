@@ -1276,6 +1276,16 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertUMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMinOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1423,6 +1433,8 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umin:
+    return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
     return createCall(intrinsicInstruction, threeAddressCodes, context);
   }
