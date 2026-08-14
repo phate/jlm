@@ -556,7 +556,7 @@ public:
   ~AbsOperation() noexcept override;
 
   explicit AbsOperation(const std::shared_ptr<const rvsdg::Type> & type)
-      : SimpleOperation({ type, type }, { type })
+      : SimpleOperation({ type, rvsdg::BitType::Create(1) }, { type })
   {
     checkType(type);
   }
