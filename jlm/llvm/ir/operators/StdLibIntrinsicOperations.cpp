@@ -92,4 +92,34 @@ MemSetNonVolatileOperation::numMemoryStates() const noexcept
   return nresults();
 }
 
+UMaxOperation::~UMaxOperation() noexcept = default;
+
+bool
+UMaxOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMaxOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+UMaxOperation::debug_string() const
+{
+  return util::strfmt("UMax[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMaxOperation::copy() const
+{
+  return std::make_unique<UMaxOperation>(*this);
+}
+
+void
+UMaxOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMaxOperation::checkType: Expected integer type.");
+  }
+}
+
 }
