@@ -1428,7 +1428,6 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return ConvertValue(intrinsicInstruction.getArgOperand(0), threeAddressCodes, context);
   }
-
   case ::llvm::Intrinsic::experimental_noalias_scope_decl:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
@@ -1451,7 +1450,10 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
   default:
+  {
+    JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
     return createCall(intrinsicInstruction, threeAddressCodes, context);
+  }
   }
 }
 
