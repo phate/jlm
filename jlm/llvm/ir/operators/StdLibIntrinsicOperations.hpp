@@ -550,13 +550,13 @@ private:
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#llvm-fabs-intrinsic) for more details.
  */
-class FAbsOperation final : public rvsdg::SimpleOperation
+class FAbsOperation final : public rvsdg::UnaryOperation
 {
 public:
   ~FAbsOperation() noexcept override;
 
   explicit FAbsOperation(const std::shared_ptr<const rvsdg::Type> & type)
-      : SimpleOperation({ type, type }, { type })
+      : UnaryOperation(type, type)
   {
     checkType(type);
   }
@@ -577,21 +577,20 @@ public:
   }
 
   static std::unique_ptr<ThreeAddressCode>
-  createTac(const Variable & operand1, const Variable & operand2)
+  createTac(const Variable & operand)
   {
-    auto operation = std::make_unique<FAbsOperation>(operand1.Type());
-    return ThreeAddressCode::create(std::move(operation), { &operand1, &operand2 });
+    auto operation = std::make_unique<FAbsOperation>(operand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand });
   }
 
   static rvsdg::SimpleNode &
-  createNode(rvsdg::Output & operand1, rvsdg::Output & operand2)
+  createNode(rvsdg::Output & operand)
   {
     return rvsdg::CreateOpNode<FAbsOperation>(
         {
-            &operand1,
-            &operand2,
+            &operand,
         },
-        operand1.Type());
+        operand.Type());
   }
 
 private:
