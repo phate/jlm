@@ -116,7 +116,7 @@ FAbsOperation::copy() const
 void
 FAbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
 {
-  if (!is<const FloatingPointType>(type) || !isVectorOf<const FloatingPointType>(*type))
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
   {
     throw std::runtime_error("FAbsOperation::checkType: Expected floating point type.");
   }
