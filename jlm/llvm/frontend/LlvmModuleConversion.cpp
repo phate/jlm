@@ -1494,6 +1494,7 @@ shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
   // to an external function, serving as transformation bottleneck in the code.
   case ::llvm::Intrinsic::assume:
   case ::llvm::Intrinsic::expect:
+  case ::llvm::Intrinsic::prefetch:
 
   // These intrinsics are ignored because they take pointers to local variables,
   // reducing the precision of alias analysis unless specifically handled
@@ -1560,6 +1561,11 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::prefetch:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
   case ::llvm::Intrinsic::smax:
     return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
