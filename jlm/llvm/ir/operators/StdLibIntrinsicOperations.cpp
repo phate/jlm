@@ -122,6 +122,36 @@ UMaxOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+SMinOperation::~SMinOperation() noexcept = default;
+
+bool
+SMinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const SMinOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+SMinOperation::debug_string() const
+{
+  return util::strfmt("SMin[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+SMinOperation::copy() const
+{
+  return std::make_unique<SMinOperation>(*this);
+}
+
+void
+SMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("SMinOperation::checkType: Expected integer type.");
+  }
+}
+
 UMinOperation::~UMinOperation() noexcept = default;
 
 bool
