@@ -1452,9 +1452,7 @@ convertIntrinsicInstruction(
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
-
-  switch (intrinsicInstruction.getIntrinsicID())
-  {
+  }
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
@@ -1936,10 +1934,10 @@ convert_instructions(::llvm::Function & function, Context & ctx)
       if (auto result = convertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      // When an LLVM PhiNode is converted to a jlm SsaPhiOperation, some of its operands may not be
-      // ready. The created SsaPhiOperation therefore has no operands, but is instead added to a
-      // list. Once all basic blocks have been converted, all SsaPhiOperations are revisited and
-      // given operands.
+      // When an LLVM PhiNode is converted to a jlm SsaPhiOperation, some of its operands may
+      // not be ready. The created SsaPhiOperation therefore has no operands, but is instead
+      // added to a list. Once all basic blocks have been converted, all SsaPhiOperations are
+      // revisited and given operands.
       if (!tacs.empty() && is<SsaPhiOperation>(tacs.back()->operation()))
       {
         auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
@@ -1974,13 +1972,14 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, Context & ctx)
         continue;
 
       // The LLVM phi instruction may have multiple operands with the same incoming cfg node.
-      // When this happens in valid LLVM IR, all operands from the same basic block are identical.
-      // We therefore skip any operands that reference already handled basic blocks.
+      // When this happens in valid LLVM IR, all operands from the same basic block are
+      // identical. We therefore skip any operands that reference already handled basic blocks.
       auto predecessor = ctx.get(phi->getIncomingBlock(n));
       if (std::find(incomingNodes.begin(), incomingNodes.end(), predecessor) != incomingNodes.end())
         continue;
 
-      // Convert the operand value in the predecessor basic block, as that is where it is "used".
+      // Convert the operand value in the predecessor basic block, as that is where it is
+      // "used".
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       predecessor->insert_before_branch(tacs);
@@ -2044,8 +2043,8 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 
       results in a JLM CFG with no incoming edge to the exit node.
 
-      We solve this problem by finding the first SCC with no exit edge, i.e., an endless loop, and
-      restructure it to an SCC with an exit edge to the CFG's exit node.
+      We solve this problem by finding the first SCC with no exit edge, i.e., an endless loop,
+      and restructure it to an SCC with an exit edge to the CFG's exit node.
     */
     auto stronglyConnectedComponents = find_sccs(cfg);
     for (auto stronglyConnectedComponent : stronglyConnectedComponents)
@@ -2298,5 +2297,4 @@ ConvertLlvmModule(::llvm::Module & llvmModule)
 
   return ipgModule;
 }
-
 }
