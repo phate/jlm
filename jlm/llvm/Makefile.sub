@@ -34,6 +34,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/ControlOperations.cpp \
     jlm/llvm/ir/operators/ConversionOperations.cpp \
     jlm/llvm/ir/operators/delta.cpp \
+    jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Gamma.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/IntegerOperations.cpp \
@@ -153,6 +154,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp \
     jlm/llvm/ir/operators/ControlOperations.hpp \
     jlm/llvm/ir/operators/ConversionOperations.hpp \
+    jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp \
     jlm/llvm/ir/operators/Gamma.hpp \
     jlm/llvm/ir/operators/operators.hpp \
     jlm/llvm/ir/operators/Load.hpp \
