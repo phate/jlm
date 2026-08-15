@@ -11,8 +11,10 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -1479,6 +1481,62 @@ IpGraphToLlvmConverter::convert_operation(
         ::llvm::Intrinsic::fmuladd,
         { type },
         { multiplier, multiplicand, summand });
+  }
+  if (is<UMaxOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::umax, { type }, { operand1, operand2 });
+  }
+  if (is<SMinOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::smin, { type }, { operand1, operand2 });
+  }
+  if (is<UMinOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::umin, { type }, { operand1, operand2 });
+  }
+  if (is<FAbsOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::fabs, { type }, { operand });
+  }
+  if (is<FShlOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+    auto operand3 = Context_->value(arguments[2]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::fshl,
+        { type },
+        { operand1, operand2, operand3 });
+  }
+  if (is<FloorOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::floor, { type }, { operand });
   }
   if (is<AbsOperation>(op))
   {
