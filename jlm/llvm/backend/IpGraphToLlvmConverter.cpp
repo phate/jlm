@@ -1482,6 +1482,15 @@ IpGraphToLlvmConverter::convert_operation(
         { type },
         { multiplier, multiplicand, summand });
   }
+  if (is<SMaxOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::smax, { type }, { operand1, operand2 });
+  }
   if (is<UMaxOperation>(op))
   {
     auto operand1 = Context_->value(arguments[0]);

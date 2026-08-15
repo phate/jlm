@@ -1308,6 +1308,16 @@ convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convertSMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMaxOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertUMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1539,6 +1549,8 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smax:
+    return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
