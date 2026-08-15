@@ -1279,6 +1279,15 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
 }
 
 static const Variable *
+convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CeilOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1294,6 +1303,16 @@ convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
   const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
   const auto operand3 = ConvertValue(instruction.getArgOperand(2), tacs, context);
   tacs.push_back(FShlOperation::createTac(*operand1, *operand2, *operand3));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMaxOperation::createTac(*operand1, *operand2));
 
   return tacs.back()->result(0);
 }
@@ -1333,6 +1352,25 @@ convertFAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
   tacs.push_back(FAbsOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(AbsOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertBSwapIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(BSwapOperation::createTac(*operand));
 
   return tacs.back()->result(0);
 }
@@ -1466,6 +1504,7 @@ shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
   // to an external function, serving as transformation bottleneck in the code.
   case ::llvm::Intrinsic::assume:
   case ::llvm::Intrinsic::expect:
+  case ::llvm::Intrinsic::prefetch:
 
   // These intrinsics are ignored because they take pointers to local variables,
   // reducing the precision of alias analysis unless specifically handled
@@ -1489,11 +1528,17 @@ convertIntrinsicInstruction(
 {
   switch (const auto intrinsicId = intrinsicInstruction.getIntrinsicID())
   {
+  case ::llvm::Intrinsic::abs:
+    return convertAbsIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::assume:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::bswap:
+    return convertBSwapIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ceil:
+    return convertCeilIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctlz:
     return converCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
@@ -1528,6 +1573,13 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::prefetch:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
+  case ::llvm::Intrinsic::smax:
+    return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
