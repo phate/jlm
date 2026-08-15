@@ -38,4 +38,47 @@ FShlOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+BSwapOperation::~BSwapOperation() noexcept = default;
+
+bool
+BSwapOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const BSwapOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+BSwapOperation::debug_string() const
+{
+  return util::strfmt("BSwap[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+BSwapOperation::copy() const
+{
+  return std::make_unique<BSwapOperation>(*this);
+}
+
+void
+BSwapOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  auto scalarType = type.get();
+  if (const auto vectorType = dynamic_cast<const VectorType *>(scalarType))
+  {
+    scalarType = &vectorType->type();
+  }
+
+  const auto bitType = dynamic_cast<const rvsdg::BitType *>(scalarType);
+  if (!bitType)
+  {
+    throw std::runtime_error("BSwapOperation::checkType: Expected integer type.");
+  }
+
+  if (bitType->nbits() % 16 != 0)
+  {
+    throw std::runtime_error(
+        "BSwapOperation::checkType: Expected integer type with a multiple of 16 bits.");
+  }
+}
+
 }
