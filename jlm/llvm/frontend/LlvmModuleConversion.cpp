@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -1347,6 +1348,18 @@ convertAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, C
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertIsConstantIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(IsConstantOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1514,6 +1527,8 @@ convertIntrinsicInstruction(
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fshl:
     return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_constant:
+    return convertIsConstantIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
