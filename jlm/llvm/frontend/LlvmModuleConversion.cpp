@@ -1279,6 +1279,15 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
 }
 
 static const Variable *
+convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CeilOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1496,6 +1505,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::ceil:
+    return convertCeilIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));

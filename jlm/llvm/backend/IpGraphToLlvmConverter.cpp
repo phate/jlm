@@ -1547,6 +1547,14 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(::llvm::Intrinsic::abs, { type }, { operand1, operand2 });
   }
+  if (is<CeilOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::ceil, { type }, { operand });
+  }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
 }
