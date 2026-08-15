@@ -1288,6 +1288,45 @@ convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertUMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMaxOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMinOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMinOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertFAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(FAbsOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1445,10 +1484,12 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
-  case ::llvm::Intrinsic::fshl:
-    return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::fabs:
+    return convertFAbsIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::fshl:
+    return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
@@ -1463,6 +1504,12 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smin:
+    return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umax:
+    return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umin:
+    return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
   {
     JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
