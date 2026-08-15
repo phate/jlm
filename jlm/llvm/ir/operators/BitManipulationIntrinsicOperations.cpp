@@ -81,4 +81,34 @@ BSwapOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+CtlzOperation::~CtlzOperation() noexcept = default;
+
+bool
+CtlzOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const CtlzOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+CtlzOperation::debug_string() const
+{
+  return util::strfmt("Ctlz[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+CtlzOperation::copy() const
+{
+  return std::make_unique<CtlzOperation>(*this);
+}
+
+void
+CtlzOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("CtlzOperation::checkType: Expected integer type.");
+  }
+}
+
 }
