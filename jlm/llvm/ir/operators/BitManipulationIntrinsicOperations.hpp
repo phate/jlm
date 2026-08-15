@@ -114,7 +114,6 @@ private:
   checkType(const std::shared_ptr<const rvsdg::Type> & type);
 };
 
-
 /**
  * Represents LLVM's llvm.ctlz.* intrinsic
  *
