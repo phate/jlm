@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
@@ -1277,6 +1278,17 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
 }
 
 static const Variable *
+convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  const auto operand3 = ConvertValue(instruction.getArgOperand(2), tacs, context);
+  tacs.push_back(FShlOperation::createTac(*operand1, *operand2, *operand3));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertUMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1476,6 +1488,8 @@ convertIntrinsicInstruction(
     return convertFAbsIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::fshl:
+    return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
