@@ -212,4 +212,34 @@ FAbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+AbsOperation::~AbsOperation() noexcept = default;
+
+bool
+AbsOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const AbsOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+AbsOperation::debug_string() const
+{
+  return util::strfmt("Abs[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+AbsOperation::copy() const
+{
+  return std::make_unique<AbsOperation>(*this);
+}
+
+void
+AbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("AbsOperation::checkType: Expected integer type.");
+  }
+}
+
 }
