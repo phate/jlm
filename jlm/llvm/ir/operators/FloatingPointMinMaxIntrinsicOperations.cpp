@@ -34,7 +34,7 @@ FloorOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
 {
   if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
   {
-    throw std::runtime_error("FloorOperation::checkType: Expected integer type.");
+    throw std::runtime_error("FloorOperation::checkType: Expected floating point type.");
   }
 }
 
