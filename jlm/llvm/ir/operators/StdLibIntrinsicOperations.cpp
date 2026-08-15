@@ -182,4 +182,34 @@ UMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+FAbsOperation::~FAbsOperation() noexcept = default;
+
+bool
+FAbsOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const FAbsOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+FAbsOperation::debug_string() const
+{
+  return util::strfmt("FAbs[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+FAbsOperation::copy() const
+{
+  return std::make_unique<FAbsOperation>(*this);
+}
+
+void
+FAbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
+  {
+    throw std::runtime_error("FAbsOperation::checkType: Expected floating point type.");
+  }
+}
+
 }
