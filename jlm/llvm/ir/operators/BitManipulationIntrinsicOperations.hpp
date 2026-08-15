@@ -63,6 +63,57 @@ private:
   static void
   checkType(const std::shared_ptr<const rvsdg::Type> & type);
 };
+
+/**
+ * Represents LLVM's llvm.ctlz.* intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-ctlz-intrinsic) for more details.
+ */
+class CtlzOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~CtlzOperation() noexcept override;
+
+  explicit CtlzOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation({ type, rvsdg::BitType::Create(1) }, { type })
+  {
+    checkType(type);
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getType() const noexcept
+  {
+    return result(0);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable & operand, const Variable & isZeroPoison)
+  {
+    auto operation = std::make_unique<FShlOperation>(operand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand, &isZeroPoison });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, rvsdg::Output & isZeroPoison)
+  {
+    return rvsdg::CreateOpNode<FShlOperation>({ &operand, &isZeroPoison }, operand.Type());
+  }
+
+private:
+  static void
+  checkType(const std::shared_ptr<const rvsdg::Type> & type);
+};
+
 }
 
 #endif
