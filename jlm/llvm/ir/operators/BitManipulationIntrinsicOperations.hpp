@@ -99,14 +99,14 @@ public:
   static std::unique_ptr<ThreeAddressCode>
   createTac(const Variable & operand)
   {
-    auto operation = std::make_unique<FShlOperation>(operand.Type());
+    auto operation = std::make_unique<BSwapOperation>(operand.Type());
     return ThreeAddressCode::create(std::move(operation), { &operand });
   }
 
   static rvsdg::SimpleNode &
   createNode(rvsdg::Output & operand)
   {
-    return rvsdg::CreateOpNode<FShlOperation>({ &operand }, operand.Type());
+    return rvsdg::CreateOpNode<BSwapOperation>({ &operand }, operand.Type());
   }
 
 private:
