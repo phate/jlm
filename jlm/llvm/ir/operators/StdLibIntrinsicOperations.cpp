@@ -92,6 +92,96 @@ MemSetNonVolatileOperation::numMemoryStates() const noexcept
   return nresults();
 }
 
+UMaxOperation::~UMaxOperation() noexcept = default;
+
+bool
+UMaxOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMaxOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+UMaxOperation::debug_string() const
+{
+  return util::strfmt("UMax[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMaxOperation::copy() const
+{
+  return std::make_unique<UMaxOperation>(*this);
+}
+
+void
+UMaxOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMaxOperation::checkType: Expected integer type.");
+  }
+}
+
+SMinOperation::~SMinOperation() noexcept = default;
+
+bool
+SMinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const SMinOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+SMinOperation::debug_string() const
+{
+  return util::strfmt("SMin[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+SMinOperation::copy() const
+{
+  return std::make_unique<SMinOperation>(*this);
+}
+
+void
+SMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("SMinOperation::checkType: Expected integer type.");
+  }
+}
+
+UMinOperation::~UMinOperation() noexcept = default;
+
+bool
+UMinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMinOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+UMinOperation::debug_string() const
+{
+  return util::strfmt("UMin[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMinOperation::copy() const
+{
+  return std::make_unique<UMinOperation>(*this);
+}
+
+void
+UMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMinOperation::checkType: Expected integer type.");
+  }
+}
+
 FAbsOperation::~FAbsOperation() noexcept = default;
 
 bool
