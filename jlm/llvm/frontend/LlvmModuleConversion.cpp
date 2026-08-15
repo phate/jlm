@@ -1445,7 +1445,7 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
-  case ::llvm::Intrinsic::floor:
+  case ::llvm::Intrinsic::fshl:
     return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
