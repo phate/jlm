@@ -1277,6 +1277,16 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
 }
 
 static const Variable *
+convertUMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMaxOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertUMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1400,13 +1410,21 @@ shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
 {
   switch (intrinsicId)
   {
+  // These intrinsics are ignored because jlm is currently unable to handle them. They only keep
+  // their arguments live as well as are otherwise converted to an ordinary call
+  // to an external function, serving as transformation bottleneck in the code.
+  case ::llvm::Intrinsic::assume:
+  case ::llvm::Intrinsic::expect:
+
   // These intrinsics are ignored because they take pointers to local variables,
   // reducing the precision of alias analysis unless specifically handled
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
+
   // This intrinsic is ignored because it takes a parameter of type "metadata"
   case ::llvm::Intrinsic::experimental_noalias_scope_decl:
     return true;
+
   default:
     return false;
   }
@@ -1418,13 +1436,33 @@ convertIntrinsicInstruction(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
-  if (shouldIgnoreIntrinsic(intrinsicInstruction.getIntrinsicID()))
+  switch (const auto intrinsicId = intrinsicInstruction.getIntrinsicID())
+  {
+  case ::llvm::Intrinsic::assume:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
+  case ::llvm::Intrinsic::expect:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return ConvertValue(intrinsicInstruction.getArgOperand(0), threeAddressCodes, context);
+  }
+  case ::llvm::Intrinsic::experimental_noalias_scope_decl:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
 
   switch (intrinsicInstruction.getIntrinsicID())
   {
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::lifetime_start:
+  case ::llvm::Intrinsic::lifetime_end:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
   case ::llvm::Intrinsic::memcpy:
   case ::llvm::Intrinsic::memcpy_inline:
   case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
@@ -1433,10 +1471,15 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umax:
+    return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umin:
     return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
+  {
+    JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
     return createCall(intrinsicInstruction, threeAddressCodes, context);
+  }
   }
 }
 
