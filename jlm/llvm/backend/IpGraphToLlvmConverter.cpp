@@ -1594,11 +1594,12 @@ IpGraphToLlvmConverter::convert_operation(
   }
   if (is<IsFPClassOperation>(op))
   {
-    auto operand = Context_->value(arguments[0]);
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
 
     auto type =
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
-    return builder.CreateIntrinsic(::llvm::Intrinsic::is_fpclass, { type }, { operand });
+    return builder.CreateIntrinsic(::llvm::Intrinsic::is_fpclass, { type }, { operand1, operand2 });
   }
   if (is<SAddWithOverflowOperation>(op))
   {

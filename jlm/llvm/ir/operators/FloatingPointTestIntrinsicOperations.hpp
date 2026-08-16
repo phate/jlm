@@ -20,13 +20,13 @@ namespace jlm::llvm
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#llvm-is-fpclass-intrinsic) for more details.
  */
-class IsFPClassOperation final : public rvsdg::UnaryOperation
+class IsFPClassOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~IsFPClassOperation() noexcept override;
 
   explicit IsFPClassOperation(const std::shared_ptr<const rvsdg::Type> & type)
-      : UnaryOperation(type, createResultType(type))
+      : SimpleOperation({ type, rvsdg::BitType::Create(32) }, { createResultType(type) })
   {
     checkType(type);
   }
@@ -47,16 +47,16 @@ public:
   }
 
   static std::unique_ptr<ThreeAddressCode>
-  createTac(const Variable & operand)
+  createTac(const Variable & operand1, const Variable & operand2)
   {
-    auto operation = std::make_unique<IsFPClassOperation>(operand.Type());
-    return ThreeAddressCode::create(std::move(operation), { &operand });
+    auto operation = std::make_unique<IsFPClassOperation>(operand1.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand1, &operand2 });
   }
 
   static rvsdg::SimpleNode &
-  createNode(rvsdg::Output & operand)
+  createNode(rvsdg::Output & operand1, rvsdg::Output & operand2)
   {
-    return rvsdg::CreateOpNode<IsFPClassOperation>({ &operand }, operand.Type());
+    return rvsdg::CreateOpNode<IsFPClassOperation>({ &operand1, &operand2 }, operand1.Type());
   }
 
 private:
