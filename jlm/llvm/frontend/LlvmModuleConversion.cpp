@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/ArithmeticWithOverflowIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
@@ -1398,6 +1399,19 @@ convertIsConstantIntrinsic(
   return tacs.back()->result(0);
 }
 
+static const Variable *
+converSAddWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SAddWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1593,6 +1607,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::sadd_with_overflow:
+    return converSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smax:
     return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
