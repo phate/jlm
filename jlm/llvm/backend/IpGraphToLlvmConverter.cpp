@@ -1382,6 +1382,19 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convertMemsetNonVolatileOperation(op, arguments, builder);
   }
+  if (is<MemMoveNonVolatileOperation>(op))
+  {
+    const auto destOperand = Context_->value(arguments[0]);
+    const auto srcOperand = Context_->value(arguments[1]);
+    const auto lengthOperand = Context_->value(arguments[2]);
+
+    return builder.CreateMemMove(
+        destOperand,
+        ::llvm::MaybeAlign(),
+        srcOperand,
+        ::llvm::MaybeAlign(),
+        lengthOperand);
+  }
   if (is<FNegOperation>(op))
   {
     return convert_fpneg(op, arguments, builder);
