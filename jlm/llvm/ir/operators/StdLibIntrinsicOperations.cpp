@@ -92,6 +92,34 @@ MemSetNonVolatileOperation::numMemoryStates() const noexcept
   return nresults();
 }
 
+MemMoveNonVolatileOperation::~MemMoveNonVolatileOperation() noexcept = default;
+
+bool
+MemMoveNonVolatileOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const MemMoveNonVolatileOperation *>(&other);
+  return operation && operation->lengthType() == lengthType()
+      && operation->numMemoryStates() == numMemoryStates();
+}
+
+std::string
+MemMoveNonVolatileOperation::debug_string() const
+{
+  return "MemMove";
+}
+
+std::unique_ptr<rvsdg::Operation>
+MemMoveNonVolatileOperation::copy() const
+{
+  return std::make_unique<MemMoveNonVolatileOperation>(*this);
+}
+
+size_t
+MemMoveNonVolatileOperation::numMemoryStates() const noexcept
+{
+  return nresults();
+}
+
 UMaxOperation::~UMaxOperation() noexcept = default;
 
 bool

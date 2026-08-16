@@ -545,6 +545,230 @@ private:
 };
 
 /**
+ * Represents a LLVM's llvm.memmove intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-memmove-intrinsic) for more details.
+ *
+ * @see MemMoveNonVolatileOperation
+ */
+class MemMoveOperation : public rvsdg::SimpleOperation
+{
+protected:
+  MemMoveOperation(
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
+      : SimpleOperation(operandTypes, resultTypes)
+  {
+    JLM_ASSERT(operandTypes.size() >= 3);
+
+    auto & destAddressType = *operandTypes[0];
+    JLM_ASSERT(is<PointerType>(destAddressType));
+
+    auto & srcAddressType = *operandTypes[1];
+    JLM_ASSERT(is<PointerType>(srcAddressType));
+
+    auto & lengthType = *operandTypes[2];
+    JLM_ASSERT(
+        lengthType == *rvsdg::BitType::Create(32) || lengthType == *rvsdg::BitType::Create(64));
+  }
+
+public:
+  /**
+   * @return The type of the length argument
+   */
+  [[nodiscard]] const rvsdg::BitType &
+  lengthType() const noexcept
+  {
+    const auto type = std::dynamic_pointer_cast<const rvsdg::BitType>(argument(2));
+    JLM_ASSERT(type != nullptr);
+    JLM_ASSERT(type->nbits() == 32 || type->nbits() == 64);
+    return *type;
+  }
+
+  /**
+   * @return Number of memory states
+   */
+  [[nodiscard]] virtual size_t
+  numMemoryStates() const noexcept = 0;
+
+  /**
+   * @param node a SimpleNode containing a MemMoveOperation
+   * @return the input of \p node that points to the destination to move to.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  destinationInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemMoveOperation>(&node));
+    const auto input = node.input(0);
+    JLM_ASSERT(is<PointerType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * @param node a SimpleNode containing a MemMoveOperation
+   * @return the input of \p node that points to the source to move from.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  sourceInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemMoveOperation>(&node));
+    const auto input = node.input(1);
+    JLM_ASSERT(is<PointerType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * @param node a SimpleNode containing a MemMoveOperation
+   * @return the input of \p node that points to the length of the memory to move.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  lengthInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemMoveOperation>(&node));
+    const auto input = node.input(2);
+    const auto type = std::dynamic_pointer_cast<const rvsdg::BitType>(node.input(2)->Type());
+    JLM_ASSERT(type != nullptr);
+    JLM_ASSERT(type->nbits() == 32 || type->nbits() == 64);
+    return *input;
+  }
+
+  /**
+   * Maps a memory state output to its corresponding memory state input.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  mapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [memmoveNode, memmoveOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemMoveOperation>(output);
+    JLM_ASSERT(memmoveOperation);
+    const auto numNonMemoryStateOutputs =
+        memmoveNode->noutputs() - memmoveOperation->numMemoryStates();
+    JLM_ASSERT(output.index() >= numNonMemoryStateOutputs);
+    const auto numNonMemoryStateInputs =
+        memmoveNode->ninputs() - memmoveOperation->numMemoryStates();
+    const auto inputIndex = numNonMemoryStateInputs + (output.index() - numNonMemoryStateOutputs);
+    const auto input = memmoveNode->input(inputIndex);
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * Maps a memory state input to its corresponding memory state output.
+   */
+  [[nodiscard]] static rvsdg::Output &
+  mapMemoryStateInputToOutput(const rvsdg::Input & input)
+  {
+    JLM_ASSERT(is<MemoryStateType>(input.Type()));
+    auto [memmoveNode, memmoveOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemMoveOperation>(input);
+    JLM_ASSERT(memmoveOperation);
+    const auto numNonMemoryStateInputs =
+        memmoveNode->ninputs() - memmoveOperation->numMemoryStates();
+    JLM_ASSERT(input.index() >= numNonMemoryStateInputs);
+    const auto numNonMemoryStateOutputs =
+        memmoveNode->noutputs() - memmoveOperation->numMemoryStates();
+    const auto outputIndex = numNonMemoryStateOutputs + (input.index() - numNonMemoryStateInputs);
+    const auto output = memmoveNode->output(outputIndex);
+    JLM_ASSERT(is<MemoryStateType>(output->Type()));
+    return *output;
+  }
+};
+
+/**
+ * Represents a LLVM's non-volatile llvm.memmove intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-memmove-intrinsic) for more details.
+ */
+class MemMoveNonVolatileOperation final : public MemMoveOperation
+{
+public:
+  ~MemMoveNonVolatileOperation() noexcept override;
+
+  MemMoveNonVolatileOperation(std::shared_ptr<const rvsdg::Type> lengthType, size_t numMemoryStates)
+      : MemMoveOperation(
+            checkAndCreateOperandTypes(std::move(lengthType), numMemoryStates),
+            createResultTypes(numMemoryStates))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] size_t
+  numMemoryStates() const noexcept override;
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(
+      const Variable & dest,
+      const Variable & src,
+      const Variable & length,
+      const std::vector<const Variable *> & memoryStates)
+  {
+    std::vector operands = { &dest, &src, &length };
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    auto operation =
+        std::make_unique<MemMoveNonVolatileOperation>(length.Type(), memoryStates.size());
+    return ThreeAddressCode::create(std::move(operation), operands);
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(
+      rvsdg::Output & dest,
+      rvsdg::Output & src,
+      rvsdg::Output & length,
+      const std::vector<rvsdg::Output *> & memoryStates)
+  {
+    std::vector operands = { &dest, &src, &length };
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    return rvsdg::CreateOpNode<MemMoveNonVolatileOperation>(
+        operands,
+        length.Type(),
+        memoryStates.size());
+  }
+
+private:
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  checkAndCreateOperandTypes(
+      const std::shared_ptr<const rvsdg::Type> & lengthType,
+      const size_t numMemoryStates)
+  {
+    const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(lengthType);
+    if (!bitType || (bitType->nbits() != 32 && bitType->nbits() != 64))
+    {
+      throw std::runtime_error("lengthType must be a 32-bit or 64-bit integer type");
+    }
+
+    std::vector<std::shared_ptr<const rvsdg::Type>> types = { PointerType::Create(),
+                                                              PointerType::Create(),
+                                                              lengthType };
+    types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
+    return types;
+  }
+
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  createResultTypes(size_t numMemoryStates)
+  {
+    // The memmove() standard C library call has as return type void*, but LLVM models the
+    // function call nevertheless as:
+    // call void @llvm.memmove.p0.p0.i64(ptr %0, i8 0, i64 8, i1 false)
+    //
+    // LLVM simply hands in register %7 (dest pointer) to all users of the return type of memmove().
+    // Thus, we only need state types as result types of the operation here.
+    return { numMemoryStates, MemoryStateType::Create() };
+  }
+};
+
+/**
  * Represents LLVM's llvm.umax.* intrinsic
  *
  * See [LLVM Language Reference

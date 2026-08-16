@@ -1254,6 +1254,41 @@ convertMemSetCall(
   return nullptr;
 }
 
+static const Variable *
+convertMemMoveCall(
+    const ::llvm::IntrinsicInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  JLM_ASSERT(
+      instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove
+      || instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic);
+
+  if (instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic)
+    throw std::logic_error("Unhandled memmove_element_unordered_atomic intrinsic.");
+
+  auto memoryState = context.memory_state();
+
+  const auto destOperand = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
+  const auto srcOperand = ConvertValue(instruction.getArgOperand(1), threeAddressCodes, context);
+  const auto lengthOperand = ConvertValue(instruction.getArgOperand(2), threeAddressCodes, context);
+
+  if (IsVolatile(*instruction.getArgOperand(3)))
+  {
+    throw std::logic_error("Unhandled volatile memset intrinsic.");
+  }
+
+  threeAddressCodes.push_back(MemSetNonVolatileOperation::createTac(
+      *destOperand,
+      *srcOperand,
+      *lengthOperand,
+      { memoryState }));
+  threeAddressCodes.push_back(
+      AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
+
+  return nullptr;
+}
+
 static bool
 isMallocCall(const ::llvm::CallInst & callInstruction)
 {
@@ -1584,6 +1619,9 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memcpy_inline:
   case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
     return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memmove:
+  case ::llvm::Intrinsic::memmove_element_unordered_atomic:
+    return convertMemMoveCall(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::memset:
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
