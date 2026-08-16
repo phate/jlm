@@ -1605,6 +1605,15 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(::llvm::Intrinsic::ctlz, { type }, { operand, isZeroPoison });
   }
+  if (is<CttzOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+    auto isZeroPoison = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::cttz, { type }, { operand, isZeroPoison });
+  }
   if (is<CtpopOperation>(op))
   {
     auto operand = Context_->value(arguments[0]);
