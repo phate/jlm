@@ -110,6 +110,9 @@ private:
   EncodeMemset(const rvsdg::SimpleNode & memsetNode);
 
   void
+  EncodeMemmove(const rvsdg::SimpleNode & memmoveNode);
+
+  void
   EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void

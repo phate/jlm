@@ -782,6 +782,10 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
       {
         EncodeMemset(simpleNode);
       },
+      [&](const MemMoveOperation &)
+      {
+        EncodeMemmove(simpleNode);
+      },
       [&](const MemoryStateOperation &)
       {
         // Nothing needs to be done
@@ -973,6 +977,20 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode)
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto memoryStateResults = ReplaceMemsetNode(memsetNode, memoryStateOperands);
+
+  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+}
+
+void
+MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode)
+{
+  JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
+  auto & stateMap = Context_->GetRegionalizedStateMap();
+
+  auto memoryNodeStatePairs = stateMap.GetExistingStates(memmoveNode);
+  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+
+  auto memoryStateResults = ReplaceMemcpyNode(memmoveNode, memoryStateOperands);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
 }
