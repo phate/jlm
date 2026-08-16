@@ -990,7 +990,7 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode)
   auto memoryNodeStatePairs = stateMap.GetExistingStates(memmoveNode);
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto memoryStateResults = ReplaceMemcpyNode(memmoveNode, memoryStateOperands);
+  auto memoryStateResults = ReplaceMemmoveNode(memmoveNode, memoryStateOperands);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
 }
@@ -1341,13 +1341,17 @@ MemoryStateEncoder::ReplaceMemmoveNode(
 {
   JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
 
-  const auto destOperand = memmoveNode.input(0)->origin();
-  const auto srcOperand = memmoveNode.input(1)->origin();
-  const auto lengthOperand = memmoveNode.input(2)->origin();
+  auto & destOperand = *memmoveNode.input(0)->origin();
+  auto & srcOperand = *memmoveNode.input(1)->origin();
+  auto & lengthOperand = *memmoveNode.input(2)->origin();
 
   if (is<MemMoveNonVolatileOperation>(memmoveNode.GetOperation()))
   {
-    return MemCpyNonVolatileOperation::create(destOperand, srcOperand, lengthOperand, memoryStates);
+    return outputs(&MemMoveNonVolatileOperation::createNode(
+        destOperand,
+        srcOperand,
+        lengthOperand,
+        memoryStates));
   }
 
   throw std::logic_error("Unhandled memmove operation type.");

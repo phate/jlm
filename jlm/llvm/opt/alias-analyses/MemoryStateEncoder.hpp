@@ -180,14 +180,14 @@ private:
    * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param memmoveNode A rvsdg::SimpleNode representing a MemCpyOperation.
+   * @param memcpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
    * @param memoryStates The memory states the new memcpy node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static std::vector<rvsdg::Output *>
   ReplaceMemcpyNode(
-      const rvsdg::SimpleNode & memmoveNode,
+      const rvsdg::SimpleNode & memcpyNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**

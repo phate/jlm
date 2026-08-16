@@ -1276,7 +1276,7 @@ convertMemMoveCall(
 
   if (IsVolatile(*instruction.getArgOperand(3)))
   {
-    throw std::logic_error("Unhandled volatile memset intrinsic.");
+    throw std::logic_error("Unhandled volatile memmove intrinsic.");
   }
 
   threeAddressCodes.push_back(MemMoveNonVolatileOperation::createTac(
