@@ -1279,7 +1279,7 @@ convertMemMoveCall(
     throw std::logic_error("Unhandled volatile memset intrinsic.");
   }
 
-  threeAddressCodes.push_back(MemSetNonVolatileOperation::createTac(
+  threeAddressCodes.push_back(MemMoveNonVolatileOperation::createTac(
       *destOperand,
       *srcOperand,
       *lengthOperand,
