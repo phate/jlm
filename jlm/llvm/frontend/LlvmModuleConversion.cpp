@@ -1378,7 +1378,7 @@ convertBSwapIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs,
 }
 
 static const Variable *
-converCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+convertCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
   const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
@@ -1400,7 +1400,7 @@ convertIsConstantIntrinsic(
 }
 
 static const Variable *
-converSAddWithOverflowIntrinsic(
+convertSAddWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
     Context & context)
@@ -1413,7 +1413,7 @@ converSAddWithOverflowIntrinsic(
 }
 
 static const Variable *
-converSSubWithOverflowIntrinsic(
+convertSSubWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
     Context & context)
@@ -1426,7 +1426,7 @@ converSSubWithOverflowIntrinsic(
 }
 
 static const Variable *
-converSMulWithOverflowIntrinsic(
+convertSMulWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
     Context & context)
@@ -1593,7 +1593,7 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::ceil:
     return convertCeilIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctlz:
-    return converCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
@@ -1634,15 +1634,15 @@ convertIntrinsicInstruction(
     return nullptr;
   }
   case ::llvm::Intrinsic::sadd_with_overflow:
-    return converSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smax:
     return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smul_with_overflow:
-    return converSMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertSMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ssub_with_overflow:
-    return converSSubWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertSSubWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
     return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umin:
