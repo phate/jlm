@@ -180,14 +180,14 @@ private:
    * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param memcpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
+   * @param memmoveNode A rvsdg::SimpleNode representing a MemCpyOperation.
    * @param memoryStates The memory states the new memcpy node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static std::vector<rvsdg::Output *>
   ReplaceMemcpyNode(
-      const rvsdg::SimpleNode & memcpyNode,
+      const rvsdg::SimpleNode & memmoveNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
@@ -203,6 +203,21 @@ private:
   [[nodiscard]] static std::vector<rvsdg::Output *>
   ReplaceMemsetNode(
       const rvsdg::SimpleNode & memsetNode,
+      const std::vector<rvsdg::Output *> & memoryStates);
+
+  /**
+   * Replace \p memmoveNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memmoveNode are redirected to the respective outputs of the newly created
+   * copy.
+   *
+   * @param memmoveNode A rvsdg::SimpleNode representing a \ref MemMoveOperation.
+   * @param memoryStates The memory states the new \ref MemMoveOperation node should consume.
+   *
+   * @return A vector with the memory states of the newly created copy.
+   */
+  [[nodiscard]] static std::vector<rvsdg::Output *>
+  ReplaceMemmoveNode(
+      const rvsdg::SimpleNode & memmoveNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   std::unique_ptr<Context> Context_;

@@ -1334,4 +1334,23 @@ MemoryStateEncoder::ReplaceMemsetNode(
   throw std::logic_error("Unhandled memset operation type.");
 }
 
+std::vector<rvsdg::Output *>
+MemoryStateEncoder::ReplaceMemmoveNode(
+    const rvsdg::SimpleNode & memmoveNode,
+    const std::vector<rvsdg::Output *> & memoryStates)
+{
+  JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
+
+  const auto destOperand = memmoveNode.input(0)->origin();
+  const auto srcOperand = memmoveNode.input(1)->origin();
+  const auto lengthOperand = memmoveNode.input(2)->origin();
+
+  if (is<MemMoveNonVolatileOperation>(memmoveNode.GetOperation()))
+  {
+    return MemCpyNonVolatileOperation::create(destOperand, srcOperand, lengthOperand, memoryStates);
+  }
+
+  throw std::logic_error("Unhandled memmove operation type.");
+}
+
 }
