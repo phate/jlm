@@ -134,6 +134,66 @@ private:
   checkOperandType(const std::shared_ptr<const rvsdg::Type> & type);
 };
 
+/**
+ * Represents LLVM's llvm.umul.with.overflow.* intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-umul-with-overflow-intrinsics) for more details.
+ */
+class UMulWithOverflowOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~UMulWithOverflowOperation() noexcept override;
+
+  explicit UMulWithOverflowOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation(
+            { type, type },
+            { StructType::CreateLiteral({ type, rvsdg::BitType::Create(1) }, false) })
+  {
+    checkOperandType(type);
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getOperandType() const noexcept
+  {
+    return argument(0);
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getResultType() const noexcept
+  {
+    return result(0);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable & operand1, const Variable & operand2)
+  {
+    auto operation = std::make_unique<UMulWithOverflowOperation>(operand1.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand1, &operand2 });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<UMulWithOverflowOperation>(
+        { &operand1, &operand2 },
+        operand1.Type());
+  }
+
+private:
+  static void
+  checkOperandType(const std::shared_ptr<const rvsdg::Type> & type);
+};
+
 }
 
 #endif

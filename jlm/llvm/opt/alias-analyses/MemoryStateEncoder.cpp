@@ -782,6 +782,10 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
       {
         EncodeMemset(simpleNode);
       },
+      [&](const MemMoveOperation &)
+      {
+        EncodeMemmove(simpleNode);
+      },
       [&](const MemoryStateOperation &)
       {
         // Nothing needs to be done
@@ -973,6 +977,20 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode)
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto memoryStateResults = ReplaceMemsetNode(memsetNode, memoryStateOperands);
+
+  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+}
+
+void
+MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode)
+{
+  JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
+  auto & stateMap = Context_->GetRegionalizedStateMap();
+
+  auto memoryNodeStatePairs = stateMap.GetExistingStates(memmoveNode);
+  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+
+  auto memoryStateResults = ReplaceMemmoveNode(memmoveNode, memoryStateOperands);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
 }
@@ -1314,6 +1332,29 @@ MemoryStateEncoder::ReplaceMemsetNode(
   }
 
   throw std::logic_error("Unhandled memset operation type.");
+}
+
+std::vector<rvsdg::Output *>
+MemoryStateEncoder::ReplaceMemmoveNode(
+    const rvsdg::SimpleNode & memmoveNode,
+    const std::vector<rvsdg::Output *> & memoryStates)
+{
+  JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
+
+  auto & destOperand = *memmoveNode.input(0)->origin();
+  auto & srcOperand = *memmoveNode.input(1)->origin();
+  auto & lengthOperand = *memmoveNode.input(2)->origin();
+
+  if (is<MemMoveNonVolatileOperation>(memmoveNode.GetOperation()))
+  {
+    return outputs(&MemMoveNonVolatileOperation::createNode(
+        destOperand,
+        srcOperand,
+        lengthOperand,
+        memoryStates));
+  }
+
+  throw std::logic_error("Unhandled memmove operation type.");
 }
 
 }

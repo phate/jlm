@@ -685,6 +685,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeMemset(node);
       },
+      [&](const MemMoveOperation &)
+      {
+        AnalyzeMemmove(node);
+      },
       [&](const ConstantArrayOperation &)
       {
         AnalyzeConstantArray(node);
@@ -948,6 +952,28 @@ void
 Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(node.GetOperation()));
+
+  auto & dstAddressRegister = *node.input(0)->origin();
+  auto & srcAddressRegister = *node.input(1)->origin();
+  JLM_ASSERT(is<PointerType>(dstAddressRegister.Type()));
+  JLM_ASSERT(is<PointerType>(srcAddressRegister.Type()));
+
+  const auto dstAddressRegisterPO = Set_->GetRegisterPointerObject(dstAddressRegister);
+  const auto srcAddressRegisterPO = Set_->GetRegisterPointerObject(srcAddressRegister);
+
+  // Create an intermediate PointerObject representing the moved values
+  const auto dummyPO = Set_->CreateDummyRegisterPointerObject();
+
+  // Add a "load" constraint from the source into the dummy register
+  Constraints_->AddConstraint(LoadConstraint(dummyPO, srcAddressRegisterPO));
+  // Add a "store" constraint from the dummy register into the destination
+  Constraints_->AddConstraint(StoreConstraint(dstAddressRegisterPO, dummyPO));
+}
+
+void
+Andersen::AnalyzeMemmove(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<MemMoveOperation>(node.GetOperation()));
 
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();

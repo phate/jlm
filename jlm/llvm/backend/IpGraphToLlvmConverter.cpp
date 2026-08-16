@@ -16,6 +16,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -1381,6 +1382,19 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convertMemsetNonVolatileOperation(op, arguments, builder);
   }
+  if (is<MemMoveNonVolatileOperation>(op))
+  {
+    const auto destOperand = Context_->value(arguments[0]);
+    const auto srcOperand = Context_->value(arguments[1]);
+    const auto lengthOperand = Context_->value(arguments[2]);
+
+    return builder.CreateMemMove(
+        destOperand,
+        ::llvm::MaybeAlign(),
+        srcOperand,
+        ::llvm::MaybeAlign(),
+        lengthOperand);
+  }
   if (is<FNegOperation>(op))
   {
     return convert_fpneg(op, arguments, builder);
@@ -1599,6 +1613,15 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(::llvm::Intrinsic::is_constant, { type }, { operand });
   }
+  if (is<IsFPClassOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::is_fpclass, { type }, { operand1, operand2 });
+  }
   if (is<SAddWithOverflowOperation>(op))
   {
     auto operand1 = Context_->value(arguments[0]);
@@ -1620,6 +1643,26 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(
         ::llvm::Intrinsic::smul_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<RoundOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::round, { type }, { operand });
+  }
+  if (is<UMulWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::umul_with_overflow,
         { type },
         { operand1, operand2 });
   }

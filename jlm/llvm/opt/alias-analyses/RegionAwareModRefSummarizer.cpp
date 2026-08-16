@@ -1459,6 +1459,10 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
       {
         return AnnotateMemset(simpleNode, lambda);
       },
+      [&](const MemMoveOperation &) -> std::optional<ModRefSetIndex>
+      {
+        return AnnotateMemmove(simpleNode, lambda);
+      },
       [&](const CallOperation &) -> std::optional<ModRefSetIndex>
       {
         return AnnotateCall(simpleNode, lambda);
@@ -1604,6 +1608,23 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
   const auto srcOrigin = MemCpyOperation::sourceInput(memcpyNode).origin();
   const auto countOrigin = MemCpyOperation::countInput(memcpyNode).origin();
   const auto count = tryGetConstantSignedInteger(*countOrigin);
+  addPointerOriginTargets(nodeModRef, *dstOrigin, count, ModRefEffect::ModOnly);
+  addPointerOriginTargets(nodeModRef, *srcOrigin, count, ModRefEffect::RefOnly);
+  return nodeModRef;
+}
+
+ModRefSetIndex
+RegionAwareModRefSummarizer::AnnotateMemmove(
+    const rvsdg::SimpleNode & memmoveNode,
+    const rvsdg::LambdaNode & lambda)
+{
+  JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
+
+  const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(memmoveNode, lambda);
+  const auto dstOrigin = MemMoveOperation::destinationInput(memmoveNode).origin();
+  const auto srcOrigin = MemMoveOperation::sourceInput(memmoveNode).origin();
+  const auto lengthOrigin = MemMoveOperation::lengthInput(memmoveNode).origin();
+  const auto count = tryGetConstantSignedInteger(*lengthOrigin);
   addPointerOriginTargets(nodeModRef, *dstOrigin, count, ModRefEffect::ModOnly);
   addPointerOriginTargets(nodeModRef, *srcOrigin, count, ModRefEffect::RefOnly);
   return nodeModRef;
