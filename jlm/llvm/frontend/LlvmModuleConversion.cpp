@@ -1483,6 +1483,19 @@ converSMulWithOverflowIntrinsic(
   return tacs.back()->result(0);
 }
 
+static const Variable *
+convertUMulWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMulWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
 std::vector<const Variable *>
 convertCallArguments(
     const ::llvm::CallInst & callInstruction,
@@ -1697,6 +1710,8 @@ convertIntrinsicInstruction(
     return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umin:
     return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umul_with_overflow:
+    return convertUMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
   {
     JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
