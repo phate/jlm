@@ -1662,7 +1662,7 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::ctlz:
     return converCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctpop:
-    return converCtpopIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertCtpopIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
