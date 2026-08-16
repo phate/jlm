@@ -1426,7 +1426,7 @@ converSMulWithOverflowIntrinsic(
 }
 
 static const Variable *
-converUMulWithOverflowIntrinsic(
+convertUMulWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
     Context & context)
@@ -1646,7 +1646,7 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::umin:
     return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umul_with_overflow:
-    return converUMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+    return convertUMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
   {
     JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
