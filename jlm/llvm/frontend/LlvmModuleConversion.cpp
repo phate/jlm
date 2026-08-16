@@ -1433,6 +1433,15 @@ converCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, C
 }
 
 static const Variable *
+convertCtpopIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CtpopOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertIsConstantIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
@@ -1652,6 +1661,8 @@ convertIntrinsicInstruction(
     return convertCeilIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctlz:
     return converCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ctpop:
+    return convertCtpopIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
   {
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
