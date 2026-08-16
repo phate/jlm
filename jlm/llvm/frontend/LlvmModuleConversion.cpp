@@ -1299,6 +1299,15 @@ convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs,
 }
 
 static const Variable *
+convertRoundIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RoundOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1620,6 +1629,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::round:
+    return convertRoundIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::sadd_with_overflow:
     return converSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smax:
