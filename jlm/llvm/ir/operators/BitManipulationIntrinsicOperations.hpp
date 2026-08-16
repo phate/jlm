@@ -170,13 +170,13 @@ private:
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#llvm-ctpop-intrinsic) for more details.
  */
-class CtpopOperation final : public rvsdg::SimpleOperation
+class CtpopOperation final : public rvsdg::UnaryOperation
 {
 public:
   ~CtpopOperation() noexcept override;
 
   explicit CtpopOperation(const std::shared_ptr<const rvsdg::Type> & type)
-      : SimpleOperation({ type, rvsdg::BitType::Create(1) }, { type })
+      : UnaryOperation(type, type)
   {
     checkType(type);
   }
@@ -197,16 +197,16 @@ public:
   }
 
   static std::unique_ptr<ThreeAddressCode>
-  createTac(const Variable & operand, const Variable & isZeroPoison)
+  createTac(const Variable & operand)
   {
     auto operation = std::make_unique<CtpopOperation>(operand.Type());
-    return ThreeAddressCode::create(std::move(operation), { &operand, &isZeroPoison });
+    return ThreeAddressCode::create(std::move(operation), { &operand });
   }
 
   static rvsdg::SimpleNode &
-  createNode(rvsdg::Output & operand, rvsdg::Output & isZeroPoison)
+  createNode(rvsdg::Output & operand)
   {
-    return rvsdg::CreateOpNode<CtpopOperation>({ &operand, &isZeroPoison }, operand.Type());
+    return rvsdg::CreateOpNode<CtpopOperation>({ &operand }, operand.Type());
   }
 
 private:

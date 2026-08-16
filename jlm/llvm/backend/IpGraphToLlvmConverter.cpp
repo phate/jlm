@@ -1586,11 +1586,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<CtpopOperation>(op))
   {
     auto operand = Context_->value(arguments[0]);
-    auto isZeroPoison = Context_->value(arguments[1]);
 
     auto type =
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
-    return builder.CreateIntrinsic(::llvm::Intrinsic::ctpop, { type }, { operand, isZeroPoison });
+    return builder.CreateIntrinsic(::llvm::Intrinsic::ctpop, { type }, { operand });
   }
   if (is<IsConstantOperation>(op))
   {

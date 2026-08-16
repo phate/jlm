@@ -1390,9 +1390,8 @@ converCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, C
 static const Variable *
 converCtpopIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
-  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
-  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
-  tacs.push_back(CtpopOperation::createTac(*operand1, *operand2));
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CtpopOperation::createTac(*operand));
 
   return tacs.back()->result(0);
 }
