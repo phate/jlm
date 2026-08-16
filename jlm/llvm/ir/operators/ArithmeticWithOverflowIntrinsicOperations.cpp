@@ -38,4 +38,34 @@ SAddWithOverflowOperation::checkOperandType(const std::shared_ptr<const rvsdg::T
   }
 }
 
+SMulWithOverflowOperation::~SMulWithOverflowOperation() noexcept = default;
+
+bool
+SMulWithOverflowOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const SMulWithOverflowOperation *>(&other);
+  return operation && *operation->getOperandType() == *getOperandType();
+}
+
+std::string
+SMulWithOverflowOperation::debug_string() const
+{
+  return util::strfmt("SMulWithOverflow[", getOperandType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+SMulWithOverflowOperation::copy() const
+{
+  return std::make_unique<SMulWithOverflowOperation>(*this);
+}
+
+void
+SMulWithOverflowOperation::checkOperandType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("SMulWithOverflowOperation::checkType: Expected integer type.");
+  }
+}
+
 }
