@@ -1326,6 +1326,15 @@ convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convertTruncIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(TruncIntrinsicOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1485,6 +1494,19 @@ convertSAddWithOverflowIntrinsic(
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
   const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
   tacs.push_back(SAddWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUAddWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UAddWithOverflowOperation::createTac(*operand1, *operand2));
 
   return tacs.back()->result(0);
 }
@@ -1744,6 +1766,10 @@ convertIntrinsicInstruction(
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ssub_with_overflow:
     return convertSSubWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::trunc:
+    return convertTruncIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::uadd_with_overflow:
+    return convertUAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
     return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umin:

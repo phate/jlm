@@ -1580,6 +1580,14 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(::llvm::Intrinsic::ceil, { type }, { operand });
   }
+  if (is<TruncIntrinsicOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::trunc, { type }, { operand });
+  }
   if (is<BSwapOperation>(op))
   {
     auto operand = Context_->value(arguments[0]);
@@ -1640,6 +1648,18 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(
         ::llvm::Intrinsic::sadd_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<UAddWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::uadd_with_overflow,
         { type },
         { operand1, operand2 });
   }
