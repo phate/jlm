@@ -98,4 +98,34 @@ RoundOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+TruncIntrinsicOperation::~TruncIntrinsicOperation() noexcept = default;
+
+bool
+TruncIntrinsicOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const TruncIntrinsicOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+TruncIntrinsicOperation::debug_string() const
+{
+  return util::strfmt("TruncIntrinsic[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+TruncIntrinsicOperation::copy() const
+{
+  return std::make_unique<TruncIntrinsicOperation>(*this);
+}
+
+void
+TruncIntrinsicOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
+  {
+    throw std::runtime_error("TruncIntrinsicOperation::checkType: Expected floating point type.");
+  }
+}
+
 }
