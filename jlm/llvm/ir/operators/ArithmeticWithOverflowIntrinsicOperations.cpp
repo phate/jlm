@@ -98,4 +98,34 @@ SMulWithOverflowOperation::checkOperandType(const std::shared_ptr<const rvsdg::T
   }
 }
 
+UMulWithOverflowOperation::~UMulWithOverflowOperation() noexcept = default;
+
+bool
+UMulWithOverflowOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMulWithOverflowOperation *>(&other);
+  return operation && *operation->getOperandType() == *getOperandType();
+}
+
+std::string
+UMulWithOverflowOperation::debug_string() const
+{
+  return util::strfmt("UMulWithOverflow[", getOperandType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMulWithOverflowOperation::copy() const
+{
+  return std::make_unique<UMulWithOverflowOperation>(*this);
+}
+
+void
+UMulWithOverflowOperation::checkOperandType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMulWithOverflowOperation::checkType: Expected integer type.");
+  }
+}
+
 }
