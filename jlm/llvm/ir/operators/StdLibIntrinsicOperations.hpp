@@ -677,7 +677,7 @@ public:
 };
 
 /**
- * Represents a LLVM's non-volatile llvm.memmove intrinsic
+ * Represents a non-volatile llvm.memmove intrinsic
  *
  * See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#llvm-memmove-intrinsic) for more details.
