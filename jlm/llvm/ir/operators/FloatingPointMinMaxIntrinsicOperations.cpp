@@ -68,4 +68,34 @@ CeilOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
   }
 }
 
+RoundOperation::~RoundOperation() noexcept = default;
+
+bool
+RoundOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const RoundOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+RoundOperation::debug_string() const
+{
+  return util::strfmt("Round[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+RoundOperation::copy() const
+{
+  return std::make_unique<RoundOperation>(*this);
+}
+
+void
+RoundOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
+  {
+    throw std::runtime_error("RoundOperation::checkType: Expected floating point type.");
+  }
+}
+
 }
