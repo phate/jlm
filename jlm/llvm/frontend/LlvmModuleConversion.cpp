@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -1255,6 +1256,41 @@ convertMemSetCall(
   return nullptr;
 }
 
+static const Variable *
+convertMemMoveCall(
+    const ::llvm::IntrinsicInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  JLM_ASSERT(
+      instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove
+      || instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic);
+
+  if (instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic)
+    throw std::logic_error("Unhandled memmove_element_unordered_atomic intrinsic.");
+
+  auto memoryState = context.memory_state();
+
+  const auto destOperand = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
+  const auto srcOperand = ConvertValue(instruction.getArgOperand(1), threeAddressCodes, context);
+  const auto lengthOperand = ConvertValue(instruction.getArgOperand(2), threeAddressCodes, context);
+
+  if (IsVolatile(*instruction.getArgOperand(3)))
+  {
+    throw std::logic_error("Unhandled volatile memmove intrinsic.");
+  }
+
+  threeAddressCodes.push_back(MemMoveNonVolatileOperation::createTac(
+      *destOperand,
+      *srcOperand,
+      *lengthOperand,
+      { memoryState }));
+  threeAddressCodes.push_back(
+      AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
+
+  return nullptr;
+}
+
 static bool
 isMallocCall(const ::llvm::CallInst & callInstruction)
 {
@@ -1294,6 +1330,15 @@ convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs,
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
   tacs.push_back(FloorOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertRoundIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RoundOperation::createTac(*operand));
 
   return tacs.back()->result(0);
 }
@@ -1395,6 +1440,19 @@ convertIsConstantIntrinsic(
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
   tacs.push_back(IsConstantOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertIsFPClassIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(IsFPClassOperation::createTac(*operand1, *operand2));
 
   return tacs.back()->result(0);
 }
@@ -1614,6 +1672,8 @@ convertIntrinsicInstruction(
     return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::is_constant:
     return convertIsConstantIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_fpclass:
+    return convertIsFPClassIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
@@ -1624,6 +1684,9 @@ convertIntrinsicInstruction(
   case ::llvm::Intrinsic::memcpy_inline:
   case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
     return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memmove:
+  case ::llvm::Intrinsic::memmove_element_unordered_atomic:
+    return convertMemMoveCall(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::memset:
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
@@ -1633,6 +1696,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::round:
+    return convertRoundIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::sadd_with_overflow:
     return converSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smax:
