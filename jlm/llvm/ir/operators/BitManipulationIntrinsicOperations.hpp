@@ -164,6 +164,56 @@ private:
   checkType(const std::shared_ptr<const rvsdg::Type> & type);
 };
 
+/**
+ * Represents LLVM's llvm.ctpop.* intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-ctpop-intrinsic) for more details.
+ */
+class CtpopOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~CtpopOperation() noexcept override;
+
+  explicit CtpopOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation({ type, rvsdg::BitType::Create(1) }, { type })
+  {
+    checkType(type);
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getType() const noexcept
+  {
+    return result(0);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable & operand, const Variable & isZeroPoison)
+  {
+    auto operation = std::make_unique<CtpopOperation>(operand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand, &isZeroPoison });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, rvsdg::Output & isZeroPoison)
+  {
+    return rvsdg::CreateOpNode<CtpopOperation>({ &operand, &isZeroPoison }, operand.Type());
+  }
+
+private:
+  static void
+  checkType(const std::shared_ptr<const rvsdg::Type> & type);
+};
+
 }
 
 #endif
