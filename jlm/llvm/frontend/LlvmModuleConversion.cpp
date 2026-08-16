@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -1400,6 +1401,19 @@ convertIsConstantIntrinsic(
 }
 
 static const Variable *
+convertIsFPClassIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(IsFPClassOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 converSAddWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
@@ -1601,6 +1615,8 @@ convertIntrinsicInstruction(
     return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::is_constant:
     return convertIsConstantIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_fpclass:
+    return convertIsFPClassIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
