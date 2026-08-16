@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -1334,6 +1335,15 @@ convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs,
 }
 
 static const Variable *
+convertRoundIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RoundOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1435,6 +1445,19 @@ convertIsConstantIntrinsic(
 }
 
 static const Variable *
+convertIsFPClassIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(IsFPClassOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 converSAddWithOverflowIntrinsic(
     const ::llvm::CallInst & instruction,
     tacsvector_t & tacs,
@@ -1443,6 +1466,19 @@ converSAddWithOverflowIntrinsic(
   const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
   const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
   tacs.push_back(SAddWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+converSMulWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMulWithOverflowOperation::createTac(*operand1, *operand2));
 
   return tacs.back()->result(0);
 }
@@ -1623,6 +1659,8 @@ convertIntrinsicInstruction(
     return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::is_constant:
     return convertIsConstantIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_fpclass:
+    return convertIsFPClassIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
   {
@@ -1645,10 +1683,14 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::round:
+    return convertRoundIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::sadd_with_overflow:
     return converSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smax:
     return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smul_with_overflow:
+    return converSMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::smin:
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
