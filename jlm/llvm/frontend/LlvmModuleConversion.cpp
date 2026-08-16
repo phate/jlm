@@ -1326,6 +1326,15 @@ convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convertTruncIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(TruncIntrinsicOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1745,6 +1754,8 @@ convertIntrinsicInstruction(
     return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ssub_with_overflow:
     return convertSSubWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::trunc:
+    return convertTruncIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::uadd_with_overflow:
     return convertUAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::umax:
