@@ -128,4 +128,34 @@ TruncIntrinsicOperation::checkType(const std::shared_ptr<const rvsdg::Type> & ty
   }
 }
 
+CopysignOperation::~CopysignOperation() noexcept = default;
+
+bool
+CopysignOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const CopysignOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+CopysignOperation::debug_string() const
+{
+  return util::strfmt("Copysign[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+CopysignOperation::copy() const
+{
+  return std::make_unique<CopysignOperation>(*this);
+}
+
+void
+CopysignOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
+  {
+    throw std::runtime_error("CopysignOperation::checkType: Expected floating point type.");
+  }
+}
+
 }
