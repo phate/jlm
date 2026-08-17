@@ -58,23 +58,23 @@ PtrMaskOperation::checkOperandTypes(
 {
   if (is<PointerType>(ptrType))
   {
-    if (!is<rvsdg::BitType>(maskType))
-    {
-      throw std::runtime_error(
-          "PtrMaskOperation::checkOperandTypes: Expected mask type to be integer.");
-    }
+    if (is<rvsdg::BitType>(maskType))
+      return;
+
+    throw std::runtime_error(
+        "PtrMaskOperation::checkOperandTypes: Expected mask type to be integer.");
   }
 
   if (const auto vectorType = std::dynamic_pointer_cast<const VectorType>(ptrType))
   {
-    if (!isVectorOfSize<const rvsdg::BitType>(*vectorType, vectorType->size()))
-    {
-      throw std::runtime_error(util::strfmt(
-          "PtrMaskOperation::checkOperandTypes: Expected mask type to be a "
-          "vector of integers of size ",
-          vectorType->size(),
-          "."));
-    }
+    if (isVectorOfSize<const rvsdg::BitType>(*vectorType, vectorType->size()))
+      return;
+
+    throw std::runtime_error(util::strfmt(
+        "PtrMaskOperation::checkOperandTypes: Expected mask type to be a "
+        "vector of integers of size ",
+        vectorType->size(),
+        "."));
   }
 
   throw std::runtime_error(
