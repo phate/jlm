@@ -311,7 +311,12 @@ FunctionInlining::inlineCall(
   JLM_ASSERT(contextVars.size() == routedDeps.size());
   for (size_t n = 0; n < contextVars.size(); n++)
   {
-    smap.insert(contextVars[n].inner, routedDeps[n]);
+    auto dep = routedDeps[n];
+    if (IsOrContains<PointerType>(*dep->Type()))
+    {
+      dep = IOBarrierOperation::createNode(*dep, ioStateOperand).output(0);
+    }
+    smap.insert(contextVars[n].inner, dep);
   }
 
   // Use the substitution map to copy the function body into the caller region
