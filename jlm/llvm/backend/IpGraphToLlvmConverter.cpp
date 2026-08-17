@@ -1580,6 +1580,14 @@ IpGraphToLlvmConverter::convert_operation(
         Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(::llvm::Intrinsic::ceil, { type }, { operand });
   }
+  if (is<RIntOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::rint, { type }, { operand });
+  }
   if (is<TruncIntrinsicOperation>(op))
   {
     auto operand = Context_->value(arguments[0]);
