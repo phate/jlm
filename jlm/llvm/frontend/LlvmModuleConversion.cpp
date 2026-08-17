@@ -1326,6 +1326,15 @@ convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convertRIntIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RIntOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertTruncIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1769,6 +1778,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::rint:
+    return convertRIntIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::round:
     return convertRoundIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::sadd_with_overflow:
