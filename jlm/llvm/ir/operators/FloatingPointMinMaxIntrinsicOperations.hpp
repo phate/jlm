@@ -215,6 +215,56 @@ private:
 };
 
 /**
+ * Represents LLVM's llvm.copysign.* intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-copysign-intrinsic) for more details.
+ */
+class CopysignOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~CopysignOperation() noexcept override;
+
+  explicit CopysignOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation({ type, type }, { type })
+  {
+    checkType(type);
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getType() const noexcept
+  {
+    return result(0);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable & operand1, const Variable & operand2)
+  {
+    auto operation = std::make_unique<CopysignOperation>(operand1.Type());
+    return ThreeAddressCode::create(std::move(operation), { &operand1, &operand2 });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand1, rvsdg::Output & operand2)
+  {
+    return rvsdg::CreateOpNode<CopysignOperation>({ &operand1, &operand2 }, operand1.Type());
+  }
+
+private:
+  static void
+  checkType(const std::shared_ptr<const rvsdg::Type> & type);
+};
+
+/**
  * Represents LLVM's llvm.rint.* intrinsic
  *
  * See [LLVM Language Reference
