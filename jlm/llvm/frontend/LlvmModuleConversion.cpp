@@ -1455,6 +1455,16 @@ convertCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, 
 }
 
 static const Variable *
+convertCttzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(CttzOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertCtpopIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1711,6 +1721,8 @@ convertIntrinsicInstruction(
     return convertCopysignIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctlz:
     return convertCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::cttz:
+    return convertCttzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::ctpop:
     return convertCtpopIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::expect:
