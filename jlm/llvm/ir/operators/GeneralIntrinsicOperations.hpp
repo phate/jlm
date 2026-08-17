@@ -58,6 +58,67 @@ public:
   }
 };
 
+/**
+ * Represents LLVM's llvm.ptrmask intrinsic
+ *
+ * See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#llvm-ptrmask-intrinsic) for more details.
+ */
+class PtrMaskOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~PtrMaskOperation() noexcept override;
+
+  explicit PtrMaskOperation(
+      const std::shared_ptr<const rvsdg::Type> & ptrOperandType,
+      const std::shared_ptr<const rvsdg::Type> & maskOperandType)
+      : SimpleOperation({ ptrOperandType, maskOperandType }, { ptrOperandType })
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getPtrOperandType() const noexcept
+  {
+    return argument(0);
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::Type>
+  getMaskOperandType() const noexcept
+  {
+    return argument(1);
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable & ptrOperand, const Variable & maskOperand)
+  {
+    auto operation = std::make_unique<PtrMaskOperation>(ptrOperand.Type(), maskOperand.Type());
+    return ThreeAddressCode::create(std::move(operation), { &ptrOperand, &maskOperand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & ptrOperand, rvsdg::Output & maskOperand)
+  {
+    return rvsdg::CreateOpNode<PtrMaskOperation>(
+        { &ptrOperand, &maskOperand },
+        ptrOperand.Type(),
+        maskOperand.Type());
+  }
+
+private:
+  static void
+  checkOperandTypes(
+      const std::shared_ptr<const rvsdg::Type> & ptrType,
+      const std::shared_ptr<const rvsdg::Type> & maskType);
+};
+
 }
 
 #endif

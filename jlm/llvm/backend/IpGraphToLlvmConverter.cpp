@@ -1707,6 +1707,18 @@ IpGraphToLlvmConverter::convert_operation(
         { type },
         { operand1, operand2 });
   }
+  if (is<PtrMaskOperation>(op))
+  {
+    auto ptrOperand = Context_->value(arguments[0]);
+    auto maskOperand = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::ptrmask,
+        { type },
+        { ptrOperand, maskOperand });
+  }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
 }
