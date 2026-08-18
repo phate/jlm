@@ -91,13 +91,16 @@ DumpTransformation::Run(
   std::ostringstream base;
   base << prefix << std::setw(3) << std::setfill('0') << passNumber_++ << "-" << label_;
 
+  // Determine output directory from the StatisticsCollector so files don't land in CWD.
+  const auto & settings = statisticsCollector.GetSettings();
+  auto outputPath = settings.GetOutputDirectory().to_str();
+
   for (auto format : Config_.formats)
   {
-    auto fileName = base.str() + "." + std::string(format_to_ext(format));
+    auto fileName = outputPath + "/" + base.str() + "." + std::string(format_to_ext(format));
 
     // Write directly to avoid createOutputFile generating a new unique string.
-    // We still use createOutputFile once to validate the output directory exists,
-    // then write files manually since all extensions are distinct now.
+    // All extensions are distinct so no collision risk.
     std::ofstream fs(fileName);
     if (!fs)
       throw util::Error("DumpTransformation: failed to open file " + fileName);
@@ -110,12 +113,7 @@ DumpTransformation::Run(
       outputAsGraph(rootRegion, format, fs);
       break;
     case OutputFormat::StructuralDot:
-      outputAsStructuralDot(
-          rootRegion,
-          Config_.outputColor,
-          Config_.inputColor,
-          Config_.tailLabel,
-          fs);
+      outputAsStructuralDot(rootRegion, fs);
       break;
     case OutputFormat::Ascii:
       outputAsAscii(rootRegion, fs);
@@ -157,24 +155,16 @@ DumpTransformation::outputAsGraph(
 }
 
 // ---------------------------------------------------------------------------
-// StructuralDot — HLS-structural rendering via ToDot() from view.hpp
+// StructuralDot — HLS-structural rendering via ToDot() from view.hpp.
 // ---------------------------------------------------------------------------
 
 void
-DumpTransformation::outputAsStructuralDot(
-    const rvsdg::Region & region,
-    const std::unordered_map<rvsdg::Output *, ViewColors> & outputColor,
-    const std::unordered_map<rvsdg::Input *, ViewColors> & inputColor,
-    const std::unordered_map<rvsdg::Output *, ViewColors> & tailLabel,
-    std::ofstream & out)
+DumpTransformation::outputAsStructuralDot(const rvsdg::Region & region, std::ofstream & out)
 {
-  auto dot = ToDot(
-      const_cast<rvsdg::Region *>(&region),
-      const_cast<std::unordered_map<rvsdg::Output *, ViewColors> &>(outputColor),
-      const_cast<std::unordered_map<rvsdg::Input *, ViewColors> &>(inputColor),
-      const_cast<std::unordered_map<rvsdg::Output *, ViewColors> &>(tailLabel));
-
-  out << dot;
+  std::unordered_map<rvsdg::Output *, ViewColors> outputColor;
+  std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
+  std::unordered_map<rvsdg::Output *, ViewColors> tailLabel;
+  out << ToDot(const_cast<rvsdg::Region *>(&region), outputColor, inputColor, tailLabel);
 }
 
 // ---------------------------------------------------------------------------

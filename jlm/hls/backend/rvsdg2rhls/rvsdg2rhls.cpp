@@ -407,8 +407,8 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgG
   // Each Run() produces one file per configured format. All available annotation
   // types are applied automatically — no per-format tuning needed.
   //
-  //   [name]-[unique]-00X-pass-name.dot              GraphViz DOT (LlvmDotWriter)
-  //   [name]-[unique]-00X-pass-name-hls.dot          HLS-annotated DOT (HlsDotWriter)
+  //   [name]-[unique]-00X-pass-name.llvm.dot         GraphViz DOT (LlvmDotWriter)
+  //   [name]-[unique]-00X-pass-name.hls.dot          HLS-annotated DOT (HlsDotWriter)
   //   [name]-[unique]-00X-pass-name.structural.dot   Structural node ports (ToDot)
   //   [name]-[unique]-00X-pass-name.json             Structured JSON graph
   //   [name]-[unique]-00X-pass-name.txt              Human-readable indented text
@@ -424,7 +424,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgG
 
   std::vector<std::shared_ptr<rvsdg::Transformation>> sequence;
   size_t dumpIndex = 0;
-  auto push = [&sequence, &dumpIndex](auto && t)
+  auto push = [&sequence](auto && t)
   {
     sequence.push_back(std::forward<decltype(t)>(t));
   };

@@ -108,6 +108,7 @@ run-libhls-tests_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/SinkInsertionTests.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaTests.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests.cpp \
+    jlm/hls/opt/DumpTransformationTests.cpp \
     jlm/hls/opt/IOBarrierRemovalTests.cpp \
     jlm/hls/opt/IOStateEliminationTests.cpp \
     jlm/hls/util/ViewTests.cpp \

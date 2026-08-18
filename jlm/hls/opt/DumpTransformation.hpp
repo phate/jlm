@@ -44,17 +44,13 @@ public:
   /** Supported output formats. Each corresponds to an existing rendering backend. */
   enum class OutputFormat
   {
-    FirstEnumValue, /**< Must always be first -- used for iteration. */
-
     Dot,           /**< GraphViz DOT (uses LlvmDotWriter + util::graph::Writer) */
     HlsDot,        /**< GraphViz DOT with HLS type annotations (HlsDotWriter) */
     StructuralDot, /**< RVSDG structural node ports (ToDot from view.hpp) */
     Json,          /**< Structured JSON per-region graph (LlvmDotWriter + json) */
     Ascii,         /**< Human-readable indented text (rvsdg::view) */
     Tree,          /**< Annotated tree view (rvsdg::Region::ToTree with annotations) */
-    JsonTree,      /**< Hierarchical JSON tree (rvsdg::Region::toJson) */
-
-    LastEnumValue /**< Must always be last -- used for iteration. */
+    JsonTree       /**< Hierarchical JSON tree (rvsdg::Region::toJson) */
   };
 
   /** Lightweight configuration passed to the constructor. */
@@ -62,11 +58,6 @@ public:
   {
     bool recursive = true;             /**< Include subregions (for Dot/Json only). */
     std::vector<OutputFormat> formats; /**< Formats to produce in a single Run(). */
-
-    /** Optional color maps for StructuralDot rendering. Empty maps are ignored. */
-    std::unordered_map<rvsdg::Output *, ViewColors> outputColor;
-    std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
-    std::unordered_map<rvsdg::Output *, ViewColors> tailLabel;
   };
 
   ~DumpTransformation() noexcept override;
@@ -123,14 +114,9 @@ private:
   void
   outputAsGraph(const rvsdg::Region & region, OutputFormat format, std::ofstream & out);
 
-  /** Output HLS-structural DOT with optional color maps (ToDot from view.hpp). */
+  /** Output HLS-structural DOT with default colors (ToDot from view.hpp). */
   static void
-  outputAsStructuralDot(
-      const rvsdg::Region & region,
-      const std::unordered_map<rvsdg::Output *, ViewColors> & outputColor,
-      const std::unordered_map<rvsdg::Input *, ViewColors> & inputColor,
-      const std::unordered_map<rvsdg::Output *, ViewColors> & tailLabel,
-      std::ofstream & out);
+  outputAsStructuralDot(const rvsdg::Region & region, std::ofstream & out);
 
   /** Output human-readable ASCII tree via rvsdg::view(). */
   static void
