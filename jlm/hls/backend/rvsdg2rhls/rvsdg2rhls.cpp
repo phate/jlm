@@ -25,9 +25,9 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
+#include <jlm/hls/opt/DumpTransformation.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/opt/IOStateElimination.hpp>
-#include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/DotWriter.hpp>
@@ -46,7 +46,6 @@
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -402,50 +401,144 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgG
   auto bufferInsertion = std::make_shared<BufferInsertion>();
   auto rhlsVerification = std::make_shared<RhlsVerification>();
 
-  // Use this transformation to dump HLS dot graphs at specific points in the sequence
-  [[maybe_unused]] auto dumpDot = std::make_shared<DumpDotTransformation>();
+  // -------------------------------------------------------------------------
+  // Debug dumping: DumpTransformation
+  //
+  // Each Run() produces one file per configured format. All available annotation
+  // types are applied automatically — no per-format tuning needed.
+  //
+  //   [name]-[unique]-00X-pass-name.dot              GraphViz DOT (LlvmDotWriter)
+  //   [name]-[unique]-00X-pass-name-hls.dot          HLS-annotated DOT (HlsDotWriter)
+  //   [name]-[unique]-00X-pass-name.structural.dot   Structural node ports (ToDot)
+  //   [name]-[unique]-00X-pass-name.json             Structured JSON graph
+  //   [name]-[unique]-00X-pass-name.txt              Human-readable indented text
+  //   [name]-[unique]-00X-pass-name.tree.txt         Annotated tree view (all annotations)
+  //   [name]-[unique]-00X-pass-name.tree.json        Hierarchical JSON tree
+  //
+  // Usage: comment out formats you don't need, and set enableDumps = true.
+  // Each dump point is its own instance so the label is captured per-entry
+  // rather than being shared/mutated across the sequence.
+  // -------------------------------------------------------------------------
 
-  std::vector<std::shared_ptr<rvsdg::Transformation>> sequence({
-      loopUnswitching,
-      deadNodeElimination,
-      commonNodeElimination,
-      invariantValueRedirection,
-      predicateCorrelation,
-      deadNodeElimination,
-      commonNodeElimination,
-      deadNodeElimination,
-      ioBarrierRemoval,
-      ioStateElimination,
-      memoryStateSeparation,
-      gammaMerge,
-      unusedStateRemoval,
-      deadNodeElimination,
-      loopUnswitching,
-      commonNodeElimination,
-      deadNodeElimination,
-      gammaMerge,
-      deadNodeElimination,
-      unusedStateRemoval,
-      constantDistribution,
-      deadNodeElimination,
-      gammaNodeConversion,
-      thetaNodeConversion,
-      commonNodeElimination,
-      rhlsDeadNodeElimination,
-      allocaNodeConversion,
-      streamConversion,
-      addressQueueInsertion,
-      memoryStateDecoupling,
-      unusedStateRemoval,
-      memoryConverter,
-      nodeReduction,
-      memoryStateSplitConversion,
-      redundantBufferElimination,
-      sinkInsertion,
-      forkInsertion,
-      bufferInsertion,
-      rhlsVerification,
-  });
+  constexpr bool enableDumps = false;
+
+  std::vector<std::shared_ptr<rvsdg::Transformation>> sequence;
+  size_t dumpIndex = 0;
+  auto push = [&sequence, &dumpIndex](auto && t)
+  {
+    sequence.push_back(std::forward<decltype(t)>(t));
+  };
+  auto pushDump = [enableDumps, &sequence, &dumpIndex](const std::string & label)
+  {
+    if (!enableDumps)
+    {
+      sequence.push_back(std::make_shared<DumpTransformation>(DumpTransformation::Disabled));
+      return;
+    }
+
+    DumpTransformation::Config config;
+    config.formats = {
+      // GraphViz DOT via LlvmDotWriter — basic node/port structure.
+      DumpTransformation::OutputFormat::Dot,
+      // HLS-annotated DOT via HlsDotWriter — includes HLS types (TriggerType, BundleType).
+      DumpTransformation::OutputFormat::HlsDot,
+      // Structural ports via ToDot(view.hpp) — shows input/output connections.
+      DumpTransformation::OutputFormat::StructuralDot,
+      // Structured JSON per-region graph — machine-readable structure.
+      DumpTransformation::OutputFormat::Json,
+      // Human-readable indented text — quick inspection of RVSDG shape.
+      DumpTransformation::OutputFormat::Ascii,
+      // Annotated tree view (all annotation types applied).
+      DumpTransformation::OutputFormat::Tree,
+      // Hierarchical JSON tree — structured output for tooling.
+      DumpTransformation::OutputFormat::JsonTree,
+    };
+
+    auto dumpDot = std::make_shared<DumpTransformation>(std::move(config));
+    dumpDot->setLabel(label);
+    dumpDot->setPassNumber(dumpIndex++);
+    sequence.push_back(dumpDot);
+  };
+
+  // Push each transformation followed by its dump point.
+  push(loopUnswitching);
+  pushDump("loop-unswitching");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination");
+  push(commonNodeElimination);
+  pushDump("common-node-elimination");
+  push(invariantValueRedirection);
+  pushDump("invariant-value-redirection");
+  push(predicateCorrelation);
+  pushDump("predicate-correlation");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-2");
+  push(commonNodeElimination);
+  pushDump("common-node-elimination-2");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-3");
+  push(ioBarrierRemoval);
+  pushDump("io-barrier-removal");
+  push(ioStateElimination);
+  pushDump("io-state-elimination");
+  push(memoryStateSeparation);
+  pushDump("memory-state-separation");
+  push(gammaMerge);
+  pushDump("gamma-merge");
+  push(unusedStateRemoval);
+  pushDump("unused-state-removal");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-4");
+  push(loopUnswitching);
+  pushDump("loop-unswitching-2");
+  push(commonNodeElimination);
+  pushDump("common-node-elimination-3");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-5");
+  push(gammaMerge);
+  pushDump("gamma-merge-2");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-6");
+  push(unusedStateRemoval);
+  pushDump("unused-state-removal-2");
+  push(constantDistribution);
+  pushDump("constant-distribution");
+  push(deadNodeElimination);
+  pushDump("dead-node-elimination-7");
+  push(gammaNodeConversion);
+  pushDump("gamma-node-conversion");
+  push(thetaNodeConversion);
+  pushDump("theta-node-conversion");
+  push(commonNodeElimination);
+  pushDump("common-node-elimination-4");
+  push(rhlsDeadNodeElimination);
+  pushDump("rhls-dead-node-elimination");
+  push(allocaNodeConversion);
+  pushDump("alloca-node-conversion");
+  push(streamConversion);
+  pushDump("stream-conversion");
+  push(addressQueueInsertion);
+  pushDump("address-queue-insertion");
+  push(memoryStateDecoupling);
+  pushDump("memory-state-decoupling");
+  push(unusedStateRemoval);
+  pushDump("unused-state-removal-3");
+  push(memoryConverter);
+  pushDump("memory-converter");
+  push(nodeReduction);
+  pushDump("node-reduction");
+  push(memoryStateSplitConversion);
+  pushDump("memory-state-split-conversion");
+  push(redundantBufferElimination);
+  pushDump("redundant-buffer-elimination");
+  push(sinkInsertion);
+  pushDump("sink-insertion");
+  push(forkInsertion);
+  pushDump("fork-insertion");
+  push(bufferInsertion);
+  pushDump("buffer-insertion");
+  push(rhlsVerification);
+  pushDump("rhls-verification");
 
   return std::make_unique<rvsdg::TransformationSequence>(
       std::move(sequence),
