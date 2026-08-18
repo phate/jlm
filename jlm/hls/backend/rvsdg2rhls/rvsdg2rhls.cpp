@@ -428,7 +428,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgG
   {
     sequence.push_back(std::forward<decltype(t)>(t));
   };
-  auto pushDump = [enableDumps, &sequence, &dumpIndex](const std::string & label)
+  auto pushDump = [&sequence, &dumpIndex](const std::string & label)
   {
     if (!enableDumps)
     {
