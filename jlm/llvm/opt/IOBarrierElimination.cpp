@@ -195,7 +195,7 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
   for (auto & node : region.Nodes())
   {
     rvsdg::MatchType(
-    node.GetOperation(),
+        node.GetOperation(),
         [&](const rvsdg::PhiOperation &)
         {
           const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(&node);
