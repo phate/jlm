@@ -19,6 +19,7 @@ jobs:
     - name: "Build jlm"
       uses: ./.github/actions/BuildJlm
       with:
+        make-target: 'all-without-tests'
         enable-hls: true
     - name: "Install verilator"
       uses: ./.github/actions/InstallPackages
