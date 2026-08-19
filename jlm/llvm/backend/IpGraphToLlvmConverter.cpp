@@ -1729,11 +1729,9 @@ IpGraphToLlvmConverter::convert_operation(
     auto ptrOperand = Context_->value(arguments[0]);
     auto maskOperand = Context_->value(arguments[1]);
 
-    auto type =
-        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
     return builder.CreateIntrinsic(
         ::llvm::Intrinsic::ptrmask,
-        { type },
+        { ptrOperand->getType(), maskOperand->getType() },
         { ptrOperand, maskOperand });
   }
 
