@@ -1426,6 +1426,19 @@ convertCopysignIntrinsic(
 }
 
 static const Variable *
+convertPtrMaskIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto ptrOperand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto maskOperand = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(PtrMaskOperation::createTac(*ptrOperand, *maskOperand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
 convertFAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
 {
   const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
@@ -1778,6 +1791,8 @@ convertIntrinsicInstruction(
     JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
     return nullptr;
   }
+  case ::llvm::Intrinsic::ptrmask:
+    return convertPtrMaskIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::rint:
     return convertRIntIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::round:

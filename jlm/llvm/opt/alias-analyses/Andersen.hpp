@@ -368,6 +368,9 @@ private:
   AnalyzeGep(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzePtrMask(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeBitcast(const rvsdg::SimpleNode & node);
 
   void

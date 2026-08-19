@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -649,6 +650,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeGep(node);
       },
+      [&](const PtrMaskOperation &)
+      {
+        AnalyzePtrMask(node);
+      },
       [&](const BitCastOperation &)
       {
         AnalyzeBitcast(node);
@@ -838,6 +843,20 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 
   // The analysis is field insensitive, so ignoring the offset and mapping the output
   // to the same PointerObject as the input is sufficient.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.Type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzePtrMask(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PtrMaskOperation>(node.GetOperation()));
+
+  // FIXME: What about vector of pointers?
   const auto & baseRegister = *node.input(0)->origin();
   JLM_ASSERT(is<PointerType>(baseRegister.Type()));
 

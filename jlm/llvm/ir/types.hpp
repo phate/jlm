@@ -553,6 +553,26 @@ isVectorOf(const rvsdg::Type & type)
 }
 
 /**
+ * Checks if \p type is a vector of type \p T with size \p size.
+ *
+ * @tparam T The element type of the vector.
+ * @param type The type to check.
+ * @param size The size of the vector.
+ * @return True, if it is a vector of type \p T, otherwise false.
+ */
+template<class T>
+bool
+isVectorOfSize(const rvsdg::Type & type, const size_t size)
+{
+  static_assert(
+      std::is_base_of_v<rvsdg::Type, T>,
+      "Template parameter T must be derived from jlm::rvsdg::Type.");
+
+  auto vectorType = dynamic_cast<const VectorType *>(&type);
+  return vectorType && rvsdg::is<T>(vectorType->Type()) && vectorType->size() == size;
+}
+
+/**
  * Returns the size of the given type's representation, in bytes.
  * More specifically, the size is the number of bytes affected when storing value of the given type
  * to memory. Unlike C's sizeof() operator, the size is not rounded up to a multiple of alignment.
