@@ -5,7 +5,7 @@ on:
 
 jobs:
   clang-debug-all-dialects-asserts:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm with clang++ for all dialects in debug mode."
@@ -19,7 +19,7 @@ jobs:
           enable-asserts: 'true'
 
   clang-release-all-dialects:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm with clang++ for all dialects in release mode."
@@ -33,7 +33,7 @@ jobs:
           enable-asserts: 'false'
 
   clang-release-no-dialects:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm with clang++ for all dialects in release mode."
@@ -47,7 +47,7 @@ jobs:
           enable-asserts: 'false'
 
   gcc-debug-all-dialects-asserts:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm dialects with g++ in debug mode."
@@ -61,7 +61,7 @@ jobs:
           enable-asserts: 'true'
 
   gcc-release-all-dialects:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm dialects with g++ in release mode."
@@ -75,7 +75,7 @@ jobs:
           enable-asserts: 'false'
 
   gcc-release-no-dialects:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm dialects with g++ in release mode."
