@@ -9,17 +9,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  UnitTests:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Run unit tests and C tests"
-        uses: ./.github/actions/BuildJlm
-        with:
-          enable-hls: true
-          enable-mlir: true
-          make-target: check
-
   UnitTestsWithValgrind:
     runs-on: ubuntu-22.04
     steps:
