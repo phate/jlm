@@ -7,6 +7,14 @@ GENERATED_FILES += $(EXECUTABLES)
 
 all: $(SHARED_LIBRARIES) $(STATIC_LIBRARIES) $(EXECUTABLES)
 
+# Build the libraries and production executables without building test
+# executables or coverage-instrumented test executables.
+.PHONY: all-without-tests
+all-without-tests: \
+	$(SHARED_LIBRARIES) \
+	$(STATIC_LIBRARIES) \
+	$(filter-out $(TEST_EXECUTABLES) $(COVERAGE_EXECUTABLES),$(EXECUTABLES))
+
 # commands for generating various types of targets
 
 EXECUTABLE_LINK = $(CXX)

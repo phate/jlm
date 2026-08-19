@@ -65,22 +65,22 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: "Get LLVM apt key"
+    - name: "Configure and update LLVM apt source"
       if: ${{inputs.install-llvm == 'true'
         || inputs.install-clang == 'true'
         || inputs.install-mlir == 'true'
         || inputs.install-clang-format == 'true'
         || inputs.install-clang-tidy == 'true'}}
       run: |
-        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-${{inputs.llvm-version}})
-        if [[ -z $HAS_LLVM_REPOSITORY ]]; then
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          sudo add-apt-repository --no-update deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{inputs.llvm-version}} main
+        LLVM_SOURCE=/etc/apt/sources.list.d/jlm-llvm.list
+        if [[ ! -f "${LLVM_SOURCE}" ]]; then
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc >/dev/null
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{inputs.llvm-version}} main" | sudo tee "${LLVM_SOURCE}" >/dev/null
         fi
-      shell: bash
-
-    - name: "Update apt sources"
-      run: sudo apt-get update
+        sudo apt-get update \
+          -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/jlm-llvm.list \
+          -o Dir::Etc::sourceparts=- \
+          -o APT::Get::List-Cleanup=0
       shell: bash
 
     - name: "Install LLVM package"
