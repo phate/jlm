@@ -44,9 +44,6 @@ private:
   void
   sweepRegion(rvsdg::Region & region);
 
-  static void
-  removeIOBarrierNode(rvsdg::Node & node);
-
   std::unique_ptr<Context> context_{};
 };
 

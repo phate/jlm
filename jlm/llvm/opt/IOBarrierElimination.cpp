@@ -192,48 +192,39 @@ IOBarrierElimination::markNode(const rvsdg::Node & node)
 void
 IOBarrierElimination::sweepRegion(rvsdg::Region & region)
 {
-  for (const auto node : rvsdg::BottomUpTraverser(&region))
+  for (auto & node : region.Nodes())
   {
     rvsdg::MatchType(
-        node->GetOperation(),
+    node.GetOperation(),
         [&](const rvsdg::PhiOperation &)
         {
-          const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(node);
+          const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(&node);
           sweepRegion(*phiNode->subregion());
         },
         [&](const LlvmLambdaOperation &)
         {
-          const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(node);
+          const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(&node);
           sweepRegion(*lambdaNode->subregion());
         },
         [&](const LoadNonVolatileOperation & loadOperation)
         {
-          const auto & addressOperand = *LoadOperation::AddressInput(*node).origin();
+          auto & loadAddress = LoadOperation::AddressInput(node);
           auto [ioBarrierNode, ioBarrierOp] =
-              rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(addressOperand);
+              rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*loadAddress.origin());
           if (!ioBarrierOp)
             return;
 
-          const auto & barredAddressOperand =
-              *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-          auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
+          auto & barredAddressOperand = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+          const auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
           const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
           if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
             return;
 
-          removeIOBarrierNode(*ioBarrierNode);
+          loadAddress.divert_to(&barredAddressOperand);
         });
   }
-}
 
-void
-IOBarrierElimination::removeIOBarrierNode(rvsdg::Node & node)
-{
-  JLM_ASSERT(is<IOBarrierOperation>(&node));
-
-  const auto & barredInput = IOBarrierOperation::BarredInput(node);
-  node.output(0)->divert_users(barredInput.origin());
-  remove(&node);
+  region.prune(false);
 }
 
 }

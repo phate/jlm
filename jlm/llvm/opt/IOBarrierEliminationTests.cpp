@@ -147,4 +147,57 @@ TEST(IOBarrierEliminationTests, testSuccess)
   EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
+TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i8Type = BitType::Create(8);
+  auto i32Type = BitType::Create(32);
+  auto i64Type = BitType::Create(64);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, ioStateType }, { i32Type, i8Type, i64Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i32Type, 4);
+
+  auto testNode =
+      TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
+
+  auto & ioBarrierNode = IOBarrierOperation::createNode(*ptrArgument, *testNode->output(0));
+
+  auto & load8Node = LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i8Type, 4);
+
+  auto & load64Node =
+      LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i64Type, 4);
+
+  auto lambdaOutput = lambdaNode->finalize(
+      { load32Node.output(0), load8Node.output(0), load64Node.output(0), testNode->output(0) });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+
+  // We expect that the load8Node is not any longer barred behind the IOBarrier node as ptrArgument
+  // is dereferenceable for 32 bits.
+  EXPECT_EQ(LoadOperation::AddressInput(load8Node).origin(), ptrArgument);
+
+  // We expect that the load64Node is still barred behind the IOBarrier node as ptrArgument is only
+  // dereferenceable for 64 bits.
+  EXPECT_EQ(LoadOperation::AddressInput(load64Node).origin(), ioBarrierNode.output(0));
+}
+
 }
