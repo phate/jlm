@@ -29,7 +29,7 @@ public:
   {}
 
   void
-  startMarkStatistics(const rvsdg::Graph & graph) noexcept
+  startMarkStatistics() noexcept
   {
     AddTimer(MarkTimerLabel_).start();
   }
@@ -47,7 +47,7 @@ public:
   }
 
   void
-  stopSweepStatistics(const rvsdg::Graph & graph) noexcept
+  stopSweepStatistics() noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
   }
@@ -122,13 +122,13 @@ IOBarrierElimination::Run(
   context_ = Context::create();
   auto statistics = Statistics::create(module.SourceFilePath().value());
 
-  statistics->startMarkStatistics(rvsdg);
+  statistics->startMarkStatistics();
   markRegion(rvsdg.GetRootRegion());
   statistics->stopMarkStatistics();
 
   statistics->startSweepStatistics();
   sweepRegion(rvsdg.GetRootRegion());
-  statistics->stopSweepStatistics(rvsdg);
+  statistics->stopSweepStatistics();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
