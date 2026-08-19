@@ -26,6 +26,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run polybench"
         run: ./scripts/run-polybench.sh
 
@@ -35,6 +37,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-opt"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-opt
 
@@ -45,6 +49,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-andersen-agnostic"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-agnostic
 
@@ -54,5 +60,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-andersen-region-aware"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-region-aware

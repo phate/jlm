@@ -16,6 +16,7 @@ jobs:
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
         with:
+          make-target: 'all-without-tests'
           build-mode: release
           enable-asserts: true
       - name: "Cache build"
