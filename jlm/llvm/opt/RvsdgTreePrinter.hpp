@@ -129,6 +129,23 @@ public:
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
+public:
+  /**
+   * Render an annotated tree string for the given \p region with all available annotations.
+   *
+   * This convenience method applies every annotation type to the RVSDG and produces a
+   * human-readable indented tree output via \ref rvsdg::Region::ToTree. It encapsulates the full
+   * annotation-compute-and-render pipeline so callers do not need to invoke individual annotator
+   * functions or handle the intermediate \ref AnnotationMap.
+   *
+   * @param graph The RVSDG graph (required because annotation computation walks the entire region
+   *              tree).
+   * @param region The region whose annotated tree to render.
+   * @return A string containing the fully annotated tree.
+   */
+  [[nodiscard]] static std::string
+  RenderAnnotatedTree(const rvsdg::Graph & graph, const rvsdg::Region & region);
+
 private:
   /**
    * Computes a map with annotations based on the required \ref jlm::util::Annotation%s in the \ref
@@ -175,7 +192,7 @@ private:
   /**
    * Adds the ID of a region and structural node to \p annotationMap.
    *
-   * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param rvsdg The RVSDG for which to compute the annotations.
    * @param annotationMap The annotation map in which the annotation is inserted.
    *
    * @see DebugIds
