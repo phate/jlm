@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -292,10 +293,17 @@ FunctionInlining::inlineCall(
 
   // Set up substitution map for function arguments and context variables
   rvsdg::SubstitutionMap smap;
+  auto & ioStateOperand = *CallOperation::GetIOStateInput(callNode).origin();
   auto arguments = callee.GetFunctionArguments();
   for (size_t n = 0; n < arguments.size(); n++)
   {
-    smap.insert(arguments[n], callNode.input(n + 1)->origin());
+    auto callOperand = callNode.input(n + 1)->origin();
+    if (IsOrContains<PointerType>(*callOperand->Type()))
+    {
+      callOperand = IOBarrierOperation::createNode(*callOperand, ioStateOperand).output(0);
+    }
+
+    smap.insert(arguments[n], callOperand);
   }
 
   const auto routedDeps = routeContextVariablesToRegion(*callNode.region(), callee);
@@ -303,7 +311,12 @@ FunctionInlining::inlineCall(
   JLM_ASSERT(contextVars.size() == routedDeps.size());
   for (size_t n = 0; n < contextVars.size(); n++)
   {
-    smap.insert(contextVars[n].inner, routedDeps[n]);
+    auto dep = routedDeps[n];
+    if (IsOrContains<PointerType>(*dep->Type()))
+    {
+      dep = IOBarrierOperation::createNode(*dep, ioStateOperand).output(0);
+    }
+    smap.insert(contextVars[n].inner, dep);
   }
 
   // Use the substitution map to copy the function body into the caller region

@@ -9,12 +9,16 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -434,4 +438,116 @@ TEST(FunctionInliningTests, testFunctionWithDisqualifyingAlloca)
   EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#Functions"), 1u);
   // f1 should not be considered inlinable, due to the alloca
   EXPECT_EQ(statistics->GetMeasurementValue<uint64_t>("#InlineableFunctions"), 0u);
+}
+
+TEST(FunctionInliningTests, testIOBarrierInsertion)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  auto vt = TestType::createValueType();
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto iOStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+
+  auto SetupD1 = [&]()
+  {
+    auto deltaNode = DeltaNode::Create(
+        &graph.GetRootRegion(),
+        LlvmDeltaOperation::Create(i32Type, "delta", Linkage::externalLinkage, "", true, 4));
+    auto & constant = IntegerConstantOperation::Create(*deltaNode->subregion(), 32, 4);
+    deltaNode->finalize(constant.output(0));
+    return deltaNode;
+  };
+
+  auto SetupF1 = [&](Output * d1)
+  {
+    auto functionType = FunctionType::Create(
+        { pointerType, IOStateType::Create(), MemoryStateType::Create() },
+        { i32Type, i32Type, IOStateType::Create(), MemoryStateType::Create() });
+
+    auto lambda = LambdaNode::Create(
+        graph.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f1", Linkage::externalLinkage));
+    auto ctxVar = lambda->AddContextVar(*d1);
+    auto ptrArgument = lambda->GetFunctionArguments()[0];
+    auto ioStateArgument = lambda->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[2];
+
+    auto & loadNode1 =
+        LoadNonVolatileOperation::CreateNode(*ptrArgument, { memoryStateArgument }, i32Type, 4);
+
+    auto & loadNode2 =
+        LoadNonVolatileOperation::CreateNode(*ctxVar.inner, { loadNode1.output(1) }, i32Type, 4);
+
+    return lambda->finalize(
+        { loadNode1.output(0), loadNode2.output(0), ioStateArgument, loadNode2.output(1) });
+  };
+
+  auto SetupF2 = [&](Output * f1)
+  {
+    auto ct = ControlType::Create(2);
+    auto functionType = FunctionType::Create(
+        { pointerType, IOStateType::Create(), MemoryStateType::Create() },
+        { i32Type, i32Type, IOStateType::Create(), MemoryStateType::Create() });
+
+    auto lambda = LambdaNode::Create(
+        graph.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f2", Linkage::externalLinkage));
+    auto ctxVar = lambda->AddContextVar(*f1);
+    auto ptrArgument = lambda->GetFunctionArguments()[0];
+    auto iOStateArgument = lambda->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[2];
+
+    auto callResults = CallOperation::Create(
+        ctxVar.inner,
+        jlm::rvsdg::AssertGetOwnerNode<LambdaNode>(*f1).GetOperation().Type(),
+        { ptrArgument, iOStateArgument, memoryStateArgument });
+
+    lambda->finalize({ callResults[0], callResults[1], callResults[2], callResults[3] });
+    return lambda;
+  };
+
+  auto d1 = SetupD1();
+  auto f1 = SetupF1(&d1->output());
+  auto f2 = SetupF2(f1);
+
+  GraphExport::Create(*f2->output(), "f2");
+
+  // Act
+  auto statistics = runInlining(rvsdgModule);
+
+  // Assert
+  // Check that the call has been replaced by the test operation inside f1
+  EXPECT_FALSE(Region::containsOperation<CallOperation>(graph.GetRootRegion(), true));
+
+  // We expect a two load and IOBarrier nodes
+  EXPECT_EQ(f2->subregion()->numNodes(), 4);
+
+  {
+    auto [loadNode, loadOp] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+        *f2->GetFunctionResults()[0]->origin());
+    EXPECT_NE(loadOp, nullptr);
+
+    auto [ioBarrierNode, ioBarrierOp] = TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(
+        *LoadOperation::AddressInput(*loadNode).origin());
+    EXPECT_NE(ioBarrierOp, nullptr);
+    EXPECT_EQ(ioBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
+  }
+
+  {
+    auto [loadNode, loadOp] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+        *f2->GetFunctionResults()[1]->origin());
+    EXPECT_NE(loadOp, nullptr);
+
+    auto [ioBarrierNode, ioBarrierOp] = TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(
+        *LoadOperation::AddressInput(*loadNode).origin());
+    EXPECT_NE(ioBarrierOp, nullptr);
+    EXPECT_EQ(ioBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
+  }
 }
