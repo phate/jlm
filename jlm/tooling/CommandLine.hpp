@@ -73,6 +73,7 @@ public:
     DeadNodeElimination,
     FunctionInlining,
     IfConversion,
+    IOBarrierElimination,
     InvariantValueRedirection,
     LoadChainSeparation,
     LoopStrengthReduction,

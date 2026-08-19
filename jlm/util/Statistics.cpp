@@ -30,6 +30,7 @@ GetStatisticsIdNames()
     { Statistics::Id::DeadNodeElimination, "DeadNodeElimination" },
     { Statistics::Id::FunctionInlining, "ILN" },
     { Statistics::Id::IfConversion, "IfConversion" },
+    { Statistics::Id::IOBarrierElimination, "IOBarrierElimination" },
     { Statistics::Id::JlmToRvsdgConversion, "ControlFlowGraphToLambda" },
     { Statistics::Id::LoopStrengthReduction, "LoopStrengthReduction" },
     { Statistics::Id::LoopUnrolling, "UNROLL" },
