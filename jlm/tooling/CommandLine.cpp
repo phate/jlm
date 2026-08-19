@@ -210,6 +210,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
     { util::Statistics::Id::IfConversion, "print-if-conversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
+    { util::Statistics::Id::IOBarrierElimination, "print-io-barrier-elimination" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopStrengthReduction, "print-loop-strength-reduction" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },

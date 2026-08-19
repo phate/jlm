@@ -16,6 +16,49 @@
 namespace jlm::llvm
 {
 
+class IOBarrierElimination::Statistics final : public util::Statistics
+{
+  const char * MarkTimerLabel_ = "MarkTime";
+  const char * SweepTimerLabel_ = "SweepTime";
+
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Id::IOBarrierElimination, sourceFile)
+  {}
+
+  void
+  startMarkStatistics(const rvsdg::Graph & graph) noexcept
+  {
+    AddTimer(MarkTimerLabel_).start();
+  }
+
+  void
+  stopMarkStatistics() noexcept
+  {
+    GetTimer(MarkTimerLabel_).stop();
+  }
+
+  void
+  startSweepStatistics() noexcept
+  {
+    AddTimer(SweepTimerLabel_).start();
+  }
+
+  void
+  stopSweepStatistics(const rvsdg::Graph & graph) noexcept
+  {
+    GetTimer(SweepTimerLabel_).stop();
+  }
+
+  static std::unique_ptr<Statistics>
+  create(const util::FilePath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+};
+
 class IOBarrierElimination::Context
 {
 public:
@@ -53,38 +96,6 @@ public:
     return it->second;
   }
 
-  /**
-   * Mark \p node eliminable.
-   *
-   * @param node An \ref IOBarrierOperation node
-   * @return True, if the node was not already marked as eliminable, otherwise false.
-   */
-  bool
-  markEliminable(const rvsdg::Node & node)
-  {
-    JLM_ASSERT(is<IOBarrierOperation>(node.GetOperation()));
-    return eliminableIOBarriers_.insert(&node);
-  }
-
-  bool
-  isEliminable(const rvsdg::Node & node) const
-  {
-    // We only care about IOBarrierOperation nodes.
-    if (!is<IOBarrierOperation>(node.GetOperation()))
-      return false;
-
-    // The IOBarrier node was directly marked for elimination
-    if (eliminableIOBarriers_.Contains(&node))
-      return true;
-
-    // Its barred input was marked as dereferenceable
-    const auto & barredInput = IOBarrierOperation::BarredInput(node);
-    if (dereferenceableOutputs_.find(barredInput.origin()) != dereferenceableOutputs_.end())
-      return true;
-
-    return false;
-  }
-
   static std::unique_ptr<Context>
   create()
   {
@@ -93,7 +104,6 @@ public:
 
 private:
   std::unordered_map<const rvsdg::Output *, size_t> dereferenceableOutputs_{};
-  util::HashSet<const rvsdg::Node *> eliminableIOBarriers_{};
 };
 
 IOBarrierElimination::~IOBarrierElimination() = default;
@@ -110,9 +120,17 @@ IOBarrierElimination::Run(
   auto & rvsdg = module.Rvsdg();
 
   context_ = Context::create();
+  auto statistics = Statistics::create(module.SourceFilePath().value());
 
+  statistics->startMarkStatistics(rvsdg);
   markRegion(rvsdg.GetRootRegion());
+  statistics->stopMarkStatistics();
+
+  statistics->startSweepStatistics();
   sweepRegion(rvsdg.GetRootRegion());
+  statistics->stopSweepStatistics(rvsdg);
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done
   context_.reset();

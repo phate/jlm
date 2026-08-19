@@ -14,6 +14,7 @@ namespace jlm::llvm
 class IOBarrierElimination final : public rvsdg::Transformation
 {
   class Context;
+  class Statistics;
 
 public:
   ~IOBarrierElimination() override;
