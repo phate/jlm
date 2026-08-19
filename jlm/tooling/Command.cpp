@@ -20,6 +20,7 @@
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
@@ -422,6 +423,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_shared<llvm::IfConversion>();
+  case JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination:
+    return std::make_shared<llvm::IOBarrierElimination>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_shared<llvm::InvariantValueRedirection>(
         llvm::InvariantValueRedirection::Configuration());

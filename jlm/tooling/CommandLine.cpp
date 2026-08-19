@@ -100,6 +100,7 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::FunctionInlining, "FunctionInlining" },
     { OptimizationId::IfConversion, "IfConversion" },
     { OptimizationId::InvariantValueRedirection, "InvariantValueRedirection" },
+    { OptimizationId::IOBarrierElimination, "IOBarrierElimination" },
     { OptimizationId::LoadChainSeparation, "LoadChainSeparation" },
     { OptimizationId::LoopStrengthReduction, "LoopStrengthReduction" },
     { OptimizationId::LoopUnrolling, "LoopUnrolling" },
@@ -839,6 +840,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
+  auto ioBarrierElimination = JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination;
   auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
   auto loopStrengthReduction = JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
@@ -885,6 +887,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               invariantValueRedirection,
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
               "Invariant Value Redirection"),
+          ::clEnumValN(
+              ioBarrierElimination,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ioBarrierElimination),
+              "Eliminate IOBarrier nodes"),
           ::clEnumValN(
               loadChainSeparation,
               JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),

@@ -74,6 +74,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
+    jlm/llvm/opt/IOBarrierElimination.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
@@ -255,7 +256,6 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/IfConversionTests.cpp \
     jlm/llvm/opt/InliningTests.cpp \
     jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
-    jlm/llvm/opt/IOBarrierElimination.cpp \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \

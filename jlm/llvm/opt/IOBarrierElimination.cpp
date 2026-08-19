@@ -9,6 +9,7 @@
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
@@ -40,7 +41,6 @@ public:
   }
 
   /**
-   *
    * @return The size in bytes, if \p output is marked as dereferenceable, otherwise std::nullopt.
    */
   std::optional<size_t>
@@ -107,10 +107,12 @@ IOBarrierElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto & rvsdg = module.Rvsdg();
+
   context_ = Context::create();
 
-  auto & rvsdg = module.Rvsdg();
   markRegion(rvsdg.GetRootRegion());
+  sweepRegion(rvsdg.GetRootRegion());
 
   // Discard internal state to free up memory after we are done
   context_.reset();
@@ -130,21 +132,41 @@ IOBarrierElimination::markNode(const rvsdg::Node & node)
 {
   rvsdg::MatchType(
       node.GetOperation(),
+      [&](const rvsdg::PhiOperation &)
+      {
+        const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(&node);
+        markRegion(*phiNode->subregion());
+      },
       [&](const LlvmLambdaOperation &)
       {
         const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(&node);
         markRegion(*lambdaNode->subregion());
       },
-      [&](const IOBarrierOperation &)
+      [&](const LoadNonVolatileOperation & loadOperation)
       {
-        auto & ioStateInput = IOBarrierOperation::getIOStateInput(node);
+        const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
+        const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
 
-        if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*ioStateInput.origin()))
+        auto [ioBarrierNode, ioBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(addressOperand);
+        if (ioBarrierOp)
         {
-          // If the IO state is directly connected to a function argument, we can eliminate it as
-          // function inlining should reinsert a new IOBarrierOperation node when inlining is
-          // performed.
-          context_->markEliminable(node);
+          const auto & barredAddressOperand =
+              *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+          if (const auto & ioStateInput = IOBarrierOperation::getIOStateInput(*ioBarrierNode);
+              rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*ioStateInput.origin()))
+          {
+            // If the IO state is directly connected to a function argument, we can eliminate the
+            // IOBarrierOperation node as function inlining should reinsert a new IOBarrierOperation
+            // node when inlining is performed.
+            context_->markDereferenceable(barredAddressOperand, sizeInBytes);
+          }
+        }
+        else
+        {
+          // The load node is not connected to a IOBarrierOperation node. Mark its address operand
+          // as dereferenceable.
+          context_->markDereferenceable(addressOperand, sizeInBytes);
         }
       });
 }
@@ -154,15 +176,35 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
 {
   for (const auto node : rvsdg::BottomUpTraverser(&region))
   {
-    if (const auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
-    {
-      sweepRegion(*lambdaNode->subregion());
-    }
+    rvsdg::MatchType(
+        node->GetOperation(),
+        [&](const rvsdg::PhiOperation &)
+        {
+          const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(node);
+          sweepRegion(*phiNode->subregion());
+        },
+        [&](const LlvmLambdaOperation &)
+        {
+          const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(node);
+          sweepRegion(*lambdaNode->subregion());
+        },
+        [&](const LoadNonVolatileOperation & loadOperation)
+        {
+          const auto & addressOperand = *LoadOperation::AddressInput(*node).origin();
+          auto [ioBarrierNode, ioBarrierOp] =
+              rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(addressOperand);
+          if (!ioBarrierOp)
+            return;
 
-    if (context_->isEliminable(*node))
-    {
-      removeIOBarrierNode(*node);
-    }
+          const auto & barredAddressOperand =
+              *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+          auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
+          const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
+          if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
+            return;
+
+          removeIOBarrierNode(*ioBarrierNode);
+        });
   }
 }
 
