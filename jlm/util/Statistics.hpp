@@ -47,6 +47,7 @@ public:
     FunctionInlining,
     IfConversion,
     InvariantValueRedirection,
+    IOBarrierElimination,
     JlmToRvsdgConversion,
     LoopStrengthReduction,
     LoopUnrolling,
