@@ -142,5 +142,6 @@ runs:
       shell: bash
 
     - name: "Install gcovr package"
+      if: ${{inputs.install-gcovr == 'true'}}
       run: sudo apt-get install gcovr
       shell: bash
