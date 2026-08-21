@@ -368,6 +368,9 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
 
       if (auto inputCpy = mapStateOutputToInput(outputCpy))
       {
+        // FIXME: We introduce a slight impression here. If inputCpy->origin() has more than a
+        // single user, then all users will all in a sudden be sequentialized after the hoisted node
+        // even though they were only sequentialized by the producer of inputCpy->origin() before.
         inputCpy->origin()->divertUsersWhere(
             outputCpy,
             [&inputCpy](const rvsdg::Input & input)
