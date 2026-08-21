@@ -4,6 +4,8 @@
  */
 
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -17,6 +19,8 @@
 
 #include <algorithm>
 #include <deque>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 
 namespace jlm::llvm
 {
@@ -112,8 +116,17 @@ NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & lo
   return true;
 }
 
+static bool
+isLoadNonVolatileOperationMemoryState(
+    const rvsdg::Output & output,
+    const rvsdg::Operation & operation)
+{
+  return is<MemoryStateType>(output.Type()) && is<LoadNonVolatileOperation>(operation);
+}
+
 rvsdg::Region &
-NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
+NodeHoisting::computeTargetRegion(const rvsdg::Output & output, const rvsdg::Operation & operation)
+    const
 {
   // Handle lambda region arguments
   if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
@@ -124,18 +137,18 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   // Handle gamma region arguments
   if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    if (output.Type()->Kind() == rvsdg::TypeKind::State)
+    if (output.Type()->Kind() == rvsdg::TypeKind::State
+        && !isLoadNonVolatileOperationMemoryState(output, operation))
     {
-      // FIXME: This is a bit too conservative. For example, it avoids that load and store nodes are
-      // hoisted out of a gamma node, but we would only like to avoid store nodes being hoisted out.
-      // For load nodes, it is legal to hoist them out if they are not preceded by an IOBarrier.
+      // Do not hoist nodes with state edges out of gamma nodes, except LoadNonVolatileOperation
+      // nodes.
       return *output.region();
     }
 
     const auto roleVar = gammaNode->MapBranchArgument(output);
     if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
     {
-      return computeTargetRegion(*entryVar->input->origin());
+      return computeTargetRegion(*entryVar->input->origin(), operation);
     }
 
     return *output.region();
@@ -147,12 +160,12 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
     const auto loopVar = thetaNode->MapPreLoopVar(output);
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      return computeTargetRegion(*loopVar.input->origin());
+      return computeTargetRegion(*loopVar.input->origin(), operation);
     }
 
     if (isInvariantMemoryStateLoopVar(loopVar))
     {
-      return computeTargetRegion(*loopVar.input->origin());
+      return computeTargetRegion(*loopVar.input->origin(), operation);
     }
 
     return *output.region();
@@ -202,7 +215,7 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 
   for (auto & input : node.Inputs())
   {
-    auto & targetRegion = computeTargetRegion(*input.origin());
+    auto & targetRegion = computeTargetRegion(*input.origin(), node.GetOperation());
     if (&targetRegion == node.region())
     {
       // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
@@ -292,6 +305,38 @@ NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & ta
   return operands;
 }
 
+static rvsdg::Input *
+mapStateOutputToInput(rvsdg::Output & output)
+{
+  JLM_ASSERT(output.Type()->Kind() == rvsdg::TypeKind::State);
+
+  const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+  JLM_ASSERT(simpleNode);
+
+  return rvsdg::MatchTypeWithDefault(
+      simpleNode->GetOperation(),
+      [&output](const LoadNonVolatileOperation &)
+      {
+        return &LoadOperation::MapMemoryStateOutputToInput(output);
+      },
+      [&output](const StoreNonVolatileOperation &)
+      {
+        return &StoreOperation::MapMemoryStateOutputToInput(output);
+      },
+      [](const VariadicArgumentListOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
+      [](const CallEntryMemoryStateMergeOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
+      []() -> rvsdg::Input *
+      {
+        throw std::logic_error("Unhandled operation type!");
+      });
+}
+
 void
 NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
 {
@@ -313,8 +358,34 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
   {
     auto & outputOrg = *itOrg;
     auto & outputCpy = *itCpy;
-    auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
-    outputOrg.divert_users(&newOutputOrg);
+
+    if (outputOrg.Type()->Kind() == rvsdg::TypeKind::State)
+    {
+      if (auto inputOrg = mapStateOutputToInput(outputOrg))
+      {
+        outputOrg.divert_users(inputOrg->origin());
+      }
+
+      if (auto inputCpy = mapStateOutputToInput(outputCpy))
+      {
+        inputCpy->origin()->divertUsersWhere(
+            outputCpy,
+            [&inputCpy](const rvsdg::Input & input)
+            {
+              return &input != inputCpy;
+            });
+      }
+      else
+      {
+        auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
+        outputOrg.divert_users(&newOutputOrg);
+      }
+    }
+    else
+    {
+      auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
+      outputOrg.divert_users(&newOutputOrg);
+    }
   }
 }
 
