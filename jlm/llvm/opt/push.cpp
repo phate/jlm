@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <jlm/llvm/ir/operators/call.hpp>
 
 namespace jlm::llvm
 {
@@ -358,6 +359,21 @@ mapStateOutputToInput(rvsdg::Output & output)
       [&output](const StoreNonVolatileOperation &)
       {
         return &StoreOperation::MapMemoryStateOutputToInput(output);
+      },
+      [&output](const CallOperation &)
+      {
+        if (is<IOStateType>(output.Type()))
+        {
+          return &CallOperation::mapIOStateOutputToInput(output);
+        }
+
+        if (is<MemoryStateType>(output.Type()))
+        {
+          return &CallOperation::mapMemoryStateOutputToInput(output);
+        }
+
+        throw std::logic_error(
+            util::strfmt("Unhandled output type: ", output.Type()->debug_string()));
       },
       [](const VariadicArgumentListOperation &) -> rvsdg::Input *
       {
