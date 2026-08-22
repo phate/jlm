@@ -62,8 +62,8 @@ runs:
         install-llvm: true
         install-clang: true
         install-gtest: true # Required for unit tests
-        install-valgrind: true  # Required for make target valgrind-check
-        install-gcovr: true # Required for compiling with code coverage information
+        install-valgrind: ${{inputs.make-target == 'valgrind-check'}}
+        install-gcovr: ${{inputs.enable-coverage == 'true'}}
 
     - name: "Install HLS dialect dependencies"
       if: ${{inputs.enable-hls == 'true'}}
