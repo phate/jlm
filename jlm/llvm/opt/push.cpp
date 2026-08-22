@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 
@@ -331,9 +332,14 @@ mapStateOutputToInput(rvsdg::Output & output)
       {
         return nullptr;
       },
-      []() -> rvsdg::Input *
+      [](const AllocaOperation &) -> rvsdg::Input *
       {
-        throw std::logic_error("Unhandled operation type!");
+        return nullptr;
+      },
+      [&simpleNode]() -> rvsdg::Input *
+      {
+        throw std::logic_error(
+            util::strfmt("Unhandled operation type: ", simpleNode->DebugString()));
       });
 }
 
@@ -364,13 +370,14 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
       if (auto inputOrg = mapStateOutputToInput(outputOrg))
       {
         outputOrg.divert_users(inputOrg->origin());
-      }
 
-      if (auto inputCpy = mapStateOutputToInput(outputCpy))
-      {
-        // FIXME: We introduce a slight impression here. If inputCpy->origin() has more than a
-        // single user, then all users will all in a sudden be sequentialized after the hoisted node
-        // even though they were only sequentialized by the producer of inputCpy->origin() before.
+        auto inputCpy = mapStateOutputToInput(outputCpy);
+        JLM_ASSERT(inputCpy);
+
+        // FIXME: We introduce a slight impression here. If inputCpy->origin() has
+        // more than a single user, then all users will all in a sudden be
+        // sequentialized after the hoisted node even though they were only
+        // sequentialized by the producer of inputCpy->origin() before.
         inputCpy->origin()->divertUsersWhere(
             outputCpy,
             [&inputCpy](const rvsdg::Input & input)
@@ -380,14 +387,20 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
       }
       else
       {
+        // If we cannot map the output state to the input state of the node, we fall back value-edge
+        // semantic for hoisting.
         auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
         outputOrg.divert_users(&newOutputOrg);
       }
     }
-    else
+    else if (outputOrg.Type()->Kind() == rvsdg::TypeKind::Value)
     {
       auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
       outputOrg.divert_users(&newOutputOrg);
+    }
+    else
+    {
+      throw std::logic_error(util::strfmt("Unhandled type kind!"));
     }
   }
 }
