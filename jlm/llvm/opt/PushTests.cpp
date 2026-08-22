@@ -539,11 +539,16 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
       { memoryStateEntryVar.branchArgument[1] },
       i32Type,
       4);
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
+      *ptrEntryVar.branchArgument[1],
+      *loadNode1.output(0),
+      { loadNode1.output(1) },
+      4);
 
   auto i32ExitVar = gammaNode->AddExitVar({ loadNode0.output(0), loadNode1.output(0) });
   auto ioStateExitVar = gammaNode->AddExitVar(
       { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
-  auto memoryStateExitVar = gammaNode->AddExitVar({ loadNode0.output(1), loadNode1.output(1) });
+  auto memoryStateExitVar = gammaNode->AddExitVar({ loadNode0.output(1), storeNode1.output(0) });
 
   auto lambdaOutput =
       lambdaNode->finalize({ i32ExitVar.output, ioStateExitVar.output, memoryStateExitVar.output });
@@ -559,7 +564,7 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
   // We expect the load node from gamma subregion 1 to be hoisted out
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
   EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2u);
-  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 0u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 1u);
 
   // We expect that only one input was added to the gamma node: the loaded value of the hoisted load
   // node. We do not expect that a new input for the memory state of the load node was added as the

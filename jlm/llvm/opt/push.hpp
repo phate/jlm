@@ -73,7 +73,7 @@ private:
   computeTargetRegion(const rvsdg::Node & node) const;
 
   rvsdg::Region &
-  computeTargetRegion(const rvsdg::Output & output, const rvsdg::Operation & operation) const;
+  computeTargetRegion(const rvsdg::Output & output) const;
 
   static bool
   isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar);

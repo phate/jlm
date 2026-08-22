@@ -3,8 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
@@ -19,9 +22,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
 
 namespace jlm::llvm
 {
@@ -117,17 +117,8 @@ NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & lo
   return true;
 }
 
-static bool
-isLoadNonVolatileOperationMemoryState(
-    const rvsdg::Output & output,
-    const rvsdg::Operation & operation)
-{
-  return is<MemoryStateType>(output.Type()) && is<LoadNonVolatileOperation>(operation);
-}
-
 rvsdg::Region &
-NodeHoisting::computeTargetRegion(const rvsdg::Output & output, const rvsdg::Operation & operation)
-    const
+NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
 {
   // Handle lambda region arguments
   if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
@@ -138,18 +129,16 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output, const rvsdg::Ope
   // Handle gamma region arguments
   if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    if (output.Type()->Kind() == rvsdg::TypeKind::State
-        && !isLoadNonVolatileOperationMemoryState(output, operation))
+    if (is<IOStateType>(output.Type()))
     {
-      // Do not hoist nodes with state edges out of gamma nodes, except LoadNonVolatileOperation
-      // nodes.
+      // Do not hoist nodes with IO state edges out of gamma nodes.
       return *output.region();
     }
 
     const auto roleVar = gammaNode->MapBranchArgument(output);
     if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
     {
-      return computeTargetRegion(*entryVar->input->origin(), operation);
+      return computeTargetRegion(*entryVar->input->origin());
     }
 
     return *output.region();
@@ -161,12 +150,12 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output, const rvsdg::Ope
     const auto loopVar = thetaNode->MapPreLoopVar(output);
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
     {
-      return computeTargetRegion(*loopVar.input->origin(), operation);
+      return computeTargetRegion(*loopVar.input->origin());
     }
 
     if (isInvariantMemoryStateLoopVar(loopVar))
     {
-      return computeTargetRegion(*loopVar.input->origin(), operation);
+      return computeTargetRegion(*loopVar.input->origin());
     }
 
     return *output.region();
@@ -191,6 +180,50 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output, const rvsdg::Ope
   }
 
   throw std::logic_error("Unhandled output type!");
+}
+
+static bool
+hasOnlyValueInputs(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (input.Type()->Kind() != rvsdg::TypeKind::Value)
+      return false;
+  }
+
+  return true;
+}
+
+static rvsdg::Region &
+limitTargetRegion(const rvsdg::Node & node, rvsdg::Region & targetRegion)
+{
+  JLM_ASSERT(node.region() != &targetRegion);
+
+  if (hasOnlyValueInputs(node))
+  {
+    // Pure nodes can be hoisted out of gamma and theta nodes.
+    return targetRegion;
+  }
+
+  if (is<LoadNonVolatileOperation>(node.GetOperation()))
+  {
+    // LoadNonVolatileOperation nodes can also be hoisted out of gamma and theta nodes.
+    return targetRegion;
+  }
+
+  // For all other nodes, we want to limit the target region to the lowest gamma node.
+  auto currentRegion = node.region();
+  do
+  {
+    if (dynamic_cast<rvsdg::GammaNode *>(currentRegion->node()))
+    {
+      break;
+    }
+
+    currentRegion = currentRegion->node()->region();
+  } while (currentRegion != &targetRegion);
+
+  return *currentRegion;
 }
 
 rvsdg::Region &
@@ -231,7 +264,9 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     greatestCommonTargetRegion = &targetRegion;
   }
 
-  // Return the lowestmost common target region in the region tree among all inputs
+  greatestCommonTargetRegion = &limitTargetRegion(node, *greatestCommonTargetRegion);
+
+  // Return the lowest-most common target region in the region tree among all inputs
   JLM_ASSERT(greatestCommonTargetRegion);
   return *greatestCommonTargetRegion;
 }
