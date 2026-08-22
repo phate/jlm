@@ -69,9 +69,6 @@ private:
   static rvsdg::Output &
   getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region & targetRegion);
 
-  size_t
-  computeRegionDepth(const rvsdg::Region & region) const;
-
   rvsdg::Region &
   computeTargetRegion(const rvsdg::Node & node) const;
 

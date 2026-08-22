@@ -3,7 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -17,6 +22,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <jlm/llvm/ir/operators/call.hpp>
 
 namespace jlm::llvm
 {
@@ -124,11 +130,9 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   // Handle gamma region arguments
   if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    if (output.Type()->Kind() == rvsdg::TypeKind::State)
+    if (is<IOStateType>(output.Type()))
     {
-      // FIXME: This is a bit too conservative. For example, it avoids that load and store nodes are
-      // hoisted out of a gamma node, but we would only like to avoid store nodes being hoisted out.
-      // For load nodes, it is legal to hoist them out if they are not preceded by an IOBarrier.
+      // Do not hoist nodes with IO state edges out of gamma nodes.
       return *output.region();
     }
 
@@ -179,6 +183,50 @@ NodeHoisting::computeTargetRegion(const rvsdg::Output & output) const
   throw std::logic_error("Unhandled output type!");
 }
 
+static bool
+hasOnlyValueInputs(const rvsdg::Node & node)
+{
+  for (auto & input : node.Inputs())
+  {
+    if (input.Type()->Kind() != rvsdg::TypeKind::Value)
+      return false;
+  }
+
+  return true;
+}
+
+static rvsdg::Region &
+limitTargetRegion(const rvsdg::Node & node, rvsdg::Region & targetRegion)
+{
+  JLM_ASSERT(node.region() != &targetRegion);
+
+  if (hasOnlyValueInputs(node))
+  {
+    // Pure nodes can be hoisted out of gamma and theta nodes.
+    return targetRegion;
+  }
+
+  if (is<LoadNonVolatileOperation>(node.GetOperation()))
+  {
+    // LoadNonVolatileOperation nodes can also be hoisted out of gamma and theta nodes.
+    return targetRegion;
+  }
+
+  // For all other nodes, we want to limit the target region to the lowest gamma node.
+  auto currentRegion = node.region();
+  do
+  {
+    if (dynamic_cast<rvsdg::GammaNode *>(currentRegion->node()))
+    {
+      break;
+    }
+
+    currentRegion = currentRegion->node()->region();
+  } while (currentRegion != &targetRegion);
+
+  return *currentRegion;
+}
+
 rvsdg::Region &
 NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 {
@@ -217,7 +265,9 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     greatestCommonTargetRegion = &targetRegion;
   }
 
-  // Return the lowestmost common target region in the region tree among all inputs
+  greatestCommonTargetRegion = &limitTargetRegion(node, *greatestCommonTargetRegion);
+
+  // Return the lowest-most common target region in the region tree among all inputs
   JLM_ASSERT(greatestCommonTargetRegion);
   return *greatestCommonTargetRegion;
 }
@@ -292,6 +342,58 @@ NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & ta
   return operands;
 }
 
+static rvsdg::Input *
+mapStateOutputToInput(rvsdg::Output & output)
+{
+  JLM_ASSERT(output.Type()->Kind() == rvsdg::TypeKind::State);
+
+  const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output);
+  JLM_ASSERT(simpleNode);
+
+  return rvsdg::MatchTypeWithDefault(
+      simpleNode->GetOperation(),
+      [&output](const LoadNonVolatileOperation &)
+      {
+        return &LoadOperation::MapMemoryStateOutputToInput(output);
+      },
+      [&output](const StoreNonVolatileOperation &)
+      {
+        return &StoreOperation::MapMemoryStateOutputToInput(output);
+      },
+      [&output](const CallOperation &)
+      {
+        if (is<IOStateType>(output.Type()))
+        {
+          return &CallOperation::mapIOStateOutputToInput(output);
+        }
+
+        if (is<MemoryStateType>(output.Type()))
+        {
+          return &CallOperation::mapMemoryStateOutputToInput(output);
+        }
+
+        throw std::logic_error(
+            util::strfmt("Unhandled output type: ", output.Type()->debug_string()));
+      },
+      [](const VariadicArgumentListOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
+      [](const CallEntryMemoryStateMergeOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
+      [](const AllocaOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
+      [&simpleNode]() -> rvsdg::Input *
+      {
+        throw std::logic_error(
+            util::strfmt("Unhandled operation type: ", simpleNode->DebugString()));
+      });
+}
+
 void
 NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
 {
@@ -313,8 +415,44 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
   {
     auto & outputOrg = *itOrg;
     auto & outputCpy = *itCpy;
-    auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
-    outputOrg.divert_users(&newOutputOrg);
+
+    if (outputOrg.Type()->Kind() == rvsdg::TypeKind::State)
+    {
+      if (auto inputOrg = mapStateOutputToInput(outputOrg))
+      {
+        outputOrg.divert_users(inputOrg->origin());
+
+        auto inputCpy = mapStateOutputToInput(outputCpy);
+        JLM_ASSERT(inputCpy);
+
+        // FIXME: We introduce a slight impression here. If inputCpy->origin() has
+        // more than a single user, then all users will all in a sudden be
+        // sequentialized after the hoisted node even though they were only
+        // sequentialized by the producer of inputCpy->origin() before.
+        inputCpy->origin()->divertUsersWhere(
+            outputCpy,
+            [&inputCpy](const rvsdg::Input & input)
+            {
+              return &input != inputCpy;
+            });
+      }
+      else
+      {
+        // If we cannot map the output state to the input state of the node, we fall back value-edge
+        // semantic for hoisting.
+        auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
+        outputOrg.divert_users(&newOutputOrg);
+      }
+    }
+    else if (outputOrg.Type()->Kind() == rvsdg::TypeKind::Value)
+    {
+      auto & newOutputOrg = rvsdg::RouteToRegion(outputCpy, *node.region());
+      outputOrg.divert_users(&newOutputOrg);
+    }
+    else
+    {
+      throw std::logic_error(util::strfmt("Unhandled type kind!"));
+    }
   }
 }
 

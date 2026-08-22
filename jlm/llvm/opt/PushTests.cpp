@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -22,6 +23,8 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
+namespace jlm::llvm
+{
 TEST(NodeHoistingTests, simpleGamma)
 {
   using namespace jlm::llvm;
@@ -286,6 +289,10 @@ TEST(NodeHoistingTests, invariantMemoryOperation)
   // We expect the store node hoisted out of the theta subregion
   EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
   EXPECT_EQ(thetaNode->subregion()->numNodes(), 0u);
+
+  // We expect no new input to be added to the theta node as the store node should have been
+  // "hoisted along" its memory state edges.
+  EXPECT_EQ(thetaNode->ninputs(), 4u);
 }
 
 TEST(NodeHoistingTests, statefulOperations)
@@ -484,4 +491,85 @@ TEST(NodeHoistingTests, controlConstants)
   // Gamma2 subregions: Int32 constants should have been hoisted out to lambda level
   EXPECT_EQ(gamma2.subregion(0)->numNodes(), 0u);
   EXPECT_EQ(gamma2.subregion(1)->numNodes(), 0u);
+}
+
+TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto ptrType = PointerType::Create();
+  const auto i32Type = BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto functionType = FunctionType::Create(
+      { controlType, ptrType, ioStateType, memoryStateType },
+      { i32Type, ioStateType, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[3];
+
+  auto gammaNode = GammaNode::create(controlArgument, 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrArgument);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+  auto memoryStateEntryVar = gammaNode->AddEntryVar(memoryStateArgument);
+
+  // gamma subregion 0
+  auto & ioBarrierNode = IOBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0]);
+  auto & loadNode0 = LoadNonVolatileOperation::CreateNode(
+      *ioBarrierNode.output(0),
+      { memoryStateEntryVar.branchArgument[0] },
+      i32Type,
+      4);
+
+  // gamma subregion 1
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
+      *ptrEntryVar.branchArgument[1],
+      { memoryStateEntryVar.branchArgument[1] },
+      i32Type,
+      4);
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
+      *ptrEntryVar.branchArgument[1],
+      *loadNode1.output(0),
+      { loadNode1.output(1) },
+      4);
+
+  auto i32ExitVar = gammaNode->AddExitVar({ loadNode0.output(0), loadNode1.output(0) });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+  auto memoryStateExitVar = gammaNode->AddExitVar({ loadNode0.output(1), storeNode1.output(0) });
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ i32ExitVar.output, ioStateExitVar.output, memoryStateExitVar.output });
+
+  GraphExport::Create(*lambdaOutput, "x");
+
+  // Act
+  NodeHoisting nodeHoisting;
+  util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // We expect the load node from gamma subregion 1 to be hoisted out
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
+  EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 1u);
+
+  // We expect that only one input was added to the gamma node: the loaded value of the hoisted load
+  // node. We do not expect that a new input for the memory state of the load node was added as the
+  // load node should have been "hoisted along" its state edge.
+  EXPECT_EQ(gammaNode->ninputs(), 5u);
+}
+
 }
