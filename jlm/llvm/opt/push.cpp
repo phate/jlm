@@ -249,7 +249,7 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
 
   for (auto & input : node.Inputs())
   {
-    auto & targetRegion = computeTargetRegion(*input.origin(), node.GetOperation());
+    auto & targetRegion = computeTargetRegion(*input.origin());
     if (&targetRegion == node.region())
     {
       // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
