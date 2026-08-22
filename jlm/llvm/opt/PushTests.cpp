@@ -572,4 +572,69 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
   EXPECT_EQ(gammaNode->ninputs(), 5u);
 }
 
+TEST(NodeHoistingTests, hoistLoadNodeOutOfGammaInTheta)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto ptrType = PointerType::Create();
+  const auto i32Type = BitType::Create(32);
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto functionType =
+      FunctionType::Create({ controlType, ptrType, memoryStateType }, { ptrType, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[1];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto ptrLoopVar = thetaNode->AddLoopVar(ptrArgument);
+  auto memoryStateLoopVar = thetaNode->AddLoopVar(memoryStateArgument);
+  auto controlLoopVar = thetaNode->AddLoopVar(controlArgument);
+
+  auto gammaNode = GammaNode::create(controlLoopVar.pre, 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrLoopVar.pre);
+  auto memoryStateEntryVar = gammaNode->AddEntryVar(memoryStateLoopVar.pre);
+
+  // gamma subregion 0
+  auto testNode = TestOperation::createNode(gammaNode->subregion(0), {}, { i32Type });
+
+  // gamma subregion 1
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *ptrEntryVar.branchArgument[1],
+      { memoryStateEntryVar.branchArgument[1] },
+      i32Type,
+      4);
+
+  auto i32ExitVar = gammaNode->AddExitVar({ testNode->output(0), loadNode.output(0) });
+  auto memoryStateExitVar =
+      gammaNode->AddExitVar({ memoryStateEntryVar.branchArgument[0], loadNode.output(1) });
+
+  memoryStateLoopVar.post->divert_to(memoryStateExitVar.output);
+
+  auto lambdaOutput = lambdaNode->finalize({ ptrLoopVar.output, memoryStateLoopVar.output });
+
+  GraphExport::Create(*lambdaOutput, "x");
+
+  // Act
+  NodeHoisting nodeHoisting;
+  util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // We expect the load node from gamma subregion 1 to be hoisted out to the theta subregion
+  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(*thetaNode->subregion(), false));
+
+  // We expect that two inputs was added to the gamma node: the loaded value of the hoisted load
+  // node and the result of the test node.
+  EXPECT_EQ(gammaNode->ninputs(), 5u);
+}
+
 }

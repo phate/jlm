@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -22,7 +23,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <jlm/llvm/ir/operators/call.hpp>
 
 namespace jlm::llvm
 {
@@ -109,10 +109,12 @@ NodeHoisting::isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & lo
   if (loopVar.pre->nusers() != 1)
     return false;
 
+  // FIXME: This check fails if we have a simple node followed for example by a gamma node.
+  // The consequence is that nodes are not pushed out as much as they could.
   const auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loopVar.pre->Users().begin());
   const auto originNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loopVar.post->origin());
 
-  if (userNode != originNode)
+  if (userNode == nullptr || originNode == nullptr || userNode != originNode)
     return false;
 
   return true;
@@ -483,11 +485,54 @@ NodeHoisting::hoistNodes(rvsdg::Region & region)
 }
 
 void
+NodeHoisting::printHoistChain(const rvsdg::Region & region) const
+{
+  for (const auto node : rvsdg::TopDownConstTraverser(&region))
+  {
+    rvsdg::MatchTypeWithDefault(
+        *node,
+        [&](const rvsdg::StructuralNode & structuralNode)
+        {
+          for (auto & subregion : structuralNode.Subregions())
+          {
+            printHoistChain(subregion);
+          }
+        },
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          auto & targetRegion = context_->getTargetRegion(simpleNode);
+
+          if (&targetRegion != node->region())
+          {
+            std::cerr << node->DebugString() << "[" << node->GetNodeId() << ", "
+                      << node->region()->getRegionId() << "]: ";
+            auto currentRegion = node->region();
+            do
+            {
+              std::cerr << currentRegion->node()->DebugString() << "["
+                        << currentRegion->getRegionId() << "] -> ";
+
+              currentRegion = currentRegion->node()->region();
+            } while (currentRegion != &targetRegion);
+
+            std::cerr << currentRegion->node()->DebugString() << "[" << currentRegion->getRegionId()
+                      << "]" << std::endl;
+          }
+        },
+        []()
+        {
+          throw std::logic_error("Unhandled node type!");
+        });
+  }
+}
+
+void
 NodeHoisting::hoistNodesInLambda(rvsdg::LambdaNode & lambdaNode)
 {
   context_ = Context::create(lambdaNode);
 
   markNodes(*lambdaNode.subregion());
+  // printHoistChain(*lambdaNode.subregion());
   hoistNodes(*lambdaNode.subregion());
 
   context_.reset();

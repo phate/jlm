@@ -75,6 +75,9 @@ private:
   rvsdg::Region &
   computeTargetRegion(const rvsdg::Output & output) const;
 
+  void
+  printHoistChain(const rvsdg::Region & region) const;
+
   static bool
   isInvariantMemoryStateLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar);
 
