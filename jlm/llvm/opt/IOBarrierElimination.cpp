@@ -7,10 +7,13 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm
@@ -19,6 +22,7 @@ namespace jlm::llvm
 class IOBarrierElimination::Statistics final : public util::Statistics
 {
   const char * MarkTimerLabel_ = "MarkTime";
+  const char * PropagateTimerLabel_ = "PropagateTime";
   const char * SweepTimerLabel_ = "SweepTime";
 
 public:
@@ -38,6 +42,18 @@ public:
   stopMarkStatistics() noexcept
   {
     GetTimer(MarkTimerLabel_).stop();
+  }
+
+  void
+  startPropagateStatistics() noexcept
+  {
+    AddTimer(PropagateTimerLabel_).start();
+  }
+
+  void
+  stopPropagateStatistics() noexcept
+  {
+    GetTimer(PropagateTimerLabel_).stop();
   }
 
   void
@@ -77,16 +93,14 @@ public:
       return true;
     }
 
-    if (it->second < sizeInBytes)
-      dereferenceableOutputs_[&output] = sizeInBytes;
-
+    dereferenceableOutputs_[&output] = std::max(it->second, sizeInBytes);
     return false;
   }
 
   /**
    * @return The size in bytes, if \p output is marked as dereferenceable, otherwise std::nullopt.
    */
-  std::optional<size_t>
+  [[nodiscard]] std::optional<size_t>
   isDereferenceable(const rvsdg::Output & output) const
   {
     const auto it = dereferenceableOutputs_.find(&output);
@@ -94,6 +108,12 @@ public:
       return std::nullopt;
 
     return it->second;
+  }
+
+  [[nodiscard]] size_t
+  numDereferenceableOutputs() const
+  {
+    return dereferenceableOutputs_.size();
   }
 
   static std::unique_ptr<Context>
@@ -123,8 +143,12 @@ IOBarrierElimination::Run(
   auto statistics = Statistics::create(module.SourceFilePath().value());
 
   statistics->startMarkStatistics();
-  markRegion(rvsdg.GetRootRegion());
+  markOutputsDereferenceable(rvsdg.GetRootRegion());
   statistics->stopMarkStatistics();
+
+  statistics->startPropagateStatistics();
+  propagateDereferenceable(rvsdg);
+  statistics->stopPropagateStatistics();
 
   statistics->startSweepStatistics();
   sweepRegion(rvsdg.GetRootRegion());
@@ -137,33 +161,24 @@ IOBarrierElimination::Run(
 }
 
 void
-IOBarrierElimination::markRegion(rvsdg::Region & region)
+IOBarrierElimination::markOutputsDereferenceable(const rvsdg::Region & region)
 {
-  for (const auto node : rvsdg::TopDownTraverser(&region))
+  for (auto & node : region.Nodes())
   {
-    markNode(*node);
-  }
-}
-
-void
-IOBarrierElimination::markNode(const rvsdg::Node & node)
-{
-  rvsdg::MatchType(
-      node.GetOperation(),
-      [&](const rvsdg::PhiOperation &)
+    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
       {
-        const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(&node);
-        markRegion(*phiNode->subregion());
-      },
-      [&](const LlvmLambdaOperation &)
-      {
-        const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(&node);
-        markRegion(*lambdaNode->subregion());
-      },
-      [&](const LoadNonVolatileOperation & loadOperation)
+        markOutputsDereferenceable(subregion);
+      }
+    }
+    else
+    {
+      if (const auto loadOperation =
+              dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
       {
         const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
-        const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
+        const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
 
         auto [ioBarrierNode, ioBarrierOp] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(addressOperand);
@@ -186,7 +201,107 @@ IOBarrierElimination::markNode(const rvsdg::Node & node)
           // as dereferenceable.
           context_->markDereferenceable(addressOperand, sizeInBytes);
         }
-      });
+      }
+    }
+  }
+}
+
+void
+IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
+{
+  std::function<void(rvsdg::Region &)> propagate = [&](rvsdg::Region & region)
+  {
+    for (auto node : rvsdg::TopDownTraverser(&region))
+    {
+      rvsdg::MatchTypeWithDefault(
+          *node,
+          [&](rvsdg::PhiNode & phiNode)
+          {
+            propagate(*phiNode.subregion());
+          },
+          [&](rvsdg::LambdaNode & lambdaNode)
+          {
+            propagate(*lambdaNode.subregion());
+          },
+          [&](rvsdg::GammaNode & gammaNode)
+          {
+            for (auto & [input, arguments] : gammaNode.GetEntryVars())
+            {
+              if (auto size = context_->isDereferenceable(*input->origin()))
+              {
+                for (const auto & argument : arguments)
+                {
+                  context_->markDereferenceable(*argument, size.value());
+                }
+              }
+            }
+
+            for (auto & subregion : gammaNode.Subregions())
+              propagate(subregion);
+
+            for (auto & [results, output] : gammaNode.GetExitVars())
+            {
+              bool allResultsAreDereferenceable = true;
+              size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
+              for (const auto & result : results)
+              {
+                auto sizeOpt = context_->isDereferenceable(*result->origin());
+                if (!sizeOpt)
+                {
+                  allResultsAreDereferenceable = false;
+                  break;
+                }
+
+                sizeInBytes = std::min(sizeInBytes, sizeOpt.value());
+              }
+              if (allResultsAreDereferenceable)
+                context_->markDereferenceable(*output, sizeInBytes);
+            }
+          },
+          [&](rvsdg::ThetaNode & thetaNode)
+          {
+            // FIXME: This could be improved
+            for (const auto & loopVar : thetaNode.GetLoopVars())
+            {
+              auto inputSizeOpt = context_->isDereferenceable(*loopVar.input->origin());
+              auto resultSizeOpt = context_->isDereferenceable(*loopVar.post->origin());
+              if (inputSizeOpt && resultSizeOpt)
+              {
+                auto sizeInBytes = std::min(inputSizeOpt.value(), resultSizeOpt.value());
+                context_->markDereferenceable(*loopVar.output, sizeInBytes);
+              }
+            }
+
+            propagate(*thetaNode.subregion());
+          },
+          [&](rvsdg::DeltaOperation &)
+          {
+            // Nothing needs to be done
+          },
+          [&](rvsdg::SimpleNode &)
+          {
+            // Nothing needs to be done
+          },
+          []()
+          {
+            throw std::logic_error(
+                "Unhandled node type encountered during dereferenceable propagation.");
+          });
+    }
+  };
+
+  // FIXME: This is a simple fixpoint algorithm and can improved
+  // FIXME: The algorithm is intra-procedural. There is no need to iterate over the entire graph
+  // again. We could also just iterate over a function again.
+  // FIXME: Counting the number of dereferenceable outputs is imprecise. It might be that we could
+  // improve the result further as the size of an already marked output is widened. This is
+  // currently not captured here.
+  size_t numDereferenceableOutputs = 0;
+  do
+  {
+    numDereferenceableOutputs = context_->numDereferenceableOutputs();
+    propagate(graph.GetRootRegion());
+  } while (numDereferenceableOutputs != context_->numDereferenceableOutputs());
 }
 
 void
@@ -194,33 +309,54 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
-    rvsdg::MatchType(
-        node.GetOperation(),
-        [&](const rvsdg::PhiOperation &)
+    rvsdg::MatchTypeWithDefault(
+        node,
+        [this](const rvsdg::PhiNode & phiNode)
         {
-          const auto phiNode = util::assertedCast<const rvsdg::PhiNode>(&node);
-          sweepRegion(*phiNode->subregion());
+          sweepRegion(*phiNode.subregion());
         },
-        [&](const LlvmLambdaOperation &)
+        [this](const rvsdg::LambdaNode & lambdaNode)
         {
-          const auto lambdaNode = util::assertedCast<const rvsdg::LambdaNode>(&node);
-          sweepRegion(*lambdaNode->subregion());
+          sweepRegion(*lambdaNode.subregion());
         },
-        [&](const LoadNonVolatileOperation & loadOperation)
+        [](const rvsdg::DeltaNode &)
         {
-          auto & loadAddress = LoadOperation::AddressInput(node);
-          auto [ioBarrierNode, ioBarrierOp] =
-              rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*loadAddress.origin());
-          if (!ioBarrierOp)
-            return;
+          // Nothing needs to be done
+        },
+        [this](rvsdg::GammaNode & gammaNode)
+        {
+          for (auto & subregion : gammaNode.Subregions())
+          {
+            sweepRegion(subregion);
+          }
+        },
+        [this](const rvsdg::ThetaNode & thetaNode)
+        {
+          sweepRegion(*thetaNode.subregion());
+        },
+        [this](const rvsdg::SimpleNode & simpleNode)
+        {
+          if (const auto loadOperation =
+                  dynamic_cast<const LoadNonVolatileOperation *>(&simpleNode.GetOperation()))
+          {
+            auto & loadAddress = LoadOperation::AddressInput(simpleNode);
+            auto [ioBarrierNode, ioBarrierOp] =
+                rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*loadAddress.origin());
+            if (!ioBarrierOp)
+              return;
 
-          auto & barredAddressOperand = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-          const auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
-          const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
-          if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
-            return;
+            auto & barredAddressOperand = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+            const auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
+            const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
+            if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
+              return;
 
-          loadAddress.divert_to(&barredAddressOperand);
+            loadAddress.divert_to(&barredAddressOperand);
+          }
+        },
+        []()
+        {
+          throw std::logic_error("Unsupported node type");
         });
   }
 

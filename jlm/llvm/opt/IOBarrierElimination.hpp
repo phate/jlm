@@ -36,10 +36,10 @@ public:
 
 private:
   void
-  markRegion(rvsdg::Region & region);
+  markOutputsDereferenceable(const rvsdg::Region & region);
 
   void
-  markNode(const rvsdg::Node & node);
+  propagateDereferenceable(rvsdg::Graph & graph);
 
   void
   sweepRegion(rvsdg::Region & region);
