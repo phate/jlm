@@ -315,6 +315,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::NodePushOut,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
