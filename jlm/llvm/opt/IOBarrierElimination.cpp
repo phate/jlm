@@ -283,7 +283,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
 
             propagate(*thetaNode.subregion());
           },
-          [&](rvsdg::DeltaOperation &)
+          [&](rvsdg::DeltaNode &)
           {
             // Nothing needs to be done
           },
