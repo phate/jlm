@@ -271,7 +271,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
             {
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
-              
+
               auto inputSizeOpt = context_->isDereferenceable(*loopVar.input->origin());
               auto resultSizeOpt = context_->isDereferenceable(*loopVar.post->origin());
               if (inputSizeOpt && resultSizeOpt)
