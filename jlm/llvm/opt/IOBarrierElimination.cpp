@@ -227,6 +227,9 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
           {
             for (auto & [input, arguments] : gammaNode.GetEntryVars())
             {
+              if (!is<PointerType>(input->Type()))
+                continue;
+
               if (auto size = context_->isDereferenceable(*input->origin()))
               {
                 for (const auto & argument : arguments)
@@ -241,6 +244,9 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
 
             for (auto & [results, output] : gammaNode.GetExitVars())
             {
+              if (!is<PointerType>(output->Type()))
+                continue;
+
               bool allResultsAreDereferenceable = true;
               size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
               for (const auto & result : results)
@@ -263,6 +269,9 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
             // FIXME: This could be improved
             for (const auto & loopVar : thetaNode.GetLoopVars())
             {
+              if (!is<PointerType>(loopVar.input->Type()))
+                continue;
+              
               auto inputSizeOpt = context_->isDereferenceable(*loopVar.input->origin());
               auto resultSizeOpt = context_->isDereferenceable(*loopVar.post->origin());
               if (inputSizeOpt && resultSizeOpt)
