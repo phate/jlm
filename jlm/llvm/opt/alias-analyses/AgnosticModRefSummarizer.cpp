@@ -255,6 +255,15 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
         AddPointerTargetsToModRefSet(dstAddress, ModRefEffect::ModOnly, modRefSet);
         ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
       },
+      [&](const MemMoveOperation &)
+      {
+        AgnosticModRefSet modRefSet;
+        const auto & srcAddress = *MemMoveOperation::sourceInput(node).origin();
+        const auto & dstAddress = *MemMoveOperation::destinationInput(node).origin();
+        AddPointerTargetsToModRefSet(srcAddress, RefOnly, modRefSet);
+        AddPointerTargetsToModRefSet(dstAddress, ModOnly, modRefSet);
+        ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
+      },
       [&](const MemSetOperation &)
       {
         AgnosticModRefSet modRefSet;
