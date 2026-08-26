@@ -43,7 +43,7 @@ jobs:
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-opt
 
   llvm-test-suite-andersen-agnostic:
-    if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
+    #if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
