@@ -417,16 +417,6 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
         return input->origin();
       });
 
-  std::vector<rvsdg::Input *> stateUsers;
-  stateUsers.reserve(users.size());
-  for (auto user : users)
-  {
-    if (user->Type()->Kind() == rvsdg::TypeKind::State)
-    {
-      stateUsers.push_back(user);
-    }
-  }
-
   const auto copiedNode = node.copy(&targetRegion, operands);
 
   // FIXME: I really would like to have a zip function here, but C++ does not really seem to have
@@ -437,7 +427,6 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
   const auto endCpy = std::end(copiedNode->Outputs());
   JLM_ASSERT(std::distance(itOrg, endOrg) == std::distance(itCpy, endCpy));
 
-  size_t stateUserIdx = 0;
   for (; itOrg != endOrg; ++itOrg, ++itCpy)
   {
     auto & outputOrg = *itOrg;
@@ -452,8 +441,8 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
         auto inputCpy = mapStateOutputToInput(outputCpy);
         JLM_ASSERT(inputCpy);
 
-        auto stateUser = stateUsers[stateUserIdx++];
-        stateUser->divert_to(&outputCpy);
+        auto user = users[inputCpy->index()];
+        user->divert_to(&outputCpy);
       }
       else
       {
@@ -473,8 +462,6 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
       throw std::logic_error(util::strfmt("Unhandled type kind!"));
     }
   }
-
-  //  JLM_ASSERT(stateUserIdx == stateUsers.size());
 }
 
 void
