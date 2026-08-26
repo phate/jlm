@@ -304,44 +304,46 @@ NodeHoisting::markNodes(const rvsdg::Region & region)
   }
 }
 
-rvsdg::Output &
-NodeHoisting::getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region & targetRegion)
+rvsdg::Input &
+NodeHoisting::getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targetRegion)
 {
-  if (output.region() == &targetRegion)
-    return output;
+  if (input.region() == &targetRegion)
+    return input;
+
+  const auto & operand = *input.origin();
 
   // Handle gamma subregion arguments
-  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(operand))
   {
-    const auto roleVar = gammaNode->MapBranchArgument(output);
+    const auto roleVar = gammaNode->MapBranchArgument(operand);
     if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
     {
-      return getOperandFromTargetRegion(*entryVar->input->origin(), targetRegion);
+      return getUserFromTargetRegion(*entryVar->input, targetRegion);
     }
   }
 
   // Handle theta subregion arguments
-  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(operand))
   {
-    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    const auto loopVar = thetaNode->MapPreLoopVar(operand);
     JLM_ASSERT(rvsdg::ThetaLoopVarIsInvariant(loopVar) || isInvariantMemoryStateLoopVar(loopVar));
-    return getOperandFromTargetRegion(*loopVar.input->origin(), targetRegion);
+    return getUserFromTargetRegion(*loopVar.input, targetRegion);
   }
 
   throw std::logic_error("Unhandled output type!");
 }
 
-std::vector<rvsdg::Output *>
-NodeHoisting::getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion)
+std::vector<rvsdg::Input *>
+NodeHoisting::getUsersFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion)
 {
-  std::vector<rvsdg::Output *> operands;
+  std::vector<rvsdg::Input *> users;
   for (auto & input : node.Inputs())
   {
-    auto & operand = getOperandFromTargetRegion(*input.origin(), targetRegion);
-    operands.push_back(&operand);
+    auto & user = getUserFromTargetRegion(input, targetRegion);
+    users.push_back(&user);
   }
 
-  return operands;
+  return users;
 }
 
 static rvsdg::Input *
@@ -402,7 +404,19 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
   auto & targetRegion = context_->getTargetRegion(node);
   JLM_ASSERT(&targetRegion != node.region());
 
-  const auto operands = getOperandsFromTargetRegion(node, targetRegion);
+  const auto users = getUsersFromTargetRegion(node, targetRegion);
+
+  std::vector<rvsdg::Output *> operands;
+  operands.reserve(users.size());
+  std::transform(
+      users.begin(),
+      users.end(),
+      std::back_inserter(operands),
+      [](const rvsdg::Input * input) -> rvsdg::Output *
+      {
+        return input->origin();
+      });
+
   const auto copiedNode = node.copy(&targetRegion, operands);
 
   // FIXME: I really would like to have a zip function here, but C++ does not really seem to have
@@ -427,16 +441,8 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
         auto inputCpy = mapStateOutputToInput(outputCpy);
         JLM_ASSERT(inputCpy);
 
-        // FIXME: We introduce a slight impression here. If inputCpy->origin() has
-        // more than a single user, then all users will all in a sudden be
-        // sequentialized after the hoisted node even though they were only
-        // sequentialized by the producer of inputCpy->origin() before.
-        inputCpy->origin()->divertUsersWhere(
-            outputCpy,
-            [&inputCpy](const rvsdg::Input & input)
-            {
-              return &input != inputCpy;
-            });
+        auto user = users[inputCpy->index()];
+        user->divert_to(&outputCpy);
       }
       else
       {

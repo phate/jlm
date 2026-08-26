@@ -63,11 +63,11 @@ private:
   void
   copyNodeToTargetRegion(rvsdg::Node & node) const;
 
-  static std::vector<rvsdg::Output *>
-  getOperandsFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion);
+  static std::vector<rvsdg::Input *>
+  getUsersFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion);
 
-  static rvsdg::Output &
-  getOperandFromTargetRegion(rvsdg::Output & output, rvsdg::Region & targetRegion);
+  static rvsdg::Input &
+  getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targetRegion);
 
   rvsdg::Region &
   computeTargetRegion(const rvsdg::Node & node) const;
