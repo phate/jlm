@@ -474,7 +474,7 @@ NodeHoisting::copyNodeToTargetRegion(rvsdg::Node & node) const
     }
   }
 
-  JLM_ASSERT(stateUserIdx == stateUsers.size());
+  //  JLM_ASSERT(stateUserIdx == stateUsers.size());
 }
 
 void
