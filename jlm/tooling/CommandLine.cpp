@@ -101,6 +101,7 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::IfConversion, "IfConversion" },
     { OptimizationId::InvariantValueRedirection, "InvariantValueRedirection" },
     { OptimizationId::IOBarrierElimination, "IOBarrierElimination" },
+    { OptimizationId::IOBarrierRedirection, "IOBarrierRedirection" },
     { OptimizationId::LoadChainSeparation, "LoadChainSeparation" },
     { OptimizationId::LoopStrengthReduction, "LoopStrengthReduction" },
     { OptimizationId::LoopUnrolling, "LoopUnrolling" },
@@ -315,6 +316,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::IOBarrierRedirection,
           JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::NodePushOut,
@@ -843,6 +845,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto ioBarrierElimination = JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination;
+  auto ioBarrierRedirection = JlmOptCommandLineOptions::OptimizationId::IOBarrierRedirection;
   auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
   auto loopStrengthReduction = JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
@@ -893,6 +896,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               ioBarrierElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(ioBarrierElimination),
               "Eliminate IOBarrier nodes"),
+          ::clEnumValN(
+              ioBarrierRedirection,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ioBarrierRedirection),
+              "Redirect IOBarrier nodes"),
           ::clEnumValN(
               loadChainSeparation,
               JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),

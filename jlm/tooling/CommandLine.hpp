@@ -74,6 +74,7 @@ public:
     FunctionInlining,
     IfConversion,
     IOBarrierElimination,
+    IOBarrierRedirection,
     InvariantValueRedirection,
     LoadChainSeparation,
     LoopStrengthReduction,

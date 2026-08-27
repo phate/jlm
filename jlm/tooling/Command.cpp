@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 
 #include <fstream>
+#include <jlm/llvm/opt/IOBarrierRedirection.hpp>
 #include <unordered_map>
 
 namespace jlm::tooling
@@ -425,6 +426,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination:
     return std::make_shared<llvm::IOBarrierElimination>();
+  case JlmOptCommandLineOptions::OptimizationId::IOBarrierRedirection:
+    return std::make_shared<llvm::IOBarrierRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_shared<llvm::InvariantValueRedirection>(
         llvm::InvariantValueRedirection::Configuration());
