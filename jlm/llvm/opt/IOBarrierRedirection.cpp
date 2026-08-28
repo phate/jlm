@@ -103,7 +103,8 @@ IOBarrierRedirection::redirectIOBarrierNode(rvsdg::SimpleNode & ioBarrierNode)
   for (auto & user : barredGammaInput.origin()->Users())
   {
     auto [node, ioBarrierOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(user);
-    if (ioBarrierOp)
+    if (ioBarrierOp
+        && IOBarrierOperation::getIOStateInput(*node).origin() == ioStateGammaInput.origin())
     {
       outerIOBarrierNode = node;
       break;
