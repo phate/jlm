@@ -259,6 +259,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/InliningTests.cpp \
     jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
     jlm/llvm/opt/IOBarrierEliminationTests.cpp \
+    jlm/llvm/opt/IOBarrierRedirectionTests.cpp \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \

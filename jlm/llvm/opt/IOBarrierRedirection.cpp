@@ -15,13 +15,42 @@
 namespace jlm::llvm
 {
 
+class IOBarrierRedirection::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Id::IOBarrierElimination, sourceFile)
+  {}
+
+  void
+  start() noexcept
+  {
+    AddTimer(Label::Timer).start();
+  }
+
+  void
+  stop() noexcept
+  {
+    GetTimer(Label::Timer).stop();
+  }
+
+  static std::unique_ptr<Statistics>
+  create(const util::FilePath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+};
+
 IOBarrierRedirection::~IOBarrierRedirection() = default;
 
 IOBarrierRedirection::IOBarrierRedirection()
     : Transformation("IOBarrierRedirection")
 {}
-
+#if 0
 // FIXME: copied from NodeSinking pass
+// We can be more efficient here
 static util::HashSet<rvsdg::Node *>
 collectDependentNodes(const rvsdg::Node & node)
 {
@@ -47,7 +76,7 @@ collectDependentNodes(const rvsdg::Node & node)
   collect(node, dependentNodes);
   return dependentNodes;
 }
-
+#endif
 void
 IOBarrierRedirection::redirectIOBarrierNode(rvsdg::SimpleNode & ioBarrierNode)
 {
@@ -83,11 +112,11 @@ IOBarrierRedirection::redirectIOBarrierNode(rvsdg::SimpleNode & ioBarrierNode)
 
   if (!outerIOBarrierNode)
     return;
-
+#if 0
   if (const auto dependentNodes = collectDependentNodes(*outerIOBarrierNode);
       !dependentNodes.Contains(gammaNode))
     return;
-
+#endif
   ioBarrierNode.output(0)->divert_users(&barredOperand);
   barredGammaInput.divert_to(outerIOBarrierNode->output(0));
 }
@@ -145,7 +174,13 @@ IOBarrierRedirection::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto statistics = Statistics::create(rvsdgModule.SourceFilePath().value());
+
+  statistics->start();
   redirectInRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->stop();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 }

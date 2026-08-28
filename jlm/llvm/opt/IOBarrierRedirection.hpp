@@ -13,7 +13,6 @@ namespace jlm::llvm
 
 class IOBarrierRedirection final : public rvsdg::Transformation
 {
-  class Context;
   class Statistics;
 
 public:
