@@ -36,7 +36,7 @@ public:
 
 private:
   void
-  markOutputsDereferenceable(const rvsdg::Region & region);
+  markDereferenceable(const rvsdg::Region & region);
 
   void
   propagateDereferenceable(rvsdg::Graph & graph);
