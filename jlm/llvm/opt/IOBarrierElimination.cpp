@@ -79,41 +79,53 @@ class IOBarrierElimination::Context
 {
 public:
   /**
-   * Mark \p output as dereferenceable with size \p sizeInBytes.
+   * Mark \p input as dereferenceable with size \p sizeInBytes.
    *
-   * @return True, if the output was not already marked as dereferenceable, otherwise false.
+   * @return True, if the input was not already marked as dereferenceable, otherwise false.
    */
   bool
-  markDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
+  markDereferenceable(const rvsdg::Input & input, const size_t sizeInBytes)
   {
-    const auto it = dereferenceableOutputs_.find(&output);
-    if (it == dereferenceableOutputs_.end())
+    const auto it = dereferenceableInputs_.find(&input);
+    if (it == dereferenceableInputs_.end())
     {
-      dereferenceableOutputs_[&output] = sizeInBytes;
+      dereferenceableInputs_[&input] = sizeInBytes;
       return true;
     }
 
-    dereferenceableOutputs_[&output] = std::max(it->second, sizeInBytes);
+    dereferenceableInputs_[&input] = std::max(it->second, sizeInBytes);
     return false;
   }
 
+  bool
+  markUsersDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
+  {
+    bool wasMarked = false;
+    for (auto & user : output.Users())
+    {
+      wasMarked |= markDereferenceable(user, sizeInBytes);
+    }
+
+    return wasMarked;
+  }
+
   /**
-   * @return The size in bytes, if \p output is marked as dereferenceable, otherwise std::nullopt.
+   * @return The size in bytes, if \p input is marked as dereferenceable, otherwise std::nullopt.
    */
   [[nodiscard]] std::optional<size_t>
-  isDereferenceable(const rvsdg::Output & output) const
+  isDereferenceable(const rvsdg::Input & input) const
   {
-    const auto it = dereferenceableOutputs_.find(&output);
-    if (it == dereferenceableOutputs_.end())
+    const auto it = dereferenceableInputs_.find(&input);
+    if (it == dereferenceableInputs_.end())
       return std::nullopt;
 
     return it->second;
   }
 
   [[nodiscard]] size_t
-  numDereferenceableOutputs() const
+  numDereferenceableInputs() const
   {
-    return dereferenceableOutputs_.size();
+    return dereferenceableInputs_.size();
   }
 
   static std::unique_ptr<Context>
@@ -123,7 +135,7 @@ public:
   }
 
 private:
-  std::unordered_map<const rvsdg::Output *, size_t> dereferenceableOutputs_{};
+  std::unordered_map<const rvsdg::Input *, size_t> dereferenceableInputs_{};
 };
 
 IOBarrierElimination::~IOBarrierElimination() = default;
@@ -143,7 +155,7 @@ IOBarrierElimination::Run(
   auto statistics = Statistics::create(module.SourceFilePath().value());
 
   statistics->startMarkStatistics();
-  markOutputsDereferenceable(rvsdg.GetRootRegion());
+  markDereferenceable(rvsdg.GetRootRegion());
   statistics->stopMarkStatistics();
 
   statistics->startPropagateStatistics();
@@ -161,7 +173,7 @@ IOBarrierElimination::Run(
 }
 
 void
-IOBarrierElimination::markOutputsDereferenceable(const rvsdg::Region & region)
+IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
@@ -169,7 +181,7 @@ IOBarrierElimination::markOutputsDereferenceable(const rvsdg::Region & region)
     {
       for (auto & subregion : structuralNode->Subregions())
       {
-        markOutputsDereferenceable(subregion);
+        markDereferenceable(subregion);
       }
     }
     else
@@ -192,14 +204,14 @@ IOBarrierElimination::markOutputsDereferenceable(const rvsdg::Region & region)
             // If the IO state is directly connected to a function argument, we can eliminate the
             // IOBarrierOperation node as function inlining should reinsert a new IOBarrierOperation
             // node when inlining is performed.
-            context_->markDereferenceable(barredAddressOperand, sizeInBytes);
+            context_->markUsersDereferenceable(barredAddressOperand, sizeInBytes);
           }
         }
         else
         {
           // The load node is not connected to a IOBarrierOperation node. Mark its address operand
           // as dereferenceable.
-          context_->markDereferenceable(addressOperand, sizeInBytes);
+          context_->markUsersDereferenceable(addressOperand, sizeInBytes);
         }
       }
     }
@@ -230,11 +242,11 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(input->Type()))
                 continue;
 
-              if (auto size = context_->isDereferenceable(*input->origin()))
+              if (auto size = context_->isDereferenceable(*input))
               {
                 for (const auto & argument : arguments)
                 {
-                  context_->markDereferenceable(*argument, size.value());
+                  context_->markUsersDereferenceable(*argument, size.value());
                 }
               }
             }
@@ -251,7 +263,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
               for (const auto & result : results)
               {
-                auto sizeOpt = context_->isDereferenceable(*result->origin());
+                auto sizeOpt = context_->isDereferenceable(*result);
                 if (!sizeOpt)
                 {
                   allResultsAreDereferenceable = false;
@@ -261,7 +273,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
                 sizeInBytes = std::min(sizeInBytes, sizeOpt.value());
               }
               if (allResultsAreDereferenceable)
-                context_->markDereferenceable(*output, sizeInBytes);
+                context_->markUsersDereferenceable(*output, sizeInBytes);
             }
           },
           [&](rvsdg::ThetaNode & thetaNode)
@@ -272,12 +284,12 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
 
-              auto inputSizeOpt = context_->isDereferenceable(*loopVar.input->origin());
-              auto resultSizeOpt = context_->isDereferenceable(*loopVar.post->origin());
+              auto inputSizeOpt = context_->isDereferenceable(*loopVar.input);
+              auto resultSizeOpt = context_->isDereferenceable(*loopVar.post);
               if (inputSizeOpt && resultSizeOpt)
               {
                 auto sizeInBytes = std::min(inputSizeOpt.value(), resultSizeOpt.value());
-                context_->markDereferenceable(*loopVar.output, sizeInBytes);
+                context_->markUsersDereferenceable(*loopVar.output, sizeInBytes);
               }
             }
 
@@ -305,12 +317,12 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
   // FIXME: Counting the number of dereferenceable outputs is imprecise. It might be that we could
   // improve the result further as the size of an already marked output is widened. This is
   // currently not captured here.
-  size_t numDereferenceableOutputs = 0;
+  size_t numDereferenceableInputs = 0;
   do
   {
-    numDereferenceableOutputs = context_->numDereferenceableOutputs();
+    numDereferenceableInputs = context_->numDereferenceableInputs();
     propagate(graph.GetRootRegion());
-  } while (numDereferenceableOutputs != context_->numDereferenceableOutputs());
+  } while (numDereferenceableInputs != context_->numDereferenceableInputs());
 }
 
 void
@@ -354,13 +366,13 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
             if (!ioBarrierOp)
               return;
 
-            auto & barredAddressOperand = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-            const auto sizeOpt = context_->isDereferenceable(barredAddressOperand);
+            auto & barredAddressInput = IOBarrierOperation::BarredInput(*ioBarrierNode);
+            const auto sizeOpt = context_->isDereferenceable(barredAddressInput);
             const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
             if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
               return;
 
-            loadAddress.divert_to(&barredAddressOperand);
+            loadAddress.divert_to(barredAddressInput.origin());
           }
         },
         []()
