@@ -8,7 +8,9 @@
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
@@ -140,6 +142,9 @@ InvariantValueRedirection::redirectInRegion(rvsdg::Region & region)
 
           if (configuration_.enableGammaOutputRedirection)
             redirectGammaOutputs(gammaNode);
+
+          if (configuration_.enableGammaControlOutputRedirection)
+            redirectGammaControlOutputs(gammaNode);
         },
         [this](rvsdg::ThetaNode & thetaNode)
         {
@@ -195,6 +200,54 @@ InvariantValueRedirection::redirectGammaOutputs(rvsdg::GammaNode & gammaNode)
     {
       exitVar.output->divert_users(*invariantOrigin);
     }
+  }
+}
+
+void
+InvariantValueRedirection::redirectGammaControlOutputs(rvsdg::GammaNode & gammaNode)
+{
+  for (auto exitVar : gammaNode.GetExitVars())
+  {
+    if (!rvsdg::is<rvsdg::ControlType>(exitVar.output->Type()))
+      continue;
+
+    bool foundUndefValue = false;
+    std::optional<rvsdg::ControlValueRepresentation> ctlValueOpt;
+    for (auto result : exitVar.branchResult)
+    {
+      auto & tracedOutput = llvm::traceOutput(*result->origin());
+      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(tracedOutput))
+      {
+        if (auto ctlConstantOp =
+                dynamic_cast<const rvsdg::ControlConstantOperation *>(&simpleNode->GetOperation()))
+        {
+          if (!ctlValueOpt.has_value())
+          {
+            ctlValueOpt = ctlConstantOp->value();
+          }
+          else if (ctlValueOpt != ctlConstantOp->value())
+          {
+            ctlValueOpt = std::nullopt;
+            break;
+          }
+          else
+          {
+            // ctlValueOpt == ctlConstantOp->value()
+            // Nothing needs to be done
+          }
+        }
+        else if (dynamic_cast<const UndefValueOperation *>(&simpleNode->GetOperation()))
+        {
+          foundUndefValue = true;
+        }
+      }
+    }
+
+    if (foundUndefValue)
+      throw std::runtime_error("InvariantValueRedirection: Found undef control value");
+
+    if (ctlValueOpt.has_value())
+      throw std::runtime_error("InvariantValueRedirection: Found single control value");
   }
 }
 

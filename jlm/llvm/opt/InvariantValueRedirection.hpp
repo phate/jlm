@@ -86,6 +86,7 @@ public:
   struct Configuration
   {
     bool enableGammaOutputRedirection = true;
+    bool enableGammaControlOutputRedirection = true;
     bool enableThetaOutputRedirection = true;
     bool enableThetaGammaCorrelationRedirection = true;
     bool enableCallOutputRedirection = true;
@@ -123,6 +124,9 @@ private:
 
   static void
   redirectGammaOutputs(rvsdg::GammaNode & gammaNode);
+
+  static void
+  redirectGammaControlOutputs(rvsdg::GammaNode & gammaNode);
 
   static void
   redirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
