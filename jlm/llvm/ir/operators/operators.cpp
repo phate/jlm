@@ -441,7 +441,7 @@ UndefValueOperation::operator==(const Operation & other) const noexcept
 std::string
 UndefValueOperation::debug_string() const
 {
-  return "undef";
+  return util::strfmt("Undef[", GetType().debug_string(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
