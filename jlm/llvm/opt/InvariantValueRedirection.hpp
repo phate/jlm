@@ -38,6 +38,13 @@ class ThetaGammaPredicateCorrelation;
  * connected to the arguments of a single gamma input. All the users of a gamma output are diverted
  * to the origin of this gamma input.
  *
+ * ### Gamma control constant redirection
+ * The output of a gamma node is considered invariant if all the corresponding region
+ * results are connected to control constants that represent the same value. This can include
+ * \ref UndefValueOperation constants, which can be used as a replacement for any \ref
+ * ControlConstantOperation constants. All the users of a gamma output are diverted to a \ref
+ * ControlConstantOperation node that is created in the parent region of the gamma node.
+ *
  * ### Theta output redirection
  * A loop variable is considered invariant if its post value is connected to its corresponding pre
  * value. All the users of the loop variables' output are diverted to the origin of the
