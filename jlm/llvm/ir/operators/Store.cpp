@@ -32,7 +32,7 @@ StoreNonVolatileOperation::operator==(const Operation & other) const noexcept
 std::string
 StoreNonVolatileOperation::debug_string() const
 {
-  return util::strfmt("Store", GetStoredType().debug_string(), "]");
+  return util::strfmt("Store[", GetStoredType().debug_string(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
