@@ -42,20 +42,21 @@ namespace jlm::llvm
 {
 
 // Makes the LocalAA give up earlier
-static const bool USE_TRIVIAL_LOCALAA = std::getenv("JLM_SVF_USE_TRIVIAL_LOCALAA");
+static const bool USE_TRIVIAL_LOCALAA = true; // std::getenv("JLM_SVF_USE_TRIVIAL_LOCALAA");
 
 // Enables the use of the PointsToGraphAliasAnalysis.
 // Runs Andersen to make the PointsToGraph, and queries it if LocalAA yields MayAlias.
-static const bool ENABLE_PTGAA = std::getenv("JLM_ENABLE_SVF_PTGAA");
+static const bool ENABLE_PTGAA = false; // std::getenv("JLM_ENABLE_SVF_PTGAA");
 
 // Enables the use of region predication checking when tracing origins of loaded values
-static const bool ENABLE_REGION_PREDICATE_CHECK =
-    !std::getenv("JLM_DISABLE_REGION_PREDICATE_CHECK");
+static const bool ENABLE_REGION_PREDICATE_CHECK = true;
+//! std::getenv("JLM_DISABLE_REGION_PREDICATE_CHECK");
 
 // By default, loads whose memory states can be traced to other loads attempt to forward
 // the previously loaded value, if the types match, and the addresses are the same (MustAlias).
 // When disabled, loads are skipped during tracing, and never considered for value forwarding.
-static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
+static const bool DISABLE_LOAD_LOAD_FORWARDING =
+    true; // std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
 
 /**
  * Helper for counting alias analysis responses
