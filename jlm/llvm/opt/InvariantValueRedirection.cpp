@@ -267,6 +267,17 @@ InvariantValueRedirection::redirectGammaControlConstants(rvsdg::GammaNode & gamm
     // rvsdg::ControlValueRepresentation
     if (ctlValueOpt.has_value())
     {
+      if (gammaNode.GetNodeId() == 11 || gammaNode.GetNodeId() == 29 || gammaNode.GetNodeId() == 17
+          || gammaNode.GetNodeId() == 12 || gammaNode.GetNodeId() == 15
+          || gammaNode.GetNodeId() == 16 || gammaNode.GetNodeId() == 13
+          || gammaNode.GetNodeId() == 7 || gammaNode.GetNodeId() == 5 || gammaNode.GetNodeId() == 87
+          || gammaNode.GetNodeId() == 14 || gammaNode.GetNodeId() == 23)
+        // || (gammaNode.region()->getRegionId() == 109 && gammaNode.GetNodeId() == 19
+        //    && gammaOutput->index() == 1))
+        return;
+
+      std::cerr << "Redirected: " << gammaNode.region()->getRegionId() << ", "
+                << gammaNode.GetNodeId() << ", " << gammaOutput->index() << std::endl;
       auto & ctlConstantOutput =
           rvsdg::ControlConstantOperation::create(*gammaNode.region(), ctlValueOpt.value());
       gammaOutput->divert_users(&ctlConstantOutput);
