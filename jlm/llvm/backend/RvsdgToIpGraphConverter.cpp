@@ -663,8 +663,11 @@ RvsdgToIpGraphConverter::ConvertModule(
   // not the function itself. See the NestedLoopWithCall test in the RvsdgToIpGraphConverterTests
   // suite. We simply avoid this problem by removing all invariant theta/gamma values from the RVSDG
   // using invariant value redirection before converting it to a control flow graph.
+  //
+  // FIXME: use designated initializers once we switched to C++20
   constexpr InvariantValueRedirection::Configuration configuration{
     true,  // enableGammaOutputRedirection
+    false, // enableGammaControlConstantRedirection
     true,  // enableThetaOutputRedirection
     false, // enableThetaGammaCorrelationRedirection
     false, // enableCallOutputRedirection

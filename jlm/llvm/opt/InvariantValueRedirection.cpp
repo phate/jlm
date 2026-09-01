@@ -143,8 +143,8 @@ InvariantValueRedirection::redirectInRegion(rvsdg::Region & region)
           if (configuration_.enableGammaOutputRedirection)
             redirectGammaOutputs(gammaNode);
 
-          if (configuration_.enableGammaControlOutputRedirection)
-            redirectGammaControlOutputs(gammaNode);
+          if (configuration_.enableGammaControlConstantRedirection)
+            redirectGammaControlConstants(gammaNode);
         },
         [this](rvsdg::ThetaNode & thetaNode)
         {
@@ -204,50 +204,73 @@ InvariantValueRedirection::redirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 }
 
 void
-InvariantValueRedirection::redirectGammaControlOutputs(rvsdg::GammaNode & gammaNode)
+InvariantValueRedirection::redirectGammaControlConstants(rvsdg::GammaNode & gammaNode)
 {
-  for (auto exitVar : gammaNode.GetExitVars())
+  for (auto [branchResult, gammaOutput] : gammaNode.GetExitVars())
   {
-    if (!rvsdg::is<rvsdg::ControlType>(exitVar.output->Type()))
+    if (!rvsdg::is<rvsdg::ControlType>(gammaOutput->Type()))
       continue;
 
-    bool foundUndefValue = false;
     std::optional<rvsdg::ControlValueRepresentation> ctlValueOpt;
-    for (auto result : exitVar.branchResult)
+    for (const auto result : branchResult)
     {
       auto & tracedOutput = llvm::traceOutput(*result->origin());
-      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(tracedOutput))
+      if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(tracedOutput))
       {
-        if (auto ctlConstantOp =
-                dynamic_cast<const rvsdg::ControlConstantOperation *>(&simpleNode->GetOperation()))
+        const bool done = rvsdg::MatchTypeWithDefault(
+            simpleNode->GetOperation(),
+            [&ctlValueOpt](const rvsdg::ControlConstantOperation & ctlConstantOp)
+            {
+              if (!ctlValueOpt.has_value())
+              {
+                ctlValueOpt = ctlConstantOp.value();
+                return false;
+              }
+
+              if (ctlValueOpt != ctlConstantOp.value())
+              {
+                return true;
+              }
+
+              // ctlValueOpt == ctlConstantOp->value()
+              // Nothing needs to be done
+              return false;
+            },
+            [](const UndefValueOperation &)
+            {
+              // Nothing needs to be done
+              // A UndefValue can be a placeholder for any ControlConstantOperation
+              return false;
+            },
+            []()
+            {
+              // Any other operation means the transformation cannot be performed
+              return true;
+            });
+
+        if (done)
         {
-          if (!ctlValueOpt.has_value())
-          {
-            ctlValueOpt = ctlConstantOp->value();
-          }
-          else if (ctlValueOpt != ctlConstantOp->value())
-          {
-            ctlValueOpt = std::nullopt;
-            break;
-          }
-          else
-          {
-            // ctlValueOpt == ctlConstantOp->value()
-            // Nothing needs to be done
-          }
+          // We found a traced output that we could not deal with. Stop the transformation.
+          ctlValueOpt = std::nullopt;
+          break;
         }
-        else if (dynamic_cast<const UndefValueOperation *>(&simpleNode->GetOperation()))
-        {
-          foundUndefValue = true;
-        }
+      }
+      else
+      {
+        // We found a traced output that we could not deal with. Stop the transformation.
+        ctlValueOpt = std::nullopt;
+        break;
       }
     }
 
-    if (foundUndefValue)
-      throw std::runtime_error("InvariantValueRedirection: Found undef control value");
-
+    // At this point we know that the gamma exit variable could only be traced to a single
+    // rvsdg::ControlValueRepresentation
     if (ctlValueOpt.has_value())
-      throw std::runtime_error("InvariantValueRedirection: Found single control value");
+    {
+      auto & ctlConstantOutput =
+          rvsdg::ControlConstantOperation::create(*gammaNode.region(), ctlValueOpt.value());
+      gammaOutput->divert_users(&ctlConstantOutput);
+    }
   }
 }
 
