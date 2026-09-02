@@ -278,7 +278,7 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   auto ioStateType = IOStateType::Create();
   auto functionType = FunctionType::Create(
       { pointerType, ioStateType },
-      { pointerType, pointerType, pointerType, pointerType, ioStateType });
+      { pointerType, pointerType, pointerType, pointerType, pointerType, ioStateType });
 
   Graph rvsdg;
 
@@ -312,11 +312,14 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   auto & ioBarrierNode2 =
       IOBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output);
 
+  auto & ioBarrierNode3 = IOBarrierOperation::createNode(*ptrArgument, *ioStateOutputVar.output);
+
   auto lambdaOutput = lambdaNode->finalize({ ioBarrierNode0.output(0),
                                              ioBarrierNode2.output(0),
                                              ptrOutputVar1.output,
                                              ptrOutputVar2.output,
-                                             ioStateOutputVar.output });
+                                             ioBarrierNode3.output(0),
+        ioStateOutputVar.output });
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act
@@ -330,6 +333,7 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   EXPECT_EQ(ptrInputVar.input->origin(), ioBarrierNode0.output(0));
   EXPECT_EQ(ptrOutputVar2.result[0]->origin(), ioBarrierNode1.output(0));
   EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), ioBarrierNode2.output(0));
+  EXPECT_EQ(IOBarrierOperation::BarredInput(ioBarrierNode3).origin(), ioBarrierNode0.output(0));
 }
 
 }
