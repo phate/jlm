@@ -312,12 +312,11 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   auto & ioBarrierNode2 =
       IOBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output);
 
-  auto lambdaOutput = lambdaNode->finalize(
-      { ioBarrierNode0.output(0),
-        ioBarrierNode2.output(0),
-        ptrOutputVar1.output,
-        ptrOutputVar2.output,
-        ioStateOutputVar.output });
+  auto lambdaOutput = lambdaNode->finalize({ ioBarrierNode0.output(0),
+                                             ioBarrierNode2.output(0),
+                                             ptrOutputVar1.output,
+                                             ptrOutputVar2.output,
+                                             ioStateOutputVar.output });
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act
