@@ -99,8 +99,11 @@ CompareTypes(const Type & type1, const Type & type2)
   }
 
   // Fallback to regular equality for any remaining types
-  ASSERT_TRUE(type1 == type2) << "CompareTypes: Type mismatch: expected " << type1.debug_string()
-                              << " but got " << type2.debug_string();
+  if (type1 != type2)
+  {
+    ADD_FAILURE() << "CompareTypes: Type mismatch - expected '" << type1.debug_string()
+                  << "' but got '" << type2.debug_string() << "'";
+  }
 }
 
 /**
@@ -372,7 +375,9 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if structural node
   if (auto * snode1 = dynamic_cast<const StructuralNode *>(&node1))
   {
-    auto * snode2 = assertedCast<const StructuralNode>(&node2);
+    auto * snode2 = dynamic_cast<const StructuralNode *>(&node2);
+    ASSERT_NE(snode2, nullptr) << "CompareNodes: Node type mismatch - expected StructuralNode for "
+                                  "both nodes, but node2 is of a different type";
 
     CompareOperations(snode1->GetOperation(), snode2->GetOperation());
     ASSERT_EQ(snode1->nsubregions(), snode2->nsubregions())
@@ -403,7 +408,8 @@ CompareNodes(const Node & node1, const Node & node2)
     // Theta-specific: compare loop variable struct fields
     if (auto * theta1 = dynamic_cast<const ThetaNode *>(&node1))
     {
-      auto * theta2 = assertedCast<const ThetaNode>(&node2);
+      auto * theta2 = dynamic_cast<const ThetaNode *>(&node2);
+      ASSERT_NE(theta2, nullptr) << "CompareNodes: Theta node type mismatch for node2";
 
       auto lvList1 = theta1->GetLoopVars();
       auto lvList2 = theta2->GetLoopVars();
@@ -425,7 +431,8 @@ CompareNodes(const Node & node1, const Node & node2)
     // Gamma-specific: compare exit variable struct fields
     if (auto * gamma1 = dynamic_cast<const GammaNode *>(&node1))
     {
-      auto * gamma2 = assertedCast<const GammaNode>(&node2);
+      auto * gamma2 = dynamic_cast<const GammaNode *>(&node2);
+      ASSERT_NE(gamma2, nullptr) << "CompareNodes: Gamma node type mismatch for node2";
 
       auto evList1 = gamma1->GetExitVars();
       auto evList2 = gamma2->GetExitVars();
@@ -447,7 +454,8 @@ CompareNodes(const Node & node1, const Node & node2)
     // PhiNode-specific: compare fixpoint variable struct fields
     if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
     {
-      auto * phi2 = assertedCast<const PhiNode>(&node2);
+      auto * phi2 = dynamic_cast<const PhiNode *>(&node2);
+      ASSERT_NE(phi2, nullptr) << "CompareNodes: Phi node type mismatch for node2";
 
       auto fvList1 = phi1->GetFixVars();
       auto fvList2 = phi2->GetFixVars();
@@ -471,7 +479,8 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if simple node
   if (auto * simp1 = dynamic_cast<const SimpleNode *>(&node1))
   {
-    auto * simp2 = assertedCast<const SimpleNode>(&node2);
+    auto * simp2 = dynamic_cast<const SimpleNode *>(&node2);
+    ASSERT_NE(simp2, nullptr) << "CompareNodes: Simple node type mismatch for node2";
 
     CompareOperations(simp1->GetOperation(), simp2->GetOperation());
 
@@ -657,13 +666,16 @@ CompareRegions(const Region & region1, const Region & region2)
     if (auto * node1 = TryGetOwnerNode<Node>(*origin1))
     {
       auto * node2 = TryGetOwnerNode<Node>(*origin2);
-      ASSERT_NE(node2, nullptr);
+      ASSERT_NE(node2, nullptr)
+          << "CompareRegions: Origin mismatch - node1 found but origin2 did not resolve to a node";
       // Add nodes to queue for BFS traversing
       nodeQueue.push({ node1, node2 });
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
-      auto arg2 = assertedCast<RegionArgument>(origin2);
+      auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
+      ASSERT_NE(arg2, nullptr) << "CompareRegions: RegionArgument mismatch - origin1 resolved to a "
+                                  "region argument but origin2 did not";
       CompareTypes(*arg1->Type(), *arg2->Type());
     }
     else
@@ -693,7 +705,8 @@ CompareRegions(const Region & region1, const Region & region2)
       if (auto * next1 = TryGetOwnerNode<Node>(*origin1))
       {
         auto * next2 = TryGetOwnerNode<Node>(*origin2);
-        ASSERT_NE(next2, nullptr);
+        ASSERT_NE(next2, nullptr) << "CompareRegions: Origin mismatch - node1 input j origin found "
+                                     "but node2 input j origin did not resolve to a node";
 
         if (!visited.count(next1))
         {
@@ -705,7 +718,9 @@ CompareRegions(const Region & region1, const Region & region2)
       }
       else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
       {
-        auto arg2 = assertedCast<RegionArgument>(origin2);
+        auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
+        ASSERT_NE(arg2, nullptr) << "CompareRegions: RegionArgument mismatch - node1 input j "
+                                    "origin is a region argument but node2 is not";
         CompareTypes(*arg1->Type(), *arg2->Type());
       }
       else
