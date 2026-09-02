@@ -22,6 +22,7 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
@@ -711,6 +712,131 @@ TEST(StoreValueForwardingTests, RouteUninitialized)
   const auto [undefNode, undefOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*exitVar.branchResult[1]->origin());
   EXPECT_TRUE(undefNode && undefOperation);
+}
+
+TEST(StoreValueForwardingTests, DoNotPruneLoopCarriedGammaStore)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   * lambda [p:ptr, io, mem0] {
+   *   mem1 = STORE[bits32] p, 0, mem0
+   *   _, mem4, result = theta p, mem1, undef
+   *     [p1, mem2, _] {
+   *       pred = TestOperation[ControlType(2)]
+   *       ctrl, mem3 = gamma1 pred, p1, mem2
+   *         [p2, memStore] {
+   *           memStoreOut = STORE[bits32] p2, 1, memStore
+   *         }[ControlConstant(0), memStoreOut]
+   *         [_, memPass] {
+   *         }[ControlConstant(1), memPass]
+   *       mem4, loaded = gamma2 ctrl, p1, mem3
+   *         [_, memPass] {
+   *         }[memPass, undef]
+   *         [p3, memLoad] {
+   *           loadedInBranch, memLoadOut = LOAD[bits32] p3, memLoad
+   *         }[memLoadOut, loadedInBranch]
+   *     }[pred, p1, mem4, loaded]
+   * } [result, io, mem4]
+   *
+   * The STORE in the first gamma branch can affect the LOAD in the second gamma branch
+   * through the theta's loop-carried memory state, even though both branches are mutually
+   * exclusive within one iteration.
+   *
+   * Region predicate checking can therefore not prune the store branch while tracing the
+   * load branch: doing so makes StoreValueForwarding incorrectly replace the load with the
+   * initial store of 0.
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = rvsdg::BitType::Create(32);
+  const auto controlType = rvsdg::ControlType::Create(2);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { bits32Type, ioStateType, memoryStateType });
+
+  auto & lambdaNode = *rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(funcType, "func", Linkage::internalLinkage));
+
+  auto & p = *lambdaNode.GetFunctionArguments()[0];
+  auto & io0 = *lambdaNode.GetFunctionArguments()[1];
+  auto & mem0 = *lambdaNode.GetFunctionArguments()[2];
+
+  auto & constantZero = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
+  auto & initialStoreNode =
+      StoreNonVolatileOperation::CreateNode(p, *constantZero.output(0), { &mem0 }, 4);
+  auto & mem1 = *StoreOperation::MemoryStateOutputs(initialStoreNode).begin();
+
+  auto undefResult = UndefValueOperation::Create(*lambdaNode.subregion(), bits32Type);
+
+  auto & thetaNode = *rvsdg::ThetaNode::create(lambdaNode.subregion());
+  auto pLoopVar = thetaNode.AddLoopVar(&p);
+  auto memLoopVar = thetaNode.AddLoopVar(&mem1);
+  auto resultLoopVar = thetaNode.AddLoopVar(undefResult);
+
+  auto predicateNode = rvsdg::TestOperation::createNode(thetaNode.subregion(), {}, { controlType });
+  auto gamma1 = rvsdg::GammaNode::create(predicateNode->output(0), 2);
+
+  auto gamma1PEntry = gamma1->AddEntryVar(pLoopVar.pre);
+  auto gamma1MemEntry = gamma1->AddEntryVar(memLoopVar.pre);
+
+  auto & constantOne = IntegerConstantOperation::Create(*gamma1->subregion(0), 32, 1);
+  auto & loopStoreNode = StoreNonVolatileOperation::CreateNode(
+      *gamma1PEntry.branchArgument[0],
+      *constantOne.output(0),
+      { gamma1MemEntry.branchArgument[0] },
+      4);
+  auto & gamma1StoreBranchMem = *StoreOperation::MemoryStateOutputs(loopStoreNode).begin();
+  auto & gamma1StoreBranchControl =
+      rvsdg::ControlConstantOperation::create(*gamma1->subregion(0), 2, 0);
+  auto & gamma1PassBranchControl =
+      rvsdg::ControlConstantOperation::create(*gamma1->subregion(1), 2, 1);
+
+  auto gamma1ControlExit =
+      gamma1->AddExitVar({ &gamma1StoreBranchControl, &gamma1PassBranchControl });
+  auto gamma1MemExit =
+      gamma1->AddExitVar({ &gamma1StoreBranchMem, gamma1MemEntry.branchArgument[1] });
+
+  auto gamma2 = rvsdg::GammaNode::create(gamma1ControlExit.output, 2);
+  auto gamma2PEntry = gamma2->AddEntryVar(pLoopVar.pre);
+  auto gamma2MemEntry = gamma2->AddEntryVar(gamma1MemExit.output);
+
+  auto gamma2PassBranchValue = UndefValueOperation::Create(*gamma2->subregion(0), bits32Type);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *gamma2PEntry.branchArgument[1],
+      { gamma2MemEntry.branchArgument[1] },
+      bits32Type,
+      4);
+  auto & loadedValue = LoadOperation::LoadedValueOutput(loadNode);
+  auto & gamma2LoadBranchMem = *LoadOperation::MemoryStateOutputs(loadNode).begin();
+
+  auto gamma2MemExit =
+      gamma2->AddExitVar({ gamma2MemEntry.branchArgument[0], &gamma2LoadBranchMem });
+  auto gamma2ResultExit = gamma2->AddExitVar({ gamma2PassBranchValue, &loadedValue });
+
+  memLoopVar.post->divert_to(gamma2MemExit.output);
+  resultLoopVar.post->divert_to(gamma2ResultExit.output);
+
+  lambdaNode.finalize({ resultLoopVar.output, &io0, memLoopVar.output });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  const auto & loadBranchResultOrigin = *gamma2ResultExit.branchResult[1]->origin();
+  EXPECT_TRUE(rvsdg::IsOwnerNodeOperation<LoadNonVolatileOperation>(loadBranchResultOrigin));
 }
 
 TEST(StoreValueForwardingTests, GepInLoop)

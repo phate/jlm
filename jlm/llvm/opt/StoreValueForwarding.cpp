@@ -57,6 +57,28 @@ static const bool ENABLE_REGION_PREDICATE_CHECK =
 // When disabled, loads are skipped during tracing, and never considered for value forwarding.
 static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
 
+static bool
+haveCommonParentTheta(
+    const rvsdg::Region & firstRegion,
+    const rvsdg::Region & secondRegion) noexcept
+{
+  for (auto region = &firstRegion; region && region->node(); region = region->node()->region())
+  {
+    const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(region->node());
+    if (!thetaNode)
+      continue;
+
+    for (auto otherRegion = &secondRegion; otherRegion && otherRegion->node();
+         otherRegion = otherRegion->node()->region())
+    {
+      if (otherRegion->node() == thetaNode)
+        return true;
+    }
+  }
+
+  return false;
+}
+
 /**
  * Helper for counting alias analysis responses
  */
@@ -803,6 +825,13 @@ private:
           auto & fromRegion = *branchResult->region();
           if (!regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region()))
           {
+            // Predicate constraints inside a theta only describe the current loop iteration.
+            // A memory state can still carry a value from an earlier iteration through a loop
+            // variable, so treating such branches as unreachable can incorrectly discard the
+            // actual last store.
+            if (haveCommonParentTheta(fromRegion, *loadNode.region()))
+              return ValueOrigin::createUnknown();
+
             // Mark the region as providing uninitialized memory, since it is never reached
             auto valueOrigin = ValueOrigin::createUninitialized();
             lastValueOriginInRegion.emplace(
