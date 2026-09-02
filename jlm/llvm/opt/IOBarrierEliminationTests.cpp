@@ -274,9 +274,6 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto i32Type = BitType::Create(32);
-  auto i64Type = BitType::Create(64);
-  auto controlType = ControlType::Create(2);
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto functionType = FunctionType::Create(
@@ -330,7 +327,7 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   EXPECT_EQ(ptrArgument->nusers(), 1);
   EXPECT_EQ(ptrInputVar.argument[0]->nusers(), 1);
   EXPECT_EQ(ptrOutputVar1.output->nusers(), 1);
-  
+
   EXPECT_EQ(ptrInputVar.input->origin(), ioBarrierNode0.output(0));
   EXPECT_EQ(ptrOutputVar2.result[0]->origin(), ioBarrierNode1.output(0));
   EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), ioBarrierNode2.output(0));
