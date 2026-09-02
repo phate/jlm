@@ -21,6 +21,7 @@ namespace jlm::llvm
 
 class IOBarrierElimination::Statistics final : public util::Statistics
 {
+  const char * NormalizationTimerLabel_ = "NormalizationTime";
   const char * MarkTimerLabel_ = "MarkTime";
   const char * PropagateTimerLabel_ = "PropagateTime";
   const char * SweepTimerLabel_ = "SweepTime";
@@ -31,6 +32,18 @@ public:
   explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Id::IOBarrierElimination, sourceFile)
   {}
+
+  void
+  startNormalizationStatistics() noexcept
+  {
+    AddTimer(NormalizationTimerLabel_).start();
+  }
+
+  void
+  stopNormalizationStatistics() noexcept
+  {
+    GetTimer(NormalizationTimerLabel_).stop();
+  }
 
   void
   startMarkStatistics() noexcept
@@ -154,6 +167,10 @@ IOBarrierElimination::Run(
   context_ = Context::create();
   auto statistics = Statistics::create(module.SourceFilePath().value());
 
+  statistics->startNormalizationStatistics();
+  normalizeIOBarriers(rvsdg.GetRootRegion());
+  statistics->stopNormalizationStatistics();
+
   statistics->startMarkStatistics();
   markDereferenceable(rvsdg.GetRootRegion());
   statistics->stopMarkStatistics();
@@ -170,6 +187,69 @@ IOBarrierElimination::Run(
 
   // Discard internal state to free up memory after we are done
   context_.reset();
+}
+
+static void
+divertUsersToIOBarrierOutput(rvsdg::Output & output)
+{
+  rvsdg::SimpleNode * ioBarrierNode = nullptr;
+  for (auto & user : output.Users())
+  {
+    if (auto [node, ioBarrierOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(user);
+        ioBarrierOp)
+    {
+      // Ensure that the IOBarrierOperation operands are both originating from the same owner
+      if (IOBarrierOperation::getIOStateInput(*node).origin()->GetOwner() != output.GetOwner())
+        continue;
+
+      ioBarrierNode = node;
+      break;
+    }
+  }
+
+  if (!ioBarrierNode)
+    return;
+
+  output.divertUsersWhere(
+      *ioBarrierNode->output(0),
+      [&ioBarrierNode](const rvsdg::Input & user)
+      {
+        return &IOBarrierOperation::BarredInput(*ioBarrierNode) != &user;
+      });
+}
+
+void
+IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
+{
+  for (auto & node : region.Nodes())
+  {
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        // Handle innermost regions first
+        normalizeIOBarriers(subregion);
+
+        // Normalize subregion arguments
+        for (auto & argument : subregion.Arguments())
+        {
+          if (is<PointerType>(argument->Type()))
+          {
+            divertUsersToIOBarrierOutput(*argument);
+          }
+        }
+      }
+
+      // Normalize node outputs
+      for (auto & output : structuralNode->Outputs())
+      {
+        if (is<PointerType>(output.Type()))
+        {
+          divertUsersToIOBarrierOutput(output);
+        }
+      }
+    }
+  }
 }
 
 void
