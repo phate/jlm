@@ -319,7 +319,7 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
                                              ptrOutputVar1.output,
                                              ptrOutputVar2.output,
                                              ioBarrierNode3.output(0),
-        ioStateOutputVar.output });
+                                             ioStateOutputVar.output });
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act
