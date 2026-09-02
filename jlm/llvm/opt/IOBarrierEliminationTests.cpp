@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -266,6 +267,73 @@ TEST(IOBarrierEliminationTests, testGamma)
 
   // We expect the IOBarrierOperation nodes in gamma subregion 1 NOT to be eliminated
   EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(*gammaNode->subregion(1), true));
+}
+
+TEST(IOBarrierEliminationTest, testNormalizeation)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType = FunctionType::Create(
+      { pointerType, ioStateType },
+      { pointerType, pointerType, pointerType, pointerType, pointerType, ioStateType });
+
+  Graph rvsdg;
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & ioBarrierNode0 = IOBarrierOperation::createNode(*ptrArgument, *ioStateArgument);
+
+  auto structuralNode = TestStructuralNode::create(lambdaNode->subregion(), 2);
+  auto ptrInputVar = structuralNode->addInputWithArguments(*ptrArgument);
+  auto ioStateInputVar = structuralNode->addInputWithArguments(*ioStateArgument);
+
+  // subregion 0
+  auto & ioBarrierNode1 =
+      IOBarrierOperation::createNode(*ptrInputVar.argument[0], *ioStateInputVar.argument[0]);
+
+  // subregion 1
+  // Nothing needs to be done
+
+  // finalize
+  auto ptrOutputVar1 =
+      structuralNode->addOutputWithResults({ ioBarrierNode1.output(0), ptrInputVar.argument[1] });
+  auto ptrOutputVar2 =
+      structuralNode->addOutputWithResults({ ptrInputVar.argument[0], ptrInputVar.argument[1] });
+  auto ioStateOutputVar = structuralNode->addOutputWithResults(
+      { ioStateInputVar.argument[0], ioStateInputVar.argument[1] });
+
+  auto & ioBarrierNode2 =
+      IOBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output);
+
+  auto & ioBarrierNode3 = IOBarrierOperation::createNode(*ptrArgument, *ioStateOutputVar.output);
+
+  auto lambdaOutput = lambdaNode->finalize({ ioBarrierNode0.output(0),
+                                             ioBarrierNode2.output(0),
+                                             ptrOutputVar1.output,
+                                             ptrOutputVar2.output,
+                                             ioBarrierNode3.output(0),
+                                             ioStateOutputVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  IOBarrierElimination::normalizeIOBarriers(rvsdg.GetRootRegion());
+
+  // Assert
+  EXPECT_EQ(ptrArgument->nusers(), 1);
+  EXPECT_EQ(ptrInputVar.argument[0]->nusers(), 1);
+  EXPECT_EQ(ptrOutputVar1.output->nusers(), 1);
+
+  EXPECT_EQ(ptrInputVar.input->origin(), ioBarrierNode0.output(0));
+  EXPECT_EQ(ptrOutputVar2.result[0]->origin(), ioBarrierNode1.output(0));
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), ioBarrierNode2.output(0));
+  EXPECT_EQ(IOBarrierOperation::BarredInput(ioBarrierNode3).origin(), ioBarrierNode0.output(0));
 }
 
 }

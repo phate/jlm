@@ -34,6 +34,9 @@ public:
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
+  static void
+  normalizeIOBarriers(rvsdg::Region & region);
+
 private:
   void
   markDereferenceable(const rvsdg::Region & region);
