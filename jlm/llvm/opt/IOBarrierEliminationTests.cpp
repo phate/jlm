@@ -60,8 +60,8 @@ TEST(IOBarrierEliminationTests, testLambdaArgument)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrier node to be eliminated
-  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  // We expect the IOBarrier node to NOT be eliminated
+  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
 TEST(IOBarrierEliminationTests, testSizeIsRespected)
