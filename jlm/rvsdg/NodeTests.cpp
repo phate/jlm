@@ -309,5 +309,3 @@ TEST(NodeTests, NodeId)
   auto node4 = TestOperation::createNode(&rvsdg2.GetRootRegion(), {}, {});
   EXPECT_EQ(node4->GetNodeId(), 0u);
 }
-
-TEST(NodeTests, )
