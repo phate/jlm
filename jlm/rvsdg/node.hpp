@@ -1095,6 +1095,45 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
     node->output(n)->divert_users(outputs[n]);
 }
 
+/**
+ * Returns true, if \p node1 depends on \p node2. Otherwise, returns false.
+ *
+ * \pre \p node1 and \p node2 must belong to the same region.
+ */
+bool
+dependsOn(const Node & node1, const Node & node2);
+
+enum class DependencyInfo
+{
+  /**
+   * Both nodes are the same.
+   */
+  Equal,
+
+  /**
+   * The nodes are independent and do not depend on each other.
+   */
+  Independent,
+
+  /**
+   * Node1 depends on Node2.
+   */
+  Node1DependsOnNode2,
+
+  /**
+   * Node2 depends on Node1.
+   */
+  Node2DependsOnNode1,
+};
+
+/**
+ * Computes the dependency information between \p node1 and \p node2.
+ *
+ * \pre \p node1 and \p node2 must belong to the same region.
+ */
+DependencyInfo
+computeDependencyInfo(const Node & node1, const Node & node2);
+
 }
 
 #endif

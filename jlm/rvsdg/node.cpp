@@ -420,6 +420,55 @@ RouteToRegion(Output & output, Region & region)
   return *newOrigin;
 }
 
+bool
+dependsOn(const Node & node1, const Node & node2)
+{
+  JLM_ASSERT(node1.region() == node2.region());
+
+  std::function<bool(const Node &, const Node &, util::HashSet<const Node *> &)> canReach =
+      [&](const Node & node, const Node & targetNode, util::HashSet<const Node *> & visited)
+  {
+    if (&node == &targetNode)
+      return true;
+
+    if (visited.Contains(&node))
+      return false;
+
+    for (auto & input : node.Inputs())
+    {
+      auto owner = input.origin()->GetOwner();
+      if (std::holds_alternative<Region *>(owner))
+        continue;
+
+      if (const auto ownerNode = std::get_if<Node *>(&owner))
+        if (canReach(**ownerNode, targetNode, visited))
+          return true;
+    }
+
+    return false;
+  };
+
+  util::HashSet<const Node *> visited;
+  return canReach(node1, node2, visited);
+}
+
+DependencyInfo
+computeDependencyInfo(const Node & node1, const Node & node2)
+{
+  JLM_ASSERT(node1.region() == node2.region());
+
+  if (&node1 == &node2)
+    return DependencyInfo::Equal;
+
+  if (dependsOn(node1, node2))
+    return DependencyInfo::Node1DependsOnNode2;
+
+  if (dependsOn(node2, node1))
+    return DependencyInfo::Node2DependsOnNode1;
+
+  return DependencyInfo::Independent;
+}
+
 /**
   \page def_use_inspection Inspecting the graph and matching against different operations
 
