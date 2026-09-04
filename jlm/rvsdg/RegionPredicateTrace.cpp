@@ -535,7 +535,7 @@ AlternativeRegionPredicateTracer::canRegionReachRegion(Region & originRegion, Re
   }
   // Lowest common ancestor found
   JLM_ASSERT(targetAncestor == originAncestor);
-  auto commonAncestor = targetAncestor;
+  const auto commonAncestor = targetAncestor;
 
   // Go through the ancestors of the target region and check if any of them have requirements
   // that can not be satisfied by the origin region or one of its ancestors
