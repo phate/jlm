@@ -430,8 +430,6 @@ AlternativeRegionPredicateTracer::markRequiredPredicateValueInternal(
   // handle gamma outputs by recursively propagating the requirement to each subregion
   if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    // output is the output of a gamma exit variable
-    // continue inside each of the gamma subregions
     auto exitVar = gamma->MapOutputExitVar(output);
 
     bool anyReachable = false;
@@ -448,8 +446,6 @@ AlternativeRegionPredicateTracer::markRequiredPredicateValueInternal(
   // handle theta outputs by making the same requirement inside the theta
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
-    // output is the output of a theta loop variable
-    // continue from the loop variable post
     auto loopVar = theta->MapOutputLoopVar(output);
 
     // This call can mark certain subregions within the theta region as impossible origins.
@@ -478,7 +474,7 @@ AlternativeRegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & ou
 {
   auto key = std::make_pair(&output, value);
 
-  // If the target region has already been processed, use the cached result
+  // If the (output, value) pair has already been processed, use the cached result
   auto [it, inserted] = impossibleOriginRegions_.insert({ key, {} });
 
   if (inserted)
@@ -487,8 +483,8 @@ AlternativeRegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & ou
     markRequiredPredicateValue(output, value, it->second);
   }
 
-  // Go through all regions that have been marked as unable to satisfy the requirement
-  // of the target region, and check if any of them are ancestors of the origin region
+  // Go through all regions that have been marked as unable to satisfy the requirement,
+  // and check if any of them are the origin region, or one of its ancestors.
   for (auto & impossibleOrigin : it->second)
   {
     if (currentOriginRegionAncestors_.Contains(impossibleOrigin))
