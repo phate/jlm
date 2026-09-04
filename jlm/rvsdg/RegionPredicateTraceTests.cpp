@@ -325,6 +325,12 @@ TEST(RegionPredicateTraceTests, TraceThroughGammas)
   ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma1.subregion(0)));
   ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma1.subregion(1)));
 
+  // gamma0 has no effect on the choice between region 0 or 1 in gamma2 either
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(1)));
+
   // From subregion 0 of gamma1 both subregions 0 and 1 can be reached in gamma2
   ASSERT_TRUE(tracer.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(0)));
   ASSERT_TRUE(tracer.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(1)));
