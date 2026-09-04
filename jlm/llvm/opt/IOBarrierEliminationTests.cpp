@@ -60,7 +60,7 @@ TEST(IOBarrierEliminationTests, testLambdaArgument)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrier node to NOT be eliminated
+  // We expect the IOBarrier node connected to a lambda argument to NOT be eliminated
   EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
