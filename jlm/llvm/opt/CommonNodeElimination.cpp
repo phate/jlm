@@ -1196,6 +1196,8 @@ divertInRegion(rvsdg::Region & region, CommonNodeElimination::Context & context)
       divertOutput(output, context);
     }
   }
+
+  region.prune(false);
 }
 
 CommonNodeElimination::~CommonNodeElimination() noexcept = default;
