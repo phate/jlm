@@ -8,7 +8,9 @@
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
@@ -140,6 +142,9 @@ InvariantValueRedirection::redirectInRegion(rvsdg::Region & region)
 
           if (configuration_.enableGammaOutputRedirection)
             redirectGammaOutputs(gammaNode);
+
+          if (configuration_.enableGammaControlConstantRedirection)
+            redirectGammaControlConstants(gammaNode);
         },
         [this](rvsdg::ThetaNode & thetaNode)
         {
@@ -194,6 +199,77 @@ InvariantValueRedirection::redirectGammaOutputs(rvsdg::GammaNode & gammaNode)
     if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitVar))
     {
       exitVar.output->divert_users(*invariantOrigin);
+    }
+  }
+}
+
+void
+InvariantValueRedirection::redirectGammaControlConstants(rvsdg::GammaNode & gammaNode)
+{
+  for (auto [branchResult, gammaOutput] : gammaNode.GetExitVars())
+  {
+    if (!rvsdg::is<rvsdg::ControlType>(gammaOutput->Type()))
+      continue;
+
+    std::optional<rvsdg::ControlValueRepresentation> ctlValueOpt;
+    for (const auto result : branchResult)
+    {
+      auto & tracedOutput = llvm::traceOutput(*result->origin());
+      if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(tracedOutput))
+      {
+        const bool done = rvsdg::MatchTypeWithDefault(
+            simpleNode->GetOperation(),
+            [&ctlValueOpt](const rvsdg::ControlConstantOperation & ctlConstantOp)
+            {
+              if (!ctlValueOpt.has_value())
+              {
+                ctlValueOpt = ctlConstantOp.value();
+                return false;
+              }
+
+              if (ctlValueOpt != ctlConstantOp.value())
+              {
+                return true;
+              }
+
+              // ctlValueOpt == ctlConstantOp->value()
+              // Nothing needs to be done
+              return false;
+            },
+            [](const UndefValueOperation &)
+            {
+              // Nothing needs to be done
+              // A UndefValue can be a placeholder for any ControlConstantOperation
+              return false;
+            },
+            []()
+            {
+              // Any other operation means the transformation cannot be performed
+              return true;
+            });
+
+        if (done)
+        {
+          // We found a traced output that we could not deal with. Stop the transformation.
+          ctlValueOpt = std::nullopt;
+          break;
+        }
+      }
+      else
+      {
+        // We found a traced output that we could not deal with. Stop the transformation.
+        ctlValueOpt = std::nullopt;
+        break;
+      }
+    }
+
+    // At this point we know that the gamma exit variable could only be traced to a single
+    // rvsdg::ControlValueRepresentation
+    if (ctlValueOpt.has_value())
+    {
+      auto & ctlConstantOutput =
+          rvsdg::ControlConstantOperation::create(*gammaNode.region(), ctlValueOpt.value());
+      gammaOutput->divert_users(&ctlConstantOutput);
     }
   }
 }
