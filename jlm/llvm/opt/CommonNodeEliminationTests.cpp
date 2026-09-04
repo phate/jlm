@@ -70,27 +70,27 @@ TEST(CommonNodeEliminationTests, test_gamma)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto vt = jlm::rvsdg::TestType::createValueType();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  auto vt = TestType::createValueType();
+  auto ct = ControlType::Create(2);
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
+  auto c = &GraphImport::Create(graph, ct, "c");
+  auto ix = &GraphImport::Create(graph, vt, "x");
+  auto iy = &GraphImport::Create(graph, vt, "y");
+  auto iz = &GraphImport::Create(graph, vt, "z");
 
-  auto u1 = TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
-  auto u2 = TestOperation::createNode(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto u1 = TestOperation::createNode(&graph.GetRootRegion(), { ix }, { vt })->output(0);
+  auto u2 = TestOperation::createNode(&graph.GetRootRegion(), { ix }, { vt })->output(0);
 
-  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
+  auto gamma = GammaNode::create(c, 2);
 
   auto ev1 = gamma->AddEntryVar(u1);
   auto ev2 = gamma->AddEntryVar(u2);
-  auto ev3 = gamma->AddEntryVar(y);
-  auto ev4 = gamma->AddEntryVar(z);
-  auto ev5 = gamma->AddEntryVar(z);
+  auto ev3 = gamma->AddEntryVar(iy);
+  auto ev4 = gamma->AddEntryVar(iz);
+  auto ev5 = gamma->AddEntryVar(iz);
 
   auto n1 = TestOperation::createNode(gamma->subregion(0), {}, { vt })->output(0);
   auto n2 = TestOperation::createNode(gamma->subregion(0), {}, { vt })->output(0);
@@ -104,29 +104,25 @@ TEST(CommonNodeEliminationTests, test_gamma)
   gamma->AddExitVar({ n3, ev3.branchArgument[1] });
   gamma->AddExitVar({ ev5.branchArgument[0], ev4.branchArgument[1] });
 
-  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x1");
-  jlm::rvsdg::GraphExport::Create(*gamma->output(1), "x2");
-  jlm::rvsdg::GraphExport::Create(*gamma->output(2), "y");
+  auto & ex1 = GraphExport::Create(*gamma->output(0), "x1");
+  auto & ex2 = GraphExport::Create(*gamma->output(1), "x2");
+  auto & ex3 = GraphExport::Create(*gamma->output(2), "x3");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto subregion0 = gamma->subregion(0);
-  auto subregion1 = gamma->subregion(1);
-  EXPECT_EQ(gamma->input(1)->origin(), gamma->input(2)->origin());
-  EXPECT_EQ(subregion0->result(0)->origin(), subregion0->result(1)->origin());
-  EXPECT_EQ(subregion0->result(3)->origin(), subregion0->result(4)->origin());
-  EXPECT_EQ(subregion0->result(3)->origin(), subregion0->result(5)->origin());
-  EXPECT_EQ(subregion1->result(0)->origin(), subregion1->result(1)->origin());
-  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), graph.GetRootRegion().result(1)->origin());
+  // Assert
+  // We expect that the gamma node has been pruned
+  EXPECT_FALSE(Region::containsNodeType<GammaNode>(graph.GetRootRegion(), false));
 
-  auto argument0 =
-      dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion0->result(6)->origin());
-  auto argument1 =
-      dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion1->result(6)->origin());
-  EXPECT_EQ(argument0->input(), argument1->input());
+  EXPECT_TRUE(graph.GetRootRegion().numNodes() == 1);
+  auto & node = *graph.GetRootRegion().Nodes().begin();
+
+  EXPECT_EQ(ex1.origin(), node.output(0));
+  EXPECT_EQ(ex2.origin(), node.output(0));
+  EXPECT_EQ(ex3.origin(), iy);
 }
 
 TEST(CommonNodeEliminationTests, test_gamma_congruent_exit_vars)
@@ -212,16 +208,16 @@ TEST(CommonNodeEliminationTests, test_theta)
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto vt = jlm::rvsdg::TestType::createValueType();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  auto vt = TestType::createValueType();
+  auto ct = ControlType::Create(2);
 
-  jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
+  LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto c = &GraphImport::Create(graph, ct, "c");
+  auto x = &GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto theta = ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
 
   auto lv1 = theta->AddLoopVar(c);
@@ -239,23 +235,20 @@ TEST(CommonNodeEliminationTests, test_theta)
 
   theta->set_predicate(lv1.pre);
 
-  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
-  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
-  jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
+  auto & elv2 = GraphExport::Create(*lv2.output, "lv2");
+  auto & elv3 = GraphExport::Create(*lv3.output, "lv3");
+  auto & elv4 = GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::CommonNodeElimination cne;
+  CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto un1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u1);
-  auto un2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u2);
-  auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
-  EXPECT_EQ(un1->input(0)->origin(), un2->input(0)->origin());
-  EXPECT_EQ(bn1->input(0)->origin(), un1->input(0)->origin());
-  EXPECT_EQ(bn1->input(1)->origin(), region->argument(3));
-  EXPECT_EQ(region->result(2)->origin(), region->result(3)->origin());
-  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), graph.GetRootRegion().result(1)->origin());
+  // Assert
+  EXPECT_EQ(lv2.post->origin(), lv3.post->origin());
+  EXPECT_NE(lv4.post->origin(), lv4.post->origin());
+  EXPECT_EQ(elv2.origin(), elv3.origin());
+  EXPECT_EQ(elv4.origin(), lv4.output);
 }
 
 TEST(CommonNodeEliminationTests, test_theta2)
