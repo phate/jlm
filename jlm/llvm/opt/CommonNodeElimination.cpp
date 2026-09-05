@@ -28,6 +28,7 @@ class CommonNodeElimination::Statistics final : public util::Statistics
 {
   const char * MarkTimerLabel_ = "MarkTime";
   const char * DivertTimerLabel_ = "DivertTime";
+  const char * PruneTimerLabel_ = "PruneTime";
 
 public:
   ~Statistics() override = default;
@@ -60,6 +61,18 @@ public:
   {
     AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(DivertTimerLabel_).stop();
+  }
+
+  void
+  startPruneStatistics() noexcept
+  {
+    AddTimer(PruneTimerLabel_).start();
+  }
+
+  void
+  stopPruneStatistics() noexcept
+  {
+    GetTimer(PruneTimerLabel_).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -1207,7 +1220,7 @@ CommonNodeElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  const auto & rvsdg = module.Rvsdg();
+  auto & rvsdg = module.Rvsdg();
   auto & rootRegion = rvsdg.GetRootRegion();
 
   Context context;
@@ -1221,6 +1234,18 @@ CommonNodeElimination::Run(
   statistics->startDivertStatistics();
   divertInRegion(rootRegion, context);
   statistics->endDivertStatistics(rvsdg);
+
+  // Pruning nodes as an extra stage instead of at the end of divertInRegion() was a deliberate
+  // choice. The divertInRegion() method traverses the region tree to the innermost regions first
+  // before handling the outermost region, which means we would prune in the innermost regions
+  // before pruning in the outermost regions. However, it could be that CNE renders a structural
+  // node dead. Thus, this innermost-first strategy would mean that we prune in the dead structural
+  // node's subregion before removing the structural node itself, which is not desirable. In
+  // contrast, the Graph::PruneNodes() method prunes the outermost regions first before traversing
+  // into the subregions of the (leftover) structural nodes.
+  statistics->startPruneStatistics();
+  rvsdg.PruneNodes();
+  statistics->stopPruneStatistics();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
