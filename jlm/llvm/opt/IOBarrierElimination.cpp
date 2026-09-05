@@ -271,28 +271,7 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
       {
         const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
         const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
-
-        auto [ioBarrierNode, ioBarrierOp] =
-            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(addressOperand);
-        if (ioBarrierOp)
-        {
-          const auto & barredAddressOperand =
-              *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-          if (const auto & ioStateInput = IOBarrierOperation::getIOStateInput(*ioBarrierNode);
-              rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*ioStateInput.origin()))
-          {
-            // If the IO state is directly connected to a function argument, we can eliminate the
-            // IOBarrierOperation node as function inlining should reinsert a new IOBarrierOperation
-            // node when inlining is performed.
-            context_->markUsersDereferenceable(barredAddressOperand, sizeInBytes);
-          }
-        }
-        else
-        {
-          // The load node is not connected to a IOBarrierOperation node. Mark its address operand
-          // as dereferenceable.
-          context_->markUsersDereferenceable(addressOperand, sizeInBytes);
-        }
+        context_->markUsersDereferenceable(addressOperand, sizeInBytes);
       }
     }
   }
@@ -379,9 +358,19 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
           {
             // Nothing needs to be done
           },
-          [&](rvsdg::SimpleNode &)
+          [&](rvsdg::SimpleNode & simpleNode)
           {
-            // Nothing needs to be done
+            rvsdg::MatchType(
+                simpleNode.GetOperation(),
+                [this, &simpleNode](const IOBarrierOperation &)
+                {
+                  const auto & barredInput = IOBarrierOperation::BarredInput(simpleNode);
+                  if (!is<PointerType>(barredInput.Type()))
+                    return;
+
+                  if (const auto size = context_->isDereferenceable(barredInput))
+                    context_->markUsersDereferenceable(*simpleNode.output(0), size.value());
+                });
           },
           []()
           {
@@ -463,5 +452,4 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
 
   region.prune(false);
 }
-
 }
