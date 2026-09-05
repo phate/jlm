@@ -846,7 +846,7 @@ TEST(CommonNodeEliminationTests, InvariantThetaInTheta)
   // Create the inner theta
   auto & five = *IntegerConstantOperation::Create(*theta0.subregion(), 32, 5).output(0);
   auto & theta1 = *ThetaNode::create(theta0.subregion());
-  auto loopVarZ1 = theta1.AddLoopVar(&five);
+  theta1.AddLoopVar(&five);
   auto loopVarY1 = theta1.AddLoopVar(loopVarY0.pre);
   auto & predicate1 = ControlConstantOperation::create(*theta1.subregion(), 2, 0);
   theta1.set_predicate(&predicate1);
@@ -876,9 +876,8 @@ TEST(CommonNodeEliminationTests, InvariantThetaInTheta)
 
   // Assert
 
-  // The inner theta's loop varibales should have no users
-  EXPECT_TRUE(loopVarZ1.output->IsDead());
-  EXPECT_TRUE(loopVarY1.output->IsDead());
+  // The inner theta should have been pruned.
+  EXPECT_FALSE(Region::containsNodeType<rvsdg::ThetaNode>(*theta0.subregion(), false));
 
   // The add operations should take the corresponding loop variables as input
   EXPECT_EQ(plus1Node.input(0)->origin(), loopVarX0.pre);
