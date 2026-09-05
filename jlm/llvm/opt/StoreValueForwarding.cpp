@@ -224,7 +224,7 @@ struct StoreValueForwarding::Context final
 
   OutputTracer outputTracer;
 
-  rvsdg::RegionPredicateTrace regionPredicateTrace;
+  rvsdg::AlternativeRegionPredicateTracer regionPredicateTracer;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -412,11 +412,11 @@ public:
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
       aa::AliasAnalysis & aliasAnalysis,
-      rvsdg::RegionPredicateTrace & regionPredicateTrace)
+      rvsdg::AlternativeRegionPredicateTracer & regionPredicateTracer)
       : loadNode(loadNode),
         tracer(tracer),
         aliasAnalysis(aliasAnalysis),
-        regionPredicateTrace(regionPredicateTrace)
+        regionPredicateTracer(regionPredicateTracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
     loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
@@ -800,13 +800,14 @@ private:
           // If region predication checks has been disabled, loopBackEdgeTaken is always true
           JLM_ASSERT(ENABLE_REGION_PREDICATE_CHECK);
 
-          auto & fromRegion = *branchResult->region();
-          if (!regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region()))
+          auto & valueOriginRegion = *branchResult->region();
+          auto & targetRegion = *loadNode.region();
+          if (!regionPredicateTracer.canRegionReachRegion(valueOriginRegion, targetRegion))
           {
             // Mark the region as providing uninitialized memory, since it is never reached
             auto valueOrigin = ValueOrigin::createUninitialized();
             lastValueOriginInRegion.emplace(
-                std::make_pair(&fromRegion, loopBackEdgeTaken),
+                std::make_pair(&valueOriginRegion, loopBackEdgeTaken),
                 valueOrigin);
             addObservedValueOrigin(valueOrigin);
             continue;
@@ -926,7 +927,7 @@ private:
 
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
-  rvsdg::RegionPredicateTrace & regionPredicateTrace;
+  rvsdg::AlternativeRegionPredicateTracer & regionPredicateTracer;
 
   // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -1007,7 +1008,7 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
       loadNode,
       context_->outputTracer,
       context_->aliasAnalysis,
-      context_->regionPredicateTrace);
+      context_->regionPredicateTracer);
   const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 

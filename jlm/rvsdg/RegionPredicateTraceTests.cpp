@@ -55,32 +55,33 @@ TEST(RegionPredicateTraceTests, TestTracing)
   auto s = gamma3->AddExitVar({ s0->output(0), s1->output(0) }).output;
   rvsdg::GraphExport::Create(*s, "result2");
 
-  rvsdg::RegionPredicateTrace trace;
+  rvsdg::AlternativeRegionPredicateTracer trace;
 
   // Since gamma1 dominates gamma2, not all cross-paths are possible.
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g2_right));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g2_left));
-  EXPECT_FALSE(trace.CheckPredicatesSatisfiable(*g1_left, *g2_left));
-  EXPECT_FALSE(trace.CheckPredicatesSatisfiable(*g1_right, *g2_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g2_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g2_left));
+  EXPECT_FALSE(trace.canRegionReachRegion(*g1_left, *g2_left));
+  EXPECT_FALSE(trace.canRegionReachRegion(*g1_right, *g2_right));
 
   // Since gamma1 and gamma3 are unrelated,  all cross-paths are possible.
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g3_right));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g3_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g3_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g3_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g3_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g3_right));
 
   // Now change the graph, and check again.
   gamma2->predicate()->divert_to(&pred2);
+  trace.clearCaches();
 
   // Now, everything is uncorrelated.
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g2_right));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g2_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g2_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g2_right));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g3_right));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_left, *g3_left));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*g1_right, *g3_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g2_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g2_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g2_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g2_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g3_right));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g3_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_left, *g3_left));
+  EXPECT_TRUE(trace.canRegionReachRegion(*g1_right, *g3_right));
 }
 
 TEST(RegionPredicateTraceTests, TraceOutOfTheta)
@@ -155,40 +156,40 @@ TEST(RegionPredicateTraceTests, TraceOutOfTheta)
   rvsdg::GraphExport::Create(*loopVar0.output, "x");
 
   // Assert
-  rvsdg::RegionPredicateTrace trace;
+  rvsdg::AlternativeRegionPredicateTracer trace;
 
   // Every region can be reached from the root region
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta0->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta1->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta2->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta3->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(rvsdg.GetRootRegion(), *theta4->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(rvsdg.GetRootRegion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(rvsdg.GetRootRegion(), *theta1->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(rvsdg.GetRootRegion(), *theta2->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(rvsdg.GetRootRegion(), *theta3->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(rvsdg.GetRootRegion(), *theta4->subregion()));
 
   // Every region can reach the root region
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), rvsdg.GetRootRegion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta0->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), rvsdg.GetRootRegion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), rvsdg.GetRootRegion()));
 
   // theta0 can reach every region inside it
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta1->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta2->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta3->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta0->subregion(), *theta4->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta0->subregion(), *theta1->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta0->subregion(), *theta2->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta0->subregion(), *theta3->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta0->subregion(), *theta4->subregion()));
 
   // theta0 can also be reached by every region inside it
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), *theta0->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta2->subregion(), *theta0->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta3->subregion(), *theta0->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta4->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta2->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta3->subregion(), *theta0->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta4->subregion(), *theta0->subregion()));
 
   // theta2 can be reached from theta1
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta1->subregion(), *theta2->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta1->subregion(), *theta2->subregion()));
 
   // theta3 and theta4 can reach each other
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta3->subregion(), *theta4->subregion()));
-  EXPECT_TRUE(trace.CheckPredicatesSatisfiable(*theta4->subregion(), *theta3->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta3->subregion(), *theta4->subregion()));
+  EXPECT_TRUE(trace.canRegionReachRegion(*theta4->subregion(), *theta3->subregion()));
 }
 
 TEST(RegionPredicateTraceTests, TraceIntoGamma)
@@ -244,17 +245,107 @@ TEST(RegionPredicateTraceTests, TraceIntoGamma)
   auto & gamma2 = *rvsdg::GammaNode::create(gamma0Exit.output, 2);
 
   // Assert
-  rvsdg::RegionPredicateTrace trace;
+  rvsdg::AlternativeRegionPredicateTracer trace;
 
   // targeting gamma2's left subregion
-  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(0), *gamma2.subregion(0)));
-  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(1), *gamma2.subregion(0)));
-  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(0), *gamma2.subregion(0)));
-  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(trace.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(0)));
+  ASSERT_FALSE(trace.canRegionReachRegion(*gamma1.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(trace.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(0)));
+  ASSERT_FALSE(trace.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(0)));
 
   // targeting gamma2's right subregion
-  ASSERT_FALSE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(0), *gamma2.subregion(1)));
-  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma1.subregion(1), *gamma2.subregion(1)));
-  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(0), *gamma2.subregion(1)));
-  ASSERT_TRUE(trace.CheckPredicatesSatisfiable(*gamma0.subregion(1), *gamma2.subregion(1)));
+  ASSERT_FALSE(trace.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.canRegionReachRegion(*gamma1.subregion(1), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(trace.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(1)));
+}
+
+TEST(RegionPredicateTraceTests, TraceThroughGammas)
+{
+  /**
+   * Creates an RVSDG that looks like
+   *
+   *  TestOp(CtrlType)
+   *    v
+   * +-gamma0-------+--------------+
+   * | Ctrl(0)      | Ctrl(1)      |
+   * |   v          |   v          |
+   * +---x----------+---x----------+
+   *               |
+   *               |
+   *  TestOp(Ctrl) |  Ctrl(1)
+   *    v          v    v
+   * +-gamma1-------+--------------+
+   * |   \          |         /    |
+   * |    \         |        /     |
+   * |     \        |       /      |
+   * |      v       |      v       |
+   * +------x-------+------x-------+
+   *     |
+   *     v
+   * +-gamma2---+---------+---------+
+   * |          |         |         |
+   * +----------+---------+---------+
+   */
+
+  using namespace jlm;
+
+  auto controlType2 = rvsdg::ControlType::Create(2);
+  auto controlType3 = rvsdg::ControlType::Create(3);
+
+  rvsdg::Graph rvsdg;
+
+  // gamma 0
+  auto & testOp0 =
+      rvsdg::CreateOpNode<rvsdg::TestNullaryOperation>(rvsdg.GetRootRegion(), controlType2);
+  auto & gamma0 = *rvsdg::GammaNode::create(testOp0.output(0), 2);
+  auto & gamma0Ctrl0 = rvsdg::ControlConstantOperation::create(*gamma0.subregion(0), { 0, 3 });
+  auto & gamma0Ctrl1 = rvsdg::ControlConstantOperation::create(*gamma0.subregion(1), { 1, 3 });
+  auto gamma0ExitVar = gamma0.AddExitVar({ &gamma0Ctrl0, &gamma0Ctrl1 });
+
+  // gamma 1
+  auto & testOp1 =
+      rvsdg::CreateOpNode<rvsdg::TestNullaryOperation>(rvsdg.GetRootRegion(), controlType2);
+  auto & gamma1 = *rvsdg::GammaNode::create(testOp1.output(0), 2);
+  auto gamma1EntryFromGamma0 = gamma1.AddEntryVar(gamma0ExitVar.output);
+  auto & gamma1Ctrl1 = rvsdg::ControlConstantOperation::create(rvsdg.GetRootRegion(), { 1, 3 });
+  auto gamma1EntryFromCtrl1 = gamma1.AddEntryVar(&gamma1Ctrl1);
+  auto gamma1ExitVar = gamma1.AddExitVar(
+      { gamma1EntryFromGamma0.branchArgument[0], gamma1EntryFromCtrl1.branchArgument[1] });
+
+  // gamma 2
+  auto & gamma2 = *rvsdg::GammaNode::create(gamma1ExitVar.output, 3);
+
+  // Assert
+  rvsdg::AlternativeRegionPredicateTracer tracer;
+
+  // gamma0 has no effect on the subregions of gamma1
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma1.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma1.subregion(1)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma1.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma1.subregion(1)));
+
+  // gamma0 has no effect on the choice between region 0 or 1 in gamma2 either
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(1)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(1)));
+
+  // From subregion 0 of gamma1 both subregions 0 and 1 can be reached in gamma2
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(1)));
+  // From subregion 1 of gamma1, however, only subregions 1 can be reached in gamma2
+  ASSERT_FALSE(tracer.canRegionReachRegion(*gamma1.subregion(1), *gamma2.subregion(0)));
+  ASSERT_TRUE(tracer.canRegionReachRegion(*gamma1.subregion(1), *gamma2.subregion(1)));
+
+  // region 2 of gamma2 is entriely unreachable, from any region, including the root
+  ASSERT_FALSE(tracer.canRegionReachRegion(*gamma0.subregion(0), *gamma2.subregion(2)));
+  ASSERT_FALSE(tracer.canRegionReachRegion(*gamma0.subregion(1), *gamma2.subregion(2)));
+  ASSERT_FALSE(tracer.canRegionReachRegion(*gamma1.subregion(0), *gamma2.subregion(2)));
+  ASSERT_FALSE(tracer.canRegionReachRegion(*gamma1.subregion(1), *gamma2.subregion(2)));
+  ASSERT_FALSE(tracer.canRegionReachRegion(rvsdg.GetRootRegion(), *gamma2.subregion(2)));
+
+  // Using the old predicate tracer, the following assert fails
+  // rvsdg::RegionPredicateTrace oldTracer;
+  // ASSERT_TRUE(oldTracer.CheckPredicatesSatisfiable(*gamma0.subregion(0), *gamma2.subregion(1)));
 }
