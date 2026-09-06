@@ -189,32 +189,46 @@ IOBarrierElimination::Run(
   context_.reset();
 }
 
-static void
-divertUsersToIOBarrierOutput(rvsdg::Output & output)
+static std::vector<rvsdg::SimpleNode *>
+collectIOBarrierNodes(rvsdg::Output & output)
 {
-  rvsdg::SimpleNode * ioBarrierNode = nullptr;
+  std::vector<rvsdg::SimpleNode *> ioBarrierNodes;
   for (auto & user : output.Users())
   {
     if (auto [node, ioBarrierOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(user);
         ioBarrierOp)
     {
-      // Ensure that the IOBarrierOperation operands are both originating from the same owner
-      if (IOBarrierOperation::getIOStateInput(*node).origin()->GetOwner() != output.GetOwner())
-        continue;
-
-      ioBarrierNode = node;
-      break;
+      ioBarrierNodes.push_back(node);
     }
   }
 
-  if (!ioBarrierNode)
-    return;
+  return ioBarrierNodes;
+}
+
+static std::optional<rvsdg::SimpleNode *>
+selectIOBarrierNode(
+    const std::vector<rvsdg::SimpleNode *> & ioBarrierNodes,
+    const std::variant<rvsdg::Node *, rvsdg::Region *> ioStateOwner)
+{
+  for (auto node : ioBarrierNodes)
+  {
+    if (IOBarrierOperation::getIOStateInput(*node).origin()->GetOwner() == ioStateOwner)
+      return node;
+  }
+
+  return std::nullopt;
+}
+
+static void
+divertUsersToIOBarrierNode(rvsdg::Output & output, rvsdg::SimpleNode & ioBarrierNode)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&ioBarrierNode));
 
   output.divertUsersWhere(
-      *ioBarrierNode->output(0),
+      *ioBarrierNode.output(0),
       [&ioBarrierNode](const rvsdg::Input & user)
       {
-        return &IOBarrierOperation::BarredInput(*ioBarrierNode) != &user;
+        return &IOBarrierOperation::BarredInput(ioBarrierNode) != &user;
       });
 }
 
@@ -223,32 +237,57 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
-    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
-    {
-      for (auto & subregion : structuralNode->Subregions())
-      {
-        // Handle innermost regions first
-        normalizeIOBarriers(subregion);
-
-        // Normalize subregion arguments
-        for (auto & argument : subregion.Arguments())
+    rvsdg::MatchTypeWithDefault(
+        node,
+        [](rvsdg::StructuralNode & structuralNode)
         {
-          if (is<PointerType>(argument->Type()))
+          for (auto & subregion : structuralNode.Subregions())
           {
-            divertUsersToIOBarrierOutput(*argument);
-          }
-        }
-      }
+            // Handle innermost regions first
+            normalizeIOBarriers(subregion);
 
-      // Normalize node outputs
-      for (auto & output : structuralNode->Outputs())
-      {
-        if (is<PointerType>(output.Type()))
+            // Normalize subregion arguments
+            for (auto & argument : subregion.Arguments())
+            {
+              if (is<PointerType>(argument->Type()))
+              {
+                auto ioBarrierNodes = collectIOBarrierNodes(*argument);
+                if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, &subregion))
+                  divertUsersToIOBarrierNode(*argument, **ioBarrierNode);
+              }
+            }
+          }
+
+          // Normalize node outputs
+          for (auto & output : structuralNode.Outputs())
+          {
+            if (is<PointerType>(output.Type()))
+            {
+              auto ioBarrierNodes = collectIOBarrierNodes(output);
+              if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, &structuralNode))
+                divertUsersToIOBarrierNode(output, **ioBarrierNode);
+            }
+          }
+        },
+        [](rvsdg::SimpleNode & simpleNode)
         {
-          divertUsersToIOBarrierOutput(output);
-        }
-      }
-    }
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [&simpleNode](const LoadNonVolatileOperation &)
+              {
+                auto & loadedValue = LoadOperation::LoadedValueOutput(simpleNode);
+                if (is<PointerType>(loadedValue.Type()))
+                {
+                  auto ioBarrierNodes = collectIOBarrierNodes(loadedValue);
+                  if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, simpleNode.region()))
+                    divertUsersToIOBarrierNode(loadedValue, **ioBarrierNode);
+                }
+              });
+        },
+        []()
+        {
+          throw std::logic_error("Unexpected node type");
+        });
   }
 }
 
