@@ -802,7 +802,7 @@ private:
 
           auto & valueOriginRegion = *branchResult->region();
           auto & targetRegion = *loadNode.region();
-          if (!regionPredicateTracer.canRegionReachRegion(valueOriginRegion, targetRegion))
+          if (!regionPredicateTracer.isReachableFromRegion(targetRegion, valueOriginRegion))
           {
             // Mark the region as providing uninitialized memory, since it is never reached
             auto valueOrigin = ValueOrigin::createUninitialized();

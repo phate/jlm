@@ -256,7 +256,7 @@ public:
    * or control flow entering theta nodes between the two regions.
    */
   [[nodiscard]] bool
-  canRegionReachRegion(Region & originRegion, Region & targetRegion);
+  isReachableFromRegion(Region & targetRegion, Region & originRegion);
 
   /**
    * Removes all cached information from the tracer.
@@ -327,7 +327,7 @@ private:
       impossibleOriginRegions_;
 
   // The ancestors of the current origin region.
-  // Not a cache, updates for every call to \ref canRegionReachRegion.
+  // Not a cache, updates for every call to \ref isReachableFromRegion.
   util::HashSet<Region *> currentOriginRegionAncestors_;
 };
 
