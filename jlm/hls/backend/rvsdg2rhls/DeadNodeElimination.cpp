@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -13,64 +14,64 @@ namespace jlm::hls
 static bool
 RemoveUnusedLoopOutputs(LoopNode & loopNode)
 {
-  bool anyChanged = false;
+  // Keep only those entry vars that are not dead.
+  std::vector<LoopNode::ExitVar> vars = loopNode.getExitVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::ExitVar & var)
+          {
+            return !var.output->IsDead();
+          }),
+      vars.end());
 
-  // go through in reverse because we might remove outputs
-  for (int i = loopNode.noutputs() - 1; i >= 0; --i)
-  {
-    auto output = loopNode.output(i);
-    if (output->nusers() == 0)
-    {
-      loopNode.removeLoopOutput(output);
-      anyChanged = true;
-    }
-  }
+  // Remove all dead vars.
+  bool anyChanged = !vars.empty();
+  loopNode.removeExitVars(std::move(vars));
   return anyChanged;
 }
 
 static bool
 RemoveUnusedInputs(LoopNode & loopNode)
 {
-  bool anyChanged = false;
-  auto loopSubregion = loopNode.subregion();
+  // Keep only those entry vars that are not dead.
+  std::vector<LoopNode::EntryVar> vars = loopNode.getEntryVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::EntryVar & var)
+          {
+            return !var.inner->IsDead();
+          }),
+      vars.end());
 
-  // go through in reverse because we might remove inputs
-  for (int i = loopNode.ninputs() - 1; i >= 0; --i)
-  {
-    auto input = loopNode.input(i);
-    JLM_ASSERT(input->arguments.size() == 1);
-    auto argument = input->arguments.begin();
+  // Remove all dead vars.
+  bool anyChanged = !vars.empty();
+  loopNode.removeEntryVars(std::move(vars));
+  return anyChanged;
+}
 
-    if (argument->nusers() == 0)
-    {
-      loopNode.removeLoopInput(input);
-      anyChanged = true;
-    }
-  }
-
-  // clean up unused arguments - only ones without an input should be left
-  // go through in reverse because we might remove some
-  for (int i = loopSubregion->narguments() - 1; i >= 0; --i)
-  {
-    auto argument = loopSubregion->argument(i);
-
-    if (auto backedgeArgument = dynamic_cast<BackEdgeArgument *>(argument))
-    {
-      auto result = backedgeArgument->result();
-      JLM_ASSERT(*result->Type() == *argument->Type());
-
-      if (argument->nusers() == 0 || (argument->nusers() == 1 && result->origin() == argument))
-      {
-        loopSubregion->RemoveResults({ result->index() });
-        loopSubregion->RemoveArguments({ argument->index() });
-      }
-    }
-    else
-    {
-      JLM_ASSERT(argument->nusers() != 0);
-    }
-  }
-
+static bool
+RemoveUnusedBackEdges(LoopNode & loopNode)
+{
+  // Keep only back edge vars that have a user (instead of
+  // simply forwarding to itself).
+  std::vector<LoopNode::BackEdgeVar> vars = loopNode.getBackEdgeVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::BackEdgeVar & var)
+          {
+            return !(var.pre->nusers() == 1 && var.post->origin() == var.pre);
+          }),
+      vars.end());
+  // Remove all that have exactly one user, namely forward itself
+  // to next loop iteration.
+  bool anyChanged = !vars.empty();
+  loopNode.removeBackEdgeVars(std::move(vars));
   return anyChanged;
 }
 
@@ -94,6 +95,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
       {
         changed |= RemoveUnusedLoopOutputs(*loopNode);
         changed |= RemoveUnusedInputs(*loopNode);
+        changed |= RemoveUnusedBackEdges(*loopNode);
         changed |= EliminateDeadNodesInRegion(*loopNode->subregion());
       }
     }

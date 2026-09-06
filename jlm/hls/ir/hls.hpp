@@ -715,11 +715,86 @@ private:
   {}
 
 public:
+  /**
+   * \brief Variable entering the hls loop.
+   */
+  struct EntryVar
+  {
+    /**
+     * \brief Variable at loop entry.
+     */
+    rvsdg::Input * input;
+    /**
+     * \brief Variable in region representing entry value.
+     */
+    rvsdg::Output * inner;
+  };
+
+  /**
+   * \brief Variable exiting the hls loop.
+   */
+  struct ExitVar
+  {
+    /**
+     * \brief Variable in region representing exit value.
+     */
+    rvsdg::Input * inner;
+    /**
+     * \brief Variable after loop exit.
+     */
+    rvsdg::Output * output;
+  };
+
+  /**
+   * \brief Variable passed between hls loop iterations.
+   */
+  struct BackEdgeVar
+  {
+    /**
+     * \brief Variable at beginning of loop (pre-iteration value).
+     */
+    rvsdg::Output * pre;
+    /**
+     * \brief Variable at end of loop (post-iteration value).
+     */
+    rvsdg::Input * post;
+  };
+
   [[nodiscard]] const rvsdg::Operation &
   GetOperation() const noexcept override;
 
+  EntryVar
+  mapInput(const rvsdg::Input & input);
+
+  ExitVar
+  mapOutput(const rvsdg::Output & output);
+
+  std::variant<EntryVar, BackEdgeVar>
+  mapArgument(const rvsdg::Output & argument);
+
+  std::variant<ExitVar, BackEdgeVar>
+  mapResult(const rvsdg::Input & result);
+
+  std::vector<EntryVar>
+  getEntryVars();
+
+  std::vector<ExitVar>
+  getExitVars();
+
+  std::vector<BackEdgeVar>
+  getBackEdgeVars();
+
+  void
+  removeEntryVars(std::vector<EntryVar> vars);
+
+  void
+  removeExitVars(std::vector<ExitVar> vars);
+
+  void
+  removeBackEdgeVars(std::vector<BackEdgeVar> vars);
+
   static LoopNode *
-  create(rvsdg::Region * parent, bool init = true);
+  create(rvsdg::Region * parent);
 
   rvsdg::Region *
   subregion() const noexcept
@@ -797,20 +872,6 @@ public:
    */
   rvsdg::Output *
   addRequestOutput(rvsdg::Output * origin);
-
-  /**
-   * Removes the given node output, and the corresponding region result.
-   * @param output the node output to remove. Must be dead.
-   */
-  void
-  removeLoopOutput(rvsdg::StructuralOutput * output);
-
-  /**
-   * Removes the given node input, and the corresponding region argument.
-   * @param input the node input to remove. Its argument must be dead.
-   */
-  void
-  removeLoopInput(rvsdg::StructuralInput * input);
 
   LoopNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
