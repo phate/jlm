@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -266,13 +267,20 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
     }
     else
     {
-      if (const auto loadOperation =
-              dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
-      {
-        const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
-        const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
-        context_->markUsersDereferenceable(addressOperand, sizeInBytes);
-      }
+      rvsdg::MatchType(
+          node.GetOperation(),
+          [this, &node](const LoadNonVolatileOperation & loadOperation)
+          {
+            const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
+            const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
+            context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+          },
+          [this, &node](const StoreNonVolatileOperation & storeOperation)
+          {
+            const auto & addressOperand = *StoreOperation::AddressInput(node).origin();
+            const auto sizeInBytes = GetTypeStoreSize(storeOperation.GetStoredType());
+            context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+          });
     }
   }
 }
