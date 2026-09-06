@@ -99,11 +99,8 @@ CompareTypes(const Type & type1, const Type & type2)
   }
 
   // Fallback to regular equality for any remaining types
-  if (type1 != type2)
-  {
-    ADD_FAILURE() << "CompareTypes: Type mismatch - expected '" << type1.debug_string()
-                  << "' but got '" << type2.debug_string() << "'";
-  }
+  ASSERT_EQ(type1, type2) << "CompareTypes: Type mismatch - expected '" << type1.debug_string()
+                          << "' but got '" << type2.debug_string() << "'";
 }
 
 /**
@@ -267,32 +264,26 @@ CompareThetaLoopVars(const ThetaNode::LoopVar & lv1, const ThetaNode::LoopVar & 
   // Verify pre (loop variable value before iteration) types match
   ASSERT_NE(lv1.pre, nullptr) << "CompareThetaLoopVars: Theta LoopVar.pre is null in graph 1";
   ASSERT_NE(lv2.pre, nullptr) << "CompareThetaLoopVars: Theta LoopVar.pre is null in graph 2";
-  if (lv1.pre && lv2.pre)
-  {
-    CompareTypes(*lv1.pre->Type(), *lv2.pre->Type());
-  }
+  CompareTypes(*lv1.pre->Type(), *lv2.pre->Type());
 
   // Verify post (loop variable value after iteration) types match
   ASSERT_NE(lv1.post, nullptr) << "CompareThetaLoopVars: Theta LoopVar.post is null in graph 1";
   ASSERT_NE(lv2.post, nullptr) << "CompareThetaLoopVars: Theta LoopVar.post is null in graph 2";
-  if (lv1.post && lv2.post)
+  CompareTypes(*lv1.post->Type(), *lv2.post->Type());
+
+  // Verify redirect chain integrity: post->origin() should have same structure
+  // When post is redirected via divert_to, we need to compare the origin nodes
+  auto * origin1 = TryGetOwnerNode<Node>(*lv1.post->origin());
+  auto * origin2 = TryGetOwnerNode<Node>(*lv2.post->origin());
+
+  if (origin1 && origin2)
   {
-    CompareTypes(*lv1.post->Type(), *lv2.post->Type());
-
-    // Verify redirect chain integrity: post->origin() should have same structure
-    // When post is redirected via divert_to, we need to compare the origin nodes
-    auto * origin1 = TryGetOwnerNode<Node>(*lv1.post->origin());
-    auto * origin2 = TryGetOwnerNode<Node>(*lv2.post->origin());
-
-    if (origin1 && origin2)
-    {
-      CompareNodes(*origin1, *origin2);
-    }
-    else if (origin1 || origin2)
-    {
-      // One is redirected but the other isn't - structural mismatch
-      FAIL() << "CompareThetaLoopVars: Theta LoopVar post redirect mismatch";
-    }
+    CompareNodes(*origin1, *origin2);
+  }
+  else if (origin1 || origin2)
+  {
+    // One is redirected but the other isn't - structural mismatch
+    FAIL() << "CompareThetaLoopVars: Theta LoopVar post redirect mismatch";
   }
 
   // Verify output (final value at loop exit) types match
@@ -638,7 +629,8 @@ CompareRegions(const Region & region1, const Region & region2)
     CompareTypes(*arg1->Type(), *arg2->Type());
   }
 
-  ASSERT_EQ(region1.nresults(), region2.nresults());
+  ASSERT_EQ(region1.nresults(), region2.nresults())
+      << "CompareRegions: Region number of results mismatch";
   for (size_t i = 0; i < region1.nresults(); ++i)
   {
     CompareTypes(*region1.result(i)->Type(), *region2.result(i)->Type());
@@ -756,10 +748,9 @@ CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
  * \brief Tests that an RVSDG graph roundtrips through MLIR.
  */
 void
-TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName)
+TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
 {
   using namespace jlm::mlir;
-  (void)testName;
 
   JlmToMlirConverter mlirgen;
   auto omega = mlirgen.ConvertModule(originalModule);
@@ -774,118 +765,47 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule, const char * testName
 
 } // namespace
 
-// Tests from RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
+// ============================================================================
+// Parameterized roundtrip tests from RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
+// ============================================================================
 
-TEST(RvsdgRoundtripTests, TestTheta)
+/**
+ * \brief Runs the roundtrip checker with a fresh instance of T.
+ */
+template<typename T>
+void
+RunRoundtripTest()
 {
-  ::jlm::llvm::ThetaTest test;
-  TestRvsdgRoundtrip(test.module(), "TestTheta");
+  T test;
+  TestRvsdgRoundtrip(test.module());
 }
 
-TEST(RvsdgRoundtripTests, TestStoreTest1)
-{
-  ::jlm::llvm::StoreTest1 test;
-  TestRvsdgRoundtrip(test.module(), "StoreTest1");
-}
+// ============================================================================
+// Roundtrip tests from RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
+// ============================================================================
 
-TEST(RvsdgRoundtripTests, TestStoreTest2)
-{
-  ::jlm::llvm::StoreTest2 test;
-  TestRvsdgRoundtrip(test.module(), "StoreTest2");
-}
+#define ROUNTRIP_TEST(Name, Fixture) \
+  TEST(RvsdgRoundtripTests, Name)    \
+  {                                  \
+    RunRoundtripTest<Fixture>();     \
+  }
 
-TEST(RvsdgRoundtripTests, TestLoadTest1)
-{
-  ::jlm::llvm::LoadTest1 test;
-  TestRvsdgRoundtrip(test.module(), "LoadTest1");
-}
-
-TEST(RvsdgRoundtripTests, TestLoadTest2)
-{
-  ::jlm::llvm::LoadTest2 test;
-  TestRvsdgRoundtrip(test.module(), "LoadTest2");
-}
-
-TEST(RvsdgRoundtripTests, TestLoadFromUndef)
-{
-  ::jlm::llvm::LoadFromUndefTest test;
-  TestRvsdgRoundtrip(test.module(), "LoadFromUndef");
-}
-
-TEST(RvsdgRoundtripTests, TestGetElementPtr)
-{
-  ::jlm::llvm::GetElementPtrTest test;
-  TestRvsdgRoundtrip(test.module(), "GetElementPtr");
-}
-
-TEST(RvsdgRoundtripTests, TestConstantPointerNull)
-{
-  ::jlm::llvm::ConstantPointerNullTest test;
-  TestRvsdgRoundtrip(test.module(), "ConstantPointerNull");
-}
-
-TEST(RvsdgRoundtripTests, TestCallTest1)
-{
-  ::jlm::llvm::CallTest1 test;
-  TestRvsdgRoundtrip(test.module(), "CallTest1");
-}
-
-TEST(RvsdgRoundtripTests, TestExternalCallTest1)
-{
-  ::jlm::llvm::ExternalCallTest1 test;
-  TestRvsdgRoundtrip(test.module(), "ExternalCallTest1");
-}
-
-TEST(RvsdgRoundtripTests, TestDeltaTest1)
-{
-  ::jlm::llvm::DeltaTest1 test;
-  TestRvsdgRoundtrip(test.module(), "DeltaTest1");
-}
-
-TEST(RvsdgRoundtripTests, TestExternalMemory)
-{
-  ::jlm::llvm::ExternalMemoryTest test;
-  TestRvsdgRoundtrip(test.module(), "ExternalMemory");
-}
-
-TEST(RvsdgRoundtripTests, TestEscapedMemoryTest2)
-{
-  ::jlm::llvm::EscapedMemoryTest2 test;
-  TestRvsdgRoundtrip(test.module(), "EscapedMemoryTest2");
-}
-
-TEST(RvsdgRoundtripTests, TestEscapedMemoryTest3)
-{
-  ::jlm::llvm::EscapedMemoryTest3 test;
-  TestRvsdgRoundtrip(test.module(), "EscapedMemoryTest3");
-}
-
-TEST(RvsdgRoundtripTests, TestLinkedList)
-{
-  ::jlm::llvm::LinkedListTest test;
-  TestRvsdgRoundtrip(test.module(), "LinkedList");
-}
-
-TEST(RvsdgRoundtripTests, TestAllMemoryNodes)
-{
-  ::jlm::llvm::AllMemoryNodesTest test;
-  TestRvsdgRoundtrip(test.module(), "AllMemoryNodes");
-}
-
-TEST(RvsdgRoundtripTests, TestFreeNull)
-{
-  ::jlm::llvm::FreeNullTest test;
-  TestRvsdgRoundtrip(test.module(), "FreeNull");
-}
-
-TEST(RvsdgRoundtripTests, TestVariadicFunctionTest1)
-{
-  ::jlm::llvm::VariadicFunctionTest1 test;
-  TestRvsdgRoundtrip(test.module(), "VariadicFunctionTest1");
-}
-
-TEST(RvsdgRoundtripTests, TestVariadicFunctionTest2)
-{
-  ::jlm::llvm::VariadicFunctionTest2 test;
-  TestRvsdgRoundtrip(test.module(), "VariadicFunctionTest2");
-}
+ROUNTRIP_TEST(TestTheta, ::jlm::llvm::ThetaTest)
+ROUNTRIP_TEST(TestStoreTest1, ::jlm::llvm::StoreTest1)
+ROUNTRIP_TEST(TestStoreTest2, ::jlm::llvm::StoreTest2)
+ROUNTRIP_TEST(TestLoadTest1, ::jlm::llvm::LoadTest1)
+ROUNTRIP_TEST(TestLoadTest2, ::jlm::llvm::LoadTest2)
+ROUNTRIP_TEST(TestLoadFromUndef, ::jlm::llvm::LoadFromUndefTest)
+ROUNTRIP_TEST(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
+ROUNTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
+ROUNTRIP_TEST(TestCallTest1, ::jlm::llvm::CallTest1)
+ROUNTRIP_TEST(TestExternalCallTest1, ::jlm::llvm::ExternalCallTest1)
+ROUNTRIP_TEST(TestDeltaTest1, ::jlm::llvm::DeltaTest1)
+ROUNTRIP_TEST(TestExternalMemory, ::jlm::llvm::ExternalMemoryTest)
+ROUNTRIP_TEST(TestEscapedMemoryTest2, ::jlm::llvm::EscapedMemoryTest2)
+ROUNTRIP_TEST(TestEscapedMemoryTest3, ::jlm::llvm::EscapedMemoryTest3)
+ROUNTRIP_TEST(TestLinkedList, ::jlm::llvm::LinkedListTest)
+ROUNTRIP_TEST(TestAllMemoryNodes, ::jlm::llvm::AllMemoryNodesTest)
+ROUNTRIP_TEST(TestFreeNull, ::jlm::llvm::FreeNullTest)
+ROUNTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
+ROUNTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
