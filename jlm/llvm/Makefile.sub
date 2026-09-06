@@ -78,10 +78,10 @@ libllvm_SOURCES = \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
+    jlm/llvm/opt/NodeHoisting.cpp \
     jlm/llvm/opt/NodeReduction.cpp \
     jlm/llvm/opt/PredicateCorrelation.cpp \
     jlm/llvm/opt/pull.cpp \
-    jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
     jlm/llvm/opt/StoreValueForwarding.cpp \
@@ -98,7 +98,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/DeadNodeElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/CommonNodeElimination.hpp \
-    jlm/llvm/opt/push.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
@@ -126,6 +125,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopStrengthReduction.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
+    jlm/llvm/opt/NodeHoisting.hpp \
     jlm/llvm/opt/NodeReduction.hpp \
     jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
@@ -260,10 +260,10 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \
+    jlm/llvm/opt/NodeHoistingTests.cpp \
     jlm/llvm/opt/NodeReductionTests.cpp \
     jlm/llvm/opt/PredicateCorrelationTests.cpp \
     jlm/llvm/opt/PullTests.cpp \
-    jlm/llvm/opt/PushTests.cpp \
     jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
     jlm/llvm/opt/ScalarEvolutionTests.cpp \
     jlm/llvm/opt/StoreValueForwardingTests.cpp \
