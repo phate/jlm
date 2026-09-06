@@ -495,7 +495,9 @@ AlternativeRegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & ou
 }
 
 bool
-AlternativeRegionPredicateTracer::isReachableFromRegion(Region & targetRegion, Region & originRegion)
+AlternativeRegionPredicateTracer::isReachableFromRegion(
+    Region & targetRegion,
+    Region & originRegion)
 {
   // find the common ancestor of the origin and target regions
   auto targetAncestor = &targetRegion;
