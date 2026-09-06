@@ -404,4 +404,63 @@ TEST(IOBarrierElimination, testStoreMarking)
   EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(*lambdaNode->subregion(), true));
 }
 
+TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({ pointerType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, pointerType, 4);
+
+  auto & ioBarrierNode1 =
+      IOBarrierOperation::createNode(LoadOperation::LoadedValueOutput(loadNode1), *ioStateArgument);
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*ioBarrierNode1.output(0), {}, i32Type, 4);
+
+  auto testNode = TestOperation::createNode(lambdaNode->subregion(), {}, { controlType });
+  auto gammaNode = GammaNode::create(testNode->output(0), 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(&LoadOperation::LoadedValueOutput(loadNode1));
+  auto i32EntryVar = gammaNode->AddEntryVar(&LoadOperation::LoadedValueOutput(loadNode2));
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+
+  // subregion 0
+  auto & ioBarrierNode2 = IOBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0]);
+  auto & loadNode3 =
+      LoadNonVolatileOperation::CreateNode(*ioBarrierNode2.output(0), {}, i32Type, 4);
+
+  // subregion 1
+  // Nothing needs to be done
+
+  auto i32ExitVar = gammaNode->AddExitVar(
+      { &LoadOperation::LoadedValueOutput(loadNode3), i32EntryVar.branchArgument[1] });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+
+  auto lambdaOutput = lambdaNode->finalize({ i32ExitVar.output, ioStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  IOBarrierElimination::normalizeIOBarriers(rvsdg.GetRootRegion());
+
+  // Assert
+  // We expect the origin of the ptrEntryVar to be the outermost IOBarrierNode
+  EXPECT_EQ(ptrEntryVar.input->origin(), ioBarrierNode1.output(0));
+}
+
 }
