@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_PUSH_HPP
-#define JLM_LLVM_OPT_PUSH_HPP
+#ifndef JLM_LLVM_OPT_NODEHOISTING_HPP
+#define JLM_LLVM_OPT_NODEHOISTING_HPP
 
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
