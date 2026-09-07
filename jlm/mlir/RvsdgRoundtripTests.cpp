@@ -33,7 +33,7 @@ CompareRegions(const Region & region1, const Region & region2);
 void
 CompareTypes(const Type & type1, const Type & type2)
 {
-  // If same type class and equal by operator==, return immediately
+  // If types are equal, return immediately.
   if (type1 == type2)
     return;
 
@@ -46,28 +46,23 @@ CompareTypes(const Type & type1, const Type & type2)
     return;
   }
 
-  // Handle StructType comparison - compare by element types and properties
   if (auto * structType1 = dynamic_cast<const StructType *>(&type1))
   {
     auto * structType2 = assertedCast<const StructType>(&type2);
 
-    // Compare element count using numElements()
     ASSERT_EQ(structType1->numElements(), structType2->numElements())
         << "CompareTypes: StructType element count mismatch: '" << type1.debug_string() << "' vs '"
         << type2.debug_string() << "'";
-    // Compare each element type recursively using getElementType(index)
     for (size_t i = 0; i < structType1->numElements(); ++i)
     {
       CompareTypes(*structType1->getElementType(i), *structType2->getElementType(i));
     }
-    // Compare packed status using IsPacked()
     ASSERT_EQ(structType1->IsPacked(), structType2->IsPacked())
         << "CompareTypes: StructType packed mismatch: '" << type1.debug_string() << "' vs '"
         << type2.debug_string() << "'";
     return;
   }
 
-  // Handle ArrayType comparison - compare by element type and size
   if (auto * arrayType1 = dynamic_cast<const ArrayType *>(&type1))
   {
     auto * arrayType2 = assertedCast<const ArrayType>(&type2);
@@ -78,7 +73,6 @@ CompareTypes(const Type & type1, const Type & type2)
     return;
   }
 
-  // Handle FunctionType comparison - compare by argument and result types
   if (auto * fnType1 = dynamic_cast<const FunctionType *>(&type1))
   {
     auto * fnType2 = assertedCast<const FunctionType>(&type2);
@@ -332,12 +326,11 @@ ComparePhiFixVars(const PhiNode::FixVar & fv1, const PhiNode::FixVar & fv2)
 }
 
 /**
- * \brief Compares two RVSDG nodes for equality.
+ * \brief Compares two RVSDG nodes for structural equality, including their subregions.
  */
 void
 CompareNodes(const Node & node1, const Node & node2)
 {
-  // Check if structural node
   if (auto * snode1 = dynamic_cast<const StructuralNode *>(&node1))
   {
     auto * snode2 = assertedCast<const StructuralNode>(&node2);
@@ -346,13 +339,11 @@ CompareNodes(const Node & node1, const Node & node2)
     ASSERT_EQ(snode1->nsubregions(), snode2->nsubregions())
         << "CompareNodes: StructuralNode subregion count mismatch";
 
-    // Compare each region recursively
     for (size_t r = 0; r < snode1->nsubregions(); ++r)
     {
       CompareRegions(*snode1->subregion(r), *snode2->subregion(r));
     }
 
-    // Compare inputs types
     ASSERT_EQ(snode1->ninputs(), snode2->ninputs())
         << "CompareNodes: Structural node input count mismatch";
     for (size_t i = 0; i < snode1->ninputs(); ++i)
@@ -360,7 +351,6 @@ CompareNodes(const Node & node1, const Node & node2)
       CompareTypes(*snode1->input(i)->Type(), *snode2->input(i)->Type());
     }
 
-    // Compare output types
     ASSERT_EQ(snode1->noutputs(), snode2->noutputs())
         << "CompareNodes: Structural node output count mismatch";
     for (size_t i = 0; i < snode1->noutputs(); ++i)
@@ -368,7 +358,7 @@ CompareNodes(const Node & node1, const Node & node2)
       CompareTypes(*snode1->output(i)->Type(), *snode2->output(i)->Type());
     }
 
-    // Theta-specific: compare loop variable struct fields
+    // Theta-specific: verify loop variable count and compare each var
     if (auto * theta1 = dynamic_cast<const ThetaNode *>(&node1))
     {
       auto * theta2 = assertedCast<const ThetaNode>(&node2);
@@ -390,7 +380,7 @@ CompareNodes(const Node & node1, const Node & node2)
       }
     }
 
-    // Gamma-specific: compare exit variable struct fields
+    // Gamma-specific: verify exit variable count and compare each var
     if (auto * gamma1 = dynamic_cast<const GammaNode *>(&node1))
     {
       auto * gamma2 = assertedCast<const GammaNode>(&node2);
@@ -412,7 +402,7 @@ CompareNodes(const Node & node1, const Node & node2)
       }
     }
 
-    // PhiNode-specific: compare fixpoint variable struct fields
+    // PhiNode-specific: verify fixpoint variable count and compare each var
     if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
     {
       auto * phi2 = assertedCast<const PhiNode>(&node2);
@@ -436,14 +426,12 @@ CompareNodes(const Node & node1, const Node & node2)
     return;
   }
 
-  // Check if simple node
   if (auto * simp1 = dynamic_cast<const SimpleNode *>(&node1))
   {
     auto * simp2 = assertedCast<const SimpleNode>(&node2);
 
     CompareOperations(simp1->GetOperation(), simp2->GetOperation());
 
-    // Compare input types
     ASSERT_EQ(simp1->ninputs(), simp2->ninputs())
         << "CompareNodes: Simple node input count mismatch";
     for (size_t i = 0; i < simp1->ninputs(); ++i)
@@ -451,7 +439,6 @@ CompareNodes(const Node & node1, const Node & node2)
       CompareTypes(*simp1->input(i)->Type(), *simp2->input(i)->Type());
     }
 
-    // Compare output types
     ASSERT_EQ(simp1->noutputs(), simp2->noutputs())
         << "CompareNodes: Simple node output count mismatch";
     for (size_t i = 0; i < simp1->noutputs(); ++i)
@@ -657,7 +644,9 @@ CompareRegions(const Region & region1, const Region & region2)
 }
 
 /**
- * \brief Compares two LlvmRvsdgModule instances for equality.
+ * \brief Compares two LlvmRvsdgModule instances to verify they are structurally identical.
+ *
+ * Verifies full structural equality of all regions, and that graph export names match.
  */
 void
 CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
