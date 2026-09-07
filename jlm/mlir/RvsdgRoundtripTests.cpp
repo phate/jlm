@@ -766,48 +766,34 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
 } // namespace
 
 // ============================================================================
-// Parameterized roundtrip tests from RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
-// ============================================================================
-
-/**
- * \brief Runs the roundtrip checker with a fresh instance of T.
- */
-template<typename T>
-void
-RunRoundtripTest()
-{
-  T test;
-  TestRvsdgRoundtrip(test.module());
-}
-
-// ============================================================================
 // Roundtrip tests from RVSDG graphs defined in jlm/llvm/TestRvsdgs.cpp
 // ============================================================================
 
-#define ROUNTRIP_TEST(Name, Fixture) \
-  TEST(RvsdgRoundtripTests, Name)    \
-  {                                  \
-    RunRoundtripTest<Fixture>();     \
+#define ROUNDTRIP_TEST(Name, Fixture)  \
+  TEST(RvsdgRoundtripTests, Name)      \
+  {                                    \
+    Fixture test;                      \
+    TestRvsdgRoundtrip(test.module()); \
   }
 
-ROUNTRIP_TEST(TestTheta, ::jlm::llvm::ThetaTest)
-ROUNTRIP_TEST(TestStoreTest1, ::jlm::llvm::StoreTest1)
-ROUNTRIP_TEST(TestStoreTest2, ::jlm::llvm::StoreTest2)
-ROUNTRIP_TEST(TestLoadTest1, ::jlm::llvm::LoadTest1)
-ROUNTRIP_TEST(TestLoadTest2, ::jlm::llvm::LoadTest2)
-ROUNTRIP_TEST(TestLoadFromUndef, ::jlm::llvm::LoadFromUndefTest)
-ROUNTRIP_TEST(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
-ROUNTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
-ROUNTRIP_TEST(TestCallTest1, ::jlm::llvm::CallTest1)
-ROUNTRIP_TEST(TestExternalCallTest1, ::jlm::llvm::ExternalCallTest1)
-ROUNTRIP_TEST(TestDeltaTest1, ::jlm::llvm::DeltaTest1)
-ROUNTRIP_TEST(TestExternalMemory, ::jlm::llvm::ExternalMemoryTest)
-ROUNTRIP_TEST(TestEscapedMemoryTest2, ::jlm::llvm::EscapedMemoryTest2)
-ROUNTRIP_TEST(TestEscapedMemoryTest3, ::jlm::llvm::EscapedMemoryTest3)
-ROUNTRIP_TEST(TestLinkedList, ::jlm::llvm::LinkedListTest)
-ROUNTRIP_TEST(TestAllMemoryNodes, ::jlm::llvm::AllMemoryNodesTest)
-ROUNTRIP_TEST(TestFreeNull, ::jlm::llvm::FreeNullTest)
-ROUNTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
-ROUNTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
-ROUNTRIP_TEST(TestGamma, ::jlm::llvm::GammaTest)
-ROUNTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
+ROUNDTRIP_TEST(TestTheta, ::jlm::llvm::ThetaTest)
+ROUNDTRIP_TEST(TestStoreTest1, ::jlm::llvm::StoreTest1)
+ROUNDTRIP_TEST(TestStoreTest2, ::jlm::llvm::StoreTest2)
+ROUNDTRIP_TEST(TestLoadTest1, ::jlm::llvm::LoadTest1)
+ROUNDTRIP_TEST(TestLoadTest2, ::jlm::llvm::LoadTest2)
+ROUNDTRIP_TEST(TestLoadFromUndef, ::jlm::llvm::LoadFromUndefTest)
+ROUNDTRIP_TEST(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
+ROUNDTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
+ROUNDTRIP_TEST(TestCallTest1, ::jlm::llvm::CallTest1)
+ROUNDTRIP_TEST(TestExternalCallTest1, ::jlm::llvm::ExternalCallTest1)
+ROUNDTRIP_TEST(TestDeltaTest1, ::jlm::llvm::DeltaTest1)
+ROUNDTRIP_TEST(TestExternalMemory, ::jlm::llvm::ExternalMemoryTest)
+ROUNDTRIP_TEST(TestEscapedMemoryTest2, ::jlm::llvm::EscapedMemoryTest2)
+ROUNDTRIP_TEST(TestEscapedMemoryTest3, ::jlm::llvm::EscapedMemoryTest3)
+ROUNDTRIP_TEST(TestLinkedList, ::jlm::llvm::LinkedListTest)
+ROUNDTRIP_TEST(TestAllMemoryNodes, ::jlm::llvm::AllMemoryNodesTest)
+ROUNDTRIP_TEST(TestFreeNull, ::jlm::llvm::FreeNullTest)
+ROUNDTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
+ROUNDTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
+ROUNDTRIP_TEST(TestGamma, ::jlm::llvm::GammaTest)
+ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
