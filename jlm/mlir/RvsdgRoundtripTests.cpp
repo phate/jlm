@@ -340,8 +340,7 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if structural node
   if (auto * snode1 = dynamic_cast<const StructuralNode *>(&node1))
   {
-    auto * snode2 = dynamic_cast<const StructuralNode *>(&node2);
-    ASSERT_NE(snode2, nullptr) << "CompareNodes: Expected StructuralNode, got different type";
+    auto * snode2 = assertedCast<const StructuralNode>(&node2);
 
     CompareOperations(snode1->GetOperation(), snode2->GetOperation());
     ASSERT_EQ(snode1->nsubregions(), snode2->nsubregions())
@@ -372,8 +371,7 @@ CompareNodes(const Node & node1, const Node & node2)
     // Theta-specific: compare loop variable struct fields
     if (auto * theta1 = dynamic_cast<const ThetaNode *>(&node1))
     {
-      auto * theta2 = dynamic_cast<const ThetaNode *>(&node2);
-      ASSERT_NE(theta2, nullptr) << "CompareNodes: Theta node type mismatch for node2";
+      auto * theta2 = assertedCast<const ThetaNode>(&node2);
 
       auto lvList1 = theta1->GetLoopVars();
       auto lvList2 = theta2->GetLoopVars();
@@ -441,8 +439,7 @@ CompareNodes(const Node & node1, const Node & node2)
   // Check if simple node
   if (auto * simp1 = dynamic_cast<const SimpleNode *>(&node1))
   {
-    auto * simp2 = dynamic_cast<const SimpleNode *>(&node2);
-    ASSERT_NE(simp2, nullptr) << "CompareNodes: Simple node type mismatch for node2";
+    auto * simp2 = assertedCast<const SimpleNode>(&node2);
 
     CompareOperations(simp1->GetOperation(), simp2->GetOperation());
 
@@ -610,8 +607,7 @@ CompareRegions(const Region & region1, const Region & region2)
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
-      auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
-      ASSERT_NE(arg2, nullptr) << "CompareRegions: Origin1 is RegionArgument but Origin2 is not";
+      auto * arg2 = assertedCast<RegionArgument>(origin2);
       CompareTypes(*arg1->Type(), *arg2->Type());
     }
     else
@@ -649,9 +645,7 @@ CompareRegions(const Region & region1, const Region & region2)
       }
       else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
       {
-        auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
-        ASSERT_NE(arg2, nullptr)
-            << "CompareRegions: Input j Origin1 is RegionArgument but Origin2 is not";
+        auto * arg2 = assertedCast<RegionArgument>(origin2);
         CompareTypes(*arg1->Type(), *arg2->Type());
       }
       else
