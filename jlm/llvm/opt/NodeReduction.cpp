@@ -213,8 +213,8 @@ static std::vector<rvsdg::NodeNormalization<IntegerLShrOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerAndOperation>>
     integerAndNormalizations({ IntegerAndOperation::foldConstants });
 
-static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>>
-    integerOrNormalizations({ IntegerOrOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>> integerOrNormalizations(
+    { IntegerOrOperation::foldConstants, IntegerOrOperation::normalizeIdempotent });
 
 static std::vector<rvsdg::NodeNormalization<IntegerXorOperation>>
     integerXorNormalizations({ IntegerXorOperation::foldConstants });
