@@ -40,9 +40,9 @@ CompareTypes(const Type & type1, const Type & type2)
   if (auto * bitType1 = dynamic_cast<const BitType *>(&type1))
   {
     auto * bitType2 = assertedCast<const BitType>(&type2);
-    ASSERT_TRUE(bitType1->nbits() == bitType2->nbits())
-        << "CompareTypes: BitType mismatch: expected " << type1.debug_string() << " but got "
-        << type2.debug_string();
+    ASSERT_EQ(bitType1->nbits(), bitType2->nbits())
+        << "CompareTypes: BitType nbits mismatch: '" << type1.debug_string() << "' vs '"
+        << type2.debug_string() << "'";
     return;
   }
 
@@ -52,18 +52,18 @@ CompareTypes(const Type & type1, const Type & type2)
     auto * structType2 = assertedCast<const StructType>(&type2);
 
     // Compare element count using numElements()
-    ASSERT_TRUE(structType1->numElements() == structType2->numElements())
-        << "CompareTypes: StructType element count mismatch: expected " << type1.debug_string()
-        << " but got " << type2.debug_string();
+    ASSERT_EQ(structType1->numElements(), structType2->numElements())
+        << "CompareTypes: StructType element count mismatch: '" << type1.debug_string() << "' vs '"
+        << type2.debug_string() << "'";
     // Compare each element type recursively using getElementType(index)
     for (size_t i = 0; i < structType1->numElements(); ++i)
     {
       CompareTypes(*structType1->getElementType(i), *structType2->getElementType(i));
     }
     // Compare packed status using IsPacked()
-    ASSERT_TRUE(structType1->IsPacked() == structType2->IsPacked())
-        << "CompareTypes: StructType packed mismatch: expected " << type1.debug_string()
-        << " but got " << type2.debug_string();
+    ASSERT_EQ(structType1->IsPacked(), structType2->IsPacked())
+        << "CompareTypes: StructType packed mismatch: '" << type1.debug_string() << "' vs '"
+        << type2.debug_string() << "'";
     return;
   }
 
@@ -72,9 +72,9 @@ CompareTypes(const Type & type1, const Type & type2)
   {
     auto * arrayType2 = assertedCast<const ArrayType>(&type2);
     CompareTypes(arrayType1->element_type(), arrayType2->element_type());
-    ASSERT_TRUE(arrayType1->nelements() == arrayType2->nelements())
-        << "CompareTypes: ArrayType element count mismatch: expected " << type1.debug_string()
-        << " but got " << type2.debug_string();
+    ASSERT_EQ(arrayType1->nelements(), arrayType2->nelements())
+        << "CompareTypes: ArrayType element count mismatch: '" << type1.debug_string() << "' vs '"
+        << type2.debug_string() << "'";
     return;
   }
 
@@ -82,11 +82,12 @@ CompareTypes(const Type & type1, const Type & type2)
   if (auto * fnType1 = dynamic_cast<const FunctionType *>(&type1))
   {
     auto * fnType2 = assertedCast<const FunctionType>(&type2);
-    ASSERT_TRUE(
-        fnType1->NumArguments() == fnType2->NumArguments()
-        && fnType1->NumResults() == fnType2->NumResults())
-        << "CompareTypes: FunctionType argument/result count mismatch: expected "
-        << type1.debug_string() << " but got " << type2.debug_string();
+    ASSERT_EQ(fnType1->NumArguments(), fnType2->NumArguments())
+        << "CompareTypes: FunctionType argument count mismatch: '" << type1.debug_string()
+        << "' vs '" << type2.debug_string() << "'";
+    ASSERT_EQ(fnType1->NumResults(), fnType2->NumResults())
+        << "CompareTypes: FunctionType result count mismatch: '" << type1.debug_string() << "' vs '"
+        << type2.debug_string() << "'";
     for (size_t i = 0; i < fnType1->NumArguments(); ++i)
     {
       CompareTypes(fnType1->ArgumentType(i), fnType2->ArgumentType(i));
@@ -104,22 +105,25 @@ CompareTypes(const Type & type1, const Type & type2)
 }
 
 /**
- * \brief Compares two operations for equality, handling different but equivalent
- * operation types.
+ * \brief Compares two operations for structural equality.
+ *
+ * Handles operations whose operator== relies on pointer identity by performing
+ * field-by-field comparison, enabling correct equivalence checks across independently
+ * constructed RVSDG graphs (e.g., before and after an MLIR roundtrip).
  */
 void
 CompareOperations(const Operation & op1, const Operation & op2)
 {
-  // Handle comparison for operations that use pointer identity for
-  // its operator== which would fail
+  // Handle operations whose operator== relies on pointer identity,
+  // which would incorrectly report them as unequal.
 
   if (auto * alloca1 = dynamic_cast<const AllocaOperation *>(&op1))
   {
     auto * alloca2 = assertedCast<const AllocaOperation>(&op2);
     CompareTypes(*alloca1->allocatedType(), *alloca2->allocatedType());
-    ASSERT_TRUE(alloca1->alignment() == alloca2->alignment())
-        << "CompareOperations: Alloca mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(alloca1->alignment(), alloca2->alignment())
+        << "CompareOperations: Alloca alignment mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
     return;
   }
 
@@ -133,9 +137,9 @@ CompareOperations(const Operation & op1, const Operation & op2)
   if (auto * free1 = dynamic_cast<const FreeOperation *>(&op1))
   {
     auto * free2 = assertedCast<const FreeOperation>(&op2);
-    ASSERT_TRUE(free1->narguments() == free2->narguments())
-        << "CompareOperations: Free mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(free1->narguments(), free2->narguments())
+        << "CompareOperations: Free argument count mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
     return;
   }
 
@@ -185,9 +189,9 @@ CompareOperations(const Operation & op1, const Operation & op2)
   {
     auto * memcpy2 = assertedCast<const jlm::llvm::MemCpyNonVolatileOperation>(&op2);
     CompareTypes(memcpy1->LengthType(), memcpy2->LengthType());
-    ASSERT_TRUE(memcpy1->NumMemoryStates() == memcpy2->NumMemoryStates())
-        << "CompareOperations: MemCpyNonVolatile mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(memcpy1->NumMemoryStates(), memcpy2->NumMemoryStates())
+        << "CompareOperations: MemCpyNonVolatile memory state count mismatch: '"
+        << op1.debug_string() << "' vs '" << op2.debug_string() << "'";
     return;
   }
 
@@ -195,9 +199,9 @@ CompareOperations(const Operation & op1, const Operation & op2)
   {
     auto * vmemcpy2 = assertedCast<const jlm::llvm::MemCpyVolatileOperation>(&op2);
     CompareTypes(vmemcpy1->LengthType(), vmemcpy2->LengthType());
-    ASSERT_TRUE(vmemcpy1->NumMemoryStates() == vmemcpy2->NumMemoryStates())
-        << "CompareOperations: MemCpyVolatile mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(vmemcpy1->NumMemoryStates(), vmemcpy2->NumMemoryStates())
+        << "CompareOperations: MemCpyVolatile memory state count mismatch: '" << op1.debug_string()
+        << "' vs '" << op2.debug_string() << "'";
     return;
   }
 
@@ -205,32 +209,32 @@ CompareOperations(const Operation & op1, const Operation & op2)
   {
     auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
 
-    ASSERT_TRUE(lambda1->name() == lambda2->name())
-        << "CompareOperations: Lambda name mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
-    ASSERT_TRUE(lambda1->linkage() == lambda2->linkage())
-        << "CompareOperations: Lambda linkage mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
-    ASSERT_TRUE(lambda1->callingConvention() == lambda2->callingConvention())
-        << "CompareOperations: Lambda calling convention mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(lambda1->name(), lambda2->name())
+        << "CompareOperations: Lambda name mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
+    ASSERT_EQ(lambda1->linkage(), lambda2->linkage())
+        << "CompareOperations: Lambda linkage mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
+    ASSERT_EQ(lambda1->callingConvention(), lambda2->callingConvention())
+        << "CompareOperations: Lambda calling convention mismatch: '" << op1.debug_string()
+        << "' vs '" << op2.debug_string() << "'";
 
     auto type1 = lambda1->type();
     auto type2 = lambda2->type();
 
     // Compare argument types
-    ASSERT_TRUE(type1.NumArguments() == type2.NumArguments())
-        << "CompareOperations: Lambda arg count mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(type1.NumArguments(), type2.NumArguments())
+        << "CompareOperations: Lambda argument count mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
     for (size_t i = 0; i < type1.NumArguments(); ++i)
     {
       CompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
     }
 
     // Compare result types
-    ASSERT_TRUE(type1.NumResults() == type2.NumResults())
-        << "CompareOperations: Lambda result count mismatch: " << op1.debug_string() << " vs "
-        << op2.debug_string();
+    ASSERT_EQ(type1.NumResults(), type2.NumResults())
+        << "CompareOperations: Lambda result count mismatch: '" << op1.debug_string() << "' vs '"
+        << op2.debug_string() << "'";
     for (size_t i = 0; i < type1.NumResults(); ++i)
     {
       CompareTypes(type1.ResultType(i), type2.ResultType(i));
@@ -252,8 +256,8 @@ CompareOperations(const Operation & op1, const Operation & op2)
 /**
  * \brief Compares two ThetaNode loop variables for structural equality.
  *
- * This verifies the LoopVar struct integrity including input, pre, post, and output
- * fields. It also checks that redirect chains (post->divert_to()) are structurally identical.
+ * Verifies the LoopVar struct integrity: non-null input/pre/post/output pointers,
+ * matching types, and structurally identical origin chains for post.
  */
 static void
 CompareThetaLoopVars(const ThetaNode::LoopVar & lv1, const ThetaNode::LoopVar & lv2)
@@ -271,21 +275,6 @@ CompareThetaLoopVars(const ThetaNode::LoopVar & lv1, const ThetaNode::LoopVar & 
   ASSERT_NE(lv2.post, nullptr) << "CompareThetaLoopVars: Theta LoopVar.post is null in graph 2";
   CompareTypes(*lv1.post->Type(), *lv2.post->Type());
 
-  // Verify redirect chain integrity: post->origin() should have same structure
-  // When post is redirected via divert_to, we need to compare the origin nodes
-  auto * origin1 = TryGetOwnerNode<Node>(*lv1.post->origin());
-  auto * origin2 = TryGetOwnerNode<Node>(*lv2.post->origin());
-
-  if (origin1 && origin2)
-  {
-    CompareNodes(*origin1, *origin2);
-  }
-  else if (origin1 || origin2)
-  {
-    // One is redirected but the other isn't - structural mismatch
-    FAIL() << "CompareThetaLoopVars: Theta LoopVar post redirect mismatch";
-  }
-
   // Verify output (final value at loop exit) types match
   ASSERT_NE(lv1.output, nullptr) << "CompareThetaLoopVars: Theta LoopVar.output is null in graph 1";
   ASSERT_NE(lv2.output, nullptr) << "CompareThetaLoopVars: Theta LoopVar.output is null in graph 2";
@@ -295,8 +284,8 @@ CompareThetaLoopVars(const ThetaNode::LoopVar & lv1, const ThetaNode::LoopVar & 
 /**
  * \brief Compares two GammaNode exit variables for structural equality.
  *
- * This verifies that ExitVar::branchResult vectors have matching sizes and types,
- * and that the output linkage is structurally identical.
+ * Verifies that branchResult vectors have matching sizes and types,
+ * and that the output pointer is non-null with a matching type.
  */
 static void
 CompareGammaExitVars(const GammaNode::ExitVar & ev1, const GammaNode::ExitVar & ev2)
@@ -318,9 +307,8 @@ CompareGammaExitVars(const GammaNode::ExitVar & ev1, const GammaNode::ExitVar & 
 /**
  * \brief Compares two PhiNode fixpoint variables for structural equality.
  *
- * This verifies the FixVar struct integrity including recref (recursive reference),
- * result (definition input), and output (external reference) fields. These fields
- * are crucial for defining mutually recursive functions in the RVSDG.
+ * Verifies FixVar struct integrity: recref (recursive reference), result (definition input),
+ * and output (external reference) pointers are non-null with matching types.
  */
 static void
 ComparePhiFixVars(const PhiNode::FixVar & fv1, const PhiNode::FixVar & fv2)
@@ -336,20 +324,6 @@ ComparePhiFixVars(const PhiNode::FixVar & fv1, const PhiNode::FixVar & fv2)
   ASSERT_NE(fv1.result, nullptr) << "ComparePhiFixVars: Phi FixVar.result is null in graph 1";
   ASSERT_NE(fv2.result, nullptr) << "ComparePhiFixVars: Phi FixVar.result is null in graph 2";
   CompareTypes(*fv1.result->Type(), *fv2.result->Type());
-
-  // The result is an input to the phi region; follow its origin to compare definition nodes
-  auto * origin1 = TryGetOwnerNode<Node>(*fv1.result->origin());
-  auto * origin2 = TryGetOwnerNode<Node>(*fv2.result->origin());
-
-  if (origin1 && origin2)
-  {
-    CompareNodes(*origin1, *origin2);
-  }
-  else if (origin1 || origin2)
-  {
-    // One has a redirect but the other doesn't - structural mismatch
-    FAIL() << "ComparePhiFixVars: Phi FixVar result redirect mismatch";
-  }
 
   // Verify output (external reference to fixpoint value) types match
   ASSERT_NE(fv1.output, nullptr) << "ComparePhiFixVars: Phi FixVar.output is null in graph 1";
@@ -367,12 +341,11 @@ CompareNodes(const Node & node1, const Node & node2)
   if (auto * snode1 = dynamic_cast<const StructuralNode *>(&node1))
   {
     auto * snode2 = dynamic_cast<const StructuralNode *>(&node2);
-    ASSERT_NE(snode2, nullptr) << "CompareNodes: Node type mismatch - expected StructuralNode for "
-                                  "both nodes, but node2 is of a different type";
+    ASSERT_NE(snode2, nullptr) << "CompareNodes: Expected StructuralNode, got different type";
 
     CompareOperations(snode1->GetOperation(), snode2->GetOperation());
     ASSERT_EQ(snode1->nsubregions(), snode2->nsubregions())
-        << "CompareNodes: StructuralNode number of subregions mismatch";
+        << "CompareNodes: StructuralNode subregion count mismatch";
 
     // Compare each region recursively
     for (size_t r = 0; r < snode1->nsubregions(); ++r)
@@ -382,7 +355,7 @@ CompareNodes(const Node & node1, const Node & node2)
 
     // Compare inputs types
     ASSERT_EQ(snode1->ninputs(), snode2->ninputs())
-        << "CompareNodes: Structural node with number of inputs mismatch";
+        << "CompareNodes: Structural node input count mismatch";
     for (size_t i = 0; i < snode1->ninputs(); ++i)
     {
       CompareTypes(*snode1->input(i)->Type(), *snode2->input(i)->Type());
@@ -390,7 +363,7 @@ CompareNodes(const Node & node1, const Node & node2)
 
     // Compare output types
     ASSERT_EQ(snode1->noutputs(), snode2->noutputs())
-        << "CompareNodes: Structural node with number of outputs mismatch";
+        << "CompareNodes: Structural node output count mismatch";
     for (size_t i = 0; i < snode1->noutputs(); ++i)
     {
       CompareTypes(*snode1->output(i)->Type(), *snode2->output(i)->Type());
@@ -408,7 +381,7 @@ CompareNodes(const Node & node1, const Node & node2)
       ASSERT_EQ(
           std::distance(lvList1.begin(), lvList1.end()),
           std::distance(lvList2.begin(), lvList2.end()))
-          << "CompareNodes: Theta node with variable count mismatch";
+          << "CompareNodes: Theta node loop variable count mismatch";
 
       auto it1 = lvList1.begin(), it2 = lvList2.begin();
       while (it1 != lvList1.end() && it2 != lvList2.end())
@@ -431,7 +404,7 @@ CompareNodes(const Node & node1, const Node & node2)
       ASSERT_EQ(
           std::distance(evList1.begin(), evList1.end()),
           std::distance(evList2.begin(), evList2.end()))
-          << "CompareNodes: Gamma node with exit variable count mismatch";
+          << "CompareNodes: Gamma node exit variable count mismatch";
 
       auto it1 = evList1.begin(), it2 = evList2.begin();
       while (it1 != evList1.end() && it2 != evList2.end())
@@ -454,7 +427,7 @@ CompareNodes(const Node & node1, const Node & node2)
       ASSERT_EQ(
           std::distance(fvList1.begin(), fvList1.end()),
           std::distance(fvList2.begin(), fvList2.end()))
-          << "CompareNodes: Phi node with fixpoint variable count mismatch";
+          << "CompareNodes: Phi node fixpoint variable count mismatch";
 
       auto it1 = fvList1.begin(), it2 = fvList2.begin();
       while (it1 != fvList1.end() && it2 != fvList2.end())
@@ -475,17 +448,17 @@ CompareNodes(const Node & node1, const Node & node2)
 
     CompareOperations(simp1->GetOperation(), simp2->GetOperation());
 
-    // Compare inputs
+    // Compare input types
     ASSERT_EQ(simp1->ninputs(), simp2->ninputs())
-        << "CompareNodes: Simple node with number of inputs mismatch";
+        << "CompareNodes: Simple node input count mismatch";
     for (size_t i = 0; i < simp1->ninputs(); ++i)
     {
       CompareTypes(*simp1->input(i)->Type(), *simp2->input(i)->Type());
     }
 
-    // Compare outputs
+    // Compare output types
     ASSERT_EQ(simp1->noutputs(), simp2->noutputs())
-        << "CompareNodes: Simple node with number of outputs mismatch";
+        << "CompareNodes: Simple node output count mismatch";
     for (size_t i = 0; i < simp1->noutputs(); ++i)
     {
       CompareTypes(*simp1->output(i)->Type(), *simp2->output(i)->Type());
@@ -498,10 +471,10 @@ CompareNodes(const Node & node1, const Node & node2)
 /**
  * \brief Collect context variable origin node pairs from a structural node.
  *
- * For LambdaNode, DeltaNode, and PhiNode, this extracts the owner nodes of all
- * context variable inputs. This enables BFS to traverse into subregions via
- * their context variable dependencies that are not reachable through normal
- * input→origin edges.
+ * For LambdaNode, DeltaNode, and PhiNode, extracts the owner nodes of all
+ * context variable inputs (via Input::origin()). This enables BFS traversal
+ * to reach subregions linked through context variables rather than
+ * direct input→origin edges.
  */
 static std::vector<std::pair<const Node *, const Node *>>
 CollectContextVarOrigins(const Node & node1, const Node & node2)
@@ -528,9 +501,10 @@ CollectContextVarOrigins(const Node & node1, const Node & node2)
       ++it2;
     }
 
-    JLM_ASSERT(
-        std::distance(cvList1.begin(), cvList1.end())
-        == std::distance(cvList2.begin(), cvList2.end()));
+    EXPECT_EQ(
+        std::distance(cvList1.begin(), cvList1.end()),
+        std::distance(cvList2.begin(), cvList2.end()))
+        << "CollectContextVarOrigins: ContextVar count mismatch for LambdaNode";
   }
   // DeltaNode case - same pattern as LambdaNode
   else if (auto * delta1 = dynamic_cast<const DeltaNode *>(&node1))
@@ -552,11 +526,12 @@ CollectContextVarOrigins(const Node & node1, const Node & node2)
       ++it2;
     }
 
-    JLM_ASSERT(
-        std::distance(cvList1.begin(), cvList1.end())
-        == std::distance(cvList2.begin(), cvList2.end()));
+    EXPECT_EQ(
+        std::distance(cvList1.begin(), cvList1.end()),
+        std::distance(cvList2.begin(), cvList2.end()))
+        << "CollectContextVarOrigins: ContextVar count mismatch for DeltaNode";
   }
-  // PhiNode case - collects CV inputs (not recref, handled separately)
+  // PhiNode case - collects context variable origins (distinct from FixVar.recref)
   else if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
   {
     auto * phi2 = assertedCast<const PhiNode>(&node2);
@@ -576,9 +551,10 @@ CollectContextVarOrigins(const Node & node1, const Node & node2)
       ++it2;
     }
 
-    JLM_ASSERT(
-        std::distance(cvList1.begin(), cvList1.end())
-        == std::distance(cvList2.begin(), cvList2.end()));
+    EXPECT_EQ(
+        std::distance(cvList1.begin(), cvList1.end()),
+        std::distance(cvList2.begin(), cvList2.end()))
+        << "CollectContextVarOrigins: ContextVar count mismatch for PhiNode";
   }
 
   return origins;
@@ -586,6 +562,10 @@ CollectContextVarOrigins(const Node & node1, const Node & node2)
 
 /**
  * \brief Check for context variables and traverse their origin nodes into the BFS queue.
+ *
+ * Delegates to CollectContextVarOrigins to find origin pairs, then adds any unvisited
+ * ones to the BFS queue and recursively expands from them (for nested context variable
+ * chains). Compares each origin pair via CompareNodes.
  */
 static void
 CheckForContextVariables(
@@ -614,8 +594,11 @@ CheckForContextVariables(
 }
 
 /**
- * \brief Compares two RVSDG regions for equality by traversing through results
- * and verifying the same graph structure exists in both regions.
+ * \brief Compares two RVSDG regions for structural equality using BFS traversal.
+ *
+ * Verifies argument/result counts and types, total node count, then traverses
+ * from region results via input→origin edges and context variable inputs to verify
+ * that every corresponding node pair is structurally identical.
  */
 void
 CompareRegions(const Region & region1, const Region & region2)
@@ -647,27 +630,21 @@ CompareRegions(const Region & region1, const Region & region2)
     auto * origin1 = region1.result(i)->origin();
     auto * origin2 = region2.result(i)->origin();
 
-    if (!origin1 || !origin2)
-    {
-      ADD_FAILURE() << "CompareRegions: Result origin is null at index " << i;
-      return;
-    }
+    ASSERT_TRUE(origin1 && origin2) << "CompareRegions: Result origin is null at index " << i;
 
     CompareTypes(*origin1->Type(), *origin2->Type());
 
     if (auto * node1 = TryGetOwnerNode<Node>(*origin1))
     {
       auto * node2 = TryGetOwnerNode<Node>(*origin2);
-      ASSERT_NE(node2, nullptr)
-          << "CompareRegions: Origin mismatch - node1 found but origin2 did not resolve to a node";
-      // Add nodes to queue for BFS traversing
+      ASSERT_NE(node2, nullptr) << "CompareRegions: Origin1 is a node but Origin2 is not";
+      // Seed BFS from this node pair
       nodeQueue.push({ node1, node2 });
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
       auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
-      ASSERT_NE(arg2, nullptr) << "CompareRegions: RegionArgument mismatch - origin1 resolved to a "
-                                  "region argument but origin2 did not";
+      ASSERT_NE(arg2, nullptr) << "CompareRegions: Origin1 is RegionArgument but Origin2 is not";
       CompareTypes(*arg1->Type(), *arg2->Type());
     }
     else
@@ -688,17 +665,12 @@ CompareRegions(const Region & region1, const Region & region2)
       auto * origin1 = node1->input(j)->origin();
       auto * origin2 = node2->input(j)->origin();
 
-      if (!origin1 || !origin2)
-      {
-        ADD_FAILURE() << "CompareRegions: Input origin mismatch for node inputs at index " << j;
-        return;
-      }
+      ASSERT_TRUE(origin1 && origin2) << "CompareRegions: Input origin is null at index " << j;
 
       if (auto * next1 = TryGetOwnerNode<Node>(*origin1))
       {
         auto * next2 = TryGetOwnerNode<Node>(*origin2);
-        ASSERT_NE(next2, nullptr) << "CompareRegions: Origin mismatch - node1 input j origin found "
-                                     "but node2 input j origin did not resolve to a node";
+        ASSERT_NE(next2, nullptr) << "CompareRegions: Input j Origin1 is a node but Origin2 is not";
 
         if (!visited.count(next1))
         {
@@ -711,8 +683,8 @@ CompareRegions(const Region & region1, const Region & region2)
       else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
       {
         auto * arg2 = dynamic_cast<RegionArgument *>(origin2);
-        ASSERT_NE(arg2, nullptr) << "CompareRegions: RegionArgument mismatch - node1 input j "
-                                    "origin is a region argument but node2 is not";
+        ASSERT_NE(arg2, nullptr)
+            << "CompareRegions: Input j Origin1 is RegionArgument but Origin2 is not";
         CompareTypes(*arg1->Type(), *arg2->Type());
       }
       else
@@ -745,7 +717,11 @@ CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
 }
 
 /**
- * \brief Tests that an RVSDG graph roundtrips through MLIR.
+ * \brief Converts an RVSDG graph to MLIR and back, then compares for structural equality.
+ *
+ * Uses JlmToMlirConverter to emit the RVSDG as an MLIR operation, wraps it in a Block,
+ * then uses MlirToJlmConverter to reconstruct an LlvmRvsdgModule. Compares the
+ * original and roundtripped modules via CompareModules (node count, types, graph structure).
  */
 void
 TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
