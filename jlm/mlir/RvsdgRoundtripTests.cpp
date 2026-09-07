@@ -395,8 +395,7 @@ CompareNodes(const Node & node1, const Node & node2)
     // Gamma-specific: compare exit variable struct fields
     if (auto * gamma1 = dynamic_cast<const GammaNode *>(&node1))
     {
-      auto * gamma2 = dynamic_cast<const GammaNode *>(&node2);
-      ASSERT_NE(gamma2, nullptr) << "CompareNodes: Gamma node type mismatch for node2";
+      auto * gamma2 = assertedCast<const GammaNode>(&node2);
 
       auto evList1 = gamma1->GetExitVars();
       auto evList2 = gamma2->GetExitVars();
@@ -418,8 +417,7 @@ CompareNodes(const Node & node1, const Node & node2)
     // PhiNode-specific: compare fixpoint variable struct fields
     if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
     {
-      auto * phi2 = dynamic_cast<const PhiNode *>(&node2);
-      ASSERT_NE(phi2, nullptr) << "CompareNodes: Phi node type mismatch for node2";
+      auto * phi2 = assertedCast<const PhiNode>(&node2);
 
       auto fvList1 = phi1->GetFixVars();
       auto fvList2 = phi2->GetFixVars();
@@ -469,6 +467,35 @@ CompareNodes(const Node & node1, const Node & node2)
 }
 
 /**
+ * \brief Iterate over two equal-length context-variable lists and collect origin node pairs.
+ */
+template<typename CvList1, typename CvList2>
+static void
+CollectOriginsFromCvPairs(
+    const CvList1 & cvList1,
+    const CvList2 & cvList2,
+    std::vector<std::pair<const Node *, const Node *>> & origins)
+{
+  auto it1 = cvList1.begin(), it2 = cvList2.begin();
+  while (it1 != cvList1.end() && it2 != cvList2.end())
+  {
+    if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
+    {
+      auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
+      if (origin2)
+        origins.push_back({ origin1, origin2 });
+    }
+    ++it1;
+    ++it2;
+  }
+
+  EXPECT_EQ(
+      std::distance(cvList1.begin(), cvList1.end()),
+      std::distance(cvList2.begin(), cvList2.end()))
+      << "CollectOriginsFromCvPairs: ContextVar count mismatch";
+}
+
+/**
  * \brief Collect context variable origin node pairs from a structural node.
  *
  * For LambdaNode, DeltaNode, and PhiNode, extracts the owner nodes of all
@@ -481,80 +508,20 @@ CollectContextVarOrigins(const Node & node1, const Node & node2)
 {
   std::vector<std::pair<const Node *, const Node *>> origins;
 
-  // LambdaNode case
   if (auto * lambda1 = dynamic_cast<const LambdaNode *>(&node1))
   {
     auto * lambda2 = assertedCast<const LambdaNode>(&node2);
-    auto cvList1 = lambda1->GetContextVars();
-    auto cvList2 = lambda2->GetContextVars();
-
-    auto it1 = cvList1.begin(), it2 = cvList2.begin();
-    while (it1 != cvList1.end() && it2 != cvList2.end())
-    {
-      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
-      {
-        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
-        if (origin2)
-          origins.push_back({ origin1, origin2 });
-      }
-      ++it1;
-      ++it2;
-    }
-
-    EXPECT_EQ(
-        std::distance(cvList1.begin(), cvList1.end()),
-        std::distance(cvList2.begin(), cvList2.end()))
-        << "CollectContextVarOrigins: ContextVar count mismatch for LambdaNode";
+    CollectOriginsFromCvPairs(lambda1->GetContextVars(), lambda2->GetContextVars(), origins);
   }
-  // DeltaNode case - same pattern as LambdaNode
   else if (auto * delta1 = dynamic_cast<const DeltaNode *>(&node1))
   {
     auto * delta2 = assertedCast<const DeltaNode>(&node2);
-    auto cvList1 = delta1->GetContextVars();
-    auto cvList2 = delta2->GetContextVars();
-
-    auto it1 = cvList1.begin(), it2 = cvList2.begin();
-    while (it1 != cvList1.end() && it2 != cvList2.end())
-    {
-      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
-      {
-        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
-        if (origin2)
-          origins.push_back({ origin1, origin2 });
-      }
-      ++it1;
-      ++it2;
-    }
-
-    EXPECT_EQ(
-        std::distance(cvList1.begin(), cvList1.end()),
-        std::distance(cvList2.begin(), cvList2.end()))
-        << "CollectContextVarOrigins: ContextVar count mismatch for DeltaNode";
+    CollectOriginsFromCvPairs(delta1->GetContextVars(), delta2->GetContextVars(), origins);
   }
-  // PhiNode case - collects context variable origins (distinct from FixVar.recref)
   else if (auto * phi1 = dynamic_cast<const PhiNode *>(&node1))
   {
     auto * phi2 = assertedCast<const PhiNode>(&node2);
-    auto cvList1 = phi1->GetContextVars();
-    auto cvList2 = phi2->GetContextVars();
-
-    auto it1 = cvList1.begin(), it2 = cvList2.begin();
-    while (it1 != cvList1.end() && it2 != cvList2.end())
-    {
-      if (auto * origin1 = TryGetOwnerNode<Node>(*it1->input->origin()))
-      {
-        auto * origin2 = TryGetOwnerNode<Node>(*it2->input->origin());
-        if (origin2)
-          origins.push_back({ origin1, origin2 });
-      }
-      ++it1;
-      ++it2;
-    }
-
-    EXPECT_EQ(
-        std::distance(cvList1.begin(), cvList1.end()),
-        std::distance(cvList2.begin(), cvList2.end()))
-        << "CollectContextVarOrigins: ContextVar count mismatch for PhiNode";
+    CollectOriginsFromCvPairs(phi1->GetContextVars(), phi2->GetContextVars(), origins);
   }
 
   return origins;
@@ -704,12 +671,12 @@ CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
   CompareRegions(module1.Rvsdg().GetRootRegion(), module2.Rvsdg().GetRootRegion());
 
   // Compare root region exports
-  ASSERT_EQ(module1.Rvsdg().GetRootRegion().nresults(), module2.Rvsdg().GetRootRegion().nresults())
-      << "CompareModules: Root region export count mismatch";
-  for (size_t i = 0; i < module1.Rvsdg().GetRootRegion().nresults(); ++i)
+  auto & rootRegion = module1.Rvsdg().GetRootRegion();
+  auto & rootRegion2 = module2.Rvsdg().GetRootRegion();
+  for (size_t i = 0; i < rootRegion.nresults(); ++i)
   {
-    auto * exp1 = assertedCast<const GraphExport>(module1.Rvsdg().GetRootRegion().result(i));
-    auto * exp2 = assertedCast<const GraphExport>(module2.Rvsdg().GetRootRegion().result(i));
+    auto * exp1 = assertedCast<const GraphExport>(rootRegion.result(i));
+    auto * exp2 = assertedCast<const GraphExport>(rootRegion2.result(i));
 
     ASSERT_STREQ(exp1->Name().c_str(), exp2->Name().c_str())
         << "CompareModules: Export name mismatch at index " << i;
@@ -735,6 +702,9 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
   rootBlock->push_back(omega);
 
   auto roundTripModule = MlirToJlmConverter::CreateAndConvert(rootBlock);
+
+  ASSERT_NE(roundTripModule, nullptr)
+      << "TestRvsdgRoundtrip: MLIR-to-JLM conversion produced no module";
 
   CompareModules(originalModule, *roundTripModule);
 }
