@@ -485,7 +485,7 @@ CompareNodes(const Node & node1, const Node & node2)
 
     // Compare outputs
     ASSERT_EQ(simp1->noutputs(), simp2->noutputs())
-        << "CompareNodes: Simple node woth number of outputs mismatch";
+        << "CompareNodes: Simple node with number of outputs mismatch";
     for (size_t i = 0; i < simp1->noutputs(); ++i)
     {
       CompareTypes(*simp1->output(i)->Type(), *simp2->output(i)->Type());
