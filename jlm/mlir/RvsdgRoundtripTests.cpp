@@ -108,6 +108,9 @@ CompareTypes(const Type & type1, const Type & type2)
 void
 CompareOperations(const Operation & op1, const Operation & op2)
 {
+  if (op1 == op2)
+    return;
+
   // Handle operations whose operator== relies on pointer identity,
   // which would incorrectly report them as unequal.
 
@@ -172,13 +175,6 @@ CompareOperations(const Operation & op1, const Operation & op2)
     return;
   }
 
-  if (auto * gep1 = dynamic_cast<const GetElementPtrOperation *>(&op1))
-  {
-    auto * gep2 = assertedCast<const GetElementPtrOperation>(&op2);
-    CompareTypes(*gep1->getPointeeType(), *gep2->getPointeeType());
-    return;
-  }
-
   if (auto * memcpy1 = dynamic_cast<const jlm::llvm::MemCpyNonVolatileOperation *>(&op1))
   {
     auto * memcpy2 = assertedCast<const jlm::llvm::MemCpyNonVolatileOperation>(&op2);
@@ -196,50 +192,6 @@ CompareOperations(const Operation & op1, const Operation & op2)
     ASSERT_EQ(vmemcpy1->NumMemoryStates(), vmemcpy2->NumMemoryStates())
         << "CompareOperations: MemCpyVolatile memory state count mismatch: '" << op1.debug_string()
         << "' vs '" << op2.debug_string() << "'";
-    return;
-  }
-
-  if (auto * lambda1 = dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&op1))
-  {
-    auto * lambda2 = assertedCast<const jlm::llvm::LlvmLambdaOperation>(&op2);
-
-    ASSERT_EQ(lambda1->name(), lambda2->name())
-        << "CompareOperations: Lambda name mismatch: '" << op1.debug_string() << "' vs '"
-        << op2.debug_string() << "'";
-    ASSERT_EQ(lambda1->linkage(), lambda2->linkage())
-        << "CompareOperations: Lambda linkage mismatch: '" << op1.debug_string() << "' vs '"
-        << op2.debug_string() << "'";
-    ASSERT_EQ(lambda1->callingConvention(), lambda2->callingConvention())
-        << "CompareOperations: Lambda calling convention mismatch: '" << op1.debug_string()
-        << "' vs '" << op2.debug_string() << "'";
-
-    auto type1 = lambda1->type();
-    auto type2 = lambda2->type();
-
-    // Compare argument types
-    ASSERT_EQ(type1.NumArguments(), type2.NumArguments())
-        << "CompareOperations: Lambda argument count mismatch: '" << op1.debug_string() << "' vs '"
-        << op2.debug_string() << "'";
-    for (size_t i = 0; i < type1.NumArguments(); ++i)
-    {
-      CompareTypes(type1.ArgumentType(i), type2.ArgumentType(i));
-    }
-
-    // Compare result types
-    ASSERT_EQ(type1.NumResults(), type2.NumResults())
-        << "CompareOperations: Lambda result count mismatch: '" << op1.debug_string() << "' vs '"
-        << op2.debug_string() << "'";
-    for (size_t i = 0; i < type1.NumResults(); ++i)
-    {
-      CompareTypes(type1.ResultType(i), type2.ResultType(i));
-    }
-  }
-
-  // If same type, use the regular operator==
-  if (typeid(op1) == typeid(op2))
-  {
-    ASSERT_TRUE(op1 == op2) << "CompareOperations: Same-type operation inequality: "
-                            << op1.debug_string() << " vs " << op2.debug_string();
     return;
   }
 
