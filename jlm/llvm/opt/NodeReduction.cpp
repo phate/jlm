@@ -82,6 +82,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
 
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
+  AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
 
@@ -260,6 +261,9 @@ static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
 
 static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
     getElementPtrNormalizations({ GetElementPtrOperation::normalizeIdempotent });
+
+static std::vector<rvsdg::NodeNormalization<FCmpOperation>>
+    fCmpNormalizations({ FCmpOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::BinaryOperation>>
     binaryOperationNormalizations({ rvsdg::NormalizeBinaryOperation });
@@ -632,6 +636,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         getElementPtrNormalizations,
         Statistics_->getReductionCounters().numGetElementPtrReductions);
+  }
+  if (is<FCmpOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FCmpOperation>(
+        simpleNode,
+        fCmpNormalizations,
+        Statistics_->getReductionCounters().numFCmpReductions);
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {

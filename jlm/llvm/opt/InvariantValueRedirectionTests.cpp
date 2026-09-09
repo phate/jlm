@@ -228,6 +228,151 @@ TEST(InvariantValueRedirectionTests, testGammaControlConstantRedirection_Failure
   EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), outerGammaNodeExitVar.output);
 }
 
+TEST(InvariantValueRedirectionTests, testGammaIntegerConstantRedirection_Success)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto valueType = TestType::createValueType();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({}, { i32Type });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto outerPredicate = TestOperation::createNode(lambdaNode->subregion(), {}, { controlType });
+  auto outerGammaNode = GammaNode::create(outerPredicate->output(0), 2);
+
+  // outerGammaNode - subregion 0
+  auto innerPredicate0 =
+      TestOperation::createNode(outerGammaNode->subregion(0), {}, { controlType });
+  auto innerGammaNode0 = GammaNode::create(innerPredicate0->output(0), 2);
+
+  // innerGammaNode0 - subregion 0
+  auto & intConstant00 =
+      *IntegerConstantOperation::Create(*innerGammaNode0->subregion(0), 32, 0).output(0);
+
+  // innerGammaNode0 - subregion 1
+  auto & intConstant01 = *UndefValueOperation::Create(*innerGammaNode0->subregion(1), i32Type);
+
+  // innerGammaNode0 - finalize
+  auto innerGammeNode0ExitVar = innerGammaNode0->AddExitVar({ &intConstant00, &intConstant01 });
+
+  // outerGammaNode - subregion 1
+  auto innerPredicate1 =
+      TestOperation::createNode(outerGammaNode->subregion(1), {}, { controlType });
+  auto innerGammaNode1 = GammaNode::create(innerPredicate1->output(0), 2);
+
+  // innerGammaNode1 - subregion 0
+  auto & intConstant10 =
+      *IntegerConstantOperation::Create(*innerGammaNode1->subregion(0), 32, 0).output(0);
+
+  // innerGammaNode1 - subregion 1
+  auto & intConstant11 = *UndefValueOperation::Create(*innerGammaNode1->subregion(1), i32Type);
+
+  // innerGammaNode1 - finalize
+  auto innerGammeNode1ExitVar = innerGammaNode1->AddExitVar({ &intConstant10, &intConstant11 });
+
+  // outerGammaNode - finalize
+  auto outerGammaNodeExitVar =
+      outerGammaNode->AddExitVar({ innerGammeNode0ExitVar.output, innerGammeNode1ExitVar.output });
+
+  auto lambdaOutput = lambdaNode->finalize({ outerGammaNodeExitVar.output });
+
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+
+  // Assert
+  // We expect that the transformation could be applied and consequently the gamma node was pruned
+  EXPECT_FALSE(Region::containsNodeType<GammaNode>(*lambdaNode->subregion(), false));
+
+  // We expect that the origin of the lambda result should be connected to a
+  // IntegerConstantOperation node
+  auto [intConstantNode, intConstantOp] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+      *lambdaNode->GetFunctionResults()[0]->origin());
+  EXPECT_NE(intConstantOp, nullptr);
+  EXPECT_EQ(intConstantOp->Representation().nbits(), 32);
+  EXPECT_EQ(intConstantOp->Representation().to_uint(), 0);
+}
+
+TEST(InvariantValueRedirectionTests, testGammaIntegerConstantRedirection_Failure)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto valueType = TestType::createValueType();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({}, { i32Type });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+
+  auto outerPredicate = TestOperation::createNode(lambdaNode->subregion(), {}, { controlType });
+  auto outerGammaNode = GammaNode::create(outerPredicate->output(0), 2);
+
+  // outerGammaNode - subregion 0
+  auto innerPredicate0 =
+      TestOperation::createNode(outerGammaNode->subregion(0), {}, { controlType });
+  auto innerGammaNode0 = GammaNode::create(innerPredicate0->output(0), 2);
+
+  // innerGammaNode0 - subregion 0
+  auto & intConstant00 =
+      *IntegerConstantOperation::Create(*innerGammaNode0->subregion(0), 32, 1).output(0);
+
+  // innerGammaNode0 - subregion 1
+  auto & intConstant01 = *UndefValueOperation::Create(*innerGammaNode0->subregion(1), i32Type);
+
+  // innerGammaNode0 - finalize
+  auto innerGammeNode0ExitVar = innerGammaNode0->AddExitVar({ &intConstant00, &intConstant01 });
+
+  // outerGammaNode - subregion 1
+  auto innerPredicate1 =
+      TestOperation::createNode(outerGammaNode->subregion(1), {}, { controlType });
+  auto innerGammaNode1 = GammaNode::create(innerPredicate1->output(0), 2);
+
+  // innerGammaNode1 - subregion 0
+  auto & intConstant10 =
+      *IntegerConstantOperation::Create(*innerGammaNode1->subregion(0), 32, 0).output(0);
+
+  // innerGammaNode1 - subregion 1
+  auto & intConstant11 = *UndefValueOperation::Create(*innerGammaNode1->subregion(1), i32Type);
+
+  // innerGammaNode1 - finalize
+  auto innerGammeNode1ExitVar = innerGammaNode1->AddExitVar({ &intConstant10, &intConstant11 });
+
+  // outerGammaNode - finalize
+  auto outerGammaNodeExitVar =
+      outerGammaNode->AddExitVar({ innerGammeNode0ExitVar.output, innerGammeNode1ExitVar.output });
+
+  auto lambdaOutput = lambdaNode->finalize({ outerGammaNodeExitVar.output });
+
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+
+  // Assert
+
+  // We expect that the transformation could not be applied and consequently the gamma node is still
+  // existent
+  EXPECT_TRUE(Region::containsNodeType<GammaNode>(*lambdaNode->subregion(), false));
+
+  // The origin of the lambda result should not have been diverted
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[0]->origin(), outerGammaNodeExitVar.output);
+}
+
 TEST(InvariantValueRedirectionTests, TestTheta)
 {
   // Arrange
