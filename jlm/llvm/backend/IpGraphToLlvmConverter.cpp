@@ -1799,12 +1799,13 @@ IpGraphToLlvmConverter::convert_instruction(
     operands.push_back(tac.operand(n));
 
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
-  if (Context_->hasDISubprogram())
+  auto rvsdgNodeLocation = tac.getRvsdgNodeLocation();
+  if (Context_->hasDISubprogram() && rvsdgNodeLocation.has_value())
   {
     auto debugLoc = ::llvm::DILocation::get(
         Context_->llvm_module().getContext(),
-        1,
-        1,
+        rvsdgNodeLocation.value().regionId,
+        rvsdgNodeLocation.value().nodeId,
         Context_->getDISubprogram());
     builder.SetCurrentDebugLocation(debugLoc);
   }
@@ -1890,19 +1891,20 @@ IpGraphToLlvmConverter::create_conditional_branch(const ControlFlowGraphNode * n
   JLM_ASSERT(node->OutEdge(0)->sink() != node->cfg().exit());
   JLM_ASSERT(node->OutEdge(1)->sink() != node->cfg().exit());
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
-  if (Context_->hasDISubprogram())
-  {
-    auto debugLoc = ::llvm::DILocation::get(
-        Context_->llvm_module().getContext(),
-        2,
-        3,
-        Context_->getDISubprogram());
-    builder.SetCurrentDebugLocation(debugLoc);
-  }
 
   auto branch = static_cast<const BasicBlock *>(node)->tacs().last();
   JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
+  auto rvsdgNodeLocation = branch->getRvsdgNodeLocation();
+  if (Context_->hasDISubprogram() && rvsdgNodeLocation.has_value())
+  {
+    auto debugLoc = ::llvm::DILocation::get(
+        Context_->llvm_module().getContext(),
+        rvsdgNodeLocation.value().regionId,
+        rvsdgNodeLocation.value().nodeId,
+        Context_->getDISubprogram());
+    builder.SetCurrentDebugLocation(debugLoc);
+  }
 
   auto condition = Context_->value(branch->operand(0));
   auto bbfalse = Context_->basic_block(node->OutEdge(0)->sink());
