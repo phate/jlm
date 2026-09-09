@@ -153,13 +153,18 @@ TEST(FCmpOperationTests, testFoldConstants)
     auto & c0 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(0.0));
     auto & c1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(1.0));
     auto & c2 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(2.0));
-    auto & cNaN =
-        ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat::getNaN(::llvm::APFloat::IEEEdouble()));
+    auto & cNaN = ConstantFP::createNode(
+        *region,
+        fpsize::dbl,
+        ::llvm::APFloat::getNaN(::llvm::APFloat::IEEEdouble()));
 
-    const auto expectFoldedTo = [&](fpcmp predicate, rvsdg::Output * lhs, rvsdg::Output * rhs, bool expected) {
+    const auto expectFoldedTo =
+        [&](fpcmp predicate, rvsdg::Output * lhs, rvsdg::Output * rhs, bool expected)
+    {
       const FCmpOperation operation(predicate, fpt);
       const auto folded = FCmpOperation::foldConstants(operation, { lhs, rhs });
-      ASSERT_TRUE(folded.has_value()) << "Expected folding for predicate " << static_cast<int>(predicate);
+      ASSERT_TRUE(folded.has_value())
+          << "Expected folding for predicate " << static_cast<int>(predicate);
       ASSERT_EQ(folded->size(), 1u);
 
       auto [node, constantOperation] =
