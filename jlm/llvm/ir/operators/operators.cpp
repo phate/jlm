@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
@@ -427,6 +428,105 @@ FCmpOperation::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output 
     const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FCmpOperation::foldConstants(
+    const FCmpOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+  JLM_ASSERT(!is<VectorType>(operand1.Type()));
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
+  if (!c1Operation)
+    return std::nullopt;
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
+  if (!c2Operation)
+    return std::nullopt;
+
+  auto & c1Representation = c1Operation->constant();
+  auto & c2Representation = c2Operation->constant();
+  const auto cmpResult = c1Representation.compare(c2Representation);
+
+  bool boolResult = false;
+  switch (operation.cmp())
+  {
+  case fpcmp::FALSE:
+    boolResult = false;
+    break;
+  case fpcmp::TRUE:
+    boolResult = true;
+    break;
+
+  case fpcmp::oeq:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ogt:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::oge:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpGreaterThan || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::olt:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpLessThan);
+    break;
+  case fpcmp::ole:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpLessThan || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::one:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpLessThan || cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::ord:
+    boolResult = (cmpResult != ::llvm::APFloat::cmpUnordered);
+    break;
+
+  case fpcmp::uno:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpUnordered);
+    break;
+  case fpcmp::ueq:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ugt:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered
+         || cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::uge:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpGreaterThan
+         || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ult:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpLessThan);
+    break;
+  case fpcmp::ule:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpLessThan
+         || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::une:
+    boolResult = (cmpResult != ::llvm::APFloat::cmpEqual);
+    break;
+
+  default:
+    throw std::logic_error("Invalid FCmp operation");
+  }
+
+  auto result =
+      IntegerConstantOperation::Create(*operand1.region(), 1, boolResult ? 1 : 0).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
 }
 
 UndefValueOperation::~UndefValueOperation() noexcept = default;
