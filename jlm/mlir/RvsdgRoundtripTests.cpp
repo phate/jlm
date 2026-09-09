@@ -30,7 +30,7 @@ CompareRegions(const Region & region1, const Region & region2);
 /**
  * \brief Compares two RVSDG types for structural equality.
  */
-void
+static void
 CompareTypes(const Type & type1, const Type & type2)
 {
   // If types are equal, return immediately.
@@ -105,7 +105,7 @@ CompareTypes(const Type & type1, const Type & type2)
  * field-by-field comparison, enabling correct equivalence checks across independently
  * constructed RVSDG graphs (e.g., before and after an MLIR roundtrip).
  */
-void
+static void
 CompareOperations(const Operation & op1, const Operation & op2)
 {
   if (op1 == op2)
