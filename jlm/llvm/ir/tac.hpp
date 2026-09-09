@@ -8,10 +8,12 @@
 
 #include <jlm/llvm/ir/variable.hpp>
 #include <jlm/rvsdg/operation.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/util/common.hpp>
 
 #include <list>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace jlm::llvm
@@ -49,6 +51,12 @@ public:
 
 private:
   llvm::ThreeAddressCode * tac_;
+};
+
+struct RvsdgNodeLocation
+{
+  rvsdg::Region::Id regionId;
+  rvsdg::Node::Id nodeId;
 };
 
 class ThreeAddressCode final
@@ -128,6 +136,18 @@ public:
   void
   convert(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands);
 
+  void
+  setRvsdgNodeLocation(RvsdgNodeLocation rvsdgNodeLocation)
+  {
+    rvsdgNodeLocation_ = std::move(rvsdgNodeLocation);
+  }
+
+  [[nodiscard]] const std::optional<RvsdgNodeLocation> &
+  getRvsdgNodeLocation() const noexcept
+  {
+    return rvsdgNodeLocation_;
+  }
+
   static std::string
   ToAscii(const ThreeAddressCode & threeAddressCode);
 
@@ -184,6 +204,7 @@ private:
     return names;
   }
 
+  std::optional<RvsdgNodeLocation> rvsdgNodeLocation_;
   std::vector<const Variable *> operands_;
   std::unique_ptr<rvsdg::Operation> operation_;
   std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results_;
