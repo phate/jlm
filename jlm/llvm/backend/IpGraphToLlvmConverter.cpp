@@ -2434,7 +2434,6 @@ IpGraphToLlvmConverter::ConvertModule(
       ::llvm::DEBUG_METADATA_VERSION);
 
   Context_ = Context::Create(ipGraphModule, *llvmModule);
-
   convert_ipgraph();
 
   return llvmModule;
