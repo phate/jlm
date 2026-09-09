@@ -38,12 +38,12 @@ class ThetaGammaPredicateCorrelation;
  * connected to the arguments of a single gamma input. All the users of a gamma output are diverted
  * to the origin of this gamma input.
  *
- * ### Gamma control constant redirection
+ * ### Gamma output constant redirection
  * The output of a gamma node is considered invariant if all the corresponding region
- * results are connected to control constants that represent the same value. This can include
- * \ref UndefValueOperation constants, which can be used as a replacement for any \ref
- * rvsdg::ControlConstantOperation constants. All the users of a gamma output are diverted to a \ref
- * rvsdg::ControlConstantOperation node that is created in the parent region of the gamma node.
+ * results are connected to constants that represent the same value. This can include
+ * \ref UndefValueOperation constants, which can be used as a replacement for any constants. All the
+ * users of a gamma output are diverted to a respective constant node that is created in the parent
+ * region of the gamma node.
  *
  * ### Theta output redirection
  * A loop variable is considered invariant if its post value is connected to its corresponding pre
@@ -93,7 +93,7 @@ public:
   struct Configuration
   {
     bool enableGammaOutputRedirection = true;
-    bool enableGammaControlConstantRedirection = true;
+    bool enableGammaOutputConstantRedirection = true;
     bool enableThetaOutputRedirection = true;
     bool enableThetaGammaCorrelationRedirection = true;
     bool enableCallOutputRedirection = true;
@@ -133,7 +133,7 @@ private:
   redirectGammaOutputs(rvsdg::GammaNode & gammaNode);
 
   static void
-  redirectGammaControlConstants(rvsdg::GammaNode & gammaNode);
+  redirectGammaOutputConstants(rvsdg::GammaNode & gammaNode);
 
   static void
   redirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
