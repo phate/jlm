@@ -641,6 +641,19 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
   }
 
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FCmpOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const fpcmp & cmp, const Variable * op1, const Variable * op2)
   {
