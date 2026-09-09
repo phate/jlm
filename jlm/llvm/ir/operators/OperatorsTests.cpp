@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <llvm/ADT/APFloat.h>
+
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -134,6 +136,117 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
+  }
+}
+
+TEST(FCmpOperationTests, testFoldConstants)
+{
+  using namespace jlm::rvsdg;
+
+  Graph graph;
+  auto region = &graph.GetRootRegion();
+
+  auto fpt = FloatingPointType::Create(fpsize::dbl);
+
+  {
+    auto & cNeg1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(-1.0));
+    auto & c0 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(0.0));
+    auto & c1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(1.0));
+    auto & c2 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(2.0));
+    auto & cNaN =
+        ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat::getNaN(::llvm::APFloat::IEEEdouble()));
+
+    const auto expectFoldedTo = [&](fpcmp predicate, rvsdg::Output * lhs, rvsdg::Output * rhs, bool expected) {
+      const FCmpOperation operation(predicate, fpt);
+      const auto folded = FCmpOperation::foldConstants(operation, { lhs, rhs });
+      ASSERT_TRUE(folded.has_value()) << "Expected folding for predicate " << static_cast<int>(predicate);
+      ASSERT_EQ(folded->size(), 1u);
+
+      auto [node, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*(*folded)[0]);
+      ASSERT_NE(constantOperation, nullptr);
+      EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
+      EXPECT_EQ(constantOperation->Representation().to_uint(), expected ? 1u : 0u)
+          << "Predicate " << static_cast<int>(predicate);
+    };
+
+    // FALSE / TRUE
+    expectFoldedTo(fpcmp::FALSE, c0.output(0), c1.output(0), false);
+    expectFoldedTo(fpcmp::TRUE, c0.output(0), c1.output(0), true);
+
+    // Ordered comparisons (no NaN)
+    expectFoldedTo(fpcmp::oeq, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::oeq, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::ogt, c2.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ogt, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::oge, c2.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::oge, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::oge, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::olt, c1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::olt, c2.output(0), c1.output(0), false);
+
+    expectFoldedTo(fpcmp::ole, c1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::ole, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ole, c2.output(0), c1.output(0), false);
+
+    expectFoldedTo(fpcmp::one, c1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::one, c1.output(0), c1.output(0), false);
+
+    expectFoldedTo(fpcmp::ord, cNeg1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::uno, cNeg1.output(0), c2.output(0), false);
+
+    // Unordered comparisons (NaN)
+    expectFoldedTo(fpcmp::ord, cNaN.output(0), c1.output(0), false);
+    expectFoldedTo(fpcmp::uno, cNaN.output(0), c1.output(0), true);
+
+    expectFoldedTo(fpcmp::ueq, cNaN.output(0), cNaN.output(0), true);
+    expectFoldedTo(fpcmp::ueq, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ueq, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::une, cNaN.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::une, c1.output(0), c1.output(0), false);
+    expectFoldedTo(fpcmp::une, c1.output(0), c2.output(0), true);
+
+    expectFoldedTo(fpcmp::ugt, cNaN.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ugt, c2.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ugt, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::uge, cNaN.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::uge, c2.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::uge, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::uge, c1.output(0), c2.output(0), false);
+
+    expectFoldedTo(fpcmp::ult, cNaN.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ult, c1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::ult, c2.output(0), c1.output(0), false);
+
+    expectFoldedTo(fpcmp::ule, cNaN.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ule, c1.output(0), c2.output(0), true);
+    expectFoldedTo(fpcmp::ule, c1.output(0), c1.output(0), true);
+    expectFoldedTo(fpcmp::ule, c2.output(0), c1.output(0), false);
+  }
+
+  {
+    auto & nonConst = LlvmGraphImport::create(
+        graph,
+        fpt,
+        fpt,
+        "x",
+        Linkage::externalLinkage,
+        CallingConvention::C,
+        false,
+        8);
+
+    auto & c0Node = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(0.0));
+
+    const FCmpOperation operation(fpcmp::oeq, fpt);
+    const auto notFolded = FCmpOperation::foldConstants(
+        operation,
+        std::vector<rvsdg::Output *>({ &nonConst, c0Node.output(0) }));
+    EXPECT_FALSE(notFolded.has_value());
   }
 }
 
