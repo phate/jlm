@@ -47,17 +47,25 @@ class IpGraphToLlvmConverter::Context final
       std::unordered_map<const ControlFlowGraphNode *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
-  Context(
-      InterProceduralGraphModule & ipGraphModule,
-      ::llvm::Module & llvmModule,
-      std::unique_ptr<::llvm::DIBuilder> diBuilder)
+  ~Context()
+  {
+    diBuilder_.finalize();
+  }
+
+  Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
       : LlvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule),
-        diBuilder_(std::move(diBuilder)),
-        diCompileUnit_(nullptr),
+        diBuilder_(llvmModule),
         diFile_(nullptr),
         diSubprogram_(nullptr)
-  {}
+  {
+    auto sourceFile = llvmModule.getSourceFileName();
+    if (sourceFile.empty())
+      sourceFile = "unknown";
+
+    diFile_ = diBuilder_.createFile(sourceFile, ".");
+    diBuilder_.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile_, "jlm", false, "", 0);
+  }
 
   Context(const Context &) = delete;
 
@@ -83,41 +91,10 @@ public:
     return LlvmModule_;
   }
 
-  void
-  setDIBuilder(std::unique_ptr<::llvm::DIBuilder> diBuilder) noexcept
-  {
-    diBuilder_ = std::move(diBuilder);
-  }
-
-  [[nodiscard]] bool
-  hasDIBuilder() const noexcept
-  {
-    return diBuilder_ != nullptr;
-  }
-
   [[nodiscard]] ::llvm::DIBuilder &
-  di_builder() const noexcept
+  getDIBuilder() noexcept
   {
-    JLM_ASSERT(diBuilder_ != nullptr);
-    return *diBuilder_;
-  }
-
-  void
-  setDICompileUnit(::llvm::DICompileUnit * cu) noexcept
-  {
-    diCompileUnit_ = cu;
-  }
-
-  [[nodiscard]] ::llvm::DICompileUnit *
-  di_compile_unit() const noexcept
-  {
-    return diCompileUnit_;
-  }
-
-  void
-  setDIFile(::llvm::DIFile * file) noexcept
-  {
-    diFile_ = file;
+    return diBuilder_;
   }
 
   [[nodiscard]] ::llvm::DIFile *
@@ -192,10 +169,7 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(
-      InterProceduralGraphModule & ipGraphModule,
-      ::llvm::Module & llvmModule,
-      std::unique_ptr<::llvm::DIBuilder> diBuilder)
+  Create(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
   {
     return std::make_unique<Context>(ipGraphModule, llvmModule);
   }
@@ -203,8 +177,7 @@ public:
 private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
-  std::unique_ptr<::llvm::DIBuilder> diBuilder_;
-  ::llvm::DICompileUnit * diCompileUnit_;
+  ::llvm::DIBuilder diBuilder_;
   ::llvm::DIFile * diFile_;
   ::llvm::DISubprogram * diSubprogram_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
@@ -2406,26 +2379,22 @@ IpGraphToLlvmConverter::convert_ipgraph()
       // Create and attach debug info only for function *definitions*.
       // For declarations (e.g. libc functions like printf), attaching multiple distinct
       // DISubprograms across translation units/passes can easily create invalid IR.
-      if (n->cfg() && Context_->hasDIBuilder())
+      if (n->cfg())
       {
-        auto * file = Context_->di_file();
-        if (file != nullptr)
-        {
-          auto & dib = Context_->di_builder();
-          auto diTypeArray = dib.getOrCreateTypeArray({});
-          auto * subroutineType = dib.createSubroutineType(diTypeArray);
-          auto * sp = dib.createFunction(
-              file,
-              n->name(),
-              n->name(),
-              file,
-              1,
-              subroutineType,
-              1,
-              ::llvm::DINode::FlagZero,
-              ::llvm::DISubprogram::SPFlagDefinition);
-          f->setSubprogram(sp);
-        }
+        auto & diBuilder = Context_->getDIBuilder();
+        auto diTypeArray = diBuilder.getOrCreateTypeArray({});
+        auto * subroutineType = diBuilder.createSubroutineType(diTypeArray);
+        auto * sp = diBuilder.createFunction(
+            Context_->di_file(),
+            n->name(),
+            n->name(),
+            Context_->di_file(),
+            1,
+            subroutineType,
+            1,
+            ::llvm::DINode::FlagZero,
+            ::llvm::DISubprogram::SPFlagDefinition);
+        f->setSubprogram(sp);
       }
 
       Context_->insert(v, f);
@@ -2459,33 +2428,14 @@ IpGraphToLlvmConverter::ConvertModule(
   llvmModule->setSourceFileName(ipGraphModule.source_filename().to_str());
   llvmModule->setTargetTriple(ipGraphModule.target_triple());
   llvmModule->setDataLayout(ipGraphModule.data_layout());
+  llvmModule->addModuleFlag(
+      ::llvm::Module::Warning,
+      "Debug Info Version",
+      ::llvm::DEBUG_METADATA_VERSION);
 
   Context_ = Context::Create(ipGraphModule, *llvmModule);
 
-  // Initialize module-level debug info so that functions can get DISubprograms attached.
-  // This creates a minimal compile unit + file; callers without a source filename still work.
-  {
-    llvmModule->addModuleFlag(
-        ::llvm::Module::Warning,
-        "Debug Info Version",
-        ::llvm::DEBUG_METADATA_VERSION);
-
-    auto dib = std::make_unique<::llvm::DIBuilder>(*llvmModule);
-    auto sourceFile = llvmModule->getSourceFileName();
-    if (sourceFile.empty())
-      sourceFile = "unknown";
-
-    auto * file = dib->createFile(sourceFile, ".");
-    Context_->setDIFile(file);
-    auto * cu = dib->createCompileUnit(::llvm::dwarf::DW_LANG_C, file, "jlm", false, "", 0);
-    Context_->setDICompileUnit(cu);
-    Context_->setDIBuilder(std::move(dib));
-  }
-
   convert_ipgraph();
-
-  if (Context_->hasDIBuilder())
-    Context_->di_builder().finalize();
 
   return llvmModule;
 }
