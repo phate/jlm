@@ -137,9 +137,9 @@ public:
   convert(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands);
 
   void
-  setRvsdgNodeLocation(RvsdgNodeLocation rvsdgNodeLocation)
+  setRvsdgNodeLocation(const rvsdg::Node & node)
   {
-    rvsdgNodeLocation_ = std::move(rvsdgNodeLocation);
+    rvsdgNodeLocation_ = { node.region()->getRegionId(), node.GetNodeId() };
   }
 
   [[nodiscard]] const std::optional<RvsdgNodeLocation> &

@@ -268,7 +268,7 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
       std::unique_ptr<rvsdg::SimpleOperation>(
           util::assertedCast<rvsdg::SimpleOperation>(operation.release())),
       operands);
-  tac->setRvsdgNodeLocation({ simpleNode.region()->getRegionId(), simpleNode.GetNodeId() });
+  tac->setRvsdgNodeLocation(simpleNode);
   Context_->GetLastProcessedBasicBlock()->append_last(std::move(tac));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
@@ -291,7 +291,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   // convert gamma regions
   std::vector<ControlFlowGraphNode *> phi_nodes;
   auto branchTac = BranchOperation::create(numSubregions, Context_->GetVariable(predicate));
-  branchTac->setRvsdgNodeLocation({ gammaNode.region()->getRegionId(), gammaNode.GetNodeId() });
+  branchTac->setRvsdgNodeLocation(gammaNode);
   entryBlock->append_last(std::move(branchTac));
   auto entryvars = gammaNode.GetEntryVars();
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
@@ -342,7 +342,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 
     // create phi instruction
     auto ssaPhiTac = SsaPhiOperation::create(arguments, output->Type());
-    ssaPhiTac->setRvsdgNodeLocation({ gammaNode.region()->getRegionId(), gammaNode.GetNodeId() });
+    ssaPhiTac->setRvsdgNodeLocation(gammaNode);
     exitBlock->append_last(std::move(ssaPhiTac));
     Context_->InsertVariable(output, exitBlock->last()->result(0));
   }
@@ -381,7 +381,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
     if (RequiresSsaPhiOperation(loopVar))
     {
       auto ssaPhiTac = SsaPhiOperation::create({}, loopVar.pre->Type());
-      ssaPhiTac->setRvsdgNodeLocation({ thetaNode.region()->getRegionId(), thetaNode.GetNodeId() });
+      ssaPhiTac->setRvsdgNodeLocation(thetaNode);
       auto phi = entryBlock->append_last(std::move(ssaPhiTac));
       phis.push_back(phi);
       variable = phi->result(0);
@@ -411,7 +411,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   JLM_ASSERT(phiIndex == phis.size());
 
   auto branchTac = BranchOperation::create(2, Context_->GetVariable(predicate));
-  branchTac->setRvsdgNodeLocation({ thetaNode.region()->getRegionId(), thetaNode.GetNodeId() });
+  branchTac->setRvsdgNodeLocation(thetaNode);
   Context_->GetLastProcessedBasicBlock()->append_last(std::move(branchTac));
   const auto exitBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
