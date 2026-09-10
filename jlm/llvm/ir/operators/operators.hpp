@@ -463,9 +463,11 @@ public:
   }
 
   /**
-   * Checks if the comparison is between a \ref ConstantPointerNullOperation and an allocation side
-   * guaranteed to never return a nullptr, and normalizes the \ref PtrCmpOperation to an
-   * \ref IntegerConstantOperation.
+   * Checks if the comparison is between:
+   * 1. a \ref ConstantPointerNullOperation and an allocation side guaranteed to never return a
+   * nullptr
+   * 2. two \ref ConstantPointerNullOperation%s
+   * and normalizes the \ref PtrCmpOperation to an \ref IntegerConstantOperation.
    *
    * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
    * @param operands The operands of the \ref PtrCmpOperation node.
