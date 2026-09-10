@@ -64,13 +64,13 @@ private:
 rvsdg::Output &
 traceOutput(
     rvsdg::Output & output,
-    bool mayEnterSubregions = false,
+    bool mayEnterSubregions,
     const rvsdg::Region * withinRegion = nullptr);
 
 inline const rvsdg::Output &
 traceOutput(
     const rvsdg::Output & output,
-    bool mayEnterSubregions = false,
+    bool mayEnterSubregions,
     const rvsdg::Region * withinRegion = nullptr)
 {
   return llvm::traceOutput(const_cast<rvsdg::Output &>(output), mayEnterSubregions, withinRegion);

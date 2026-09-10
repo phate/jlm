@@ -217,7 +217,7 @@ InvariantValueRedirection::redirectGammaOutputConstants(rvsdg::GammaNode & gamma
     std::optional<rvsdg::ControlValueRepresentation> ctlValueOpt;
     for (const auto result : branchResult)
     {
-      auto & tracedOutput = llvm::traceOutput(*result->origin());
+      auto & tracedOutput = llvm::traceOutput(*result->origin(), false);
       if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(tracedOutput))
       {
         const bool done = rvsdg::MatchTypeWithDefault(

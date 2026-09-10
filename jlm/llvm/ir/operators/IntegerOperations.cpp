@@ -82,13 +82,13 @@ foldBinaryOperationConstants(const std::vector<rvsdg::Output *> & operands)
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
 
-  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
   auto [c1Node, c1Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand1);
   if (!c1Operation)
     return std::nullopt;
 
-  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
   auto [c2Node, c2Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand2);
   if (!c2Operation)
@@ -234,8 +234,8 @@ IntegerSubOperation::normalizeAdditiveInverse(
   const auto & operand1 = *operands[0];
   const auto & operand2 = *operands[1];
 
-  auto & tracedOperand1 = llvm::traceOutput(operand1);
-  auto & tracedOperand2 = llvm::traceOutput(operand2);
+  auto & tracedOperand1 = llvm::traceOutput(operand1, false);
+  auto & tracedOperand2 = llvm::traceOutput(operand2, false);
 
   if (&tracedOperand1 != &tracedOperand2)
     return std::nullopt;

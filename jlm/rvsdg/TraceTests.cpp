@@ -54,12 +54,12 @@ TEST(TraceTests, TestTraceOutputIntraProcedural_Gamma)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin());
-  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin());
-  const auto & tracedX2 = traceOutputIntraProcedurally(*x2.origin());
+  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin(), false);
+  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin(), false);
+  const auto & tracedX2 = traceOutputIntraProcedurally(*x2.origin(), false);
   // Trace from within one of the context variables of the gamma
-  const auto & traceGammaEntry = traceOutputIntraProcedurally(*entryVar1.branchArgument[0]);
-  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
+  const auto & traceGammaEntry = traceOutputIntraProcedurally(*entryVar1.branchArgument[0], false);
+  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin(), false);
 
   // Assert
   EXPECT_EQ(&tracedX0, &i1);
@@ -97,11 +97,11 @@ TEST(TraceTests, TestTraceOutputIntraProcedural_Theta)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin());
-  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin());
-  const auto & traceLoopVar0Pre = traceOutputIntraProcedurally(*loopVar0.pre);
-  const auto & traceLoopVar1Pre = traceOutputIntraProcedurally(*loopVar1.pre);
-  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin());
+  const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin(), false);
+  const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin(), false);
+  const auto & traceLoopVar0Pre = traceOutputIntraProcedurally(*loopVar0.pre, false);
+  const auto & traceLoopVar1Pre = traceOutputIntraProcedurally(*loopVar1.pre, false);
+  const auto & tracedNodeInput = traceOutputIntraProcedurally(*node->input(0)->origin(), false);
 
   // Assert
   EXPECT_EQ(&tracedX0, &i0);
@@ -157,16 +157,18 @@ TEST(TraceTests, TestTraceNestedStructuralNodes)
 
   // Act & Assert 1
   {
-    const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin());
-    const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin());
-    const auto & tracedX2 = traceOutputIntraProcedurally(*x2.origin());
-    const auto & traceExitVar0 = traceOutputIntraProcedurally(*exitVar0.output);
-    const auto & traceExitVar1 = traceOutputIntraProcedurally(*exitVar1.output);
-    const auto & traceBranchArgument0 = traceOutputIntraProcedurally(*entryVar0.branchArgument[0]);
-    const auto & traceBranchArgument1 = traceOutputIntraProcedurally(*entryVar1.branchArgument[1]);
-    const auto & traceLoopVar0Pre = traceOutputIntraProcedurally(*loopVar0.pre);
-    const auto & traceLoopVar1Pre = traceOutputIntraProcedurally(*loopVar1.pre);
-    const auto & traceLoopVar2Pre = traceOutputIntraProcedurally(*loopVar2.pre);
+    const auto & tracedX0 = traceOutputIntraProcedurally(*x0.origin(), false);
+    const auto & tracedX1 = traceOutputIntraProcedurally(*x1.origin(), false);
+    const auto & tracedX2 = traceOutputIntraProcedurally(*x2.origin(), false);
+    const auto & traceExitVar0 = traceOutputIntraProcedurally(*exitVar0.output, false);
+    const auto & traceExitVar1 = traceOutputIntraProcedurally(*exitVar1.output, false);
+    const auto & traceBranchArgument0 =
+        traceOutputIntraProcedurally(*entryVar0.branchArgument[0], false);
+    const auto & traceBranchArgument1 =
+        traceOutputIntraProcedurally(*entryVar1.branchArgument[1], false);
+    const auto & traceLoopVar0Pre = traceOutputIntraProcedurally(*loopVar0.pre, false);
+    const auto & traceLoopVar1Pre = traceOutputIntraProcedurally(*loopVar1.pre, false);
+    const auto & traceLoopVar2Pre = traceOutputIntraProcedurally(*loopVar2.pre, false);
 
     EXPECT_EQ(&tracedX0, &i0);
     EXPECT_EQ(&tracedX1, loopVar1.output);
@@ -260,8 +262,8 @@ TEST(TraceTests, TestIndirectLoopInvariantOutput)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin());
-  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin());
+  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin(), false);
+  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin(), false);
 
   // Assert
   EXPECT_TRUE(ThetaLoopVarIsInvariant(invariantLoopVar));
@@ -317,14 +319,71 @@ TEST(TraceTests, TestIndirectLoopInvariance)
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin());
-  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin());
+  const auto & tracedUser1 = traceOutputIntraProcedurally(*user1->input(0)->origin(), false);
+  const auto & tracedUser2 = traceOutputIntraProcedurally(*user2->input(0)->origin(), false);
 
   // Assert
   EXPECT_TRUE(ThetaLoopVarIsInvariant(invariantLoopVar));
   EXPECT_FALSE(ThetaLoopVarIsInvariant(indirectLoopVar));
   EXPECT_EQ(&tracedUser1, &c20);
   EXPECT_EQ(&tracedUser2, &c20);
+}
+
+/**
+ * Tests tracing into the subregion of a theta node from the theta's outputs,
+ * when the loop variable is not invariant.
+ */
+TEST(TraceTests, TestEnterThetaSubregion)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates a graph with a single theta node that looks like
+   *
+   *      import(i1)
+   *          |
+   *          |
+   *          v
+   *  +-theta-x----+
+   *  |            |
+   *  |  TestNode  |
+   *  |       v    |
+   *  +-------x----+
+   *          v
+   *        export(x1)
+   *
+   * The loop variable is not invariant: its post value comes from a node
+   * inside the subregion, not from its pre argument.
+   * Tracing x1 from the root region:
+   *  - with mayEnterSubregions=true continues into the theta subregion and
+   *    stops at the node output inside it.
+   *  - with mayEnterSubregions=false stops at the theta output itself.
+   */
+
+  // Arrange
+  const auto valueType = TestType::createValueType();
+
+  Graph rvsdg;
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar = thetaNode->AddLoopVar(&i1);
+
+  auto node = TestOperation::createNode(thetaNode->subregion(), { loopVar.pre }, { valueType });
+  loopVar.post->divert_to(node->output(0));
+
+  auto & x1 = GraphExport::Create(*loopVar.output, "x1");
+
+  // Act & Assert
+  // When tracing may enter subregions, tracing goes into the theta subregion
+  const auto & tracedIn = traceOutputIntraProcedurally(*x1.origin(), true);
+  EXPECT_EQ(&tracedIn, node->output(0));
+  EXPECT_EQ(tracedIn.region(), thetaNode->subregion());
+
+  // When tracing may not enter subregions, tracing stops at the theta output
+  const auto & tracedOut = traceOutputIntraProcedurally(*x1.origin(), false);
+  EXPECT_EQ(&tracedOut, loopVar.output);
+  EXPECT_EQ(tracedOut.region(), &rvsdg.GetRootRegion());
 }
 
 TEST(TraceTests, GammaCachingTest)

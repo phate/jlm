@@ -424,7 +424,7 @@ public:
         regionPredicateTracer(regionPredicateTracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
-    loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
+    loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin(), false);
     loadedType = LoadOperation::LoadedValueOutput(loadNode).Type();
     loadedTypeSize = GetTypeStoreSize(*loadedType);
   }
@@ -542,7 +542,7 @@ private:
     const auto storedSize = GetTypeStoreSize(*storeType);
 
     // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
-    const auto & tracedStoredAddress = llvm::traceOutput(storeAddress);
+    const auto & tracedStoredAddress = llvm::traceOutput(storeAddress, false);
 
     // Query the alias analysis
     const auto response =
@@ -567,7 +567,7 @@ private:
     const auto otherLoadSize = GetTypeStoreSize(*otherLoadType);
 
     // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
-    const auto & tracedOtherLoadAddress = llvm::traceOutput(otherLoadAddress);
+    const auto & tracedOtherLoadAddress = llvm::traceOutput(otherLoadAddress, false);
 
     // Query the alias analysis
     const auto response =

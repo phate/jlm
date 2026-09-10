@@ -293,10 +293,10 @@ protected:
  * @return The final value of the tracing.
  */
 Output &
-traceOutputIntraProcedurally(Output & output, bool mayEnterSubregions = false);
+traceOutputIntraProcedurally(Output & output, bool mayEnterSubregions);
 
 inline const Output &
-traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions = false)
+traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions)
 {
   return traceOutputIntraProcedurally(const_cast<Output &>(output), mayEnterSubregions);
 }
@@ -320,15 +320,12 @@ traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions = fa
  * @return the final value of the tracing
  */
 Output &
-traceOutput(
-    Output & output,
-    bool mayEnterSubregions = false,
-    const rvsdg::Region * withinRegion = nullptr);
+traceOutput(Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion = nullptr);
 
 inline const Output &
 traceOutput(
     const Output & output,
-    bool mayEnterSubregions = false,
+    bool mayEnterSubregions,
     const rvsdg::Region * withinRegion = nullptr)
 {
   return traceOutput(const_cast<Output &>(output), mayEnterSubregions, withinRegion);
