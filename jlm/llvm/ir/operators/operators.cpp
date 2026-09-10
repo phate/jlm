@@ -325,8 +325,23 @@ PtrCmpOperation::normalizeNullPointerComparison(
     return std::nullopt;
 
   JLM_ASSERT(operands.size() == 2);
-  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
-  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+  auto & tracedOperand1 = rvsdg::traceOutput(*operands[0]);
+  auto & tracedOperand2 = rvsdg::traceOutput(*operands[1]);
+
+  if (isOutputOf<ConstantPointerNullOperation>(tracedOperand1)
+      && isOutputOf<ConstantPointerNullOperation>(tracedOperand2))
+  {
+    auto & region = *operands[0]->region();
+    switch (ptrCmpOperation.predicate())
+    {
+    case ICmpPredicate::Eq:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 1));
+    case ICmpPredicate::Ne:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
+    default:
+      throw std::logic_error("Unhandled predicate!");
+    }
+  }
 
   const bool hasRequiredOperands =
       (isOutputOf<ConstantPointerNullOperation>(tracedOperand1) && isAllocationSide(tracedOperand2))
@@ -340,9 +355,7 @@ PtrCmpOperation::normalizeNullPointerComparison(
     case ICmpPredicate::Eq:
       return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
     case ICmpPredicate::Ne:
-      return std::vector<rvsdg::Output *>{
-        IntegerConstantOperation::Create(region, 1, 1).output(0)
-      };
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 1));
     default:
       throw std::logic_error("Unhandled predicate!");
     }
