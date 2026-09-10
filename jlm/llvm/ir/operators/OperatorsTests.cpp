@@ -25,8 +25,11 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   // Arrange
   auto pointerType = PointerType::Create();
+  auto i1Type = BitType::Create(1);
   auto i32Type = BitType::Create(32);
-  auto functionType = FunctionType::Create({}, { pointerType });
+  auto functionType1 = FunctionType::Create({}, { pointerType });
+  auto functionType2 =
+      FunctionType::Create({}, { i1Type, i1Type, i1Type, i1Type, i1Type, i1Type, i1Type });
 
   Graph graph;
 
@@ -46,23 +49,34 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
   auto & ptrNullDeltaNode = ConstantPointerNullOperation::createNode(*deltaNode->subregion());
   auto & deltaOutput = deltaNode->finalize(ptrNullDeltaNode.output(0));
 
-  auto lambdaNode = LambdaNode::Create(
+  auto lambdaNode1 = LambdaNode::Create(
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
-          functionType,
+          functionType1,
           "lambda",
           Linkage::externalLinkage,
           CallingConvention::C,
           {}));
-  auto & ptrNullLambdaNode = ConstantPointerNullOperation::createNode(*lambdaNode->subregion());
-  auto lambdaOutput = lambdaNode->finalize({ ptrNullLambdaNode.output(0) });
+  auto & ptrNullLambdaNode = ConstantPointerNullOperation::createNode(*lambdaNode1->subregion());
+  auto lambdaOutput = lambdaNode1->finalize({ ptrNullLambdaNode.output(0) });
+  auto & fnToPtrNode = CreateOpNode<FunctionToPointerOperation>({ lambdaOutput }, functionType1);
 
-  auto & fnToPtrNode = CreateOpNode<FunctionToPointerOperation>({ lambdaOutput }, functionType);
+  auto lambdaNode2 = LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          functionType2,
+          "lambda",
+          Linkage::externalLinkage,
+          CallingConvention::C,
+          {}));
+  auto i0CtxVar = lambdaNode2->AddContextVar(i0);
+  auto deltaCtxVar = lambdaNode2->AddContextVar(deltaOutput);
+  auto fnToPtrCtxVar = lambdaNode2->AddContextVar(*fnToPtrNode.output(0));
 
-  auto & oneNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+  auto & oneNode = IntegerConstantOperation::Create(*lambdaNode2->subregion(), 32, 1);
   auto & allocaNode = AllocaOperation::createNode(i32Type, *oneNode.output(0), 4);
 
-  auto & cPtrNullNode = ConstantPointerNullOperation::createNode(graph.GetRootRegion());
+  auto & cPtrNullNode = ConstantPointerNullOperation::createNode(*lambdaNode2->subregion());
 
   auto & ptrCmpNode1 = PtrCmpOperation::createNode(
       ICmpPredicate::Eq,
@@ -74,15 +88,14 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
       AllocaOperation::getPointerOutput(allocaNode),
       *cPtrNullNode.output(0));
 
-  auto & ptrCmpNode3 = PtrCmpOperation::createNode(ICmpPredicate::Ne, i0, *cPtrNullNode.output(0));
+  auto & ptrCmpNode3 =
+      PtrCmpOperation::createNode(ICmpPredicate::Ne, *i0CtxVar.inner, *cPtrNullNode.output(0));
 
   auto & ptrCmpNode4 =
-      PtrCmpOperation::createNode(ICmpPredicate::Ne, deltaOutput, *cPtrNullNode.output(0));
+      PtrCmpOperation::createNode(ICmpPredicate::Ne, *deltaCtxVar.inner, *cPtrNullNode.output(0));
 
-  auto & ptrCmpNode5 = PtrCmpOperation::createNode(
-      ICmpPredicate::Ne,
-      *fnToPtrNode.output(0),
-      *cPtrNullNode.output(0));
+  auto & ptrCmpNode5 =
+      PtrCmpOperation::createNode(ICmpPredicate::Ne, *fnToPtrCtxVar.inner, *cPtrNullNode.output(0));
 
   auto & ptrCmpNode6 = PtrCmpOperation::createNode(
       ICmpPredicate::Eq,
@@ -94,13 +107,13 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
       *cPtrNullNode.output(0),
       *cPtrNullNode.output(0));
 
-  auto & x1 = GraphExport::Create(*ptrCmpNode1.output(0), "x1");
-  auto & x2 = GraphExport::Create(*ptrCmpNode2.output(0), "x2");
-  auto & x3 = GraphExport::Create(*ptrCmpNode3.output(0), "x3");
-  auto & x4 = GraphExport::Create(*ptrCmpNode4.output(0), "x4");
-  auto & x5 = GraphExport::Create(*ptrCmpNode5.output(0), "x5");
-  auto & x6 = GraphExport::Create(*ptrCmpNode6.output(0), "x6");
-  auto & x7 = GraphExport::Create(*ptrCmpNode7.output(0), "x7");
+  lambdaNode2->finalize({ ptrCmpNode1.output(0),
+                          ptrCmpNode2.output(0),
+                          ptrCmpNode3.output(0),
+                          ptrCmpNode4.output(0),
+                          ptrCmpNode5.output(0),
+                          ptrCmpNode6.output(0),
+                          ptrCmpNode7.output(0) });
 
   // Act
   rvsdg::ReduceNode<PtrCmpOperation>(PtrCmpOperation::normalizeNullPointerComparison, ptrCmpNode1);
@@ -114,7 +127,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
   // Assert
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[0]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);
@@ -122,7 +136,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x2.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[1]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
@@ -130,7 +145,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x3.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[2]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
@@ -138,7 +154,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x4.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[3]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
@@ -146,7 +163,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x5.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[4]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
@@ -154,7 +172,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x6.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[5]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 1u);
@@ -162,7 +181,8 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 
   {
     auto [constantNode, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x7.origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode2->GetFunctionResults()[6]->origin());
     EXPECT_NE(constantOperation, nullptr);
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);

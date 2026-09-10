@@ -325,8 +325,8 @@ PtrCmpOperation::normalizeNullPointerComparison(
     return std::nullopt;
 
   JLM_ASSERT(operands.size() == 2);
-  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
-  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+  auto & tracedOperand1 = rvsdg::traceOutput(*operands[0]);
+  auto & tracedOperand2 = rvsdg::traceOutput(*operands[1]);
 
   if (isOutputOf<ConstantPointerNullOperation>(tracedOperand1)
       && isOutputOf<ConstantPointerNullOperation>(tracedOperand2))
