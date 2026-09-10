@@ -159,7 +159,7 @@ public:
    * Clears the invariance cache.
    *
    * This only needs to done if invariance caching is enabled.
-   * @See isInvarianceCachingEnabled()
+   * @see isInvarianceCachingEnabled()
    *
    * It only needs to be done if either of the following happens:
    *  - structural outputs that were once invariant have their origin changed
@@ -269,7 +269,7 @@ protected:
 
   // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
   // Enabling caching also means you must take care to manually invalidate the cache.
-  // See \ref clearInvarianceCache() for details
+  // @see clearInvarianceCache() for details
   bool enableInvarianceCaching_ = false;
   std::unordered_map<const Output *, Input *> invariantOutputCache_{};
 };
