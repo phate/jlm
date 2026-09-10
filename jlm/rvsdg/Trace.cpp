@@ -141,13 +141,13 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
   }
 
   // If we are allowed to return outputs from inside the subregion,
-  //
+  // return the result from tracing inside the subregion
   if (structuralNodePolicy_ >= StructuralNodePolicy::traceIntoSubregions)
   {
     return tracedInner;
   }
 
-  // Otherwise
+  // Otherwise, we are unable to trace further from the theta output
   return nullptr;
 }
 
