@@ -191,11 +191,16 @@ public:
 struct StoreValueForwarding::Context final
 {
   explicit Context(aa::AliasAnalysis & aliasAnalysis, Statistics & statistics) noexcept
-      : outputTracer(true),
+      : outputTracer(),
         aliasAnalysis(aliasAnalysis),
         statistics(statistics)
   {
-    outputTracer.setTraceThroughStructuralNodes(true);
+    // It is safe to do invariance caching.
+    //  - outputs that are invariant in a structural node are never changed inside the node.
+    //  - structural node inputs and outputs are never deleted during the duration of this pass.
+    outputTracer.setInvarianceCaching(true);
+    outputTracer.setStructuralNodePolicy(
+        rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
     // If load/load forwarding is disabled, make the tracer skip loads
     outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
   }
@@ -254,7 +259,7 @@ StoreValueForwarding::traverseInterProceduralRegion(rvsdg::Region & region)
           // Output tracing is only done intra-procedural in this pass, and we are about to process
           // a new lambda node. Clear the tracing cache to free up the memory from the last lambda
           // we processed.
-          context_->outputTracer.clearCache();
+          context_->outputTracer.clearInvarianceCache();
 
           traverseIntraProceduralRegion(*lambdaNode.subregion());
         },

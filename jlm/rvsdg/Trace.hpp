@@ -8,8 +8,6 @@
 
 #include <jlm/rvsdg/node.hpp>
 
-#include <optional>
-
 namespace jlm::rvsdg
 {
 class GammaNode;
@@ -27,38 +25,81 @@ class ThetaNode;
 class OutputTracer
 {
 public:
+  /**
+   * Different policies for how to handle outputs of structural nodes during tracing.
+   * For each new policy along the list, the amount of effort increases.
+   *
+   * These policies only apply to gamma and theta nodes.
+   * For phi nodes, see \ref isEnteringPhiNodes()
+   */
+  enum class StructuralNodePolicy : int
+  {
+    // Perform a quick check to see if the structural output is trivially invariant,
+    // i.e., gets its value directly from a single subregion argument in all subregions.
+    // If so, tracing continues from the corresponding input to the structural node.
+    traceThroughTriviallyInvariant = 0,
+
+    // Performs the same check as above, but tries harder to determine invariance.
+    // Tracing continues inside the subregion, to check if it can reach a subregion argument.
+    // If all subregions reach the same argument, the structural node is invariant,
+    // and tracing continue from the input of the structural node.
+    traceThroughIfDetectedInvariant = 1,
+
+    // Enables tracing ending up inside subregions of structural nodes.
+    // Unlike the previous policies, this means the final return value of the tracer can be
+    // inside a region that is not an ancestor of the region where tracing started.
+    traceIntoSubregions = 2
+  };
+
   virtual ~OutputTracer();
 
   /**
    * Creates an OutputTracer with the default configuration
-   *
-   * @param enableCaching Determines whether the output tracer should cache traced results.
    */
-  explicit OutputTracer(bool enableCaching) noexcept;
+  OutputTracer() noexcept;
 
   /**
-   * When tracing reaches the output of a structural node, how much effort should be made to
-   * check if the output is an invariant copy of one of the node's inputs.
-   * If true, tracing is performed inside the subregion(s) of the node.
-   * If false, only a simple invariant check is performed, which only detects invariance if
-   * the region result is directly connected to a region argument.
-   * @return true if tracing though the subregions of structural nodes is enabled.
+   * When tracing reaches the output of a structural node, how should the tracer continue.
+   * @see StructuralNodePolicy
+   * @return the current structural node policy
    */
-  [[nodiscard]] bool
-  isTracingThroughStructuralNodes() const noexcept
+  [[nodiscard]] StructuralNodePolicy
+  getStructuralNodePolicy() const noexcept
   {
-    return traceThroughStrucutalNodes_;
+    return structuralNodePolicy_;
   }
 
   /**
-   * Enables or disables tracing through the subregions of structural nodes.
-   * @see isTracingThroughStructuralNodes
+   * Sets the policy for how to trace when reaching outputs of structural nodes.
    * @param value the new value
    */
   void
-  setTraceThroughStructuralNodes(bool value) noexcept
+  setStructuralNodePolicy(StructuralNodePolicy value) noexcept
   {
-    traceThroughStrucutalNodes_ = value;
+    structuralNodePolicy_ = value;
+  }
+
+  /**
+   * Controls if tracing is allowed to leave functions.
+   * If true, outputs can be traced out of functions via context arguments.
+   * If false, tracing stops if it reaches lambda context arguments.
+   * @return true if interprocedural tracing is enabled.
+   */
+  [[nodiscard]] bool
+  isInterprocedural() const noexcept
+  {
+    return isInterprocedural_;
+  }
+
+  /**
+   * Enables or disables interprocedural tracing.
+   * @see isInterprocedural()
+   * @param value the new value
+   */
+  void
+  setInterprocedural(bool value) noexcept
+  {
+    isInterprocedural_ = value;
   }
 
   /**
@@ -86,26 +127,50 @@ public:
   }
 
   /**
-   * Controls if tracing is allowed to leave functions.
-   * If true, outputs can be traced out of functions via context arguments.
-   * If false, tracing stops if it reaches lambda context arguments.
-   * @return true if interprocedural tracing is enabled.
+   * Controls whether caching of structural output invariance is enabled,
+   * which can speed up tracing through deeply nested graphs.
+   *
+   * It only caches outputs that are confirmed to be invariant,
+   * so outputs that change from variant to invariant will still be picked up.
+   * Outputs that change from invariant to variant need to trigger a manual cache invalidation.
+   * @see clearInvarianceCache().
+   *
+   * @return true if structutal output invariance is cached, false otherwise.
    */
   [[nodiscard]] bool
-  isInterprocedural() const noexcept
+  isInvarianceCachingEnabled() const noexcept
   {
-    return isInterprocedural_;
+    return enableInvarianceCaching_;
   }
 
   /**
-   * Enables or disables interprocedural tracing.
-   * @see isInterprocedural()
+   * Enables or disables caching the fact that structural outputs are invariant.
+   * @see isInvarianceCachingEnabled()
+   *
    * @param value the new value
    */
   void
-  setInterprocedural(bool value) noexcept
+  setInvarianceCaching(bool value) noexcept
   {
-    isInterprocedural_ = value;
+    enableInvarianceCaching_ = value;
+  }
+
+  /**
+   * Clears the invariance cache.
+   *
+   * This only needs to done if invariance caching is enabled.
+   * @See isInvarianceCachingEnabled()
+   *
+   * It only needs to be done if either of the following happens:
+   *  - structural outputs that were once invariant have their origin changed
+   *    inside the structural node to make them no longer be invariant,
+   *    or be invariant copies of a different structural input.
+   *  - structural input and outputs are removed from the graph.
+   */
+  void
+  clearInvarianceCache()
+  {
+    invariantOutputCache_.clear();
   }
 
   /**
@@ -126,6 +191,7 @@ public:
   [[nodiscard]] Output &
   trace(Output & output, const rvsdg::Region * withinRegion);
 
+protected:
   /**
    * Attempts to trace the output of a gamma node through the node.
    * This is only possible if the output can be traced to a gamma entry variable in all subregions,
@@ -141,30 +207,22 @@ public:
   tryTraceThroughGamma(GammaNode & gammaNode, Output & output);
 
   /**
-   * Attempts to trace the the given loop output through the theta node,
-   * resulting in the origin of one of the theta node's inputs if successful.
-   * This is only possible if the output belongs to an invariant loop variable,
-   * or if the loop variable's post result takes its value from another invariant loop variable.
+   * Trace from the the given loop output.
+   * If the loop output is found to be loop invariant, the origin of the theta input is returned.
+   * Otherwise, if the tracer is allowed to trace into the subregion of structural nodes,
+   * the traced origin of the loop variable post inside the theta is returned.
+   * Otherwise, nullopt is returned.
    *
    * @pre the \p output is an output of the given \p thetaNode
    *
    * @param thetaNode the theta node to trace through
    * @param output an output of the given theta node
-   * @return the origin of the output value on the input side of the theta, or nullptr.
+   * @return the origin of the output value on the input side of the theta,
+   *         the origin of the loop variable post, or nullopt
    */
   [[nodiscard]] Output *
-  tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
+  traceThetaOutput(ThetaNode & thetaNode, Output & output);
 
-  /**
-   * Clears the tracing cache.
-   */
-  void
-  clearCache()
-  {
-    traceCache_.clear();
-  }
-
-protected:
   /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
@@ -176,39 +234,44 @@ protected:
   traceStep(Output & output, const rvsdg::Region * withinRegion);
 
   /**
-   * Inserts a traced value into the tracing cache.
+   * Inserts the given \p structuralOutput in the invariance cache.
+   * The output needs to be a copy of one of the inputs of the structural node,
+   * which is given as \p structualInput.
    *
-   * @param output The output that was traced.
-   * @param traceResult The input at which the tracing arrived.
-   * @return The origin of \p traceResult for convenience.
+   * @param structuralOutput The structural output that was traced.
+   * @param structuralInput The corresponding structural input, or nullptr if it isn't invariant.
+   * @return The origin of \p structuralInput for convenience.
    */
   Output *
-  insertInCache(const Output & output, Input * traceResult);
+  insertInInvarianceCache(const Output & structuralOutput, Input & structuralInput);
 
   /**
-   * Loops up the tracing result for \p output.
+   * Performs a lookup in the invariance cache.
    *
-   * @param output The output that is traced.
-   * @return The output at which tracing arrived, otherwise std::nullopt.
+   * @param structuralOutput the output looked up in the cache.
+   * @return the corresponding structural input the output is a copy of,
+   *         or nullptr if the output is not found, or caching is disabled.
    */
-  std::optional<Output *>
-  lookupInCache(const Output & output);
+  Input *
+  lookupInInvarianceCache(const Output & structuralOutput);
 
-  // When true, tracing enters subregions of structural nodes to check if the value is invariant.
-  // When false, values are only considered invariant if they are directly connected to arguments.
-  bool traceThroughStrucutalNodes_ = true;
-
-  // When true, tracing can go from the output of a Phi node into its subregion.
-  // When false, tracing will stop at the Phi output.
-  bool enterPhiNodes_ = true;
+  // The policy determining how tracing handles outputs of gamma and theta nodes
+  StructuralNodePolicy structuralNodePolicy_ =
+      StructuralNodePolicy::traceThroughIfDetectedInvariant;
 
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
 
-  // When true, tracing is allowed to cache traced values.
-  bool enableCaching_;
-  std::unordered_map<const Output *, Input *> traceCache_{};
+  // When true, tracing can go from the output of a Phi node into its subregion.
+  // When false, tracing will stop at the Phi output.
+  bool enterPhiNodes_ = true;
+
+  // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
+  // Enabling caching also means you must take care to manually invalidate the cache.
+  // See \ref clearInvarianceCache() for details
+  bool enableInvarianceCaching_ = false;
+  std::unordered_map<const Output *, Input *> invariantOutputCache_{};
 };
 
 /**
@@ -221,16 +284,21 @@ protected:
  *
  * Tracing stops when a lambda function argument or context argument is reached.
  *
+ * The parameter \p mayEnterSubregions controls if the return value is allowed to
+ * be an output located in a subregion or sibling region of the \p output.
+ * If false, the return value is guaranteed to be in the same region, or in an ancestor region.
+ *
  * @param output The \ref Output that needs to be traced.
+ * @param mayEnterSubregions if true, the result can be in a sub/sibling region
  * @return The final value of the tracing.
  */
 Output &
-traceOutputIntraProcedurally(Output & output);
+traceOutputIntraProcedurally(Output & output, bool mayEnterSubregions = false);
 
 inline const Output &
-traceOutputIntraProcedurally(const Output & output)
+traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions = false)
 {
-  return traceOutputIntraProcedurally(const_cast<Output &>(output));
+  return traceOutputIntraProcedurally(const_cast<Output &>(output), mayEnterSubregions);
 }
 
 /**
@@ -247,16 +315,23 @@ traceOutputIntraProcedurally(const Output & output)
  * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
+ * @param mayEnterSubregions if true, the result can be in a sub/sibling region
  * @param withinRegion the region to stop at (if any).
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output, const rvsdg::Region * withinRegion = nullptr);
+traceOutput(
+    Output & output,
+    bool mayEnterSubregions = false,
+    const rvsdg::Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
+traceOutput(
+    const Output & output,
+    bool mayEnterSubregions = false,
+    const rvsdg::Region * withinRegion = nullptr)
 {
-  return traceOutput(const_cast<Output &>(output), withinRegion);
+  return traceOutput(const_cast<Output &>(output), mayEnterSubregions, withinRegion);
 }
 
 }

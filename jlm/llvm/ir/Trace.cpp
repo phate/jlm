@@ -24,8 +24,8 @@
 namespace jlm::llvm
 {
 
-OutputTracer::OutputTracer(const bool enableCaching)
-    : rvsdg::OutputTracer(enableCaching)
+OutputTracer::OutputTracer()
+    : rvsdg::OutputTracer()
 {}
 
 rvsdg::Output &
@@ -59,17 +59,21 @@ OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegi
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions
+          ? rvsdg::OutputTracer::StructuralNodePolicy::traceIntoSubregions
+          : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+  tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output, nullptr);
+  const auto & normalized = llvm::traceOutput(output, true);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);

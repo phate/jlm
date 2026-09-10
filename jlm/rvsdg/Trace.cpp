@@ -14,8 +14,7 @@ namespace jlm::rvsdg
 {
 OutputTracer::~OutputTracer() = default;
 
-OutputTracer::OutputTracer(const bool enableCaching) noexcept
-    : enableCaching_(enableCaching)
+OutputTracer::OutputTracer() noexcept
 {}
 
 Output &
@@ -56,9 +55,9 @@ mapGammaArgumentToOrigin(GammaNode & gammaNode, Output & output)
 Output *
 OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
 {
-  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  if (const auto invariantValueInput = lookupInInvarianceCache(output))
   {
-    return traceResultOpt.value();
+    return invariantValueInput->origin();
   }
 
   const auto exitVar = gammaNode.MapOutputExitVar(output);
@@ -71,16 +70,19 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
   {
     auto tracedInner = branchResult->origin();
 
-    // If deep tracing is enabled, make a greater effort to trace up to a region argument
-    if (traceThroughStrucutalNodes_)
+    if (structuralNodePolicy_ >= StructuralNodePolicy::traceThroughIfDetectedInvariant)
     {
       // Trace the branch result origin, but only within the gamma subregion
       tracedInner = &trace(*tracedInner, tracedInner->region());
     }
 
+    // TODO: handle the traceIntoSubregion policy as well,
+    // when only one of the gamma subregions provides a defined and reachable value,
+    // that value can be returned
+
     // The traced output must reach a region argument in the gamma subregion
     if (TryGetRegionParentNode<GammaNode>(*tracedInner) != &gammaNode)
-      return insertInCache(output, nullptr);
+      return nullptr;
 
     // Get the origin of the region argument outside the gamma
     gammaInput = &gammaNode.mapBranchArgumentToInput(*tracedInner);
@@ -93,29 +95,29 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
     }
     else if (commonOrigin != &outerOrigin)
     {
-      return insertInCache(output, nullptr);
+      return nullptr;
     }
   }
 
   JLM_ASSERT(commonOrigin != nullptr);
   JLM_ASSERT(gammaInput != nullptr);
-  return insertInCache(output, gammaInput);
+  return insertInInvarianceCache(output, *gammaInput);
 }
 
 Output *
-OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
+OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
 {
-  if (const auto traceResultOpt = lookupInCache(output); traceResultOpt.has_value())
+  if (const auto invariantValueInput = lookupInInvarianceCache(output))
   {
-    return traceResultOpt.value();
+    return invariantValueInput->origin();
   }
 
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
 
   auto tracedInner = loopVar.post->origin();
 
-  // If deep tracing is enabled, make a greater effort in tracing up to a region argument
-  if (traceThroughStrucutalNodes_)
+  // If invariance detection is enabled, perform tracing inside the subregion
+  if (structuralNodePolicy_ >= StructuralNodePolicy::traceThroughIfDetectedInvariant)
   {
     // trace the origin within the thetaNode, but only within the theta's subregion
     tracedInner = &trace(*tracedInner, thetaNode.subregion());
@@ -124,7 +126,7 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
   // If tracing reached the pre argument of the same loop variable, it is invariant
   if (tracedInner == loopVar.pre)
   {
-    return insertInCache(output, loopVar.input);
+    return insertInInvarianceCache(output, *loopVar.input);
   }
 
   // If tracing from the post result lead to the pre argument of a different loop variable,
@@ -134,11 +136,19 @@ OutputTracer::tryTraceThroughTheta(ThetaNode & thetaNode, Output & output)
     auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return insertInCache(output, originLoopVar.input);
+      return insertInInvarianceCache(output, *originLoopVar.input);
     }
   }
 
-  return insertInCache(output, nullptr);
+  // If we are allowed to return outputs from inside the subregion,
+  //
+  if (structuralNodePolicy_ >= StructuralNodePolicy::traceIntoSubregions)
+  {
+    return tracedInner;
+  }
+
+  // Otherwise
+  return nullptr;
 }
 
 Output &
@@ -168,7 +178,7 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
   // Handle theta node outputs
   if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
   {
-    if (const auto traced = tryTraceThroughTheta(*thetaNode, output))
+    if (const auto traced = traceThetaOutput(*thetaNode, output))
     {
       return *traced;
     }
@@ -193,7 +203,7 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
     // if it reaches an invariant loop variable and "escapes" the theta.
     // The invariant loop variable found does not have to be the same as the above loopVar.
     // See TraceTests' TestIndirectLoopInvariance.
-    const auto postOrigin = tryTraceThroughTheta(*thetaNode, *loopVar.output);
+    const auto postOrigin = traceThetaOutput(*thetaNode, *loopVar.output);
 
     if (postOrigin == inputOrigin)
     {
@@ -255,44 +265,50 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
 }
 
 Output *
-OutputTracer::insertInCache(const Output & output, Input * traceResult)
+OutputTracer::insertInInvarianceCache(const Output & output, Input & traceResult)
 {
-  if (!enableCaching_)
-    return traceResult != nullptr ? traceResult->origin() : nullptr;
-
-  JLM_ASSERT(traceCache_.find(&output) == traceCache_.end());
-  traceCache_[&output] = traceResult;
-  return traceResult != nullptr ? traceResult->origin() : nullptr;
-}
-
-std::optional<Output *>
-OutputTracer::lookupInCache(const Output & output)
-{
-  if (!enableCaching_)
-    return std::nullopt;
-
-  if (const auto it = traceCache_.find(&output); it != traceCache_.end())
+  if (enableInvarianceCaching_)
   {
-    return it->second != nullptr ? it->second->origin() : nullptr;
+    JLM_ASSERT(invariantOutputCache_.find(&output) == invariantOutputCache_.end());
+    invariantOutputCache_[&output] = &traceResult;
   }
 
-  return std::nullopt;
+  return traceResult.origin();
+}
+
+Input *
+OutputTracer::lookupInInvarianceCache(const Output & output)
+{
+  if (enableInvarianceCaching_)
+  {
+    if (const auto it = invariantOutputCache_.find(&output); it != invariantOutputCache_.end())
+    {
+      return it->second;
+    }
+  }
+
+  return nullptr;
 }
 
 Output &
-traceOutputIntraProcedurally(Output & output)
+traceOutputIntraProcedurally(Output & output, bool mayEnterSubregions)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
   tracer.setInterprocedural(false);
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions ? OutputTracer::StructuralNodePolicy::traceIntoSubregions
+                         : OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
   return tracer.trace(output);
 }
 
 Output &
-traceOutput(Output & output, const rvsdg::Region * withinRegion)
+traceOutput(Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions ? OutputTracer::StructuralNodePolicy::traceIntoSubregions
+                         : OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+  tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
 

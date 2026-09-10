@@ -183,9 +183,9 @@ TEST(TraceTests, TestTraceNestedStructuralNodes)
   // Act & Assert 2
   {
     // Create an alternative tracer that does not perform deep tracing
-    constexpr bool enableCaching = false;
-    OutputTracer shallowTracer(enableCaching);
-    shallowTracer.setTraceThroughStructuralNodes(false);
+    OutputTracer shallowTracer;
+    shallowTracer.setStructuralNodePolicy(
+        OutputTracer::StructuralNodePolicy::traceThroughTriviallyInvariant);
 
     const auto & tracedX0 = shallowTracer.trace(*x0.origin());
     const auto & tracedX1 = shallowTracer.trace(*x1.origin());
@@ -350,8 +350,8 @@ TEST(TraceTests, GammaCachingTest)
 
   auto & graphExport = GraphExport::Create(*exitVar.output, "export");
 
-  constexpr bool enableCaching = true;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setInvarianceCaching(true);
 
   // Act & Assert
   // This is the first time we are tracing this output. We expect it to arrive at i1.
@@ -368,7 +368,7 @@ TEST(TraceTests, GammaCachingTest)
   assert(traceResult == &i1);
 
   // Clear the tracing cache. We should now arrive at i2.
-  tracer.clearCache();
+  tracer.clearInvarianceCache();
   traceResult = &tracer.trace(*graphExport.origin());
   assert(traceResult == &i2);
 }
@@ -392,8 +392,8 @@ TEST(TraceTests, ThetaCachingTest)
 
   auto & graphExport = GraphExport::Create(*loopVar1.output, "export");
 
-  constexpr bool enableCaching = true;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setInvarianceCaching(true);
 
   // Act & Assert
   // This is the first time we are tracing this output. We expect it to arrive at i1.
@@ -410,7 +410,7 @@ TEST(TraceTests, ThetaCachingTest)
   assert(traceResult == &i1);
 
   // Clear the tracing cache. We should now arrive at the output of loopVar1.
-  tracer.clearCache();
+  tracer.clearInvarianceCache();
   traceResult = &tracer.trace(*graphExport.origin());
   assert(traceResult == loopVar1.output);
 }

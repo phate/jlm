@@ -104,8 +104,7 @@ FunctionInlining::FunctionInlining()
 static std::vector<rvsdg::Output *>
 routeContextVariablesToRegion(rvsdg::Region & region, const rvsdg::LambdaNode & callee)
 {
-  constexpr bool enableCaching = false;
-  llvm::OutputTracer tracer(enableCaching);
+  llvm::OutputTracer tracer;
   // We avoid entering phi nodes, as we can not route from a sibling region
   tracer.setEnterPhiNodes(false);
 
