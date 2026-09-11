@@ -79,7 +79,7 @@ public:
    * @return true if the policy allows deep invariance checking, false otherwise
    */
   [[nodiscard]] bool
-  structuralNodePolicyAllowsDeepInvarianceChecking() const noexcept
+  isDeepInvarianceCheckingEnabled() const noexcept
   {
     return structuralNodePolicy_ >= StructuralNodePolicy::traceThroughIfDetectedInvariant;
   }
@@ -92,7 +92,7 @@ public:
    * @return true if the policy allows tracing to enter subregions, false otherwise.
    */
   [[nodiscard]] bool
-  structuralNodePolicyAllowsTracingIntoSubregions() const noexcept
+  isTracingIntoSubregionsEnabled() const noexcept
   {
     return structuralNodePolicy_ >= StructuralNodePolicy::traceIntoSubregions;
   }

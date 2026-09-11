@@ -70,7 +70,7 @@ OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
   {
     auto tracedInner = branchResult->origin();
 
-    if (structuralNodePolicyAllowsDeepInvarianceChecking())
+    if (isDeepInvarianceCheckingEnabled())
     {
       // Trace the branch result origin, but only within the gamma subregion
       tracedInner = &trace(*tracedInner, tracedInner->region());
@@ -117,7 +117,7 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
   auto tracedInner = loopVar.post->origin();
 
   // If invariance detection is enabled, perform tracing inside the subregion
-  if (structuralNodePolicyAllowsDeepInvarianceChecking())
+  if (isDeepInvarianceCheckingEnabled())
   {
     // trace the origin within the thetaNode, but only within the theta's subregion
     tracedInner = &trace(*tracedInner, thetaNode.subregion());
@@ -142,7 +142,7 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
 
   // If we are allowed to return outputs from inside the subregion,
   // return the result from tracing inside the subregion
-  if (structuralNodePolicyAllowsTracingIntoSubregions())
+  if (isTracingIntoSubregionsEnabled())
   {
     return tracedInner;
   }
