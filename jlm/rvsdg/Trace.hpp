@@ -27,12 +27,12 @@ class OutputTracer
 public:
   /**
    * Different policies for how to handle outputs of structural nodes during tracing.
-   * For each new policy along the list, the amount of effort increases.
+   * The policies are numbered such that a greater number means more effort is spent.
    *
    * These policies only apply to gamma and theta nodes.
    * For phi nodes, see \ref isEnteringPhiNodes()
    */
-  enum class StructuralNodePolicy : int
+  enum class StructuralNodePolicy
   {
     // Perform a quick check to see if the structural output is trivially invariant,
     // i.e., gets its value directly from a single subregion argument in all subregions.
@@ -45,7 +45,10 @@ public:
     // and tracing continue from the input of the structural node.
     traceThroughIfDetectedInvariant = 1,
 
-    // Enables tracing ending up inside subregions of structural nodes.
+    // Performs the same checks as above, but can also trace outputs that are not invariant.
+    // Tracing can continue inside subregions, such as inside a theta subregion,
+    // or inside a gamma subregion when the other subregions are unreachable or
+    // provide undefined values.
     // Unlike the previous policies, this means the final return value of the tracer can be
     // inside a region that is not an ancestor of the region where tracing started.
     traceIntoSubregions = 2
@@ -67,6 +70,31 @@ public:
   getStructuralNodePolicy() const noexcept
   {
     return structuralNodePolicy_;
+  }
+
+  /**
+   * Checks if the current \ref StructuralNodePolicy allows checking for invariant outputs
+   * of structural nodes by performing tracing inside the subregion(s) of the node.
+   *
+   * @return true if the policy allows deep invariance checking, false otherwise
+   */
+  [[nodiscard]] bool
+  structuralNodePolicyAllowsDeepInvarianceChecking() const noexcept
+  {
+    return structuralNodePolicy_ >= StructuralNodePolicy::traceThroughIfDetectedInvariant;
+  }
+
+  /**
+   * Checks if the current \ref StructuralNodePolicy allows tracing to enter subregions,
+   * and returning value origins that are inside subregions or sibling regions of the region
+   * where tracing started.
+   *
+   * @return true if the policy allows tracing to enter subregions, false otherwise.
+   */
+  [[nodiscard]] bool
+  structuralNodePolicyAllowsTracingIntoSubregions() const noexcept
+  {
+    return structuralNodePolicy_ >= StructuralNodePolicy::traceIntoSubregions;
   }
 
   /**
@@ -144,7 +172,7 @@ public:
   }
 
   /**
-   * Enables or disables caching the fact that structural outputs are invariant.
+   * Enables or disables invariant structural output caching.
    * @see isInvarianceCachingEnabled()
    *
    * @param value the new value
@@ -235,11 +263,12 @@ protected:
 
   /**
    * Inserts the given \p structuralOutput in the invariance cache.
-   * The output needs to be a copy of one of the inputs of the structural node,
-   * which is given as \p structualInput.
+   * Invariance means that the structural output gets its value from one of the inputs
+   * of the structural node, so tracing can pass through the structural node without
+   * looking inside its subregions.
    *
    * @param structuralOutput The structural output that was traced.
-   * @param structuralInput The corresponding structural input, or nullptr if it isn't invariant.
+   * @param structuralInput The corresponding structural input.
    * @return The origin of \p structuralInput for convenience.
    */
   Output *
@@ -248,9 +277,8 @@ protected:
   /**
    * Performs a lookup in the invariance cache.
    *
-   * @param structuralOutput the output looked up in the cache.
-   * @return the corresponding structural input the output is a copy of,
-   *         or nullptr if the output is not found, or caching is disabled.
+   * @param structuralOutput the output to look up in the cache.
+   * @return the corresponding structural input the invariant output gets its value from.
    */
   Input *
   lookupInInvarianceCache(const Output & structuralOutput);
@@ -263,12 +291,12 @@ protected:
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
 
-  // When true, tracing can go from the output of a Phi node into its subregion.
-  // When false, tracing will stop at the Phi output.
+  // When true, tracing can go from the output of a \ref PhiNode into its subregion.
+  // When false, tracing will stop at the output of the phi node.
   bool enterPhiNodes_ = true;
 
   // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
-  // Enabling caching also means you must take care to manually invalidate the cache.
+  // Enabling caching means the user of the tracer is responsible for cache invalidation.
   // @see clearInvarianceCache() for details
   bool enableInvarianceCaching_ = false;
   std::unordered_map<const Output *, Input *> invariantOutputCache_{};

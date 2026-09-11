@@ -197,7 +197,7 @@ struct StoreValueForwarding::Context final
   {
     // It is safe to do invariance caching.
     //  - outputs that are invariant in a structural node are never changed inside the node.
-    //  - structural node inputs and outputs are never deleted during the duration of this pass.
+    //  - structural node inputs and outputs are never removed during the duration of this pass.
     outputTracer.setInvarianceCaching(true);
     outputTracer.setStructuralNodePolicy(
         rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
