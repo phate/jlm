@@ -31,9 +31,11 @@
 #include <jlm/rvsdg/control.hpp>
 
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -45,10 +47,25 @@ class IpGraphToLlvmConverter::Context final
       std::unordered_map<const ControlFlowGraphNode *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
+  ~Context()
+  {
+    diBuilder_.finalize();
+  }
+
   Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
       : LlvmModule_(llvmModule),
-        IpGraphModule_(ipGraphModule)
-  {}
+        IpGraphModule_(ipGraphModule),
+        diBuilder_(llvmModule),
+        diFile_(nullptr),
+        diSubprogram_(nullptr)
+  {
+    auto sourceFile = llvmModule.getSourceFileName();
+    if (sourceFile.empty())
+      sourceFile = "unknown";
+
+    diFile_ = diBuilder_.createFile(sourceFile, ".");
+    diBuilder_.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile_, "jlm", false, "", 0);
+  }
 
   Context(const Context &) = delete;
 
@@ -72,6 +89,18 @@ public:
   llvm_module() const noexcept
   {
     return LlvmModule_;
+  }
+
+  [[nodiscard]] ::llvm::DIBuilder &
+  getDIBuilder() noexcept
+  {
+    return diBuilder_;
+  }
+
+  [[nodiscard]] ::llvm::DIFile *
+  di_file() const noexcept
+  {
+    return diFile_;
   }
 
   const_iterator
@@ -114,6 +143,25 @@ public:
     return it->second;
   }
 
+  void
+  setDISubprogram(::llvm::DISubprogram * diSubprogram) noexcept
+  {
+    diSubprogram_ = diSubprogram;
+  }
+
+  [[nodiscard]] bool
+  hasDISubprogram() const noexcept
+  {
+    return diSubprogram_ != nullptr;
+  }
+
+  [[nodiscard]] ::llvm::DISubprogram *
+  getDISubprogram() const noexcept
+  {
+    JLM_ASSERT(diSubprogram_ != nullptr);
+    return diSubprogram_;
+  }
+
   TypeConverter &
   GetTypeConverter()
   {
@@ -129,6 +177,9 @@ public:
 private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
+  ::llvm::DIBuilder diBuilder_;
+  ::llvm::DIFile * diFile_;
+  ::llvm::DISubprogram * diSubprogram_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::ControlFlowGraphNode *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
@@ -1748,6 +1799,16 @@ IpGraphToLlvmConverter::convert_instruction(
     operands.push_back(tac.operand(n));
 
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
+  auto rvsdgNodeLocation = tac.getRvsdgNodeLocation();
+  if (Context_->hasDISubprogram() && rvsdgNodeLocation.has_value())
+  {
+    auto debugLoc = ::llvm::DILocation::get(
+        Context_->llvm_module().getContext(),
+        rvsdgNodeLocation.value().regionId,
+        rvsdgNodeLocation.value().nodeId,
+        Context_->getDISubprogram());
+    builder.SetCurrentDebugLocation(debugLoc);
+  }
   const auto & op = tac.operation();
   auto r = convert_operation(op, op, operands, builder);
   if (r != nullptr)
@@ -1834,6 +1895,16 @@ IpGraphToLlvmConverter::create_conditional_branch(const ControlFlowGraphNode * n
   auto branch = static_cast<const BasicBlock *>(node)->tacs().last();
   JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
+  auto rvsdgNodeLocation = branch->getRvsdgNodeLocation();
+  if (Context_->hasDISubprogram() && rvsdgNodeLocation.has_value())
+  {
+    auto debugLoc = ::llvm::DILocation::get(
+        Context_->llvm_module().getContext(),
+        rvsdgNodeLocation.value().regionId,
+        rvsdgNodeLocation.value().nodeId,
+        Context_->getDISubprogram());
+    builder.SetCurrentDebugLocation(debugLoc);
+  }
 
   auto condition = Context_->value(branch->operand(0));
   auto bbfalse = Context_->basic_block(node->OutEdge(0)->sink());
@@ -2223,10 +2294,13 @@ IpGraphToLlvmConverter::convert_function(const FunctionNode & node)
   auto & im = Context_->module();
   auto f = ::llvm::cast<::llvm::Function>(Context_->value(im.variable(&node)));
 
+  Context_->setDISubprogram(f->getSubprogram());
+
   // Type, name, attributes and calling convention have already been set on the LLVM Function.
   // The only conversion that remains is the function body.
 
   convert_cfg(*node.cfg(), *f);
+  Context_->setDISubprogram(nullptr);
 }
 
 void
@@ -2304,6 +2378,27 @@ IpGraphToLlvmConverter::convert_ipgraph()
       auto attributes = convert_attributes(*n);
       f->setAttributes(attributes);
 
+      // Create and attach debug info only for function *definitions*.
+      // For declarations (e.g. libc functions like printf), attaching multiple distinct
+      // DISubprograms across translation units/passes can easily create invalid IR.
+      if (n->cfg())
+      {
+        auto & diBuilder = Context_->getDIBuilder();
+        auto diTypeArray = diBuilder.getOrCreateTypeArray({});
+        auto * subroutineType = diBuilder.createSubroutineType(diTypeArray);
+        auto * sp = diBuilder.createFunction(
+            Context_->di_file(),
+            n->name(),
+            n->name(),
+            Context_->di_file(),
+            1,
+            subroutineType,
+            1,
+            ::llvm::DINode::FlagZero,
+            ::llvm::DISubprogram::SPFlagDefinition);
+        f->setSubprogram(sp);
+      }
+
       Context_->insert(v, f);
     }
     else
@@ -2335,6 +2430,10 @@ IpGraphToLlvmConverter::ConvertModule(
   llvmModule->setSourceFileName(ipGraphModule.source_filename().to_str());
   llvmModule->setTargetTriple(ipGraphModule.target_triple());
   llvmModule->setDataLayout(ipGraphModule.data_layout());
+  llvmModule->addModuleFlag(
+      ::llvm::Module::Warning,
+      "Debug Info Version",
+      ::llvm::DEBUG_METADATA_VERSION);
 
   Context_ = Context::Create(ipGraphModule, *llvmModule);
   convert_ipgraph();
