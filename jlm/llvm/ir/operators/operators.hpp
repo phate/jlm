@@ -923,6 +923,19 @@ public:
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
 
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FBinarOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FBinaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FBinaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FBinaryOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
 private:
   llvm::fpop op_;
 };

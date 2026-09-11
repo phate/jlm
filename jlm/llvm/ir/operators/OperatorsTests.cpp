@@ -305,4 +305,79 @@ TEST(FCmpOperationTests, testFoldConstants)
   }
 }
 
+TEST(FBinaryOperationTests, testFoldConstants)
+{
+  using namespace jlm::rvsdg;
+
+  Graph graph;
+  auto region = &graph.GetRootRegion();
+
+  auto fpt = FloatingPointType::Create(fpsize::dbl);
+
+  auto & c1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(7.25));
+  auto & c2 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(2.0));
+
+  const auto expectFoldedTo = [&](fpop op, Output * lhs, Output * rhs)
+  {
+    const FBinaryOperation operation(op, fpt);
+    const auto folded = FBinaryOperation::foldConstants(operation, { lhs, rhs });
+    ASSERT_TRUE(folded.has_value()) << "Expected folding for fpop " << static_cast<int>(op);
+    ASSERT_EQ(folded->size(), 1u);
+
+    auto [node, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*(*folded)[0]);
+    ASSERT_NE(constantOperation, nullptr);
+    EXPECT_EQ(&constantOperation->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
+
+    ::llvm::APFloat expected(0.0);
+    switch (op)
+    {
+    case fpop::add:
+      expected = ::llvm::APFloat(9.25);
+      break;
+    case fpop::sub:
+      expected = ::llvm::APFloat(5.25);
+      break;
+    case fpop::mul:
+      expected = ::llvm::APFloat(14.5);
+      break;
+    case fpop::div:
+      expected = ::llvm::APFloat(3.625);
+      break;
+    case fpop::mod:
+      expected = ::llvm::APFloat(1.25);
+      break;
+    default:
+      FAIL() << "Unhandled fpop in test";
+    }
+
+    EXPECT_TRUE(constantOperation->constant().bitwiseIsEqual(expected))
+        << "fpop " << static_cast<int>(op);
+  };
+
+  expectFoldedTo(fpop::add, c1.output(0), c2.output(0));
+  expectFoldedTo(fpop::sub, c1.output(0), c2.output(0));
+  expectFoldedTo(fpop::mul, c1.output(0), c2.output(0));
+  expectFoldedTo(fpop::div, c1.output(0), c2.output(0));
+  expectFoldedTo(fpop::mod, c1.output(0), c2.output(0));
+
+  {
+    auto & nonConst = LlvmGraphImport::create(
+        graph,
+        fpt,
+        fpt,
+        "x",
+        Linkage::externalLinkage,
+        CallingConvention::C,
+        false,
+        8);
+
+    const FBinaryOperation operation(fpop::add, fpt);
+    const auto notFolded = FBinaryOperation::foldConstants(
+        operation,
+        std::vector<Output *>({ &nonConst, c1.output(0) }));
+    EXPECT_FALSE(notFolded.has_value());
+  }
+}
+
 }
