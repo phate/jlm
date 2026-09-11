@@ -195,7 +195,7 @@ StoreNonVolatileOperation::normalizeStoreStore(
 
   // Store1 and store2 must have the same address
   auto & store1Address = *AddressInput(*store1Node).origin();
-  if (&llvm::traceOutput(store1Address) != &llvm::traceOutput(store2Address))
+  if (&llvm::traceOutput(store1Address, false) != &llvm::traceOutput(store2Address, false))
     return std::nullopt;
 
   // Check that all memory state inputs originate from store1 AND have no other users

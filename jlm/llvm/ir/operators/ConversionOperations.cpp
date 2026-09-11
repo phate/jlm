@@ -67,7 +67,7 @@ SExtOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -110,7 +110,7 @@ ZExtOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -153,7 +153,7 @@ TruncOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -237,7 +237,7 @@ FPExtOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand);
   if (!constantOperation)

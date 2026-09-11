@@ -305,7 +305,7 @@ isAllocationSide(rvsdg::Output & output)
   if (fnToPtrOperation != nullptr)
   {
     const auto & tracedOutput =
-        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin());
+        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin(), false);
     if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(tracedOutput))
     {
       return true;
@@ -325,8 +325,8 @@ PtrCmpOperation::normalizeNullPointerComparison(
     return std::nullopt;
 
   JLM_ASSERT(operands.size() == 2);
-  auto & tracedOperand1 = rvsdg::traceOutput(*operands[0]);
-  auto & tracedOperand2 = rvsdg::traceOutput(*operands[1]);
+  auto & tracedOperand1 = rvsdg::traceOutput(*operands[0], false);
+  auto & tracedOperand2 = rvsdg::traceOutput(*operands[1], false);
 
   if (isOutputOf<ConstantPointerNullOperation>(tracedOperand1)
       && isOutputOf<ConstantPointerNullOperation>(tracedOperand2))
@@ -453,12 +453,12 @@ FCmpOperation::foldConstants(
   auto & operand2 = *operands[1];
   JLM_ASSERT(!is<VectorType>(operand1.Type()));
 
-  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
   auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
   if (!c1Operation)
     return std::nullopt;
 
-  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
   auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
   if (!c2Operation)
     return std::nullopt;

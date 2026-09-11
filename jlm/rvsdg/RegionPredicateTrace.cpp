@@ -344,7 +344,7 @@ AlternativeRegionPredicateTracer::AlternativeRegionPredicateTracer() = default;
 PredicateValueRange &
 AlternativeRegionPredicateTracer::getPossibleValues(rvsdg::Output & output)
 {
-  auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(output);
+  auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(output, false);
   if (auto it = predicateValueRanges_.find(&tracedOutput); it != predicateValueRanges_.end())
   {
     return it->second;
