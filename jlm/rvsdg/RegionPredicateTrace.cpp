@@ -22,6 +22,10 @@
 namespace jlm::rvsdg
 {
 
+// use this to make the alternative region predicate checker skip adding the
+// lowest common ancestor as an ancestor of the origin region
+const bool DISABLE_LOWEST_COMMON_ANCESTOR_ORIGIN = std::getenv("JLM_DISABLE_LOWEST_COMMON_ANCESTOR_ORIGIN");
+
 // Observe changes to region that may invalidate the cached computation
 // of predicate assignments / satisfiability constraints.
 class RegionPredicateTrace::Observer : public RegionObserver
@@ -538,6 +542,9 @@ AlternativeRegionPredicateTracer::isReachableFromRegion(
   // Lowest common ancestor found
   JLM_ASSERT(targetAncestor == originAncestor);
   const auto commonAncestor = targetAncestor;
+
+  if (DISABLE_LOWEST_COMMON_ANCESTOR_ORIGIN)
+    currentOriginRegionAncestors_.Remove(commonAncestor);
 
   // Go through the ancestors of the target region and check if any of them have requirements
   // that can not be satisfied by the origin region or one of its ancestors
