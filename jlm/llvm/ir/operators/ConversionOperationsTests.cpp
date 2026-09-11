@@ -150,6 +150,51 @@ TEST(ConversionOperationsTests, TruncConstantFolding)
   }
 }
 
+TEST(ConversionOperationsTests, fpExtConstantFolding)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto fpFltType = FloatingPointType::Create(fpsize::flt);
+  auto fpDblType = FloatingPointType::Create(fpsize::dbl);
+
+  Graph graph;
+
+  auto & eight = ConstantFP::createNode(graph.GetRootRegion(), fpsize::flt, ::llvm::APFloat(8.0));
+  auto & one = ConstantFP::createNode(graph.GetRootRegion(), fpsize::half, ::llvm::APFloat(1.0));
+
+  auto & node1 = FPExtOperation::createNode(*eight.output(0), fpDblType);
+  auto & node2 = FPExtOperation::createNode(*one.output(0), fpFltType);
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*node2.output(0), "x2");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<FPExtOperation>(FPExtOperation::foldConstant, node1);
+  ReduceNode<FPExtOperation>(FPExtOperation::foldConstant, node2);
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<ConstantFP>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(&op->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
+    EXPECT_EQ(op->constant().convertToDouble(), 8.0);
+  }
+
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<ConstantFP>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(&op->constant().getSemantics(), &::llvm::APFloat::IEEEsingle());
+    EXPECT_EQ(op->constant().convertToFloat(), 1.0);
+  }
+}
+
 TEST(ConversionOperationsTests, FunctionToPointerInversion)
 {
   using namespace jlm::rvsdg;
