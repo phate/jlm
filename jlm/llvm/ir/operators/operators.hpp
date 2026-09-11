@@ -927,7 +927,7 @@ public:
    * Performs constant folding by statically evaluating the two constant operands and replacing the
    * operations result with the resulting constant.
    *
-   * @param operation The \ref FBinarOperation on which the transformation is performed.
+   * @param operation The \ref FBinaryOperation on which the transformation is performed.
    * @param operands The operands of the \ref FBinaryOperation node.
    *
    * @return If the normalization could be applied, then the result of the \ref FBinaryOperation
