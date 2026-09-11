@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/common.hpp>
 
@@ -206,6 +207,53 @@ std::unique_ptr<rvsdg::Operation>
 FPExtOperation::copy() const
 {
   return std::make_unique<FPExtOperation>(*this);
+}
+
+static const ::llvm::fltSemantics &
+mapToLlvmFltSemantics(const fpsize size)
+{
+  switch (size)
+  {
+  case fpsize::half:
+    return ::llvm::APFloat::IEEEhalf();
+  case fpsize::flt:
+    return ::llvm::APFloat::IEEEsingle();
+  case fpsize::dbl:
+    return ::llvm::APFloat::IEEEdouble();
+  case fpsize::x86fp80:
+    return ::llvm::APFloat::x87DoubleExtended();
+  case fpsize::fp128:
+    return ::llvm::APFloat::IEEEquad();
+  default:
+    JLM_UNREACHABLE("Unknown float size");
+  }
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FPExtOperation::foldConstant(
+    const FPExtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  bool ignored = false;
+  ::llvm::APFloat resultRepresentation = constantOperation->constant();
+  resultRepresentation.convert(
+      mapToLlvmFltSemantics(operation.dstsize()),
+      ::llvm::APFloat::rmNearestTiesToEven,
+      &ignored);
+
+  auto & resultNode =
+      ConstantFP::createNode(*operand.region(), operation.dstsize(), resultRepresentation);
+
+  return std::vector<rvsdg::Output *>({ resultNode.output(0) });
 }
 
 FPTruncOperation::~FPTruncOperation() noexcept = default;

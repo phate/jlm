@@ -392,28 +392,23 @@ public:
   }
 
   FPExtOperation(
-      const std::shared_ptr<const FloatingPointType> & srctype,
-      const std::shared_ptr<const FloatingPointType> & dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const FloatingPointType> & operandType,
+      const std::shared_ptr<const FloatingPointType> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
+    if (operandType->size() == fpsize::flt && resultType->size() == fpsize::half)
       throw util::Error("destination type size must be bigger than source type size.");
   }
 
   FPExtOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
+    auto & operandFpType = checkAndExtractFloatingPointType(*operandType);
+    auto & resultTFpType = checkAndExtractFloatingPointType(*resultType);
 
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::flt && dt->size() == fpsize::half)
+    if (operandFpType.size() == fpsize::flt && resultTFpType.size() == fpsize::half)
       throw util::Error("destination type size must be bigger than source type size.");
   }
 
@@ -439,18 +434,39 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPExtOperation>(std::move(st), std::move(dt));
+    auto op = std::make_unique<FPExtOperation>(operand->Type(), resultType);
     return ThreeAddressCode::create(std::move(op), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
+  {
+    return rvsdg::CreateOpNode<FPExtOperation>({ &operand }, operand.Type(), resultType);
+  }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FPExtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FPExtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FPExtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const FPExtOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
+private:
+  static const FloatingPointType &
+  checkAndExtractFloatingPointType(const rvsdg::Type & type)
+  {
+    if (const auto fpType = dynamic_cast<const FloatingPointType *>(&type))
+      return *fpType;
+
+    throw util::Error("Expected floating point type.");
   }
 };
 
