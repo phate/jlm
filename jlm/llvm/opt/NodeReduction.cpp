@@ -55,6 +55,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#SExtReductions", counters.numSExtReductions);
   AddMeasurement("#ZExtReductions", counters.numZExtReductions);
   AddMeasurement("#TruncReductions", counters.numTruncReductions);
+  AddMeasurement("#FPExtReductions", counters.numFPExtReductions);
   AddMeasurement("#IntegerEqReductions", counters.numIntegerEqReductions);
   AddMeasurement("#IntegerNeReductions", counters.numIntegerNeReductions);
   AddMeasurement("#IntegerSgeReductions", counters.numIntegerSgeReductions);
@@ -150,6 +151,9 @@ static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
 
 static std::vector<rvsdg::NodeNormalization<TruncOperation>>
     truncOperationNormalizations({ TruncOperation::foldConstant });
+
+static std::vector<rvsdg::NodeNormalization<FPExtOperation>>
+    fpExtOperationNormalizations({ FPExtOperation::foldConstant });
 
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
     integerEqNormalizations({ IntegerEqOperation::foldConstants });
@@ -461,6 +465,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         truncOperationNormalizations,
         Statistics_->getReductionCounters().numTruncReductions);
+  }
+  if (is<FPExtOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FPExtOperation>(
+        simpleNode,
+        fpExtOperationNormalizations,
+        Statistics_->getReductionCounters().numFPExtReductions);
   }
   if (is<IntegerEqOperation>(&simpleNode))
   {
