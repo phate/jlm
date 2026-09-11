@@ -29,9 +29,12 @@ OutputTracer::OutputTracer()
 {}
 
 rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+OutputTracer::traceStep(
+    rvsdg::Output & output,
+    bool loopBackEdgeTaken,
+    const rvsdg::Region * withinRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, loopBackEdgeTaken, withinRegion);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);

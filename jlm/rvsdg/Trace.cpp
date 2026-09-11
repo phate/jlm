@@ -26,13 +26,24 @@ OutputTracer::trace(Output & output)
 Output &
 OutputTracer::trace(Output & output, const rvsdg::Region * withinRegion)
 {
+  regionPredicateTracer_.clearCaches();
+  startingOutput_ = &output;
+  return traceInternal(output, false, withinRegion);
+}
+
+Output &
+OutputTracer::traceInternal(
+    Output & output,
+    bool loopBackEdgeTaken,
+    const rvsdg::Region * withinRegion)
+{
   Output * head = &output;
 
   // Keep tracing until the output stops changing
   while (true)
   {
     Output * prevHead = head;
-    head = &traceStep(*head, withinRegion);
+    head = &traceStep(*head, loopBackEdgeTaken, withinRegion);
     if (head == prevHead)
     {
       return *head;
@@ -52,64 +63,109 @@ mapGammaArgumentToOrigin(GammaNode & gammaNode, Output & output)
   return *gammaNode.mapBranchArgumentToInput(output).origin();
 }
 
-Output *
-OutputTracer::tryTraceThroughGamma(GammaNode & gammaNode, Output & output)
+Output &
+OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, bool loopBackEdgeTaken)
 {
-  if (const auto invariantValueInput = lookupInInvarianceCache(output))
+  // First check the invariance cache
+  if (const auto invariantValueInput = lookupInInvarianceCache(output, loopBackEdgeTaken))
   {
-    return invariantValueInput->origin();
+    return *invariantValueInput->origin();
   }
 
   const auto exitVar = gammaNode.MapOutputExitVar(output);
 
   // The shared output that is the origin of the entry variable(s) going into the gamma node
-  Output * commonOrigin = nullptr;
-  Input * gammaInput = nullptr;
+  // nullopt means no subregion has been traced yet.
+  // nullptr means there can be no shared common outer origin.
+  std::optional<Output *> commonOuterOrigin;
+  // The gamma input that gets its value from the common outer origin
+  Input * commonGammaInput = nullptr;
+
+  // If only a single subregion can provide the value, this is the origin within that subregion.
+  // nullopt means no valid subregion been found yet.
+  // nullptr means there are multiple valid subregions.
+  std::optional<Output *> singleInnerOrigin;
 
   for (auto branchResult : exitVar.branchResult)
   {
+    // Check if region predicate checking is enabled and lets us skip this subregion
+    if (!loopBackEdgeTaken && regionPredicateChecking_)
+    {
+      // If the current gamma subregion can not reach the starting region for the trace,
+      // it can not be the region providing the traced value
+      if (!regionPredicateTracer_.isReachableFromRegion(
+              *startingOutput_->region(),
+              *branchResult->region()))
+        continue;
+    }
+
     auto tracedInner = branchResult->origin();
 
     if (isDeepInvarianceCheckingEnabled())
     {
       // Trace the branch result origin, but only within the gamma subregion
-      tracedInner = &trace(*tracedInner, tracedInner->region());
+      tracedInner = &traceInternal(*tracedInner, loopBackEdgeTaken, tracedInner->region());
     }
 
-    // TODO: handle the traceIntoSubregion policy as well,
-    // when only one of the gamma subregions provides a defined and reachable value,
-    // that value can be returned
+    // Set the single inner origin, or clear it if we already had one
+    if (!singleInnerOrigin.has_value())
+    {
+      singleInnerOrigin = tracedInner;
+    }
+    else
+    {
+      singleInnerOrigin = nullptr;
+    }
 
     // The traced output must reach a region argument in the gamma subregion
     if (TryGetRegionParentNode<GammaNode>(*tracedInner) != &gammaNode)
-      return nullptr;
-
-    // Get the origin of the region argument outside the gamma
-    gammaInput = &gammaNode.mapBranchArgumentToInput(*tracedInner);
-    Output & outerOrigin = *gammaInput->origin();
-
-    // Check that the origin matches with all other origins
-    if (commonOrigin == nullptr)
     {
-      commonOrigin = &outerOrigin;
+      commonOuterOrigin = nullptr;
     }
-    else if (commonOrigin != &outerOrigin)
+    else
     {
-      return nullptr;
+      // Get the origin of the region argument outside the gamma
+      auto & gammaInput = gammaNode.mapBranchArgumentToInput(*tracedInner);
+      Output & outerOrigin = *gammaInput.origin();
+
+      // If this is the first outer origin, make it the common outer origin for now
+      if (!commonOuterOrigin.has_value())
+      {
+        commonOuterOrigin = &outerOrigin;
+        commonGammaInput = &gammaInput;
+      }
+      else if (*commonOuterOrigin != &outerOrigin)
+      {
+        // Mismatching outer origins found
+        commonOuterOrigin = nullptr;
+      }
     }
   }
 
-  JLM_ASSERT(commonOrigin != nullptr);
-  JLM_ASSERT(gammaInput != nullptr);
-  return insertInInvarianceCache(output, *gammaInput);
+  // If we found a common outer origin, continue tracing from there
+  if (commonOuterOrigin.has_value() && *commonOuterOrigin != nullptr)
+  {
+    JLM_ASSERT(commonGammaInput != nullptr);
+    return insertInInvarianceCache(output, loopBackEdgeTaken, *commonGammaInput);
+  }
+
+  // If only a single gamma subregion provides a possible origin
+  if (isTracingIntoSubregionsEnabled() && singleInnerOrigin.has_value()
+      && *singleInnerOrigin != nullptr)
+  {
+    return **singleInnerOrigin;
+  }
+
+  // Tracing was unable to make any progress beyond the gamma output
+  return output;
 }
 
-Output *
-OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
+Output &
+OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, bool loopBackEdgeTaken)
 {
-  if (const auto invariantValueInput = lookupInInvarianceCache(output))
+  if (const auto invariantValueInput = lookupInInvarianceCache(output, loopBackEdgeTaken))
   {
-    return invariantValueInput->origin();
+    return *invariantValueInput->origin();
   }
 
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
@@ -120,39 +176,74 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output)
   if (isDeepInvarianceCheckingEnabled())
   {
     // trace the origin within the thetaNode, but only within the theta's subregion
-    tracedInner = &trace(*tracedInner, thetaNode.subregion());
+    tracedInner = &traceInternal(*tracedInner, loopBackEdgeTaken, thetaNode.subregion());
   }
 
-  // If tracing reached the pre argument of the same loop variable, it is invariant
+  // If tracing reached the pre argument of the same loop variable, it might be invariant
   if (tracedInner == loopVar.pre)
   {
-    return insertInInvarianceCache(output, *loopVar.input);
-  }
+    // If the loop variable was found to be invariant, but loopBackEdgeTaken was false,
+    // we must check again without making assumptions about no back-edges being taken
 
-  // If tracing from the post result lead to the pre argument of a different loop variable,
-  // check if that loop variable is trivially invariant, and if it is, return its input origin.
-  if (TryGetRegionParentNode<ThetaNode>(*tracedInner) == &thetaNode)
+    // We already traced without making assumptions about back-edges
+    if (loopBackEdgeTaken)
+    {
+      return insertInInvarianceCache(output, true, *loopVar.input);
+    }
+
+    // Try again with loopBackEdgeTaken=true
+    auto tracedInnerAgain = &traceInternal(*tracedInner, true, thetaNode.subregion());
+    if (tracedInnerAgain == loopVar.pre)
+    {
+      // It is still invariant!
+      return insertInInvarianceCache(output, true, *loopVar.input);
+    }
+  }
+  else if (TryGetRegionParentNode<ThetaNode>(*tracedInner) == &thetaNode)
   {
+    // Tracing from the post result lead to the pre argument of a different loop variable.
+    // Check if that loop variable is trivially invariant, and if it is, return its input origin.
+
     auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return insertInInvarianceCache(output, *originLoopVar.input);
+      return insertInInvarianceCache(output, loopBackEdgeTaken, *originLoopVar.input);
     }
   }
 
   // If we are allowed to return outputs from inside the subregion,
-  // return the result from tracing inside the subregion
+  // return the result from tracing inside the subregion.
   if (isTracingIntoSubregionsEnabled())
   {
-    return tracedInner;
+    return *tracedInner;
   }
 
   // Otherwise, we are unable to trace further from the theta output
-  return nullptr;
+  return output;
 }
 
 Output &
-OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
+OutputTracer::traceThetaArgument(rvsdg::ThetaNode & thetaNode, Output & output)
+{
+  // Get the loop variable
+  auto loopVar = thetaNode.MapPreLoopVar(output);
+
+  // Trace from the corresponding theta output.
+  auto & tracedOutput = traceThetaOutput(thetaNode, *loopVar.output, true);
+
+  // If the loop output is invariant and has the same origin as the loop variable,
+  // tracing can continue from outside the theta
+  if (&tracedOutput == loopVar.input->origin())
+  {
+    return tracedOutput;
+  }
+
+  // Otherwise tracing stops at the theta argument
+  return output;
+}
+
+Output &
+OutputTracer::traceStep(Output & output, bool loopBackEdgeTaken, const rvsdg::Region * withinRegion)
 {
   if (withinRegion && withinRegion == TryGetOwnerRegion(output))
   {
@@ -163,10 +254,7 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
   // Handle gamma node outputs
   if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
   {
-    if (const auto traced = tryTraceThroughGamma(*gammaNode, output))
-      return *traced;
-
-    return output;
+    return traceGammaOutput(*gammaNode, output, loopBackEdgeTaken);
   }
 
   // Handle gamma node arguments
@@ -178,39 +266,17 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
   // Handle theta node outputs
   if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
   {
-    if (const auto traced = traceThetaOutput(*thetaNode, output))
-    {
-      return *traced;
-    }
-
-    return output;
+    return traceThetaOutput(*thetaNode, output, loopBackEdgeTaken);
   }
 
   // Handle theta node arguments
   if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
   {
-    // Tracing from inside a theta to outside it is only valid if the loop variable is invariant.
-    // This is determined by tracing from the loop variable's post result,
-    // and seeing if it leads to the same input origin as the loop variable's own input.
-
-    // The loop variable whose pre argument is being traced from
-    const auto loopVar = thetaNode->MapPreLoopVar(output);
-
-    // The origin of the loop variable's input.
-    const auto inputOrigin = loopVar.input->origin();
-
-    // The origin reached when tracing from the loop variable's post result,
-    // if it reaches an invariant loop variable and "escapes" the theta.
-    // The invariant loop variable found does not have to be the same as the above loopVar.
-    // See TraceTests' TestIndirectLoopInvariance.
-    const auto postOrigin = traceThetaOutput(*thetaNode, *loopVar.output);
-
-    if (postOrigin == inputOrigin)
-    {
-      return *inputOrigin;
-    }
-
-    return output;
+    // When reaching theta arguments this way, it it always because the starting point
+    // of the tracing is inside the theta subregion
+    JLM_ASSERT(!loopBackEdgeTaken);
+    JLM_ASSERT(Region::isAncestorOrSame(*startingOutput_->region(), *thetaNode->subregion()));
+    return traceThetaArgument(*thetaNode, output);
   }
 
   // If we are not doing interprocedural tracing, stop tracing now
@@ -264,26 +330,44 @@ OutputTracer::traceStep(Output & output, const rvsdg::Region * withinRegion)
   return output;
 }
 
-Output *
-OutputTracer::insertInInvarianceCache(const Output & output, Input & traceResult)
+Output &
+OutputTracer::insertInInvarianceCache(
+    const Output & output,
+    bool loopBackEdgeTaken,
+    Input & traceResult)
 {
   if (enableInvarianceCaching_)
   {
-    JLM_ASSERT(invariantOutputCache_.find(&output) == invariantOutputCache_.end());
-    invariantOutputCache_[&output] = &traceResult;
+    auto [it, inserted] =
+        invariantOutputCache_.emplace(&output, std::make_pair(loopBackEdgeTaken, &traceResult));
+    if (!inserted)
+    {
+      // The only reason we would be inserting into the cache for the same output again,
+      // is if the old cache entry is only valid for loopBackEdgeTaken = false,
+      // and we now have one where loopBackEdgeTaken = true, which is valid for both.
+      // Both the old and new cached value must point to inputs with the same origin.
+      JLM_ASSERT(!it->second.first && loopBackEdgeTaken);
+      JLM_ASSERT(it->second.second->origin() == traceResult.origin());
+      it->second.first = loopBackEdgeTaken;
+    }
   }
 
-  return traceResult.origin();
+  return *traceResult.origin();
 }
 
 Input *
-OutputTracer::lookupInInvarianceCache(const Output & output)
+OutputTracer::lookupInInvarianceCache(const Output & output, bool loopBackEdgeTaken)
 {
   if (enableInvarianceCaching_)
   {
     if (const auto it = invariantOutputCache_.find(&output); it != invariantOutputCache_.end())
     {
-      return it->second;
+      // If the query has loopBackEdgeTaken=true but the cached value assumes to loop back-edges
+      // have been followed, we must respond that it is not in cache.
+      if (loopBackEdgeTaken && !it->second.first)
+        return nullptr;
+
+      return it->second.second;
     }
   }
 

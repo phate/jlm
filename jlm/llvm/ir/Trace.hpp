@@ -43,7 +43,8 @@ public:
 
 protected:
   [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion) override;
+  traceStep(rvsdg::Output & output, bool loopBackEdgeTaken, const rvsdg::Region * withinRegion)
+      override;
 
 private:
   bool traceThroughLoadedStates_ = false;

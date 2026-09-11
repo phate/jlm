@@ -471,21 +471,24 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
 }
 
 bool
-Region::isAncestor(const Region & region, const Region & ancestor) noexcept
+Region::isAncestorOrSame(const Region & region, const Region & ancestor) noexcept
 {
   const auto ancestorDepth = ancestor.getDepth();
-  // If region starts at the same level or higher than ancestor, it can not be an ancestor
-  if (region.getDepth() <= ancestorDepth)
-    return false;
 
   // Follow the parent chain until the ancestor depth is reached
   auto current = &region;
-  do
+  while (current->getDepth() > ancestorDepth)
   {
     current = current->node()->region();
-  } while (current->getDepth() > ancestorDepth);
+  }
 
   return current == &ancestor;
+}
+
+bool
+Region::isStrictAncestor(const Region & region, const Region & ancestor) noexcept
+{
+  return &region != &ancestor && isAncestorOrSame(region, ancestor);
 }
 
 std::string

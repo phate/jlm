@@ -7,6 +7,7 @@
 #define JLM_RVSDG_TRACE_HPP
 
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 
 namespace jlm::rvsdg
 {
@@ -154,6 +155,18 @@ public:
     enterPhiNodes_ = value;
   }
 
+  [[nodiscard]] bool
+  isRegionPredicateCheckingEnabled() const noexcept
+  {
+    return regionPredicateChecking_;
+  }
+
+  void
+  setRegionPredicateCheckingEnabled(bool value) noexcept
+  {
+    regionPredicateChecking_ = value;
+  }
+
   /**
    * Controls whether caching of structural output invariance is enabled,
    * which can speed up tracing through deeply nested graphs.
@@ -221,45 +234,76 @@ public:
 
 protected:
   /**
-   * Attempts to trace the output of a gamma node through the node.
-   * This is only possible if the output can be traced to a gamma entry variable in all subregions,
-   * and these entry variables all share the same origin outside the gamma.
+   * Performs tracing from the given \p output.
+   * The \p loopBackEdgeTaken indicates if any back-edges have been followed while tracing from
+   * the original starting point of the tracing to the given \p output.
+   *
+   * @param output the output to trace from.
+   * @param loopBackEdgeTaken false if we know that no loop back-edges have been followed.
+   * @param withinRegion the region tracing has to stay within, or nullptr
+   */
+  [[nodiscard]] Output &
+  traceInternal(Output & output, bool loopBackEdgeTaken, const rvsdg::Region * withinRegion);
+
+  /**
+   * Trace from the given gamma output.
+   * If the gamma output can be traced to the same gamma input in all subregions,
+   * the origin of the gamma input is returned.
+   * Otherwise, if the tracer is allowed to trace into subregions,
+   * and only one of the subregions can be the origin of the value being traced,
+   * the origin within that subregion is returned.
+   * Otherwise, the gamma output itself is returned.
    *
    * @pre the \p output is an output of the given \p gammaNode
    *
    * @param gammaNode the gamma node to trace through
    * @param output an output of the given gamma node
-   * @return the origin of the output value on the input side of the gamma, or nullptr.
+   * @param loopBackEdgeTaken true if any loop back edge surrounding the gamma may have been taken
+   * @return the result of tracing from the gamma output
    */
-  [[nodiscard]] Output *
-  tryTraceThroughGamma(GammaNode & gammaNode, Output & output);
+  [[nodiscard]] Output &
+  traceGammaOutput(GammaNode & gammaNode, Output & output, bool loopBackEdgeTaken);
 
   /**
    * Trace from the the given loop output.
    * If the loop output is found to be loop invariant, the origin of the theta input is returned.
    * Otherwise, if the tracer is allowed to trace into the subregion of structural nodes,
    * the traced origin of the loop variable post inside the theta is returned.
-   * Otherwise, nullopt is returned.
+   * Otherwise, the theta output itself is returned.
    *
    * @pre the \p output is an output of the given \p thetaNode
    *
    * @param thetaNode the theta node to trace through
    * @param output an output of the given theta node
-   * @return the origin of the output value on the input side of the theta,
-   *         the origin of the loop variable post, or nullopt
+   * @param loopBackEdgeTaken true if any loop back edge surrounding the theta may have been taken
+   * @return the result of tracing from the theta output
    */
-  [[nodiscard]] Output *
-  traceThetaOutput(ThetaNode & thetaNode, Output & output);
+  [[nodiscard]] Output &
+  traceThetaOutput(ThetaNode & thetaNode, Output & output, bool loopBackEdgeTaken);
+
+  /**
+   * Trace from the given loop variable pre argument.
+   * This function is only used when the tracing starting point is inside the theta.
+   * Otherwise \ref traceThetaOutput is used.
+   *
+   * @pre the \p output is an argument of the given \p thetaNode's subregion.
+   *
+   * @param thetaNode the theta node to attempt to trace out of
+   * @param output the theta subregion argument
+   */
+  [[nodiscard]] Output &
+  traceThetaArgument(ThetaNode & thetaNode, Output & output);
 
   /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from.
+   * @param loopBackedgeTaken true if a back-edge may have been taken around the output.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, const rvsdg::Region * withinRegion);
+  traceStep(Output & output, bool loopBackedgeTaken, const rvsdg::Region * withinRegion);
 
   /**
    * Inserts the given \p structuralOutput in the invariance cache.
@@ -268,20 +312,25 @@ protected:
    * looking inside its subregions.
    *
    * @param structuralOutput The structural output that was traced.
+   * @param loopBackEdgeTaken true if no assumptions about not taking back-edges have been made.
    * @param structuralInput The corresponding structural input.
    * @return The origin of \p structuralInput for convenience.
    */
-  Output *
-  insertInInvarianceCache(const Output & structuralOutput, Input & structuralInput);
+  Output &
+  insertInInvarianceCache(
+      const Output & structuralOutput,
+      bool loopBackEdgeTaken,
+      Input & structuralInput);
 
   /**
    * Performs a lookup in the invariance cache.
    *
    * @param structuralOutput the output to look up in the cache.
+   * @param false if no back-edges have been followed while tracing to the given \p output.
    * @return the corresponding structural input the invariant output gets its value from.
    */
   Input *
-  lookupInInvarianceCache(const Output & structuralOutput);
+  lookupInInvarianceCache(const Output & structuralOutput, bool loopBackEdgeTaken);
 
   // The policy determining how tracing handles outputs of gamma and theta nodes
   StructuralNodePolicy structuralNodePolicy_ =
@@ -295,11 +344,24 @@ protected:
   // When false, tracing will stop at the output of the phi node.
   bool enterPhiNodes_ = true;
 
+  // When true, gamma subregions are ignored when it is impossible for control flow to go
+  // from the gamma subregion to the region containing the output tracing started from
+  bool regionPredicateChecking_ = true;
+  // The region predicate checker used to disqualify regions
+  rvsdg::AlternativeRegionPredicateTracer regionPredicateTracer_;
+  // This is the output from which the current trace started.
+  // It gets updated at the beginning of the \ref trace() function.
+  Output * startingOutput_ = nullptr;
+
   // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
   // Enabling caching means the user of the tracer is responsible for cache invalidation.
   // @see clearInvarianceCache() for details
   bool enableInvarianceCaching_ = false;
-  std::unordered_map<const Output *, Input *> invariantOutputCache_{};
+  // Maps from structural output to (loopBackEdgeTaken, input).
+  // If loopBackEdgeTaken is false, it means the output has only been confirmed
+  // to be invariant under the assumption that no loop back edges have been followed.
+  // If loopBackEdgeTaken is true, the output is always invariant
+  std::unordered_map<const Output *, std::pair<bool, Input *>> invariantOutputCache_{};
 };
 
 /**

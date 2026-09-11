@@ -636,24 +636,30 @@ TEST(RegionTests, Ancestor)
 
   // Act & Assert
   // The root region is an ancestor of all the regions
-  EXPECT_TRUE(Region::isAncestor(*structuralNode1->subregion(0), graph.GetRootRegion()));
-  EXPECT_TRUE(Region::isAncestor(*structuralNode2->subregion(0), graph.GetRootRegion()));
-  EXPECT_TRUE(Region::isAncestor(*structuralNode3->subregion(0), graph.GetRootRegion()));
-  EXPECT_TRUE(Region::isAncestor(*structuralNode4->subregion(0), graph.GetRootRegion()));
+  EXPECT_TRUE(Region::isStrictAncestor(*structuralNode1->subregion(0), graph.GetRootRegion()));
+  EXPECT_TRUE(Region::isStrictAncestor(*structuralNode2->subregion(0), graph.GetRootRegion()));
+  EXPECT_TRUE(Region::isStrictAncestor(*structuralNode3->subregion(0), graph.GetRootRegion()));
+  EXPECT_TRUE(Region::isStrictAncestor(*structuralNode4->subregion(0), graph.GetRootRegion()));
 
   // A region is not it's own ancestor
-  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode1->subregion(0)));
+  EXPECT_FALSE(
+      Region::isStrictAncestor(*structuralNode1->subregion(0), *structuralNode1->subregion(0)));
 
   // Two unrelated regions are not ancestors
-  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode2->subregion(0)));
+  EXPECT_FALSE(
+      Region::isStrictAncestor(*structuralNode1->subregion(0), *structuralNode2->subregion(0)));
 
   // Ancestry works at multiple levels of nesting
-  EXPECT_TRUE(Region::isAncestor(*structuralNode3->subregion(0), *structuralNode1->subregion(0)));
-  EXPECT_TRUE(Region::isAncestor(*structuralNode4->subregion(0), *structuralNode1->subregion(0)));
+  EXPECT_TRUE(
+      Region::isStrictAncestor(*structuralNode3->subregion(0), *structuralNode1->subregion(0)));
+  EXPECT_TRUE(
+      Region::isStrictAncestor(*structuralNode4->subregion(0), *structuralNode1->subregion(0)));
 
   // Swapping the order makes the function return false
-  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
-  EXPECT_FALSE(Region::isAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
+  EXPECT_FALSE(
+      Region::isStrictAncestor(*structuralNode1->subregion(0), *structuralNode3->subregion(0)));
+  EXPECT_FALSE(
+      Region::isStrictAncestor(*structuralNode1->subregion(0), *structuralNode4->subregion(0)));
 }
 
 TEST(RegionTests, DepthTest)

@@ -1522,7 +1522,7 @@ StoreValueForwarding::routeOutputToRegion(rvsdg::Output & output, rvsdg::Region 
   if (output.region() == &region)
     return output;
 
-  JLM_ASSERT(rvsdg::Region::isAncestor(region, *output.region()));
+  JLM_ASSERT(rvsdg::Region::isStrictAncestor(region, *output.region()));
 
   if (region.IsRootRegion())
     JLM_UNREACHABLE("root region reached during attempt at routing output into region");
