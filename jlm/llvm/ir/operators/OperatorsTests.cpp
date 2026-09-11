@@ -317,7 +317,7 @@ TEST(FBinaryOperationTests, testFoldConstants)
   auto & c1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(7.25));
   auto & c2 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(2.0));
 
-  const auto expectFoldedTo = [&](fpop op, Output * lhs, Output * rhs)
+  const auto expectFoldedTo = [&](fpop op, Output * lhs, Output * rhs, double expected)
   {
     const FBinaryOperation operation(op, fpt);
     const auto folded = FBinaryOperation::foldConstants(operation, { lhs, rhs });
@@ -328,38 +328,15 @@ TEST(FBinaryOperationTests, testFoldConstants)
         rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*(*folded)[0]);
     ASSERT_NE(constantOperation, nullptr);
     EXPECT_EQ(&constantOperation->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
-
-    ::llvm::APFloat expected(0.0);
-    switch (op)
-    {
-    case fpop::add:
-      expected = ::llvm::APFloat(9.25);
-      break;
-    case fpop::sub:
-      expected = ::llvm::APFloat(5.25);
-      break;
-    case fpop::mul:
-      expected = ::llvm::APFloat(14.5);
-      break;
-    case fpop::div:
-      expected = ::llvm::APFloat(3.625);
-      break;
-    case fpop::mod:
-      expected = ::llvm::APFloat(1.25);
-      break;
-    default:
-      FAIL() << "Unhandled fpop in test";
-    }
-
-    EXPECT_TRUE(constantOperation->constant().bitwiseIsEqual(expected))
+    EXPECT_TRUE(constantOperation->constant().bitwiseIsEqual(::llvm::APFloat(expected)))
         << "fpop " << static_cast<int>(op);
   };
 
-  expectFoldedTo(fpop::add, c1.output(0), c2.output(0));
-  expectFoldedTo(fpop::sub, c1.output(0), c2.output(0));
-  expectFoldedTo(fpop::mul, c1.output(0), c2.output(0));
-  expectFoldedTo(fpop::div, c1.output(0), c2.output(0));
-  expectFoldedTo(fpop::mod, c1.output(0), c2.output(0));
+  expectFoldedTo(fpop::add, c1.output(0), c2.output(0), 9.25);
+  expectFoldedTo(fpop::sub, c1.output(0), c2.output(0), 5.25);
+  expectFoldedTo(fpop::mul, c1.output(0), c2.output(0), 14.5);
+  expectFoldedTo(fpop::div, c1.output(0), c2.output(0), 3.625);
+  expectFoldedTo(fpop::mod, c1.output(0), c2.output(0), 1.25);
 
   {
     auto & nonConst = LlvmGraphImport::create(
