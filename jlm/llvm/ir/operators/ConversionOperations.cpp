@@ -277,6 +277,33 @@ FPTruncOperation::copy() const
   return std::make_unique<FPTruncOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+FPTruncOperation::foldConstant(
+    const FPTruncOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  bool ignored = false;
+  ::llvm::APFloat resultRepresentation = constantOperation->constant();
+  resultRepresentation.convert(
+      mapToLlvmFltSemantics(operation.dstsize()),
+      ::llvm::APFloat::rmNearestTiesToEven,
+      &ignored);
+
+  auto & resultNode =
+      ConstantFP::createNode(*operand.region(), operation.dstsize(), resultRepresentation);
+
+  return std::vector<rvsdg::Output *>({ resultNode.output(0) });
+}
+
 UIToFPOperation::~UIToFPOperation() noexcept = default;
 
 bool

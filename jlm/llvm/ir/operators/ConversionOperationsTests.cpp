@@ -195,6 +195,39 @@ TEST(ConversionOperationsTests, fpExtConstantFolding)
   }
 }
 
+TEST(ConversionOperationsTests, fpTruncConstantFolding)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto fpFltType = FloatingPointType::Create(fpsize::flt);
+
+  Graph graph;
+
+  auto & eight = ConstantFP::createNode(graph.GetRootRegion(), fpsize::dbl, ::llvm::APFloat(8.0));
+
+  auto & node1 = FPTruncOperation::createNode(*eight.output(0), fpFltType);
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<FPTruncOperation>(FPTruncOperation::foldConstant, node1);
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<ConstantFP>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(&op->constant().getSemantics(), &::llvm::APFloat::IEEEsingle());
+    EXPECT_EQ(op->constant().convertToDouble(), 8.0);
+  }
+}
+
 TEST(ConversionOperationsTests, FunctionToPointerInversion)
 {
   using namespace jlm::rvsdg;
