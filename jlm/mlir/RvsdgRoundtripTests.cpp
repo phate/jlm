@@ -667,7 +667,9 @@ ROUNDTRIP_TEST(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
 ROUNDTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
 ROUNDTRIP_TEST(TestCallTest1, ::jlm::llvm::CallTest1)
 ROUNDTRIP_TEST(TestExternalCallTest1, ::jlm::llvm::ExternalCallTest1)
+ROUNDTRIP_TEST(TestExternalCallTest2, ::jlm::llvm::ExternalCallTest2)
 ROUNDTRIP_TEST(TestDeltaTest1, ::jlm::llvm::DeltaTest1)
+ROUNDTRIP_TEST(TestDeltaTest2, ::jlm::llvm::DeltaTest2)
 ROUNDTRIP_TEST(TestExternalMemory, ::jlm::llvm::ExternalMemoryTest)
 ROUNDTRIP_TEST(TestEscapedMemoryTest2, ::jlm::llvm::EscapedMemoryTest2)
 ROUNDTRIP_TEST(TestEscapedMemoryTest3, ::jlm::llvm::EscapedMemoryTest3)
@@ -678,3 +680,11 @@ ROUNDTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
 ROUNDTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
 ROUNDTRIP_TEST(TestGamma, ::jlm::llvm::GammaTest)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
+
+// NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the
+// default-constructing ROUNDTRIP_TEST macro.
+TEST(RvsdgRoundtripTests, TestNAllocaNodes)
+{
+  ::jlm::llvm::NAllocaNodesTest test(3);
+  TestRvsdgRoundtrip(test.module());
+}
