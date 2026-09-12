@@ -893,6 +893,21 @@ MlirToJlmConverter::ConvertOperation(
 
     return { llvm::GetElementPtrOperation::create(inputs[0], indices, pointeeType) };
   }
+  else if (::mlir::isa<::mlir::jlm::FuncToPtr>(&mlirOperation))
+  {
+    auto srcFnType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(inputs[0]->Type());
+    JLM_ASSERT(srcFnType);
+    auto & node = rvsdg::CreateOpNode<llvm::FunctionToPointerOperation>({ inputs[0] }, srcFnType);
+    return { node.output(0) };
+  }
+  else if (::mlir::isa<::mlir::jlm::PtrToFunc>(&mlirOperation))
+  {
+    auto dstFnType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(
+        ConvertType(mlirOperation.getResult(0).getType()));
+    JLM_ASSERT(dstFnType);
+    return rvsdg::outputs(
+        &rvsdg::CreateOpNode<llvm::PointerToFunctionOperation>({ inputs[0] }, dstFnType));
+  }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {

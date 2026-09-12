@@ -583,6 +583,20 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
+  else if (dynamic_cast<const jlm::llvm::FunctionToPointerOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::FuncToPtr>(
+        Builder_->getUnknownLoc(),
+        Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+        inputs[0]);
+  }
+  else if (auto ptrToFnOp = dynamic_cast<const jlm::llvm::PointerToFunctionOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::PtrToFunc>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*ptrToFnOp->result(0)),
+        inputs[0]);
+  }
   // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
