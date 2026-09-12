@@ -493,20 +493,16 @@ public:
   }
 
   FPTruncOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
+    auto & operandFpType = checkAndExtractFloatingPointType(*operandType);
+    auto & resultTFpType = checkAndExtractFloatingPointType(*resultType);
 
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::half || (st->size() == fpsize::flt && dt->size() != fpsize::half)
-        || (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
+    if (operandFpType.size() == fpsize::half
+        || (operandFpType.size() == fpsize::flt && resultTFpType.size() != fpsize::half)
+        || (operandFpType.size() == fpsize::dbl && resultTFpType.size() == fpsize::dbl))
       throw util::Error("destination type size must be smaller than source size type.");
   }
 
@@ -532,18 +528,39 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
+  create(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> resultType)
   {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPTruncOperation>(std::move(st), std::move(dt));
+    auto op = std::make_unique<FPTruncOperation>(operand->Type(), resultType);
     return ThreeAddressCode::create(std::move(op), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
+  {
+    return rvsdg::CreateOpNode<FPTruncOperation>({ &operand }, operand.Type(), resultType);
+  }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FPTruncOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FPTruncOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FPTruncOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const FPTruncOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
+private:
+  static const FloatingPointType &
+  checkAndExtractFloatingPointType(const rvsdg::Type & type)
+  {
+    if (const auto fpType = dynamic_cast<const FloatingPointType *>(&type))
+      return *fpType;
+
+    throw util::Error("Expected floating point type.");
   }
 };
 
