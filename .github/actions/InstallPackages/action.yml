@@ -53,7 +53,7 @@ inputs:
     required: false
 
   install-gtest:
-    descrption: "Install gtest package. Default is 'false'."
+    description: "Install gtest package. Default is 'false'."
     default: "false"
     required: false
 
