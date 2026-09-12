@@ -122,7 +122,7 @@ GetElementPtrOperation::getIndexedType(
     if (auto structType = std::dynamic_pointer_cast<const StructType>(currentType))
     {
       auto index = indices[n];
-      auto & tracedIndex = llvm::traceOutput(*index);
+      auto & tracedIndex = llvm::traceOutput(*index, false);
       auto [constantNode, constantOperation] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedIndex);
       if (!constantOperation)

@@ -24,8 +24,8 @@
 namespace jlm::llvm
 {
 
-OutputTracer::OutputTracer(const bool enableCaching)
-    : rvsdg::OutputTracer(enableCaching)
+OutputTracer::OutputTracer()
+    : rvsdg::OutputTracer()
 {}
 
 rvsdg::Output &
@@ -59,17 +59,21 @@ OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegi
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions
+          ? rvsdg::OutputTracer::StructuralNodePolicy::traceIntoSubregions
+          : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+  tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output, nullptr);
+  const auto & normalized = llvm::traceOutput(output, true);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
@@ -158,7 +162,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base);
+    base = &llvm::traceOutput(*base, false);
 
     if (const auto [gepNode, gepOperation] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -191,7 +195,7 @@ traceAllPointerOriginsInternal(
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  basePointer = &llvm::traceOutput(*basePointer);
+  basePointer = &llvm::traceOutput(*basePointer, false);
 
   auto it = traceCollection.AllTracedOutputs.find(basePointer);
   if (it != traceCollection.AllTracedOutputs.end())
