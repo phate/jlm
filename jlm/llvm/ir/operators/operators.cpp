@@ -658,12 +658,12 @@ FBinaryOperation::foldConstants(
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
 
-  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
   auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
   if (!c1Operation)
     return std::nullopt;
 
-  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
   auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
   if (!c2Operation)
     return std::nullopt;
