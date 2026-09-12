@@ -411,6 +411,8 @@ TEST(TraceTests, GammaCachingTest)
 
   OutputTracer tracer;
   tracer.setInvarianceCaching(true);
+  // predicate checking reduces caching of gamma nodes, so disable it for this test
+  tracer.setRegionPredicateCheckingEnabled(false);
 
   // Act & Assert
   // This is the first time we are tracing this output. We expect it to arrive at i1.
@@ -472,4 +474,35 @@ TEST(TraceTests, ThetaCachingTest)
   tracer.clearInvarianceCache();
   traceResult = &tracer.trace(*graphExport.origin());
   assert(traceResult == loopVar1.output);
+}
+
+TEST(TraceTests, RegionPredicationThetaTest)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   *             Int(1)  Int(2)  Int(3)
+   *               v       v       v
+   * +-theta-------x-------x-------x-------------------+
+   * |             |       |       |                   |
+   * |  TestOp     |       |       |                   |
+   * |    v        v       v       v                   |
+   * | +-gamma---x--x--x------+---------x--x------x-+  |
+   * | |         |  |         |         |         | |  |
+   * | | CTRL(0) |  | Int(4)  | CTRL(1) |  Int(5) | |  |
+   * | |   v     v  v  v      |   v     v    v    v |  |
+   * | +---x-----x--x--x------+---x-----x----x----x-+  |
+   * |     |       |       |       |                   |
+   * |     v       v       v       v                   |
+   * +-----x-------x-------x-------x-------------------+
+   *               |       |       |
+   *               v       v       v
+   *              exp(x)  exp(y)  exp(z)
+   *
+   * and checks that tracing from "x" leads all the way to Int(1),
+   * tracing from "y" leads to to the pre of the second loop variable,
+   * and tracing from "z" leads to Int(4)
+   */
 }

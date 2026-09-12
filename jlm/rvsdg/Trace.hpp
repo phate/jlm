@@ -230,20 +230,20 @@ public:
    * @param withinRegion the region where we stop tracing.
    */
   [[nodiscard]] Output &
-  trace(Output & output, const rvsdg::Region * withinRegion);
+  trace(Output & output, const Region * withinRegion);
 
 protected:
   /**
    * Performs tracing from the given \p output.
-   * The \p loopBackEdgeTaken indicates if any back-edges have been followed while tracing from
-   * the original starting point of the tracing to the given \p output.
    *
    * @param output the output to trace from.
-   * @param loopBackEdgeTaken false if we know that no loop back-edges have been followed.
+   * @param directlyFromRegion the region from which tracing started, if the tracing has
+   *        reached \p output without following any back-edges around \p output.
+   *        Otherwise, nullptr is given.
    * @param withinRegion the region tracing has to stay within, or nullptr
    */
   [[nodiscard]] Output &
-  traceInternal(Output & output, bool loopBackEdgeTaken, const rvsdg::Region * withinRegion);
+  traceInternal(Output & output, const Region * directlyFromRegion, const Region * withinRegion);
 
   /**
    * Trace from the given gamma output.
@@ -258,11 +258,13 @@ protected:
    *
    * @param gammaNode the gamma node to trace through
    * @param output an output of the given gamma node
-   * @param loopBackEdgeTaken true if any loop back edge surrounding the gamma may have been taken
+   * @param directlyFromRegion the region from which tracing started, if the tracing has
+   *        reached \p output without following any back-edges around \p output.
+   *        Otherwise, nullptr is given.
    * @return the result of tracing from the gamma output
    */
   [[nodiscard]] Output &
-  traceGammaOutput(GammaNode & gammaNode, Output & output, bool loopBackEdgeTaken);
+  traceGammaOutput(GammaNode & gammaNode, Output & output, const Region * directlyFromRegion);
 
   /**
    * Trace from the the given loop output.
@@ -275,21 +277,23 @@ protected:
    *
    * @param thetaNode the theta node to trace through
    * @param output an output of the given theta node
-   * @param loopBackEdgeTaken true if any loop back edge surrounding the theta may have been taken
+   * @param directlyFromRegion the region from which tracing started, if the tracing has
+   *        reached \p output without following any back-edges around \p output.
+   *        Otherwise, nullptr is given.
    * @return the result of tracing from the theta output
    */
   [[nodiscard]] Output &
-  traceThetaOutput(ThetaNode & thetaNode, Output & output, bool loopBackEdgeTaken);
+  traceThetaOutput(ThetaNode & thetaNode, Output & output, const Region * directlyFromRegion);
 
   /**
    * Trace from the given loop variable pre argument.
    * This function is only used when the tracing starting point is inside the theta.
-   * Otherwise \ref traceThetaOutput is used.
    *
    * @pre the \p output is an argument of the given \p thetaNode's subregion.
    *
    * @param thetaNode the theta node to attempt to trace out of
    * @param output the theta subregion argument
+   * @return the result of tracing from the theta argument
    */
   [[nodiscard]] Output &
   traceThetaArgument(ThetaNode & thetaNode, Output & output);
@@ -299,11 +303,14 @@ protected:
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from.
    * @param loopBackedgeTaken true if a back-edge may have been taken around the output.
+   * @param directlyFromRegion is the region from which tracing started, if the tracing has
+   *        traversed directly from that region to the \p output without following any back-edges.
+   *        Otherwise, nullptr is given.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
   [[nodiscard]] virtual Output &
-  traceStep(Output & output, bool loopBackedgeTaken, const rvsdg::Region * withinRegion);
+  traceStep(Output & output, const Region * directlyFromRegion, const Region * withinRegion);
 
   /**
    * Inserts the given \p structuralOutput in the invariance cache.
@@ -311,26 +318,24 @@ protected:
    * of the structural node, so tracing can pass through the structural node without
    * looking inside its subregions.
    *
+   * When determining invariance, it  important that no assumptions about
+   * tracing coming directly from a region without following back-edges are made.
+   *
    * @param structuralOutput The structural output that was traced.
-   * @param loopBackEdgeTaken true if no assumptions about not taking back-edges have been made.
    * @param structuralInput The corresponding structural input.
    * @return The origin of \p structuralInput for convenience.
    */
   Output &
-  insertInInvarianceCache(
-      const Output & structuralOutput,
-      bool loopBackEdgeTaken,
-      Input & structuralInput);
+  insertInInvarianceCache(const Output & structuralOutput, Input & structuralInput);
 
   /**
    * Performs a lookup in the invariance cache.
    *
    * @param structuralOutput the output to look up in the cache.
-   * @param false if no back-edges have been followed while tracing to the given \p output.
    * @return the corresponding structural input the invariant output gets its value from.
    */
   Input *
-  lookupInInvarianceCache(const Output & structuralOutput, bool loopBackEdgeTaken);
+  lookupInInvarianceCache(const Output & structuralOutput);
 
   // The policy determining how tracing handles outputs of gamma and theta nodes
   StructuralNodePolicy structuralNodePolicy_ =
@@ -348,20 +353,15 @@ protected:
   // from the gamma subregion to the region containing the output tracing started from
   bool regionPredicateChecking_ = true;
   // The region predicate checker used to disqualify regions
-  rvsdg::AlternativeRegionPredicateTracer regionPredicateTracer_;
-  // This is the output from which the current trace started.
-  // It gets updated at the beginning of the \ref trace() function.
-  Output * startingOutput_ = nullptr;
+  AlternativeRegionPredicateTracer regionPredicateTracer_;
 
   // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
   // Enabling caching means the user of the tracer is responsible for cache invalidation.
   // @see clearInvarianceCache() for details
   bool enableInvarianceCaching_ = false;
-  // Maps from structural output to (loopBackEdgeTaken, input).
-  // If loopBackEdgeTaken is false, it means the output has only been confirmed
-  // to be invariant under the assumption that no loop back edges have been followed.
-  // If loopBackEdgeTaken is true, the output is always invariant
-  std::unordered_map<const Output *, std::pair<bool, Input *>> invariantOutputCache_{};
+  // Maps from a structural output to an input of the same structural node
+  // that the output always gets its value from.
+  std::unordered_map<const Output *, Input *> invariantOutputCache_{};
 };
 
 /**
@@ -410,13 +410,10 @@ traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions)
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion = nullptr);
+traceOutput(Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(
-    const Output & output,
-    bool mayEnterSubregions,
-    const rvsdg::Region * withinRegion = nullptr)
+traceOutput(const Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr)
 {
   return traceOutput(const_cast<Output &>(output), mayEnterSubregions, withinRegion);
 }

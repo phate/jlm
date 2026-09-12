@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_TRACE_HPP
 #define JLM_LLVM_IR_TRACE_HPP
 
+#include "jlm/rvsdg/region.hpp"
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Trace.hpp>
@@ -43,8 +44,10 @@ public:
 
 protected:
   [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, bool loopBackEdgeTaken, const rvsdg::Region * withinRegion)
-      override;
+  traceStep(
+      rvsdg::Output & output,
+      const rvsdg::Region * directlyFromRegion,
+      const rvsdg::Region * withinRegion) override;
 
 private:
   bool traceThroughLoadedStates_ = false;
