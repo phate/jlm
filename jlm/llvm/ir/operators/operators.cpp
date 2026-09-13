@@ -649,6 +649,58 @@ FBinaryOperation::reduce_operand_pair(
   JLM_UNREACHABLE("Not implemented!");
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+FBinaryOperation::foldConstants(
+    const FBinaryOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
+  auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
+  if (!c1Operation)
+    return std::nullopt;
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
+  auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
+  if (!c2Operation)
+    return std::nullopt;
+
+  auto c1Representation = c1Operation->constant();
+  const auto & c2Representation = c2Operation->constant();
+
+  switch (operation.fpop())
+  {
+  case fpop::add:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation + c2Representation));
+  case fpop::sub:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation - c2Representation));
+  case fpop::mul:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation * c2Representation));
+  case fpop::div:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation / c2Representation));
+  case fpop::mod:
+    c1Representation.mod(c2Representation);
+    return outputs(&ConstantFP::createNode(*operand1.region(), operation.size(), c1Representation));
+  default:
+    throw std::logic_error("Unsupported floating-point operation");
+  }
+}
+
 FNegOperation::~FNegOperation() noexcept = default;
 
 bool

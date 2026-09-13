@@ -305,4 +305,56 @@ TEST(FCmpOperationTests, testFoldConstants)
   }
 }
 
+TEST(FBinaryOperationTests, testFoldConstants)
+{
+  using namespace jlm::rvsdg;
+
+  Graph graph;
+  auto region = &graph.GetRootRegion();
+
+  auto fpt = FloatingPointType::Create(fpsize::dbl);
+
+  auto & c1 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(7.25));
+  auto & c2 = ConstantFP::createNode(*region, fpsize::dbl, ::llvm::APFloat(2.0));
+
+  const auto expectFoldedTo = [&](fpop op, Output * lhs, Output * rhs, double expected)
+  {
+    const FBinaryOperation operation(op, fpt);
+    const auto folded = FBinaryOperation::foldConstants(operation, { lhs, rhs });
+    ASSERT_TRUE(folded.has_value()) << "Expected folding for fpop " << static_cast<int>(op);
+    ASSERT_EQ(folded->size(), 1u);
+
+    auto [node, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(*(*folded)[0]);
+    ASSERT_NE(constantOperation, nullptr);
+    EXPECT_EQ(&constantOperation->constant().getSemantics(), &::llvm::APFloat::IEEEdouble());
+    EXPECT_TRUE(constantOperation->constant().bitwiseIsEqual(::llvm::APFloat(expected)))
+        << "fpop " << static_cast<int>(op);
+  };
+
+  expectFoldedTo(fpop::add, c1.output(0), c2.output(0), 9.25);
+  expectFoldedTo(fpop::sub, c1.output(0), c2.output(0), 5.25);
+  expectFoldedTo(fpop::mul, c1.output(0), c2.output(0), 14.5);
+  expectFoldedTo(fpop::div, c1.output(0), c2.output(0), 3.625);
+  expectFoldedTo(fpop::mod, c1.output(0), c2.output(0), 1.25);
+
+  {
+    auto & nonConst = LlvmGraphImport::create(
+        graph,
+        fpt,
+        fpt,
+        "x",
+        Linkage::externalLinkage,
+        CallingConvention::C,
+        false,
+        8);
+
+    const FBinaryOperation operation(fpop::add, fpt);
+    const auto notFolded = FBinaryOperation::foldConstants(
+        operation,
+        std::vector<Output *>({ &nonConst, c1.output(0) }));
+    EXPECT_FALSE(notFolded.has_value());
+  }
+}
+
 }
