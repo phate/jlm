@@ -672,11 +672,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto inttoptrOp = ::mlir::dyn_cast<::mlir::LLVM::IntToPtrOp>(&mlirOperation))
   {
-    auto srcType = inputs[0]->Type();
-    if (dynamic_cast<const rvsdg::BitType *>(srcType.get()))
-    {
-      return { llvm::IntToPtrOperation::create(inputs[0]) };
-    }
+    return { llvm::IntToPtrOperation::create(inputs[0]) };
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
