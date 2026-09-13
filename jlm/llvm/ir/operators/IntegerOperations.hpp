@@ -772,6 +772,24 @@ public:
   foldConstants(
       const IntegerOrOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   *
+   * v = IntegerOrOperation x 0
+   * =>
+   * v = x
+   *
+   * @param operation The \ref IntegerOrOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerOrOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerOrOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdempotent(
+      const IntegerOrOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
