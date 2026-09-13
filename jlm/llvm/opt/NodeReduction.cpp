@@ -82,6 +82,8 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
 
+  AddMeasurement("#FPBinaryOpReductions", counters.numFPBinaryOpReductions);
+
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
   AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
@@ -227,6 +229,9 @@ static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>>
 
 static std::vector<rvsdg::NodeNormalization<IntegerXorOperation>>
     integerXorNormalizations({ IntegerXorOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<FBinaryOperation>>
+    fpBinaryOpNormalizations({ FBinaryOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
     loadNonVolatileNormalizations({ LoadNonVolatileOperation::NormalizeLoadStore,
@@ -644,6 +649,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         integerXorNormalizations,
         Statistics_->getReductionCounters().numIntegerXorReductions);
+  }
+  if (is<FBinaryOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FBinaryOperation>(
+        simpleNode,
+        fpBinaryOpNormalizations,
+        Statistics_->getReductionCounters().numFPBinaryOpReductions);
   }
   if (is<PtrCmpOperation>(&simpleNode))
   {
