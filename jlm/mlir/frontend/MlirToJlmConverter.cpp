@@ -979,9 +979,9 @@ MlirToJlmConverter::ConvertOperation(
             4)); // FIXME: the MLIR delta node does not support the alignment attribute
 
     // Add context variables from inputs to delta's subregion
-    for (size_t i = 0; i < inputs.size(); ++i)
+    for (auto input : inputs)
     {
-      rvsdgDeltaNode->AddContextVar(*inputs[i]);
+      rvsdgDeltaNode->AddContextVar(*input);
     }
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
