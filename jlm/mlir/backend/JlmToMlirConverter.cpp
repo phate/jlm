@@ -583,6 +583,58 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
+  else if (auto bitCastOp = dynamic_cast<const jlm::llvm::BitCastOperation *>(&operation))
+  {
+    auto srcType = bitCastOp->argument(0);
+    auto dstType = bitCastOp->result(0);
+
+    // BitCast on pointer types maps to LLVM::BitcastOp
+    if (rvsdg::is<llvm::PointerType>(*srcType) && rvsdg::is<llvm::PointerType>(*dstType))
+    {
+      MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+          Builder_->getUnknownLoc(),
+          ConvertType(*bitCastOp->result(0)),
+          inputs[0]);
+    }
+    // BitCast on integer types maps to arith::ExtUIOp or arith::TruncIOp depending on size
+    else if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      if (auto dstBitType = dynamic_cast<const rvsdg::BitType *>(dstType.get()))
+      {
+        auto srcBits = srcBitType->nbits();
+        auto dstBits = dstBitType->nbits();
+
+        if (dstBits > srcBits)
+        {
+          MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+        else if (dstBits < srcBits)
+        {
+          MlirOp = Builder_->create<::mlir::arith::TruncIOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+        else
+        {
+          // Same bit width - just pass through
+          MlirOp = Builder_->create<::mlir::LLVM::BitcastOp>(
+              Builder_->getUnknownLoc(),
+              ConvertType(*bitCastOp->result(0)),
+              inputs[0]);
+        }
+      }
+    }
+    else
+    {
+      auto message =
+          util::strfmt("Unsupported bitcast type combination: ", bitCastOp->debug_string());
+      JLM_UNREACHABLE(message.c_str());
+    }
+  }
   // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
