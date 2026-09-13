@@ -165,6 +165,8 @@ public:
     size_t numIntegerOrReductions = 0;
     size_t numIntegerXorReductions = 0;
 
+    size_t numFPBinaryOpReductions = 0;
+
     size_t numPtrCmpReductions = 0;
     size_t numGetElementPtrReductions = 0;
     size_t numFCmpReductions = 0;
