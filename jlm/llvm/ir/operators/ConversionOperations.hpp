@@ -589,6 +589,12 @@ public:
       throw util::Error("expected floating point type.");
   }
 
+  [[nodiscard]] const std::shared_ptr<const FloatingPointType> &
+  getResultType() const noexcept
+  {
+    return std::dynamic_pointer_cast<const FloatingPointType>(result(0));
+  }
+
   bool
   operator==(const Operation & other) const noexcept override;
 
@@ -612,6 +618,19 @@ public:
     auto op = std::make_unique<UIToFPOperation>(std::move(st), std::move(rt));
     return ThreeAddressCode::create(std::move(op), { operand });
   }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref UIToFPOperation on which the transformation is performed.
+   * @param operands The operands of the \ref UIToFPOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref UIToFPOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const UIToFPOperation & operation, const std::vector<rvsdg::Output *> & operands);
 };
 
 class SIToFPOperation final : public rvsdg::UnaryOperation

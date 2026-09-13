@@ -325,6 +325,30 @@ UIToFPOperation::copy() const
   return std::make_unique<UIToFPOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+UIToFPOperation::foldConstant(
+    const UIToFPOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+  const auto fpSize = operation.getResultType()->size();
+
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  const ::llvm::APFloat resultRepresentation(
+      mapToLlvmFltSemantics(fpSize),
+      constantOperation->Representation().to_uint());
+
+  auto & resultNode = ConstantFP::createNode(*operand.region(), fpSize, resultRepresentation);
+
+  return std::vector<rvsdg::Output *>({ resultNode.output(0) });
+}
+
 SIToFPOperation::~SIToFPOperation() noexcept = default;
 
 bool
