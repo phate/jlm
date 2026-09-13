@@ -38,6 +38,7 @@ libhls_SOURCES = \
     jlm/hls/ir/hls.cpp \
     \
     jlm/hls/opt/cne.cpp \
+    jlm/hls/opt/DumpTransformation.cpp \
     jlm/hls/opt/IOBarrierRemoval.cpp \
     jlm/hls/opt/IOStateElimination.cpp \
     \
@@ -82,6 +83,7 @@ libhls_HEADERS = \
     jlm/hls/ir/hls.hpp \
     \
     jlm/hls/opt/cne.hpp \
+    jlm/hls/opt/DumpTransformation.hpp \
     jlm/hls/opt/IOBarrierRemoval.hpp \
     jlm/hls/opt/IOStateElimination.hpp \
     \
@@ -106,6 +108,7 @@ run-libhls-tests_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/SinkInsertionTests.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaTests.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests.cpp \
+    jlm/hls/opt/DumpTransformationTests.cpp \
     jlm/hls/opt/IOBarrierRemovalTests.cpp \
     jlm/hls/opt/IOStateEliminationTests.cpp \
     jlm/hls/util/ViewTests.cpp \

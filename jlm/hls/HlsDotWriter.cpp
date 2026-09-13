@@ -24,6 +24,11 @@ HlsDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node 
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }
+  else if (dynamic_cast<const TriggerType *>(&type))
+  {
+    // TriggerType is a singleton: the node/label are created by GetOrCreateTypeGraphNode(),
+    // and there are no subtype edges to add here.
+  }
   else
   {
     LlvmDotWriter::AnnotateTypeGraphNode(type, node);
