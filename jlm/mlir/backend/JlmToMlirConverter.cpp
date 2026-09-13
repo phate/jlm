@@ -546,6 +546,8 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (jlm::rvsdg::is<const rvsdg::BitCompareOperation>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
+    // Set jlm.op_category attribute so it converts back to BitCompareOperation
+    MlirOp->setAttr("jlm.op_category", Builder_->getStringAttr("bitcmp"));
   }
   else if (auto fpCmpOp = dynamic_cast<const llvm::FCmpOperation *>(&operation))
   {

@@ -679,6 +679,7 @@ ROUNDTRIP_TEST(TestFreeNull, ::jlm::llvm::FreeNullTest)
 ROUNDTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
 ROUNDTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
 ROUNDTRIP_TEST(TestGamma, ::jlm::llvm::GammaTest)
+ROUNDTRIP_TEST(TestGamma2, ::jlm::llvm::GammaTest2)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
 
 // NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the

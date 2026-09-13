@@ -191,6 +191,73 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   return GetConvertedInputs(*terminator, outputMap);
 }
 
+/**
+ * Creates a bitstring comparison operation from an MLIR arith::CmpIOp predicate.
+ *
+ * The MLIR roundtrip encodes JLM bitstring comparisons (\ref rvsdg::biteq_op, etc.)
+ * as arith::CmpIOp with a "jlm.op_category" = "bitcmp" attribute. This reconstructs
+ * the corresponding bitstring comparison operation from the CmpIOp predicate, as
+ * opposed to \ref MlirToJlmConverter::ConvertCmpIOp, which reconstructs the integer
+ * comparison operations.
+ * @param predicate the comparison predicate of the CmpIOp
+ * @param nbits the bit width of the comparison operands
+ * @param op0 the first comparison operand
+ * @param op1 the second comparison operand
+ * @return the output of the created bitstring comparison node
+ */
+static rvsdg::Output *
+CreateBitCompareNode(
+    ::mlir::arith::CmpIPredicate predicate,
+    size_t nbits,
+    rvsdg::Output * op0,
+    rvsdg::Output * op1)
+{
+  if (predicate == ::mlir::arith::CmpIPredicate::eq)
+  {
+    return rvsdg::biteq_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ne)
+  {
+    return rvsdg::bitne_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sge)
+  {
+    return rvsdg::bitsge_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sgt)
+  {
+    return rvsdg::bitsgt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::sle)
+  {
+    return rvsdg::bitsle_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::slt)
+  {
+    return rvsdg::bitslt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::uge)
+  {
+    return rvsdg::bituge_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ugt)
+  {
+    return rvsdg::bitugt_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ule)
+  {
+    return rvsdg::bitule_op::create(nbits, op0, op1);
+  }
+  else if (predicate == ::mlir::arith::CmpIPredicate::ult)
+  {
+    return rvsdg::bitult_op::create(nbits, op0, op1);
+  }
+  else
+  {
+    JLM_UNREACHABLE("frontend : Unknown comparison predicate for bit comparison.");
+  }
+}
+
 rvsdg::Node *
 MlirToJlmConverter::ConvertCmpIOp(
     ::mlir::arith::CmpIOp & CompOp,
@@ -683,6 +750,26 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
     auto type = ComOp.getOperandTypes()[0];
+
+    // Check for jlm.op_category attribute to determine operation type
+    auto opCategoryAttr = mlirOperation.getAttr("jlm.op_category");
+    bool isBitComparison = false;
+    if (opCategoryAttr)
+    {
+      auto attrStr = opCategoryAttr.cast<::mlir::StringAttr>();
+      if (attrStr.getValue() == "bitcmp")
+      {
+        isBitComparison = true;
+      }
+    }
+
+    // Bit-string comparison: reconstruct the corresponding bitstring compare op
+    if (isBitComparison && inputs.size() > 0 && rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
+    {
+      auto st = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
+      return { CreateBitCompareNode(ComOp.getPredicate(), st->nbits(), inputs[0], inputs[1]) };
+    }
+
     if (type.isa<::mlir::IntegerType>())
     {
       auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
