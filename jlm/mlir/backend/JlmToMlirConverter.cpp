@@ -583,6 +583,13 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
+  else if (auto intToPtrOp = dynamic_cast<const llvm::IntToPtrOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::IntToPtrOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*intToPtrOp->result(0)),
+        inputs[0]);
+  }
   // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
   {
