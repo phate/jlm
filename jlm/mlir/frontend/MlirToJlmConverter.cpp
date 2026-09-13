@@ -893,6 +893,40 @@ MlirToJlmConverter::ConvertOperation(
 
     return { llvm::GetElementPtrOperation::create(inputs[0], indices, pointeeType) };
   }
+  else if (auto bitCastOp = ::mlir::dyn_cast<::mlir::LLVM::BitcastOp>(&mlirOperation))
+  {
+    auto srcType = inputs[0]->Type();
+    auto mlirDstType = bitCastOp.getType();
+
+    // BitCast on pointer types
+    if (rvsdg::is<llvm::PointerType>(*srcType)
+        && ::mlir::isa<::mlir::LLVM::LLVMPointerType>(mlirDstType))
+    {
+      return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+    }
+    // BitCast on integer types (ExtUI or Trunc depending on size)
+    else if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      auto dstIntType = mlirDstType.cast<::mlir::IntegerType>();
+      auto srcBits = srcBitType->nbits();
+      auto dstBits = dstIntType.getWidth();
+
+      if (dstBits > srcBits)
+      {
+        return { &llvm::ZExtOperation::create(dstBits, *inputs[0]) };
+      }
+      else if (dstBits < srcBits)
+      {
+        return { &llvm::TruncOperation::create(dstBits, *inputs[0]) };
+      }
+      else
+      {
+        // Same bit width - just pass through with BitCastOperation
+        return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+      }
+    }
+    JLM_UNREACHABLE("Unsupported bitcast type combination in BitcastOp.");
+  }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
