@@ -311,7 +311,6 @@ protected:
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from.
-   * @param loopBackedgeTaken true if a back-edge may have been taken around the output.
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
