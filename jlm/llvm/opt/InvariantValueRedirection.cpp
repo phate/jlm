@@ -305,6 +305,22 @@ InvariantValueRedirection::redirectGammaOutputConstants(rvsdg::GammaNode & gamma
   }
 }
 
+static rvsdg::Node *
+getConstant(const rvsdg::Output & output)
+{
+  const auto owner = output.GetOwner();
+  const auto ownerNode = std::get_if<rvsdg::Node *>(&owner);
+  if (!ownerNode)
+    return nullptr;
+
+  if (rvsdg::is<IntegerConstantOperation>(*ownerNode)
+      || rvsdg::is<rvsdg::ControlConstantOperation>(*ownerNode) || rvsdg::is<ConstantFP>(*ownerNode)
+      || rvsdg::is<UndefValueOperation>(*ownerNode))
+    return *ownerNode;
+
+  return nullptr;
+}
+
 void
 InvariantValueRedirection::redirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
@@ -317,6 +333,12 @@ InvariantValueRedirection::redirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
       loopVar.output->divert_users(loopVar.input->origin());
+
+    if (const auto constantNode = getConstant(*loopVar.post->origin()))
+    {
+      auto copiedConstantNode = constantNode->copy(thetaNode.region(), {});
+      loopVar.output->divert_users(copiedConstantNode->output(0));
+    }
   }
 }
 
