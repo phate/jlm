@@ -158,13 +158,13 @@ public:
   [[nodiscard]] bool
   isRegionPredicateCheckingEnabled() const noexcept
   {
-    return regionPredicateChecking_;
+    return enableRegionPredicateChecking_;
   }
 
   void
   setRegionPredicateCheckingEnabled(bool value) noexcept
   {
-    regionPredicateChecking_ = value;
+    enableRegionPredicateChecking_ = value;
   }
 
   /**
@@ -240,12 +240,12 @@ protected:
     // Tracing has gone from the starting output to the current output without
     // following any back-edges around the current output.
     // Theta nodes between the current output and the starting output do not matter.
-    NotTakenAroundCurrentOutput,
+    NoBackEdgeTaken,
 
     // While tracing from the starting output to the current output,
     // the tracer may have followed a back-edge going around the current output.
     // This prevents the use of the region predication checker.
-    PossiblyTakenAroundCurrentOutput,
+    PossiblyBackEdgeTaken,
   };
 
   /**
@@ -357,7 +357,7 @@ protected:
 
   // When true, gamma subregions are ignored when it is impossible for control flow to go
   // from the gamma subregion to the region containing the output tracing started from
-  bool regionPredicateChecking_ = false;
+  bool enableRegionPredicateChecking_ = false;
   // The region predicate checker used to disqualify regions
   AlternativeRegionPredicateTracer regionPredicateTracer_;
   // The output from which the current tracing operation started.

@@ -26,19 +26,19 @@ OutputTracer::trace(Output & output)
 Output &
 OutputTracer::trace(Output & output, const Region * withinRegion)
 {
-  // PERF: Querying the region predication checker class causes repeated re-traversal of the same
-  // paths through the region hierarchy that the tracer is already taking.
+  // FIXME(perf): Querying the region predication checker class causes repeated re-traversal of
+  // the same paths through the region hierarchy that the tracer is already taking.
   // Performance could be improved by adding a way of extracting impossible regions directy.
   regionPredicateTracer_.clearCaches();
 
   // Mark this as the starting output, which becomes the target for region predicate reachability
   startingOutput_ = &output;
   // Since the current output is the starting output, no back-edges have been followed
-  BackEdgeState backEdgeState = BackEdgeState::NotTakenAroundCurrentOutput;
+  BackEdgeState backEdgeState = BackEdgeState::NoBackEdgeTaken;
 
   // To disable region predicate checking, always assume back-edges have been taken
   if (!isRegionPredicateCheckingEnabled())
-    backEdgeState = BackEdgeState::PossiblyTakenAroundCurrentOutput;
+    backEdgeState = BackEdgeState::PossiblyBackEdgeTaken;
 
   return traceInternal(output, backEdgeState, withinRegion);
 }
@@ -105,7 +105,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
   for (auto branchResult : exitVar.branchResult)
   {
     // Region predication checking requires that no back-edge has been taken around the gamma
-    if (backEdgeState == BackEdgeState::NotTakenAroundCurrentOutput)
+    if (backEdgeState == BackEdgeState::NoBackEdgeTaken)
     {
       // If control flow can not go from the gamma subregion to the region of the starting output,
       // it can not be the origin of the traced value.
@@ -170,7 +170,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
 
     // If the gamma was invariant, even with no assumptions about back-edges not being taken
     // around the gamma, the invariance can be added to the cache
-    if (backEdgeState == BackEdgeState::PossiblyTakenAroundCurrentOutput)
+    if (backEdgeState == BackEdgeState::PossiblyBackEdgeTaken)
     {
       return insertInInvarianceCache(output, *commonGammaInput);
     }
@@ -216,7 +216,7 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
     // but we also made an assumption about not taking any back-edges around the theta subregion,
     // we must check again without making that assumption to be sure it is acutually invariant.
 
-    if (backEdgeState == BackEdgeState::PossiblyTakenAroundCurrentOutput)
+    if (backEdgeState == BackEdgeState::PossiblyBackEdgeTaken)
     {
       // The tracing already made no assumptions about back-edges.
       // The loop variable is definitely invariant
@@ -226,7 +226,7 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
     // Try tracing from the loop var post again, this time with no assumption
     auto tracedInnerAgain = &traceInternal(
         *loopVar.post->origin(),
-        BackEdgeState::PossiblyTakenAroundCurrentOutput,
+        BackEdgeState::PossiblyBackEdgeTaken,
         thetaNode.subregion());
     if (tracedInnerAgain == loopVar.pre)
     {
@@ -269,7 +269,7 @@ OutputTracer::traceThetaArgument(ThetaNode & thetaNode, Output & output)
 
   // Trace from the corresponding theta output by following the back-edge
   auto & tracedOutput =
-      traceThetaOutput(thetaNode, *loopVar.output, BackEdgeState::PossiblyTakenAroundCurrentOutput);
+      traceThetaOutput(thetaNode, *loopVar.output, BackEdgeState::PossiblyBackEdgeTaken);
 
   // If the loop output is invariant and has the same origin as the loop variable,
   // tracing can continue from outside the theta

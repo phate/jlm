@@ -543,7 +543,7 @@ TEST(TraceTests, RegionPredicationThetaTest)
   auto gammaExit2 = gammaNode.AddExitVar({ gammaEntry2.branchArgument[0], &gammaInt5 });
   auto gammaExit3 = gammaNode.AddExitVar({ &gammaInt4, gammaEntry3.branchArgument[1] });
 
-  // Diver theta results
+  // Divert theta results
   thetaNode.predicate()->divert_to(gammaCtrlExit.output);
   loopVar1.post->divert_to(gammaExit1.output);
   loopVar2.post->divert_to(gammaExit2.output);
