@@ -332,9 +332,10 @@ InvariantValueRedirection::redirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    {
       loopVar.output->divert_users(loopVar.input->origin());
-
-    if (const auto constantNode = getConstant(*loopVar.post->origin()))
+    }
+    else if (const auto constantNode = getConstant(*loopVar.post->origin()))
     {
       auto copiedConstantNode = constantNode->copy(thetaNode.region(), {});
       loopVar.output->divert_users(copiedConstantNode->output(0));
