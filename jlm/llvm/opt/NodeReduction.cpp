@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -88,7 +89,9 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
   AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
+
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
+  AddMeasurement("#ThetaReductions", counters.numThetaReductions);
 
   GetTimer(Label::Timer).stop();
 }
@@ -365,13 +368,20 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 bool
 NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
-  bool reductionPerformed = false;
-
-  // Reduce structural nodes
-  if (const auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
-  {
-    reductionPerformed |= ReduceGammaNode(*gammaNode);
-  }
+  const bool reductionPerformed = rvsdg::MatchTypeWithDefault(
+      structuralNode,
+      [this](rvsdg::GammaNode & gammaNode)
+      {
+        return ReduceGammaNode(gammaNode);
+      },
+      [this](rvsdg::ThetaNode & thetaNode)
+      {
+        return reduceThetaNode(thetaNode);
+      },
+      []()
+      {
+        return false;
+      });
 
   if (reductionPerformed)
   {
@@ -398,6 +408,16 @@ NodeReduction::ReduceGammaNode(rvsdg::GammaNode & gammaNode)
   const bool reductionPerformed = reduceStaticallyKnownPredicate(gammaNode);
   if (reductionPerformed)
     Statistics_->getReductionCounters().numGammaReductions++;
+
+  return reductionPerformed;
+}
+
+bool
+NodeReduction::reduceThetaNode(rvsdg::ThetaNode & thetaNode)
+{
+  const bool reductionPerformed = rvsdg::ThetaNode::reduceStaticallyKnownPredicate(thetaNode);
+  if (reductionPerformed)
+    Statistics_->getReductionCounters().numThetaReductions++;
 
   return reductionPerformed;
 }
