@@ -670,6 +670,10 @@ MlirToJlmConverter::ConvertOperation(
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return { &llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), *inputs[0]) };
   }
+  else if (auto inttoptrOp = ::mlir::dyn_cast<::mlir::LLVM::IntToPtrOp>(&mlirOperation))
+  {
+    return { llvm::IntToPtrOperation::create(inputs[0]) };
+  }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
