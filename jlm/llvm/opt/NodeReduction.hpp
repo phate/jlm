@@ -20,6 +20,7 @@ class Node;
 class Region;
 class Output;
 class StructuralNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -70,6 +71,9 @@ private:
 
   bool
   ReduceGammaNode(rvsdg::GammaNode & gammaNode);
+
+  bool
+  reduceThetaNode(rvsdg::ThetaNode & thetaNode);
 
   bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
@@ -173,6 +177,7 @@ public:
     size_t numBinaryReductions = 0;
 
     size_t numGammaReductions = 0;
+    size_t numThetaReductions = 0;
   };
 
   [[nodiscard]] ReductionCounters &
