@@ -4,9 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <algorithm>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Trace.hpp>
 
 #include <algorithm>
 
@@ -184,6 +184,38 @@ ThetaNode::GetLoopVars() const
                                 output(index) });
   }
   return loopvars;
+}
+
+bool
+ThetaNode::reduceStaticallyKnownPredicate(Node & node)
+{
+  auto thetaNode = dynamic_cast<const ThetaNode *>(&node);
+  if (!thetaNode)
+    return false;
+
+  auto & tracedPredicate = traceOutput(*thetaNode->predicate()->origin(), false);
+  auto [constantNode, constantOp] =
+      TryGetSimpleNodeAndOptionalOp<ControlConstantOperation>(tracedPredicate);
+  if (!constantOp)
+    return false;
+
+  JLM_ASSERT(constantOp->value().nalternatives() == 2);
+  if (constantOp->value().alternative() != 0)
+    return false;
+
+  // At this point we know that the predicate is statically known to be false and we can copy the
+  // subregion into the theta node's parent region
+  SubstitutionMap smap;
+  for (const auto & loopVar : thetaNode->GetLoopVars())
+    smap.insert(loopVar.pre, loopVar.input->origin());
+
+  thetaNode->subregion()->copy(thetaNode->region(), smap);
+
+  for (const auto & loopVar : thetaNode->GetLoopVars())
+    loopVar.output->divert_users(&smap.lookup(*loopVar.post->origin()));
+
+  remove(&node);
+  return true;
 }
 
 }
