@@ -136,12 +136,6 @@ public:
     return it->second;
   }
 
-  [[nodiscard]] size_t
-  numDereferenceableInputs() const
-  {
-    return dereferenceableInputs_.size();
-  }
-
   static std::unique_ptr<Context>
   create()
   {
@@ -324,6 +318,18 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
   }
 }
 
+static std::optional<size_t>
+merge(const std::optional<size_t> size1, const std::optional<size_t> size2)
+{
+  if (!size1.has_value())
+    return std::nullopt;
+
+  if (!size2.has_value())
+    return std::nullopt;
+
+  return std::min(*size1, *size2);
+}
+
 void
 IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
 {
@@ -384,22 +390,53 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
           },
           [&](rvsdg::ThetaNode & thetaNode)
           {
-            // FIXME: This could be improved
+            // FIXME: This fix-point algorithm could be improved in terms of performance.
+
+            // Mark loop variables in subregion
             for (const auto & loopVar : thetaNode.GetLoopVars())
             {
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
 
-              auto inputSizeOpt = context_->isDereferenceable(*loopVar.input);
-              auto resultSizeOpt = context_->isDereferenceable(*loopVar.post);
-              if (inputSizeOpt && resultSizeOpt)
+              if (auto inputSizeOpt = context_->isDereferenceable(*loopVar.input))
               {
-                auto sizeInBytes = std::min(inputSizeOpt.value(), resultSizeOpt.value());
-                context_->markUsersDereferenceable(*loopVar.output, sizeInBytes);
+                context_->markUsersDereferenceable(*loopVar.pre, inputSizeOpt.value());
               }
             }
 
-            propagate(*thetaNode.subregion());
+            // Propagate information through loop until fix-point is reached
+            bool done = false;
+            do
+            {
+              done = true;
+              propagate(*thetaNode.subregion());
+
+              for (const auto & loopVar : thetaNode.GetLoopVars())
+              {
+                if (!is<PointerType>(loopVar.input->Type()))
+                  continue;
+
+                const auto inputSizeOpt = context_->isDereferenceable(*loopVar.input);
+                const auto resultSizeOpt = context_->isDereferenceable(*loopVar.post);
+                if (auto mergeOpt = merge(inputSizeOpt, resultSizeOpt); mergeOpt != inputSizeOpt)
+                {
+                  context_->markUsersDereferenceable(*loopVar.pre, mergeOpt.value());
+                  done = false;
+                }
+              }
+            } while (!done);
+
+            // Mark loop outputs
+            for (const auto & loopVar : thetaNode.GetLoopVars())
+            {
+              if (!is<PointerType>(loopVar.output->Type()))
+                continue;
+
+              if (auto resultSizeOpt = context_->isDereferenceable(*loopVar.post))
+              {
+                context_->markUsersDereferenceable(*loopVar.output, resultSizeOpt.value());
+              }
+            }
           },
           [&](rvsdg::DeltaNode &)
           {
@@ -427,18 +464,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
     }
   };
 
-  // FIXME: This is a simple fixpoint algorithm and can improved
-  // FIXME: The algorithm is intra-procedural. There is no need to iterate over the entire graph
-  // again. We could also just iterate over a function again.
-  // FIXME: Counting the number of dereferenceable outputs is imprecise. It might be that we could
-  // improve the result further as the size of an already marked output is widened. This is
-  // currently not captured here.
-  size_t numDereferenceableInputs = 0;
-  do
-  {
-    numDereferenceableInputs = context_->numDereferenceableInputs();
-    propagate(graph.GetRootRegion());
-  } while (numDereferenceableInputs != context_->numDereferenceableInputs());
+  propagate(graph.GetRootRegion());
 }
 
 void
