@@ -670,6 +670,10 @@ MlirToJlmConverter::ConvertOperation(
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return { &llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), *inputs[0]) };
   }
+  else if (auto inttoptrOp = ::mlir::dyn_cast<::mlir::LLVM::IntToPtrOp>(&mlirOperation))
+  {
+    return { llvm::IntToPtrOperation::create(inputs[0]) };
+  }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
@@ -1026,6 +1030,12 @@ MlirToJlmConverter::ConvertOperation(
             mlirDeltaNode.getSection().str(),
             mlirDeltaNode.getConstant(),
             4)); // FIXME: the MLIR delta node does not support the alignment attribute
+
+    // Add context variables from inputs to delta's subregion
+    for (auto input : inputs)
+    {
+      rvsdgDeltaNode->AddContextVar(*input);
+    }
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 
