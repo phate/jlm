@@ -66,6 +66,47 @@ TestFoldConstants(const FoldConstantsTestInput & input)
   }
 }
 
+template<typename Operation>
+static void
+testNormalizeIdenticalOperands(const std::uint64_t expected)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto iType = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, iType, "i0");
+  auto & i1 = GraphImport::Create(graph, iType, "i1");
+
+  auto & node1 = Operation::createNode(32, i0, i0);
+  auto & node2 = Operation::createNode(32, i0, i1);
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*node2.output(0), "x2");
+
+  // Act
+  ReduceNode<Operation>(Operation::normalizeIdenticalOperands, dynamic_cast<SimpleNode &>(node1));
+  ReduceNode<Operation>(Operation::normalizeIdenticalOperands, dynamic_cast<SimpleNode &>(node2));
+
+  graph.PruneNodes();
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+    EXPECT_EQ(op->Representation().to_uint(), expected);
+  }
+
+  {
+    auto [node, op] = TryGetSimpleNodeAndOptionalOp<Operation>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(node, &node2);
+  }
+}
+
 TEST(IntegerEqOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerEqOperation>({ 4, 32, 4, 32, -1, 1 });
@@ -247,46 +288,47 @@ TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
 
 TEST(IntegerEqOperationTests, normalizeIdenticalOperands)
 {
-  using namespace jlm::rvsdg;
+  testNormalizeIdenticalOperands<IntegerEqOperation>(1);
+}
 
-  // Arrange
-  auto i32Type = BitType::Create(32);
+TEST(IntegerNeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerNeOperation>(0);
+}
 
-  Graph graph;
+TEST(IntegerSgeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSgeOperation>(1);
+}
 
-  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
-  auto & i1 = GraphImport::Create(graph, i32Type, "i1");
+TEST(IntegerSgtOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSgtOperation>(0);
+}
 
-  auto & eqNode1 = IntegerEqOperation::createNode(32, i0, i0);
-  auto & eqNode2 = IntegerEqOperation::createNode(32, i0, i1);
+TEST(IntegerSleOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSleOperation>(1);
+}
 
-  auto & x1 = GraphExport::Create(*eqNode1.output(0), "x1");
-  auto & x2 = GraphExport::Create(*eqNode2.output(0), "x2");
+TEST(IntegerSltOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSltOperation>(0);
+}
 
-  // Act
-  ReduceNode<IntegerEqOperation>(
-      IntegerEqOperation::normalizeIdenticalOperands,
-      dynamic_cast<SimpleNode &>(eqNode1));
+TEST(IntegerUgeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUgeOperation>(1);
+}
 
-  ReduceNode<IntegerEqOperation>(
-      IntegerEqOperation::normalizeIdenticalOperands,
-      dynamic_cast<SimpleNode &>(eqNode2));
+TEST(IntegerUgtOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUgtOperation>(0);
+}
 
-  graph.PruneNodes();
-
-  // Assert
-  {
-    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
-    EXPECT_TRUE(op);
-    EXPECT_EQ(op->Representation().nbits(), 1u);
-    EXPECT_EQ(op->Representation().to_uint(), 1u);
-  }
-
-  {
-    auto [node, op] = TryGetSimpleNodeAndOptionalOp<IntegerEqOperation>(*x2.origin());
-    EXPECT_TRUE(op);
-    EXPECT_EQ(node, &eqNode2);
-  }
+TEST(IntegerUltOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUltOperation>(0);
 }
 
 }

@@ -167,32 +167,32 @@ static std::vector<rvsdg::NodeNormalization<FPTruncOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>> integerEqNormalizations(
     { IntegerEqOperation::foldConstants, IntegerEqOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
-    integerNeNormalizations({ IntegerNeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>> integerNeNormalizations(
+    { IntegerNeOperation::foldConstants, IntegerNeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>>
-    integerSgeNormalizations({ IntegerSgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>> integerSgeNormalizations(
+    { IntegerSgeOperation::foldConstants, IntegerSgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>>
-    integerSgtNormalizations({ IntegerSgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>> integerSgtNormalizations(
+    { IntegerSgtOperation::foldConstants, IntegerSgtOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>>
-    integerSleNormalizations({ IntegerSleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>> integerSleNormalizations(
+    { IntegerSleOperation::foldConstants, IntegerSleOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>>
-    integerSltNormalizations({ IntegerSltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>> integerSltNormalizations(
+    { IntegerSltOperation::foldConstants, IntegerSltOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>>
-    integerUgeNormalizations({ IntegerUgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>> integerUgeNormalizations(
+    { IntegerUgeOperation::foldConstants, IntegerUgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>>
-    integerUgtNormalizations({ IntegerUgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>> integerUgtNormalizations(
+    { IntegerUgtOperation::foldConstants, IntegerUgtOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
-    integerUleNormalizations({ IntegerUleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>> integerUleNormalizations(
+    { IntegerUleOperation::foldConstants, IntegerUleOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
-    integerUltNormalizations({ IntegerUltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>> integerUltNormalizations(
+    { IntegerUltOperation::foldConstants, IntegerUltOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
     integerAddNormalizations({ IntegerAddOperation::foldConstants });

@@ -105,6 +105,24 @@ foldBinaryOperationConstants(const std::vector<rvsdg::Output *> & operands)
   return std::vector<rvsdg::Output *>({ result });
 }
 
+static std::optional<std::vector<rvsdg::Output *>>
+normalizeIdenticalOperands(const std::vector<rvsdg::Output *> & operands, const std::int64_t result)
+{
+  JLM_ASSERT(result == 0 || result == 1);
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, true);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, true);
+  if (&tracedOperand1 == &tracedOperand2)
+  {
+    return outputs(&IntegerConstantOperation::Create(*operand1.region(), 1, result));
+  }
+
+  return std::nullopt;
+}
+
 IntegerConstantOperation::~IntegerConstantOperation() = default;
 
 std::unique_ptr<rvsdg::Operation>
@@ -869,18 +887,7 @@ IntegerEqOperation::normalizeIdenticalOperands(
     const IntegerEqOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  JLM_ASSERT(operands.size() == 2);
-  auto & operand1 = *operands[0];
-  auto & operand2 = *operands[1];
-
-  const auto & tracedOperand1 = llvm::traceOutput(operand1, true);
-  const auto & tracedOperand2 = llvm::traceOutput(operand2, true);
-  if (&tracedOperand1 == &tracedOperand2)
-  {
-    return outputs(&IntegerConstantOperation::Create(*operand1.region(), 1, 1));
-  }
-
-  return std::nullopt;
+  return llvm::normalizeIdenticalOperands(operands, 1);
 }
 
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
@@ -934,6 +941,14 @@ IntegerNeOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerNeOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerNeOperation::normalizeIdenticalOperands(
+    const IntegerNeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 0);
+}
+
 IntegerSgeOperation::~IntegerSgeOperation() noexcept = default;
 
 bool
@@ -983,6 +998,14 @@ IntegerSgeOperation::foldConstants(
     const std::vector<rvsdg::Output *> & operands)
 {
   return foldBinaryOperationConstants<IntegerSgeOperation>(operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSgeOperation::normalizeIdenticalOperands(
+    const IntegerSgeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 1);
 }
 
 IntegerSgtOperation::~IntegerSgtOperation() noexcept = default;
@@ -1036,6 +1059,14 @@ IntegerSgtOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerSgtOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSgtOperation::normalizeIdenticalOperands(
+    const IntegerSgtOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 0);
+}
+
 IntegerSleOperation::~IntegerSleOperation() noexcept = default;
 
 bool
@@ -1085,6 +1116,14 @@ IntegerSleOperation::foldConstants(
     const std::vector<rvsdg::Output *> & operands)
 {
   return foldBinaryOperationConstants<IntegerSleOperation>(operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSleOperation::normalizeIdenticalOperands(
+    const IntegerSleOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 1);
 }
 
 IntegerSltOperation::~IntegerSltOperation() noexcept = default;
@@ -1138,6 +1177,14 @@ IntegerSltOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerSltOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerSltOperation::normalizeIdenticalOperands(
+    const IntegerSltOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 0);
+}
+
 IntegerUgeOperation::~IntegerUgeOperation() noexcept = default;
 
 bool
@@ -1187,6 +1234,14 @@ IntegerUgeOperation::foldConstants(
     const std::vector<rvsdg::Output *> & operands)
 {
   return foldBinaryOperationConstants<IntegerUgeOperation>(operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUgeOperation::normalizeIdenticalOperands(
+    const IntegerUgeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 1);
 }
 
 IntegerUgtOperation::~IntegerUgtOperation() noexcept = default;
@@ -1240,6 +1295,14 @@ IntegerUgtOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerUgtOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUgtOperation::normalizeIdenticalOperands(
+    const IntegerUgtOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 0);
+}
+
 IntegerUleOperation::~IntegerUleOperation() noexcept = default;
 
 bool
@@ -1291,6 +1354,14 @@ IntegerUleOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerUleOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUleOperation::normalizeIdenticalOperands(
+    const IntegerUleOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 1);
+}
+
 IntegerUltOperation::~IntegerUltOperation() noexcept = default;
 
 bool
@@ -1340,6 +1411,14 @@ IntegerUltOperation::foldConstants(
     const std::vector<rvsdg::Output *> & operands)
 {
   return foldBinaryOperationConstants<IntegerUltOperation>(operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerUltOperation::normalizeIdenticalOperands(
+    const IntegerUltOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return llvm::normalizeIdenticalOperands(operands, 0);
 }
 
 }
