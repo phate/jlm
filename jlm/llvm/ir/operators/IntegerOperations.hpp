@@ -957,6 +957,23 @@ public:
   foldConstants(
       const IntegerNeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerNeOperation x x
+   * =>
+   * y = 0
+   *
+   * @param operation The \ref IntegerNeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerNeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerNeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerNeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1011,6 +1028,23 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
+      const IntegerSgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerSgeOperation x x
+   * =>
+   * y = 1
+   *
+   * @param operation The \ref IntegerSgeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSgeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSgeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const IntegerSgeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -1069,6 +1103,23 @@ public:
   foldConstants(
       const IntegerSgtOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerSgtOperation x x
+   * =>
+   * y = 0
+   *
+   * @param operation The \ref IntegerSgtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSgtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSgtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerSgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1123,6 +1174,23 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
+      const IntegerSleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerSleOperation x x
+   * =>
+   * y = 1
+   *
+   * @param operation The \ref IntegerSleOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSleOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSleOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const IntegerSleOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -1181,6 +1249,23 @@ public:
   foldConstants(
       const IntegerSltOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerSltOperation x x
+   * =>
+   * y = 0
+   *
+   * @param operation The \ref IntegerSltOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerSltOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerSltOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerSltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1235,6 +1320,23 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
+      const IntegerUgeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerUgeOperation x x
+   * =>
+   * y = 1
+   *
+   * @param operation The \ref IntegerUgeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUgeOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUgeOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const IntegerUgeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
@@ -1293,6 +1395,23 @@ public:
   foldConstants(
       const IntegerUgtOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerUgtOperation x x
+   * =>
+   * y = 0
+   *
+   * @param operation The \ref IntegerUgtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUgtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUgtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerUgtOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1349,6 +1468,23 @@ public:
   foldConstants(
       const IntegerUleOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerUleOperation x x
+   * =>
+   * y = 1
+   *
+   * @param operation The \ref IntegerUleOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUleOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUleOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerUleOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
@@ -1403,6 +1539,23 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   foldConstants(
+      const IntegerUltOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerUltOperation x x
+   * =>
+   * y = 0
+   *
+   * @param operation The \ref IntegerUltOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerUltOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerUltOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const IntegerUltOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 };
