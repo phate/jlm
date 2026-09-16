@@ -480,6 +480,27 @@ public:
       const PtrCmpOperation & ptrCmpOperation,
       const std::vector<rvsdg::Output *> & operands);
 
+  /**
+   * Performs the following normalizations:
+   * y = PtrCmpOperation [eq, sge, sle, uge, ule] x x
+   * =>
+   * y = 1
+   *
+   * y = PtrCmpOperation [ne, sgt, slt, ult, ugt] x x
+   * =>
+   * y = 0
+   *
+   * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PtrCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref PtrCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const PtrCmpOperation & ptrCmpOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   ICmpPredicate predicate_;
 };

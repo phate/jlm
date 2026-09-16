@@ -19,6 +19,52 @@
 namespace jlm::llvm
 {
 
+template<ICmpPredicate Predicate>
+static void
+testPtrCmpNormalizeIdenticalOperands(const std::uint64_t expected)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  auto region = &graph.GetRootRegion();
+
+  auto i32Type = BitType::Create(32);
+  auto & oneNode = IntegerConstantOperation::Create(*region, 32, 1);
+
+  auto & allocaNode1 = AllocaOperation::createNode(i32Type, *oneNode.output(0), 4);
+  auto & allocaNode2 = AllocaOperation::createNode(i32Type, *oneNode.output(0), 4);
+
+  auto & ptr1 = AllocaOperation::getPointerOutput(allocaNode1);
+  auto & ptr2 = AllocaOperation::getPointerOutput(allocaNode2);
+
+  auto & cmpNode1 = PtrCmpOperation::createNode(Predicate, ptr1, ptr1);
+  auto & cmpNode2 = PtrCmpOperation::createNode(Predicate, ptr1, ptr2);
+
+  auto & x1 = GraphExport::Create(*cmpNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*cmpNode2.output(0), "x2");
+
+  // Act
+  ReduceNode<PtrCmpOperation>(PtrCmpOperation::normalizeIdenticalOperands, cmpNode1);
+  ReduceNode<PtrCmpOperation>(PtrCmpOperation::normalizeIdenticalOperands, cmpNode2);
+
+  graph.PruneNodes();
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_NE(op, nullptr);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+    EXPECT_EQ(op->Representation().to_uint(), expected);
+  }
+
+  {
+    auto [node, op] = TryGetSimpleNodeAndOptionalOp<PtrCmpOperation>(*x2.origin());
+    EXPECT_NE(op, nullptr);
+    EXPECT_EQ(node, &cmpNode2);
+  }
+}
+
 TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
 {
   using namespace jlm::rvsdg;
@@ -187,6 +233,21 @@ TEST(PtrCmpOperationTests, testNormalizeNullPointerComparison)
     EXPECT_EQ(constantOperation->Representation().nbits(), 1u);
     EXPECT_EQ(constantOperation->Representation().to_uint(), 0u);
   }
+}
+
+TEST(PtrCmpOperationTests, testNormalizeIdenticalOperands)
+{
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Eq>(1);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Sge>(1);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Sle>(1);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Uge>(1);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Ule>(1);
+
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Ne>(0);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Sgt>(0);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Slt>(0);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Ugt>(0);
+  testPtrCmpNormalizeIdenticalOperands<ICmpPredicate::Ult>(0);
 }
 
 TEST(FCmpOperationTests, testFoldConstants)
