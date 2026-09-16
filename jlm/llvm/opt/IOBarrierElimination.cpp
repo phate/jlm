@@ -124,22 +124,16 @@ public:
   }
 
   /**
-   * @return The size in bytes, if \p input is marked as dereferenceable, otherwise std::nullopt.
+   * @return The size in bytes. If \p input was not marked as dereferenceable, then 0 is returned.
    */
-  [[nodiscard]] std::optional<size_t>
+  [[nodiscard]] size_t
   isDereferenceable(const rvsdg::Input & input) const
   {
     const auto it = dereferenceableInputs_.find(&input);
     if (it == dereferenceableInputs_.end())
-      return std::nullopt;
+      return 0;
 
     return it->second;
-  }
-
-  [[nodiscard]] size_t
-  numDereferenceableInputs() const
-  {
-    return dereferenceableInputs_.size();
   }
 
   static std::unique_ptr<Context>
@@ -348,11 +342,11 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(input->Type()))
                 continue;
 
-              if (auto size = context_->isDereferenceable(*input))
+              if (const auto size = context_->isDereferenceable(*input); size > 0)
               {
                 for (const auto & argument : arguments)
                 {
-                  context_->markUsersDereferenceable(*argument, size.value());
+                  context_->markUsersDereferenceable(*argument, size);
                 }
               }
             }
@@ -365,41 +359,72 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(output->Type()))
                 continue;
 
-              bool allResultsAreDereferenceable = true;
               size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
               for (const auto & result : results)
               {
-                auto sizeOpt = context_->isDereferenceable(*result);
-                if (!sizeOpt)
+                sizeInBytes = std::min(sizeInBytes, context_->isDereferenceable(*result));
+                if (sizeInBytes == 0)
                 {
-                  allResultsAreDereferenceable = false;
                   break;
                 }
-
-                sizeInBytes = std::min(sizeInBytes, sizeOpt.value());
               }
-              if (allResultsAreDereferenceable)
+              if (sizeInBytes > 0)
                 context_->markUsersDereferenceable(*output, sizeInBytes);
             }
           },
           [&](rvsdg::ThetaNode & thetaNode)
           {
-            // FIXME: This could be improved
+            // FIXME: This fix-point algorithm could be improved in terms of performance.
+
+            std::unordered_map<rvsdg::Output *, size_t> loopVarPreSizes;
+
+            // Mark loop variables in subregion
             for (const auto & loopVar : thetaNode.GetLoopVars())
             {
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
 
-              auto inputSizeOpt = context_->isDereferenceable(*loopVar.input);
-              auto resultSizeOpt = context_->isDereferenceable(*loopVar.post);
-              if (inputSizeOpt && resultSizeOpt)
+              if (const auto inputSize = context_->isDereferenceable(*loopVar.input); inputSize > 0)
               {
-                auto sizeInBytes = std::min(inputSizeOpt.value(), resultSizeOpt.value());
-                context_->markUsersDereferenceable(*loopVar.output, sizeInBytes);
+                loopVarPreSizes[loopVar.pre] = inputSize;
+                context_->markUsersDereferenceable(*loopVar.pre, inputSize);
               }
             }
 
-            propagate(*thetaNode.subregion());
+            // Propagate information through loop until fix-point is reached
+            bool repeat = false;
+            do
+            {
+              repeat = false;
+              propagate(*thetaNode.subregion());
+
+              for (const auto & loopVar : thetaNode.GetLoopVars())
+              {
+                if (!is<PointerType>(loopVar.input->Type()))
+                  continue;
+
+                const auto preSize = loopVarPreSizes[loopVar.pre];
+                const auto postSize = context_->isDereferenceable(*loopVar.post);
+                if (preSize != postSize)
+                {
+                  loopVarPreSizes[loopVar.pre] = postSize;
+                  context_->markUsersDereferenceable(*loopVar.pre, std::min(preSize, postSize));
+                  repeat = true;
+                }
+              }
+            } while (repeat);
+
+            // Mark loop outputs
+            for (const auto & loopVar : thetaNode.GetLoopVars())
+            {
+              if (!is<PointerType>(loopVar.output->Type()))
+                continue;
+
+              if (const auto postSize = context_->isDereferenceable(*loopVar.post); postSize > 0)
+              {
+                context_->markUsersDereferenceable(*loopVar.output, postSize);
+              }
+            }
           },
           [&](rvsdg::DeltaNode &)
           {
@@ -415,8 +440,8 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
                   if (!is<PointerType>(barredInput.Type()))
                     return;
 
-                  if (const auto size = context_->isDereferenceable(barredInput))
-                    context_->markUsersDereferenceable(*simpleNode.output(0), size.value());
+                  if (const auto size = context_->isDereferenceable(barredInput); size > 0)
+                    context_->markUsersDereferenceable(*simpleNode.output(0), size);
                 });
           },
           []()
@@ -427,18 +452,7 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
     }
   };
 
-  // FIXME: This is a simple fixpoint algorithm and can improved
-  // FIXME: The algorithm is intra-procedural. There is no need to iterate over the entire graph
-  // again. We could also just iterate over a function again.
-  // FIXME: Counting the number of dereferenceable outputs is imprecise. It might be that we could
-  // improve the result further as the size of an already marked output is widened. This is
-  // currently not captured here.
-  size_t numDereferenceableInputs = 0;
-  do
-  {
-    numDereferenceableInputs = context_->numDereferenceableInputs();
-    propagate(graph.GetRootRegion());
-  } while (numDereferenceableInputs != context_->numDereferenceableInputs());
+  propagate(graph.GetRootRegion());
 }
 
 void
@@ -483,9 +497,12 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
               return;
 
             auto & barredAddressInput = IOBarrierOperation::BarredInput(*ioBarrierNode);
-            const auto sizeOpt = context_->isDereferenceable(barredAddressInput);
-            const auto sizeInBytes = GetTypeStoreSize(*loadOperation->GetLoadedType());
-            if (!sizeOpt.has_value() || sizeOpt.value() < sizeInBytes)
+            const auto barredAddressSize = context_->isDereferenceable(barredAddressInput);
+            if (barredAddressSize == 0)
+              return;
+
+            if (const auto storeSize = GetTypeStoreSize(*loadOperation->GetLoadedType());
+                barredAddressSize < storeSize)
               return;
 
             loadAddress.divert_to(barredAddressInput.origin());
