@@ -29,12 +29,9 @@ OutputTracer::OutputTracer()
 {}
 
 rvsdg::Output &
-OutputTracer::traceStep(
-    rvsdg::Output & output,
-    BackEdgeState backEdgeState,
-    const rvsdg::Region * withinRegion)
+OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, backEdgeState, withinRegion);
+  auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
@@ -69,7 +66,6 @@ traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region
       mayEnterSubregions
           ? rvsdg::OutputTracer::StructuralNodePolicy::traceIntoSubregions
           : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
-  tracer.setRegionPredicateCheckingEnabled(mayEnterSubregions);
   tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
