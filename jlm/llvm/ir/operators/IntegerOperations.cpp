@@ -864,6 +864,25 @@ IntegerEqOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerEqOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerEqOperation::normalizeIdenticalOperands(
+    const IntegerEqOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, true);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, true);
+  if (&tracedOperand1 == &tracedOperand2)
+  {
+    return outputs(&IntegerConstantOperation::Create(*operand1.region(), 1, 1));
+  }
+
+  return std::nullopt;
+}
+
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
 
 bool
