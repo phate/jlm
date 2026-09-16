@@ -164,8 +164,8 @@ static std::vector<rvsdg::NodeNormalization<FPExtOperation>>
 static std::vector<rvsdg::NodeNormalization<FPTruncOperation>>
     fpTruncOperationNormalizations({ FPTruncOperation::foldConstant });
 
-static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
-    integerEqNormalizations({ IntegerEqOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>> integerEqNormalizations(
+    { IntegerEqOperation::foldConstants, IntegerEqOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
     integerNeNormalizations({ IntegerNeOperation::foldConstants });

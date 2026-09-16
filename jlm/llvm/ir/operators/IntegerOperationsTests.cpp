@@ -245,4 +245,48 @@ TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
   }
 }
 
+TEST(IntegerEqOperationTests, normalizeIdenticalOperands)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
+  auto & i1 = GraphImport::Create(graph, i32Type, "i1");
+
+  auto & eqNode1 = IntegerEqOperation::createNode(32, i0, i0);
+  auto & eqNode2 = IntegerEqOperation::createNode(32, i0, i1);
+
+  auto & x1 = GraphExport::Create(*eqNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*eqNode2.output(0), "x2");
+
+  // Act
+  ReduceNode<IntegerEqOperation>(
+      IntegerEqOperation::normalizeIdenticalOperands,
+      dynamic_cast<SimpleNode &>(eqNode1));
+
+  ReduceNode<IntegerEqOperation>(
+      IntegerEqOperation::normalizeIdenticalOperands,
+      dynamic_cast<SimpleNode &>(eqNode2));
+
+  graph.PruneNodes();
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+    EXPECT_EQ(op->Representation().to_uint(), 1u);
+  }
+
+  {
+    auto [node, op] = TryGetSimpleNodeAndOptionalOp<IntegerEqOperation>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(node, &eqNode2);
+  }
+}
+
 }

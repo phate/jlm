@@ -884,6 +884,23 @@ public:
   foldConstants(
       const IntegerEqOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   * y = IntegerEqOperation x x
+   * =>
+   * y = 1
+   *
+   * @param operation The \ref IntegerEqOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerEqOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerEqOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
+      const IntegerEqOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
