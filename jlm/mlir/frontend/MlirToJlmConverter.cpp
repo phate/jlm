@@ -1224,13 +1224,10 @@ MlirToJlmConverter::ConvertLambda(
   auto functionType = rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
   // Get the linkage attribute from the MLIR LambdaNode
-  auto linkage = llvm::Linkage::externalLinkage; // Default to external linkage
   auto linkageAttribute = mlirOperation.getAttr(::llvm::StringRef("linkage"));
-  if (linkageAttribute != nullptr)
-  {
-    auto linkageStr = ::mlir::cast<::mlir::StringAttr>(linkageAttribute);
-    linkage = llvm::linkageFromString(linkageStr.str());
-  }
+  JLM_ASSERT(linkageAttribute != nullptr);
+  auto linkageStr = ::mlir::cast<::mlir::StringAttr>(linkageAttribute);
+  auto linkage = llvm::linkageFromString(linkageStr.str());
 
   auto rvsdgLambda = rvsdg::LambdaNode::Create(
       rvsdgRegion,
