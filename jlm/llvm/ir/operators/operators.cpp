@@ -364,6 +364,40 @@ PtrCmpOperation::normalizeNullPointerComparison(
   return std::nullopt;
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+PtrCmpOperation::normalizeIdenticalOperands(
+    const PtrCmpOperation & ptrCmpOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = operands[0];
+  auto & operand2 = operands[1];
+
+  const auto & tracedOperand1 = rvsdg::traceOutput(*operand1, true);
+  const auto & tracedOperand2 = rvsdg::traceOutput(*operand2, true);
+  if (&tracedOperand1 != &tracedOperand2)
+    return std::nullopt;
+
+  switch (ptrCmpOperation.predicate())
+  {
+  case ICmpPredicate::Eq:
+  case ICmpPredicate::Sge:
+  case ICmpPredicate::Sle:
+  case ICmpPredicate::Uge:
+  case ICmpPredicate::Ule:
+    return rvsdg::outputs(&IntegerConstantOperation::Create(*operand1->region(), 1, 1));
+
+  case ICmpPredicate::Ne:
+  case ICmpPredicate::Sgt:
+  case ICmpPredicate::Slt:
+  case ICmpPredicate::Ugt:
+  case ICmpPredicate::Ult:
+    return rvsdg::outputs(&IntegerConstantOperation::Create(*operand1->region(), 1, 0));
+  default:
+    throw std::logic_error("Unhandled predicate!");
+  }
+}
+
 ConstantFP::~ConstantFP() noexcept = default;
 
 bool

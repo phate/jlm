@@ -273,7 +273,8 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
           LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
 
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
-    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
+    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison,
+                           PtrCmpOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
     getElementPtrNormalizations({ GetElementPtrOperation::normalizeIdempotent });
