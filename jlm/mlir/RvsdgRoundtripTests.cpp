@@ -686,6 +686,8 @@ ROUNDTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
 ROUNDTRIP_TEST(TestVariadicFunctionTest2, ::jlm::llvm::VariadicFunctionTest2)
 ROUNDTRIP_TEST(TestGamma, ::jlm::llvm::GammaTest)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
+ROUNDTRIP_TEST(TestEscapingLocalFunction, ::jlm::llvm::EscapingLocalFunctionTest)
+ROUNDTRIP_TEST(TestLambdaCallArgumentMismatch, ::jlm::llvm::LambdaCallArgumentMismatch)
 
 // NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the
 // default-constructing ROUNDTRIP_TEST macro.

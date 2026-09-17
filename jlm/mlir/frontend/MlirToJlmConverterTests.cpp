@@ -57,6 +57,10 @@ TEST(MlirToJlmConverterTests, TestLambda)
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
+    attributes.push_back(linkage);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
     // Add inputs to the function
@@ -185,6 +189,10 @@ TEST(MlirToJlmConverterTests, TestDivOperation)
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
+    attributes.push_back(linkage);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
     // Add inputs to the function
@@ -377,6 +385,10 @@ TEST(MlirToJlmConverterTests, TestCompZeroExt)
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
+    attributes.push_back(linkage);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
     // Add inputs to the function
@@ -601,6 +613,10 @@ TEST(MlirToJlmConverterTests, TestMatchOp)
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
+    attributes.push_back(linkage);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
     // Add inputs to the function
@@ -773,6 +789,10 @@ TEST(MlirToJlmConverterTests, TestGammaOp)
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
+    attributes.push_back(linkage);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
     // Add inputs to the function
@@ -925,6 +945,9 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
     auto attributeName = Builder_->getStringAttr("sym_name");
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
+    auto linkageName = Builder_->getStringAttr("linkage");
+    auto linkageValue = Builder_->getStringAttr("external_linkage");
+    auto linkage = Builder_->getNamedAttr(linkageName, linkageValue);
 
     auto iotype = Builder_->getType<IOStateEdgeType>();
     auto memtype = Builder_->getType<MemStateEdgeType>();
@@ -937,7 +960,7 @@ TEST(MlirToJlmConverterTests, TestThetaOp)
             ::mlir::TypeRange({ iotype, memtype }),
             ::mlir::TypeRange({ iotype, memtype })),
         ::llvm::SmallVector<mlir::Value>(),
-        ::llvm::ArrayRef<::mlir::NamedAttribute>({ symbolName }));
+        ::llvm::ArrayRef<::mlir::NamedAttribute>({ symbolName, linkage }));
     omegaBlock->push_back(lambda);
     auto & lambdaRegion = lambda.getRegion();
     auto * lambdaBlock = new mlir::Block;
