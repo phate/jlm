@@ -31,11 +31,11 @@
 #include <jlm/rvsdg/control.hpp>
 
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <llvm/IR/DebugInfoMetadata.h>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -47,25 +47,16 @@ class IpGraphToLlvmConverter::Context final
       std::unordered_map<const ControlFlowGraphNode *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
-  ~Context()
-  {
-    diBuilder_.finalize();
-  }
-
-  Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
+  Context(
+      InterProceduralGraphModule & ipGraphModule,
+      ::llvm::Module & llvmModule,
+      ::llvm::DIBuilder & diBuilder)
       : LlvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule),
-        diBuilder_(llvmModule),
+        diBuilder_(&diBuilder),
         diFile_(nullptr),
         diSubprogram_(nullptr)
-  {
-    auto sourceFile = llvmModule.getSourceFileName();
-    if (sourceFile.empty())
-      sourceFile = "unknown";
-
-    diFile_ = diBuilder_.createFile(sourceFile, ".");
-    diBuilder_.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile_, "jlm", false, "", 0);
-  }
+  {}
 
   Context(const Context &) = delete;
 
@@ -94,7 +85,7 @@ public:
   [[nodiscard]] ::llvm::DIBuilder &
   getDIBuilder() noexcept
   {
-    return diBuilder_;
+    return *diBuilder_;
   }
 
   [[nodiscard]] ::llvm::DIFile *
@@ -169,15 +160,18 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
+  Create(
+      InterProceduralGraphModule & ipGraphModule,
+      ::llvm::Module & llvmModule,
+      ::llvm::DIBuilder & diBuilder)
   {
-    return std::make_unique<Context>(ipGraphModule, llvmModule);
+    return std::make_unique<Context>(ipGraphModule, llvmModule, diBuilder);
   }
 
 private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
-  ::llvm::DIBuilder diBuilder_;
+  ::llvm::DIBuilder * diBuilder_;
   ::llvm::DIFile * diFile_;
   ::llvm::DISubprogram * diSubprogram_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
@@ -2435,8 +2429,18 @@ IpGraphToLlvmConverter::ConvertModule(
       "Debug Info Version",
       ::llvm::DEBUG_METADATA_VERSION);
 
-  Context_ = Context::Create(ipGraphModule, *llvmModule);
+  ::llvm::DIBuilder diBuilder(*llvmModule);
+  auto sourceFile = llvmModule->getSourceFileName();
+  if (sourceFile.empty())
+    sourceFile = "unknown";
+
+  const auto diFile = diBuilder.createFile(sourceFile, ".");
+  diBuilder.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile, "jlm", false, "", 0);
+
+  Context_ = Context::Create(ipGraphModule, *llvmModule, diBuilder);
   convert_ipgraph();
+
+  diBuilder.finalize();
 
   return llvmModule;
 }
