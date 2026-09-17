@@ -47,14 +47,28 @@ class IpGraphToLlvmConverter::Context final
       std::unordered_map<const ControlFlowGraphNode *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
-  Context(
-      InterProceduralGraphModule & ipGraphModule,
-      ::llvm::Module & llvmModule,
-      ::llvm::DIBuilder & diBuilder)
+  ~Context()
+  {
+    diBuilder_.finalize();
+  }
+
+  Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
       : llvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule),
-        diBuilder_(&diBuilder)
-  {}
+        diBuilder_(llvmModule)
+  {
+    auto sourceFile = llvmModule.getSourceFileName();
+    if (sourceFile.empty())
+      sourceFile = "unknown";
+
+    diBuilder_.createCompileUnit(
+        ::llvm::dwarf::DW_LANG_C,
+        diBuilder_.createFile(sourceFile, "."),
+        "jlm",
+        false,
+        "",
+        0);
+  }
 
   Context(const Context &) = delete;
 
@@ -83,7 +97,7 @@ public:
   [[nodiscard]] ::llvm::DIBuilder &
   getDIBuilder() noexcept
   {
-    return *diBuilder_;
+    return diBuilder_;
   }
 
   [[nodiscard]] ::llvm::DICompileUnit &
@@ -144,18 +158,15 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(
-      InterProceduralGraphModule & ipGraphModule,
-      ::llvm::Module & llvmModule,
-      ::llvm::DIBuilder & diBuilder)
+  Create(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
   {
-    return std::make_unique<Context>(ipGraphModule, llvmModule, diBuilder);
+    return std::make_unique<Context>(ipGraphModule, llvmModule);
   }
 
 private:
   ::llvm::Module & llvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
-  ::llvm::DIBuilder * diBuilder_;
+  ::llvm::DIBuilder diBuilder_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::ControlFlowGraphNode *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
@@ -2410,23 +2421,8 @@ IpGraphToLlvmConverter::ConvertModule(
       "Debug Info Version",
       ::llvm::DEBUG_METADATA_VERSION);
 
-  ::llvm::DIBuilder diBuilder(*llvmModule);
-  auto sourceFile = llvmModule->getSourceFileName();
-  if (sourceFile.empty())
-    sourceFile = "unknown";
-
-  diBuilder.createCompileUnit(
-      ::llvm::dwarf::DW_LANG_C,
-      diBuilder.createFile(sourceFile, "."),
-      "jlm",
-      false,
-      "",
-      0);
-
-  Context_ = Context::Create(ipGraphModule, *llvmModule, diBuilder);
+  Context_ = Context::Create(ipGraphModule, *llvmModule);
   convert_ipgraph();
-
-  diBuilder.finalize();
 
   return llvmModule;
 }
