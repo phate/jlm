@@ -88,10 +88,10 @@ public:
     return *diBuilder_;
   }
 
-  [[nodiscard]] ::llvm::DIFile *
-  di_file() const noexcept
+  [[nodiscard]] ::llvm::DIFile &
+  getDIFile() const noexcept
   {
-    return diFile_;
+    return *diFile_;
   }
 
   const_iterator
@@ -2381,10 +2381,10 @@ IpGraphToLlvmConverter::convert_ipgraph()
         auto diTypeArray = diBuilder.getOrCreateTypeArray({});
         auto * subroutineType = diBuilder.createSubroutineType(diTypeArray);
         auto * sp = diBuilder.createFunction(
-            Context_->di_file(),
+            &Context_->getDIFile(),
             n->name(),
             n->name(),
-            Context_->di_file(),
+            &Context_->getDIFile(),
             1,
             subroutineType,
             1,
