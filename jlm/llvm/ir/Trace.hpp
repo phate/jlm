@@ -42,7 +42,7 @@ public:
   }
 
 protected:
-  [[nodiscard]] rvsdg::Output &
+  [[nodiscard]] TraceStepResult
   traceStep(rvsdg::Output & output, BackEdgeState backEdgeState, const rvsdg::Region * withinRegion)
       override;
 

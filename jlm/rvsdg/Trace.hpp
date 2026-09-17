@@ -249,11 +249,73 @@ protected:
   };
 
   /**
+   * Internal class used for returning intermediate results during tracing.
+   */
+  class TraceStepResult
+  {
+  public:
+    /**
+     * The output reached after tracing zero, one or more steps.
+     *
+     * @return the output arrived at by the tracing function
+     */
+    [[nodiscard]] Output &
+    getOutput() const noexcept
+    {
+      return output_;
+    }
+
+    /**
+     * Indicates whether the returned output can be traced any further, or if tracing is done.
+     * When done, the caller should not attempt any further tracing from the resulting output.
+     *
+     * @return true if the result is final, false if further tracing might be possible
+     */
+    [[nodiscard]] bool
+    isFinalResult() const noexcept
+    {
+      return isFinalResult_;
+    }
+
+    /**
+     * Creates an instance representing a non-final tracing result,
+     * that can possibly be traced further.
+     */
+    [[nodiscard]] static TraceStepResult
+    createStepResult(Output & output)
+    {
+      return TraceStepResult(output, false);
+    }
+
+    /**
+     * Creates an instance representing a final tracing result,
+     * from which further tracing is not possible.
+     */
+    [[nodiscard]] static TraceStepResult
+    createFinalResult(Output & output)
+    {
+      return TraceStepResult(output, true);
+    }
+
+  private:
+    TraceStepResult(Output & output, bool isFinalResult)
+        : output_(output),
+          isFinalResult_(isFinalResult)
+    {}
+
+    Output & output_;
+    bool isFinalResult_;
+  };
+
+  /**
    * Performs tracing from the given \p output, without updating the current starting output.
+   * Keeps tracing until the tracer is unable to find a more canonical output,
+   * or until an argument of the optional \p withinRegion limit is reached.
    *
    * @param output the output to trace from.
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion the region tracing has to stay within, or nullptr
+   * @return the resulting output reached when no more tracing is possible
    */
   [[nodiscard]] Output &
   traceInternal(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
@@ -274,7 +336,7 @@ protected:
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @return the result of tracing from the gamma output
    */
-  [[nodiscard]] Output &
+  [[nodiscard]] TraceStepResult
   traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeState backEdgeState);
 
   /**
@@ -291,7 +353,7 @@ protected:
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @return the result of tracing from the theta output
    */
-  [[nodiscard]] Output &
+  [[nodiscard]] TraceStepResult
   traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeState backEdgeState);
 
   /**
@@ -304,7 +366,7 @@ protected:
    * @param output the theta subregion argument
    * @return the result of tracing from the theta argument
    */
-  [[nodiscard]] Output &
+  [[nodiscard]] TraceStepResult
   traceThetaArgument(ThetaNode & thetaNode, Output & output);
 
   /**
@@ -315,7 +377,7 @@ protected:
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
    * @return the result of tracing from the given output, if possible. Otherwise, \p output.
    */
-  [[nodiscard]] virtual Output &
+  [[nodiscard]] virtual TraceStepResult
   traceStep(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
 
   /**
