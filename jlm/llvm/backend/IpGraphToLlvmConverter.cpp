@@ -50,11 +50,12 @@ public:
   Context(
       InterProceduralGraphModule & ipGraphModule,
       ::llvm::Module & llvmModule,
-      ::llvm::DIBuilder & diBuilder)
+      ::llvm::DIBuilder & diBuilder,
+      ::llvm::DICompileUnit & diCompileUnit)
       : LlvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule),
         diBuilder_(&diBuilder),
-        diFile_(nullptr),
+        diCompileUnit_(&diCompileUnit),
         diSubprogram_(nullptr)
   {}
 
@@ -88,10 +89,10 @@ public:
     return *diBuilder_;
   }
 
-  [[nodiscard]] ::llvm::DIFile &
-  getDIFile() const noexcept
+  [[nodiscard]] ::llvm::DICompileUnit &
+  getDICompileUnit() const noexcept
   {
-    return *diFile_;
+    return *diCompileUnit_;
   }
 
   const_iterator
@@ -163,16 +164,17 @@ public:
   Create(
       InterProceduralGraphModule & ipGraphModule,
       ::llvm::Module & llvmModule,
-      ::llvm::DIBuilder & diBuilder)
+      ::llvm::DIBuilder & diBuilder,
+      ::llvm::DICompileUnit & diCompileUnit)
   {
-    return std::make_unique<Context>(ipGraphModule, llvmModule, diBuilder);
+    return std::make_unique<Context>(ipGraphModule, llvmModule, diBuilder, diCompileUnit);
   }
 
 private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
   ::llvm::DIBuilder * diBuilder_;
-  ::llvm::DIFile * diFile_;
+  ::llvm::DICompileUnit * diCompileUnit_;
   ::llvm::DISubprogram * diSubprogram_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::ControlFlowGraphNode *, ::llvm::BasicBlock *> nodes_;
@@ -2381,10 +2383,10 @@ IpGraphToLlvmConverter::convert_ipgraph()
         auto diTypeArray = diBuilder.getOrCreateTypeArray({});
         auto * subroutineType = diBuilder.createSubroutineType(diTypeArray);
         auto * sp = diBuilder.createFunction(
-            &Context_->getDIFile(),
+            Context_->getDICompileUnit().getFile(),
             n->name(),
             n->name(),
-            &Context_->getDIFile(),
+            Context_->getDICompileUnit().getFile(),
             1,
             subroutineType,
             1,
@@ -2434,10 +2436,11 @@ IpGraphToLlvmConverter::ConvertModule(
   if (sourceFile.empty())
     sourceFile = "unknown";
 
-  const auto diFile = diBuilder.createFile(sourceFile, ".");
-  diBuilder.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile, "jlm", false, "", 0);
+  auto diFile = diBuilder.createFile(sourceFile, ".");
+  auto diCompileUnit =
+      diBuilder.createCompileUnit(::llvm::dwarf::DW_LANG_C, diFile, "jlm", false, "", 0);
 
-  Context_ = Context::Create(ipGraphModule, *llvmModule, diBuilder);
+  Context_ = Context::Create(ipGraphModule, *llvmModule, diBuilder, *diCompileUnit);
   convert_ipgraph();
 
   diBuilder.finalize();
