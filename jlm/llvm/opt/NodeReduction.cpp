@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -88,7 +89,9 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
   AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
+
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
+  AddMeasurement("#ThetaReductions", counters.numThetaReductions);
 
   GetTimer(Label::Timer).stop();
 }
@@ -161,35 +164,35 @@ static std::vector<rvsdg::NodeNormalization<FPExtOperation>>
 static std::vector<rvsdg::NodeNormalization<FPTruncOperation>>
     fpTruncOperationNormalizations({ FPTruncOperation::foldConstant });
 
-static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
-    integerEqNormalizations({ IntegerEqOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>> integerEqNormalizations(
+    { IntegerEqOperation::foldConstants, IntegerEqOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
-    integerNeNormalizations({ IntegerNeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>> integerNeNormalizations(
+    { IntegerNeOperation::foldConstants, IntegerNeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>>
-    integerSgeNormalizations({ IntegerSgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>> integerSgeNormalizations(
+    { IntegerSgeOperation::foldConstants, IntegerSgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>>
-    integerSgtNormalizations({ IntegerSgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>> integerSgtNormalizations(
+    { IntegerSgtOperation::foldConstants, IntegerSgtOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>>
-    integerSleNormalizations({ IntegerSleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>> integerSleNormalizations(
+    { IntegerSleOperation::foldConstants, IntegerSleOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>>
-    integerSltNormalizations({ IntegerSltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>> integerSltNormalizations(
+    { IntegerSltOperation::foldConstants, IntegerSltOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>>
-    integerUgeNormalizations({ IntegerUgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>> integerUgeNormalizations(
+    { IntegerUgeOperation::foldConstants, IntegerUgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>>
-    integerUgtNormalizations({ IntegerUgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>> integerUgtNormalizations(
+    { IntegerUgtOperation::foldConstants, IntegerUgtOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
-    integerUleNormalizations({ IntegerUleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>> integerUleNormalizations(
+    { IntegerUleOperation::foldConstants, IntegerUleOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
-    integerUltNormalizations({ IntegerUltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>> integerUltNormalizations(
+    { IntegerUltOperation::foldConstants, IntegerUltOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
     integerAddNormalizations({ IntegerAddOperation::foldConstants });
@@ -270,7 +273,8 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
           LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
 
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
-    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
+    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison,
+                           PtrCmpOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
     getElementPtrNormalizations({ GetElementPtrOperation::normalizeIdempotent });
@@ -365,13 +369,20 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 bool
 NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
-  bool reductionPerformed = false;
-
-  // Reduce structural nodes
-  if (const auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
-  {
-    reductionPerformed |= ReduceGammaNode(*gammaNode);
-  }
+  const bool reductionPerformed = rvsdg::MatchTypeWithDefault(
+      structuralNode,
+      [this](rvsdg::GammaNode & gammaNode)
+      {
+        return ReduceGammaNode(gammaNode);
+      },
+      [this](rvsdg::ThetaNode & thetaNode)
+      {
+        return reduceThetaNode(thetaNode);
+      },
+      []()
+      {
+        return false;
+      });
 
   if (reductionPerformed)
   {
@@ -398,6 +409,16 @@ NodeReduction::ReduceGammaNode(rvsdg::GammaNode & gammaNode)
   const bool reductionPerformed = reduceStaticallyKnownPredicate(gammaNode);
   if (reductionPerformed)
     Statistics_->getReductionCounters().numGammaReductions++;
+
+  return reductionPerformed;
+}
+
+bool
+NodeReduction::reduceThetaNode(rvsdg::ThetaNode & thetaNode)
+{
+  const bool reductionPerformed = rvsdg::ThetaNode::reduceStaticallyKnownPredicate(thetaNode);
+  if (reductionPerformed)
+    Statistics_->getReductionCounters().numThetaReductions++;
 
   return reductionPerformed;
 }

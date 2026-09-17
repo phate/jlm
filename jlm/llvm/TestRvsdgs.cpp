@@ -1544,8 +1544,8 @@ GammaTest2::SetupRvsdg()
         StoreNonVolatileOperation::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
     auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
-    auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
-    auto & predicateNode = MatchOperation::CreateNode(*bitEq, { { 0, 1 } }, 0, 2);
+    auto & intEq = IntegerEqOperation::createNode(32, *cArgument, *zero);
+    auto & predicateNode = MatchOperation::CreateNode(*intEq.output(0), { { 0, 1 } }, 0, 2);
 
     auto [gammaOutputA, gammaOutputMemoryState] =
         SetupGamma(predicateNode.output(0), xArgument, yArgument, allocaZResults[0], memoryState);

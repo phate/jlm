@@ -424,6 +424,85 @@ TEST(InvariantValueRedirectionTests, TestTheta)
   EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), thetaVar3.output);
 }
 
+TEST(InvariantValueRedirectionTests, testThetaConstantRedirection)
+{
+  // Arrange
+  using namespace jlm::rvsdg;
+
+  auto i32Type = BitType::Create(32);
+  auto ctlType = ControlType::Create(2);
+  auto fpType = FloatingPointType::Create(fpsize::dbl);
+  auto valueType = TestType::createValueType();
+  auto functionType = FunctionType::Create(
+      { i32Type, ctlType, fpType, valueType },
+      { i32Type, ctlType, fpType, valueType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto lambdaArguments = lambdaNode->GetFunctionArguments();
+
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto thetaVar1 = thetaNode->AddLoopVar(lambdaArguments[0]);
+  auto thetaVar2 = thetaNode->AddLoopVar(lambdaArguments[1]);
+  auto thetaVar3 = thetaNode->AddLoopVar(lambdaArguments[2]);
+  auto thetaVar4 = thetaNode->AddLoopVar(lambdaArguments[3]);
+
+  auto & intConstant = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1);
+  auto & ctlConstant = ControlConstantOperation::createFalse(*thetaNode->subregion());
+  auto & fpConstant =
+      ConstantFP::createNode(*thetaNode->subregion(), fpsize::dbl, ::llvm::APFloat(0.0));
+  auto undefConstant = UndefValueOperation::Create(*thetaNode->subregion(), valueType);
+
+  thetaVar1.post->divert_to(intConstant.output(0));
+  thetaVar2.post->divert_to(&ctlConstant);
+  thetaVar3.post->divert_to(fpConstant.output(0));
+  thetaVar4.post->divert_to(undefConstant);
+
+  auto lambdaOutput = lambdaNode->finalize(
+      { thetaVar1.output, thetaVar2.output, thetaVar3.output, thetaVar4.output });
+
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+
+  // Assert
+  {
+    auto [constantNode, constantOp] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode->GetFunctionResults()[0]->origin());
+    EXPECT_NE(constantOp, nullptr);
+    EXPECT_EQ(constantOp->Representation().to_uint(), 1);
+  }
+
+  {
+    auto [constantNode, constantOp] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<ControlConstantOperation>(
+            *lambdaNode->GetFunctionResults()[1]->origin());
+    EXPECT_NE(constantOp, nullptr);
+    EXPECT_EQ(constantOp->value().nalternatives(), 2);
+    EXPECT_EQ(constantOp->value().alternative(), 0);
+  }
+
+  {
+    auto [constantNode, constantOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(
+        *lambdaNode->GetFunctionResults()[2]->origin());
+    EXPECT_NE(constantOp, nullptr);
+    EXPECT_EQ(constantOp->constant().convertToDouble(), 0.0);
+  }
+
+  {
+    auto [constantNode, constantOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(
+        *lambdaNode->GetFunctionResults()[3]->origin());
+    EXPECT_NE(constantOp, nullptr);
+    EXPECT_EQ(constantOp->GetType(), *valueType);
+  }
+}
+
 TEST(InvariantValueRedirectionTests, TestCall)
 {
   // Arrange

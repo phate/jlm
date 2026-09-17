@@ -583,6 +583,13 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
+  else if (auto intToPtrOp = dynamic_cast<const llvm::IntToPtrOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::IntToPtrOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*intToPtrOp->result(0)),
+        inputs[0]);
+  }
   else if (auto bitCastOp = dynamic_cast<const jlm::llvm::BitCastOperation *>(&operation))
   {
     auto srcType = bitCastOp->argument(0);
@@ -634,6 +641,20 @@ JlmToMlirConverter::ConvertSimpleNode(
           util::strfmt("Unsupported bitcast type combination: ", bitCastOp->debug_string());
       JLM_UNREACHABLE(message.c_str());
     }
+  }
+  else if (dynamic_cast<const jlm::llvm::FunctionToPointerOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::FuncToPtr>(
+        Builder_->getUnknownLoc(),
+        Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+        inputs[0]);
+  }
+  else if (auto ptrToFnOp = dynamic_cast<const jlm::llvm::PointerToFunctionOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::PtrToFunc>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*ptrToFnOp->result(0)),
+        inputs[0]);
   }
   // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const rvsdg::ControlConstantOperation *>(&operation))
