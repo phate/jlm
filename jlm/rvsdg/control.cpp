@@ -108,6 +108,27 @@ ControlConstantOperation::copy() const
   return std::make_unique<ControlConstantOperation>(value_);
 }
 
+UndefControlConstantOperation::~UndefControlConstantOperation() noexcept = default;
+
+bool
+UndefControlConstantOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UndefControlConstantOperation *>(&other);
+  return operation && operation->numAlternatives() == numAlternatives();
+}
+
+std::string
+UndefControlConstantOperation::debug_string() const
+{
+  return util::strfmt("UndefCtlConstant[", numAlternatives(), "]");
+}
+
+std::unique_ptr<Operation>
+UndefControlConstantOperation::copy() const
+{
+  return std::make_unique<UndefControlConstantOperation>(numAlternatives());
+}
+
 MatchOperation::~MatchOperation() noexcept = default;
 
 MatchOperation::MatchOperation(
