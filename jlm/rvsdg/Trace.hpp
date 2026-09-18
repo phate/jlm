@@ -7,6 +7,7 @@
 #define JLM_RVSDG_TRACE_HPP
 
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 
 namespace jlm::rvsdg
 {
@@ -154,6 +155,18 @@ public:
     enterPhiNodes_ = value;
   }
 
+  [[nodiscard]] bool
+  isRegionPredicateCheckingEnabled() const noexcept
+  {
+    return enableRegionPredicateChecking_;
+  }
+
+  void
+  setRegionPredicateCheckingEnabled(bool value) noexcept
+  {
+    enableRegionPredicateChecking_ = value;
+  }
+
   /**
    * Controls whether caching of structural output invariance is enabled,
    * which can speed up tracing through deeply nested graphs.
@@ -217,49 +230,155 @@ public:
    * @param withinRegion the region where we stop tracing.
    */
   [[nodiscard]] Output &
-  trace(Output & output, const rvsdg::Region * withinRegion);
+  trace(Output & output, const Region * withinRegion);
 
 protected:
+  // Enum representing information about the path the tracer took from the starting output
+  // to reach the current output being considered
+  enum class BackEdgeState
+  {
+    // Tracing has gone from the starting output to the current output without
+    // following any back-edges around the current output.
+    // Theta nodes between the current output and the starting output do not matter.
+    NoBackEdgeTaken,
+
+    // While tracing from the starting output to the current output,
+    // the tracer may have followed a back-edge going around the current output.
+    // This prevents the use of the region predication checker.
+    PossiblyBackEdgeTaken,
+  };
+
   /**
-   * Attempts to trace the output of a gamma node through the node.
-   * This is only possible if the output can be traced to a gamma entry variable in all subregions,
-   * and these entry variables all share the same origin outside the gamma.
+   * Internal class used for returning intermediate results during tracing.
+   */
+  class TraceStepResult
+  {
+  public:
+    /**
+     * The output reached after tracing zero, one or more steps.
+     *
+     * @return the output arrived at by the tracing function
+     */
+    [[nodiscard]] Output &
+    getOutput() const noexcept
+    {
+      return output_;
+    }
+
+    /**
+     * Indicates whether the returned output can be traced any further, or if tracing is done.
+     * When done, the caller should not attempt any further tracing from the resulting output.
+     *
+     * @return true if the result is final, false if further tracing might be possible
+     */
+    [[nodiscard]] bool
+    isFinalResult() const noexcept
+    {
+      return isFinalResult_;
+    }
+
+    /**
+     * Creates an instance representing a non-final tracing result,
+     * that can possibly be traced further.
+     */
+    [[nodiscard]] static TraceStepResult
+    createStepResult(Output & output)
+    {
+      return TraceStepResult(output, false);
+    }
+
+    /**
+     * Creates an instance representing a final tracing result,
+     * from which further tracing is not possible.
+     */
+    [[nodiscard]] static TraceStepResult
+    createFinalResult(Output & output)
+    {
+      return TraceStepResult(output, true);
+    }
+
+  private:
+    TraceStepResult(Output & output, bool isFinalResult)
+        : output_(output),
+          isFinalResult_(isFinalResult)
+    {}
+
+    Output & output_;
+    bool isFinalResult_;
+  };
+
+  /**
+   * Performs tracing from the given \p output, without updating the current starting output.
+   * Keeps tracing until the tracer is unable to find a more canonical output,
+   * or until an argument of the optional \p withinRegion limit is reached.
+   *
+   * @param output the output to trace from.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @param withinRegion the region tracing has to stay within, or nullptr
+   * @return the resulting output reached when no more tracing is possible
+   */
+  [[nodiscard]] Output &
+  traceInternal(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
+
+  /**
+   * Trace from the given gamma output.
+   * If the gamma output can be traced to the same gamma input in all subregions,
+   * the origin of the gamma input is returned.
+   * Otherwise, if the tracer is allowed to trace into subregions,
+   * and only one of the subregions can be the origin of the value being traced,
+   * the origin within that subregion is returned.
+   * Otherwise, the gamma output itself is returned.
    *
    * @pre the \p output is an output of the given \p gammaNode
    *
    * @param gammaNode the gamma node to trace through
    * @param output an output of the given gamma node
-   * @return the origin of the output value on the input side of the gamma, or nullptr.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @return the result of tracing from the gamma output
    */
-  [[nodiscard]] Output *
-  tryTraceThroughGamma(GammaNode & gammaNode, Output & output);
+  [[nodiscard]] TraceStepResult
+  traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeState backEdgeState);
 
   /**
    * Trace from the the given loop output.
    * If the loop output is found to be loop invariant, the origin of the theta input is returned.
    * Otherwise, if the tracer is allowed to trace into the subregion of structural nodes,
    * the traced origin of the loop variable post inside the theta is returned.
-   * Otherwise, nullopt is returned.
+   * Otherwise, the theta output itself is returned.
    *
    * @pre the \p output is an output of the given \p thetaNode
    *
    * @param thetaNode the theta node to trace through
    * @param output an output of the given theta node
-   * @return the origin of the output value on the input side of the theta,
-   *         the origin of the loop variable post, or nullopt
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @return the result of tracing from the theta output
    */
-  [[nodiscard]] Output *
-  traceThetaOutput(ThetaNode & thetaNode, Output & output);
+  [[nodiscard]] TraceStepResult
+  traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeState backEdgeState);
+
+  /**
+   * Trace from the given loop variable pre argument.
+   * This function is only used when the tracing starting point is inside the theta.
+   *
+   * @pre the \p output is an argument of the given \p thetaNode's subregion.
+   *
+   * @param thetaNode the theta node to attempt to trace out of
+   * @param output the theta subregion argument
+   * @return the result of tracing from the theta argument
+   */
+  [[nodiscard]] TraceStepResult
+  traceThetaArgument(ThetaNode & thetaNode, Output & output);
 
   /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
-   * @return the result of tracing from the given output, if possible. Otherwise, \p output.
+   * @return the result of tracing from the given output
    */
-  [[nodiscard]] virtual Output &
-  traceStep(Output & output, const rvsdg::Region * withinRegion);
+  [[nodiscard]] virtual TraceStepResult
+  traceStep(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
 
   /**
    * Inserts the given \p structuralOutput in the invariance cache.
@@ -267,11 +386,14 @@ protected:
    * of the structural node, so tracing can pass through the structural node without
    * looking inside its subregions.
    *
+   * When determining invariance, it is important to not makse assumptions about
+   * tracing never having followed back-edges.
+   *
    * @param structuralOutput The structural output that was traced.
    * @param structuralInput The corresponding structural input.
    * @return The origin of \p structuralInput for convenience.
    */
-  Output *
+  Output &
   insertInInvarianceCache(const Output & structuralOutput, Input & structuralInput);
 
   /**
@@ -295,10 +417,22 @@ protected:
   // When false, tracing will stop at the output of the phi node.
   bool enterPhiNodes_ = true;
 
+  // When true, gamma subregions are ignored when it is impossible for control flow to go
+  // from the gamma subregion to the region containing the output tracing started from
+  bool enableRegionPredicateChecking_ = false;
+  // The region predicate checker used to disqualify regions
+  AlternativeRegionPredicateTracer regionPredicateTracer_;
+  // The output from which the current tracing operation started.
+  // Used for region predication checks.
+  // This is the starting output referenced by the enum \ref BackEdgeState.
+  const Output * startingOutput_ = nullptr;
+
   // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
   // Enabling caching means the user of the tracer is responsible for cache invalidation.
   // @see clearInvarianceCache() for details
   bool enableInvarianceCaching_ = false;
+  // Maps from a structural output to an input of the same structural node
+  // that the output always gets its value from.
   std::unordered_map<const Output *, Input *> invariantOutputCache_{};
 };
 
@@ -348,13 +482,10 @@ traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions)
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion = nullptr);
+traceOutput(Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(
-    const Output & output,
-    bool mayEnterSubregions,
-    const rvsdg::Region * withinRegion = nullptr)
+traceOutput(const Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr)
 {
   return traceOutput(const_cast<Output &>(output), mayEnterSubregions, withinRegion);
 }
