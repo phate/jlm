@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <iostream>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -51,6 +52,14 @@ OutputTracer::traceInternal(
 {
   Output * head = &output;
 
+  std::cerr << "starting traceInternal of output " << &output << " with index " << output.index() << " belonging to ";
+  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output))
+    std::cerr << "node " << node->GetNodeId() << " in ";
+  std::cerr << "region " << output.region()->getRegionId();
+  if (withinRegion)
+    std::cerr << " within region " << withinRegion->getRegionId();
+  std::cerr << std::endl;
+
   // Keep tracing until a final result is reached
   while (true)
   {
@@ -58,7 +67,20 @@ OutputTracer::traceInternal(
 
     // If the tracing step is final, we are done
     if (traceStepResult.isFinalResult())
+    {
+      std::cerr << "finished traceInternal of output " << &output << " with index " << output.index() << " belonging to ";
+      if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output))
+        std::cerr << "node " << node->GetNodeId() << " in ";
+      std::cerr << "region " << output.region()->getRegionId() << ":" << std::endl;
+
+      auto & result = traceStepResult.getOutput();
+      std::cerr << "it lead to the output " << &result  << " with index " << result.index() << " belonging to ";
+      if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(result))
+        std::cerr << "node " << node->GetNodeId() << " in ";
+      std::cerr << "region " << result.region()->getRegionId() << std::endl;
+
       return traceStepResult.getOutput();
+    }
 
     // If the tracing step is not final, it must have made progress
     JLM_ASSERT(&traceStepResult.getOutput() != head);

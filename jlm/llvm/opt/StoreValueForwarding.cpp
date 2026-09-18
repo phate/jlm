@@ -201,6 +201,7 @@ struct StoreValueForwarding::Context final
     outputTracer.setInvarianceCaching(true);
     outputTracer.setStructuralNodePolicy(
         rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+    outputTracer.setRegionPredicateCheckingEnabled(true);
     // If load/load forwarding is disabled, make the tracer skip loads
     outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
   }
@@ -639,7 +640,15 @@ private:
     // If region predication checking is disabled, always assume loop back-edges have been followed
     loopBackEdgeTaken |= !ENABLE_REGION_PREDICATE_CHECK;
 
+    std::cerr << "tracing input " << &input << " with index " << input.index() << " belonging to ";
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(input))
+      std::cerr << "node " << node->GetNodeId() << " in ";
+    std::cerr << "region " << input.region()->getRegionId() << std::endl;
     auto & tracedOutput = tracer.trace(*input.origin());
+    std::cerr << "lead to output " << &tracedOutput << " with index " << tracedOutput.index() << " belonging to ";
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(tracedOutput))
+      std::cerr << "node " << node->GetNodeId() << " in ";
+    std::cerr << "region " << tracedOutput.region()->getRegionId() << std::endl;
 
     // If tracing reached a store operation, look up its info
     if (auto [storeNode, storeOp] =
