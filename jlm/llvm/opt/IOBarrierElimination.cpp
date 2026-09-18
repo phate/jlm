@@ -93,34 +93,15 @@ class IOBarrierElimination::Context
 {
 public:
   /**
-   * Mark \p input as dereferenceable with size \p sizeInBytes.
-   *
-   * @return True, if the input was not already marked as dereferenceable, otherwise false.
+   * Mark all users of \p output as dereferenceable with size \p sizeInBytes.
    */
-  bool
-  markDereferenceable(const rvsdg::Input & input, const size_t sizeInBytes)
-  {
-    const auto it = dereferenceableInputs_.find(&input);
-    if (it == dereferenceableInputs_.end())
-    {
-      dereferenceableInputs_[&input] = sizeInBytes;
-      return true;
-    }
-
-    dereferenceableInputs_[&input] = std::max(it->second, sizeInBytes);
-    return false;
-  }
-
-  bool
+  void
   markUsersDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
   {
-    bool wasMarked = false;
     for (auto & user : output.Users())
     {
-      wasMarked |= markDereferenceable(user, sizeInBytes);
+      markDereferenceable(user, sizeInBytes);
     }
-
-    return wasMarked;
   }
 
   /**
@@ -143,6 +124,22 @@ public:
   }
 
 private:
+  /**
+   * Mark \p input as dereferenceable with size \p sizeInBytes.
+   */
+  void
+  markDereferenceable(const rvsdg::Input & input, const size_t sizeInBytes)
+  {
+    if (const auto it = dereferenceableInputs_.find(&input); it == dereferenceableInputs_.end())
+    {
+      dereferenceableInputs_[&input] = sizeInBytes;
+    }
+    else
+    {
+      dereferenceableInputs_[&input] = std::max(it->second, sizeInBytes);
+    }
+  }
+
   std::unordered_map<const rvsdg::Input *, size_t> dereferenceableInputs_{};
 };
 
@@ -291,30 +288,52 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
-    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    {
-      for (auto & subregion : structuralNode->Subregions())
-      {
-        markDereferenceable(subregion);
-      }
-    }
-    else
-    {
-      rvsdg::MatchType(
-          node.GetOperation(),
-          [this, &node](const LoadNonVolatileOperation & loadOperation)
+    rvsdg::MatchTypeWithDefault(
+        node,
+        [this](const rvsdg::PhiNode & phiNode)
+        {
+          markDereferenceable(*phiNode.subregion());
+        },
+        [this](const rvsdg::LambdaNode & lambdaNode)
+        {
+          markDereferenceable(*lambdaNode.subregion());
+        },
+        [](const rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done
+        },
+        [this](const rvsdg::ThetaNode & thetaNode)
+        {
+          markDereferenceable(*thetaNode.subregion());
+        },
+        [this](const rvsdg::GammaNode & gammaNode)
+        {
+          for (auto & subregion : gammaNode.Subregions())
           {
-            const auto & addressOperand = *LoadOperation::AddressInput(node).origin();
-            const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
-            context_->markUsersDereferenceable(addressOperand, sizeInBytes);
-          },
-          [this, &node](const StoreNonVolatileOperation & storeOperation)
-          {
-            const auto & addressOperand = *StoreOperation::AddressInput(node).origin();
-            const auto sizeInBytes = GetTypeStoreSize(storeOperation.GetStoredType());
-            context_->markUsersDereferenceable(addressOperand, sizeInBytes);
-          });
-    }
+            markDereferenceable(subregion);
+          }
+        },
+        [this](const rvsdg::SimpleNode & simpleNode)
+        {
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [this, &simpleNode](const LoadNonVolatileOperation & loadOperation)
+              {
+                const auto & addressOperand = *LoadOperation::AddressInput(simpleNode).origin();
+                const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
+                context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+              },
+              [this, &simpleNode](const StoreNonVolatileOperation & storeOperation)
+              {
+                const auto & addressOperand = *StoreOperation::AddressInput(simpleNode).origin();
+                const auto sizeInBytes = GetTypeStoreSize(storeOperation.GetStoredType());
+                context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+              });
+        },
+        []()
+        {
+          throw std::logic_error("Unhandled node type");
+        });
   }
 }
 
