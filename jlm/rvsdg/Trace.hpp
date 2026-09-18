@@ -375,7 +375,7 @@ protected:
    * @param output the output to trace from.
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
-   * @return the result of tracing from the given output, if possible. Otherwise, \p output.
+   * @return the result of tracing from the given output
    */
   [[nodiscard]] virtual TraceStepResult
   traceStep(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);

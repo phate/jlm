@@ -63,7 +63,7 @@ OutputTracer::traceInternal(
     // If the tracing step is not final, it must have made progress
     JLM_ASSERT(&traceStepResult.getOutput() != head);
 
-    // Otherwise continue tracing
+    // Keep tracing from the step result
     head = &traceStepResult.getOutput();
   }
 }
