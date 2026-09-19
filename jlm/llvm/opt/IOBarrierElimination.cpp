@@ -283,6 +283,57 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
   }
 }
 
+size_t
+IOBarrierElimination::areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & entryVar) const
+{
+  // We do not care about non-pointer entry variables
+  if (!rvsdg::is<PointerType>(entryVar.input->Type()))
+    return 0;
+
+  size_t size = std::numeric_limits<std::size_t>::max();
+  for (const auto * argument : entryVar.branchArgument)
+  {
+    // IOBarrierElimination::normalizeIOBarriers() should ensure we only have zero or one user
+    const size_t numUsers = argument->nusers();
+    JLM_ASSERT(numUsers == 0 || numUsers == 1);
+
+    if (numUsers == 0)
+    {
+      // If we have no users, nothing can be marked
+      return 0;
+    }
+
+    auto * user = &*argument->Users().begin();
+    auto userSize = context_->isDereferenceable(*user);
+    if (userSize == 0)
+    {
+      // The user is not marked. Let's continue
+      auto [ioBarrierNode, ioBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*user);
+      if (!ioBarrierOp)
+      {
+        // We do not even have an IOBarrierOperation. We are done here.
+        return 0;
+      }
+
+      JLM_ASSERT(ioBarrierNode->output(0)->nusers() != 0);
+      // Any user of an IOBarrierOperation should do as we always mark all users
+      user = &*ioBarrierNode->output(0)->Users().begin();
+      userSize = context_->isDereferenceable(*user);
+      if (userSize == 0)
+      {
+        // The user of the IOBarrierOperation is not marked either. We are done for good.
+        return 0;
+      }
+    }
+
+    // The user is marked. Let's take the minimum marked size between this argument and all others.
+    size = std::min(size, userSize);
+  }
+
+  return size;
+}
+
 void
 IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
 {
@@ -308,9 +359,22 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
         },
         [this](const rvsdg::GammaNode & gammaNode)
         {
+          // Handle innermost regions first
           for (auto & subregion : gammaNode.Subregions())
           {
             markDereferenceable(subregion);
+          }
+
+          for (auto & entryVar : gammaNode.GetEntryVars())
+          {
+            if (const auto size = areAllArgumentsMarked(entryVar); size > 0)
+            {
+              // All gamma node arguments of this entry variable are marked. This means that on
+              // every path through this gamma node, the pointer variable is at least dereferenced
+              // by the returned size. Consequently, we can mark the origin of the input of this
+              // gamma node as well.
+              context_->markUsersDereferenceable(*entryVar.input->origin(), size);
+            }
           }
         },
         [this](const rvsdg::SimpleNode & simpleNode)
