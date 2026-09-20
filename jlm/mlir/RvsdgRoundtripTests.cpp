@@ -13,6 +13,7 @@
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/mlir/TestRvsdgs.hpp>
 
 namespace
 {
@@ -689,6 +690,16 @@ ROUNDTRIP_TEST(TestGamma2, ::jlm::llvm::GammaTest2)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
 ROUNDTRIP_TEST(TestEscapingLocalFunction, ::jlm::llvm::EscapingLocalFunctionTest)
 ROUNDTRIP_TEST(TestLambdaCallArgumentMismatch, ::jlm::llvm::LambdaCallArgumentMismatch)
+
+// ============================================================================
+// Roundtrip tests from MLIR-specific RVSDG graphs defined in
+// jlm/mlir/TestRvsdgs.cpp
+// ============================================================================
+
+ROUNDTRIP_TEST(TestLoadNonVolatile, ::jlm::mlir::LoadNonVolatileTest)
+ROUNDTRIP_TEST(TestLoadVolatile, ::jlm::mlir::LoadVolatileTest)
+ROUNDTRIP_TEST(TestStoreNonVolatile, ::jlm::mlir::StoreNonVolatileTest)
+ROUNDTRIP_TEST(TestStoreVolatile, ::jlm::mlir::StoreVolatileTest)
 
 // NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the
 // default-constructing ROUNDTRIP_TEST macro.

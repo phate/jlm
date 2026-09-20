@@ -19,6 +19,10 @@ run-libmlir-tests_SOURCES = \
     jlm/mlir/IntegerOperationsJlmToMlirToJlmTests.cpp \
     jlm/mlir/JlmToMlirToJlmTests.cpp \
     jlm/mlir/RvsdgRoundtripTests.cpp \
+    jlm/mlir/TestRvsdgs.cpp \
+
+run-libmlir-tests_HEADERS = \
+    jlm/mlir/TestRvsdgs.hpp \
 
 run-libmlir-tests_LIBS = libmlir libllvm librvsdg libutil
 run-libmlir-tests_EXTRA_LDFLAGS = \
