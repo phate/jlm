@@ -330,6 +330,16 @@ NodeHoisting::getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targ
     return getUserFromTargetRegion(*loopVar.input, targetRegion);
   }
 
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
+  {
+    if (is<LoadNonVolatileOperation>(simpleNode->GetOperation()))
+    {
+      JLM_ASSERT(is<MemoryStateType>(operand.Type()));
+      auto & memStateInput = LoadNonVolatileOperation::MapMemoryStateOutputToInput(operand);
+      return getUserFromTargetRegion(memStateInput, targetRegion);
+    }
+  }
+
   throw std::logic_error("Unhandled output type!");
 }
 
