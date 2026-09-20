@@ -334,7 +334,6 @@ NodeHoisting::getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targ
   {
     if (is<LoadNonVolatileOperation>(simpleNode->GetOperation()))
     {
-      JLM_ASSERT(is<MemoryStateType>(operand.Type()));
       auto & memStateInput = LoadNonVolatileOperation::MapMemoryStateOutputToInput(operand);
       return getUserFromTargetRegion(memStateInput, targetRegion);
     }
