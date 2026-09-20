@@ -293,11 +293,7 @@ IOBarrierElimination::areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & e
   size_t size = std::numeric_limits<std::size_t>::max();
   for (const auto * argument : entryVar.branchArgument)
   {
-    // IOBarrierElimination::normalizeIOBarriers() should ensure we only have zero or one user
-    const size_t numUsers = argument->nusers();
-    JLM_ASSERT(numUsers == 0 || numUsers == 1);
-
-    if (numUsers == 0)
+    if (const size_t numUsers = argument->nusers(); numUsers == 0)
     {
       // If we have no users, nothing can be marked
       return 0;
