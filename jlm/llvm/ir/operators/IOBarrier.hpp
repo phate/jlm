@@ -179,10 +179,13 @@ public:
   }
 
   static rvsdg::SimpleNode &
-  createNode(rvsdg::Output & value, rvsdg::Output & ioState, const std::size_t dereferenceableSize)
+  createNode(
+      rvsdg::Output & address,
+      rvsdg::Output & ioState,
+      const std::size_t dereferenceableSize)
   {
     return rvsdg::CreateOpNode<MemoryHoistBarrierOperation>(
-        { &value, &ioState },
+        { &address, &ioState },
         dereferenceableSize);
   }
 
