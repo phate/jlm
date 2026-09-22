@@ -192,6 +192,55 @@ TEST(IntegerAddOperationTest, foldConstants)
   TestFoldConstants<IntegerAddOperation>({ -1, 32, 2, 32, 1, 32 });
 }
 
+TEST(IntegerAddOperationTest, normalizeIdempotent)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
+
+  auto & zeroNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & addNode1 = IntegerAddOperation::createNode(32, i0, *zeroNode.output(0));
+  auto & addNode2 = IntegerAddOperation::createNode(32, *zeroNode.output(0), i0);
+  auto & addNode3 = IntegerAddOperation::createNode(32, i0, *oneNode.output(0));
+  auto & addNode4 = IntegerAddOperation::createNode(32, *oneNode.output(0), i0);
+
+  auto & x1 = GraphExport::Create(*addNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*addNode2.output(0), "x2");
+  auto & x3 = GraphExport::Create(*addNode3.output(0), "x3");
+  auto & x4 = GraphExport::Create(*addNode4.output(0), "x4");
+
+  // Act
+  ReduceNode<IntegerAddOperation>(
+      IntegerAddOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(addNode1));
+  ReduceNode<IntegerAddOperation>(
+      IntegerAddOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(addNode2));
+  ReduceNode<IntegerAddOperation>(
+      IntegerAddOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(addNode3));
+  ReduceNode<IntegerAddOperation>(
+      IntegerAddOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(addNode4));
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  EXPECT_EQ(x1.origin(), &i0);
+  EXPECT_EQ(x2.origin(), &i0);
+  EXPECT_EQ(x3.origin(), addNode3.output(0));
+  EXPECT_EQ(x4.origin(), addNode4.output(0));
+}
+
 TEST(IntegerSubOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerSubOperation>({ 12, 32, 7, 32, 5, 32 });
