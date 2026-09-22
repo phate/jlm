@@ -90,6 +90,109 @@ public:
   }
 };
 
+/**
+ * A \ref MemoryHoistBarrierOperation is used to sequentialize memory operations, such as
+ * \ref LoadNonVolatileOperation or \ref StoreNonVolatileOperation, after other IO state operations.
+ * It has no equivalent in LLVM.
+ *
+ * Example:
+ *
+ * \code{.c}
+ * int f(int * x)
+ * {
+ *   opaque(); //calls internally exit(0)
+ *   return *x;
+ * }
+ * \endcode
+ *
+ * The above code is valid C code and not undefined even if x is null.
+ * The reason for this is that the function opaque() invokes exit(0), and the load operation is
+ * never performed at runtime. In the RVSDG, the load operation might have no dependency on the
+ * function call to opaque() and therefore it can happen that it is sequentialized before the call
+ * operation, transforming the valid program to an undefined program.
+ *
+ * The \ref MemoryHoistBarrierOperation ensures a sequentialization of these two operations by
+ * routing the address operand through it along with an I/O state as additional operand. The
+ * load operation consumes then the result value of the \ref MemoryHoistBarrierOperation,
+ * effectively sequentializing the load after the barrier and with that after the call operation:
+ *
+ * ... io = Call opaque ....
+ * ptr2 = MemoryHoistBarrierOperation ptr io
+ * ... = LoadNonVolatileOperation ptr2 ...
+ *
+ * The \ref MemoryHoistBarrierOperation has a \ref MemoryHoistBarrierOperation::dereferenceableSize
+ * attribute, which determines the number of bytes that its input address is known to be
+ * dereferenceable.
+ */
+class MemoryHoistBarrierOperation final : public rvsdg::SimpleOperation
+{
+public:
+  ~MemoryHoistBarrierOperation() noexcept override;
+
+  explicit MemoryHoistBarrierOperation(const std::size_t dereferenceableSize)
+      : SimpleOperation(
+            { PointerType::Create(), IOStateType::Create() },
+            { PointerType::Create() }),
+        dereferenceableSize_(dereferenceableSize)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] std::size_t
+  getDereferenceableSize() const noexcept
+  {
+    return dereferenceableSize_;
+  }
+
+  [[nodiscard]] static rvsdg::Input &
+  getAddressInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(rvsdg::is<MemoryHoistBarrierOperation>(&node));
+    const auto input = node.input(0);
+    JLM_ASSERT(rvsdg::is<PointerType>(input->Type()));
+    return *input;
+  }
+
+  [[nodiscard]] static rvsdg::Output &
+  getAddressOutput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(rvsdg::is<MemoryHoistBarrierOperation>(&node));
+    const auto output = node.output(0);
+    JLM_ASSERT(rvsdg::is<PointerType>(output->Type()));
+    return *output;
+  }
+
+  [[nodiscard]] static rvsdg::Input &
+  getIOStateInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(rvsdg::is<MemoryHoistBarrierOperation>(&node));
+    const auto input = node.input(1);
+    JLM_ASSERT(rvsdg::is<IOStateType>(input->Type()));
+    return *input;
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & value, rvsdg::Output & ioState, const std::size_t dereferenceableSize)
+  {
+    return rvsdg::CreateOpNode<MemoryHoistBarrierOperation>(
+        { &value, &ioState },
+        dereferenceableSize);
+  }
+
+private:
+  /**
+   * Dereferenceable size of the memory input in bytes.
+   */
+  std::size_t dereferenceableSize_;
+};
+
 }
 
 #endif // JLM_LLVM_IR_OPERATORS_IOBARRIER_HPP
