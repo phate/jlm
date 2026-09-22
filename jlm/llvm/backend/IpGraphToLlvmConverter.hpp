@@ -139,13 +139,15 @@ private:
   ConvertEnumAttribute(const llvm::EnumAttribute & attribute);
 
   void
-  create_terminator_instruction(const llvm::ControlFlowGraphNode * node);
+  create_terminator_instruction(
+      const llvm::ControlFlowGraphNode * node,
+      ::llvm::DISubprogram & diSubprogram);
 
   void
   create_switch(const ControlFlowGraphNode * node);
 
   void
-  create_conditional_branch(const ControlFlowGraphNode * node);
+  create_conditional_branch(const ControlFlowGraphNode * node, ::llvm::DISubprogram & diSubprogram);
 
   void
   create_unconditional_branch(const ControlFlowGraphNode * node);
@@ -157,7 +159,10 @@ private:
   convert_tacs(const tacsvector_t & tacs);
 
   void
-  convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::ControlFlowGraphNode * node);
+  convert_instruction(
+      const llvm::ThreeAddressCode & tac,
+      const llvm::ControlFlowGraphNode * node,
+      ::llvm::DISubprogram & diSubprogram);
 
   /**
    * Converts the given operation, with the given arguments, to an LLVM instruction.
