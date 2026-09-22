@@ -200,8 +200,8 @@ static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
 static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>> integerSubNormalizations(
     { IntegerSubOperation::normalizeAdditiveInverse, IntegerSubOperation::foldConstants });
 
-static std::vector<rvsdg::NodeNormalization<IntegerMulOperation>>
-    integerMulNormalizations({ IntegerMulOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerMulOperation>> integerMulNormalizations(
+    { IntegerMulOperation::foldConstants, IntegerMulOperation::normalizeIdempotent });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSDivOperation>>
     integerSDivNormalizations({ IntegerSDivOperation::foldConstants });

@@ -204,6 +204,55 @@ TEST(IntegerMulOperationTest, foldConstants)
   TestFoldConstants<IntegerMulOperation>({ -6, 32, 7, 32, -42, 32 });
 }
 
+TEST(IntegerMulOperationTest, normalizeIdempotent)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
+
+  auto & zeroNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & mulNode1 = IntegerMulOperation::createNode(32, i0, *oneNode.output(0));
+  auto & mulNode2 = IntegerMulOperation::createNode(32, *oneNode.output(0), i0);
+  auto & mulNode3 = IntegerMulOperation::createNode(32, i0, *zeroNode.output(0));
+  auto & mulNode4 = IntegerMulOperation::createNode(32, *zeroNode.output(0), i0);
+
+  auto & x1 = GraphExport::Create(*mulNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*mulNode2.output(0), "x2");
+  auto & x3 = GraphExport::Create(*mulNode3.output(0), "x3");
+  auto & x4 = GraphExport::Create(*mulNode4.output(0), "x4");
+
+  // Act
+  ReduceNode<IntegerMulOperation>(
+      IntegerMulOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(mulNode1));
+  ReduceNode<IntegerMulOperation>(
+      IntegerMulOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(mulNode2));
+  ReduceNode<IntegerMulOperation>(
+      IntegerMulOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(mulNode3));
+  ReduceNode<IntegerMulOperation>(
+      IntegerMulOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(mulNode4));
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  EXPECT_EQ(x1.origin(), &i0);
+  EXPECT_EQ(x2.origin(), &i0);
+  EXPECT_EQ(x3.origin(), mulNode3.output(0));
+  EXPECT_EQ(x4.origin(), mulNode4.output(0));
+}
+
 TEST(IntegerSDivOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerSDivOperation>({ -13, 32, 3, 32, -4, 32 });
