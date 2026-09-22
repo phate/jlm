@@ -120,7 +120,7 @@ public:
  * ptr2 = MemoryHoistBarrierOperation ptr io
  * ... = LoadNonVolatileOperation ptr2 ...
  *
- * The \ref MemoryHoistBarrierOperation has a \ref MemoryHoistBarrierOperation::dereferenceableSize
+ * The \ref MemoryHoistBarrierOperation has a \ref MemoryHoistBarrierOperation::dereferenceableSize_
  * attribute, which determines the number of bytes that its input address is known to be
  * dereferenceable.
  */
