@@ -194,8 +194,8 @@ static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>> integerUleNorm
 static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>> integerUltNormalizations(
     { IntegerUltOperation::foldConstants, IntegerUltOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
-    integerAddNormalizations({ IntegerAddOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>> integerAddNormalizations(
+    { IntegerAddOperation::foldConstants, IntegerAddOperation::normalizeIdempotent });
 
 static std::vector<rvsdg::NodeNormalization<IntegerSubOperation>> integerSubNormalizations(
     { IntegerSubOperation::normalizeAdditiveInverse, IntegerSubOperation::foldConstants });
