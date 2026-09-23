@@ -362,6 +362,18 @@ public:
     return true;
   }
 
+  bool
+  is_zero() const noexcept
+  {
+    for (const auto bit : data_)
+    {
+      if (bit != '0')
+        return false;
+    }
+
+    return true;
+  }
+
   inline bool
   is_negative() const noexcept
   {

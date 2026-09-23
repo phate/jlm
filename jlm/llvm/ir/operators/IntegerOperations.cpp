@@ -774,7 +774,7 @@ IntegerOrOperation::normalizeIdempotent(
   const auto & tracedOperand1 = llvm::traceOutput(operand1);
   auto [c1Node, c1Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand1);
-  if (c1Operation && c1Operation->Representation().to_uint() == 0)
+  if (c1Operation && c1Operation->Representation().is_zero())
   {
     return std::vector({ &operand2 });
   }
@@ -782,7 +782,7 @@ IntegerOrOperation::normalizeIdempotent(
   const auto & tracedOperand2 = llvm::traceOutput(operand2);
   auto [c2Node, c2Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand2);
-  if (c2Operation && c2Operation->Representation().to_uint() == 0)
+  if (c2Operation && c2Operation->Representation().is_zero())
   {
     return std::vector({ &operand1 });
   }
