@@ -364,19 +364,19 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-LoadNonVolatileOperation::normalizeIOBarrierAddress(
+LoadNonVolatileOperation::normalizeMemoryHoistBarrierAddress(
     const LoadNonVolatileOperation & loadOperation,
     const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() >= 1);
   const auto address = operands[0];
 
-  auto [ioBarrierNode, ioBarrierOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*address);
-  if (!ioBarrierOperation)
+  auto [hoistBarrierNode, hoistBarrierOp] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(*address);
+  if (!hoistBarrierOp)
     return std::nullopt;
 
-  auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  auto & barredAddress = *MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode).origin();
   const auto & pointerOrigin = TracePointerOriginPrecise(barredAddress);
   const auto allocationSizeInBytes = getAllocationSizeInBytes(*pointerOrigin.BasePointer);
   if (!allocationSizeInBytes.has_value())

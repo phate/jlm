@@ -50,9 +50,11 @@ TEST(IOBarrierEliminationTests, testLambdaArgument)
   auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
   auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
 
-  auto & ioBarrierNode = IOBarrierOperation::createNode(*ptrArgument, *ioStateArgument);
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateArgument, 0);
 
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i32Type, 4);
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
 
   auto lambdaOutput = lambdaNode->finalize({ loadNode.output(0), ioStateArgument });
   GraphExport::Create(*lambdaOutput, "test");
@@ -61,8 +63,9 @@ TEST(IOBarrierEliminationTests, testLambdaArgument)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrier node connected to a lambda argument to NOT be eliminated
-  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  // We expect the MemoryHoistBarrierOperation node connected to a lambda argument to NOT be
+  // eliminated
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
 TEST(IOBarrierEliminationTests, testSizeIsRespected)
@@ -91,9 +94,11 @@ TEST(IOBarrierEliminationTests, testSizeIsRespected)
   auto testNode =
       TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
 
-  auto & ioBarrierNode = IOBarrierOperation::createNode(*ptrArgument, *testNode->output(0));
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
 
-  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i32Type, 4);
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
 
   auto lambdaOutput =
       lambdaNode->finalize({ loadNode1.output(0), loadNode2.output(0), testNode->output(0) });
@@ -103,9 +108,9 @@ TEST(IOBarrierEliminationTests, testSizeIsRespected)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrier node to NOT be eliminated as loadNode1 marks the pointer argument only
-  // dereferenceable with size i8, but loadNode2 requires size i32.
-  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  // We expect the MemoryHoistBarrierOperation node to NOT be eliminated as loadNode1 marks the
+  // pointer argument only dereferenceable with size i8, but loadNode2 requires size i32.
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
 TEST(IOBarrierEliminationTests, testSuccess)
@@ -134,9 +139,11 @@ TEST(IOBarrierEliminationTests, testSuccess)
   auto testNode =
       TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
 
-  auto & ioBarrierNode = IOBarrierOperation::createNode(*ptrArgument, *testNode->output(0));
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
 
-  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i32Type, 4);
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
 
   auto lambdaOutput =
       lambdaNode->finalize({ loadNode1.output(0), loadNode2.output(0), testNode->output(0) });
@@ -146,9 +153,9 @@ TEST(IOBarrierEliminationTests, testSuccess)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrier node to be eliminated as loadNode1 marks the pointer argument
-  // dereferenceable with size i64, but loadNode2 only requires size i32.
-  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  // We expect the MemoryHoistBarrierOperation node to be eliminated as loadNode1 marks the pointer
+  // argument dereferenceable with size i64, but loadNode2 only requires size i32.
+  EXPECT_FALSE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
 TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
@@ -178,12 +185,14 @@ TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
   auto testNode =
       TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
 
-  auto & ioBarrierNode = IOBarrierOperation::createNode(*ptrArgument, *testNode->output(0));
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
 
-  auto & load8Node = LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i8Type, 4);
+  auto & load8Node =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i8Type, 4);
 
   auto & load64Node =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode.output(0), {}, i64Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i64Type, 4);
 
   auto lambdaOutput = lambdaNode->finalize(
       { load32Node.output(0), load8Node.output(0), load64Node.output(0), testNode->output(0) });
@@ -193,15 +202,15 @@ TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
 
-  // We expect that the load8Node is not any longer barred behind the IOBarrier node as ptrArgument
-  // is dereferenceable for 32 bits.
+  // We expect that the load8Node is not any longer barred behind the MemoryHoistBarrierOperation
+  // node as ptrArgument is dereferenceable for 32 bits.
   EXPECT_EQ(LoadOperation::AddressInput(load8Node).origin(), ptrArgument);
 
-  // We expect that the load64Node is still barred behind the IOBarrier node as ptrArgument is only
-  // dereferenceable for 64 bits.
-  EXPECT_EQ(LoadOperation::AddressInput(load64Node).origin(), ioBarrierNode.output(0));
+  // We expect that the load64Node is still barred behind the MemoryHoistBarrierOperation node as
+  // ptrArgument is only dereferenceable for 64 bits.
+  EXPECT_EQ(LoadOperation::AddressInput(load64Node).origin(), hoistBarrierNode.output(0));
 }
 
 TEST(IOBarrierEliminationTests, testGamma)
@@ -235,18 +244,20 @@ TEST(IOBarrierEliminationTests, testGamma)
   auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
 
   // subregion 0
-  auto & ioBarrierNode0 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode0 = MemoryHoistBarrierOperation::createNode(
       *ptrEntryVar.branchArgument[0],
-      *ioStateEntryVar.branchArgument[0]);
+      *ioStateEntryVar.branchArgument[0],
+      0);
   auto & load32Node =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode0.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode0.output(0), {}, i32Type, 4);
 
   // subregion 1
-  auto & ioBarrierNode1 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
       *ptrEntryVar.branchArgument[1],
-      *ioStateEntryVar.branchArgument[1]);
+      *ioStateEntryVar.branchArgument[1],
+      0);
   auto & load64Node =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode1.output(0), {}, i64Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode1.output(0), {}, i64Type, 4);
   auto testNode =
       TestOperation::createNode(gammaNode->subregion(1), { load64Node.output(0) }, { i32Type });
 
@@ -263,11 +274,13 @@ TEST(IOBarrierEliminationTests, testGamma)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect the IOBarrierOperation node in gamma subregion 0 to be eliminated
-  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(*gammaNode->subregion(0), true));
+  // We expect the MemoryHoistBarrierOperation node in gamma subregion 0 to be eliminated
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(0), true));
 
-  // We expect the IOBarrierOperation nodes in gamma subregion 1 NOT to be eliminated
-  EXPECT_TRUE(Region::containsOperation<IOBarrierOperation>(*gammaNode->subregion(1), true));
+  // We expect the MemoryHoistBarrierOperation nodes in gamma subregion 1 NOT to be eliminated
+  EXPECT_TRUE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(1), true));
 }
 
 TEST(IOBarrierEliminationTest, testNormalizeation)
@@ -289,37 +302,41 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
   auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
 
-  auto & ioBarrierNode0 = IOBarrierOperation::createNode(*ptrArgument, *ioStateArgument);
+  auto & hoistBarrierNode0 =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateArgument, 0);
 
   auto structuralNode = TestStructuralNode::create(lambdaNode->subregion(), 2);
   auto ptrInputVar = structuralNode->addInputWithArguments(*ptrArgument);
   auto ioStateInputVar = structuralNode->addInputWithArguments(*ioStateArgument);
 
   // subregion 0
-  auto & ioBarrierNode1 =
-      IOBarrierOperation::createNode(*ptrInputVar.argument[0], *ioStateInputVar.argument[0]);
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
+      *ptrInputVar.argument[0],
+      *ioStateInputVar.argument[0],
+      0);
 
   // subregion 1
   // Nothing needs to be done
 
   // finalize
-  auto ptrOutputVar1 =
-      structuralNode->addOutputWithResults({ ioBarrierNode1.output(0), ptrInputVar.argument[1] });
+  auto ptrOutputVar1 = structuralNode->addOutputWithResults(
+      { hoistBarrierNode1.output(0), ptrInputVar.argument[1] });
   auto ptrOutputVar2 =
       structuralNode->addOutputWithResults({ ptrInputVar.argument[0], ptrInputVar.argument[1] });
   auto ioStateOutputVar = structuralNode->addOutputWithResults(
       { ioStateInputVar.argument[0], ioStateInputVar.argument[1] });
 
-  auto & ioBarrierNode2 =
-      IOBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output);
+  auto & hoistBarrierNode2 =
+      MemoryHoistBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output, 0);
 
-  auto & ioBarrierNode3 = IOBarrierOperation::createNode(*ptrArgument, *ioStateOutputVar.output);
+  auto & hoistBarrierNode3 =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateOutputVar.output, 0);
 
-  auto lambdaOutput = lambdaNode->finalize({ ioBarrierNode0.output(0),
-                                             ioBarrierNode2.output(0),
+  auto lambdaOutput = lambdaNode->finalize({ hoistBarrierNode0.output(0),
+                                             hoistBarrierNode2.output(0),
                                              ptrOutputVar1.output,
                                              ptrOutputVar2.output,
-                                             ioBarrierNode3.output(0),
+                                             hoistBarrierNode3.output(0),
                                              ioStateOutputVar.output });
   GraphExport::Create(*lambdaOutput, "test");
 
@@ -331,10 +348,12 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   EXPECT_EQ(ptrInputVar.argument[0]->nusers(), 1);
   EXPECT_EQ(ptrOutputVar1.output->nusers(), 1);
 
-  EXPECT_EQ(ptrInputVar.input->origin(), ioBarrierNode0.output(0));
-  EXPECT_EQ(ptrOutputVar2.result[0]->origin(), ioBarrierNode1.output(0));
-  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), ioBarrierNode2.output(0));
-  EXPECT_EQ(IOBarrierOperation::BarredInput(ioBarrierNode3).origin(), ioBarrierNode0.output(0));
+  EXPECT_EQ(ptrInputVar.input->origin(), hoistBarrierNode0.output(0));
+  EXPECT_EQ(ptrOutputVar2.result[0]->origin(), hoistBarrierNode1.output(0));
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), hoistBarrierNode2.output(0));
+  EXPECT_EQ(
+      MemoryHoistBarrierOperation::getAddressInput(hoistBarrierNode3).origin(),
+      hoistBarrierNode0.output(0));
 }
 
 TEST(IOBarrierElimination, testStoreMarking)
@@ -373,11 +392,12 @@ TEST(IOBarrierElimination, testStoreMarking)
   auto memoryStateEntryVar = gammaNode->AddEntryVar(storeNode.output(0));
 
   // subregion 0
-  auto & ioBarrierNode = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
       *ptrEntryVar.branchArgument[0],
-      *ioStateEntryVar.branchArgument[0]);
+      *ioStateEntryVar.branchArgument[0],
+      0);
   auto & load32Node = LoadNonVolatileOperation::CreateNode(
-      *ioBarrierNode.output(0),
+      *hoistBarrierNode.output(0),
       { memoryStateEntryVar.branchArgument[0] },
       i32Type,
       4);
@@ -400,8 +420,9 @@ TEST(IOBarrierElimination, testStoreMarking)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect both IOBarrierOperation nodes to be eliminated
-  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(*lambdaNode->subregion(), true));
+  // We expect both MemoryHoistBarrierOperation nodes to be eliminated
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*lambdaNode->subregion(), true));
 }
 
 TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
@@ -426,10 +447,12 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
 
   auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, pointerType, 4);
 
-  auto & ioBarrierNode1 =
-      IOBarrierOperation::createNode(LoadOperation::LoadedValueOutput(loadNode1), *ioStateArgument);
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
+      LoadOperation::LoadedValueOutput(loadNode1),
+      *ioStateArgument,
+      0);
   auto & loadNode2 =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode1.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode1.output(0), {}, i32Type, 4);
 
   auto testNode = TestOperation::createNode(lambdaNode->subregion(), {}, { controlType });
   auto gammaNode = GammaNode::create(testNode->output(0), 2);
@@ -438,11 +461,12 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
   auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
 
   // subregion 0
-  auto & ioBarrierNode2 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode2 = MemoryHoistBarrierOperation::createNode(
       *ptrEntryVar.branchArgument[0],
-      *ioStateEntryVar.branchArgument[0]);
+      *ioStateEntryVar.branchArgument[0],
+      0);
   auto & loadNode3 =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode2.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode2.output(0), {}, i32Type, 4);
 
   // subregion 1
   // Nothing needs to be done
@@ -459,8 +483,8 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
   IOBarrierElimination::normalizeIOBarriers(rvsdg.GetRootRegion());
 
   // Assert
-  // We expect the origin of the ptrEntryVar to be the outermost IOBarrierNode
-  EXPECT_EQ(ptrEntryVar.input->origin(), ioBarrierNode1.output(0));
+  // We expect the origin of the ptrEntryVar to be the outermost MemoryHoistBarrierOperation node
+  EXPECT_EQ(ptrEntryVar.input->origin(), hoistBarrierNode1.output(0));
 }
 
 }

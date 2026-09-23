@@ -381,9 +381,9 @@ AggregateAllocaSplitting::checkGetElementPtrUsers(const rvsdg::SimpleNode & gepN
 
                     return true;
                   },
-                  [&](const IOBarrierOperation &)
+                  [&](const MemoryHoistBarrierOperation &)
                   {
-                    addToVisitSet(*simpleNode.output(0));
+                    addToVisitSet(MemoryHoistBarrierOperation::getAddressOutput(simpleNode));
                     return true;
                   },
                   [&]()

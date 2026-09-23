@@ -44,6 +44,14 @@ OutputTracer::traceStep(
     return TraceStepResult::createStepResult(*IOBarrierOperation::BarredInput(*node).origin());
   }
 
+  if (const auto [node, memoryHoistBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(trace1Output);
+      node && memoryHoistBarrierOp)
+  {
+    return TraceStepResult::createStepResult(
+        *MemoryHoistBarrierOperation::getAddressInput(*node).origin());
+  }
+
   // If enabled, try tracing through the memory states of load nodes
   if (traceThroughLoadedStates_)
   {
