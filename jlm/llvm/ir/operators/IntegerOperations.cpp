@@ -789,18 +789,18 @@ IntegerOrOperation::normalizeIdempotent(
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
 
-  const auto & tracedOperand1 = llvm::traceOutput(operand1);
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, true);
   auto [c1Node, c1Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand1);
-  if (c1Operation && c1Operation->Representation().is_zero())
+  if (c1Operation && c1Operation->Representation().isZero())
   {
     return std::vector({ &operand2 });
   }
 
-  const auto & tracedOperand2 = llvm::traceOutput(operand2);
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, true);
   auto [c2Node, c2Operation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand2);
-  if (c2Operation && c2Operation->Representation().is_zero())
+  if (c2Operation && c2Operation->Representation().isZero())
   {
     return std::vector({ &operand1 });
   }

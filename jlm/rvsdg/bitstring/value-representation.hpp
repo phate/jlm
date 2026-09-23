@@ -363,7 +363,7 @@ public:
   }
 
   bool
-  is_zero() const noexcept
+  isZero() const noexcept
   {
     for (const auto bit : data_)
     {
