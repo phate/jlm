@@ -763,7 +763,8 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::IOBarrier>(
         Builder_->getUnknownLoc(),
         ConvertType(*node.output(0)->Type()),
-        inputs[0]);
+        inputs[0],
+        inputs[1]);
   }
   else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
   {
