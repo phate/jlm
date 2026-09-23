@@ -41,14 +41,14 @@ OutputTracer::traceStep(
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1Output);
       node && ioBarrierOp)
   {
-    return TraceStepResult::createStepResult(*IOBarrierOperation::BarredInput(*node).origin());
+    return TraceStepResult::createStepOutput(*IOBarrierOperation::BarredInput(*node).origin());
   }
 
   if (const auto [node, memoryHoistBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(trace1Output);
       node && memoryHoistBarrierOp)
   {
-    return TraceStepResult::createStepResult(
+    return TraceStepResult::createStepOutput(
         *MemoryHoistBarrierOperation::getAddressInput(*node).origin());
   }
 
@@ -63,7 +63,7 @@ OutputTracer::traceStep(
       {
         // Map the memory state output to the corresponding memory state input
         auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1Output);
-        return TraceStepResult::createStepResult(*memoryStateInput.origin());
+        return TraceStepResult::createStepOutput(*memoryStateInput.origin());
       }
     }
   }

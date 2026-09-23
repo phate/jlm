@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/util/common.hpp"
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -40,10 +41,18 @@ OutputTracer::trace(Output & output, const Region * withinRegion)
   if (!isRegionPredicateCheckingEnabled())
     backEdgeState = BackEdgeState::PossiblyBackEdgeTaken;
 
-  return traceInternal(output, backEdgeState, withinRegion);
+  auto result = traceInternal(output, backEdgeState, withinRegion);
+
+  // If the output is statically unreachable, it may not have any origins,
+  // so return the same output back
+  if (result.isImpossibleOrigin())
+    return output;
+
+  JLM_ASSERT(result.isFinalOutput());
+  return result.getOutput();
 }
 
-Output &
+OutputTracer::TraceStepResult
 OutputTracer::traceInternal(
     Output & output,
     BackEdgeState backEdgeState,
@@ -56,11 +65,12 @@ OutputTracer::traceInternal(
   {
     const auto traceStepResult = traceStep(*head, backEdgeState, withinRegion);
 
-    // If the tracing step is final, we are done
-    if (traceStepResult.isFinalResult())
-      return traceStepResult.getOutput();
+    // If the tracing reached a final output, or determined no origin exists, stop now
+    if (traceStepResult.isFinalOutput() || traceStepResult.isImpossibleOrigin())
+      return traceStepResult;
 
-    // If the tracing step is not final, it must have made progress
+    // Otherwise the result is a tracing step, and it must have made progress
+    JLM_ASSERT(traceStepResult.isStepOutput());
     JLM_ASSERT(&traceStepResult.getOutput() != head);
 
     // Keep tracing from the step result
@@ -86,7 +96,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
   // First check the invariance cache
   if (const auto invariantValueInput = lookupInInvarianceCache(output))
   {
-    return TraceStepResult::createStepResult(*invariantValueInput->origin());
+    return TraceStepResult::createStepOutput(*invariantValueInput->origin());
   }
 
   const auto exitVar = gammaNode.MapOutputExitVar(output);
@@ -120,18 +130,24 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
         continue;
     }
 
-    auto tracedInner = branchResult->origin();
+    auto innerOrigin = branchResult->origin();
 
     if (isDeepInvarianceCheckingEnabled())
     {
       // Trace the branch result origin, but only within the gamma subregion
-      tracedInner = &traceInternal(*tracedInner, backEdgeState, tracedInner->region());
+      auto traceInnerResult = traceInternal(*innerOrigin, backEdgeState, innerOrigin->region());
+
+      // Tracing inside the subregion only leads to regions that can not reach the starting output
+      if (traceInnerResult.isImpossibleOrigin())
+        continue;
+
+      innerOrigin = &traceInnerResult.getOutput();
     }
 
     // Set the single inner origin, or clear it if we already had one
     if (!singleInnerOrigin.has_value())
     {
-      singleInnerOrigin = tracedInner;
+      singleInnerOrigin = innerOrigin;
     }
     else
     {
@@ -139,10 +155,10 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
     }
 
     // Check if the subregion result was traced all the way to an argument
-    if (TryGetRegionParentNode<GammaNode>(*tracedInner) == &gammaNode)
+    if (TryGetRegionParentNode<GammaNode>(*innerOrigin) == &gammaNode)
     {
       // Get the origin of the region argument outside the gamma
-      auto & gammaInput = gammaNode.mapBranchArgumentToInput(*tracedInner);
+      auto & gammaInput = gammaNode.mapBranchArgumentToInput(*innerOrigin);
       Output & outerOrigin = *gammaInput.origin();
 
       // If this is the first outer origin, make it the common outer origin for now
@@ -165,11 +181,18 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
 
     // Stop looping through subregions if there is neither an inner origin or a common outer origin
     if (commonOuterOrigin == nullptr && singleInnerOrigin == nullptr)
-      return TraceStepResult::createFinalResult(output);
+      return TraceStepResult::createFinalOutput(output);
+  }
+
+  // All subregions either agree with commonOuterOrigin, or set it to nullptr
+  // If it is still nullopt, that means none of the subregions were reachable.
+  if (!commonOuterOrigin.has_value())
+  {
+    return TraceStepResult::createImpossibleOrigin();
   }
 
   // If we found a common outer origin, continue tracing from there
-  if (commonOuterOrigin.has_value() && *commonOuterOrigin != nullptr)
+  if (*commonOuterOrigin != nullptr)
   {
     JLM_ASSERT(commonGammaInput != nullptr);
 
@@ -180,7 +203,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
       insertInInvarianceCache(output, *commonGammaInput);
     }
 
-    return TraceStepResult::createStepResult(*commonGammaInput->origin());
+    return TraceStepResult::createStepOutput(*commonGammaInput->origin());
   }
 
   // If only a single gamma subregion provides a possible origin, use it
@@ -189,11 +212,11 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
     JLM_ASSERT(isTracingIntoSubregionsEnabled());
 
     // The origins found inside subregions have already been fully traced, so they are final
-    return TraceStepResult::createFinalResult(**singleInnerOrigin);
+    return TraceStepResult::createFinalOutput(**singleInnerOrigin);
   }
 
   // Tracing was unable to make any progress beyond the gamma output
-  return TraceStepResult::createFinalResult(output);
+  return TraceStepResult::createFinalOutput(output);
 }
 
 OutputTracer::TraceStepResult
@@ -202,22 +225,29 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
   // Lookup the output in the invariance cache
   if (const auto invariantValueInput = lookupInInvarianceCache(output))
   {
-    return TraceStepResult::createStepResult(*invariantValueInput->origin());
+    return TraceStepResult::createStepOutput(*invariantValueInput->origin());
   }
 
   const auto loopVar = thetaNode.MapOutputLoopVar(output);
 
-  auto tracedInner = loopVar.post->origin();
+  auto innerOrigin = loopVar.post->origin();
 
   // If invariance detection is enabled, perform tracing inside the subregion
   if (isDeepInvarianceCheckingEnabled())
   {
     // trace the origin within the thetaNode, but only within the theta's subregion
-    tracedInner = &traceInternal(*tracedInner, backEdgeState, thetaNode.subregion());
+    auto tracedInnerResult = traceInternal(*innerOrigin, backEdgeState, thetaNode.subregion());
+
+    // If tracing in the theta only reaches regions that can not reach the starting output,
+    // the theta itself can not be the origin providing values to the starting output.
+    if (tracedInnerResult.isImpossibleOrigin())
+      return TraceStepResult::createImpossibleOrigin();
+
+    innerOrigin = &tracedInnerResult.getOutput();
   }
 
   // If tracing reached the pre argument of the same loop variable, it might be invariant
-  if (tracedInner == loopVar.pre)
+  if (innerOrigin == loopVar.pre)
   {
     // If the loop variable was found to be invariant,
     // but we also made an assumption about not taking any back-edges around the theta subregion,
@@ -227,33 +257,38 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
     {
       // The tracing already made no assumptions about back-edges.
       // The loop variable is definitely invariant
-      return TraceStepResult::createStepResult(insertInInvarianceCache(output, *loopVar.input));
+      return TraceStepResult::createStepOutput(insertInInvarianceCache(output, *loopVar.input));
     }
 
-    // Try tracing from the loop var post again, this time with no assumption
-    auto tracedInnerAgain = &traceInternal(
+    // Try tracing from the loop var post again, this time with no assumptions about back-edges
+    auto tracedInnerAgain = traceInternal(
         *loopVar.post->origin(),
         BackEdgeState::PossiblyBackEdgeTaken,
         thetaNode.subregion());
-    if (tracedInnerAgain == loopVar.pre)
+
+    // The loop variable has already been traced once without being impossible.
+    // Tracing again with weaker assumptions can never fail.
+    JLM_ASSERT(!tracedInnerAgain.isImpossibleOrigin());
+
+    if (&tracedInnerAgain.getOutput() == loopVar.pre)
     {
       // The loop variable is in fact invariant, connect the output to the loop variable input
-      return TraceStepResult::createStepResult(insertInInvarianceCache(output, *loopVar.input));
+      return TraceStepResult::createStepOutput(insertInInvarianceCache(output, *loopVar.input));
     }
 
     // If we get here, it means that the loop variable was only found to be invariant in the final
     // iteration of the loop, but not in every iteration
     JLM_ASSERT(!rvsdg::ThetaLoopVarIsInvariant(loopVar));
   }
-  else if (TryGetRegionParentNode<ThetaNode>(*tracedInner) == &thetaNode)
+  else if (TryGetRegionParentNode<ThetaNode>(*innerOrigin) == &thetaNode)
   {
     // Tracing from the post result lead to the pre argument of a different loop variable.
     // Check if that loop variable is trivially invariant, and if it is, return its input origin.
 
-    auto originLoopVar = thetaNode.MapPreLoopVar(*tracedInner);
+    auto originLoopVar = thetaNode.MapPreLoopVar(*innerOrigin);
     if (ThetaLoopVarIsInvariant(originLoopVar))
     {
-      return TraceStepResult::createStepResult(
+      return TraceStepResult::createStepOutput(
           insertInInvarianceCache(output, *originLoopVar.input));
     }
   }
@@ -263,11 +298,11 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
   if (isTracingIntoSubregionsEnabled())
   {
     // The origin found inside the theta is already fully traced, so it is final
-    return TraceStepResult::createFinalResult(*tracedInner);
+    return TraceStepResult::createFinalOutput(*innerOrigin);
   }
 
   // Otherwise, we are unable to trace further from the theta output
-  return TraceStepResult::createFinalResult(output);
+  return TraceStepResult::createFinalOutput(output);
 }
 
 OutputTracer::TraceStepResult
@@ -277,19 +312,18 @@ OutputTracer::traceThetaArgument(ThetaNode & thetaNode, Output & output)
   auto loopVar = thetaNode.MapPreLoopVar(output);
 
   // Trace from the corresponding theta output by following the back-edge
-  auto tracedOutput =
+  auto outputTraceResult =
       traceThetaOutput(thetaNode, *loopVar.output, BackEdgeState::PossiblyBackEdgeTaken);
 
   // If the loop output is invariant and has the same origin as the loop variable,
-  // tracing can continue from outside the theta
-  if (&tracedOutput.getOutput() == loopVar.input->origin())
+  // tracing can continue outside the theta, so we get a step output result
+  if (outputTraceResult.isStepOutput() && &outputTraceResult.getOutput() == loopVar.input->origin())
   {
-    JLM_ASSERT(!tracedOutput.isFinalResult());
-    return TraceStepResult::createStepResult(tracedOutput.getOutput());
+    return outputTraceResult;
   }
 
   // Otherwise tracing stops at the theta argument
-  return TraceStepResult::createFinalResult(output);
+  return TraceStepResult::createFinalOutput(output);
 }
 
 OutputTracer::TraceStepResult
@@ -298,7 +332,7 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
   if (withinRegion && withinRegion == TryGetOwnerRegion(output))
   {
     // We are not allowed to leave this region, and tracing has reached one of its arguments
-    return TraceStepResult::createFinalResult(output);
+    return TraceStepResult::createFinalOutput(output);
   }
 
   // Handle gamma node outputs
@@ -310,7 +344,7 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
   // Handle gamma node arguments
   if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
   {
-    return TraceStepResult::createStepResult(mapGammaArgumentToOrigin(*gammaNode, output));
+    return TraceStepResult::createStepOutput(mapGammaArgumentToOrigin(*gammaNode, output));
   }
 
   // Handle theta node outputs
@@ -329,16 +363,16 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
 
   // If we are not doing interprocedural tracing, stop tracing now
   if (!isInterprocedural_)
-    return TraceStepResult::createFinalResult(output);
+    return TraceStepResult::createFinalOutput(output);
 
   // Handle lambda context variables
   if (const auto lambda = TryGetRegionParentNode<LambdaNode>(output))
   {
     // If the argument is a contex variable, continue tracing
     if (const auto ctxVar = lambda->MapBinderContextVar(output))
-      return TraceStepResult::createStepResult(*ctxVar->input->origin());
+      return TraceStepResult::createStepOutput(*ctxVar->input->origin());
 
-    return TraceStepResult::createFinalResult(output);
+    return TraceStepResult::createFinalOutput(output);
   }
 
   // Handle delta context variables
@@ -346,7 +380,7 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
   {
     // If the argument is a contex variable, continue tracing
     const auto ctxVar = delta->MapBinderContextVar(output);
-    return TraceStepResult::createStepResult(*ctxVar.input->origin());
+    return TraceStepResult::createStepOutput(*ctxVar.input->origin());
   }
 
   // Handle phi outputs
@@ -355,9 +389,9 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
     if (enterPhiNodes_)
     {
       const auto fixVar = phiNode->MapOutputFixVar(output);
-      return TraceStepResult::createStepResult(*fixVar.result->origin());
+      return TraceStepResult::createStepOutput(*fixVar.result->origin());
     }
-    return TraceStepResult::createFinalResult(output);
+    return TraceStepResult::createFinalOutput(output);
   }
 
   // Handle phi region arguments
@@ -370,12 +404,12 @@ OutputTracer::traceStep(Output & output, BackEdgeState backEdgeState, const Regi
     if (const auto ctxVar = std::get_if<PhiNode::ContextVar>(&argument))
     {
       // Follow the context variable to outside the phi
-      return TraceStepResult::createStepResult(*ctxVar->input->origin());
+      return TraceStepResult::createStepOutput(*ctxVar->input->origin());
     }
-    return TraceStepResult::createFinalResult(output);
+    return TraceStepResult::createFinalOutput(output);
   }
 
-  return TraceStepResult::createFinalResult(output);
+  return TraceStepResult::createFinalOutput(output);
 }
 
 Output &
