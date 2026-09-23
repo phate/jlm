@@ -12,6 +12,8 @@ jobs:
   UnitTestsWithValgrind:
     runs-on: ubuntu-24.04
     steps:
+      - name: "Update dependencies"
+        run: sudo apt-get update
       - uses: actions/checkout@v4
       - name: "Run unit tests with valgrind"
         uses: ./.github/actions/BuildJlm

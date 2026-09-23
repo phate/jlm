@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Trace.hpp>
@@ -304,7 +305,7 @@ isAllocationSide(rvsdg::Output & output)
   if (fnToPtrOperation != nullptr)
   {
     const auto & tracedOutput =
-        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin());
+        rvsdg::traceOutputIntraProcedurally(*fnToPtrNode->input(0)->origin(), false);
     if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(tracedOutput))
     {
       return true;
@@ -324,8 +325,23 @@ PtrCmpOperation::normalizeNullPointerComparison(
     return std::nullopt;
 
   JLM_ASSERT(operands.size() == 2);
-  auto & tracedOperand1 = rvsdg::traceOutputIntraProcedurally(*operands[0]);
-  auto & tracedOperand2 = rvsdg::traceOutputIntraProcedurally(*operands[1]);
+  auto & tracedOperand1 = rvsdg::traceOutput(*operands[0], false);
+  auto & tracedOperand2 = rvsdg::traceOutput(*operands[1], false);
+
+  if (isOutputOf<ConstantPointerNullOperation>(tracedOperand1)
+      && isOutputOf<ConstantPointerNullOperation>(tracedOperand2))
+  {
+    auto & region = *operands[0]->region();
+    switch (ptrCmpOperation.predicate())
+    {
+    case ICmpPredicate::Eq:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 1));
+    case ICmpPredicate::Ne:
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
+    default:
+      throw std::logic_error("Unhandled predicate!");
+    }
+  }
 
   const bool hasRequiredOperands =
       (isOutputOf<ConstantPointerNullOperation>(tracedOperand1) && isAllocationSide(tracedOperand2))
@@ -339,15 +355,47 @@ PtrCmpOperation::normalizeNullPointerComparison(
     case ICmpPredicate::Eq:
       return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 0));
     case ICmpPredicate::Ne:
-      return std::vector<rvsdg::Output *>{
-        IntegerConstantOperation::Create(region, 1, 1).output(0)
-      };
+      return rvsdg::outputs(&IntegerConstantOperation::Create(region, 1, 1));
     default:
       throw std::logic_error("Unhandled predicate!");
     }
   }
 
   return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+PtrCmpOperation::normalizeIdenticalOperands(
+    const PtrCmpOperation & ptrCmpOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = operands[0];
+  auto & operand2 = operands[1];
+
+  const auto & tracedOperand1 = rvsdg::traceOutput(*operand1, true);
+  const auto & tracedOperand2 = rvsdg::traceOutput(*operand2, true);
+  if (&tracedOperand1 != &tracedOperand2)
+    return std::nullopt;
+
+  switch (ptrCmpOperation.predicate())
+  {
+  case ICmpPredicate::Eq:
+  case ICmpPredicate::Sge:
+  case ICmpPredicate::Sle:
+  case ICmpPredicate::Uge:
+  case ICmpPredicate::Ule:
+    return rvsdg::outputs(&IntegerConstantOperation::Create(*operand1->region(), 1, 1));
+
+  case ICmpPredicate::Ne:
+  case ICmpPredicate::Sgt:
+  case ICmpPredicate::Slt:
+  case ICmpPredicate::Ugt:
+  case ICmpPredicate::Ult:
+    return rvsdg::outputs(&IntegerConstantOperation::Create(*operand1->region(), 1, 0));
+  default:
+    throw std::logic_error("Unhandled predicate!");
+  }
 }
 
 ConstantFP::~ConstantFP() noexcept = default;
@@ -427,6 +475,105 @@ FCmpOperation::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output 
     const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FCmpOperation::foldConstants(
+    const FCmpOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+  JLM_ASSERT(!is<VectorType>(operand1.Type()));
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
+  auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
+  if (!c1Operation)
+    return std::nullopt;
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
+  auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
+  if (!c2Operation)
+    return std::nullopt;
+
+  auto & c1Representation = c1Operation->constant();
+  auto & c2Representation = c2Operation->constant();
+  const auto cmpResult = c1Representation.compare(c2Representation);
+
+  bool boolResult = false;
+  switch (operation.cmp())
+  {
+  case fpcmp::FALSE:
+    boolResult = false;
+    break;
+  case fpcmp::TRUE:
+    boolResult = true;
+    break;
+
+  case fpcmp::oeq:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ogt:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::oge:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpGreaterThan || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::olt:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpLessThan);
+    break;
+  case fpcmp::ole:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpLessThan || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::one:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpLessThan || cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::ord:
+    boolResult = (cmpResult != ::llvm::APFloat::cmpUnordered);
+    break;
+
+  case fpcmp::uno:
+    boolResult = (cmpResult == ::llvm::APFloat::cmpUnordered);
+    break;
+  case fpcmp::ueq:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ugt:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered
+         || cmpResult == ::llvm::APFloat::cmpGreaterThan);
+    break;
+  case fpcmp::uge:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpGreaterThan
+         || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::ult:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpLessThan);
+    break;
+  case fpcmp::ule:
+    boolResult =
+        (cmpResult == ::llvm::APFloat::cmpUnordered || cmpResult == ::llvm::APFloat::cmpLessThan
+         || cmpResult == ::llvm::APFloat::cmpEqual);
+    break;
+  case fpcmp::une:
+    boolResult = (cmpResult != ::llvm::APFloat::cmpEqual);
+    break;
+
+  default:
+    throw std::logic_error("Invalid FCmp operation");
+  }
+
+  auto result =
+      IntegerConstantOperation::Create(*operand1.region(), 1, boolResult ? 1 : 0).output(0);
+
+  return std::vector<rvsdg::Output *>({ result });
 }
 
 UndefValueOperation::~UndefValueOperation() noexcept = default;
@@ -534,6 +681,58 @@ FBinaryOperation::reduce_operand_pair(
     rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FBinaryOperation::foldConstants(
+    const FBinaryOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, false);
+  auto [c1Node, c1Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand1);
+  if (!c1Operation)
+    return std::nullopt;
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, false);
+  auto [c2Node, c2Operation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand2);
+  if (!c2Operation)
+    return std::nullopt;
+
+  auto c1Representation = c1Operation->constant();
+  const auto & c2Representation = c2Operation->constant();
+
+  switch (operation.fpop())
+  {
+  case fpop::add:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation + c2Representation));
+  case fpop::sub:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation - c2Representation));
+  case fpop::mul:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation * c2Representation));
+  case fpop::div:
+    return outputs(&ConstantFP::createNode(
+        *operand1.region(),
+        operation.size(),
+        c1Representation / c2Representation));
+  case fpop::mod:
+    c1Representation.mod(c2Representation);
+    return outputs(&ConstantFP::createNode(*operand1.region(), operation.size(), c1Representation));
+  default:
+    throw std::logic_error("Unsupported floating-point operation");
+  }
 }
 
 FNegOperation::~FNegOperation() noexcept = default;

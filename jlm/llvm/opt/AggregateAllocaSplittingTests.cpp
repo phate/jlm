@@ -290,13 +290,15 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
   // Assert
   // Check gep0
   {
-    const auto & tracedOutput = traceOutput(*StoreOperation::AddressInput(*storeGep0Node).origin());
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGep0Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit16Type);
   }
 
   // Check gep1
   {
-    const auto & tracedOutput = traceOutput(*StoreOperation::AddressInput(storeGep1Node).origin());
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(storeGep1Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit32Type);
   }
 
@@ -447,49 +449,49 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   // gepBit8
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit8Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit8Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit8Type);
   }
 
   // gepBit12
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit12Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit12Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit12Type);
   }
 
   // gepBit16
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit16Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit16Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit16Type);
   }
 
   // gepBit20
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit20Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit20Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit20Type);
   }
 
   // gepBit32
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit32Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit32Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit32Type);
   }
 
   // gepBit64
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit64Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit64Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit64Type);
   }
 
   // gepBit128
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit128Type);
   }
 

@@ -463,9 +463,11 @@ public:
   }
 
   /**
-   * Checks if the comparison is between a \ref ConstantPointerNullOperation and an allocation side
-   * guaranteed to never return a nullptr, and normalizes the \ref PtrCmpOperation to an
-   * \ref IntegerConstantOperation.
+   * Checks if the comparison is between:
+   * 1. a \ref ConstantPointerNullOperation and an allocation side guaranteed to never return a
+   * nullptr
+   * 2. two \ref ConstantPointerNullOperation%s
+   * and normalizes the \ref PtrCmpOperation to an \ref IntegerConstantOperation.
    *
    * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
    * @param operands The operands of the \ref PtrCmpOperation node.
@@ -475,6 +477,27 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeNullPointerComparison(
+      const PtrCmpOperation & ptrCmpOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalizations:
+   * y = PtrCmpOperation [eq, sge, sle, uge, ule] x x
+   * =>
+   * y = 1
+   *
+   * y = PtrCmpOperation [ne, sgt, slt, ult, ugt] x x
+   * =>
+   * y = 0
+   *
+   * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PtrCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref PtrCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const PtrCmpOperation & ptrCmpOperation,
       const std::vector<rvsdg::Output *> & operands);
 
@@ -640,6 +663,19 @@ public:
   {
     return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FCmpOperation & operation, const std::vector<rvsdg::Output *> & operands);
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const fpcmp & cmp, const Variable * op1, const Variable * op2)
@@ -907,6 +943,19 @@ public:
     auto op = std::make_unique<FBinaryOperation>(fpop, ft);
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FBinaryOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FBinaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FBinaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FBinaryOperation & operation, const std::vector<rvsdg::Output *> & operands);
 
 private:
   llvm::fpop op_;

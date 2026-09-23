@@ -14,11 +14,6 @@
 
 #include <unordered_map>
 
-namespace jlm::util
-{
-class GraphWriter;
-}
-
 namespace jlm::llvm::aa
 {
 

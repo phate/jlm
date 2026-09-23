@@ -343,7 +343,7 @@ LoopStrengthReduction::HoistChrec(
 
   if (rvsdg::Region::isAncestor(*targetLoop.subregion(), *thetaNode.subregion()))
   {
-    auto & traced = llvm::traceOutput(*chrecOutput, thetaNode.subregion());
+    auto & traced = llvm::traceOutput(*chrecOutput, false, thetaNode.subregion());
     if (traced.region() != thetaNode.region())
       return std::nullopt;
 
@@ -387,7 +387,7 @@ LoopStrengthReduction::HoistSCEVExpresssion(
 
     if (rvsdg::Region::isAncestor(*targetLoop->subregion(), *thetaNode.subregion()))
     {
-      auto & traced = llvm::traceOutput(*initLoopVar.pre, thetaNode.region());
+      auto & traced = llvm::traceOutput(*initLoopVar.pre, false, thetaNode.region());
 
       if (traced.region() != thetaNode.region())
         return std::nullopt;

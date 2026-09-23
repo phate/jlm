@@ -104,8 +104,7 @@ FunctionInlining::FunctionInlining()
 static std::vector<rvsdg::Output *>
 routeContextVariablesToRegion(rvsdg::Region & region, const rvsdg::LambdaNode & callee)
 {
-  constexpr bool enableCaching = false;
-  llvm::OutputTracer tracer(enableCaching);
+  llvm::OutputTracer tracer;
   // We avoid entering phi nodes, as we can not route from a sibling region
   tracer.setEnterPhiNodes(false);
 
@@ -256,7 +255,7 @@ hoistInlinedAllocas(
     JLM_ASSERT(oldAllocaNode);
 
     auto countOrigin = AllocaOperation::getCountInput(*oldAllocaNode).origin();
-    countOrigin = &rvsdg::traceOutputIntraProcedurally(*countOrigin);
+    countOrigin = &rvsdg::traceOutputIntraProcedurally(*countOrigin, false);
     auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOrigin);
     if (!countNode || countNode->ninputs() != 0)
       throw std::runtime_error("Alloca did not have a nullary count origin");
@@ -378,7 +377,7 @@ FunctionInlining::canBeInlined(rvsdg::Region & region, bool topLevelRegion)
 
       // Having allocation sizes that are not compile time constants also disqualifies from inlining
       auto countOutput = AllocaOperation::getCountInput(node).origin();
-      countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput);
+      countOutput = &rvsdg::traceOutputIntraProcedurally(*countOutput, false);
       auto countNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*countOutput);
 
       // The count must come from a node, and it must be nullary

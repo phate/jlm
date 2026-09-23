@@ -24,52 +24,63 @@
 namespace jlm::llvm
 {
 
-OutputTracer::OutputTracer(const bool enableCaching)
-    : rvsdg::OutputTracer(enableCaching)
+OutputTracer::OutputTracer()
+    : rvsdg::OutputTracer()
 {}
 
-rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+OutputTracer::TraceStepResult
+OutputTracer::traceStep(
+    rvsdg::Output & output,
+    BackEdgeState backEdgeState,
+    const rvsdg::Region * withinRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
+  const auto trace1 = rvsdg::OutputTracer::traceStep(output, backEdgeState, withinRegion);
+  auto & trace1Output = trace1.getOutput();
 
   if (const auto [node, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1Output);
       node && ioBarrierOp)
   {
-    return *IOBarrierOperation::BarredInput(*node).origin();
+    return TraceStepResult::createStepResult(*IOBarrierOperation::BarredInput(*node).origin());
   }
 
   // If enabled, try tracing through the memory states of load nodes
   if (traceThroughLoadedStates_)
   {
-    if (const auto [node, loadOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(trace1);
+    if (const auto [node, loadOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(trace1Output);
         node && loadOp)
     {
-      if (is<MemoryStateType>(trace1.Type()))
+      if (is<MemoryStateType>(trace1Output.Type()))
       {
         // Map the memory state output to the corresponding memory state input
-        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1);
-        return *memoryStateInput.origin();
+        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1Output);
+        return TraceStepResult::createStepResult(*memoryStateInput.origin());
       }
     }
   }
 
+  // We were not able to make any extra progress on the trace result, so return it as is
   return trace1;
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions
+          ? rvsdg::OutputTracer::StructuralNodePolicy::traceIntoSubregions
+          : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+  tracer.setRegionPredicateCheckingEnabled(mayEnterSubregions);
+  tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output, nullptr);
+  const auto & normalized = llvm::traceOutput(output, true);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
@@ -158,7 +169,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base);
+    base = &llvm::traceOutput(*base, false);
 
     if (const auto [gepNode, gepOperation] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -191,7 +202,7 @@ traceAllPointerOriginsInternal(
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  basePointer = &llvm::traceOutput(*basePointer);
+  basePointer = &llvm::traceOutput(*basePointer, false);
 
   auto it = traceCollection.AllTracedOutputs.find(basePointer);
   if (it != traceCollection.AllTracedOutputs.end())

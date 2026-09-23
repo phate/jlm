@@ -20,7 +20,7 @@ BitUnaryOperation::foldConstant(
 {
   JLM_ASSERT(operands.size() == 1);
 
-  const auto & tracedOperand = traceOutputIntraProcedurally(*operands[0]);
+  const auto & tracedOperand = traceOutputIntraProcedurally(*operands[0], false);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand);
   if (constantOperation)
@@ -40,8 +40,8 @@ BitBinaryOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
-  auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1);
-  auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2);
+  auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1, false);
+  auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2, false);
 
   if (rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand1)
       && rvsdg::IsOwnerNodeOperation<BitConstantOperation>(tracedOperand2))
@@ -58,11 +58,11 @@ BitBinaryOperation::reduce_operand_pair(
 {
   if (path == binop_reduction_constants)
   {
-    auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1);
+    auto & tracedOperand1 = traceOutputIntraProcedurally(*arg1, false);
     auto [constantNode1, constantOperation1] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
 
-    auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2);
+    auto & tracedOperand2 = traceOutputIntraProcedurally(*arg2, false);
     auto [constantNode2, constantOperation2] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
 
@@ -83,7 +83,7 @@ BitBinaryOperation::foldConstants(
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
 
-  const auto & tracedOperand1 = traceOutputIntraProcedurally(operand1);
+  const auto & tracedOperand1 = traceOutputIntraProcedurally(operand1, false);
   auto [constantNode1, constantOperation1] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
   if (!constantOperation1)
@@ -91,7 +91,7 @@ BitBinaryOperation::foldConstants(
     return std::nullopt;
   }
 
-  const auto & tracedOperand2 = traceOutputIntraProcedurally(operand2);
+  const auto & tracedOperand2 = traceOutputIntraProcedurally(operand2, false);
   auto [constantNode2, constantOperation2] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
   if (!constantOperation2)
@@ -128,11 +128,11 @@ BitCompareOperation::foldConstants(
   auto & operand1 = *operands[0];
   auto & operand2 = *operands[1];
 
-  const auto & tracedOperand1 = traceOutputIntraProcedurally(operand1);
+  const auto & tracedOperand1 = traceOutputIntraProcedurally(operand1, false);
   auto [constantNode1, constantOperation1] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand1);
 
-  const auto & tracedOperand2 = traceOutputIntraProcedurally(operand2);
+  const auto & tracedOperand2 = traceOutputIntraProcedurally(operand2, false);
   auto [constantNode2, constantOperation2] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<BitConstantOperation>(tracedOperand2);
 

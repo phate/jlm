@@ -50,8 +50,8 @@ LocalAliasAnalysis::setMaxTraceCollectionSize(size_t maxTraceCollectionSize)
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = llvm::traceOutput(p1);
-  const auto & p2Norm = llvm::traceOutput(p2);
+  const auto & p1Norm = llvm::traceOutput(p1, false);
+  const auto & p2Norm = llvm::traceOutput(p2, false);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)

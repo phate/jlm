@@ -221,6 +221,16 @@ public:
    */
   [[nodiscard]] std::vector<LoopVar>
   GetLoopVars() const;
+
+  /**
+   * Removes a \ref ThetaNode with a statically known false predicate by copying its subregion to
+   * the theta node's parent region.
+   *
+   * @param node The \ref ThetaNode that is supposed to be reduced.
+   * @return True, if transformation was successful, otherwise false.
+   */
+  static bool
+  reduceStaticallyKnownPredicate(Node & node);
 };
 
 static inline bool

@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -55,6 +56,8 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#SExtReductions", counters.numSExtReductions);
   AddMeasurement("#ZExtReductions", counters.numZExtReductions);
   AddMeasurement("#TruncReductions", counters.numTruncReductions);
+  AddMeasurement("#FPExtReductions", counters.numFPExtReductions);
+  AddMeasurement("#FPTruncReductions", counters.numFPTruncReductions);
   AddMeasurement("#IntegerEqReductions", counters.numIntegerEqReductions);
   AddMeasurement("#IntegerNeReductions", counters.numIntegerNeReductions);
   AddMeasurement("#IntegerSgeReductions", counters.numIntegerSgeReductions);
@@ -80,10 +83,15 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#IntegerOrReductions", counters.numIntegerOrReductions);
   AddMeasurement("#IntegerXorReductions", counters.numIntegerXorReductions);
 
+  AddMeasurement("#FPBinaryOpReductions", counters.numFPBinaryOpReductions);
+
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
+  AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
+
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
+  AddMeasurement("#ThetaReductions", counters.numThetaReductions);
 
   GetTimer(Label::Timer).stop();
 }
@@ -150,35 +158,41 @@ static std::vector<rvsdg::NodeNormalization<ZExtOperation>>
 static std::vector<rvsdg::NodeNormalization<TruncOperation>>
     truncOperationNormalizations({ TruncOperation::foldConstant });
 
-static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>>
-    integerEqNormalizations({ IntegerEqOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<FPExtOperation>>
+    fpExtOperationNormalizations({ FPExtOperation::foldConstant });
 
-static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>>
-    integerNeNormalizations({ IntegerNeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<FPTruncOperation>>
+    fpTruncOperationNormalizations({ FPTruncOperation::foldConstant });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>>
-    integerSgeNormalizations({ IntegerSgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerEqOperation>> integerEqNormalizations(
+    { IntegerEqOperation::foldConstants, IntegerEqOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>>
-    integerSgtNormalizations({ IntegerSgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerNeOperation>> integerNeNormalizations(
+    { IntegerNeOperation::foldConstants, IntegerNeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>>
-    integerSleNormalizations({ IntegerSleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgeOperation>> integerSgeNormalizations(
+    { IntegerSgeOperation::foldConstants, IntegerSgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>>
-    integerSltNormalizations({ IntegerSltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSgtOperation>> integerSgtNormalizations(
+    { IntegerSgtOperation::foldConstants, IntegerSgtOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>>
-    integerUgeNormalizations({ IntegerUgeOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSleOperation>> integerSleNormalizations(
+    { IntegerSleOperation::foldConstants, IntegerSleOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>>
-    integerUgtNormalizations({ IntegerUgtOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerSltOperation>> integerSltNormalizations(
+    { IntegerSltOperation::foldConstants, IntegerSltOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>>
-    integerUleNormalizations({ IntegerUleOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgeOperation>> integerUgeNormalizations(
+    { IntegerUgeOperation::foldConstants, IntegerUgeOperation::normalizeIdenticalOperands });
 
-static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>>
-    integerUltNormalizations({ IntegerUltOperation::foldConstants });
+static std::vector<rvsdg::NodeNormalization<IntegerUgtOperation>> integerUgtNormalizations(
+    { IntegerUgtOperation::foldConstants, IntegerUgtOperation::normalizeIdenticalOperands });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUleOperation>> integerUleNormalizations(
+    { IntegerUleOperation::foldConstants, IntegerUleOperation::normalizeIdenticalOperands });
+
+static std::vector<rvsdg::NodeNormalization<IntegerUltOperation>> integerUltNormalizations(
+    { IntegerUltOperation::foldConstants, IntegerUltOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<IntegerAddOperation>>
     integerAddNormalizations({ IntegerAddOperation::foldConstants });
@@ -219,6 +233,9 @@ static std::vector<rvsdg::NodeNormalization<IntegerOrOperation>> integerOrNormal
 static std::vector<rvsdg::NodeNormalization<IntegerXorOperation>>
     integerXorNormalizations({ IntegerXorOperation::foldConstants });
 
+static std::vector<rvsdg::NodeNormalization<FBinaryOperation>>
+    fpBinaryOpNormalizations({ FBinaryOperation::foldConstants });
+
 static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
     loadNonVolatileNormalizations({ LoadNonVolatileOperation::NormalizeLoadStore,
                                     LoadNonVolatileOperation::NormalizeLoadAlloca,
@@ -256,10 +273,14 @@ static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>
           LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
 
 static std::vector<rvsdg::NodeNormalization<PtrCmpOperation>>
-    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison });
+    ptrCmpNormalizations({ PtrCmpOperation::normalizeNullPointerComparison,
+                           PtrCmpOperation::normalizeIdenticalOperands });
 
 static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
     getElementPtrNormalizations({ GetElementPtrOperation::normalizeIdempotent });
+
+static std::vector<rvsdg::NodeNormalization<FCmpOperation>>
+    fCmpNormalizations({ FCmpOperation::foldConstants });
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::BinaryOperation>>
     binaryOperationNormalizations({ rvsdg::NormalizeBinaryOperation });
@@ -348,13 +369,20 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 bool
 NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
-  bool reductionPerformed = false;
-
-  // Reduce structural nodes
-  if (const auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
-  {
-    reductionPerformed |= ReduceGammaNode(*gammaNode);
-  }
+  const bool reductionPerformed = rvsdg::MatchTypeWithDefault(
+      structuralNode,
+      [this](rvsdg::GammaNode & gammaNode)
+      {
+        return ReduceGammaNode(gammaNode);
+      },
+      [this](rvsdg::ThetaNode & thetaNode)
+      {
+        return reduceThetaNode(thetaNode);
+      },
+      []()
+      {
+        return false;
+      });
 
   if (reductionPerformed)
   {
@@ -381,6 +409,16 @@ NodeReduction::ReduceGammaNode(rvsdg::GammaNode & gammaNode)
   const bool reductionPerformed = reduceStaticallyKnownPredicate(gammaNode);
   if (reductionPerformed)
     Statistics_->getReductionCounters().numGammaReductions++;
+
+  return reductionPerformed;
+}
+
+bool
+NodeReduction::reduceThetaNode(rvsdg::ThetaNode & thetaNode)
+{
+  const bool reductionPerformed = rvsdg::ThetaNode::reduceStaticallyKnownPredicate(thetaNode);
+  if (reductionPerformed)
+    Statistics_->getReductionCounters().numThetaReductions++;
 
   return reductionPerformed;
 }
@@ -457,6 +495,20 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         truncOperationNormalizations,
         Statistics_->getReductionCounters().numTruncReductions);
+  }
+  if (is<FPExtOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FPExtOperation>(
+        simpleNode,
+        fpExtOperationNormalizations,
+        Statistics_->getReductionCounters().numFPExtReductions);
+  }
+  if (is<FPTruncOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FPTruncOperation>(
+        simpleNode,
+        fpTruncOperationNormalizations,
+        Statistics_->getReductionCounters().numFPTruncReductions);
   }
   if (is<IntegerEqOperation>(&simpleNode))
   {
@@ -619,6 +671,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         integerXorNormalizations,
         Statistics_->getReductionCounters().numIntegerXorReductions);
   }
+  if (is<FBinaryOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FBinaryOperation>(
+        simpleNode,
+        fpBinaryOpNormalizations,
+        Statistics_->getReductionCounters().numFPBinaryOpReductions);
+  }
   if (is<PtrCmpOperation>(&simpleNode))
   {
     return reduceSimpleNode<PtrCmpOperation>(
@@ -632,6 +691,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         getElementPtrNormalizations,
         Statistics_->getReductionCounters().numGetElementPtrReductions);
+  }
+  if (is<FCmpOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<FCmpOperation>(
+        simpleNode,
+        fCmpNormalizations,
+        Statistics_->getReductionCounters().numFCmpReductions);
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {

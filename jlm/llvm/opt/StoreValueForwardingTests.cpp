@@ -385,7 +385,7 @@ TEST(StoreValueForwardingTests, RoutingIn)
   EXPECT_EQ(resultValue, 40u);
 
   // The result should be routed in from the constant 40 node
-  auto & resultTraced = jlm::llvm::traceOutput(branch0Result);
+  auto & resultTraced = jlm::llvm::traceOutput(branch0Result, false);
   EXPECT_EQ(&resultTraced, constantForty.output(0));
 }
 
@@ -508,7 +508,8 @@ TEST(StoreValueForwardingTests, RouteOut)
   EXPECT_EQ(constInteger, 20u);
 
   // In the 1st subregion, the output should be traced back to the loop var input
-  const auto & traced1stRegionOrigin = jlm::llvm::traceOutput(*exitVar.branchResult[1]->origin());
+  const auto & traced1stRegionOrigin =
+      jlm::llvm::traceOutput(*exitVar.branchResult[1]->origin(), false);
   const auto loopVar2 = thetaNode.MapPreLoopVar(traced1stRegionOrigin);
   EXPECT_EQ(loopVar.pre, loopVar2.pre);
 
@@ -931,13 +932,13 @@ TEST(StoreValueForwardingTests, LoadForwarding)
   }
   EXPECT_EQ(loadCount, 1u);
 
-  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin());
-  const auto & addRhsOrigin = jlm::llvm::traceOutput(*addNode.input(1)->origin());
+  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin(), false);
+  const auto & addRhsOrigin = jlm::llvm::traceOutput(*addNode.input(1)->origin(), false);
   EXPECT_EQ(&addLhsOrigin, &l1);
   EXPECT_EQ(&addRhsOrigin, &l1);
 
   const auto & memoryResultOrigin =
-      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin());
+      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin(), false);
   EXPECT_EQ(&memoryResultOrigin, &mem1);
 }
 
@@ -1032,17 +1033,17 @@ TEST(StoreValueForwardingTests, LoadForwardingIntoTheta)
   }
   EXPECT_EQ(thetaLoadCount, 0u);
 
-  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin());
+  const auto & addLhsOrigin = jlm::llvm::traceOutput(*addNode.input(0)->origin(), false);
   EXPECT_EQ(&addLhsOrigin, sumLoopVar.pre);
 
   const auto & addRhsOrigin = *addNode.input(1)->origin();
   const auto forwardedLoopVar = thetaNode.MapPreLoopVar(addRhsOrigin);
   EXPECT_TRUE(rvsdg::ThetaLoopVarIsInvariant(forwardedLoopVar));
   EXPECT_EQ(forwardedLoopVar.input->origin(), &l1);
-  EXPECT_EQ(&jlm::llvm::traceOutput(addRhsOrigin), &l1);
+  EXPECT_EQ(&jlm::llvm::traceOutput(addRhsOrigin, false), &l1);
 
   const auto & memoryResultOrigin =
-      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin());
+      jlm::llvm::traceOutput(*lambdaNode.GetFunctionResults()[2]->origin(), false);
   EXPECT_EQ(&memoryResultOrigin, &mem1);
 }
 
@@ -1587,7 +1588,7 @@ TEST(StoreValueForwardingTests, RegionPredicatedValueForwarding)
   // The LOAD in the left subregion of gamma2 should be gone,
   // and replaced by a value that originates from an entry variable into gamma2.
   const auto & leftPOrigin = *gamma2ExitLoadedP.branchResult[0]->origin();
-  const auto & tracedLeftPOrigin = jlm::llvm::traceOutput(leftPOrigin);
+  const auto & tracedLeftPOrigin = jlm::llvm::traceOutput(leftPOrigin, false);
   // the value of p should come from gamma1
   auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(tracedLeftPOrigin);
   ASSERT_EQ(gamma, &gamma1);

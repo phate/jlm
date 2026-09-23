@@ -436,6 +436,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::LoopUnswitching:
     return std::make_shared<llvm::LoopUnswitching>(llvm::LoopUnswitchingDefaultHeuristic::create());
+  case JlmOptCommandLineOptions::OptimizationId::NodeHoisting:
+    return std::make_shared<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_shared<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:

@@ -55,8 +55,8 @@ TEST(TraceTests, testTracingIOBarrier)
   const auto ioBarrier2Output = ioBarrier2->output(0);
 
   // Assert
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier1Output), myInt);
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier2Output), myInt);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier1Output, false), myInt);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier2Output, false), myInt);
 }
 
 TEST(TraceTests, testGetConstantSignedInteger)
@@ -258,6 +258,43 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516u);
+}
+
+TEST(TraceTests, testGetConstantSignedIntegerOnThetaOutput)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG that looks like:
+   *
+   * zero = I32(0)
+   * thetaOut = THETA(zero)
+   *   [_]{
+   *     p = CTRL(0)
+   *     c = I32(42)
+   *   }[p, c]
+   *
+   * export(thetaOut)
+   *
+   * The constant 42 lives inside the theta subregion.
+   * tryGetConstantSignedInteger from the outside still finds it.
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  auto & zero = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  auto * theta = rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto loopVar = theta->AddLoopVar(zero.output(0));
+
+  auto & c = IntegerConstantOperation::Create(*theta->subregion(), 32, 42);
+  loopVar.post->divert_to(c.output(0));
+  theta->set_predicate(&rvsdg::ControlConstantOperation::create(*theta->subregion(), 2, 1));
+
+  // Assert
+  EXPECT_EQ(tryGetConstantSignedInteger(*loopVar.output), 42);
 }
 
 TEST(TraceTests, testTraceAllPointerOriginsTheta)

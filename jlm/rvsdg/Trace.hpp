@@ -7,8 +7,7 @@
 #define JLM_RVSDG_TRACE_HPP
 
 #include <jlm/rvsdg/node.hpp>
-
-#include <optional>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 
 namespace jlm::rvsdg
 {
@@ -27,62 +26,86 @@ class ThetaNode;
 class OutputTracer
 {
 public:
+  /**
+   * Different policies for how to handle outputs of structural nodes during tracing.
+   * The policies are numbered such that a greater number means more effort is spent.
+   *
+   * These policies only apply to gamma and theta nodes.
+   * For phi nodes, see \ref isEnteringPhiNodes()
+   */
+  enum class StructuralNodePolicy
+  {
+    // Perform a quick check to see if the structural output is trivially invariant,
+    // i.e., gets its value directly from a single subregion argument in all subregions.
+    // If so, tracing continues from the corresponding input to the structural node.
+    traceThroughTriviallyInvariant = 0,
+
+    // Performs the same check as above, but tries harder to determine invariance.
+    // Tracing continues inside the subregion, to check if it can reach a subregion argument.
+    // If all subregions reach the same argument, the structural node is invariant,
+    // and tracing continue from the input of the structural node.
+    traceThroughIfDetectedInvariant = 1,
+
+    // Performs the same checks as above, but can also trace outputs that are not invariant.
+    // Tracing can continue inside subregions, such as inside a theta subregion,
+    // or inside a gamma subregion when the other subregions are unreachable or
+    // provide undefined values.
+    // Unlike the previous policies, this means the final return value of the tracer can be
+    // inside a region that is not an ancestor of the region where tracing started.
+    traceIntoSubregions = 2
+  };
+
   virtual ~OutputTracer();
 
   /**
    * Creates an OutputTracer with the default configuration
+   */
+  OutputTracer() noexcept;
+
+  /**
+   * When tracing reaches the output of a structural node, how should the tracer continue.
+   * @see StructuralNodePolicy
+   * @return the current structural node policy
+   */
+  [[nodiscard]] StructuralNodePolicy
+  getStructuralNodePolicy() const noexcept
+  {
+    return structuralNodePolicy_;
+  }
+
+  /**
+   * Checks if the current \ref StructuralNodePolicy allows checking for invariant outputs
+   * of structural nodes by performing tracing inside the subregion(s) of the node.
    *
-   * @param enableCaching Determines whether the output tracer should cache traced results.
-   */
-  explicit OutputTracer(bool enableCaching) noexcept;
-
-  /**
-   * When tracing reaches the output of a structural node, how much effort should be made to
-   * check if the output is an invariant copy of one of the node's inputs.
-   * If true, tracing is performed inside the subregion(s) of the node.
-   * If false, only a simple invariant check is performed, which only detects invariance if
-   * the region result is directly connected to a region argument.
-   * @return true if tracing though the subregions of structural nodes is enabled.
+   * @return true if the policy allows deep invariance checking, false otherwise
    */
   [[nodiscard]] bool
-  isTracingThroughStructuralNodes() const noexcept
+  isDeepInvarianceCheckingEnabled() const noexcept
   {
-    return traceThroughStrucutalNodes_;
+    return structuralNodePolicy_ >= StructuralNodePolicy::traceThroughIfDetectedInvariant;
   }
 
   /**
-   * Enables or disables tracing through the subregions of structural nodes.
-   * @see isTracingThroughStructuralNodes
+   * Checks if the current \ref StructuralNodePolicy allows tracing to enter subregions,
+   * and returning value origins that are inside subregions or sibling regions of the region
+   * where tracing started.
+   *
+   * @return true if the policy allows tracing to enter subregions, false otherwise.
+   */
+  [[nodiscard]] bool
+  isTracingIntoSubregionsEnabled() const noexcept
+  {
+    return structuralNodePolicy_ >= StructuralNodePolicy::traceIntoSubregions;
+  }
+
+  /**
+   * Sets the policy for how to trace when reaching outputs of structural nodes.
    * @param value the new value
    */
   void
-  setTraceThroughStructuralNodes(bool value) noexcept
+  setStructuralNodePolicy(StructuralNodePolicy value) noexcept
   {
-    traceThroughStrucutalNodes_ = value;
-  }
-
-  /**
-   * Controls if tracing is allowed to enter the subregion of a phi node from its outputs.
-   * If true, tracing can go further and reach lambda or delta nodes inside of phi nodes.
-   * It does, however, mean that the result of tracing can end up inside a region that is not
-   * an ancestor of the starting region in the region tree.
-   * @return true if tracing may enter phi nodes.
-   */
-  [[nodiscard]] bool
-  isEnteringPhiNodes() const noexcept
-  {
-    return enterPhiNodes_;
-  }
-
-  /**
-   * Enables or disables tracing into phi nodes from the outside.
-   * @see isEnteringPhiNodes()
-   * @param value the new value
-   */
-  void
-  setEnterPhiNodes(bool value) noexcept
-  {
-    enterPhiNodes_ = value;
+    structuralNodePolicy_ = value;
   }
 
   /**
@@ -109,6 +132,89 @@ public:
   }
 
   /**
+   * Controls if tracing is allowed to enter the subregion of a phi node from its outputs.
+   * If true, tracing can go further and reach lambda or delta nodes inside of phi nodes.
+   * It does, however, mean that the result of tracing can end up inside a region that is not
+   * an ancestor of the starting region in the region tree.
+   * @return true if tracing may enter phi nodes.
+   */
+  [[nodiscard]] bool
+  isEnteringPhiNodes() const noexcept
+  {
+    return enterPhiNodes_;
+  }
+
+  /**
+   * Enables or disables tracing into phi nodes from the outside.
+   * @see isEnteringPhiNodes()
+   * @param value the new value
+   */
+  void
+  setEnterPhiNodes(bool value) noexcept
+  {
+    enterPhiNodes_ = value;
+  }
+
+  [[nodiscard]] bool
+  isRegionPredicateCheckingEnabled() const noexcept
+  {
+    return enableRegionPredicateChecking_;
+  }
+
+  void
+  setRegionPredicateCheckingEnabled(bool value) noexcept
+  {
+    enableRegionPredicateChecking_ = value;
+  }
+
+  /**
+   * Controls whether caching of structural output invariance is enabled,
+   * which can speed up tracing through deeply nested graphs.
+   *
+   * It only caches outputs that are confirmed to be invariant,
+   * so outputs that change from variant to invariant will still be picked up.
+   * Outputs that change from invariant to variant need to trigger a manual cache invalidation.
+   * @see clearInvarianceCache().
+   *
+   * @return true if structutal output invariance is cached, false otherwise.
+   */
+  [[nodiscard]] bool
+  isInvarianceCachingEnabled() const noexcept
+  {
+    return enableInvarianceCaching_;
+  }
+
+  /**
+   * Enables or disables invariant structural output caching.
+   * @see isInvarianceCachingEnabled()
+   *
+   * @param value the new value
+   */
+  void
+  setInvarianceCaching(bool value) noexcept
+  {
+    enableInvarianceCaching_ = value;
+  }
+
+  /**
+   * Clears the invariance cache.
+   *
+   * This only needs to done if invariance caching is enabled.
+   * @see isInvarianceCachingEnabled()
+   *
+   * It only needs to be done if either of the following happens:
+   *  - structural outputs that were once invariant have their origin changed
+   *    inside the structural node to make them no longer be invariant,
+   *    or be invariant copies of a different structural input.
+   *  - structural input and outputs are removed from the graph.
+   */
+  void
+  clearInvarianceCache()
+  {
+    invariantOutputCache_.clear();
+  }
+
+  /**
    * Traces from the given \p output to find the source of the output's value.
    * @param output the output to trace from.
    */
@@ -124,91 +230,210 @@ public:
    * @param withinRegion the region where we stop tracing.
    */
   [[nodiscard]] Output &
-  trace(Output & output, const rvsdg::Region * withinRegion);
+  trace(Output & output, const Region * withinRegion);
+
+protected:
+  // Enum representing information about the path the tracer took from the starting output
+  // to reach the current output being considered
+  enum class BackEdgeState
+  {
+    // Tracing has gone from the starting output to the current output without
+    // following any back-edges around the current output.
+    // Theta nodes between the current output and the starting output do not matter.
+    NoBackEdgeTaken,
+
+    // While tracing from the starting output to the current output,
+    // the tracer may have followed a back-edge going around the current output.
+    // This prevents the use of the region predication checker.
+    PossiblyBackEdgeTaken,
+  };
 
   /**
-   * Attempts to trace the output of a gamma node through the node.
-   * This is only possible if the output can be traced to a gamma entry variable in all subregions,
-   * and these entry variables all share the same origin outside the gamma.
+   * Internal class used for returning intermediate results during tracing.
+   */
+  class TraceStepResult
+  {
+  public:
+    /**
+     * The output reached after tracing zero, one or more steps.
+     *
+     * @return the output arrived at by the tracing function
+     */
+    [[nodiscard]] Output &
+    getOutput() const noexcept
+    {
+      return output_;
+    }
+
+    /**
+     * Indicates whether the returned output can be traced any further, or if tracing is done.
+     * When done, the caller should not attempt any further tracing from the resulting output.
+     *
+     * @return true if the result is final, false if further tracing might be possible
+     */
+    [[nodiscard]] bool
+    isFinalResult() const noexcept
+    {
+      return isFinalResult_;
+    }
+
+    /**
+     * Creates an instance representing a non-final tracing result,
+     * that can possibly be traced further.
+     */
+    [[nodiscard]] static TraceStepResult
+    createStepResult(Output & output)
+    {
+      return TraceStepResult(output, false);
+    }
+
+    /**
+     * Creates an instance representing a final tracing result,
+     * from which further tracing is not possible.
+     */
+    [[nodiscard]] static TraceStepResult
+    createFinalResult(Output & output)
+    {
+      return TraceStepResult(output, true);
+    }
+
+  private:
+    TraceStepResult(Output & output, bool isFinalResult)
+        : output_(output),
+          isFinalResult_(isFinalResult)
+    {}
+
+    Output & output_;
+    bool isFinalResult_;
+  };
+
+  /**
+   * Performs tracing from the given \p output, without updating the current starting output.
+   * Keeps tracing until the tracer is unable to find a more canonical output,
+   * or until an argument of the optional \p withinRegion limit is reached.
+   *
+   * @param output the output to trace from.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @param withinRegion the region tracing has to stay within, or nullptr
+   * @return the resulting output reached when no more tracing is possible
+   */
+  [[nodiscard]] Output &
+  traceInternal(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
+
+  /**
+   * Trace from the given gamma output.
+   * If the gamma output can be traced to the same gamma input in all subregions,
+   * the origin of the gamma input is returned.
+   * Otherwise, if the tracer is allowed to trace into subregions,
+   * and only one of the subregions can be the origin of the value being traced,
+   * the origin within that subregion is returned.
+   * Otherwise, the gamma output itself is returned.
    *
    * @pre the \p output is an output of the given \p gammaNode
    *
    * @param gammaNode the gamma node to trace through
    * @param output an output of the given gamma node
-   * @return the origin of the output value on the input side of the gamma, or nullptr.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @return the result of tracing from the gamma output
    */
-  [[nodiscard]] Output *
-  tryTraceThroughGamma(GammaNode & gammaNode, Output & output);
+  [[nodiscard]] TraceStepResult
+  traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeState backEdgeState);
 
   /**
-   * Attempts to trace the the given loop output through the theta node,
-   * resulting in the origin of one of the theta node's inputs if successful.
-   * This is only possible if the output belongs to an invariant loop variable,
-   * or if the loop variable's post result takes its value from another invariant loop variable.
+   * Trace from the the given loop output.
+   * If the loop output is found to be loop invariant, the origin of the theta input is returned.
+   * Otherwise, if the tracer is allowed to trace into the subregion of structural nodes,
+   * the traced origin of the loop variable post inside the theta is returned.
+   * Otherwise, the theta output itself is returned.
    *
    * @pre the \p output is an output of the given \p thetaNode
    *
    * @param thetaNode the theta node to trace through
    * @param output an output of the given theta node
-   * @return the origin of the output value on the input side of the theta, or nullptr.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
+   * @return the result of tracing from the theta output
    */
-  [[nodiscard]] Output *
-  tryTraceThroughTheta(ThetaNode & thetaNode, Output & output);
+  [[nodiscard]] TraceStepResult
+  traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeState backEdgeState);
 
   /**
-   * Clears the tracing cache.
+   * Trace from the given loop variable pre argument.
+   * This function is only used when the tracing starting point is inside the theta.
+   *
+   * @pre the \p output is an argument of the given \p thetaNode's subregion.
+   *
+   * @param thetaNode the theta node to attempt to trace out of
+   * @param output the theta subregion argument
+   * @return the result of tracing from the theta argument
    */
-  void
-  clearCache()
-  {
-    traceCache_.clear();
-  }
+  [[nodiscard]] TraceStepResult
+  traceThetaArgument(ThetaNode & thetaNode, Output & output);
 
-protected:
   /**
    * The innermost body of the tracing loop. Should trace at least one step, if possible.
    * If it is not possible to trace further, the same output is returned.
    * @param output the output to trace from.
+   * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion if not nullptr, tracing stops if it reaches an argument of the region.
-   * @return the result of tracing from the given output, if possible. Otherwise, \p output.
+   * @return the result of tracing from the given output
    */
-  [[nodiscard]] virtual Output &
-  traceStep(Output & output, const rvsdg::Region * withinRegion);
+  [[nodiscard]] virtual TraceStepResult
+  traceStep(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
 
   /**
-   * Inserts a traced value into the tracing cache.
+   * Inserts the given \p structuralOutput in the invariance cache.
+   * Invariance means that the structural output gets its value from one of the inputs
+   * of the structural node, so tracing can pass through the structural node without
+   * looking inside its subregions.
    *
-   * @param output The output that was traced.
-   * @param traceResult The input at which the tracing arrived.
-   * @return The origin of \p traceResult for convenience.
+   * When determining invariance, it is important to not makse assumptions about
+   * tracing never having followed back-edges.
+   *
+   * @param structuralOutput The structural output that was traced.
+   * @param structuralInput The corresponding structural input.
+   * @return The origin of \p structuralInput for convenience.
    */
-  Output *
-  insertInCache(const Output & output, Input * traceResult);
+  Output &
+  insertInInvarianceCache(const Output & structuralOutput, Input & structuralInput);
 
   /**
-   * Loops up the tracing result for \p output.
+   * Performs a lookup in the invariance cache.
    *
-   * @param output The output that is traced.
-   * @return The output at which tracing arrived, otherwise std::nullopt.
+   * @param structuralOutput the output to look up in the cache.
+   * @return the corresponding structural input the invariant output gets its value from.
    */
-  std::optional<Output *>
-  lookupInCache(const Output & output);
+  Input *
+  lookupInInvarianceCache(const Output & structuralOutput);
 
-  // When true, tracing enters subregions of structural nodes to check if the value is invariant.
-  // When false, values are only considered invariant if they are directly connected to arguments.
-  bool traceThroughStrucutalNodes_ = true;
-
-  // When true, tracing can go from the output of a Phi node into its subregion.
-  // When false, tracing will stop at the Phi output.
-  bool enterPhiNodes_ = true;
+  // The policy determining how tracing handles outputs of gamma and theta nodes
+  StructuralNodePolicy structuralNodePolicy_ =
+      StructuralNodePolicy::traceThroughIfDetectedInvariant;
 
   // When true, tracing is allowed to continue outside of lambda nodes.
   // When false, tracing will stop at the lambda's context arguments.
   bool isInterprocedural_ = true;
 
-  // When true, tracing is allowed to cache traced values.
-  bool enableCaching_;
-  std::unordered_map<const Output *, Input *> traceCache_{};
+  // When true, tracing can go from the output of a \ref PhiNode into its subregion.
+  // When false, tracing will stop at the output of the phi node.
+  bool enterPhiNodes_ = true;
+
+  // When true, gamma subregions are ignored when it is impossible for control flow to go
+  // from the gamma subregion to the region containing the output tracing started from
+  bool enableRegionPredicateChecking_ = false;
+  // The region predicate checker used to disqualify regions
+  AlternativeRegionPredicateTracer regionPredicateTracer_;
+  // The output from which the current tracing operation started.
+  // Used for region predication checks.
+  // This is the starting output referenced by the enum \ref BackEdgeState.
+  const Output * startingOutput_ = nullptr;
+
+  // When true, the tracer can cache the fact that outputs of structural nodes are invariant.
+  // Enabling caching means the user of the tracer is responsible for cache invalidation.
+  // @see clearInvarianceCache() for details
+  bool enableInvarianceCaching_ = false;
+  // Maps from a structural output to an input of the same structural node
+  // that the output always gets its value from.
+  std::unordered_map<const Output *, Input *> invariantOutputCache_{};
 };
 
 /**
@@ -221,16 +446,21 @@ protected:
  *
  * Tracing stops when a lambda function argument or context argument is reached.
  *
+ * The parameter \p mayEnterSubregions controls if the return value is allowed to
+ * be an output located in a subregion or sibling region of the \p output.
+ * If false, the return value is guaranteed to be in the same region, or in an ancestor region.
+ *
  * @param output The \ref Output that needs to be traced.
+ * @param mayEnterSubregions if true, the result can be in a sub/sibling region
  * @return The final value of the tracing.
  */
 Output &
-traceOutputIntraProcedurally(Output & output);
+traceOutputIntraProcedurally(Output & output, bool mayEnterSubregions);
 
 inline const Output &
-traceOutputIntraProcedurally(const Output & output)
+traceOutputIntraProcedurally(const Output & output, bool mayEnterSubregions)
 {
-  return traceOutputIntraProcedurally(const_cast<Output &>(output));
+  return traceOutputIntraProcedurally(const_cast<Output &>(output), mayEnterSubregions);
 }
 
 /**
@@ -247,16 +477,17 @@ traceOutputIntraProcedurally(const Output & output)
  * It will not trace through phi recursion variables
  *
  * @param output the output to trace.
+ * @param mayEnterSubregions if true, the result can be in a sub/sibling region
  * @param withinRegion the region to stop at (if any).
  * @return the final value of the tracing
  */
 Output &
-traceOutput(Output & output, const rvsdg::Region * withinRegion = nullptr);
+traceOutput(Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr);
 
 inline const Output &
-traceOutput(const Output & output, const rvsdg::Region * withinRegion = nullptr)
+traceOutput(const Output & output, bool mayEnterSubregions, const Region * withinRegion = nullptr)
 {
-  return traceOutput(const_cast<Output &>(output), withinRegion);
+  return traceOutput(const_cast<Output &>(output), mayEnterSubregions, withinRegion);
 }
 
 }

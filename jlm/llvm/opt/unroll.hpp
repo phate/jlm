@@ -211,7 +211,7 @@ private:
   bool
   is_known(const rvsdg::Output * output) const noexcept
   {
-    auto & tracedOutput = llvm::traceOutput(*output);
+    auto & tracedOutput = llvm::traceOutput(*output, false);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation && constantOperation->value().is_known();
@@ -223,7 +223,7 @@ private:
     if (!is_known(output))
       return nullptr;
 
-    auto & tracedOutput = llvm::traceOutput(*output);
+    auto & tracedOutput = llvm::traceOutput(*output, false);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
     return constantOperation == nullptr ? nullptr : &constantOperation->value();

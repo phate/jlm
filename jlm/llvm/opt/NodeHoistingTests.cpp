@@ -572,6 +572,129 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
   EXPECT_EQ(gammaNode->ninputs(), 5u);
 }
 
+TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto ptrType = PointerType::Create();
+  const auto i32Type = BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto controlType = ControlType::Create(2);
+  const auto functionType = FunctionType::Create(
+      { controlType, ptrType, ptrType, ioStateType, memoryStateType },
+      { i32Type, ioStateType, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto controlArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ptrArgument1 = lambdaNode->GetFunctionArguments()[1];
+  auto ptrArgument2 = lambdaNode->GetFunctionArguments()[2];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[3];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[4];
+
+  auto outerGammaNode = GammaNode::create(controlArgument, 2);
+  auto ctlEntryVar = outerGammaNode->AddEntryVar(controlArgument);
+  auto outerPtr1EntryVar = outerGammaNode->AddEntryVar(ptrArgument1);
+  auto outerPtr2EntryVar = outerGammaNode->AddEntryVar(ptrArgument2);
+  auto outerIOStateEntryVar = outerGammaNode->AddEntryVar(ioStateArgument);
+  auto outerMemoryStateEntryVar = outerGammaNode->AddEntryVar(memoryStateArgument);
+
+  // outerGammaNode - subregion 0
+  auto & ioBarrierNode = IOBarrierOperation::createNode(
+      *outerPtr1EntryVar.branchArgument[0],
+      *outerIOStateEntryVar.branchArgument[0]);
+
+  auto innerGammaNode = GammaNode::create(ctlEntryVar.branchArgument[0], 2);
+  auto innerPtr1EntryVar = innerGammaNode->AddEntryVar(ioBarrierNode.output(0));
+  auto innerPtr2EntryVar = innerGammaNode->AddEntryVar(outerPtr2EntryVar.branchArgument[0]);
+  auto innerMemoryStateEntryVar =
+      innerGammaNode->AddEntryVar(outerMemoryStateEntryVar.branchArgument[0]);
+
+  // inner0GammaNode - subregion 0
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
+      *innerPtr1EntryVar.branchArgument[0],
+      { innerMemoryStateEntryVar.branchArgument[0] },
+      i32Type,
+      4);
+
+  // inner0GammaNode - subregion 1
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(
+      *innerPtr2EntryVar.branchArgument[1],
+      { innerMemoryStateEntryVar.branchArgument[1] },
+      i32Type,
+      4);
+
+  // inner0GammaNode - finalize
+  auto innerI32ExitVar = innerGammaNode->AddExitVar({ loadNode1.output(0), loadNode2.output(0) });
+  auto innerMemoryStateExitVar = innerGammaNode->AddExitVar(
+      { loadNode1.output(1), innerMemoryStateEntryVar.branchArgument[1] });
+
+  // outerGammaNode - subregion 1
+  auto test1 = TestOperation::createNode(outerGammaNode->subregion(1), {}, { i32Type });
+
+  // outerGammaNode - finalize
+  auto outerI32ExitVar = outerGammaNode->AddExitVar({ innerI32ExitVar.output, test1->output(0) });
+  auto outerIOStateExitVar = outerGammaNode->AddExitVar(
+      { outerIOStateEntryVar.branchArgument[0], outerIOStateEntryVar.branchArgument[1] });
+  auto outerMemoryStateExitVar = outerGammaNode->AddExitVar(
+      { innerMemoryStateExitVar.output, outerMemoryStateEntryVar.branchArgument[1] });
+
+  // lambdaNode - finalize
+  auto lambdaOutput = lambdaNode->finalize(
+      { outerI32ExitVar.output, outerIOStateExitVar.output, outerMemoryStateExitVar.output });
+
+  GraphExport::Create(*lambdaOutput, "x");
+
+  // Act
+  NodeHoisting nodeHoisting;
+  util::StatisticsCollector statisticsCollector;
+  nodeHoisting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // We expect the following to happen:
+  // 1. loadNode1 is hoisted into subregion 0 of outerGammaNode, where the hoisting is stopped by
+  // the ioBarrierNode
+  // 2. loadNode2 is hoisted into the lambda subregion
+  // 3. The hoisting of loadNode2 needs get past the already hoisted loadNode1. As loadNode1 is
+  // hoisted out first, its outgoing memory state is indirectly connected to loadNode2, which is
+  // still in subregion 1 of the innerGammaNode. Once loadNode2 is hoisted, it is first hoisted into
+  // subregion 0 of the outerGammaNode, where it is sequentialized behind loadNode1, and then needs
+  // to be hoisted above loadNode1 into the lambda subregion.
+  EXPECT_FALSE(
+      Region::containsOperation<LoadNonVolatileOperation>(*innerGammaNode->subregion(0), false));
+  EXPECT_FALSE(
+      Region::containsOperation<LoadNonVolatileOperation>(*innerGammaNode->subregion(1), false));
+
+  EXPECT_TRUE(
+      Region::containsOperation<LoadNonVolatileOperation>(*outerGammaNode->subregion(0), false));
+  EXPECT_EQ(outerGammaNode->subregion(0)->numNodes(), 3u);
+
+  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3u);
+
+  {
+    auto [hoistedLoadNode1, loadOp] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+            *innerMemoryStateEntryVar.input->origin());
+    EXPECT_NE(loadOp, nullptr);
+    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode1).origin(), ioBarrierNode.output(0));
+  }
+
+  {
+    auto [hoistedLoadNode2, loadOp] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+            *outerMemoryStateEntryVar.input->origin());
+    EXPECT_NE(loadOp, nullptr);
+    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode2).origin(), ptrArgument2);
+  }
+}
+
 TEST(NodeHoistingTests, hoistLoadNodeOutOfGammaInTheta)
 {
   using namespace jlm::rvsdg;
