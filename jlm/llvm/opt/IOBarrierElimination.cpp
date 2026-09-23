@@ -304,55 +304,58 @@ IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entry
       return;
     }
 
+    if (auto userSize = context_->isDereferenceable(*argument->Users().begin()); userSize > 0)
     {
-      auto * user = &*argument->Users().begin();
-      if (auto userSize = context_->isDereferenceable(*user); userSize > 0)
-      {
-        // The user is marked. Let's take the minimum marked size between this argument and all
-        // other arguments.
-        size = std::min(size, userSize);
-        continue;
-      }
+      // The user is marked. Let's take the minimum marked size between this argument and all
+      // other arguments.
+      size = std::min(size, userSize);
     }
-
-    // The user is not marked. Let's see whether we can find an appropriate
-    // MemoryHoistBarrierOperation node
-    const rvsdg::SimpleNode * hoistBarrierNode = nullptr;
-    for (auto & user : argument->Users())
+    else
     {
-      auto [simpleNode, hoistBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(user);
-      if (hoistBarrierOp)
+      // Let's see whether we can find an appropriate MemoryHoistBarrierOperation node
+      const rvsdg::SimpleNode * hoistBarrierNode = nullptr;
+      for (auto & user : argument->Users())
       {
-        // We do have a MemoryHoistBarrierOperation node
-        auto & ioStateOperand = *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
-        auto owner = ioStateOperand.GetOwner();
-        if (auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
-            *ownerRegion == argument->region())
+        auto [simpleNode, hoistBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(user);
+        if (hoistBarrierOp)
         {
-          // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
-          // argument of the gamma subregion. This ensures that there is no other non-returning
-          // node, such as a call to abort() etc., that would prohibit the connected memory
-          // operation to be executed.
-          hoistBarrierNode = simpleNode;
+          // We do have a MemoryHoistBarrierOperation node
+          auto & ioStateOperand =
+              *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
+          auto owner = ioStateOperand.GetOwner();
+          if (auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
+              *ownerRegion == argument->region())
+          {
+            // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
+            // argument of the gamma subregion. This ensures that there is no other non-returning
+            // node, such as a call to abort() etc., that would prohibit the connected memory
+            // operation to be executed.
+            hoistBarrierNode = simpleNode;
+            break;
+          }
         }
       }
-    }
-    if (!hoistBarrierNode)
-    {
-      // We do not even find an appropriate MemoryHoistBarrierOperation node. Nothing can be marked.
-      return;
-    }
+      if (!hoistBarrierNode)
+      {
+        // We do not find an appropriate MemoryHoistBarrierOperation node. Nothing can be marked.
+        return;
+      }
 
-    JLM_ASSERT(hoistBarrierNode->output(0)->nusers() != 0);
-    // Any user of an MemoryHoistBarrierOperation node should do as we always mark all users
-    auto user = &*hoistBarrierNode->output(0)->Users().begin();
-    auto userSize = context_->isDereferenceable(*user);
-    if (userSize == 0)
-    {
-      // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
-      // good.
-      return;
+      JLM_ASSERT(hoistBarrierNode->output(0)->nusers() != 0);
+      // Any user of an MemoryHoistBarrierOperation node should do as we always mark all users
+      const auto user = &*hoistBarrierNode->output(0)->Users().begin();
+      userSize = context_->isDereferenceable(*user);
+      if (userSize == 0)
+      {
+        // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
+        // good.
+        return;
+      }
+
+      // The user is marked. Let's take the minimum marked size between this argument and all
+      // other arguments.
+      size = std::min(size, userSize);
     }
   }
 
@@ -360,7 +363,8 @@ IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entry
   // every path through this gamma node, the pointer variable is at least dereferenced
   // by size. Consequently, we can mark the origin of the input of this
   // gamma node as well.
-  context_->markUsersDereferenceable(*entryVar.input->origin(), size);
+  if (size != std::numeric_limits<std::size_t>::max())
+    context_->markUsersDereferenceable(*entryVar.input->origin(), size);
 }
 
 void
