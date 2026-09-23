@@ -685,3 +685,43 @@ TEST(TraceTests, RegionPredicationThetaToGammaTest)
   // Tracing directly from the theta output leads to the output of the inner gamma
   ASSERT_EQ(&tracer.trace(*loopVarInt.output), innerIntExit.output);
 }
+
+TEST(TraceTests, ImpossibleSubregions)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   *             TestOp  Int(10)
+   *               v       v
+   * +-theta-------x-------x--------------------------------------------------------+
+   * |                     |                                                        |
+   * |   TestOp            |                                                        |
+   * |     v               v                                                        |
+   * | +-gamma0------------------------------------x-----+-------------------x--+   |
+   * | |   TestOp                                        |                   |  |   |
+   * | |     v                                           |                   |  |   |
+   * | | +-gamma1----------+------------------           |                   |  |   |
+   * | | |                 |                 |           |                   |  |   |
+   * | | | CTRL(0) CTRL(1) | CTRL(1) CTRL(0) |           |                   |  |   |
+   * | | |   v       v     |  v       v      |           |                   |  |   |
+   * | | +---x-------x-----+--x-------x------+  Int(20)  |  CTRL(0) CTRL(0)  |  |   |
+   * | |         v       v                         v     |    v       v      v  |   |
+   * | +---------x-------x-------------------------x-----+----x-------x------x--+   |
+   * |     |       |       |                                                        |
+   * |     v       v       v                                                        |
+   * +-----x-------x-------x--------------------------------------------------------+
+   *               |       |
+   *               v       v
+   *         +-gamma------x----+----x----------+
+   *         |           v     |    v          |
+   *         |       target A  |  target B     |
+   *         +-----------------+---------------+
+   *
+   * Tracing from the "target A" region should reach all the way back to the Int(10),
+   * while tracing from "target B" should reach the Int(20) inside gamma0.
+   */
+
+
+}
