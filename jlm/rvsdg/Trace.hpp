@@ -6,7 +6,6 @@
 #ifndef JLM_RVSDG_TRACE_HPP
 #define JLM_RVSDG_TRACE_HPP
 
-#include "jlm/util/common.hpp"
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
 

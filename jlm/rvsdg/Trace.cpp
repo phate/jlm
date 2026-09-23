@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/util/common.hpp"
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
