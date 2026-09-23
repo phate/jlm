@@ -757,6 +757,14 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],
         inputs[1]);
   }
+  else if (rvsdg::is<llvm::MemoryHoistBarrierOperation>(operation))
+  {
+    // FIXME: We would like to map it to its own operation in MLIR
+    MlirOp = Builder_->create<::mlir::jlm::IOBarrier>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*node.output(0)->Type()),
+        inputs[0]);
+  }
   else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
