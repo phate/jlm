@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_IOBARRIERELIMINATION_HPP
 #define JLM_LLVM_OPT_IOBARRIERELIMINATION_HPP
 
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::llvm
@@ -46,6 +47,9 @@ private:
 
   void
   sweepRegion(rvsdg::Region & region);
+
+  void
+  markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entryVar) const;
 
   std::unique_ptr<Context> context_{};
 };
