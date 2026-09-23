@@ -278,8 +278,8 @@ TEST(IOBarrierEliminationTests, testGamma)
   EXPECT_FALSE(
       Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(0), true));
 
-  // We expect the MemoryHoistBarrierOperation nodes in gamma subregion 1 NOT to be eliminated
-  EXPECT_TRUE(
+  // We expect the MemoryHoistBarrierOperation nodes in gamma subregion 1 to be eliminated
+  EXPECT_FALSE(
       Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(1), true));
 }
 

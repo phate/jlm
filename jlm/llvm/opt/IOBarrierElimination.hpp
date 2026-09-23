@@ -48,8 +48,8 @@ private:
   void
   sweepRegion(rvsdg::Region & region);
 
-  size_t
-  areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & entryVar) const;
+  void
+  markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entryVar) const;
 
   std::unique_ptr<Context> context_{};
 };

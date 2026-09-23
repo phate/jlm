@@ -288,12 +288,12 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
   }
 }
 
-size_t
-IOBarrierElimination::areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & entryVar) const
+void
+IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entryVar) const
 {
   // We do not care about non-pointer entry variables
   if (!rvsdg::is<PointerType>(entryVar.input->Type()))
-    return 0;
+    return;
 
   size_t size = std::numeric_limits<std::size_t>::max();
   for (const auto * argument : entryVar.branchArgument)
@@ -301,39 +301,66 @@ IOBarrierElimination::areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & e
     if (const size_t numUsers = argument->nusers(); numUsers == 0)
     {
       // If we have no users, nothing can be marked
-      return 0;
+      return;
     }
 
-    auto * user = &*argument->Users().begin();
+    {
+      auto * user = &*argument->Users().begin();
+      if (auto userSize = context_->isDereferenceable(*user); userSize > 0)
+      {
+        // The user is marked. Let's take the minimum marked size between this argument and all
+        // other arguments.
+        size = std::min(size, userSize);
+        continue;
+      }
+    }
+
+    // The user is not marked. Let's see whether we can find an appropriate
+    // MemoryHoistBarrierOperation node
+    const rvsdg::SimpleNode * hoistBarrierNode = nullptr;
+    for (auto & user : argument->Users())
+    {
+      auto [simpleNode, hoistBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(user);
+      if (hoistBarrierOp)
+      {
+        // We do have a MemoryHoistBarrierOperation node
+        auto & ioStateOperand = *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
+        auto owner = ioStateOperand.GetOwner();
+        if (auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
+            *ownerRegion == argument->region())
+        {
+          // We only want a MemoryHoistBarrierOperation node, whose IO state is connected to the
+          // argument of the gamma subregion. This ensures that there is no other non-returning
+          // node, such as a call to abort() etc., that would prohibit the connected memory
+          // operation to not be executed.
+          hoistBarrierNode = simpleNode;
+        }
+      }
+    }
+    if (!hoistBarrierNode)
+    {
+      // We do not even find a MemoryHoistBarrierOperation node. Nothing can be marked.
+      return;
+    }
+
+    JLM_ASSERT(hoistBarrierNode->output(0)->nusers() != 0);
+    // Any user of an MemoryHoistBarrierOperation node should do as we always mark all users
+    auto user = &*hoistBarrierNode->output(0)->Users().begin();
     auto userSize = context_->isDereferenceable(*user);
     if (userSize == 0)
     {
-      // The user is not marked. Let's continue
-      auto [hoistBarrierNode, hoistBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(*user);
-      if (!hoistBarrierOp)
-      {
-        // We do not even have an MemoryHoistBarrierOperation node. We are done here.
-        return 0;
-      }
-
-      JLM_ASSERT(hoistBarrierNode->output(0)->nusers() != 0);
-      // Any user of an MemoryHoistBarrierOperation node should do as we always mark all users
-      user = &*hoistBarrierNode->output(0)->Users().begin();
-      userSize = context_->isDereferenceable(*user);
-      if (userSize == 0)
-      {
-        // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
-        // good.
-        return 0;
-      }
+      // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
+      // good.
+      return;
     }
-
-    // The user is marked. Let's take the minimum marked size between this argument and all others.
-    size = std::min(size, userSize);
   }
 
-  return size;
+  // All gamma node arguments of this entry variable are marked. This means that on
+  // every path through this gamma node, the pointer variable is at least dereferenced
+  // by size. Consequently, we can mark the origin of the input of this
+  // gamma node as well.
+  context_->markUsersDereferenceable(*entryVar.input->origin(), size);
 }
 
 void
@@ -368,16 +395,7 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
           }
 
           for (auto & entryVar : gammaNode.GetEntryVars())
-          {
-            if (const auto size = areAllArgumentsMarked(entryVar); size > 0)
-            {
-              // All gamma node arguments of this entry variable are marked. This means that on
-              // every path through this gamma node, the pointer variable is at least dereferenced
-              // by the returned size. Consequently, we can mark the origin of the input of this
-              // gamma node as well.
-              context_->markUsersDereferenceable(*entryVar.input->origin(), size);
-            }
-          }
+            markGammaEntryVar(entryVar);
         },
         [this](const rvsdg::SimpleNode & simpleNode)
         {
