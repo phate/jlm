@@ -324,8 +324,8 @@ IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entry
           auto & ioStateOperand =
               *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
           auto owner = ioStateOperand.GetOwner();
-          if (auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
-              *ownerRegion == argument->region())
+          if (const auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
+              ownerRegion && *ownerRegion == argument->region())
           {
             // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
             // argument of the gamma subregion. This ensures that there is no other non-returning
