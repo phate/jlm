@@ -534,10 +534,11 @@ TEST(FunctionInliningTests, testIOBarrierInsertion)
         *f2->GetFunctionResults()[0]->origin());
     EXPECT_NE(loadOp, nullptr);
 
-    auto [ioBarrierNode, ioBarrierOp] = TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(
-        *LoadOperation::AddressInput(*loadNode).origin());
-    EXPECT_NE(ioBarrierOp, nullptr);
-    EXPECT_EQ(ioBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
+    auto [hoistBarrierNode, hoistBarrierOp] =
+        TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+            *LoadOperation::AddressInput(*loadNode).origin());
+    EXPECT_NE(hoistBarrierOp, nullptr);
+    EXPECT_EQ(hoistBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
   }
 
   {
@@ -545,9 +546,10 @@ TEST(FunctionInliningTests, testIOBarrierInsertion)
         *f2->GetFunctionResults()[1]->origin());
     EXPECT_NE(loadOp, nullptr);
 
-    auto [ioBarrierNode, ioBarrierOp] = TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(
-        *LoadOperation::AddressInput(*loadNode).origin());
-    EXPECT_NE(ioBarrierOp, nullptr);
-    EXPECT_EQ(ioBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
+    auto [hoistBarrierNode, hoistBarrierOp] =
+        TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+            *LoadOperation::AddressInput(*loadNode).origin());
+    EXPECT_NE(hoistBarrierOp, nullptr);
+    EXPECT_EQ(hoistBarrierNode->input(1)->origin(), f2->GetFunctionArguments()[1]);
   }
 }

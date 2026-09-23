@@ -516,11 +516,11 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
       {
         bool do_continue = MatchTypeWithDefault(
             node->GetOperation(),
-            [&](const IOBarrierOperation &)
+            [&](const MemoryHoistBarrierOperation &)
             {
               // The pointer input must be the node's first input
               JLM_ASSERT(user.index() == 0);
-              Enqueue(*node->output(0));
+              Enqueue(MemoryHoistBarrierOperation::getAddressOutput(*node));
               return true;
             },
             [&](const GetElementPtrOperation &)

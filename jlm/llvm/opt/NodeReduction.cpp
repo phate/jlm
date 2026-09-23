@@ -241,14 +241,14 @@ static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>>
                                     LoadNonVolatileOperation::NormalizeLoadAlloca,
                                     LoadNonVolatileOperation::NormalizeDuplicateStates,
                                     LoadNonVolatileOperation::NormalizeLoadStoreState,
-                                    LoadNonVolatileOperation::normalizeIOBarrierAddress });
+                                    LoadNonVolatileOperation::normalizeMemoryHoistBarrierAddress });
 
 static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>>
     storeNonVolatileNormalizations({ StoreNonVolatileOperation::NormalizeStoreMux,
                                      StoreNonVolatileOperation::normalizeStoreStore,
                                      StoreNonVolatileOperation::NormalizeStoreAlloca,
                                      StoreNonVolatileOperation::NormalizeDuplicateStates,
-                                     StoreNonVolatileOperation::normalizeIOBarrierAddress,
+                                     StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
                                      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
 
 static std::vector<rvsdg::NodeNormalization<MemoryStateMergeOperation>>

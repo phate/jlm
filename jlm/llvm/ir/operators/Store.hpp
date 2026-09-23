@@ -280,16 +280,17 @@ public:
 
   /**
    * \brief Redirect the address operand of the \ref StoreNonVolatileOperation node from an \ref
-   * IOBarrierOperation node when it can be determined that the address operand is dereferenceable.
+   * MemoryHoistBarrierOperation node when it can be determined that the address operand is
+   * dereferenceable.
    *
    * For example:
    *
    * a1 memState = AllocaOperation ...
-   * a2 = IOBarrierOperation a1 ioState
+   * a2 = MemoryHoistBarrierOperation a1 ioState
    * ... = StoreNonVolatileOperation a2 ...
    * =>
    * a1 memState = AllocaOperation ...
-   * a2 = IOBarrierOperation a1 ioState
+   * a2 = MemoryHoistBarrierOperation a1 ioState
    * ... = StoreNonVolatileOperation a1 ...
    *
    * @param storeOperation The \ref StoreNonVolatileOperation on which the transformation is
@@ -300,7 +301,7 @@ public:
    * \ref StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  normalizeIOBarrierAddress(
+  normalizeMemoryHoistBarrierAddress(
       const StoreNonVolatileOperation & storeOperation,
       const std::vector<rvsdg::Output *> & operands);
 
