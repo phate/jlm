@@ -726,9 +726,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeFunctionToPointer(node);
       },
-      [&](const IOBarrierOperation &)
+      [&](const MemoryHoistBarrierOperation &)
       {
-        AnalyzeIOBarrier(node);
+        AnalyzeMemoryHoistBarrier(node);
       },
       [&](const FreeOperation &)
       {
@@ -1187,17 +1187,13 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+Andersen::AnalyzeMemoryHoistBarrier(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IOBarrierOperation>(node.GetOperation()));
+  JLM_ASSERT(is<MemoryHoistBarrierOperation>(node.GetOperation()));
 
-  const auto operation = util::assertedCast<const IOBarrierOperation>(&node.GetOperation());
-  if (!IsOrContainsPointerType(*operation->Type()))
-    return;
-
-  const auto & inputRegister = *node.input(0)->origin();
+  const auto & inputRegister = *MemoryHoistBarrierOperation::getAddressInput(node).origin();
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
-  const auto & outputRegister = *node.output(0);
+  const auto & outputRegister = MemoryHoistBarrierOperation::getAddressOutput(node);
   Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
 }
 

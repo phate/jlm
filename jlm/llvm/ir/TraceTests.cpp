@@ -22,41 +22,30 @@
 
 #include <cassert>
 
-TEST(TraceTests, testTracingIOBarrier)
+TEST(TraceTests, testTracingMemoryHoistBarrier)
 {
   using namespace jlm;
   using namespace jlm::llvm;
 
-  // Creates a graph that looks like
-  // GraphImport("x")  GraphImport("io")
-  //       |        /---------/
-  //       v       v          |
-  //      IOBarrier           |
-  //          |     /---------/
-  //          v    v
-  //      IOBarrier
-  //
-  // And checks that both the IOBarrier outputs are traced back up to the "x" graph import
-
   // Arrange
   rvsdg::Graph graph;
 
-  const auto int32Type = rvsdg::BitType::Create(32);
+  const auto ptrType = PointerType::Create();
   const auto ioStateType = IOStateType::Create();
 
-  const auto myInt = &rvsdg::GraphImport::Create(graph, int32Type, "x");
+  const auto myPtr = &rvsdg::GraphImport::Create(graph, ptrType, "x");
   const auto myIo = &rvsdg::GraphImport::Create(graph, ioStateType, "io");
 
-  const auto ioBarrier1 = &rvsdg::CreateOpNode<IOBarrierOperation>({ myInt, myIo }, int32Type);
-  const auto ioBarrier1Output = ioBarrier1->output(0);
+  const auto & hoistBarrier1 = MemoryHoistBarrierOperation::createNode(*myPtr, *myIo, 0);
+  const auto hoistBarrier1Output = hoistBarrier1.output(0);
 
-  const auto ioBarrier2 =
-      &rvsdg::CreateOpNode<IOBarrierOperation>({ ioBarrier1Output, myIo }, int32Type);
-  const auto ioBarrier2Output = ioBarrier2->output(0);
+  const auto & hoistBarrier2 =
+      MemoryHoistBarrierOperation::createNode(*hoistBarrier1Output, *myIo, 0);
+  const auto hoistBarrier2Output = hoistBarrier2.output(0);
 
   // Assert
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier1Output, false), myInt);
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier2Output, false), myInt);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*hoistBarrier1Output, false), myPtr);
+  EXPECT_EQ(&jlm::llvm::traceOutput(*hoistBarrier2Output, false), myPtr);
 }
 
 TEST(TraceTests, testGetConstantSignedInteger)

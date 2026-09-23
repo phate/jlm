@@ -79,8 +79,15 @@ public:
     LoopStrengthReduction,
     LoopUnrolling,
     LoopUnswitching,
+    NodeHoisting,
     NodePullIn,
+
+    /**
+     * \deprecated
+     * Use NodeHoisting instead.
+     */
     NodePushOut,
+
     NodeReduction,
     PredicateCorrelation,
     RvsdgTreePrinter,

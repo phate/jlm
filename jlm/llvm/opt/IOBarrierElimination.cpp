@@ -182,29 +182,30 @@ IOBarrierElimination::Run(
 }
 
 static std::vector<rvsdg::SimpleNode *>
-collectIOBarrierNodes(rvsdg::Output & output)
+collectMemoryHoistBarrierNodes(rvsdg::Output & output)
 {
-  std::vector<rvsdg::SimpleNode *> ioBarrierNodes;
+  std::vector<rvsdg::SimpleNode *> hoistBarrierNodes;
   for (auto & user : output.Users())
   {
-    if (auto [node, ioBarrierOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(user);
-        ioBarrierOp)
+    if (auto [node, hoistBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(user);
+        hoistBarrierOp)
     {
-      ioBarrierNodes.push_back(node);
+      hoistBarrierNodes.push_back(node);
     }
   }
 
-  return ioBarrierNodes;
+  return hoistBarrierNodes;
 }
 
 static std::optional<rvsdg::SimpleNode *>
-selectIOBarrierNode(
-    const std::vector<rvsdg::SimpleNode *> & ioBarrierNodes,
+selectMemoryHoistBarrierNode(
+    const std::vector<rvsdg::SimpleNode *> & hoistBarrierNodes,
     const std::variant<rvsdg::Node *, rvsdg::Region *> ioStateOwner)
 {
-  for (auto node : ioBarrierNodes)
+  for (auto node : hoistBarrierNodes)
   {
-    if (IOBarrierOperation::getIOStateInput(*node).origin()->GetOwner() == ioStateOwner)
+    if (MemoryHoistBarrierOperation::getIOStateInput(*node).origin()->GetOwner() == ioStateOwner)
       return node;
   }
 
@@ -212,15 +213,17 @@ selectIOBarrierNode(
 }
 
 static void
-divertUsersToIOBarrierNode(rvsdg::Output & output, rvsdg::SimpleNode & ioBarrierNode)
+divertUsersToMemoryHoistBarrierNode(
+    rvsdg::Output & output,
+    rvsdg::SimpleNode & memoryHoistBarrierNode)
 {
-  JLM_ASSERT(is<IOBarrierOperation>(&ioBarrierNode));
+  JLM_ASSERT(is<MemoryHoistBarrierOperation>(&memoryHoistBarrierNode));
 
   output.divertUsersWhere(
-      *ioBarrierNode.output(0),
-      [&ioBarrierNode](const rvsdg::Input & user)
+      *memoryHoistBarrierNode.output(0),
+      [&memoryHoistBarrierNode](const rvsdg::Input & user)
       {
-        return &IOBarrierOperation::BarredInput(ioBarrierNode) != &user;
+        return &MemoryHoistBarrierOperation::getAddressInput(memoryHoistBarrierNode) != &user;
       });
 }
 
@@ -243,9 +246,9 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
             {
               if (is<PointerType>(argument->Type()))
               {
-                auto ioBarrierNodes = collectIOBarrierNodes(*argument);
-                if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, &subregion))
-                  divertUsersToIOBarrierNode(*argument, **ioBarrierNode);
+                auto ioBarrierNodes = collectMemoryHoistBarrierNodes(*argument);
+                if (auto ioBarrierNode = selectMemoryHoistBarrierNode(ioBarrierNodes, &subregion))
+                  divertUsersToMemoryHoistBarrierNode(*argument, **ioBarrierNode);
               }
             }
           }
@@ -255,9 +258,10 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
           {
             if (is<PointerType>(output.Type()))
             {
-              auto ioBarrierNodes = collectIOBarrierNodes(output);
-              if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, &structuralNode))
-                divertUsersToIOBarrierNode(output, **ioBarrierNode);
+              auto ioBarrierNodes = collectMemoryHoistBarrierNodes(output);
+              if (auto ioBarrierNode =
+                      selectMemoryHoistBarrierNode(ioBarrierNodes, &structuralNode))
+                divertUsersToMemoryHoistBarrierNode(output, **ioBarrierNode);
             }
           }
         },
@@ -270,9 +274,10 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
                 auto & loadedValue = LoadOperation::LoadedValueOutput(simpleNode);
                 if (is<PointerType>(loadedValue.Type()))
                 {
-                  auto ioBarrierNodes = collectIOBarrierNodes(loadedValue);
-                  if (auto ioBarrierNode = selectIOBarrierNode(ioBarrierNodes, simpleNode.region()))
-                    divertUsersToIOBarrierNode(loadedValue, **ioBarrierNode);
+                  auto ioBarrierNodes = collectMemoryHoistBarrierNodes(loadedValue);
+                  if (auto ioBarrierNode =
+                          selectMemoryHoistBarrierNode(ioBarrierNodes, simpleNode.region()))
+                    divertUsersToMemoryHoistBarrierNode(loadedValue, **ioBarrierNode);
                 }
               });
         },
@@ -513,9 +518,10 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
           {
             rvsdg::MatchType(
                 simpleNode.GetOperation(),
-                [this, &simpleNode](const IOBarrierOperation &)
+                [this, &simpleNode](const MemoryHoistBarrierOperation &)
                 {
-                  const auto & barredInput = IOBarrierOperation::BarredInput(simpleNode);
+                  const auto & barredInput =
+                      MemoryHoistBarrierOperation::getAddressInput(simpleNode);
                   if (!is<PointerType>(barredInput.Type()))
                     return;
 
@@ -570,12 +576,14 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
                   dynamic_cast<const LoadNonVolatileOperation *>(&simpleNode.GetOperation()))
           {
             auto & loadAddress = LoadOperation::AddressInput(simpleNode);
-            auto [ioBarrierNode, ioBarrierOp] =
-                rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*loadAddress.origin());
-            if (!ioBarrierOp)
+            auto [hoistBarrierNode, hoistBarrierOp] =
+                rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+                    *loadAddress.origin());
+            if (!hoistBarrierOp)
               return;
 
-            auto & barredAddressInput = IOBarrierOperation::BarredInput(*ioBarrierNode);
+            auto & barredAddressInput =
+                MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode);
             const auto barredAddressSize = context_->isDereferenceable(barredAddressInput);
             if (barredAddressSize == 0)
               return;
