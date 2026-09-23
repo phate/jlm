@@ -311,11 +311,12 @@ TEST(IOBarrierEliminationTests, testOnlyLoadsInGamma)
   auto outerIOStateEntryVar = outerGammaNode->AddEntryVar(ioStateArgument);
 
   // outerGammaNode - subregion 0
-  auto & ioBarrierNode1 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
       *outerPtrEntryVar.branchArgument[0],
-      *outerIOStateEntryVar.branchArgument[0]);
+      *outerIOStateEntryVar.branchArgument[0],
+      0);
   auto & load32Node1 =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode1.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode1.output(0), {}, i32Type, 4);
 
   // outerGammaNode - subregion 1
   auto innerGammaNode = GammaNode::create(outerCtlEntryVar.branchArgument[1], 2);
@@ -323,18 +324,20 @@ TEST(IOBarrierEliminationTests, testOnlyLoadsInGamma)
   auto innerIOStateEntryVar = innerGammaNode->AddEntryVar(outerIOStateEntryVar.branchArgument[1]);
 
   // innerGammaNode - subregion 0
-  auto & ioBarrierNode2 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode2 = MemoryHoistBarrierOperation::createNode(
       *innerPtrEntryVar.branchArgument[0],
-      *innerIOStateEntryVar.branchArgument[0]);
+      *innerIOStateEntryVar.branchArgument[0],
+      0);
   auto & load32Node2 =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode2.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode2.output(0), {}, i32Type, 4);
 
   // innerGammaNode - subregion 1
-  auto & ioBarrierNode3 = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode3 = MemoryHoistBarrierOperation::createNode(
       *innerPtrEntryVar.branchArgument[1],
-      *innerIOStateEntryVar.branchArgument[1]);
+      *innerIOStateEntryVar.branchArgument[1],
+      0);
   auto & load32Node3 =
-      LoadNonVolatileOperation::CreateNode(*ioBarrierNode3.output(0), {}, i32Type, 4);
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode3.output(0), {}, i32Type, 4);
 
   // innerGammaNode - finalize
   auto innerI32ExitVar =
@@ -355,9 +358,9 @@ TEST(IOBarrierEliminationTests, testOnlyLoadsInGamma)
   runIOBarrierElimination(*rvsdgModule);
 
   // Assert
-  // We expect that all IOBarrierOperation nodes are eliminated in the graph as the pointer is
-  // dereferenced on every path in the function.
-  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  // We expect that all MemoryHoistBarrierOperation nodes are eliminated in the graph as the pointer
+  // is dereferenced on every path in the function.
+  EXPECT_FALSE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
 }
 
 TEST(IOBarrierEliminationTest, testNormalizeation)

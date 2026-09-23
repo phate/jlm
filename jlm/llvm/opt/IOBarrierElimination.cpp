@@ -309,21 +309,22 @@ IOBarrierElimination::areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & e
     if (userSize == 0)
     {
       // The user is not marked. Let's continue
-      auto [ioBarrierNode, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*user);
-      if (!ioBarrierOp)
+      auto [hoistBarrierNode, hoistBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(*user);
+      if (!hoistBarrierOp)
       {
-        // We do not even have an IOBarrierOperation. We are done here.
+        // We do not even have an MemoryHoistBarrierOperation node. We are done here.
         return 0;
       }
 
-      JLM_ASSERT(ioBarrierNode->output(0)->nusers() != 0);
-      // Any user of an IOBarrierOperation should do as we always mark all users
-      user = &*ioBarrierNode->output(0)->Users().begin();
+      JLM_ASSERT(hoistBarrierNode->output(0)->nusers() != 0);
+      // Any user of an MemoryHoistBarrierOperation node should do as we always mark all users
+      user = &*hoistBarrierNode->output(0)->Users().begin();
       userSize = context_->isDereferenceable(*user);
       if (userSize == 0)
       {
-        // The user of the IOBarrierOperation is not marked either. We are done for good.
+        // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
+        // good.
         return 0;
       }
     }
