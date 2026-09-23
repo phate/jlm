@@ -291,7 +291,7 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
 void
 IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entryVar) const
 {
-  // We do not care about non-pointer entry variables
+  // We only care about pointer entry variables
   if (!rvsdg::is<PointerType>(entryVar.input->Type()))
     return;
 
@@ -330,17 +330,17 @@ IOBarrierElimination::markGammaEntryVar(const rvsdg::GammaNode::EntryVar & entry
         if (auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
             *ownerRegion == argument->region())
         {
-          // We only want a MemoryHoistBarrierOperation node, whose IO state is connected to the
+          // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
           // argument of the gamma subregion. This ensures that there is no other non-returning
           // node, such as a call to abort() etc., that would prohibit the connected memory
-          // operation to not be executed.
+          // operation to be executed.
           hoistBarrierNode = simpleNode;
         }
       }
     }
     if (!hoistBarrierNode)
     {
-      // We do not even find a MemoryHoistBarrierOperation node. Nothing can be marked.
+      // We do not even find an appropriate MemoryHoistBarrierOperation node. Nothing can be marked.
       return;
     }
 
