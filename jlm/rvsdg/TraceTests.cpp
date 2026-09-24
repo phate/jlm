@@ -685,3 +685,110 @@ TEST(TraceTests, RegionPredicationThetaToGammaTest)
   // Tracing directly from the theta output leads to the output of the inner gamma
   ASSERT_EQ(&tracer.trace(*loopVarInt.output), innerIntExit.output);
 }
+
+TEST(TraceTests, ImpossibleSubregions)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG that looks like
+   *
+   *             TestOp  Int(10)
+   *               v       v
+   * +-theta-------x-------x-------------------------------------------------------------+
+   * |                     |                                                             |
+   * |   TestOp            |                                                             |
+   * |     v               v                                                             |
+   * | +-gamma0------------------------------------x-----------+------------------x--+   |
+   * | |   TestOp                                              |                  |  |   |
+   * | |     v                                                 |                  |  |   |
+   * | | +-gamma1------------------+-------------------------+ |                  |  |   |
+   * | | |                         |                         | |                  |  |   |
+   * | | | CTRL(0) CTRL(1) Int(20) | CTRL(1) CTRL(0) Int(30) | |                  |  |   |
+   * | | |   v       v        v    |  v       v        v     | |                  |  |   |
+   * | | +---x-------x--------x----+--x-------x--------x-----+ | CTRL(0) CTRL(0)  |  |   |
+   * | |         v       v     v                               |  v       v       v  |   |
+   * | +---------x-------x-----x-------------------------------+--x-------x-------x--+   |
+   * |     |       |       |                                                             |
+   * |     v       v       v                                                             |
+   * +-----x-------x-------x-------------------------------------------------------------+
+   *               |       |
+   *               v       v
+   *         +-gamma2-----x----+----x----------+
+   *         |            v    |    v          |
+   *         |       target A  |  target B     |
+   *         +-----------------+---------------+
+   *
+   * Tracing from the "target A" region should reach the pre argument of the loop variable,
+   * while tracing from "target B" should reach the Int(20) inside gamma0.
+   */
+
+  // Arrange
+  const auto control2Type = ControlType::Create(2);
+  const auto int32Type = BitType::Create(32);
+
+  Graph rvsdg;
+
+  auto & testOpCtrlOuter =
+      jlm::rvsdg::CreateOpNode<TestNullaryOperation>(rvsdg.GetRootRegion(), control2Type);
+  auto & int10 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 10 });
+
+  auto & theta = *ThetaNode::create(&rvsdg.GetRootRegion());
+  auto ctrlLoopVar = theta.AddLoopVar(testOpCtrlOuter.output(0));
+  auto intLoopVar = theta.AddLoopVar(&int10);
+
+  auto & testOpCtrlGamma0 =
+      jlm::rvsdg::CreateOpNode<TestNullaryOperation>(*theta.subregion(), control2Type);
+  auto & gamma0 = *GammaNode::create(testOpCtrlGamma0.output(0), 2);
+  auto gamma0IntEntryVar = gamma0.AddEntryVar(intLoopVar.pre);
+
+  // gamma0's left subregion
+  auto & testOpCtrlGamma1 =
+      jlm::rvsdg::CreateOpNode<TestNullaryOperation>(*gamma0.subregion(0), control2Type);
+  auto & gamma1 = *GammaNode::create(testOpCtrlGamma1.output(0), 2);
+
+  // gamma1's left subregion
+  auto & gamma1leftCtrl0 = ControlConstantOperation::createFalse(*gamma1.subregion(0));
+  auto & gamma1leftCtrl1 = ControlConstantOperation::createTrue(*gamma1.subregion(0));
+  auto & gamma1leftInt20 = BitConstantOperation::create(*gamma1.subregion(0), { 32, 20 });
+
+  // gamma1's right subregion
+  auto & gamma1rightCtrl0 = ControlConstantOperation::createFalse(*gamma1.subregion(1));
+  auto & gamma1rightCtrl1 = ControlConstantOperation::createTrue(*gamma1.subregion(1));
+  auto & gamma1rightInt30 = BitConstantOperation::create(*gamma1.subregion(1), { 32, 30 });
+
+  // gamma1's exit variables
+  auto gamma1Exit0 = gamma1.AddExitVar({ &gamma1leftCtrl0, &gamma1rightCtrl1 });
+  auto gamma1Exit1 = gamma1.AddExitVar({ &gamma1leftCtrl1, &gamma1rightCtrl0 });
+  auto gamma1ExitInt = gamma1.AddExitVar({ &gamma1leftInt20, &gamma1rightInt30 });
+
+  // gamma 0's right subregion
+  auto & gamma0rightCtrl0 = ControlConstantOperation::createFalse(*gamma0.subregion(1));
+
+  // gamma 0's exit variables
+  auto gamma0Exit0 = gamma0.AddExitVar({ gamma1Exit0.output, &gamma0rightCtrl0 });
+  auto gamma0Exit1 = gamma0.AddExitVar({ gamma1Exit1.output, &gamma0rightCtrl0 });
+  auto gamma0ExitInt =
+      gamma0.AddExitVar({ gamma1ExitInt.output, gamma0IntEntryVar.branchArgument[1] });
+
+  // route gamma0 exit variables to theta predicate and loop vars
+  theta.predicate()->divert_to(gamma0Exit0.output);
+  ctrlLoopVar.post->divert_to(gamma0Exit1.output);
+  intLoopVar.post->divert_to(gamma0ExitInt.output);
+
+  // create gamma 2 outside the theta
+  auto & gamma2 = *GammaNode::create(ctrlLoopVar.output, 2);
+  auto gamma2EntryInt = gamma2.AddEntryVar(intLoopVar.output);
+
+  // Assert
+  OutputTracer tracer;
+  tracer.setRegionPredicateCheckingEnabled(true);
+  tracer.setStructuralNodePolicy(OutputTracer::StructuralNodePolicy::traceIntoSubregions);
+
+  // Tracing from target region A traces through all of gamma0 and gamma1,
+  // but stops at the loop variable pre since the loop variable is not invariant.
+  ASSERT_EQ(&tracer.trace(*gamma2EntryInt.branchArgument[0]), intLoopVar.pre);
+
+  // Tracing from target region B traces to Int(20) inside gamma1
+  ASSERT_EQ(&tracer.trace(*gamma2EntryInt.branchArgument[1]), &gamma1leftInt20);
+}

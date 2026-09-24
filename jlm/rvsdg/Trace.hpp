@@ -256,25 +256,51 @@ protected:
   public:
     /**
      * The output reached after tracing zero, one or more steps.
+     * Can only be called if the result is a StepOutput or a FinalOutput.
      *
      * @return the output arrived at by the tracing function
      */
     [[nodiscard]] Output &
     getOutput() const noexcept
     {
-      return output_;
+      JLM_ASSERT(output_);
+      return *output_;
     }
 
     /**
-     * Indicates whether the returned output can be traced any further, or if tracing is done.
-     * When done, the caller should not attempt any further tracing from the resulting output.
+     * Indicates whether the trace step result reached an output
+     * from which it may be possible to trace further.
      *
-     * @return true if the result is final, false if further tracing might be possible
+     * @return true if the result is an output that may be traced further, otherwise false
      */
     [[nodiscard]] bool
-    isFinalResult() const noexcept
+    isStepOutput() const noexcept
     {
-      return isFinalResult_;
+      return kind_ == TraceStepResultKind::StepOutput;
+    }
+
+    /**
+     * Indicates whether the returned output represents a fully traced output.
+     *
+     * @return true if the result is an output that can not be traced further, otherwise false
+     */
+    [[nodiscard]] bool
+    isFinalOutput() const noexcept
+    {
+      return kind_ == TraceStepResultKind::FinalOutput;
+    }
+
+    /**
+     * Indicates whether tracing from the given output only reaches regions
+     * from which control flow can never reach the starting output of the current tracing.
+     *
+     * @see TraceStepResultKind::DeadEnd
+     * @return true if the result represents a dead end, otherwise false
+     */
+    [[nodiscard]] bool
+    isDeadEnd() const noexcept
+    {
+      return kind_ == TraceStepResultKind::DeadEnd;
     }
 
     /**
@@ -282,9 +308,9 @@ protected:
      * that can possibly be traced further.
      */
     [[nodiscard]] static TraceStepResult
-    createStepResult(Output & output)
+    createStepOutput(Output & output)
     {
-      return TraceStepResult(output, false);
+      return TraceStepResult(&output, TraceStepResultKind::StepOutput);
     }
 
     /**
@@ -292,19 +318,47 @@ protected:
      * from which further tracing is not possible.
      */
     [[nodiscard]] static TraceStepResult
-    createFinalResult(Output & output)
+    createFinalOutput(Output & output)
     {
-      return TraceStepResult(output, true);
+      return TraceStepResult(&output, TraceStepResultKind::FinalOutput);
+    }
+
+    /**
+     * Creates an instance representing tracing reaching a dead end.
+     * @see TraceStepResultKind::DeadEnd
+     */
+    [[nodiscard]] static TraceStepResult
+    createDeadEndResult()
+    {
+      return TraceStepResult(nullptr, TraceStepResultKind::DeadEnd);
     }
 
   private:
-    TraceStepResult(Output & output, bool isFinalResult)
+    enum class TraceStepResultKind
+    {
+      // Represents an output found after one or more steps of tracing progress,
+      // but not necessarily the final stopping point for tracing.
+      StepOutput,
+
+      // Represents an output from which no more tracing is possible
+      FinalOutput,
+
+      // When tracing, the region of the starting output is the target region.
+      // During tracing, tracing may enter the subregions of structural nodes.
+      // Within such a subregion S, it may be discovered that all possible value origins
+      // inside S are in regions from which control flow can never enter the target region.
+      // This effectively means tracing never needed to enter S in the first place.
+      // This is signalled by returning DeadEnd from the tracing inside S.
+      DeadEnd,
+    };
+
+    TraceStepResult(Output * output, TraceStepResultKind kind)
         : output_(output),
-          isFinalResult_(isFinalResult)
+          kind_(kind)
     {}
 
-    Output & output_;
-    bool isFinalResult_;
+    Output * output_;
+    TraceStepResultKind kind_;
   };
 
   /**
@@ -315,9 +369,9 @@ protected:
    * @param output the output to trace from.
    * @param backEdgeState enum describing the path taken from the starting output to \p output.
    * @param withinRegion the region tracing has to stay within, or nullptr
-   * @return the resulting output reached when no more tracing is possible
+   * @return the end result of tracing, either a final output, or an impossible origin.
    */
-  [[nodiscard]] Output &
+  [[nodiscard]] TraceStepResult
   traceInternal(Output & output, BackEdgeState backEdgeState, const Region * withinRegion);
 
   /**
