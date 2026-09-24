@@ -716,31 +716,45 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
   {
-    // Can have more than a single memory state
-    ::llvm::SmallVector<::mlir::Type> memStateTypes;
-    for (size_t i = 1; i < load_op->nresults(); i++)
-    {
-      memStateTypes.push_back(ConvertType(*load_op->result(i)));
-    }
+    const bool isVolatile = rvsdg::is<jlm::llvm::LoadVolatileOperation>(operation);
+
+    // A volatile load threads an I/O state in and out; a non-volatile one does not.
+    ::mlir::Value inputIoState = isVolatile ? inputs[1] : nullptr;
+    ::mlir::Type outputIoState =
+        isVolatile ? Builder_->getType<::mlir::rvsdg::IOStateEdgeType>() : nullptr;
+
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
-        ConvertType(*load_op->result(0)),                               // ptr
-        GetMemStateRange(load_op->nresults() - 1),                      // memstate(s)
-        inputs[0],                                                      // pointer
-        Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
-        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
-    );
+        ConvertType(*load_op->result(0)),                      // loaded value
+        outputIoState,                                         // output I/O state
+        GetMemStateRange(load_op->NumMemoryStates()),          // output memory states
+        inputs[0],                                             // pointer
+        Builder_->getUI32IntegerAttr(load_op->GetAlignment()), // alignment
+        Builder_->getBoolAttr(isVolatile),                     // isVolatile
+        inputIoState,
+        ::mlir::ValueRange(
+            { std::next(inputs.begin(), isVolatile ? 2 : 1), inputs.end() })); // inputMemStates
   }
   else if (auto store_op = dynamic_cast<const jlm::llvm::StoreOperation *>(&operation))
   {
+    const bool isVolatile = rvsdg::is<jlm::llvm::StoreVolatileOperation>(operation);
+
+    // A volatile store threads an I/O state in and out; a non-volatile one does not.
+    ::mlir::Value inputIoState = isVolatile ? inputs[2] : nullptr;
+    ::mlir::Type outputIoState =
+        isVolatile ? Builder_->getType<::mlir::rvsdg::IOStateEdgeType>() : nullptr;
+
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
-        GetMemStateRange(store_op->nresults()),                                    // memstate(s)
-        inputs[0],                                                                 // ptr
-        inputs[1],                                                                 // value
-        Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
-        ::mlir::ValueRange({ std::next(std::next(inputs.begin())), inputs.end() }) // inputMemStates
-    );
+        outputIoState,
+        GetMemStateRange(store_op->NumMemoryStates()),          // output memory states
+        inputs[0],                                              // pointer
+        inputs[1],                                              // value
+        Builder_->getUI32IntegerAttr(store_op->GetAlignment()), // alignment
+        Builder_->getBoolAttr(isVolatile),                      // isVolatile
+        inputIoState,
+        ::mlir::ValueRange(
+            { std::next(inputs.begin(), isVolatile ? 3 : 2), inputs.end() })); // inputMemStates
   }
   else if (rvsdg::is<jlm::llvm::MemoryStateMergeOperation>(operation))
   {
