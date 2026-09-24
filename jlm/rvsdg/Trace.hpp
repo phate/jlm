@@ -291,15 +291,16 @@ protected:
     }
 
     /**
-     * Indicates whether tracing only reaches regions that can never be the origin
-     * of the starting output of the current tracing operation.
+     * Indicates whether tracing from the given output only reaches regions
+     * from which control flow can never reach the starting output of the current tracing.
      *
-     * @return true if the result represents only impossible origins, otherwise false
+     * @see TraceStepResultKind::DeadEnd
+     * @return true if the result represents a dead end, otherwise false
      */
     [[nodiscard]] bool
-    isImpossibleOrigin() const noexcept
+    isDeadEnd() const noexcept
     {
-      return kind_ == TraceStepResultKind::ImpossibleOrigin;
+      return kind_ == TraceStepResultKind::DeadEnd;
     }
 
     /**
@@ -323,13 +324,13 @@ protected:
     }
 
     /**
-     * Creates an instance representing a non-final tracing result,
-     * that can possibly be traced further.
+     * Creates an instance representing tracing reaching a dead end.
+     * @see TraceStepResultKind::DeadEnd
      */
     [[nodiscard]] static TraceStepResult
-    createImpossibleOrigin()
+    createDeadEndResult()
     {
-      return TraceStepResult(nullptr, TraceStepResultKind::ImpossibleOrigin);
+      return TraceStepResult(nullptr, TraceStepResultKind::DeadEnd);
     }
 
   private:
@@ -339,12 +340,16 @@ protected:
       // but not necessarily the final stopping point for tracing.
       StepOutput,
 
-      // Represents an output reached from which no more tracing is possible
+      // Represents an output from which no more tracing is possible
       FinalOutput,
 
-      // Represents tracing reaching an output that can never be the origin
-      // of the output from which the current tracing operation started.
-      ImpossibleOrigin,
+      // When tracing, the region of the starting output is the target region.
+      // During tracing, tracing may enter the subregions of structural nodes.
+      // Within such a subregion S, it may be discovered that all possible value origins
+      // inside S are in regions from which control flow can never enter the target region.
+      // This effectively means tracing never needed to enter S in the first place.
+      // This is signalled by returning DeadEnd from the tracing inside S.
+      DeadEnd,
     };
 
     TraceStepResult(Output * output, TraceStepResultKind kind)

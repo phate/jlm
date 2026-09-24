@@ -37,7 +37,7 @@ OutputTracer::traceStep(
   const auto trace1 = rvsdg::OutputTracer::traceStep(output, backEdgeState, withinRegion);
 
   // Impossible origins can not be traced any further
-  if (trace1.isImpossibleOrigin())
+  if (trace1.isDeadEnd())
     return trace1;
 
   auto & trace1Output = trace1.getOutput();

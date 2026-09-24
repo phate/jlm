@@ -42,9 +42,9 @@ OutputTracer::trace(Output & output, const Region * withinRegion)
 
   auto result = traceInternal(output, backEdgeState, withinRegion);
 
-  // If the output is statically unreachable, it may not have any origins,
-  // so return the same output back
-  if (result.isImpossibleOrigin())
+  // If the output is unreachable, tracing may reach a dead end.
+  // In which case return the original output
+  if (result.isDeadEnd())
     return output;
 
   JLM_ASSERT(result.isFinalOutput());
@@ -64,8 +64,9 @@ OutputTracer::traceInternal(
   {
     const auto traceStepResult = traceStep(*head, backEdgeState, withinRegion);
 
-    // If the tracing reached a final output, or determined no origin exists, stop now
-    if (traceStepResult.isFinalOutput() || traceStepResult.isImpossibleOrigin())
+    // If the tracing reached a final output, or it was determined that tracing from the
+    // given output always reaches dead ends, stop now
+    if (traceStepResult.isFinalOutput() || traceStepResult.isDeadEnd())
       return traceStepResult;
 
     // Otherwise the result is a tracing step, and it must have made progress
@@ -121,8 +122,8 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
     // Region predication checking requires that no back-edge has been taken around the gamma
     if (backEdgeState == BackEdgeState::NoBackEdgeTaken)
     {
-      // If control flow can not go from the gamma subregion to the region of the starting output,
-      // it can not be the origin of the traced value.
+      // If control flow cannot go from the gamma subregion to the region of the starting output,
+      // it cannot be the origin of the traced value.
       if (!regionPredicateTracer_.isReachableFromRegion(
               *startingOutput_->region(),
               *branchResult->region()))
@@ -136,8 +137,8 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
       // Trace the branch result origin, but only within the gamma subregion
       auto traceInnerResult = traceInternal(*innerOrigin, backEdgeState, innerOrigin->region());
 
-      // Tracing inside the subregion only leads to regions that can not reach the starting output
-      if (traceInnerResult.isImpossibleOrigin())
+      // Tracing inside the subregion only leads to regions that cannot reach the starting output
+      if (traceInnerResult.isDeadEnd())
         continue;
 
       innerOrigin = &traceInnerResult.getOutput();
@@ -187,7 +188,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
   // If it is still nullopt, that means none of the subregions were reachable.
   if (!commonOuterOrigin.has_value())
   {
-    return TraceStepResult::createImpossibleOrigin();
+    return TraceStepResult::createDeadEndResult();
   }
 
   // If we found a common outer origin, continue tracing from there
@@ -237,10 +238,10 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
     // trace the origin within the thetaNode, but only within the theta's subregion
     auto tracedInnerResult = traceInternal(*innerOrigin, backEdgeState, thetaNode.subregion());
 
-    // If tracing in the theta only reaches regions that can not reach the starting output,
-    // the theta itself can not be the origin providing values to the starting output.
-    if (tracedInnerResult.isImpossibleOrigin())
-      return TraceStepResult::createImpossibleOrigin();
+    // If tracing in the theta only reaches regions that cannot reach the starting output,
+    // the theta itself cannot be the origin providing values to the starting output.
+    if (tracedInnerResult.isDeadEnd())
+      return TraceStepResult::createDeadEndResult();
 
     innerOrigin = &tracedInnerResult.getOutput();
   }
@@ -267,7 +268,7 @@ OutputTracer::traceThetaOutput(ThetaNode & thetaNode, Output & output, BackEdgeS
 
     // The loop variable has already been traced once without being impossible.
     // Tracing again with weaker assumptions can never fail.
-    JLM_ASSERT(!tracedInnerAgain.isImpossibleOrigin());
+    JLM_ASSERT(!tracedInnerAgain.isDeadEnd());
 
     if (&tracedInnerAgain.getOutput() == loopVar.pre)
     {
