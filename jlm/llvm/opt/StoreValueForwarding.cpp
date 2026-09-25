@@ -201,6 +201,7 @@ struct StoreValueForwarding::Context final
     outputTracer.setInvarianceCaching(true);
     outputTracer.setStructuralNodePolicy(
         rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+    outputTracer.setRegionPredicateCheckingEnabled(true);
     // If load/load forwarding is disabled, make the tracer skip loads
     outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
   }
