@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/strfmt.hpp>
 
 namespace jlm::llvm
@@ -49,6 +50,49 @@ std::unique_ptr<rvsdg::Operation>
 MemoryHoistBarrierOperation::copy() const
 {
   return std::make_unique<MemoryHoistBarrierOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryHoistBarrierOperation::normalizeNestedMemoryHoistBarriers(
+    const MemoryHoistBarrierOperation & lowerMhbOp,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & lowerMhbAddressOperand = *operands[0];
+  auto & lowerMhbIOStateOperand = *operands[1];
+
+  auto & tracedLowerMhbAddressOperand = llvm::traceOutput(lowerMhbAddressOperand, true);
+  auto [upperMhbNode, upperMhbOp] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+          tracedLowerMhbAddressOperand);
+  if (!upperMhbOp)
+  {
+    return std::nullopt;
+  }
+  auto & upperMhbAddressOperand = *getAddressInput(*upperMhbNode).origin();
+  auto & upperMhbIOStateOperand = *getIOStateInput(*upperMhbNode).origin();
+
+  auto & tracedUpperMhbIOStateOperand = llvm::traceOutput(upperMhbIOStateOperand, true);
+  auto & tracedLowerMhbIOStateOperand = llvm::traceOutput(lowerMhbIOStateOperand, true);
+  if (&tracedLowerMhbIOStateOperand != &tracedUpperMhbIOStateOperand)
+  {
+    return std::nullopt;
+  }
+
+  if (lowerMhbAddressOperand.region() == upperMhbAddressOperand.region())
+  {
+    auto & newMhbNode = createNode(
+        upperMhbAddressOperand,
+        upperMhbIOStateOperand,
+        std::max(lowerMhbOp.getDereferenceableSize(), upperMhbOp->getDereferenceableSize()));
+    return rvsdg::outputs(&newMhbNode);
+  }
+
+  auto & newMhbNode = createNode(
+      *getAddressInput(*upperMhbNode).origin(),
+      *getIOStateInput(*upperMhbNode).origin(),
+      std::max(lowerMhbOp.getDereferenceableSize(), upperMhbOp->getDereferenceableSize()));
+  return rvsdg::outputs(&newMhbNode);
 }
 
 }

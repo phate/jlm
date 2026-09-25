@@ -189,6 +189,12 @@ public:
         dereferenceableSize);
   }
 
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeNestedMemoryHoistBarriers(
+      const MemoryHoistBarrierOperation & lowerMhbOp,
+      const std::vector<rvsdg::Output *> & operands);
+
 private:
   /**
    * Dereferenceable size of the memory input in bytes.
