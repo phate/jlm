@@ -69,7 +69,7 @@ protected:
 
 private:
   bool traceThroughLoadedStates_ = false;
-  bool traceThroughHoistBarriers_ = false;
+  bool traceThroughHoistBarriers_ = true;
 };
 
 /**

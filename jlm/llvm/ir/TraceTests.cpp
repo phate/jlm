@@ -45,8 +45,6 @@ TEST(TraceTests, testTracingMemoryHoistBarrier)
 
   // Act & Assert
   OutputTracer tracer;
-
-  tracer.setTracingThroughHoistBarriers(true);
   EXPECT_EQ(&tracer.trace(*hoistBarrier1Output), myPtr);
   EXPECT_EQ(&tracer.trace(*hoistBarrier2Output), myPtr);
 

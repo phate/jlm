@@ -204,7 +204,6 @@ struct StoreValueForwarding::Context final
     outputTracer.setRegionPredicateCheckingEnabled(true);
     // If load/load forwarding is disabled, make the tracer skip loads
     outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
-    outputTracer.setTracingThroughHoistBarriers(true);
   }
 
   // Counters used for statistics
