@@ -25,6 +25,7 @@ class IOBarrierElimination::Statistics final : public util::Statistics
   const char * NormalizationTimerLabel_ = "NormalizationTime";
   const char * MarkTimerLabel_ = "MarkTime";
   const char * PropagateTimerLabel_ = "PropagateTime";
+  const char * EncodeTimerLabel_ = "EncodeTime";
   const char * SweepTimerLabel_ = "SweepTime";
 
 public:
@@ -71,6 +72,18 @@ public:
   }
 
   void
+  startEncodeStatistics() noexcept
+  {
+    AddTimer(EncodeTimerLabel_).start();
+  }
+
+  void
+  stopEncodeStatistics() noexcept
+  {
+    GetTimer(EncodeTimerLabel_).stop();
+  }
+
+  void
   startSweepStatistics() noexcept
   {
     AddTimer(SweepTimerLabel_).start();
@@ -93,24 +106,28 @@ class IOBarrierElimination::Context
 {
 public:
   /**
-   * Mark all users of \p output as dereferenceable with size \p sizeInBytes.
+   * Mark \p output as dereferenceable with size \p sizeInBytes.
    */
   void
-  markUsersDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
+  markDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
   {
-    for (auto & user : output.Users())
+    if (const auto it = dereferenceableInputs_.find(&output); it == dereferenceableInputs_.end())
     {
-      markDereferenceable(user, sizeInBytes);
+      dereferenceableInputs_[&output] = sizeInBytes;
+    }
+    else
+    {
+      dereferenceableInputs_[&output] = std::max(it->second, sizeInBytes);
     }
   }
 
   /**
-   * @return The size in bytes. If \p input was not marked as dereferenceable, then 0 is returned.
+   * @return The size in bytes. If \p output was not marked as dereferenceable, then 0 is returned.
    */
   [[nodiscard]] size_t
-  isDereferenceable(const rvsdg::Input & input) const
+  getDereferenceableSize(const rvsdg::Output & output) const
   {
-    const auto it = dereferenceableInputs_.find(&input);
+    const auto it = dereferenceableInputs_.find(&output);
     if (it == dereferenceableInputs_.end())
       return 0;
 
@@ -124,23 +141,7 @@ public:
   }
 
 private:
-  /**
-   * Mark \p input as dereferenceable with size \p sizeInBytes.
-   */
-  void
-  markDereferenceable(const rvsdg::Input & input, const size_t sizeInBytes)
-  {
-    if (const auto it = dereferenceableInputs_.find(&input); it == dereferenceableInputs_.end())
-    {
-      dereferenceableInputs_[&input] = sizeInBytes;
-    }
-    else
-    {
-      dereferenceableInputs_[&input] = std::max(it->second, sizeInBytes);
-    }
-  }
-
-  std::unordered_map<const rvsdg::Input *, size_t> dereferenceableInputs_{};
+  std::unordered_map<const rvsdg::Output *, size_t> dereferenceableInputs_{};
 };
 
 IOBarrierElimination::~IOBarrierElimination() = default;
@@ -160,16 +161,20 @@ IOBarrierElimination::Run(
   auto statistics = Statistics::create(module.SourceFilePath().value());
 
   statistics->startNormalizationStatistics();
-  normalizeIOBarriers(rvsdg.GetRootRegion());
+  normalizeMemoryHoistBarriers(rvsdg.GetRootRegion());
   statistics->stopNormalizationStatistics();
 
   statistics->startMarkStatistics();
-  markDereferenceable(rvsdg.GetRootRegion());
+  markOutputs(rvsdg.GetRootRegion());
   statistics->stopMarkStatistics();
 
   statistics->startPropagateStatistics();
-  propagateDereferenceable(rvsdg);
+  propagateSize(rvsdg);
   statistics->stopPropagateStatistics();
+
+  statistics->startEncodeStatistics();
+  encodeSize(rvsdg);
+  statistics->stopEncodeStatistics();
 
   statistics->startSweepStatistics();
   sweepRegion(rvsdg.GetRootRegion());
@@ -228,7 +233,7 @@ divertUsersToMemoryHoistBarrierNode(
 }
 
 void
-IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
+IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
@@ -239,7 +244,7 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
           for (auto & subregion : structuralNode.Subregions())
           {
             // Handle innermost regions first
-            normalizeIOBarriers(subregion);
+            normalizeMemoryHoistBarriers(subregion);
 
             // Normalize subregion arguments
             for (auto & argument : subregion.Arguments())
@@ -289,7 +294,7 @@ IOBarrierElimination::normalizeIOBarriers(rvsdg::Region & region)
 }
 
 void
-IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
+IOBarrierElimination::markOutputs(const rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
@@ -297,11 +302,30 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
         node,
         [this](const rvsdg::PhiNode & phiNode)
         {
-          markDereferenceable(*phiNode.subregion());
+          markOutputs(*phiNode.subregion());
         },
         [this](const rvsdg::LambdaNode & lambdaNode)
         {
-          markDereferenceable(*lambdaNode.subregion());
+          // Mark lambda arguments
+          for (const auto argument : lambdaNode.GetFunctionArguments())
+          {
+            if (rvsdg::is<PointerType>(argument->Type()))
+            {
+              context_->markDereferenceable(*argument, 0);
+            }
+          }
+
+          // Mark lambda context variables
+          for (const auto [_, inner] : lambdaNode.GetContextVars())
+          {
+            if (rvsdg::is<PointerType>(inner->Type()))
+            {
+              // FIXME: We can do better here
+              context_->markDereferenceable(*inner, 0);
+            }
+          }
+
+          markOutputs(*lambdaNode.subregion());
         },
         [](const rvsdg::DeltaNode &)
         {
@@ -309,13 +333,13 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
         },
         [this](const rvsdg::ThetaNode & thetaNode)
         {
-          markDereferenceable(*thetaNode.subregion());
+          markOutputs(*thetaNode.subregion());
         },
         [this](const rvsdg::GammaNode & gammaNode)
         {
           for (auto & subregion : gammaNode.Subregions())
           {
-            markDereferenceable(subregion);
+            markOutputs(subregion);
           }
         },
         [this](const rvsdg::SimpleNode & simpleNode)
@@ -326,13 +350,13 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
               {
                 const auto & addressOperand = *LoadOperation::AddressInput(simpleNode).origin();
                 const auto sizeInBytes = GetTypeStoreSize(*loadOperation.GetLoadedType());
-                context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+                context_->markDereferenceable(addressOperand, sizeInBytes);
               },
               [this, &simpleNode](const StoreNonVolatileOperation & storeOperation)
               {
                 const auto & addressOperand = *StoreOperation::AddressInput(simpleNode).origin();
                 const auto sizeInBytes = GetTypeStoreSize(storeOperation.GetStoredType());
-                context_->markUsersDereferenceable(addressOperand, sizeInBytes);
+                context_->markDereferenceable(addressOperand, sizeInBytes);
               });
         },
         []()
@@ -343,7 +367,7 @@ IOBarrierElimination::markDereferenceable(const rvsdg::Region & region)
 }
 
 void
-IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
+IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
 {
   std::function<void(rvsdg::Region &)> propagate = [&](rvsdg::Region & region)
   {
@@ -366,11 +390,11 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(input->Type()))
                 continue;
 
-              if (const auto size = context_->isDereferenceable(*input); size > 0)
+              if (const auto size = context_->getDereferenceableSize(*input->origin()); size > 0)
               {
                 for (const auto & argument : arguments)
                 {
-                  context_->markUsersDereferenceable(*argument, size);
+                  context_->markDereferenceable(*argument, size);
                 }
               }
             }
@@ -386,14 +410,15 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
               for (const auto & result : results)
               {
-                sizeInBytes = std::min(sizeInBytes, context_->isDereferenceable(*result));
+                sizeInBytes =
+                    std::min(sizeInBytes, context_->getDereferenceableSize(*result->origin()));
                 if (sizeInBytes == 0)
                 {
                   break;
                 }
               }
               if (sizeInBytes > 0)
-                context_->markUsersDereferenceable(*output, sizeInBytes);
+                context_->markDereferenceable(*output, sizeInBytes);
             }
           },
           [&](rvsdg::ThetaNode & thetaNode)
@@ -408,10 +433,11 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
 
-              if (const auto inputSize = context_->isDereferenceable(*loopVar.input); inputSize > 0)
+              if (const auto inputSize = context_->getDereferenceableSize(*loopVar.input->origin());
+                  inputSize > 0)
               {
                 loopVarPreSizes[loopVar.pre] = inputSize;
-                context_->markUsersDereferenceable(*loopVar.pre, inputSize);
+                context_->markDereferenceable(*loopVar.pre, inputSize);
               }
             }
 
@@ -428,11 +454,11 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
                   continue;
 
                 const auto preSize = loopVarPreSizes[loopVar.pre];
-                const auto postSize = context_->isDereferenceable(*loopVar.post);
+                const auto postSize = context_->getDereferenceableSize(*loopVar.post->origin());
                 if (preSize != postSize)
                 {
                   loopVarPreSizes[loopVar.pre] = postSize;
-                  context_->markUsersDereferenceable(*loopVar.pre, std::min(preSize, postSize));
+                  context_->markDereferenceable(*loopVar.pre, std::min(preSize, postSize));
                   repeat = true;
                 }
               }
@@ -444,9 +470,10 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
               if (!is<PointerType>(loopVar.output->Type()))
                 continue;
 
-              if (const auto postSize = context_->isDereferenceable(*loopVar.post); postSize > 0)
+              if (const auto postSize = context_->getDereferenceableSize(*loopVar.post->origin());
+                  postSize > 0)
               {
-                context_->markUsersDereferenceable(*loopVar.output, postSize);
+                context_->markDereferenceable(*loopVar.output, postSize);
               }
             }
           },
@@ -465,8 +492,9 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
                   if (!is<PointerType>(barredInput.Type()))
                     return;
 
-                  if (const auto size = context_->isDereferenceable(barredInput); size > 0)
-                    context_->markUsersDereferenceable(*simpleNode.output(0), size);
+                  if (const auto size = context_->getDereferenceableSize(*barredInput.origin());
+                      size > 0)
+                    context_->markDereferenceable(*simpleNode.output(0), size);
                 });
           },
           []()
@@ -478,6 +506,72 @@ IOBarrierElimination::propagateDereferenceable(rvsdg::Graph & graph)
   };
 
   propagate(graph.GetRootRegion());
+}
+
+void
+IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
+{
+  std::function<void(rvsdg::Region &)> encode = [&](rvsdg::Region & region)
+  {
+    for (auto & node : region.Nodes())
+    {
+      rvsdg::MatchTypeWithDefault(
+          node,
+          [&](rvsdg::PhiNode & phiNode)
+          {
+            encode(*phiNode.subregion());
+          },
+          [&](rvsdg::LambdaNode & lambdaNode)
+          {
+            encode(*lambdaNode.subregion());
+          },
+          [&](rvsdg::GammaNode & gammaNode)
+          {
+            for (auto & subregion : gammaNode.Subregions())
+              encode(subregion);
+          },
+          [&](rvsdg::ThetaNode & thetaNode)
+          {
+            encode(*thetaNode.subregion());
+          },
+          [&](rvsdg::DeltaNode &)
+          {
+            // Nothing needs to be done
+          },
+          [&](rvsdg::SimpleNode & simpleNode)
+          {
+            rvsdg::MatchType(
+                simpleNode.GetOperation(),
+                [this, &simpleNode](const MemoryHoistBarrierOperation & memoryHoistBarrier)
+                {
+                  auto & addressOperand =
+                      *MemoryHoistBarrierOperation::getAddressInput(simpleNode).origin();
+                  const auto mhbSize = memoryHoistBarrier.getDereferenceableSize();
+
+                  if (const auto size = context_->getDereferenceableSize(addressOperand);
+                      size != mhbSize)
+                  {
+                    auto & ioStateOperand =
+                        *MemoryHoistBarrierOperation::getIOStateInput(simpleNode).origin();
+                    auto & mhbNode = MemoryHoistBarrierOperation::createNode(
+                        addressOperand,
+                        ioStateOperand,
+                        size);
+                    MemoryHoistBarrierOperation::getAddressOutput(simpleNode)
+                        .divert_users(&MemoryHoistBarrierOperation::getAddressOutput(mhbNode));
+                  }
+                });
+          },
+          []()
+          {
+            throw std::logic_error("Unhandled node type encountered during encoding.");
+          });
+    }
+
+    region.prune(false);
+  };
+
+  encode(graph.GetRootRegion());
 }
 
 void
@@ -524,7 +618,8 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
 
             auto & barredAddressInput =
                 MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode);
-            const auto barredAddressSize = context_->isDereferenceable(barredAddressInput);
+            const auto barredAddressSize =
+                context_->getDereferenceableSize(*barredAddressInput.origin());
             if (barredAddressSize == 0)
               return;
 

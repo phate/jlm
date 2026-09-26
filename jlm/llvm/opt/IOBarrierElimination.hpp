@@ -35,14 +35,17 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
   static void
-  normalizeIOBarriers(rvsdg::Region & region);
+  normalizeMemoryHoistBarriers(rvsdg::Region & region);
 
 private:
   void
-  markDereferenceable(const rvsdg::Region & region);
+  markOutputs(const rvsdg::Region & region);
 
   void
-  propagateDereferenceable(rvsdg::Graph & graph);
+  propagateSize(rvsdg::Graph & graph);
+
+  void
+  encodeSize(rvsdg::Graph & graph);
 
   void
   sweepRegion(rvsdg::Region & region);
