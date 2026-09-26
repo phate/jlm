@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/Gamma.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -88,6 +89,7 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
   AddMeasurement("#PtrCmpReductions", counters.numPtrCmpReductions);
   AddMeasurement("#GetElementPtrReductions", counters.numGetElementPtrReductions);
   AddMeasurement("#FCmpReductions", counters.numFCmpReductions);
+  AddMeasurement("#MemoryHoistBarrierReductions", counters.numMemoryHoistBarrierReductions);
   AddMeasurement("#BinaryReductions", counters.numBinaryReductions);
 
   AddMeasurement("#GammaReductions", counters.numGammaReductions);
@@ -281,6 +283,10 @@ static std::vector<rvsdg::NodeNormalization<GetElementPtrOperation>>
 
 static std::vector<rvsdg::NodeNormalization<FCmpOperation>>
     fCmpNormalizations({ FCmpOperation::foldConstants });
+
+static std::vector<rvsdg::NodeNormalization<MemoryHoistBarrierOperation>>
+    memoryHoistBarrierNormalizations(
+        { MemoryHoistBarrierOperation::normalizeNestedMemoryHoistBarriers });
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::BinaryOperation>>
     binaryOperationNormalizations({ rvsdg::NormalizeBinaryOperation });
@@ -698,6 +704,13 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         fCmpNormalizations,
         Statistics_->getReductionCounters().numFCmpReductions);
+  }
+  if (is<MemoryHoistBarrierOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<MemoryHoistBarrierOperation>(
+        simpleNode,
+        memoryHoistBarrierNormalizations,
+        Statistics_->getReductionCounters().numMemoryHoistBarrierReductions);
   }
   if (is<rvsdg::BinaryOperation>(&simpleNode))
   {
