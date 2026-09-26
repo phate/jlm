@@ -25,10 +25,21 @@ public:
    * and keep tracing from the load's memory state input.
    * @return true if tracing states through loads is enabled, false otherwise
    */
-  bool
-  isTracingThroughLoadedStates()
+  [[nodiscard]] bool
+  isTracingThroughLoadedStates() const noexcept
   {
     return traceThroughLoadedStates_;
+  }
+
+  /**
+   * When enabled, tracing can continue through the output of a hoist barrier,
+   * continuing from the hoist barrier's input.
+   * @return true if tracing through hoist barriers is enabled, otherwise false.
+   */
+  [[nodiscard]] bool
+  isTracingThroughHoistBarriers() const noexcept
+  {
+    return traceThroughHoistBarriers_;
   }
 
   /**
@@ -36,9 +47,19 @@ public:
    * @param traceThroughLoadedStates the new value
    */
   void
-  setTraceThroughLoadedStates(bool traceThroughLoadedStates)
+  setTraceThroughLoadedStates(const bool traceThroughLoadedStates)
   {
     traceThroughLoadedStates_ = traceThroughLoadedStates;
+  }
+
+  /**
+   * Enables or disables tracing through hoist barriers.
+   * @param traceThroughHoistBarriers the new value
+   */
+  void
+  setTracingThroughHoistBarriers(const bool traceThroughHoistBarriers)
+  {
+    traceThroughHoistBarriers_ = traceThroughHoistBarriers;
   }
 
 protected:
@@ -48,6 +69,7 @@ protected:
 
 private:
   bool traceThroughLoadedStates_ = false;
+  bool traceThroughHoistBarriers_ = false;
 };
 
 /**

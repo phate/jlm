@@ -43,9 +43,16 @@ TEST(TraceTests, testTracingMemoryHoistBarrier)
       MemoryHoistBarrierOperation::createNode(*hoistBarrier1Output, *myIo, 0);
   const auto hoistBarrier2Output = hoistBarrier2.output(0);
 
-  // Assert
-  EXPECT_EQ(&jlm::llvm::traceOutput(*hoistBarrier1Output, false), myPtr);
-  EXPECT_EQ(&jlm::llvm::traceOutput(*hoistBarrier2Output, false), myPtr);
+  // Act & Assert
+  OutputTracer tracer;
+
+  tracer.setTracingThroughHoistBarriers(true);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier1Output), myPtr);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier2Output), myPtr);
+
+  tracer.setTracingThroughHoistBarriers(false);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier1Output), hoistBarrier1Output);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier2Output), hoistBarrier2Output);
 }
 
 TEST(TraceTests, testGetConstantSignedInteger)
