@@ -209,8 +209,13 @@ TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
   EXPECT_EQ(LoadOperation::AddressInput(load8Node).origin(), ptrArgument);
 
   // We expect that the load64Node is still barred behind the MemoryHoistBarrierOperation node as
-  // ptrArgument is only dereferenceable for 64 bits.
-  EXPECT_EQ(LoadOperation::AddressInput(load64Node).origin(), hoistBarrierNode.output(0));
+  // ptrArgument is only dereferenceable for 32 bits.
+  {
+    auto [mhbNode, mhbOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+        *LoadOperation::AddressInput(load64Node).origin());
+    EXPECT_NE(mhbOp, nullptr);
+    EXPECT_EQ(mhbOp->getDereferenceableSize(), 4);
+  }
 }
 
 TEST(IOBarrierEliminationTests, testGamma)
@@ -341,7 +346,7 @@ TEST(IOBarrierEliminationTest, testNormalizeation)
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act
-  IOBarrierElimination::normalizeIOBarriers(rvsdg.GetRootRegion());
+  IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg.GetRootRegion());
 
   // Assert
   EXPECT_EQ(ptrArgument->nusers(), 1);
@@ -480,7 +485,7 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act
-  IOBarrierElimination::normalizeIOBarriers(rvsdg.GetRootRegion());
+  IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg.GetRootRegion());
 
   // Assert
   // We expect the origin of the ptrEntryVar to be the outermost MemoryHoistBarrierOperation node

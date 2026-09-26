@@ -185,7 +185,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base, false);
+    base = &llvm::traceOutput(*base, true);
 
     if (const auto [gepNode, gepOperation] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -218,7 +218,7 @@ traceAllPointerOriginsInternal(
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  basePointer = &llvm::traceOutput(*basePointer, false);
+  basePointer = &llvm::traceOutput(*basePointer, true);
 
   auto it = traceCollection.AllTracedOutputs.find(basePointer);
   if (it != traceCollection.AllTracedOutputs.end())
