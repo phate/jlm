@@ -79,19 +79,15 @@ MemoryHoistBarrierOperation::normalizeNestedMemoryHoistBarriers(
     return std::nullopt;
   }
 
-  if (lowerMhbAddressOperand.region() == upperMhbAddressOperand.region())
+  if (lowerMhbAddressOperand.region() != upperMhbAddressOperand.region())
   {
-    auto & newMhbNode = createNode(
-        upperMhbAddressOperand,
-        upperMhbIOStateOperand,
-        std::max(lowerMhbOp.getDereferenceableSize(), upperMhbOp->getDereferenceableSize()));
-    return rvsdg::outputs(&newMhbNode);
+    return std::nullopt;
   }
 
   auto & newMhbNode = createNode(
-      *getAddressInput(*upperMhbNode).origin(),
-      *getIOStateInput(*upperMhbNode).origin(),
-      std::max(lowerMhbOp.getDereferenceableSize(), upperMhbOp->getDereferenceableSize()));
+      upperMhbAddressOperand,
+      upperMhbIOStateOperand,
+      std::min(lowerMhbOp.getDereferenceableSize(), upperMhbOp->getDereferenceableSize()));
   return rvsdg::outputs(&newMhbNode);
 }
 

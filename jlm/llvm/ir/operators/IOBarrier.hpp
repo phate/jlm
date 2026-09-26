@@ -189,7 +189,21 @@ public:
         dereferenceableSize);
   }
 
-  // FIXME: documentation
+  /**
+   * The normalization performs the following transformation:
+   *
+   * a2 = MemoryHoistBarrierOperation[1] a1 io1
+   * a3 = MemoryHoistBarrierOperation[4] a2 io1
+   * =>
+   * a3 = MemoryHoistBarrierOperation[1] a1 io1
+   *
+   * @param lowerMhbOp The \ref MemoryHoistBarrierOperation on which the transformation is
+   * performed.
+   * @param operands The operands of the \ref MemoryHoistBarrierOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the \ref
+   * MemoryHoistBarrierOperation node after the transformation. Otherwise, std::nullopt.
+   */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeNestedMemoryHoistBarriers(
       const MemoryHoistBarrierOperation & lowerMhbOp,
