@@ -90,6 +90,7 @@ traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region
           : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
   tracer.setRegionPredicateCheckingEnabled(mayEnterSubregions);
   tracer.setEnterPhiNodes(mayEnterSubregions);
+  tracer.setTracingThroughHoistBarriers(true);
   return tracer.trace(output, withinRegion);
 }
 
