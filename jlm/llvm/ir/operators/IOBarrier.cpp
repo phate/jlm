@@ -61,7 +61,12 @@ MemoryHoistBarrierOperation::normalizeNestedMemoryHoistBarriers(
   auto & lowerMhbAddressOperand = *operands[0];
   auto & lowerMhbIOStateOperand = *operands[1];
 
-  auto & tracedLowerMhbAddressOperand = llvm::traceOutput(lowerMhbAddressOperand, true);
+  OutputTracer tracer;
+  tracer.setRegionPredicateCheckingEnabled(true);
+  tracer.setTracingThroughHoistBarriers(false);
+  tracer.setStructuralNodePolicy(OutputTracer::StructuralNodePolicy::traceIntoSubregions);
+
+  auto & tracedLowerMhbAddressOperand = tracer.trace(lowerMhbAddressOperand, nullptr);
   auto [upperMhbNode, upperMhbOp] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
           tracedLowerMhbAddressOperand);
@@ -69,17 +74,18 @@ MemoryHoistBarrierOperation::normalizeNestedMemoryHoistBarriers(
   {
     return std::nullopt;
   }
-  auto & upperMhbAddressOperand = *getAddressInput(*upperMhbNode).origin();
-  auto & upperMhbIOStateOperand = *getIOStateInput(*upperMhbNode).origin();
 
-  auto & tracedUpperMhbIOStateOperand = llvm::traceOutput(upperMhbIOStateOperand, true);
-  auto & tracedLowerMhbIOStateOperand = llvm::traceOutput(lowerMhbIOStateOperand, true);
-  if (&tracedLowerMhbIOStateOperand != &tracedUpperMhbIOStateOperand)
+  if (upperMhbNode->region() != lowerMhbAddressOperand.region())
   {
     return std::nullopt;
   }
 
-  if (lowerMhbAddressOperand.region() != upperMhbAddressOperand.region())
+  auto & upperMhbAddressOperand = *getAddressInput(*upperMhbNode).origin();
+  auto & upperMhbIOStateOperand = *getIOStateInput(*upperMhbNode).origin();
+
+  const auto & tracedUpperMhbIOStateOperand = tracer.trace(upperMhbIOStateOperand, nullptr);
+  const auto & tracedLowerMhbIOStateOperand = tracer.trace(lowerMhbIOStateOperand, nullptr);
+  if (&tracedLowerMhbIOStateOperand != &tracedUpperMhbIOStateOperand)
   {
     return std::nullopt;
   }

@@ -58,7 +58,7 @@ TEST(MemoryHoistBarrierTests, normalizeNestedMemoryHoistBarriers)
   auto & x2 = GraphExport::Create(*mhbNode2.output(0), "x2");
   auto & x3 = GraphExport::Create(*mhbNode3.output(0), "x3");
   auto & x4 = GraphExport::Create(*mhbNode4.output(0), "x4");
-  auto & x5 = GraphExport::Create(*ptrExitVar.output, "x5");
+  GraphExport::Create(*ptrExitVar.output, "x5");
 
   // Act
   ReduceNode<MemoryHoistBarrierOperation>(
@@ -105,7 +105,7 @@ TEST(MemoryHoistBarrierTests, normalizeNestedMemoryHoistBarriers)
 
   {
     // We expect that nothing happened with mhbNode5
-    EXPECT_EQ(x5.origin(), mhbNode5.output(0));
+    EXPECT_EQ(ptrExitVar.branchResult[0]->origin(), mhbNode5.output(0));
   }
 }
 
