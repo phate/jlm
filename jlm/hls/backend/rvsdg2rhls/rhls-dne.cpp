@@ -176,9 +176,17 @@ dead_loop(rvsdg::Node * ndmux_node)
 {
   const auto mux_op = util::assertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
+
+  auto arg = ndmux_node->input(2)->origin();
+  auto loopNode = rvsdg::TryGetRegionParentNode<LoopNode>(*arg);
+  if (!loopNode)
+  {
+    return false;
+  }
+  auto var = loopNode->mapArgument(*arg);
   // origin is a backedege argument
-  auto backedge_arg = dynamic_cast<BackEdgeArgument *>(ndmux_node->input(2)->origin());
-  if (!backedge_arg)
+  auto backedge = std::get_if<LoopNode::BackEdgeVar>(&var);
+  if (!backedge)
   {
     return false;
   }
@@ -205,7 +213,7 @@ dead_loop(rvsdg::Node * ndmux_node)
     return false;
   }
   auto buf_out = buf_in_node->output(0);
-  if (buf_out != backedge_arg->result()->origin())
+  if (buf_out != backedge->post->origin())
   {
     // no connection back up
     return false;
@@ -229,9 +237,13 @@ dead_loop(rvsdg::Node * ndmux_node)
   }
   auto extra_buf_cond_origin = extra_buf_out_node->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
+  if (rvsdg::TryGetRegionParentNode<LoopNode>(*extra_buf_cond_origin) == loopNode)
   {
-    extra_buf_cond_origin = pred_be->result()->origin();
+    auto var = loopNode->mapArgument(*extra_buf_cond_origin);
+    if (auto extra_be = std::get_if<LoopNode::BackEdgeVar>(&var))
+    {
+      extra_buf_cond_origin = extra_be->post->origin();
+    }
   }
   if (extra_buf_cond_origin != branch_cond_origin)
   {
@@ -239,13 +251,11 @@ dead_loop(rvsdg::Node * ndmux_node)
   }
   // divert users
   branch_in_node->output(0)->divert_users(ndmux_node->input(1)->origin());
-  buf_out->divert_users(backedge_arg);
+  buf_out->divert_users(backedge->pre);
   remove(buf_in_node);
   remove(branch_in_node);
-  auto region = ndmux_node->region();
   remove(ndmux_node);
-  region->RemoveResults({ backedge_arg->result()->index() });
-  region->RemoveArguments({ backedge_arg->index() });
+  loopNode->removeBackEdgeVars({ *backedge });
   return true;
 }
 
@@ -288,9 +298,14 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
+  auto loopNode = rvsdg::TryGetRegionParentNode<LoopNode>(*extra_buf_cond_origin);
+  if (loopNode)
   {
-    extra_buf_cond_origin = pred_be->result()->origin();
+    auto var = loopNode->mapArgument(*extra_buf_cond_origin);
+    if (auto pred_be = std::get_if<LoopNode::BackEdgeVar>(&var))
+    {
+      extra_buf_cond_origin = pred_be->post->origin();
+    }
   }
   if (extra_buf_cond_origin != branch_cond_origin)
   {
