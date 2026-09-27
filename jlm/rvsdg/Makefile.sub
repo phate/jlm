@@ -40,6 +40,7 @@ librvsdg_SOURCES = \
 librvsdg_HEADERS = \
     jlm/rvsdg/FunctionType.hpp \
     jlm/rvsdg/MatchType.hpp \
+    jlm/rvsdg/MatchVariant.hpp \
     jlm/rvsdg/operation.hpp \
     jlm/rvsdg/delta.hpp \
     jlm/rvsdg/DotWriter.hpp \
@@ -92,6 +93,7 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/GraphTests.cpp \
     jlm/rvsdg/InputTests.cpp \
     jlm/rvsdg/MatchTypeTests.cpp \
+    jlm/rvsdg/MatchVariantTests.cpp \
     jlm/rvsdg/NodeTests.cpp \
     jlm/rvsdg/OutputTests.cpp \
     jlm/rvsdg/RegionPredicateTraceTests.cpp \
