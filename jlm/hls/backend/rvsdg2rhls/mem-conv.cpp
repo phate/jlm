@@ -16,6 +16,9 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -286,52 +289,98 @@ TracePointer(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
-    {
-      if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
-      {
-        tracedPointerNodes.storeNodes.push_back(simplenode);
-      }
-      else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&simplenode->GetOperation()))
-      {
-        tracedPointerNodes.loadNodes.push_back(simplenode);
-      }
-      else if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
-      {
-        // request
-        JLM_ASSERT(is_dec_req(simplenode));
-        tracedPointerNodes.decoupleNodes.push_back(simplenode);
-      }
-      else
-      {
-        for (size_t i = 0; i < simplenode->noutputs(); ++i)
+    rvsdg::MatchVariant(
+        user.GetOwner(),
+        [&](rvsdg::Node * node)
         {
-          TracePointer(simplenode->output(i), visited, tracedPointerNodes);
-        }
-      }
-    }
-    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
-    {
-      for (auto & arg : sti->arguments)
-      {
-        TracePointer(&arg, visited, tracedPointerNodes);
-      }
-    }
-    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
-    {
-      if (auto ber = dynamic_cast<BackEdgeResult *>(r))
-      {
-        TracePointer(ber->argument(), visited, tracedPointerNodes);
-      }
-      else
-      {
-        TracePointer(r->output(), visited, tracedPointerNodes);
-      }
-    }
-    else
-    {
-      JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-    }
+          rvsdg::MatchTypeOrFail(
+              *node,
+              [&](rvsdg::SimpleNode & simplenode)
+              {
+                rvsdg::MatchTypeWithDefault(
+                    simplenode.GetOperation(),
+                    [&](const llvm::StoreNonVolatileOperation &)
+                    {
+                      tracedPointerNodes.storeNodes.push_back(&simplenode);
+                    },
+                    [&](const llvm::LoadNonVolatileOperation &)
+                    {
+                      tracedPointerNodes.loadNodes.push_back(&simplenode);
+                    },
+                    [&](const llvm::CallOperation &)
+                    {
+                      JLM_ASSERT(is_dec_req(&simplenode));
+                      tracedPointerNodes.decoupleNodes.push_back(&simplenode);
+                    },
+                    [&]()
+                    {
+                      for (size_t i = 0; i < simplenode.noutputs(); ++i)
+                      {
+                        TracePointer(simplenode.output(i), visited, tracedPointerNodes);
+                      }
+                    });
+              },
+              [&](LoopNode & loop)
+              {
+                TracePointer(loop.mapInput(user).inner, visited, tracedPointerNodes);
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                TracePointer(theta.MapInputLoopVar(user).pre, visited, tracedPointerNodes);
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                rvsdg::MatchVariant(
+                    gamma.MapInput(user),
+                    [&](const rvsdg::GammaNode::MatchVar &)
+                    {
+                    },
+                    [&](const rvsdg::GammaNode::EntryVar & evar)
+                    {
+                      for (auto arg : evar.branchArgument)
+                      {
+                        TracePointer(arg, visited, tracedPointerNodes);
+                      }
+                    });
+              });
+        },
+        [&](rvsdg::Region * region)
+        {
+          rvsdg::MatchTypeOrFail(
+              *region->node(),
+              [&](LoopNode & loop)
+              {
+                rvsdg::MatchVariant(
+                    loop.mapResult(user),
+                    [&](const LoopNode::BackEdgeVar & backedge)
+                    {
+                      TracePointer(backedge.pre, visited, tracedPointerNodes);
+                    },
+                    [&](const LoopNode::ExitVar & exit)
+                    {
+                      TracePointer(exit.output, visited, tracedPointerNodes);
+                    });
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                rvsdg::MatchVariant(
+                    theta.mapResult(user),
+                    [&](const rvsdg::ThetaNode::LoopVar & loopvar)
+                    {
+                      TracePointer(loopvar.output, visited, tracedPointerNodes);
+                    },
+                    [&](const rvsdg::ThetaNode::PredicateVar &)
+                    {
+                    });
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                TracePointer(
+                    gamma.MapBranchResultExitVar(user).output,
+                    visited,
+                    tracedPointerNodes);
+              });
+        });
   }
 }
 
