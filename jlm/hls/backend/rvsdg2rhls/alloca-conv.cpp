@@ -16,7 +16,11 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -50,52 +54,95 @@ private:
     visited.insert(op);
     for (auto & user : op->Users())
     {
-      if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
-      {
-        if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
-        {
-          store_nodes.push_back(simplenode);
-        }
-        else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
-                     &simplenode->GetOperation()))
-        {
-          load_nodes.push_back(simplenode);
-        }
-        else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
-        {
-          // TODO: verify this is the right type of function call
-          throw util::Error("encountered a call for an alloca");
-        }
-        else
-        {
-          for (size_t i = 0; i < simplenode->noutputs(); ++i)
+      rvsdg::MatchVariant(
+          user.GetOwner(),
+          [&](rvsdg::Node * node)
           {
-            trace(simplenode->output(i));
-          }
-        }
-      }
-      else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
-      {
-        for (auto & arg : sti->arguments)
-        {
-          trace(&arg);
-        }
-      }
-      else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
-      {
-        if (auto ber = dynamic_cast<BackEdgeResult *>(r))
-        {
-          trace(ber->argument());
-        }
-        else
-        {
-          trace(r->output());
-        }
-      }
-      else
-      {
-        JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-      }
+            rvsdg::MatchTypeOrFail(
+                *node,
+                [&](rvsdg::SimpleNode & simplenode)
+                {
+                  rvsdg::MatchTypeWithDefault(
+                      simplenode.GetOperation(),
+                      [&](const jlm::llvm::StoreNonVolatileOperation &)
+                      {
+                        store_nodes.push_back(&simplenode);
+                      },
+                      [&](const jlm::llvm::LoadNonVolatileOperation &)
+                      {
+                        load_nodes.push_back(&simplenode);
+                      },
+                      [&](const jlm::llvm::CallOperation &)
+                      {
+                        // TODO: verify this is the right type of function call
+                        throw util::Error("encountered a call for an alloca");
+                      },
+                      [&]()
+                      {
+                        for (size_t i = 0; i < simplenode.noutputs(); ++i)
+                        {
+                          trace(simplenode.output(i));
+                        }
+                      });
+                },
+                [&](LoopNode & loop)
+                {
+                  trace(loop.mapInput(user).inner);
+                },
+                [&](rvsdg::ThetaNode & theta)
+                {
+                  trace(theta.MapInputLoopVar(user).pre);
+                },
+                [&](rvsdg::GammaNode & gamma)
+                {
+                  MatchVariant(
+                      gamma.MapInput(user),
+                      [&](const rvsdg::GammaNode::MatchVar &)
+                      {
+                      },
+                      [&](const rvsdg::GammaNode::EntryVar & entry)
+                      {
+                        for (auto var : entry.branchArgument)
+                        {
+                          trace(var);
+                        }
+                      });
+                });
+          },
+          [&](rvsdg::Region * region)
+          {
+            rvsdg::MatchTypeOrFail(
+                *region->node(),
+                [&](LoopNode & loop)
+                {
+                  rvsdg::MatchVariant(
+                      loop.mapResult(user),
+                      [&](const LoopNode::BackEdgeVar & backedge)
+                      {
+                        trace(backedge.pre);
+                      },
+                      [&](const LoopNode::ExitVar & exit)
+                      {
+                        trace(exit.output);
+                      });
+                },
+                [&](rvsdg::ThetaNode & theta)
+                {
+                  rvsdg::MatchVariant(
+                      theta.mapResult(user),
+                      [&](const rvsdg::ThetaNode::PredicateVar &)
+                      {
+                      },
+                      [&](const rvsdg::ThetaNode::LoopVar & loopvar)
+                      {
+                        trace(loopvar.output);
+                      });
+                },
+                [&](rvsdg::GammaNode & gamma)
+                {
+                  trace(gamma.MapBranchResultExitVar(user).output);
+                });
+          });
     }
   }
 
