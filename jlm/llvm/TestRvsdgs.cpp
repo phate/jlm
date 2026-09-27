@@ -16,8 +16,6 @@
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -305,11 +303,15 @@ GetElementPtrTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
-  auto one = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
+  auto zeroX0 = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto zeroX1 = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto zeroY = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto oneY = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
-  auto gepx =
-      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
+  auto gepx = GetElementPtrOperation::create(
+      fct->GetFunctionArguments()[0],
+      { zeroX0, zeroX1 },
+      structType);
   auto ldx = LoadNonVolatileOperation::Create(
       gepx,
       { fct->GetFunctionArguments()[1] },
@@ -317,10 +319,10 @@ GetElementPtrTest::SetupRvsdg()
       4);
 
   auto gepy =
-      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, one }, structType);
+      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zeroY, oneY }, structType);
   auto ldy = LoadNonVolatileOperation::Create(gepy, { ldx[1] }, jlm::rvsdg::BitType::Create(32), 4);
 
-  auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
+  auto sum = IntegerAddOperation::createNode(32, *ldx[0], *ldy[0]).output(0);
 
   fct->finalize({ sum, ldy[1] });
 
@@ -519,7 +521,7 @@ CallTest1::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
+    auto sum = IntegerAddOperation::createNode(32, *ld1[0], *ld2[0]).output(0);
 
     lambda->finalize({ sum, iOStateArgument, ld2[1] });
 
@@ -557,7 +559,7 @@ CallTest1::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto diff = jlm::rvsdg::bitsub_op::create(32, ld1[0], ld2[0]);
+    auto diff = IntegerSubOperation::createNode(32, *ld1[0], *ld2[0]).output(0);
 
     lambda->finalize({ diff, iOStateArgument, ld2[1] });
 
@@ -612,7 +614,7 @@ CallTest1::SetupRvsdg()
           &CallOperation::GetIOStateOutput(callF),
           &CallOperation::GetMemoryStateOutput(callF) });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callF.output(0), callG.output(0));
+    auto sum = IntegerAddOperation::createNode(32, *callF.output(0), *callG.output(0)).output(0);
 
     lambda->finalize({ sum,
                        &CallOperation::GetIOStateOutput(callG),
@@ -673,7 +675,7 @@ CallTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto four = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 4 }).output(0);
-    auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
+    auto prod = IntegerMulOperation::createNode(32, *valueArgument, *four).output(0);
 
     auto & mallocNode = MallocOperation::createNode(*prod, *iOStateArgument);
     auto cast = BitCastOperation::create(&MallocOperation::addressOutput(mallocNode), pt32);
@@ -870,7 +872,8 @@ IndirectCallTest1::SetupRvsdg()
           &CallOperation::GetIOStateOutput(call_four),
           &CallOperation::GetMemoryStateOutput(call_four) });
 
-    auto add = jlm::rvsdg::bitadd_op::create(32, call_four.output(0), call_three.output(0));
+    auto add =
+        IntegerAddOperation::createNode(32, *call_four.output(0), *call_three.output(0)).output(0);
 
     auto lambdaOutput = lambda->finalize({ add,
                                            &CallOperation::GetIOStateOutput(call_three),
@@ -1085,9 +1088,9 @@ IndirectCallTest2::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callX.output(0), callY.output(0));
-    sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
-    sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
+    auto sum = IntegerAddOperation::createNode(32, *callX.output(0), *callY.output(0)).output(0);
+    sum = IntegerAddOperation::createNode(32, *sum, *loadG1[0]).output(0);
+    sum = IntegerAddOperation::createNode(32, *sum, *loadG2[0]).output(0);
 
     auto lambdaOutput = lambda->finalize({ sum,
                                            &CallOperation::GetIOStateOutput(callY),
@@ -1418,7 +1421,7 @@ GammaTest::SetupRvsdg()
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
   auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
-  auto biteq = jlm::rvsdg::biteq_op::create(32, fct->GetFunctionArguments()[0], zero);
+  auto biteq = IntegerEqOperation::createNode(32, *fct->GetFunctionArguments()[0], *zero).output(0);
   auto & predicateNode = MatchOperation::CreateNode(*biteq, { { 0, 1 } }, 0, 2);
 
   auto gammanode = GammaNode::create(predicateNode.output(0), 2);
@@ -1437,7 +1440,7 @@ GammaTest::SetupRvsdg()
       4);
   auto ld2 =
       LoadNonVolatileOperation::Create(tmp2.output, { ld1[1] }, jlm::rvsdg::BitType::Create(32), 4);
-  auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
+  auto sum = IntegerAddOperation::createNode(32, *ld1[0], *ld2[0]).output(0);
 
   fct->finalize({ sum, ld2[1] });
 
@@ -1556,7 +1559,7 @@ GammaTest2::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, gammaOutputA, loadZResults[0]);
+    auto sum = IntegerAddOperation::createNode(32, *gammaOutputA, *loadZResults[0]).output(0);
 
     lambda->finalize({ sum, iOStateArgument, loadZResults[1] });
 
@@ -1681,8 +1684,8 @@ ThetaTest::SetupRvsdg()
   auto store = StoreNonVolatileOperation::Create(gepnode, c.pre, { s.pre }, 4);
 
   auto one = IntegerConstantOperation::Create(*thetanode->subregion(), { 32, 1 }).output(0);
-  auto sum = jlm::rvsdg::bitadd_op::create(32, n.pre, one);
-  auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l.pre);
+  auto sum = IntegerAddOperation::createNode(32, *n.pre, *one).output(0);
+  auto cmp = IntegerUltOperation::createNode(32, *sum, *l.pre).output(0);
   auto & predicateNode = MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
 
   n.post->divert_to(sum);
@@ -2174,7 +2177,7 @@ PhiTest1::SetupRvsdg()
     auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
     auto two = IntegerConstantOperation::Create(*lambda->subregion(), { 64, 2 }).output(0);
-    auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
+    auto bitult = IntegerUltOperation::createNode(64, *valueArgument, *two).output(0);
     auto & predicateNode = MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
     auto gammaNode = GammaNode::create(predicateNode.output(0), 2);
@@ -2186,7 +2189,7 @@ PhiTest1::SetupRvsdg()
 
     /* gamma subregion 0 */
     auto one = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 1 }).output(0);
-    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
+    auto nm1 = IntegerSubOperation::createNode(64, *nev.branchArgument[0], *one).output(0);
     auto & callFibm1 = CallOperation::CreateNode(
         fibev.branchArgument[0],
         fibFunctionType,
@@ -2196,7 +2199,7 @@ PhiTest1::SetupRvsdg()
           gIMemoryState.branchArgument[0] });
 
     two = IntegerConstantOperation::Create(*gammaNode->subregion(0), { 64, 2 }).output(0);
-    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
+    auto nm2 = IntegerSubOperation::createNode(64, *nev.branchArgument[0], *two).output(0);
     auto & callFibm2 = CallOperation::CreateNode(
         fibev.branchArgument[0],
         fibFunctionType,
@@ -2222,7 +2225,7 @@ PhiTest1::SetupRvsdg()
     auto ldnm2 =
         LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
+    auto sum = IntegerAddOperation::createNode(64, *ldnm1[0], *ldnm2[0]).output(0);
 
     /* gamma subregion 1 */
     /* Nothing needs to be done */
@@ -2407,7 +2410,7 @@ PhiTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(callB),
           &CallOperation::GetMemoryStateOutput(callB) });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callB.output(0), callD.output(0));
+    auto sum = IntegerAddOperation::createNode(32, *callB.output(0), *callD.output(0)).output(0);
 
     auto lambdaOutput = lambda->finalize({ sum,
                                            &CallOperation::GetIOStateOutput(callD),
@@ -2462,7 +2465,7 @@ PhiTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(callI),
           &CallOperation::GetMemoryStateOutput(callI) });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callI.output(0), callC.output(0));
+    auto sum = IntegerAddOperation::createNode(32, *callI.output(0), *callC.output(0)).output(0);
 
     auto lambdaOutput = lambda->finalize({ sum,
                                            &CallOperation::GetIOStateOutput(callC),
@@ -2507,7 +2510,7 @@ PhiTest2::SetupRvsdg()
         jlm::rvsdg::BitType::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callA.output(0), loadX[0]);
+    auto sum = IntegerAddOperation::createNode(32, *callA.output(0), *loadX[0]).output(0);
 
     auto lambdaOutput =
         lambda->finalize({ sum, &CallOperation::GetIOStateOutput(callA), loadX[1] });
@@ -3528,7 +3531,8 @@ LinkedListTest::SetupRvsdg()
 
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
-    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto zeroGep0 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto zeroGep1 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
     auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
@@ -3540,7 +3544,7 @@ LinkedListTest::SetupRvsdg()
     auto store1 = StoreNonVolatileOperation::Create(alloca[0], load1[0], { load1[1] }, 4);
 
     auto load2 = LoadNonVolatileOperation::Create(alloca[0], { store1[0] }, pointerType, 4);
-    auto gep = GetElementPtrOperation::create(load2[0], { zero, zero }, structType);
+    auto gep = GetElementPtrOperation::create(load2[0], { zeroGep0, zeroGep1 }, structType);
 
     auto load3 = LoadNonVolatileOperation::Create(gep, { load2[1] }, pointerType, 4);
     auto store2 = StoreNonVolatileOperation::Create(alloca[0], load3[0], { load3[1] }, 4);
@@ -4114,7 +4118,7 @@ VariadicFunctionTest2::SetupRvsdg()
         { &CallOperation::GetMemoryStateOutput(callVaStart) },
         rvsdg::BitType::Create(32),
         16);
-    auto icmpResult = rvsdg::bitult_op::create(32, loadResults[0], fortyOne);
+    auto icmpResult = IntegerUltOperation::createNode(32, *loadResults[0], *fortyOne).output(0);
     auto matchResult = rvsdg::MatchOperation::Create(*icmpResult, { { 1, 1 } }, 0, 2);
 
     auto gammaNode = rvsdg::GammaNode::create(matchResult, 2);
@@ -4157,7 +4161,9 @@ VariadicFunctionTest2::SetupRvsdg()
         loadResultsGamma1[0],
         { &zextResult },
         rvsdg::BitType::Create(8));
-    auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult.branchArgument[1], eightBit32);
+    auto addResult =
+        IntegerAddOperation::createNode(32, *gammaLoadResult.branchArgument[1], *eightBit32)
+            .output(0);
     auto storeResultsGamma1 = StoreNonVolatileOperation::Create(
         gammaVaAddress.branchArgument[1],
         addResult,
