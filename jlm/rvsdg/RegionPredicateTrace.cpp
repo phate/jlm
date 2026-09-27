@@ -8,6 +8,7 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -225,16 +226,16 @@ RegionPredicateTrace::Compute(
         *node,
         [&](const rvsdg::GammaNode & node) -> PredicateValueRange
         {
-          auto argVar = node.MapBranchArgument(*origin);
-
-          if (auto entry = std::get_if<GammaNode::EntryVar>(&argVar))
-          {
-            return ComputeAndRecord(regionPredRange, *entry->input, visitedInputs, type);
-          }
-          else
-          {
-            return PredicateValueRange::CreateUnknown(type);
-          }
+          return MatchVariant(
+              node.MapBranchArgument(*origin),
+              [&](const GammaNode::EntryVar & entry)
+              {
+                return ComputeAndRecord(regionPredRange, *entry.input, visitedInputs, type);
+              },
+              [&](const GammaNode::MatchVar &)
+              {
+                return PredicateValueRange::CreateUnknown(type);
+              });
         },
         [&](rvsdg::ThetaNode & node) -> PredicateValueRange
         {
