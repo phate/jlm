@@ -66,6 +66,17 @@ public:
     rvsdg::Output * output;
   };
 
+  /**
+   * \brief Description of the loop predicate variable.
+   */
+  struct PredicateVar
+  {
+    /**
+     * \brief Use of the predicate variable at end of loop
+     */
+    rvsdg::Input * predicate;
+  };
+
   [[nodiscard]] const ThetaOperation &
   GetOperation() const noexcept override;
 
@@ -178,7 +189,7 @@ public:
   MapPreLoopVar(const rvsdg::Output & argument) const;
 
   /**
-   * \brief Maps variable at end of loop iteration to full varibale description.
+   * \brief Maps variable at end of loop iteration to full variable description.
    *
    * \param result
    *   Result of theta region.
@@ -194,6 +205,24 @@ public:
    */
   [[nodiscard]] LoopVar
   MapPostLoopVar(const rvsdg::Input & result) const;
+
+  /**
+   * \brief Maps variable at end of loop iteration to variable description.
+   *
+   * \param result
+   *   Result of theta region.
+   *
+   * \returns
+   *   The loop variable description.
+   *
+   * \pre
+   *   \p result must be a result to the subregion of this node.
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this variable at the end of each loop iteration.
+   */
+  [[nodiscard]] std::variant<LoopVar, PredicateVar>
+  mapResult(const rvsdg::Input & result) const;
 
   /**
    * \brief Maps variable at exit to full varibale description.
