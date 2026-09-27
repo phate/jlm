@@ -162,6 +162,23 @@ ThetaNode::MapPostLoopVar(const rvsdg::Input & result) const
                   output(result.index() - 1) };
 }
 
+[[nodiscard]] std::variant<ThetaNode::LoopVar, ThetaNode::PredicateVar>
+ThetaNode::mapResult(const rvsdg::Input & result) const
+{
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<ThetaNode>(result) == this);
+  if (result.index() == 0)
+  {
+    return PredicateVar{ const_cast<rvsdg::Input *>(&result) };
+  }
+  else
+  {
+    return LoopVar{ input(result.index() - 1),
+                    subregion()->argument(result.index() - 1),
+                    const_cast<rvsdg::Input *>(&result),
+                    output(result.index() - 1) };
+  }
+}
+
 [[nodiscard]] ThetaNode::LoopVar
 ThetaNode::MapOutputLoopVar(const rvsdg::Output & output) const
 {
