@@ -6,6 +6,7 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -398,21 +399,30 @@ RegionToDot(
         GetDefaultColor<rvsdg::Input>(inputColor, region->result(i)));
   }
   dot << "}\n";
+
   for (size_t i = 0; i < region->nresults(); ++i)
   {
     dot << Edge(region->result(i)->origin(), region->result(i), tailLabel);
-    if (auto be = dynamic_cast<BackEdgeResult *>(region->result(i)))
-    {
-      dot << Edge(be->argument(), be, tailLabel, true);
-    }
-    else if (
-        region->result(i)->output()
-        && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output()))
-    {
-      auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output());
-      auto loopvar = theta->MapOutputLoopVar(*region->result(i)->output());
-      dot << Edge(loopvar.pre, loopvar.post, tailLabel, true);
-    }
+  }
+
+  if (region->node())
+  {
+    rvsdg::MatchType(
+        *region->node(),
+        [&](rvsdg::ThetaNode & theta)
+        {
+          for (auto & var : theta.GetLoopVars())
+          {
+            dot << Edge(var.pre, var.post, tailLabel, true);
+          }
+        },
+        [&](LoopNode & loop)
+        {
+          for (auto & var : loop.getBackEdgeVars())
+          {
+            dot << Edge(var.pre, var.post, tailLabel, true);
+          }
+        });
   }
 
   dot << "}\n";
