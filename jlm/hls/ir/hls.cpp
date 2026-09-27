@@ -336,8 +336,8 @@ LoopNode::removeBackEdgeVars(std::vector<BackEdgeVar> vars)
     arguments.insert(var.pre->index());
     results.insert(var.post->index());
   }
-  subregion()->RemoveArguments(arguments);
   subregion()->RemoveResults(results);
+  subregion()->RemoveArguments(arguments);
 }
 
 LoopNode *
