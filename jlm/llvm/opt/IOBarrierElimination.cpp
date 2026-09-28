@@ -26,7 +26,7 @@ class IOBarrierElimination::Statistics final : public util::Statistics
   const char * MarkTimerLabel_ = "MarkTime";
   const char * PropagateTimerLabel_ = "PropagateTime";
   const char * EncodeTimerLabel_ = "EncodeTime";
-  const char * SweepTimerLabel_ = "SweepTime";
+  const char * HoistingTimerLabel_ = "HoistingTime";
 
 public:
   ~Statistics() override = default;
@@ -84,15 +84,15 @@ public:
   }
 
   void
-  startSweepStatistics() noexcept
+  startHoistingStatistics() noexcept
   {
-    AddTimer(SweepTimerLabel_).start();
+    AddTimer(HoistingTimerLabel_).start();
   }
 
   void
-  stopSweepStatistics() noexcept
+  stopHoistingStatistics() noexcept
   {
-    GetTimer(SweepTimerLabel_).stop();
+    GetTimer(HoistingTimerLabel_).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -176,9 +176,9 @@ IOBarrierElimination::Run(
   encodeSize(rvsdg);
   statistics->stopEncodeStatistics();
 
-  statistics->startSweepStatistics();
-  sweepRegion(rvsdg.GetRootRegion());
-  statistics->stopSweepStatistics();
+  statistics->startHoistingStatistics();
+  hoistMemoryBarriers(rvsdg.GetRootRegion());
+  statistics->stopHoistingStatistics();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -574,68 +574,293 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
   encode(graph.GetRootRegion());
 }
 
-void
-IOBarrierElimination::sweepRegion(rvsdg::Region & region)
+class IOBarrierElimination::HoistContext final
 {
-  for (auto & node : region.Nodes())
+public:
+  void
+  addTargetRegion(const rvsdg::Node & node, rvsdg::Region & region) noexcept
+  {
+    JLM_ASSERT(targetRegionMap_.find(&node) == targetRegionMap_.end());
+    targetRegionMap_[&node] = &region;
+  }
+
+  rvsdg::Region *
+  getTargetRegion(const rvsdg::Node & node) const noexcept
+  {
+    if (targetRegionMap_.find(&node) == targetRegionMap_.end())
+      return nullptr;
+
+    return targetRegionMap_.at(&node);
+  }
+
+  static std::unique_ptr<HoistContext>
+  create()
+  {
+    return std::make_unique<HoistContext>();
+  }
+
+private:
+  std::unordered_map<const rvsdg::Node *, rvsdg::Region *> targetRegionMap_{};
+};
+
+void
+IOBarrierElimination::hoistMemoryBarriers(rvsdg::Region & region)
+{
+  hoistContext_ = HoistContext::create();
+  computeTargetRegions(region);
+  hoistNodes(region);
+}
+
+void
+IOBarrierElimination::computeTargetRegions(const rvsdg::Region & region)
+{
+  for (const auto node : rvsdg::TopDownConstTraverser(&region))
   {
     rvsdg::MatchTypeWithDefault(
-        node,
-        [this](const rvsdg::PhiNode & phiNode)
+        *node,
+        [&](const rvsdg::StructuralNode & structuralNode)
         {
-          sweepRegion(*phiNode.subregion());
+          for (auto & subregion : structuralNode.Subregions())
+            computeTargetRegions(subregion);
         },
-        [this](const rvsdg::LambdaNode & lambdaNode)
+        [&](const rvsdg::SimpleNode & simpleNode)
         {
-          sweepRegion(*lambdaNode.subregion());
-        },
-        [](const rvsdg::DeltaNode &)
-        {
-          // Nothing needs to be done
-        },
-        [this](rvsdg::GammaNode & gammaNode)
-        {
-          for (auto & subregion : gammaNode.Subregions())
-          {
-            sweepRegion(subregion);
-          }
-        },
-        [this](const rvsdg::ThetaNode & thetaNode)
-        {
-          sweepRegion(*thetaNode.subregion());
-        },
-        [this](const rvsdg::SimpleNode & simpleNode)
-        {
-          if (const auto loadOperation =
-                  dynamic_cast<const LoadNonVolatileOperation *>(&simpleNode.GetOperation()))
-          {
-            auto & loadAddress = LoadOperation::AddressInput(simpleNode);
-            auto [hoistBarrierNode, hoistBarrierOp] =
-                rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
-                    *loadAddress.origin());
-            if (!hoistBarrierOp)
-              return;
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [this, &simpleNode](const LoadNonVolatileOperation & loadOperation)
+              {
+                auto & loadAddress = LoadOperation::AddressInput(simpleNode);
+                auto [mhbNode, mhbOp] =
+                    rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+                        *loadAddress.origin());
+                if (!mhbOp)
+                  return;
 
-            auto & barredAddressInput =
-                MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode);
-            const auto barredAddressSize =
-                context_->getDereferenceableSize(*barredAddressInput.origin());
-            if (barredAddressSize == 0)
-              return;
+                auto & mhbAddressInput = MemoryHoistBarrierOperation::getAddressInput(*mhbNode);
+                const auto mhbSize = context_->getDereferenceableSize(*mhbAddressInput.origin());
+                if (mhbSize == 0)
+                  return;
 
-            if (const auto storeSize = GetTypeStoreSize(*loadOperation->GetLoadedType());
-                barredAddressSize < storeSize)
-              return;
-
-            loadAddress.divert_to(barredAddressInput.origin());
-          }
+                if (const auto storeSize = GetTypeStoreSize(*loadOperation.GetLoadedType());
+                    mhbSize >= storeSize)
+                {
+                  rvsdg::Region & targetRegion = computeTargetRegion(*mhbNode);
+                  hoistContext_->addTargetRegion(*mhbNode, targetRegion);
+                }
+              });
         },
         []()
         {
-          throw std::logic_error("Unsupported node type");
+          throw std::logic_error("Unhandled node type!");
+        });
+  }
+}
+
+rvsdg::Region &
+IOBarrierElimination::computeTargetRegion(const rvsdg::Node & node) const
+{
+  // Compute target regions for all the inputs of the node
+  rvsdg::Region * greatestCommonTargetRegion = nullptr;
+
+  for (auto & input : node.Inputs())
+  {
+    auto & targetRegion = computeTargetRegion(*input.origin());
+    if (&targetRegion == node.region())
+    {
+      // One of the node's predecessors cannot be hoisted, which means we can also not hoist this
+      // node
+      return *node.region();
+    }
+
+    // If we already have a common target region that is lower, keep it
+    if (greatestCommonTargetRegion
+        && greatestCommonTargetRegion->getDepth() >= targetRegion.getDepth())
+      continue;
+    greatestCommonTargetRegion = &targetRegion;
+  }
+
+  // Return the lowest-most common target region in the region tree among all inputs
+  JLM_ASSERT(greatestCommonTargetRegion);
+  return *greatestCommonTargetRegion;
+}
+
+rvsdg::Region &
+IOBarrierElimination::computeTargetRegion(const rvsdg::Output & output) const
+{
+  // Handle lambda region arguments
+  if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  {
+    return *output.region();
+  }
+
+  // Handle gamma region arguments
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      return computeTargetRegion(*entryVar->input->origin());
+    }
+
+    return *output.region();
+  }
+
+  // Handle theta region arguments
+  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    {
+      return computeTargetRegion(*loopVar.input->origin());
+    }
+
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    {
+      return computeTargetRegion(*loopVar.input->origin());
+    }
+
+    return *output.region();
+  }
+
+  // Handle gamma outputs
+  if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  {
+    return *gammaNode->region();
+  }
+
+  // Handle theta outputs
+  if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+  {
+    return *thetaNode->region();
+  }
+
+  // Handle simple node outputs
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    auto targetRegion = hoistContext_->getTargetRegion(*node);
+    return targetRegion != nullptr ? *targetRegion : *node->region();
+  }
+
+  throw std::logic_error("Unhandled output type!");
+}
+
+void
+IOBarrierElimination::hoistNodes(rvsdg::Region & region) const
+{
+  for (auto & node : rvsdg::TopDownTraverser(&region))
+  {
+    rvsdg::MatchTypeWithDefault(
+        *node,
+        [&](rvsdg::LambdaNode & lambdaNode)
+        {
+          hoistNodes(*lambdaNode.subregion());
+        },
+        [&](rvsdg::PhiNode & phiNode)
+        {
+          hoistNodes(*phiNode.subregion());
+        },
+        [](rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done
+        },
+        [&](rvsdg::ThetaNode & thetaNode)
+        {
+          hoistNodes(*thetaNode.subregion());
+        },
+        [&](rvsdg::GammaNode & gammaNode)
+        {
+          for (auto & subregion : gammaNode.Subregions())
+            hoistNodes(subregion);
+        },
+        [this](rvsdg::SimpleNode & simpleNode)
+        {
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [this, &simpleNode](const MemoryHoistBarrierOperation &)
+              {
+                hoistNode(simpleNode);
+              });
+        },
+        [&]()
+        {
+          throw std::logic_error(util::strfmt("Unhandled node type: ", node->DebugString()));
         });
   }
 
   region.prune(false);
 }
+
+rvsdg::Input &
+IOBarrierElimination::getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targetRegion)
+{
+  if (input.region() == &targetRegion)
+    return input;
+
+  const auto & operand = *input.origin();
+
+  // Handle gamma subregion arguments
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(operand))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(operand);
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+    {
+      return getUserFromTargetRegion(*entryVar->input, targetRegion);
+    }
+  }
+
+  // Handle theta subregion arguments
+  if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(operand))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(operand);
+    JLM_ASSERT(rvsdg::ThetaLoopVarIsInvariant(loopVar));
+    return getUserFromTargetRegion(*loopVar.input, targetRegion);
+  }
+
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(operand))
+  {
+    if (is<LoadNonVolatileOperation>(simpleNode->GetOperation()))
+    {
+      auto & memStateInput = LoadNonVolatileOperation::MapMemoryStateOutputToInput(operand);
+      return getUserFromTargetRegion(memStateInput, targetRegion);
+    }
+  }
+
+  throw std::logic_error("Unhandled output type!");
+}
+
+std::vector<rvsdg::Input *>
+IOBarrierElimination::getUsersFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion)
+{
+  std::vector<rvsdg::Input *> users;
+  for (auto & input : node.Inputs())
+  {
+    auto & user = getUserFromTargetRegion(input, targetRegion);
+    users.push_back(&user);
+  }
+
+  return users;
+}
+
+void
+IOBarrierElimination::hoistNode(rvsdg::SimpleNode & mhbNode) const
+{
+  JLM_ASSERT(is<MemoryHoistBarrierOperation>(mhbNode.GetOperation()));
+
+  auto targetRegion = hoistContext_->getTargetRegion(mhbNode);
+  if (!targetRegion)
+    return;
+
+  const auto users = getUsersFromTargetRegion(mhbNode, *targetRegion);
+  JLM_ASSERT(users.size() == 2);
+  const auto addressUser = users[0];
+  const auto ioStateUser = users[1];
+
+  const auto hoistedMhbNode =
+      mhbNode.copy(targetRegion, { addressUser->origin(), ioStateUser->origin() });
+
+  addressUser->divert_to(&MemoryHoistBarrierOperation::getAddressOutput(*hoistedMhbNode));
+  MemoryHoistBarrierOperation::getAddressOutput(mhbNode).divert_users(
+      MemoryHoistBarrierOperation::getAddressInput(mhbNode).origin());
+}
+
 }

@@ -134,19 +134,17 @@ TEST(IOBarrierEliminationTests, testSuccess)
   auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
   auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
 
-  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i64Type, 4);
+  auto & mhb64Node = MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateArgument, 0);
+  auto & load64Node = LoadNonVolatileOperation::CreateNode(*mhb64Node.output(0), {}, i64Type, 4);
 
   auto testNode =
       TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
 
-  auto & hoistBarrierNode =
-      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
-
-  auto & loadNode2 =
-      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
+  auto & mhb32Node = MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*mhb32Node.output(0), {}, i32Type, 4);
 
   auto lambdaOutput =
-      lambdaNode->finalize({ loadNode1.output(0), loadNode2.output(0), testNode->output(0) });
+      lambdaNode->finalize({ load64Node.output(0), load32Node.output(0), testNode->output(0) });
   GraphExport::Create(*lambdaOutput, "test");
 
   // Act

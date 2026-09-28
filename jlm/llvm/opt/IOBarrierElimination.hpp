@@ -14,6 +14,7 @@ namespace jlm::llvm
 class IOBarrierElimination final : public rvsdg::Transformation
 {
   class Context;
+  class HoistContext;
   class Statistics;
 
 public:
@@ -47,10 +48,33 @@ private:
   void
   encodeSize(rvsdg::Graph & graph);
 
+  // FIXME: All this hoisting logic was duplicated from the NodeHoisting.[cpp/hpp]. Unify it again.
   void
-  sweepRegion(rvsdg::Region & region);
+  hoistMemoryBarriers(rvsdg::Region & region);
+
+  void
+  computeTargetRegions(const rvsdg::Region & region);
+
+  rvsdg::Region &
+  computeTargetRegion(const rvsdg::Node & node) const;
+
+  rvsdg::Region &
+  computeTargetRegion(const rvsdg::Output & output) const;
+
+  void
+  hoistNodes(rvsdg::Region & region) const;
+
+  void
+  hoistNode(rvsdg::SimpleNode & mhbNode) const;
+
+  static rvsdg::Input &
+  getUserFromTargetRegion(rvsdg::Input & input, rvsdg::Region & targetRegion);
+
+  static std::vector<rvsdg::Input *>
+  getUsersFromTargetRegion(rvsdg::Node & node, rvsdg::Region & targetRegion);
 
   std::unique_ptr<Context> context_{};
+  std::unique_ptr<HoistContext> hoistContext_{};
 };
 
 }
