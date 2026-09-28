@@ -40,7 +40,7 @@ public:
 
 private:
   void
-  markOutputs(const rvsdg::Region & region);
+  markOutputs(rvsdg::Region & region);
 
   void
   propagateSize(rvsdg::Graph & graph);
@@ -52,7 +52,7 @@ private:
   sweepRegion(rvsdg::Region & region);
 
   size_t
-  areAllArgumentsMarked(const rvsdg::GammaNode::EntryVar & entryVar) const;
+  getDereferenceableSize(const rvsdg::GammaNode::EntryVar & entryVar) const;
 
   std::unique_ptr<Context> context_{};
 };
