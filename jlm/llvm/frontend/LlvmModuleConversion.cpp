@@ -980,6 +980,15 @@ AddIOBarrier(tacsvector_t & tacs, const Variable * operand, const Context & ctx)
   return tacs.back()->result(0);
 }
 
+static const Variable *
+addMemoryHoistBarrier(tacsvector_t & tacs, const Variable * address, const Context & ctx)
+{
+  auto hoistBarrierOperation = std::make_unique<MemoryHoistBarrierOperation>(0);
+  tacs.push_back(
+      ThreeAddressCode::create(std::move(hoistBarrierOperation), { address, ctx.iostate() }));
+  return tacs.back()->result(0);
+}
+
 static inline const Variable *
 convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
 {
@@ -1012,7 +1021,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
   }
   else
   {
-    address = AddIOBarrier(tacs, address, ctx);
+    address = addMemoryHoistBarrier(tacs, address, ctx);
     auto loadTac =
         LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
@@ -1058,7 +1067,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context 
   }
   else
   {
-    address = AddIOBarrier(tacs, address, ctx);
+    address = addMemoryHoistBarrier(tacs, address, ctx);
     auto storeTac =
         StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));

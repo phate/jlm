@@ -299,7 +299,8 @@ FunctionInlining::inlineCall(
     auto callOperand = callNode.input(n + 1)->origin();
     if (IsOrContains<PointerType>(*callOperand->Type()))
     {
-      callOperand = IOBarrierOperation::createNode(*callOperand, ioStateOperand).output(0);
+      callOperand =
+          MemoryHoistBarrierOperation::createNode(*callOperand, ioStateOperand, 0).output(0);
     }
 
     smap.insert(arguments[n], callOperand);
@@ -313,7 +314,7 @@ FunctionInlining::inlineCall(
     auto dep = routedDeps[n];
     if (IsOrContains<PointerType>(*dep->Type()))
     {
-      dep = IOBarrierOperation::createNode(*dep, ioStateOperand).output(0);
+      dep = MemoryHoistBarrierOperation::createNode(*dep, ioStateOperand, 0).output(0);
     }
     smap.insert(contextVars[n].inner, dep);
   }

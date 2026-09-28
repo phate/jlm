@@ -846,28 +846,67 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
+    // The op is volatile iff its `isVolatile` flag is set; volatile Store operands are
+    // pointer(0), value(1), ioState(2), inputMemStates(3+), while non-volatile ones are
+    // pointer(0), value(1), inputMemStates(2+).
+    const bool isVolatile = StoreOp.getIsVolatile();
+
     auto address = inputs[0];
     auto value = inputs[1];
-    auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    return rvsdg::outputs(&jlm::llvm::StoreNonVolatileOperation::CreateNode(
-        *address,
-        *value,
-        memoryStateInputs,
-        StoreOp.getAlignment()));
+    if (isVolatile)
+    {
+      JLM_ASSERT(inputs.size() >= 3 && "Volatile store needs at least 3 inputs");
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 3), inputs.end());
+      return rvsdg::outputs(&jlm::llvm::StoreVolatileOperation::CreateNode(
+          *address,
+          *value,
+          *inputs[2], // ioState
+          memoryStateInputs,
+          StoreOp.getAlignment()));
+    }
+    else
+    {
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 2), inputs.end());
+      return rvsdg::outputs(&jlm::llvm::StoreNonVolatileOperation::CreateNode(
+          *address,
+          *value,
+          memoryStateInputs,
+          StoreOp.getAlignment()));
+    }
   }
   else if (auto LoadOp = ::mlir::dyn_cast<::mlir::jlm::Load>(&mlirOperation))
   {
+    // The op is volatile iff its `isVolatile` flag is set; volatile Load operands are
+    // pointer(0), ioState(1), inputMemStates(2+), while non-volatile ones are
+    // pointer(0), inputMemStates(1+).
+    const bool isVolatile = LoadOp.getIsVolatile();
     auto address = inputs[0];
-    auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
+
     auto outputType = LoadOp.getOutput().getType();
     auto jlmType = ConvertType(outputType);
     if (jlmType->Kind() != rvsdg::TypeKind::Value)
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
-    return rvsdg::outputs(&llvm::LoadNonVolatileOperation::CreateNode(
-        *address,
-        memoryStateInputs,
-        jlmType,
-        LoadOp.getAlignment()));
+
+    if (isVolatile)
+    {
+      JLM_ASSERT(inputs.size() >= 2 && "Volatile load needs at least 2 inputs");
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 2), inputs.end());
+      return rvsdg::outputs(&llvm::LoadVolatileOperation::CreateNode(
+          *address,
+          *inputs[1], // ioState
+          memoryStateInputs,
+          jlmType,
+          LoadOp.getAlignment()));
+    }
+    else
+    {
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 1), inputs.end());
+      return rvsdg::outputs(&llvm::LoadNonVolatileOperation::CreateNode(
+          *address,
+          memoryStateInputs,
+          jlmType,
+          LoadOp.getAlignment()));
+    }
   }
   else if (auto GepOp = ::mlir::dyn_cast<::mlir::LLVM::GEPOp>(&mlirOperation))
   {

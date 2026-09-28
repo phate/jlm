@@ -524,11 +524,12 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
   auto memoryStateEntryVar = gammaNode->AddEntryVar(memoryStateArgument);
 
   // gamma subregion 0
-  auto & ioBarrierNode = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
       *ptrEntryVar.branchArgument[0],
-      *ioStateEntryVar.branchArgument[0]);
+      *ioStateEntryVar.branchArgument[0],
+      0);
   auto & loadNode0 = LoadNonVolatileOperation::CreateNode(
-      *ioBarrierNode.output(0),
+      *hoistBarrierNode.output(0),
       { memoryStateEntryVar.branchArgument[0] },
       i32Type,
       4);
@@ -606,12 +607,13 @@ TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
   auto outerMemoryStateEntryVar = outerGammaNode->AddEntryVar(memoryStateArgument);
 
   // outerGammaNode - subregion 0
-  auto & ioBarrierNode = IOBarrierOperation::createNode(
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
       *outerPtr1EntryVar.branchArgument[0],
-      *outerIOStateEntryVar.branchArgument[0]);
+      *outerIOStateEntryVar.branchArgument[0],
+      0);
 
   auto innerGammaNode = GammaNode::create(ctlEntryVar.branchArgument[0], 2);
-  auto innerPtr1EntryVar = innerGammaNode->AddEntryVar(ioBarrierNode.output(0));
+  auto innerPtr1EntryVar = innerGammaNode->AddEntryVar(hoistBarrierNode.output(0));
   auto innerPtr2EntryVar = innerGammaNode->AddEntryVar(outerPtr2EntryVar.branchArgument[0]);
   auto innerMemoryStateEntryVar =
       innerGammaNode->AddEntryVar(outerMemoryStateEntryVar.branchArgument[0]);
@@ -659,7 +661,7 @@ TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
   // Assert
   // We expect the following to happen:
   // 1. loadNode1 is hoisted into subregion 0 of outerGammaNode, where the hoisting is stopped by
-  // the ioBarrierNode
+  // the MemoryHoistBarrierOperation node
   // 2. loadNode2 is hoisted into the lambda subregion
   // 3. The hoisting of loadNode2 needs get past the already hoisted loadNode1. As loadNode1 is
   // hoisted out first, its outgoing memory state is indirectly connected to loadNode2, which is
@@ -683,7 +685,7 @@ TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
         rvsdg::TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
             *innerMemoryStateEntryVar.input->origin());
     EXPECT_NE(loadOp, nullptr);
-    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode1).origin(), ioBarrierNode.output(0));
+    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode1).origin(), hoistBarrierNode.output(0));
   }
 
   {

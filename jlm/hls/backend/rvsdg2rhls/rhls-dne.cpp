@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -14,112 +15,93 @@ namespace jlm::hls
 {
 
 static bool
-remove_unused_loop_backedges(LoopNode * loopNode)
+remove_loop_passthrough(LoopNode * ln)
 {
-  util::HashSet<size_t> resultIndices;
-  util::HashSet<size_t> argumentIndices;
-  const auto subregion = loopNode->subregion();
-  for (const auto argument : subregion->Arguments())
+  bool any_changed = false;
+
+  // Check if any output directly maps to an input into the loop.
+  // If yes, divert users of this output to the pre-loop value.
+  // As a consequence, this output is now unused and will be
+  // removed by remove_unused_loop_outputs (and then lead to
+  // the input also removed by remove_unused_loop_inputs).
+  for (auto exitvar : ln->getExitVars())
   {
-    if ((dynamic_cast<BackEdgeArgument *>(argument) && argument->nusers() == 1))
+    auto loopval = exitvar.inner->origin();
+    if (rvsdg::TryGetRegionParentNode<LoopNode>(*loopval) == ln)
     {
-      auto & user = *argument->Users().begin();
-      if (const auto result = dynamic_cast<BackEdgeResult *>(&user))
+      auto loopvar = ln->mapArgument(*loopval);
+      if (auto entry = std::get_if<LoopNode::EntryVar>(&loopvar))
       {
-        resultIndices.insert(result->index());
-        argumentIndices.insert(argument->index());
+        exitvar.output->divert_users(entry->input->origin());
+        any_changed = true;
       }
     }
   }
 
-  [[maybe_unused]] const auto numRemovedResults = subregion->RemoveResults(resultIndices);
-  JLM_ASSERT(numRemovedResults == resultIndices.Size());
-
-  [[maybe_unused]] const auto numRemovedArguments = subregion->RemoveArguments(argumentIndices);
-  JLM_ASSERT(numRemovedArguments == argumentIndices.Size());
-
-  return numRemovedArguments != 0;
+  return any_changed;
 }
 
 static bool
 remove_unused_loop_outputs(LoopNode * ln)
 {
-  bool any_changed = false;
-  // go through in reverse because we remove some
-  for (int i = ln->noutputs() - 1; i >= 0; --i)
-  {
-    const auto out = ln->output(i);
-    if (out->nusers() == 0)
-    {
-      ln->removeLoopOutput(out);
-      any_changed = true;
-    }
-  }
-  return any_changed;
-}
+  // Keep only those entry vars that are not dead.
+  std::vector<LoopNode::ExitVar> vars = ln->getExitVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::ExitVar & var)
+          {
+            return !var.output->IsDead();
+          }),
+      vars.end());
 
-static bool
-remove_loop_passthrough(LoopNode * ln)
-{
-  bool any_changed = false;
-  // go through in reverse because we remove some
-  for (int i = ln->ninputs() - 1; i >= 0; --i)
-  {
-    const auto in = ln->input(i);
-    JLM_ASSERT(in->arguments.size() == 1);
-    const auto arg = in->arguments.begin();
-    if (arg->nusers() != 1)
-      continue;
-
-    auto & user = *arg->Users().begin();
-    if (const auto result = dynamic_cast<rvsdg::RegionResult *>(&user))
-    {
-      result->output()->divert_users(in->origin());
-      ln->removeLoopOutput(result->output());
-      ln->removeLoopInput(arg->input());
-      any_changed = true;
-    }
-  }
+  // Remove all dead vars.
+  bool any_changed = !vars.empty();
+  ln->removeExitVars(std::move(vars));
   return any_changed;
 }
 
 static bool
 remove_unused_loop_inputs(LoopNode * ln)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = ln->ninputs() - 1; i >= 0; --i)
-  {
-    auto in = ln->input(i);
-    JLM_ASSERT(in->arguments.size() == 1);
-    auto arg = in->arguments.begin();
-    if (arg->nusers() == 0)
-    {
-      ln->removeLoopInput(in);
-      any_changed = true;
-    }
-  }
-  // clean up unused arguments - only ones without an input should be left
-  // go through in reverse because we remove some
-  for (int i = sr->narguments() - 1; i >= 0; --i)
-  {
-    auto arg = sr->argument(i);
-    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
-    {
-      auto result = ba->result();
-      JLM_ASSERT(*result->Type() == *arg->Type());
-      if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
-      {
-        sr->RemoveResults({ result->index() });
-        sr->RemoveArguments({ arg->index() });
-      }
-    }
-    else
-    {
-      JLM_ASSERT(arg->nusers() != 0);
-    }
-  }
+  // Keep only those entry vars that are not dead.
+  std::vector<LoopNode::EntryVar> vars = ln->getEntryVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::EntryVar & var)
+          {
+            return !var.inner->IsDead();
+          }),
+      vars.end());
+
+  // Remove all dead vars.
+  bool any_changed = !vars.empty();
+  ln->removeEntryVars(std::move(vars));
+  return any_changed;
+}
+
+static bool
+remove_unused_loop_backedges(LoopNode * ln)
+{
+  // Keep only back edge vars that have a user (instead of
+  // simply forwarding to itself).
+  std::vector<LoopNode::BackEdgeVar> vars = ln->getBackEdgeVars();
+  vars.erase(
+      std::remove_if(
+          vars.begin(),
+          vars.end(),
+          [](const LoopNode::BackEdgeVar & var)
+          {
+            return !(var.pre->nusers() == 1 && var.post->origin() == var.pre);
+          }),
+      vars.end());
+  // Remove all that have exactly one user, namely forward itself
+  // to next loop iteration.
+  bool any_changed = !vars.empty();
+  ln->removeBackEdgeVars(std::move(vars));
   return any_changed;
 }
 
@@ -458,10 +440,10 @@ RhlsDeadNodeElimination::Run(
       }
       else if (auto ln = dynamic_cast<LoopNode *>(node))
       {
+        changed |= remove_loop_passthrough(ln);
         changed |= remove_unused_loop_outputs(ln);
         changed |= remove_unused_loop_inputs(ln);
         changed |= remove_unused_loop_backedges(ln);
-        changed |= remove_loop_passthrough(ln);
         changed |= Run(*ln->subregion(), statisticsCollector);
       }
       else if (const auto mux = dynamic_cast<const MuxOperation *>(&node->GetOperation()))

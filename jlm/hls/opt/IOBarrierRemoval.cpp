@@ -39,6 +39,11 @@ IOBarrierRemoval::RemoveIOBarrierFromRegion(rvsdg::Region & region)
     {
       node.output(0)->divert_users(node.input(0)->origin());
     }
+
+    if (rvsdg::is<llvm::MemoryHoistBarrierOperation>(&node))
+    {
+      node.output(0)->divert_users(node.input(0)->origin());
+    }
   }
 
   // Remove all dead IOBarrier nodes

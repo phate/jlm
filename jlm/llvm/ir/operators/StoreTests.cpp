@@ -506,7 +506,7 @@ TEST(StoreOperationTests, testStoreStoreReduction)
   }
 }
 
-TEST(StoreOperationTests, normalizeIOBarrierAddress)
+TEST(StoreOperationTests, normalizeMemoryHoistBarrierAddress)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -525,12 +525,11 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress)
   auto ioStateImport = &GraphImport::Create(graph, ioStateType, "ioState");
 
   auto allocaResults = AllocaOperation::create(bit32Type, sizeImport, 4);
-  auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
-      { allocaResults[0], ioStateImport },
-      pointerType);
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*allocaResults[0], *ioStateImport, 0);
 
   auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
-      *ioBarrierNode.output(0),
+      *hoistBarrierNode.output(0),
       *valueImport,
       { allocaResults[1] },
       4);
@@ -545,11 +544,11 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress)
 
   // Act
   const auto successStoreNode1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::normalizeIOBarrierAddress,
+      StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
       storeNode1);
 
   const auto successStoreNode2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::normalizeIOBarrierAddress,
+      StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
       storeNode2);
   graph.PruneNodes();
 
@@ -561,7 +560,7 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress)
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin())->input(0)->origin(),
       allocaResults[0]);
 
-  // There is no IOBarrierOperation node as producer for the store address. We expect the
+  // There is no MemoryHoistBarrierOperation node as producer for the store address. We expect the
   // normalization not to trigger.
   EXPECT_FALSE(successStoreNode2);
   EXPECT_EQ(
@@ -569,14 +568,14 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress)
       addressImport);
 }
 
-TEST(StoreOperationTests, normalizeIOBarrierAddress_Gamma)
+TEST(StoreOperationTests, normalizeMemoryHoistBarrierAddress_Gamma)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   // Arrange
   const auto pointerType = PointerType::Create();
-  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
   const auto controlTye = ControlType::Create(2);
 
@@ -594,12 +593,13 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_Gamma)
   auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateImport);
   auto valueEntryVar = gammaNode->AddEntryVar(valueImport);
 
-  auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
-      { addressEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[0] },
-      pointerType);
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
+      *addressEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
 
   auto & storeNode = StoreNonVolatileOperation::CreateNode(
-      *ioBarrierNode.output(0),
+      *hoistBarrierNode.output(0),
       *valueEntryVar.branchArgument[0],
       { memoryStateEntryVar.branchArgument[0] },
       4);
@@ -613,7 +613,7 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_Gamma)
 
   // Act
   const auto successStoreNode = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::normalizeIOBarrierAddress,
+      StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
       storeNode);
   graph.PruneNodes();
 
@@ -622,7 +622,7 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_Gamma)
   // Assert
   EXPECT_TRUE(successStoreNode);
   // There should only be the store node left.
-  // The IOBarrier node should have been pruned.
+  // The MemoryHoistBarrierOperation node should have been pruned.
   EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 1u);
   EXPECT_EQ(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
@@ -631,7 +631,7 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_Gamma)
       addressEntryVar.branchArgument[0]);
 }
 
-TEST(StoreOperationTests, normalizeIOBarrierAddress_GEP)
+TEST(StoreOperationTests, normalizeMemoryHoistBarrierAddress_GEP)
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -658,11 +658,10 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_GEP)
       *allocaResults[0],
       { zeroNode.output(0), twoNode.output(0) },
       arrayType);
-  auto & ioBarrierNode1 = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
-      { gepNode1.output(0), ioStateImport },
-      pointerType);
+  auto & hoistBarrierNode1 =
+      MemoryHoistBarrierOperation::createNode(*gepNode1.output(0), *ioStateImport, 0);
   auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
-      *ioBarrierNode1.output(0),
+      *hoistBarrierNode1.output(0),
       *valueImport,
       { allocaResults[1] },
       4);
@@ -671,11 +670,10 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_GEP)
       *allocaResults[0],
       { zeroNode.output(0), tenNode.output(0) },
       arrayType);
-  auto & ioBarrierNode2 = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
-      { gepNode2.output(0), ioStateImport },
-      pointerType);
+  auto & hoistBarrierNode2 =
+      MemoryHoistBarrierOperation::createNode(*gepNode2.output(0), *ioStateImport, 0);
   auto & storeNode2 = StoreNonVolatileOperation::CreateNode(
-      *ioBarrierNode2.output(0),
+      *hoistBarrierNode2.output(0),
       *valueImport,
       { allocaResults[1] },
       4);
@@ -687,11 +685,11 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_GEP)
 
   // Act
   const auto successStoreNode1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::normalizeIOBarrierAddress,
+      StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
       storeNode1);
 
   const auto successStoreNode2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
-      StoreNonVolatileOperation::normalizeIOBarrierAddress,
+      StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress,
       storeNode2);
   graph.PruneNodes();
 
@@ -706,12 +704,12 @@ TEST(StoreOperationTests, normalizeIOBarrierAddress_GEP)
   }
 
   {
-    // The offset computed by the GEP + the stored size exceeds the array, we expect the IOBarrier
-    // to not be removed.
+    // The offset computed by the GEP + the stored size exceeds the array, we expect the
+    // MemoryHoistBarrierOperation node to not be removed.
     EXPECT_FALSE(successStoreNode2);
     EXPECT_EQ(
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin())->input(0)->origin(),
-        ioBarrierNode2.output(0));
+        hoistBarrierNode2.output(0));
   }
 }
 

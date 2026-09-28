@@ -959,9 +959,10 @@ ScalarEvolution::GetOrCreateSCEVForOutput(rvsdg::Output & output)
 
   if (simpleNode)
   {
-    if (rvsdg::is<IOBarrierOperation>(*simpleOperation))
+    if (rvsdg::is<MemoryHoistBarrierOperation>(*simpleOperation))
     {
-      const auto barredInputOrigin = IOBarrierOperation::BarredInput(*simpleNode).origin();
+      const auto barredInputOrigin =
+          MemoryHoistBarrierOperation::getAddressInput(*simpleNode).origin();
       result = GetOrCreateSCEVForOutput(*barredInputOrigin);
     }
     else if (

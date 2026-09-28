@@ -105,6 +105,7 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::LoopStrengthReduction, "LoopStrengthReduction" },
     { OptimizationId::LoopUnrolling, "LoopUnrolling" },
     { OptimizationId::LoopUnswitching, "LoopUnswitching" },
+    { OptimizationId::NodeHoisting, "NodeHoisting" },
     { OptimizationId::NodePullIn, "NodePullIn" },
     { OptimizationId::NodePushOut, "NodePushOut" },
     { OptimizationId::NodeReduction, "NodeReduction" },
@@ -317,7 +318,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
           JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+          JlmOptCommandLineOptions::OptimizationId::NodeHoisting,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
@@ -847,6 +848,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto loopStrengthReduction = JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
   auto loopUnswitching = JlmOptCommandLineOptions::OptimizationId::LoopUnswitching;
+  auto nodeHoisting = JlmOptCommandLineOptions::OptimizationId::NodeHoisting;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
@@ -910,9 +912,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnswitching),
               "Move conditionals outside loops"),
           ::clEnumValN(
+              nodeHoisting,
+              JlmOptCommandLineOptions::ToCommandLineArgument(nodeHoisting),
+              "Hoist nodes out of conditionals and loops."),
+          ::clEnumValN(
               nodePushOut,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
-              "Node Push Out"),
+              "DEPRECATED - Use node hoisting instead."),
           ::clEnumValN(
               nodePullIn,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePullIn),

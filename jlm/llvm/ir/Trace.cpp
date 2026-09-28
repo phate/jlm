@@ -35,13 +35,29 @@ OutputTracer::traceStep(
     const rvsdg::Region * withinRegion)
 {
   const auto trace1 = rvsdg::OutputTracer::traceStep(output, backEdgeState, withinRegion);
+
+  // Impossible origins can not be traced any further
+  if (trace1.isDeadEnd())
+    return trace1;
+
   auto & trace1Output = trace1.getOutput();
 
-  if (const auto [node, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1Output);
-      node && ioBarrierOp)
+  if (traceThroughHoistBarriers_)
   {
-    return TraceStepResult::createStepResult(*IOBarrierOperation::BarredInput(*node).origin());
+    if (const auto [node, ioBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1Output);
+        node && ioBarrierOp)
+    {
+      return TraceStepResult::createStepOutput(*IOBarrierOperation::BarredInput(*node).origin());
+    }
+
+    if (const auto [node, memoryHoistBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(trace1Output);
+        node && memoryHoistBarrierOp)
+    {
+      return TraceStepResult::createStepOutput(
+          *MemoryHoistBarrierOperation::getAddressInput(*node).origin());
+    }
   }
 
   // If enabled, try tracing through the memory states of load nodes
@@ -55,7 +71,7 @@ OutputTracer::traceStep(
       {
         // Map the memory state output to the corresponding memory state input
         auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1Output);
-        return TraceStepResult::createStepResult(*memoryStateInput.origin());
+        return TraceStepResult::createStepOutput(*memoryStateInput.origin());
       }
     }
   }
@@ -169,7 +185,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base, false);
+    base = &llvm::traceOutput(*base, true);
 
     if (const auto [gepNode, gepOperation] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -202,7 +218,7 @@ traceAllPointerOriginsInternal(
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  basePointer = &llvm::traceOutput(*basePointer, false);
+  basePointer = &llvm::traceOutput(*basePointer, true);
 
   auto it = traceCollection.AllTracedOutputs.find(basePointer);
   if (it != traceCollection.AllTracedOutputs.end())

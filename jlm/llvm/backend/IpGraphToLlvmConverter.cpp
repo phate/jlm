@@ -1210,6 +1210,10 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return Context_->value(arguments[0]);
   }
+  if (is<MemoryHoistBarrierOperation>(op))
+  {
+    return Context_->value(arguments[0]);
+  }
   if (is<IntegerConstantOperation>(op))
   {
     return ConverterIntegerConstant(op, arguments, builder);

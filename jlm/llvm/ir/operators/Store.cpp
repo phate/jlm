@@ -276,7 +276,7 @@ getAllocationSizeInBytes(const rvsdg::Output & output)
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-StoreNonVolatileOperation::normalizeIOBarrierAddress(
+StoreNonVolatileOperation::normalizeMemoryHoistBarrierAddress(
     const StoreNonVolatileOperation & storeOperation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -284,12 +284,12 @@ StoreNonVolatileOperation::normalizeIOBarrierAddress(
   const auto address = operands[0];
   const auto value = operands[1];
 
-  auto [ioBarrierNode, ioBarrierOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*address);
-  if (!ioBarrierOperation)
+  auto [hoistBarrierNode, hoistBarrierOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(*address);
+  if (!hoistBarrierOperation)
     return std::nullopt;
 
-  auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  auto & barredAddress = *MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode).origin();
   const auto & pointerOrigin = TracePointerOriginPrecise(barredAddress);
   const auto allocationSizeInBytes = getAllocationSizeInBytes(*pointerOrigin.BasePointer);
   if (!allocationSizeInBytes.has_value())

@@ -50,8 +50,8 @@ LocalAliasAnalysis::setMaxTraceCollectionSize(size_t maxTraceCollectionSize)
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = llvm::traceOutput(p1, false);
-  const auto & p2Norm = llvm::traceOutput(p2, false);
+  const auto & p1Norm = llvm::traceOutput(p1, true);
+  const auto & p2Norm = llvm::traceOutput(p2, true);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)
@@ -516,11 +516,11 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
       {
         bool do_continue = MatchTypeWithDefault(
             node->GetOperation(),
-            [&](const IOBarrierOperation &)
+            [&](const MemoryHoistBarrierOperation &)
             {
               // The pointer input must be the node's first input
               JLM_ASSERT(user.index() == 0);
-              Enqueue(*node->output(0));
+              Enqueue(MemoryHoistBarrierOperation::getAddressOutput(*node));
               return true;
             },
             [&](const GetElementPtrOperation &)
