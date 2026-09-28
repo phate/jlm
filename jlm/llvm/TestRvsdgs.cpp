@@ -303,15 +303,11 @@ GetElementPtrTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
 
-  auto zeroX0 = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
-  auto zeroX1 = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
-  auto zeroY = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
-  auto oneY = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
+  auto zero = IntegerConstantOperation::Create(*fct->subregion(), { 32, 0 }).output(0);
+  auto one = IntegerConstantOperation::Create(*fct->subregion(), { 32, 1 }).output(0);
 
-  auto gepx = GetElementPtrOperation::create(
-      fct->GetFunctionArguments()[0],
-      { zeroX0, zeroX1 },
-      structType);
+  auto gepx =
+      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, zero }, structType);
   auto ldx = LoadNonVolatileOperation::Create(
       gepx,
       { fct->GetFunctionArguments()[1] },
@@ -319,7 +315,7 @@ GetElementPtrTest::SetupRvsdg()
       4);
 
   auto gepy =
-      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zeroY, oneY }, structType);
+      GetElementPtrOperation::create(fct->GetFunctionArguments()[0], { zero, one }, structType);
   auto ldy = LoadNonVolatileOperation::Create(gepy, { ldx[1] }, jlm::rvsdg::BitType::Create(32), 4);
 
   auto sum = IntegerAddOperation::createNode(32, *ldx[0], *ldy[0]).output(0);
@@ -3531,8 +3527,7 @@ LinkedListTest::SetupRvsdg()
 
     auto myListArgument = lambda->AddContextVar(myList).inner;
 
-    auto zeroGep0 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
-    auto zeroGep1 = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
+    auto zero = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 0 }).output(0);
     auto constantOne = IntegerConstantOperation::Create(*lambda->subregion(), { 32, 1 }).output(0);
 
     auto alloca = AllocaOperation::create(pointerType, constantOne, 4);
@@ -3544,7 +3539,7 @@ LinkedListTest::SetupRvsdg()
     auto store1 = StoreNonVolatileOperation::Create(alloca[0], load1[0], { load1[1] }, 4);
 
     auto load2 = LoadNonVolatileOperation::Create(alloca[0], { store1[0] }, pointerType, 4);
-    auto gep = GetElementPtrOperation::create(load2[0], { zeroGep0, zeroGep1 }, structType);
+    auto gep = GetElementPtrOperation::create(load2[0], { zero, zero }, structType);
 
     auto load3 = LoadNonVolatileOperation::Create(gep, { load2[1] }, pointerType, 4);
     auto store2 = StoreNonVolatileOperation::Create(alloca[0], load3[0], { load3[1] }, 4);
