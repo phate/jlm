@@ -232,6 +232,18 @@ divertUsersToMemoryHoistBarrierNode(
       });
 }
 
+static std::optional<rvsdg::GammaNode::EntryVar>
+getIOStateEntryVar(const rvsdg::GammaNode & gammaNode)
+{
+  for (auto & entryVar : gammaNode.GetEntryVars())
+  {
+    if (rvsdg::is<IOStateType>(entryVar.input->Type()))
+      return entryVar;
+  }
+
+  return std::nullopt;
+}
+
 void
 IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg::Region & region)
 {
@@ -293,18 +305,88 @@ IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg::Region & region)
   }
 }
 
+size_t
+IOBarrierElimination::getDereferenceableSize(const rvsdg::GammaNode::EntryVar & entryVar) const
+{
+  // We only care about pointer entry variables
+  if (!rvsdg::is<PointerType>(entryVar.input->Type()))
+    return 0;
+
+  size_t size = std::numeric_limits<std::size_t>::max();
+  for (const auto * argument : entryVar.branchArgument)
+  {
+    if (const size_t numUsers = argument->nusers(); numUsers == 0)
+    {
+      // If we have no users, nothing can be marked
+      return 0;
+    }
+
+    if (auto argumentSize = context_->getDereferenceableSize(*argument); argumentSize > 0)
+    {
+      // The user is marked. Let's take the minimum marked size between this argument and all
+      // other arguments.
+      size = std::min(size, argumentSize);
+    }
+    else
+    {
+      // Let's see whether we can find an appropriate MemoryHoistBarrierOperation node
+      const rvsdg::SimpleNode * hoistBarrierNode = nullptr;
+      for (auto & user : argument->Users())
+      {
+        auto [simpleNode, hoistBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(user);
+        if (hoistBarrierOp)
+        {
+          // We do have a MemoryHoistBarrierOperation node
+          auto & ioStateOperand =
+              *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
+          if (rvsdg::TryGetOwnerRegion(ioStateOperand) == argument->region())
+          {
+            // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
+            // argument of the gamma subregion. This ensures that there is no other non-returning
+            // node, such as a call to abort() etc., that would prohibit the connected memory
+            // operation to be executed.
+            hoistBarrierNode = simpleNode;
+            break;
+          }
+        }
+      }
+      if (!hoistBarrierNode)
+      {
+        // We do not find an appropriate MemoryHoistBarrierOperation node. Nothing can be marked.
+        return 0;
+      }
+
+      argumentSize = context_->getDereferenceableSize(
+          MemoryHoistBarrierOperation::getAddressOutput(*hoistBarrierNode));
+      if (argumentSize == 0)
+      {
+        // The user of the MemoryHoistBarrierOperation node is not marked either. We are done for
+        // good.
+        return 0;
+      }
+
+      // The user is marked. Let's take the minimum marked size between this argument and all
+      // other arguments.
+      size = std::min(size, argumentSize);
+    }
+  }
+
+  return size;
+}
+
 void
-IOBarrierElimination::markOutputs(const rvsdg::Region & region)
+IOBarrierElimination::markOutputs(rvsdg::Region & region)
 {
   for (auto & node : region.Nodes())
   {
     rvsdg::MatchTypeWithDefault(
         node,
-        [this](const rvsdg::PhiNode & phiNode)
+        [this](rvsdg::PhiNode & phiNode)
         {
           markOutputs(*phiNode.subregion());
         },
-        [this](const rvsdg::LambdaNode & lambdaNode)
+        [this](rvsdg::LambdaNode & lambdaNode)
         {
           // Mark lambda arguments
           for (const auto argument : lambdaNode.GetFunctionArguments())
@@ -327,22 +409,44 @@ IOBarrierElimination::markOutputs(const rvsdg::Region & region)
 
           markOutputs(*lambdaNode.subregion());
         },
-        [](const rvsdg::DeltaNode &)
+        [](rvsdg::DeltaNode &)
         {
           // Nothing needs to be done
         },
-        [this](const rvsdg::ThetaNode & thetaNode)
+        [this](rvsdg::ThetaNode & thetaNode)
         {
           markOutputs(*thetaNode.subregion());
         },
-        [this](const rvsdg::GammaNode & gammaNode)
+        [this](rvsdg::GammaNode & gammaNode)
         {
+          // Handle innermost regions first
           for (auto & subregion : gammaNode.Subregions())
           {
             markOutputs(subregion);
           }
+
+          if (auto ioStateEntryVar = getIOStateEntryVar(gammaNode))
+          {
+            for (auto & entryVar : gammaNode.GetEntryVars())
+            {
+              if (const auto size = getDereferenceableSize(entryVar); size > 0)
+              {
+                // All gamma node arguments of this entry variable are marked. This means that
+                // on every path through this gamma node, the pointer variable is at least
+                // dereferenced by the returned size. Consequently, we can create a
+                // MemoryHoistBarrierOperation node for this entry variable out here and mark it.
+                auto & mhbNode = MemoryHoistBarrierOperation::createNode(
+                    *entryVar.input->origin(),
+                    *ioStateEntryVar->input->origin(),
+                    size);
+                auto & mhbAddressOutput = MemoryHoistBarrierOperation::getAddressOutput(mhbNode);
+                entryVar.input->divert_to(&mhbAddressOutput);
+                context_->markDereferenceable(mhbAddressOutput, size);
+              }
+            }
+          }
         },
-        [this](const rvsdg::SimpleNode & simpleNode)
+        [this](rvsdg::SimpleNode & simpleNode)
         {
           rvsdg::MatchType(
               simpleNode.GetOperation(),
@@ -513,10 +617,10 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
 {
   std::function<void(rvsdg::Region &)> encode = [&](rvsdg::Region & region)
   {
-    for (auto & node : region.Nodes())
+    for (auto node : rvsdg::TopDownTraverser(&region))
     {
       rvsdg::MatchTypeWithDefault(
-          node,
+          *node,
           [&](rvsdg::PhiNode & phiNode)
           {
             encode(*phiNode.subregion());
@@ -556,7 +660,8 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
                     auto & mhbNode = MemoryHoistBarrierOperation::createNode(
                         addressOperand,
                         ioStateOperand,
-                        size);
+                        // Ensure that we do not lose information. Always take the max value.
+                        std::max(size, mhbSize));
                     MemoryHoistBarrierOperation::getAddressOutput(simpleNode)
                         .divert_users(&MemoryHoistBarrierOperation::getAddressOutput(mhbNode));
                   }
