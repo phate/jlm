@@ -268,6 +268,24 @@ public:
   foldConstants(
       const IntegerMulOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalization:
+   *
+   * v = IntegerMulOperation x 1
+   * =>
+   * v = x
+   *
+   * @param operation The \ref IntegerMulOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerMulOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref IntegerMulOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdempotent(
+      const IntegerMulOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 /**
