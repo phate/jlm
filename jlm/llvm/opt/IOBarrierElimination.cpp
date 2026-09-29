@@ -340,9 +340,7 @@ IOBarrierElimination::getDereferenceableSize(const rvsdg::GammaNode::EntryVar & 
           // We do have a MemoryHoistBarrierOperation node
           auto & ioStateOperand =
               *MemoryHoistBarrierOperation::getIOStateInput(*simpleNode).origin();
-          auto owner = ioStateOperand.GetOwner();
-          if (const auto ownerRegion = std::get_if<rvsdg::Region *>(&owner);
-              ownerRegion && *ownerRegion == argument->region())
+          if (rvsdg::TryGetOwnerRegion(ioStateOperand) == argument->region())
           {
             // We only want a MemoryHoistBarrierOperation node whose IO state is connected to the
             // argument of the gamma subregion. This ensures that there is no other non-returning
