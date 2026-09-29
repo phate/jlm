@@ -619,10 +619,10 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
 {
   std::function<void(rvsdg::Region &)> encode = [&](rvsdg::Region & region)
   {
-    for (auto & node : region.Nodes())
+    for (auto node : rvsdg::TopDownTraverser(&region))
     {
       rvsdg::MatchTypeWithDefault(
-          node,
+          *node,
           [&](rvsdg::PhiNode & phiNode)
           {
             encode(*phiNode.subregion());
@@ -662,7 +662,7 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
                     auto & mhbNode = MemoryHoistBarrierOperation::createNode(
                         addressOperand,
                         ioStateOperand,
-                        size);
+                        std::max(size, mhbSize));
                     MemoryHoistBarrierOperation::getAddressOutput(simpleNode)
                         .divert_users(&MemoryHoistBarrierOperation::getAddressOutput(mhbNode));
                   }
