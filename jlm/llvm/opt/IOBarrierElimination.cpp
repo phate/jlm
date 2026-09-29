@@ -435,8 +435,8 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
               {
                 // All gamma node arguments of this entry variable are marked. This means that
                 // on every path through this gamma node, the pointer variable is at least
-                // dereferenced by the returned size. Consequently, we can mark the origin of
-                // the input of this gamma node as well.
+                // dereferenced by the returned size. Consequently, we can create a
+                // MemoryHoistBarrierOperation node for this entry variable out here and mark it.
                 auto & mhbNode = MemoryHoistBarrierOperation::createNode(
                     *entryVar.input->origin(),
                     *ioStateEntryVar->input->origin(),
@@ -662,6 +662,7 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
                     auto & mhbNode = MemoryHoistBarrierOperation::createNode(
                         addressOperand,
                         ioStateOperand,
+                        // Ensure that we do not lose information. Always take the max value.
                         std::max(size, mhbSize));
                     MemoryHoistBarrierOperation::getAddressOutput(simpleNode)
                         .divert_users(&MemoryHoistBarrierOperation::getAddressOutput(mhbNode));
