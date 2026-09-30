@@ -438,7 +438,7 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
                 auto & mhbNode = MemoryHoistBarrierOperation::createNode(
                     *entryVar.input->origin(),
                     *ioStateEntryVar->input->origin(),
-                    size);
+                    0);
                 auto & mhbAddressOutput = MemoryHoistBarrierOperation::getAddressOutput(mhbNode);
                 entryVar.input->divert_to(&mhbAddressOutput);
                 context_->markDereferenceable(mhbAddressOutput, size);
