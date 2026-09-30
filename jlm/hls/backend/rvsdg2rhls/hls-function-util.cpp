@@ -9,6 +9,9 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -52,43 +55,87 @@ trace_function_calls(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
-    {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
-      {
-        // TODO: verify this is the right type of function call
-        calls.push_back(simplenode);
-      }
-      else
-      {
-        for (size_t i = 0; i < simplenode->noutputs(); ++i)
+    rvsdg::MatchVariant(
+        user.GetOwner(),
+        [&](rvsdg::Node * node)
         {
-          trace_function_calls(simplenode->output(i), calls, visited);
-        }
-      }
-    }
-    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
-    {
-      for (auto & arg : sti->arguments)
-      {
-        trace_function_calls(&arg, calls, visited);
-      }
-    }
-    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
-    {
-      if (auto ber = dynamic_cast<BackEdgeResult *>(r))
-      {
-        trace_function_calls(ber->argument(), calls, visited);
-      }
-      else
-      {
-        trace_function_calls(r->output(), calls, visited);
-      }
-    }
-    else
-    {
-      JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-    }
+          rvsdg::MatchTypeOrFail(
+              *node,
+              [&](rvsdg::SimpleNode & simplenode)
+              {
+                rvsdg::MatchTypeWithDefault(
+                    simplenode.GetOperation(),
+                    [&](const llvm::CallOperation &)
+                    {
+                      // TODO: verify this is the right type of function call
+                      calls.push_back(&simplenode);
+                    },
+                    [&]()
+                    {
+                      for (size_t i = 0; i < simplenode.noutputs(); ++i)
+                      {
+                        trace_function_calls(simplenode.output(i), calls, visited);
+                      }
+                    });
+              },
+              [&](LoopNode & loop)
+              {
+                trace_function_calls(loop.mapInput(user).inner, calls, visited);
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                trace_function_calls(theta.MapInputLoopVar(user).pre, calls, visited);
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                rvsdg::MatchVariant(
+                    gamma.MapInput(user),
+                    [&](const rvsdg::GammaNode::MatchVar &)
+                    {
+                    },
+                    [&](const rvsdg::GammaNode::EntryVar & evar)
+                    {
+                      for (auto out : evar.branchArgument)
+                      {
+                        trace_function_calls(out, calls, visited);
+                      }
+                    });
+              });
+        },
+        [&](rvsdg::Region * region)
+        {
+          rvsdg::MatchTypeOrFail(
+              *region->node(),
+              [&](LoopNode & loop)
+              {
+                rvsdg::MatchVariant(
+                    loop.mapResult(user),
+                    [&](const LoopNode::BackEdgeVar & backedge)
+                    {
+                      trace_function_calls(backedge.pre, calls, visited);
+                    },
+                    [&](const LoopNode::ExitVar & exit)
+                    {
+                      trace_function_calls(exit.output, calls, visited);
+                    });
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                rvsdg::MatchVariant(
+                    theta.mapResult(user),
+                    [&](const rvsdg::ThetaNode::LoopVar & loopvar)
+                    {
+                      trace_function_calls(loopvar.output, calls, visited);
+                    },
+                    [&](const rvsdg::ThetaNode::PredicateVar &)
+                    {
+                    });
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                trace_function_calls(gamma.MapBranchResultExitVar(user).output, calls, visited);
+              });
+        });
   }
 }
 
