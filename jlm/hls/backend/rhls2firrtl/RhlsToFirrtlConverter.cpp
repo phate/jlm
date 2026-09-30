@@ -2525,25 +2525,26 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
 jlm::rvsdg::Output *
-RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
+RhlsToFirrtlConverter::TraceArgument(rvsdg::Output * arg)
 {
   // Check if the argument is part of a LoopNode
   auto region = arg->region();
   auto node = region->node();
-  if (dynamic_cast<LoopNode *>(node))
+  if (auto loopNode = dynamic_cast<LoopNode *>(node))
   {
-    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
+    auto var = loopNode->mapArgument(*arg);
+    if (auto back_edge = std::get_if<LoopNode::BackEdgeVar>(&var))
     {
-      return ba->result()->origin();
+      return back_edge->post->origin();
     }
-    else
+    else if (auto entry = std::get_if<LoopNode::EntryVar>(&var))
     {
       // Check if the argument is connected to an input,
       // i.e., if the argument exits the region
-      JLM_ASSERT(arg->input() != nullptr);
+      JLM_ASSERT(entry->input != nullptr);
       // Check if we are in a nested region and directly
       // connected to the outer regions argument
-      auto origin = arg->input()->origin();
+      auto origin = entry->input->origin();
       if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // Need to find the source of the outer regions argument
@@ -2558,6 +2559,10 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
       // Else we have reached the source
       return origin;
     }
+    else
+    {
+      throw std::logic_error("LoopNode argument is neither entry nor backedge");
+    }
   }
   // Reached the argument of a structural node that is not a LoopNode
   return arg;
@@ -2566,6 +2571,15 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 circt::firrtl::FModuleLike
 RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody)
 {
+  auto loopNode = dynamic_cast<LoopNode *>(subRegion->node());
+  auto isBackEdgeArgument = [&loopNode](rvsdg::Output * arg)
+  {
+    return loopNode && std::holds_alternative<LoopNode::BackEdgeVar>(loopNode->mapArgument(*arg));
+  };
+  auto isBackEdgeResult = [&loopNode](rvsdg::Input * res)
+  {
+    return loopNode && std::holds_alternative<LoopNode::BackEdgeVar>(loopNode->mapResult(*res));
+  };
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
 
@@ -2575,7 +2589,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Argument ports
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (!dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
+    if (!isBackEdgeArgument(subRegion->argument(i)))
     {
       AddBundlePort(
           &ports,
@@ -2587,7 +2601,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Result ports
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
-    if (!dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
+    if (!isBackEdgeResult(subRegion->result(i)))
     {
       AddBundlePort(
           &ports,
@@ -2619,7 +2633,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Arguments
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
+    if (isBackEdgeArgument(subRegion->argument(i)))
     {
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->argument(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(
@@ -2670,8 +2684,9 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
     mlir::Value resultSink;
-    if (auto ber = dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
+    if (isBackEdgeResult(subRegion->result(i)))
     {
+      auto ber = std::get<LoopNode::BackEdgeVar>(loopNode->mapResult(*subRegion->result(i)));
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->result(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(
           Builder_->getUnknownLoc(),
@@ -2680,7 +2695,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       body->push_back(op);
       resultSink = op.getResult();
       // connect backedge to its argument
-      Connect(body, output_map[ber->argument()], resultSink);
+      Connect(body, output_map[ber.pre], resultSink);
     }
     else
     {

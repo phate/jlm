@@ -14,6 +14,9 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -42,44 +45,92 @@ find_load_store(
   visited.insert(op);
   for (auto & user : op->Users())
   {
-    if (auto simplenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(user))
-    {
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
-      {
-        store_nodes.push_back(simplenode);
-      }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
-                   &simplenode->GetOperation()))
-      {
-        load_nodes.push_back(simplenode);
-      }
-      for (size_t i = 0; i < simplenode->noutputs(); ++i)
-      {
-        find_load_store(simplenode->output(i), load_nodes, store_nodes, visited);
-      }
-    }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(&user))
-    {
-      for (auto & arg : sti->arguments)
-      {
-        find_load_store(&arg, load_nodes, store_nodes, visited);
-      }
-    }
-    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(&user))
-    {
-      if (auto ber = dynamic_cast<jlm::hls::BackEdgeResult *>(r))
-      {
-        find_load_store(ber->argument(), load_nodes, store_nodes, visited);
-      }
-      else
-      {
-        find_load_store(r->output(), load_nodes, store_nodes, visited);
-      }
-    }
-    else
-    {
-      JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-    }
+    rvsdg::MatchVariant(
+        user.GetOwner(),
+        [&](rvsdg::Node * node)
+        {
+          rvsdg::MatchTypeOrFail(
+              *node,
+              [&](rvsdg::SimpleNode & simplenode)
+              {
+                rvsdg::MatchType(
+                    simplenode.GetOperation(),
+                    [&](const jlm::llvm::StoreNonVolatileOperation &)
+                    {
+                      store_nodes.push_back(&simplenode);
+                    },
+                    [&](const jlm::llvm::LoadNonVolatileOperation &)
+                    {
+                      load_nodes.push_back(&simplenode);
+                    });
+                for (auto & output : simplenode.Outputs())
+                {
+                  find_load_store(&output, load_nodes, store_nodes, visited);
+                }
+              },
+              [&](LoopNode & loop)
+              {
+                find_load_store(loop.mapInput(user).inner, load_nodes, store_nodes, visited);
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                find_load_store(theta.MapInputLoopVar(user).pre, load_nodes, store_nodes, visited);
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                rvsdg::MatchVariant(
+                    gamma.MapInput(user),
+                    [&](const rvsdg::GammaNode::MatchVar &)
+                    {
+                    },
+                    [&](const rvsdg::GammaNode::EntryVar & evar)
+                    {
+                      for (auto out : evar.branchArgument)
+                      {
+                        find_load_store(out, load_nodes, store_nodes, visited);
+                      }
+                    });
+              });
+        },
+        [&](rvsdg::Region * region)
+        {
+          rvsdg::MatchTypeOrFail(
+              *region->node(),
+              [&](LoopNode & loop)
+              {
+                rvsdg::MatchVariant(
+                    loop.mapResult(user),
+                    [&](const LoopNode::BackEdgeVar & backedge)
+                    {
+                      find_load_store(backedge.pre, load_nodes, store_nodes, visited);
+                    },
+                    [&](const LoopNode::ExitVar & exit)
+                    {
+                      find_load_store(exit.output, load_nodes, store_nodes, visited);
+                    });
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                rvsdg::MatchVariant(
+                    theta.mapResult(user),
+                    [&](const rvsdg::ThetaNode::LoopVar & loopvar)
+                    {
+                      find_load_store(loopvar.pre, load_nodes, store_nodes, visited);
+                      find_load_store(loopvar.output, load_nodes, store_nodes, visited);
+                    },
+                    [&](const rvsdg::ThetaNode::PredicateVar &)
+                    {
+                    });
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                find_load_store(
+                    gamma.MapBranchResultExitVar(user).output,
+                    load_nodes,
+                    store_nodes,
+                    visited);
+              });
+        });
   }
 }
 
@@ -95,9 +146,15 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = muxNode->input(i)->origin();
-    if (auto ba = dynamic_cast<jlm::hls::BackEdgeArgument *>(arg))
+    auto loopNode = rvsdg::TryGetRegionParentNode<LoopNode>(*arg);
+    if (!loopNode)
     {
-      auto res = ba->result();
+      continue;
+    }
+    auto var = loopNode->mapArgument(*arg);
+    if (auto ba = std::get_if<LoopNode::BackEdgeVar>(&var))
+    {
+      auto res = ba->post;
       JLM_ASSERT(res);
       auto [bufferNode, bufferOperation] =
           jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BufferOperation>(*res->origin());
