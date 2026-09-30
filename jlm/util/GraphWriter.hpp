@@ -1053,10 +1053,11 @@ private:
 
   /**
    * Removes the mapping of a program object to a graph element in the graph.
-   * @param object the program object that should no longer be mapped.
+   * @param element the element that is currently mapped to a program object,
+   * whose mapping should be removed.
    */
   void
-  RemoveProgramObjectMapping(uintptr_t object);
+  RemoveProgramObjectMapping(GraphElement & element);
 
   // The GraphWriter this graph was created by, and belongs to
   Writer & Writer_;
@@ -1136,6 +1137,22 @@ public:
   }
 
   /**
+   * Creates a mapping from a \ref GraphElement's assigned program object to the GraphElement.
+   * The GraphElement can belong to any \ref Graph in the writer.
+   * @param element the graph element to map
+   */
+  void
+  mapProgramObjectToElement(GraphElement & element);
+
+  /**
+   * Removes the mapping of a program object to a graph element.
+   * @param element the element that is currently mapped to a program object,
+   * whose mapping should be removed.
+   */
+  void
+  removeProgramObjectMapping(GraphElement & element);
+
+  /**
    * Ensures that all graphs added to the graph writer so far are finalized.
    * Recursively finalizes the GraphElements of each graph.
    */
@@ -1174,6 +1191,11 @@ private:
 
   // Tracks the next integer to be used when assigning a unique suffix to a given id stub
   std::unordered_map<std::string, size_t> NextUniqueIdStubSuffix_;
+
+  // Mapping from program object pointers to the GraphElement representing it
+  // If multiple graphs contain elements representing the same program object,
+  // the one last to have its program object assigned is used.
+  std::unordered_map<uintptr_t, GraphElement *> ProgramObjectMapping_;
 };
 
 /**
