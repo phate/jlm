@@ -498,9 +498,9 @@ PushCycleFrontier(
                 [&](rvsdg::SimpleNode & simpleNode)
                 {
                   bool all_contained = true;
-                  for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+                  for (auto & input : simpleNode.Inputs())
                   {
-                    auto f = frontier.find(simpleNode.input(i));
+                    auto f = frontier.find(&input);
                     if (f == frontier.end())
                     {
                       all_contained = false;
@@ -510,10 +510,10 @@ PushCycleFrontier(
                   {
                     // all inputs of node are in frontier - move them forward
                     std::vector<size_t> input_cycles;
-                    for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+                    for (auto & input : simpleNode.Inputs())
                     {
-                      input_cycles.push_back(output_cycles[simpleNode.input(i)->origin()]);
-                      frontier.erase(simpleNode.input(i));
+                      input_cycles.push_back(output_cycles[input.origin()]);
+                      frontier.erase(&input);
                     }
                     std::vector<size_t> out_cycles = NodeCycles(&simpleNode, input_cycles);
 
@@ -557,9 +557,9 @@ PushCycleFrontier(
                 [&](LoopNode & inner_loop)
                 {
                   bool all_contained = true;
-                  for (size_t i = 0; i < inner_loop.ninputs(); ++i)
+                  for (auto & input : inner_loop.Inputs())
                   {
-                    auto f = frontier.find(inner_loop.input(i));
+                    auto f = frontier.find(&input);
                     if (f == frontier.end())
                     {
                       all_contained = false;
@@ -567,9 +567,9 @@ PushCycleFrontier(
                   }
                   if (all_contained)
                   {
-                    for (size_t i = 0; i < inner_loop.ninputs(); ++i)
+                    for (auto & input : inner_loop.Inputs())
                     {
-                      frontier.erase(inner_loop.input(i));
+                      frontier.erase(&input);
                     }
                     // TODO: do we just want the latency of a single iteration here?
                     CalculateLoopCycleDepth(&inner_loop, output_cycles, true);
@@ -837,9 +837,9 @@ AdjustLoopBuffers(
                 [&](rvsdg::SimpleNode & simpleNode)
                 {
                   bool all_contained = true;
-                  for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+                  for (auto & input : simpleNode.Inputs())
                   {
-                    auto f = frontier.find(simpleNode.input(i));
+                    auto f = frontier.find(&input);
                     if (f == frontier.end())
                     {
                       all_contained = false;
@@ -849,25 +849,23 @@ AdjustLoopBuffers(
                   {
                     // all inputs of node are in frontier - move them forward
                     size_t max_cycles = 0;
-                    for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+                    for (auto & input : simpleNode.Inputs())
                     {
-                      max_cycles =
-                          std::max(max_cycles, output_cycles[simpleNode.input(i)->origin()]);
-                      frontier.erase(simpleNode.input(i));
+                      max_cycles = std::max(max_cycles, output_cycles[input.origin()]);
+                      frontier.erase(&input);
                     }
 
                     std::vector<size_t> input_capacities;
                     // adjust capacities
-                    for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+                    for (auto & input : simpleNode.Inputs())
                     {
-                      auto capacity = buffer_capacity[simpleNode.input(i)->origin()];
+                      auto capacity = buffer_capacity[input.origin()];
                       if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(&simpleNode))
                           && capacity < max_cycles)
                       {
                         size_t capacity_diff = max_cycles - capacity;
-                        capacity +=
-                            PlaceBufferLoop(simpleNode.input(i)->origin(), capacity_diff, true);
-                        buffer_capacity[simpleNode.input(i)->origin()] = capacity;
+                        capacity += PlaceBufferLoop(input.origin(), capacity_diff, true);
+                        buffer_capacity[input.origin()] = capacity;
                       }
                       input_capacities.push_back(capacity);
                     }
@@ -904,9 +902,9 @@ AdjustLoopBuffers(
                 [&](LoopNode & inner_loop)
                 {
                   bool all_contained = true;
-                  for (size_t i = 0; i < inner_loop.ninputs(); ++i)
+                  for (auto & input : inner_loop.Inputs())
                   {
-                    auto f = frontier.find(inner_loop.input(i));
+                    auto f = frontier.find(&input);
                     if (f == frontier.end())
                     {
                       all_contained = false;
@@ -916,11 +914,10 @@ AdjustLoopBuffers(
                   {
                     // all inputs of node are in frontier - move them forward
                     size_t max_cycles = 0;
-                    for (size_t i = 0; i < inner_loop.ninputs(); ++i)
+                    for (auto & input : inner_loop.Inputs())
                     {
-                      max_cycles =
-                          std::max(max_cycles, output_cycles[inner_loop.input(i)->origin()]);
-                      frontier.erase(inner_loop.input(i));
+                      max_cycles = std::max(max_cycles, output_cycles[input.origin()]);
+                      frontier.erase(&input);
                     }
                     // adjust capacities
                     for (size_t i = 0; i < inner_loop.ninputs(); ++i)

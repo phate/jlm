@@ -63,9 +63,9 @@ find_load_store(
                     {
                       load_nodes.push_back(&simplenode);
                     });
-                for (size_t i = 0; i < simplenode.noutputs(); ++i)
+                for (auto & output : simplenode.Outputs())
                 {
-                  find_load_store(simplenode.output(i), load_nodes, store_nodes, visited);
+                  find_load_store(&output, load_nodes, store_nodes, visited);
                 }
               },
               [&](LoopNode & loop)
@@ -94,7 +94,7 @@ find_load_store(
         },
         [&](rvsdg::Region * region)
         {
-          rvsdg::MatchType(
+          rvsdg::MatchTypeOrFail(
               *region->node(),
               [&](LoopNode & loop)
               {
@@ -152,7 +152,6 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       continue;
     }
     auto var = loopNode->mapArgument(*arg);
-    JLM_ASSERT(loopNode);
     if (auto ba = std::get_if<LoopNode::BackEdgeVar>(&var))
     {
       auto res = ba->post;
