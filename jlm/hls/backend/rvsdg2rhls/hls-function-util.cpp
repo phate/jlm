@@ -251,50 +251,48 @@ get_parent_regions(rvsdg::Region * region)
 const rvsdg::Output *
 trace_call_rhls(const rvsdg::Output * output)
 {
-  // version of trace call for rhls
-  if (auto argument = dynamic_cast<const rvsdg::RegionArgument *>(output))
-  {
-    auto graph = output->region()->graph();
-    if (argument->region() == &graph->GetRootRegion())
-    {
-      return argument;
-    }
-    else if (dynamic_cast<const BackEdgeArgument *>(argument))
-    {
-      // don't follow backedges to avoid cycles
-      return nullptr;
-    }
-    return trace_call_rhls(argument->input());
-  }
-  else if (auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output))
-  {
-    for (auto & r : so->results)
-    {
-      if (auto result = trace_call_rhls(&r))
+  return rvsdg::MatchVariant(
+      output->GetOwner(),
+      [&](rvsdg::Region * region) -> const rvsdg::Output *
       {
-        return result;
-      }
-    }
-  }
-  else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
-  {
-    for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-    {
-      auto ip = simpleNode->input(i);
-      if (*ip->Type() == *output->Type())
-      {
-        if (auto result = trace_call_rhls(ip))
+        if (region->IsRootRegion())
         {
-          return result;
+          return output;
         }
-      }
-    }
-  }
-  else
-  {
-    JLM_UNREACHABLE("");
-  }
-  return nullptr;
+        else if (dynamic_cast<const BackEdgeArgument *>(output))
+        {
+          // don't follow backedges to avoid cycles
+          return nullptr;
+        }
+        return trace_call_rhls(dynamic_cast<const rvsdg::RegionArgument *>(output)->input());
+      },
+      [&](rvsdg::Node * node) -> const rvsdg::Output *
+      {
+        if (auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output))
+        {
+          for (auto & r : so->results)
+          {
+            if (auto result = trace_call_rhls(&r))
+            {
+              return result;
+            }
+          }
+        }
+        else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
+        {
+          for (auto & input : simpleNode->Inputs())
+          {
+            if (*input.Type() == *output->Type())
+            {
+              if (auto result = trace_call_rhls(&input))
+              {
+                return result;
+              }
+            }
+          }
+        }
+        return nullptr;
+      });
 }
 
 const rvsdg::Output *
