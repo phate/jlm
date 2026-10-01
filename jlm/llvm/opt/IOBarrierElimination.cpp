@@ -672,12 +672,12 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
                     return;
 
                   const auto offsetInBytes = gepConstant->getOffsetInBytes();
-                  if (offsetInBytes >= 0)
-                    JLM_ASSERT(static_cast<size_t>(offsetInBytes) < baseAddressSize);
-
-                  context_->markDereferenceable(
-                      *simpleNode.output(0),
-                      baseAddressSize - offsetInBytes);
+                  if (static_cast<int64_t>(baseAddressSize) > offsetInBytes)
+                  {
+                    context_->markDereferenceable(
+                        *simpleNode.output(0),
+                        baseAddressSize - offsetInBytes);
+                  }
                 });
           },
           []()
