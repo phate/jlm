@@ -741,6 +741,7 @@ ROUNDTRIP_TEST(TestLoadNonVolatile, ::jlm::mlir::LoadNonVolatileTest)
 ROUNDTRIP_TEST(TestLoadVolatile, ::jlm::mlir::LoadVolatileTest)
 ROUNDTRIP_TEST(TestStoreNonVolatile, ::jlm::mlir::StoreNonVolatileTest)
 ROUNDTRIP_TEST(TestStoreVolatile, ::jlm::mlir::StoreVolatileTest)
+ROUNDTRIP_TEST(TestMemoryHoistBarrier, ::jlm::mlir::MemoryHoistBarrierTest)
 
 // NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the
 // default-constructing ROUNDTRIP_TEST macro.
