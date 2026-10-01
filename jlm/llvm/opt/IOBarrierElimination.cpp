@@ -402,22 +402,22 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
           }
 
           // Mark lambda context variables
-          for (const auto [input, inner] : lambdaNode.GetContextVars())
+          for (const auto ctxVar : lambdaNode.GetContextVars())
           {
-            if (rvsdg::is<PointerType>(input->Type()))
+            if (rvsdg::is<PointerType>(ctxVar.input->Type()))
             {
-              auto & tracedOrigin = llvm::traceOutput(*input->origin(), false);
+              auto & tracedOrigin = llvm::traceOutput(*ctxVar.input->origin(), false);
 
               rvsdg::MatchVariant(
                   tracedOrigin.GetOwner(),
-                  [this, inner, &tracedOrigin](const rvsdg::Region * ownerRegion)
+                  [this, &ctxVar, &tracedOrigin](const rvsdg::Region * ownerRegion)
                   {
                     if (ownerRegion->IsRootRegion())
                     {
                       const auto llvmImport =
                           util::assertedCast<const LlvmGraphImport>(&tracedOrigin);
                       const auto size = GetTypeAllocSize(*llvmImport->ValueType());
-                      context_->markDereferenceable(*inner, size);
+                      context_->markDereferenceable(*ctxVar.inner, size);
                     }
                     else
                     {
@@ -429,16 +429,16 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
                           });
                     }
                   },
-                  [this, inner](const rvsdg::Node * ownerNode)
+                  [this, &ctxVar](const rvsdg::Node * ownerNode)
                   {
                     rvsdg::MatchTypeOrFail(
                         *ownerNode,
-                        [this, inner](const rvsdg::DeltaNode & deltaNode)
+                        [this, &ctxVar](const rvsdg::DeltaNode & deltaNode)
                         {
                           const auto deltaOperation = util::assertedCast<const LlvmDeltaOperation>(
                               &deltaNode.GetOperation());
                           const auto size = GetTypeAllocSize(*deltaOperation->Type());
-                          context_->markDereferenceable(*inner, size);
+                          context_->markDereferenceable(*ctxVar.inner, size);
                         },
                         [](const rvsdg::LambdaNode &)
                         {
