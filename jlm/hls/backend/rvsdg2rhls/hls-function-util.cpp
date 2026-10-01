@@ -259,12 +259,18 @@ trace_call_rhls(const rvsdg::Output * output)
         {
           return output;
         }
-        else if (dynamic_cast<const BackEdgeArgument *>(output))
-        {
-          // don't follow backedges to avoid cycles
-          return nullptr;
-        }
-        return trace_call_rhls(dynamic_cast<const rvsdg::RegionArgument *>(output)->input());
+        return rvsdg::MatchTypeOrFail(
+            *region->node(),
+            [&](rvsdg::StructuralNode & structural) -> const rvsdg::Output *
+            {
+              (void)structural;
+              if (dynamic_cast<const BackEdgeArgument *>(output))
+              {
+                // don't follow backedges to avoid cycles
+                return nullptr;
+              }
+              return trace_call_rhls(dynamic_cast<const rvsdg::RegionArgument *>(output)->input());
+            });
       },
       [&](rvsdg::Node * node) -> const rvsdg::Output *
       {
@@ -272,6 +278,7 @@ trace_call_rhls(const rvsdg::Output * output)
             *node,
             [&](rvsdg::StructuralNode & structural) -> const rvsdg::Output *
             {
+              (void)structural;
               auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output);
               for (auto & r : so->results)
               {
