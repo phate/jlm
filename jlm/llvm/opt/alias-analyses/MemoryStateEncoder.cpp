@@ -698,103 +698,81 @@ MemoryStateEncoder::Encode(
 void
 MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
-  using namespace jlm::rvsdg;
-
-  TopDownTraverser traverser(&region);
-  for (const auto node : traverser)
+  for (const auto node : rvsdg::TopDownTraverser(&region))
   {
     MatchTypeOrFail(
         *node,
-        [&](SimpleNode & simpleNode)
+        [this](rvsdg::PhiNode & phiNode)
         {
-          EncodeSimpleNode(simpleNode);
+          EncodeRegion(*phiNode.subregion());
         },
-        [&](StructuralNode & structuralNode)
+        [](rvsdg::DeltaNode &)
         {
-          EncodeStructuralNode(structuralNode);
+          // Nothing needs to be done
+        },
+        [this](rvsdg::LambdaNode & lambdaNode)
+        {
+          EncodeLambda(lambdaNode);
+        },
+        [this](rvsdg::ThetaNode & thetaNode)
+        {
+          EncodeTheta(thetaNode);
+        },
+        [this](rvsdg::GammaNode & gammaNode)
+        {
+          EncodeGamma(gammaNode);
+        },
+        [this](const rvsdg::SimpleNode & simpleNode)
+        {
+          MatchTypeWithDefault(
+              simpleNode.GetOperation(),
+              [this, &simpleNode](const AllocaOperation &)
+              {
+                EncodeAlloca(simpleNode);
+              },
+              [this, &simpleNode](const MallocOperation &)
+              {
+                EncodeMalloc(simpleNode);
+              },
+              [this, &simpleNode](const LoadOperation &)
+              {
+                EncodeLoad(simpleNode);
+              },
+              [this, &simpleNode](const StoreOperation &)
+              {
+                EncodeStore(simpleNode);
+              },
+              [this, &simpleNode](const CallOperation &)
+              {
+                EncodeCall(simpleNode);
+              },
+              [this, &simpleNode](const FreeOperation &)
+              {
+                EncodeFree(simpleNode);
+              },
+              [this, &simpleNode](const MemCpyOperation &)
+              {
+                EncodeMemcpy(simpleNode);
+              },
+              [this, &simpleNode](const MemSetOperation &)
+              {
+                EncodeMemset(simpleNode);
+              },
+              [this, &simpleNode](const MemMoveOperation &)
+              {
+                EncodeMemmove(simpleNode);
+              },
+              [](const MemoryStateOperation &)
+              {
+                // Nothing needs to be done
+              },
+              [&simpleNode]()
+              {
+                // Ensure we took care of all memory state consuming/producing nodes
+                JLM_ASSERT(!hasMemoryState(simpleNode));
+              });
         });
   }
-}
-
-void
-MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
-{
-  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&structuralNode))
-  {
-    EncodeLambda(*lambdaNode);
-  }
-  else if (auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&structuralNode))
-  {
-    EncodeDelta(*deltaNode);
-  }
-  else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&structuralNode))
-  {
-    EncodePhi(*phiNode);
-  }
-  else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
-  {
-    EncodeGamma(*gammaNode);
-  }
-  else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
-  {
-    EncodeTheta(*thetaNode);
-  }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled node type.");
-  }
-}
-
-void
-MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
-{
-  MatchTypeWithDefault(
-      simpleNode.GetOperation(),
-      [&](const AllocaOperation &)
-      {
-        EncodeAlloca(simpleNode);
-      },
-      [&](const MallocOperation &)
-      {
-        EncodeMalloc(simpleNode);
-      },
-      [&](const LoadOperation &)
-      {
-        EncodeLoad(simpleNode);
-      },
-      [&](const StoreOperation &)
-      {
-        EncodeStore(simpleNode);
-      },
-      [&](const CallOperation &)
-      {
-        EncodeCall(simpleNode);
-      },
-      [&](const FreeOperation &)
-      {
-        EncodeFree(simpleNode);
-      },
-      [&](const MemCpyOperation &)
-      {
-        EncodeMemcpy(simpleNode);
-      },
-      [&](const MemSetOperation &)
-      {
-        EncodeMemset(simpleNode);
-      },
-      [&](const MemMoveOperation &)
-      {
-        EncodeMemmove(simpleNode);
-      },
-      [&](const MemoryStateOperation &)
-      {
-        // Nothing needs to be done
-      },
-      [&]()
-      {
-        // Ensure we took care of all memory state consuming/producing nodes
-        JLM_ASSERT(!hasMemoryState(simpleNode));
-      });
 }
 
 void
@@ -1073,18 +1051,6 @@ MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
   memoryStateResult.divert_to(mergedState);
 
   stateMap.PopRegion(*lambdaNode.subregion());
-}
-
-void
-MemoryStateEncoder::EncodePhi(const rvsdg::PhiNode & phiNode)
-{
-  EncodeRegion(*phiNode.subregion());
-}
-
-void
-MemoryStateEncoder::EncodeDelta(const rvsdg::DeltaNode &)
-{
-  // Nothing needs to be done
 }
 
 void
