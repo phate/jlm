@@ -11,11 +11,9 @@
 
 namespace jlm::rvsdg
 {
-class DeltaNode;
 class GammaNode;
 class LambdaNode;
 class Output;
-class PhiNode;
 class Region;
 class RvsdgModule;
 class SimpleNode;
@@ -28,10 +26,7 @@ namespace jlm::util
 class StatisticsCollector;
 }
 
-namespace jlm::llvm
-{
-
-namespace aa
+namespace jlm::llvm::aa
 {
 
 class ModRefSummary;
@@ -80,12 +75,6 @@ private:
   EncodeRegion(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
-
-  void
-  EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode);
-
-  void
   EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
 
   void
@@ -120,12 +109,6 @@ private:
 
   void
   EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
-
-  void
-  EncodePhi(const rvsdg::PhiNode & phiNode);
-
-  void
-  EncodeDelta(const rvsdg::DeltaNode & deltaNode);
 
   void
   EncodeGamma(rvsdg::GammaNode & gammaNode);
@@ -223,7 +206,6 @@ private:
   std::unique_ptr<Context> Context_;
 };
 
-}
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP
