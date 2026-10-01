@@ -268,30 +268,34 @@ trace_call_rhls(const rvsdg::Output * output)
       },
       [&](rvsdg::Node * node) -> const rvsdg::Output *
       {
-        if (auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output))
-        {
-          for (auto & r : so->results)
-          {
-            if (auto result = trace_call_rhls(&r))
+        return rvsdg::MatchTypeOrFail(
+            *node,
+            [&](rvsdg::StructuralNode & structural) -> const rvsdg::Output *
             {
-              return result;
-            }
-          }
-        }
-        else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
-        {
-          for (auto & input : simpleNode->Inputs())
-          {
-            if (*input.Type() == *output->Type())
-            {
-              if (auto result = trace_call_rhls(&input))
+              auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output);
+              for (auto & r : so->results)
               {
-                return result;
+                if (auto result = trace_call_rhls(&r))
+                {
+                  return result;
+                }
               }
-            }
-          }
-        }
-        return nullptr;
+              return nullptr;
+            },
+            [&](rvsdg::SimpleNode & simple) -> const rvsdg::Output *
+            {
+              for (auto & input : simple.Inputs())
+              {
+                if (*input.Type() == *output->Type())
+                {
+                  if (auto result = trace_call_rhls(&input))
+                  {
+                    return result;
+                  }
+                }
+              }
+              return nullptr;
+            });
       });
 }
 
