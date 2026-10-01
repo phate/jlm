@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
+#include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
@@ -542,8 +543,15 @@ CompareRegions(const Region & region1, const Region & region2)
     {
       auto * node2 = TryGetOwnerNode<Node>(*origin2);
       ASSERT_NE(node2, nullptr) << "CompareRegions: Origin1 is a node but Origin2 is not";
-      // Seed BFS from this node pair
-      nodeQueue.push({ node1, node2 });
+      // Seed BFS from this node pair. The node itself is part of the region, so it has to be
+      // compared here: the BFS below only reaches the nodes that produce this node's inputs.
+      if (!visited.count(node1))
+      {
+        visited.insert(node1);
+        nodeQueue.push({ node1, node2 });
+        CompareNodes(*node1, *node2);
+        CheckForContextVariables(*node1, *node2, visited, nodeQueue);
+      }
     }
     else if (auto * arg1 = dynamic_cast<RegionArgument *>(origin1))
     {
@@ -622,12 +630,27 @@ CompareModules(const LlvmRvsdgModule & module1, const LlvmRvsdgModule & module2)
 /**
  * \brief Converts an RVSDG graph to MLIR and back, then compares for structural equality.
  *
- * Uses JlmToMlirConverter to emit the RVSDG as an MLIR operation, wraps it in a Block,
- * then uses MlirToJlmConverter to reconstruct an LlvmRvsdgModule. Compares the
- * original and roundtripped modules via CompareModules (node count, types, graph structure).
+ * Uses JlmToMlirConverter to emit the RVSDG as an MLIR operation, wraps it in a Block, then uses
+ * MlirToJlmConverter to reconstruct an LlvmRvsdgModule. Compares the original and roundtripped
+ * modules via CompareModules (node count, types, graph structure).
+ *
+ * MLIR keeps the constant index of a \ref GetElementPtrOperation in the rawConstantIndices
+ * attribute of \c LLVM::GEPOp, which has no RVSDG counterpart, so the frontend materializes a node
+ * for each. Where the conversion already brought across a node for that value, the result is a
+ * duplicate. It survives pruning because it is live: the GEP reads it, which is exactly what makes
+ * it redundant rather than dead. \ref CommonNodeElimination recognizes the two as congruent and
+ * merges them.
+ *
+ * Only the converted graph is normalized, since that is where the duplicates appear; normalizing
+ * the original would change the input to the conversion, which is what is under test. This is
+ * requested only by the graphs that need it, because common node elimination also merges anything
+ * else it proves congruent and so could hide an invention the comparison would otherwise catch.
+ *
+ * \param originalModule The RVSDG module to convert and compare.
+ * \param normalizeConstants Whether to merge duplicate constant nodes on the converted graph.
  */
 void
-TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
+TestRvsdgRoundtrip(LlvmRvsdgModule & originalModule, bool normalizeConstants = false)
 {
   using namespace jlm::mlir;
 
@@ -641,6 +664,12 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
 
   ASSERT_NE(roundTripModule, nullptr)
       << "TestRvsdgRoundtrip: MLIR-to-JLM conversion produced no module";
+
+  if (normalizeConstants)
+  {
+    jlm::util::StatisticsCollector statisticsCollector;
+    jlm::llvm::CommonNodeElimination().Run(*roundTripModule, statisticsCollector);
+  }
 
   CompareModules(originalModule, *roundTripModule);
 }
@@ -658,13 +687,21 @@ TestRvsdgRoundtrip(const LlvmRvsdgModule & originalModule)
     TestRvsdgRoundtrip(test.module()); \
   }
 
+// Roundtrip tests for graphs whose constant GEP indices the conversion reconstructs as duplicate
+// constant nodes, which must be merged before the sides are compared.
+#define ROUNDTRIP_TEST_CNE(Name, Fixture)    \
+  TEST(RvsdgRoundtripTests, Name)            \
+  {                                          \
+    Fixture test;                            \
+    TestRvsdgRoundtrip(test.module(), true); \
+  }
+
 ROUNDTRIP_TEST(TestTheta, ::jlm::llvm::ThetaTest)
 ROUNDTRIP_TEST(TestStoreTest1, ::jlm::llvm::StoreTest1)
 ROUNDTRIP_TEST(TestStoreTest2, ::jlm::llvm::StoreTest2)
 ROUNDTRIP_TEST(TestLoadTest1, ::jlm::llvm::LoadTest1)
 ROUNDTRIP_TEST(TestLoadTest2, ::jlm::llvm::LoadTest2)
 ROUNDTRIP_TEST(TestLoadFromUndef, ::jlm::llvm::LoadFromUndefTest)
-ROUNDTRIP_TEST(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
 ROUNDTRIP_TEST(TestBitCast, ::jlm::llvm::BitCastTest)
 ROUNDTRIP_TEST(TestBits2Ptr, ::jlm::llvm::Bits2PtrTest)
 ROUNDTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
@@ -680,7 +717,6 @@ ROUNDTRIP_TEST(TestEscapedMemory1, ::jlm::llvm::EscapedMemoryTest1)
 ROUNDTRIP_TEST(TestEscapedMemory2, ::jlm::llvm::EscapedMemoryTest2)
 ROUNDTRIP_TEST(TestEscapedMemory3, ::jlm::llvm::EscapedMemoryTest3)
 ROUNDTRIP_TEST(TestExternalMemory, ::jlm::llvm::ExternalMemoryTest)
-ROUNDTRIP_TEST(TestLinkedList, ::jlm::llvm::LinkedListTest)
 ROUNDTRIP_TEST(TestAllMemoryNodes, ::jlm::llvm::AllMemoryNodesTest)
 ROUNDTRIP_TEST(TestFreeNull, ::jlm::llvm::FreeNullTest)
 ROUNDTRIP_TEST(TestVariadicFunctionTest1, ::jlm::llvm::VariadicFunctionTest1)
@@ -690,6 +726,11 @@ ROUNDTRIP_TEST(TestGamma2, ::jlm::llvm::GammaTest2)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
 ROUNDTRIP_TEST(TestEscapingLocalFunction, ::jlm::llvm::EscapingLocalFunctionTest)
 ROUNDTRIP_TEST(TestLambdaCallArgumentMismatch, ::jlm::llvm::LambdaCallArgumentMismatch)
+
+// The constant indices of their GEPs are reconstructed as nodes that duplicate ones already
+// present.
+ROUNDTRIP_TEST_CNE(TestLinkedList, ::jlm::llvm::LinkedListTest)
+ROUNDTRIP_TEST_CNE(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
 
 // ============================================================================
 // Roundtrip tests from MLIR-specific RVSDG graphs defined in
