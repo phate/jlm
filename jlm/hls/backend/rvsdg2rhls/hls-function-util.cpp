@@ -9,6 +9,9 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -52,43 +55,87 @@ trace_function_calls(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
-    {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
-      {
-        // TODO: verify this is the right type of function call
-        calls.push_back(simplenode);
-      }
-      else
-      {
-        for (size_t i = 0; i < simplenode->noutputs(); ++i)
+    rvsdg::MatchVariant(
+        user.GetOwner(),
+        [&](rvsdg::Node * node)
         {
-          trace_function_calls(simplenode->output(i), calls, visited);
-        }
-      }
-    }
-    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
-    {
-      for (auto & arg : sti->arguments)
-      {
-        trace_function_calls(&arg, calls, visited);
-      }
-    }
-    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
-    {
-      if (auto ber = dynamic_cast<BackEdgeResult *>(r))
-      {
-        trace_function_calls(ber->argument(), calls, visited);
-      }
-      else
-      {
-        trace_function_calls(r->output(), calls, visited);
-      }
-    }
-    else
-    {
-      JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-    }
+          rvsdg::MatchTypeOrFail(
+              *node,
+              [&](rvsdg::SimpleNode & simplenode)
+              {
+                rvsdg::MatchTypeWithDefault(
+                    simplenode.GetOperation(),
+                    [&](const llvm::CallOperation &)
+                    {
+                      // TODO: verify this is the right type of function call
+                      calls.push_back(&simplenode);
+                    },
+                    [&]()
+                    {
+                      for (size_t i = 0; i < simplenode.noutputs(); ++i)
+                      {
+                        trace_function_calls(simplenode.output(i), calls, visited);
+                      }
+                    });
+              },
+              [&](LoopNode & loop)
+              {
+                trace_function_calls(loop.mapInput(user).inner, calls, visited);
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                trace_function_calls(theta.MapInputLoopVar(user).pre, calls, visited);
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                rvsdg::MatchVariant(
+                    gamma.MapInput(user),
+                    [&](const rvsdg::GammaNode::MatchVar &)
+                    {
+                    },
+                    [&](const rvsdg::GammaNode::EntryVar & evar)
+                    {
+                      for (auto out : evar.branchArgument)
+                      {
+                        trace_function_calls(out, calls, visited);
+                      }
+                    });
+              });
+        },
+        [&](rvsdg::Region * region)
+        {
+          rvsdg::MatchTypeOrFail(
+              *region->node(),
+              [&](LoopNode & loop)
+              {
+                rvsdg::MatchVariant(
+                    loop.mapResult(user),
+                    [&](const LoopNode::BackEdgeVar & backedge)
+                    {
+                      trace_function_calls(backedge.pre, calls, visited);
+                    },
+                    [&](const LoopNode::ExitVar & exit)
+                    {
+                      trace_function_calls(exit.output, calls, visited);
+                    });
+              },
+              [&](rvsdg::ThetaNode & theta)
+              {
+                rvsdg::MatchVariant(
+                    theta.mapResult(user),
+                    [&](const rvsdg::ThetaNode::LoopVar & loopvar)
+                    {
+                      trace_function_calls(loopvar.output, calls, visited);
+                    },
+                    [&](const rvsdg::ThetaNode::PredicateVar &)
+                    {
+                    });
+              },
+              [&](rvsdg::GammaNode & gamma)
+              {
+                trace_function_calls(gamma.MapBranchResultExitVar(user).output, calls, visited);
+              });
+        });
   }
 }
 
@@ -204,50 +251,82 @@ get_parent_regions(rvsdg::Region * region)
 const rvsdg::Output *
 trace_call_rhls(const rvsdg::Output * output)
 {
-  // version of trace call for rhls
-  if (auto argument = dynamic_cast<const rvsdg::RegionArgument *>(output))
-  {
-    auto graph = output->region()->graph();
-    if (argument->region() == &graph->GetRootRegion())
-    {
-      return argument;
-    }
-    else if (dynamic_cast<const BackEdgeArgument *>(argument))
-    {
-      // don't follow backedges to avoid cycles
-      return nullptr;
-    }
-    return trace_call_rhls(argument->input());
-  }
-  else if (auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output))
-  {
-    for (auto & r : so->results)
-    {
-      if (auto result = trace_call_rhls(&r))
+  return rvsdg::MatchVariant(
+      output->GetOwner(),
+      [&](rvsdg::Region * region) -> const rvsdg::Output *
       {
-        return result;
-      }
-    }
-  }
-  else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
-  {
-    for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-    {
-      auto ip = simpleNode->input(i);
-      if (*ip->Type() == *output->Type())
-      {
-        if (auto result = trace_call_rhls(ip))
+        if (region->IsRootRegion())
         {
-          return result;
+          return output;
         }
-      }
-    }
-  }
-  else
-  {
-    JLM_UNREACHABLE("");
-  }
-  return nullptr;
+        return rvsdg::MatchTypeOrFail(
+            *region->node(),
+            [&](LoopNode & loop) -> const rvsdg::Output *
+            {
+              (void)loop;
+              if (dynamic_cast<const BackEdgeArgument *>(output))
+              {
+                // don't follow backedges to avoid cycles
+                return nullptr;
+              }
+              return trace_call_rhls(dynamic_cast<const rvsdg::RegionArgument *>(output)->input());
+            },
+            [&](rvsdg::StructuralNode & structural) -> const rvsdg::Output *
+            {
+              (void)structural;
+              if (dynamic_cast<const BackEdgeArgument *>(output))
+              {
+                // don't follow backedges to avoid cycles
+                return nullptr;
+              }
+              return trace_call_rhls(dynamic_cast<const rvsdg::RegionArgument *>(output)->input());
+            });
+      },
+      [&](rvsdg::Node * node) -> const rvsdg::Output *
+      {
+        return rvsdg::MatchTypeOrFail(
+            *node,
+            [&](LoopNode & loop) -> const rvsdg::Output *
+            {
+              (void)loop;
+              auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output);
+              for (auto & r : so->results)
+              {
+                if (auto result = trace_call_rhls(&r))
+                {
+                  return result;
+                }
+              }
+              return nullptr;
+            },
+            [&](rvsdg::StructuralNode & structural) -> const rvsdg::Output *
+            {
+              (void)structural;
+              auto so = dynamic_cast<const rvsdg::StructuralOutput *>(output);
+              for (auto & r : so->results)
+              {
+                if (auto result = trace_call_rhls(&r))
+                {
+                  return result;
+                }
+              }
+              return nullptr;
+            },
+            [&](rvsdg::SimpleNode & simple) -> const rvsdg::Output *
+            {
+              for (auto & input : simple.Inputs())
+              {
+                if (*input.Type() == *output->Type())
+                {
+                  if (auto result = trace_call_rhls(&input))
+                  {
+                    return result;
+                  }
+                }
+              }
+              return nullptr;
+            });
+      });
 }
 
 const rvsdg::Output *
