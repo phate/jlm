@@ -976,81 +976,77 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode)
 void
 MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 {
-  EncodeLambdaEntry(lambdaNode);
+  // Handle lambda entry
+  {
+    auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
+
+    const auto & modRefSet = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
+    Context_->GetInterProceduralRegionCounter().CountEntity(
+        Context_->GetModRefSummary().GetPointsToGraph(),
+        modRefSet);
+
+    const auto memoryNodeIds = GetMemoryNodeIds(modRefSet);
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+
+    stateMap.PushRegion(*lambdaNode.subregion());
+    auto & lambdaEntrySplitNode =
+        LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
+    const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
+
+    size_t n = 0;
+    for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
+      stateMap.InsertState(memoryNode, *states[n++]);
+
+    if (!states.empty())
+    {
+      // This additional MemoryStateMergeOperation node makes all other nodes in the function that
+      // consume the memory state dependent on this node and therefore transitively on the
+      // LambdaEntryMemoryStateSplitOperation. This ensures that the
+      // LambdaEntryMemoryStateSplitOperation is always visited before all other memory state
+      // consuming nodes:
+      //
+      // ... := LAMBDA[f]
+      //   [..., a1, ...]
+      //     o1, ..., ox := LambdaEntryMemoryStateSplit a1
+      //     oy = MemoryStateMerge o1, ..., ox
+      //     ....
+      //
+      // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
+      // should now consume a1.
+      auto state = MemoryStateMergeOperation::Create(states);
+      memoryStateArgument.divertUsersWhere(
+          *state,
+          [&lambdaEntrySplitNode](const rvsdg::Input & user)
+          {
+            return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &lambdaEntrySplitNode;
+          });
+    }
+  }
+
   EncodeRegion(*lambdaNode.subregion());
-  EncodeLambdaExit(lambdaNode);
-}
 
-void
-MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
-{
-  auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
-
-  const auto & modRefSet = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(
-      Context_->GetModRefSummary().GetPointsToGraph(),
-      modRefSet);
-
-  const auto memoryNodeIds = GetMemoryNodeIds(modRefSet);
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-
-  stateMap.PushRegion(*lambdaNode.subregion());
-  auto & lambdaEntrySplitNode =
-      LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
-  const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
-
-  size_t n = 0;
-  for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
-    stateMap.InsertState(memoryNode, *states[n++]);
-
-  if (!states.empty())
+  // Handle lambda exit
   {
-    // This additional MemoryStateMergeOperation node makes all other nodes in the function that
-    // consume the memory state dependent on this node and therefore transitively on the
-    // LambdaEntryMemoryStateSplitOperation. This ensures that the
-    // LambdaEntryMemoryStateSplitOperation is always visited before all other memory state
-    // consuming nodes:
-    //
-    // ... := LAMBDA[f]
-    //   [..., a1, ...]
-    //     o1, ..., ox := LambdaEntryMemoryStateSplit a1
-    //     oy = MemoryStateMerge o1, ..., ox
-    //     ....
-    //
-    // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
-    // should now consume a1.
-    auto state = MemoryStateMergeOperation::Create(states);
-    memoryStateArgument.divertUsersWhere(
-        *state,
-        [&lambdaEntrySplitNode](const rvsdg::Input & user)
-        {
-          return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user) != &lambdaEntrySplitNode;
-        });
+    const auto & modRefSet = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+    auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
+
+    std::vector<rvsdg::Output *> states;
+    std::vector<MemoryNodeId> memoryNodeIds;
+    auto & subregion = *lambdaNode.subregion();
+    const auto memoryNodeStatePairs = stateMap.GetStates(subregion, modRefSet);
+    for (const auto memoryNodeStatePair : memoryNodeStatePairs)
+    {
+      states.push_back(&memoryNodeStatePair->State());
+      memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode());
+    }
+
+    const auto mergedState =
+        LambdaExitMemoryStateMergeOperation::CreateNode(subregion, states, memoryNodeIds).output(0);
+    memoryStateResult.divert_to(mergedState);
+
+    stateMap.PopRegion(*lambdaNode.subregion());
   }
-}
-
-void
-MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
-{
-  const auto & modRefSet = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
-
-  std::vector<rvsdg::Output *> states;
-  std::vector<MemoryNodeId> memoryNodeIds;
-  auto & subregion = *lambdaNode.subregion();
-  const auto memoryNodeStatePairs = stateMap.GetStates(subregion, modRefSet);
-  for (const auto memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    states.push_back(&memoryNodeStatePair->State());
-    memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode());
-  }
-
-  const auto mergedState =
-      LambdaExitMemoryStateMergeOperation::CreateNode(subregion, states, memoryNodeIds).output(0);
-  memoryStateResult.divert_to(mergedState);
-
-  stateMap.PopRegion(*lambdaNode.subregion());
 }
 
 void
@@ -1059,59 +1055,53 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
   for (auto & subregion : gammaNode.Subregions())
     Context_->GetRegionalizedStateMap().PushRegion(subregion);
 
-  EncodeGammaEntry(gammaNode);
+  // Handle gamma entry
+  {
+    auto region = gammaNode.region();
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+    auto & modRefSet = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
+
+    // Count the memory state arguments once per subregion
+    for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
+      Context_->GetInterProceduralRegionCounter().CountEntity(
+          Context_->GetModRefSummary().GetPointsToGraph(),
+          modRefSet);
+
+    auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, modRefSet);
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    {
+      auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
+      for (auto & argument : gammaInput.branchArgument)
+        stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
+    }
+  }
 
   for (auto & subregion : gammaNode.Subregions())
     EncodeRegion(subregion);
 
-  EncodeGammaExit(gammaNode);
+  // Handle gamma exit
+  {
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+    auto & modRefSet = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
+    auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), modRefSet);
+
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    {
+      std::vector<rvsdg::Output *> states;
+
+      for (auto & subregion : gammaNode.Subregions())
+      {
+        auto & state = stateMap.GetState(subregion, memoryNodeStatePair->MemoryNode())->State();
+        states.push_back(&state);
+      }
+
+      auto state = gammaNode.AddExitVar(states).output;
+      memoryNodeStatePair->ReplaceState(*state);
+    }
+  }
 
   for (auto & subregion : gammaNode.Subregions())
     Context_->GetRegionalizedStateMap().PopRegion(subregion);
-}
-
-void
-MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
-{
-  auto region = gammaNode.region();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & modRefSet = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
-
-  // Count the memory state arguments once per subregion
-  for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
-    Context_->GetInterProceduralRegionCounter().CountEntity(
-        Context_->GetModRefSummary().GetPointsToGraph(),
-        modRefSet);
-
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, modRefSet);
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
-    for (auto & argument : gammaInput.branchArgument)
-      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
-  }
-}
-
-void
-MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
-{
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & modRefSet = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*gammaNode.region(), modRefSet);
-
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    std::vector<rvsdg::Output *> states;
-
-    for (auto & subregion : gammaNode.Subregions())
-    {
-      auto & state = stateMap.GetState(subregion, memoryNodeStatePair->MemoryNode())->State();
-      states.push_back(&state);
-    }
-
-    auto state = gammaNode.AddExitVar(states).output;
-    memoryNodeStatePair->ReplaceState(*state);
-  }
 }
 
 void
@@ -1119,58 +1109,50 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
 {
   Context_->GetRegionalizedStateMap().PushRegion(*thetaNode.subregion());
 
-  auto thetaStateOutputs = EncodeThetaEntry(thetaNode);
+  // Handle theta entry
+  std::vector<rvsdg::Output *> thetaStateOutputs;
+  {
+    auto region = thetaNode.region();
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+    const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
+    Context_->GetInterProceduralRegionCounter().CountEntity(
+        Context_->GetModRefSummary().GetPointsToGraph(),
+        memoryNodes);
+
+    auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    {
+      auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
+      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
+      thetaStateOutputs.push_back(loopvar.output);
+    }
+  }
+
   EncodeRegion(*thetaNode.subregion());
-  EncodeThetaExit(thetaNode, thetaStateOutputs);
+
+  // Handle theta exit
+  {
+    auto subregion = thetaNode.subregion();
+    auto & stateMap = Context_->GetRegionalizedStateMap();
+    const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
+    auto memoryNodeStatePairs = stateMap.GetExistingStates(*thetaNode.region(), memoryNodes);
+
+    JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
+    for (size_t n = 0; n < thetaStateOutputs.size(); n++)
+    {
+      auto thetaStateOutput = thetaStateOutputs[n];
+      auto & memoryNodeStatePair = memoryNodeStatePairs[n];
+      auto memoryNode = memoryNodeStatePair->MemoryNode();
+      auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
+      JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
+
+      auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
+      loopvar.post->divert_to(&subregionState);
+      memoryNodeStatePair->ReplaceState(*thetaStateOutput);
+    }
+  }
 
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
-}
-
-std::vector<rvsdg::Output *>
-MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
-{
-  auto region = thetaNode.region();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
-  Context_->GetInterProceduralRegionCounter().CountEntity(
-      Context_->GetModRefSummary().GetPointsToGraph(),
-      memoryNodes);
-
-  std::vector<rvsdg::Output *> thetaStateOutputs;
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*region, memoryNodes);
-  for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-  {
-    auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
-    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
-    thetaStateOutputs.push_back(loopvar.output);
-  }
-
-  return thetaStateOutputs;
-}
-
-void
-MemoryStateEncoder::EncodeThetaExit(
-    rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::Output *> & thetaStateOutputs)
-{
-  auto subregion = thetaNode.subregion();
-  auto & stateMap = Context_->GetRegionalizedStateMap();
-  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
-  auto memoryNodeStatePairs = stateMap.GetExistingStates(*thetaNode.region(), memoryNodes);
-
-  JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
-  for (size_t n = 0; n < thetaStateOutputs.size(); n++)
-  {
-    auto thetaStateOutput = thetaStateOutputs[n];
-    auto & memoryNodeStatePair = memoryNodeStatePairs[n];
-    auto memoryNode = memoryNodeStatePair->MemoryNode();
-    auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
-    JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
-
-    auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
-    loopvar.post->divert_to(&subregionState);
-    memoryNodeStatePair->ReplaceState(*thetaStateOutput);
-  }
 }
 
 rvsdg::SimpleNode &
