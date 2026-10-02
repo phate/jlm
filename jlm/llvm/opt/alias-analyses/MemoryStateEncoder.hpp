@@ -17,7 +17,6 @@ class Output;
 class Region;
 class RvsdgModule;
 class SimpleNode;
-class StructuralNode;
 class ThetaNode;
 }
 
@@ -105,30 +104,10 @@ private:
   EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
-
-  void
-  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
-
-  void
   EncodeGamma(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
-
-  void
   EncodeTheta(rvsdg::ThetaNode & thetaNode);
-
-  std::vector<rvsdg::Output *>
-  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
-
-  void
-  EncodeThetaExit(
-      rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::Output *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
