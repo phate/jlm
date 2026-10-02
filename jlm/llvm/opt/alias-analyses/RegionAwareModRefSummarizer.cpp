@@ -37,13 +37,6 @@
 
 namespace jlm::llvm::aa
 {
-/**
- * In a region with an alloca definition, the memory node representing the alloca does not need to
- * be routed into the region if the alloca is shown to be non-reentrant.
- * Such allocas are added to the NonReentrantBlocklist.
- */
-static const bool ENABLE_NON_REENTRANT_ALLOCA_BLOCKLIST =
-    !std::getenv("JLM_DISABLE_NON_REENTRANT_ALLOCA_BLOCKLIST");
 
 /**
  * Operations like loads and stores have a size.
@@ -67,11 +60,18 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
 static const bool ENABLE_READ_ONLY_DETECTION = !std::getenv("JLM_DISABLE_READ_ONLY_DETECTION");
 
 /**
- * When doing a call, any Simple Alloca that is not reachable from the arguments to the call
- * can be blocked from being added to the call's ModRefSet.
+ * For functions, only simple allocas that are reachable from the function arguments
+ * need to be included in the ModRefSet of the function. Other simple allocas can be blocked.
  */
-static const bool ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING =
-    !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_BLOCKING");
+static const bool ENABLE_FUNCTION_SIMPLE_ALLOCA_ALLOWLIST =
+    !std::getenv("JLM_DISABLE_FUNCTION_SIMPLE_ALLOCA_ALLOWLIST");
+
+/**
+ * When doing a call, only simple allocas that are reachable from the arguments to the call
+ * need to be propagated from the callee to the call. Other simple allocas can be blocked.
+ */
+static const bool ENABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST =
+    !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST");
 
 /** \brief Region-aware mod/ref summarizer statistics
  *
@@ -831,41 +831,28 @@ struct RegionAwareModRefSummarizer::Context
   /**
    * The set of all Simple Allocas in the module.
    *
-   * Assigned in \ref CreateSimpleAllocaSet(). Remains constant after.
+   * Assigned in \ref CreateSimpleAllocaSet().
+   *
+   * Some simple allocas may later be removed in \ref removeSimpleAllocasAroundSetjmp(),
+   * if the module contains any calls to setjmp.
    */
   util::HashSet<PointsToGraph::NodeIndex> SimpleAllocas;
-
-  /**
-   * For structural nodes whose subregion(s) contain alloca nodes that are non-reentrant,
-   * the memory nodes respresenting those alloca nodes are added to this map.
-   *
-   * Assigned in \ref CreateNonReentrantAllocaSets(). Remains constant after.
-   */
-  std::unordered_map<const rvsdg::Node *, util::HashSet<PointsToGraph::NodeIndex>>
-      NonReentrantAllocas;
-
-  /**
-   * Used for blocking simple allocas from being propagated to the ModRefSet of calls
-   * where none of the call's arguments can reach the simple alloca.
-   * The sets are placed in a deque, since references to elements stay valid.
-   */
-  std::deque<util::HashSet<PointsToGraph::NodeIndex>> CallBlocklists;
 
   /**
    * Simple edges in the ModRefSet constraint graph.
    * A simple edge a -> b indicates that the \ref ModRefSet b should contain everything in a.
    * ModRefSetSimpleEdges[a] contains b, as well as any other simple edge successors.
    */
-  std::vector<util::HashSet<ModRefSetIndex>> ModRefSetSimpleConstraints;
+  std::vector<std::vector<ModRefSetIndex>> ModRefSetSimpleConstraints;
 
   /**
-   * Blocklists in the \ref ModRefSet constraint graph.
+   * Allowlist for simple allocas in the \ref ModRefSet constraint graph.
    * During solving, a memory node X that is about to be propagated to a \ref ModRefSet A
-   * will be skipped if X is in the blocklist associated with A.
-   * The pointer to the blocklist must remain valid until solving is finished.
+   * will be skipped if X is a simple alloca that is not presesent in the allowlist for A.
+   * If A has no allowlist, nothing is blocked.
    */
-  std::unordered_map<ModRefSetIndex, const util::HashSet<PointsToGraph::NodeIndex> *>
-      ModRefSetBlocklists;
+  std::unordered_map<ModRefSetIndex, util::HashSet<PointsToGraph::NodeIndex>>
+      ModRefSetSimpleAllocaAllowlist;
 
   /**
    * After solving, some memory nodes may end up being read-only.
@@ -930,9 +917,7 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
   statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
 
-  statistics->StartCreateNonReentrantAllocaSetsStatistics();
-  auto numNonReentrantAllocas = CreateNonReentrantAllocaSets();
-  statistics->StopCreateNonReentrantAllocaSetsStatistics(numNonReentrantAllocas);
+  removeSimpleAllocasAroundSetjmp();
 
   statistics->StartAnnotationStatistics();
   // Go through and recursively annotate all functions, regions and nodes
@@ -1270,70 +1255,22 @@ RegionAwareModRefSummarizer::getSimpleAllocasReachableFromCallArguments(
   return getReachableSimpleAllocas(nodes);
 }
 
+void
+RegionAwareModRefSummarizer::removeSimpleAllocasAroundSetjmp()
+{
+  for (auto setjmpCaller : Context_->FunctionsCallingSetjmp.Items())
+  {
+    const auto reachableFromArguments =
+        getSimpleAllocasReachableFromRegionArguments(*setjmpCaller->subregion());
+    Context_->SimpleAllocas.DifferenceWith(reachableFromArguments);
+  }
+}
+
 bool
 RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda) const
 {
   const auto scc = Context_->FunctionToSccIndex[&lambda];
   return Context_->SccCallTargets[scc].Contains(scc);
-}
-
-size_t
-RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
-{
-  const auto & pointsToGraph = Context_->pointsToGraph;
-
-  // Caching the sets of simple allocas reachable from region arguments
-  std::unordered_map<const rvsdg::Region *, util::HashSet<PointsToGraph::NodeIndex>>
-      reachableSimpleAllocas;
-
-  // Returns the set of simple allocas reachable from the region's arguments
-  const auto getReachableSimpleAllocas =
-      [&](const rvsdg::Region & region) -> const util::HashSet<PointsToGraph::NodeIndex> &
-  {
-    if (const auto it = reachableSimpleAllocas.find(&region); it != reachableSimpleAllocas.end())
-    {
-      return it->second;
-    }
-    return reachableSimpleAllocas[&region] = getSimpleAllocasReachableFromRegionArguments(region);
-  };
-
-  // Checks if the simple alloca represented by the given points-to graph node is non-reentrant
-  const auto isNonReentrant = [&](PointsToGraph::NodeIndex simpleAllocaPtgNode) -> bool
-  {
-    auto & allocaNode = pointsToGraph.getAllocaForNode(simpleAllocaPtgNode);
-    const auto & region = *allocaNode.region();
-
-    // If the alloca's function is never involved in any recursion,
-    // the alloca is trivially non-reentrant.
-    const auto & lambda = getSurroundingLambdaNode(allocaNode);
-    if (!IsRecursionPossible(lambda))
-      return true;
-
-    // In lambdas where recursion is possible, simple allocas that are reachable from
-    // region arguments via edges in the points-to graph must be considered reentrant.
-    if (getReachableSimpleAllocas(region).Contains(simpleAllocaPtgNode))
-      return false;
-
-    // Otherwise the simple alloca is non-reentrant
-    return true;
-  };
-
-  size_t numNonReentrantAllocas = 0;
-
-  // Only simple allocas are candidates for being non-reentrant
-  for (auto simpleAllocaPtgNode : Context_->SimpleAllocas.Items())
-  {
-    if (!isNonReentrant(simpleAllocaPtgNode))
-      continue;
-
-    const auto & region = *pointsToGraph.getAllocaForNode(simpleAllocaPtgNode).region();
-    const auto structuralNode = region.node();
-    // Creates a set for the structural node if it does not already have one, and add the alloca
-    Context_->NonReentrantAllocas[structuralNode].insert(simpleAllocaPtgNode);
-    numNonReentrantAllocas++;
-  }
-
-  return numNonReentrantAllocas;
 }
 
 void
@@ -1343,16 +1280,17 @@ RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModR
   JLM_ASSERT(from != ModRefSummary_->getExternModRefSet());
   // Ensure the constraint vector is large enough
   Context_->ModRefSetSimpleConstraints.resize(ModRefSummary_->NumModRefSets());
-  Context_->ModRefSetSimpleConstraints[from].insert(to);
+  Context_->ModRefSetSimpleConstraints[from].push_back(to);
 }
 
 void
-RegionAwareModRefSummarizer::AddModRefSetBlocklist(
+RegionAwareModRefSummarizer::addModRefSetSimpleAllocaAllowlist(
     ModRefSetIndex index,
-    const util::HashSet<PointsToGraph::NodeIndex> & blocklist)
+    util::HashSet<PointsToGraph::NodeIndex> blocklist)
 {
-  JLM_ASSERT(Context_->ModRefSetBlocklists.find(index) == Context_->ModRefSetBlocklists.end());
-  Context_->ModRefSetBlocklists[index] = &blocklist;
+  auto [_, inserted] =
+      Context_->ModRefSetSimpleAllocaAllowlist.emplace(std::make_pair(index, std::move(blocklist)));
+  JLM_ASSERT(inserted);
 }
 
 void
@@ -1360,13 +1298,12 @@ RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
 {
   const auto modRefSet = AnnotateStructuralNode(lambda, lambda);
 
-  if (Context_->FunctionsCallingSetjmp.Contains(&lambda))
+  // Prevent memory nodes from being added to the ModRefSet of the lambda,
+  // if the memory node represents a simple alloca that is not reachable from arguments
+  if (ENABLE_FUNCTION_SIMPLE_ALLOCA_ALLOWLIST)
   {
-    // If this function can be jumped into, store operations on memory in its Mod/Ref set must be
-    // sequentialized with calls to external functions, in case the trigger jumps
-    // TODO: This edge could in theory only propagate Mod info, and turn it into Ref info,
-    // since calls to longjmp only need to be sequentialized with stores
-    AddModRefSimpleConstraint(modRefSet, ModRefSummary_->getExternModRefSet());
+    auto allowlist = getSimpleAllocasReachableFromRegionArguments(*lambda.subregion());
+    addModRefSetSimpleAllocaAllowlist(modRefSet, std::move(allowlist));
   }
 
   // If the function is externally available, it can be called by external functions,
@@ -1412,13 +1349,6 @@ RegionAwareModRefSummarizer::AnnotateStructuralNode(
   for (auto & subregion : structuralNode.Subregions())
   {
     AnnotateRegion(subregion, modRefSet, lambda);
-  }
-
-  // Check if this node has any non-reentrant allocas. If so, block them from leaving the node
-  if (const auto it = Context_->NonReentrantAllocas.find(&structuralNode);
-      it != Context_->NonReentrantAllocas.end() && ENABLE_NON_REENTRANT_ALLOCA_BLOCKLIST)
-  {
-    AddModRefSetBlocklist(modRefSet, it->second);
   }
 
   return modRefSet;
@@ -1683,14 +1613,12 @@ RegionAwareModRefSummarizer::AnnotateCall(
     ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
   }
 
-  if (ENABLE_CALL_SIMPLE_ALLOCA_BLOCKING)
+  // Skip adding memory nodes to the ModRefSet of the call operation if they represent
+  // simple allocas, and they are not reachable from any of the call arguments
+  if (ENABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST)
   {
     const auto reachableSimpleAllocas = getSimpleAllocasReachableFromCallArguments(callNode);
-    auto blocklist = Context_->SimpleAllocas;
-    blocklist.DifferenceWith(reachableSimpleAllocas);
-    // Move the blocklist to the deque to keep it alive during solving
-    Context_->CallBlocklists.push_back(std::move(blocklist));
-    AddModRefSetBlocklist(callModRef, Context_->CallBlocklists.back());
+    addModRefSetSimpleAllocaAllowlist(callModRef, reachableSimpleAllocas);
   }
 
   return callModRef;
@@ -1713,28 +1641,30 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
     const RegionAwareModRefSet & fromSet = ModRefSummary_->getModRefSet(workItem);
 
     // Handle all simple constraints workItem -> target
-    for (auto target : Context_->ModRefSetSimpleConstraints[workItem].Items())
+    for (auto target : Context_->ModRefSetSimpleConstraints[workItem])
     {
       RegionAwareModRefSet & targetSet = ModRefSummary_->getModRefSet(target);
 
       // Propagate flags first, to enable skipping of doubled-up memory nodes
       bool changed = targetSet.propagateFlags(fromSet);
 
-      if (auto blocklist = Context_->ModRefSetBlocklists.find(target);
-          blocklist != Context_->ModRefSetBlocklists.end())
+      if (auto allowlist = Context_->ModRefSetSimpleAllocaAllowlist.find(target); allowlist != Context_->ModRefSetSimpleAllocaAllowlist.end())
       {
-        // The target has a blocklist, avoid propagating blocked memory nodes
+        // The target has a simple alloca allowlist, avoid propagating all other simple alloca nodes
         for (auto [memoryNode, mayMod] : fromSet.getModRefNodes())
         {
-          if (blocklist->second->Contains(memoryNode))
-            continue;
+          if (Context_->SimpleAllocas.Contains(memoryNode))
+          {
+            if (!allowlist->second.Contains(memoryNode))
+              continue;
+          }
 
           changed |= ModRefSummary_->addMemoryNodeToSet(target, memoryNode, mayMod);
         }
       }
       else
       {
-        // The target does not have a blocklist, so propagate everything
+        // The target does not have an allowlist, so propagate everything
         for (auto [memoryNode, mayMod] : fromSet.getModRefNodes())
         {
           changed |= ModRefSummary_->addMemoryNodeToSet(target, memoryNode, mayMod);
@@ -1746,19 +1676,19 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
     }
   }
 
-  JLM_ASSERT(VerifyBlocklists());
+  JLM_ASSERT(verifySimpleAllocaAllowlists());
 }
 
 bool
-RegionAwareModRefSummarizer::VerifyBlocklists() const
+RegionAwareModRefSummarizer::verifySimpleAllocaAllowlists() const
 {
-  // For all ModRefSets where a blocklist has been defined,
-  // check that none of its MemoryNodes are on the blocklist
-  for (auto [index, blocklist] : Context_->ModRefSetBlocklists)
+  // For all ModRefSets where an allowlist has been defined,
+  // check that no other simple allocas are included in the ModRefSet
+  for (auto & [index, allowlist] : Context_->ModRefSetSimpleAllocaAllowlist)
   {
     for (auto [memoryNode, _] : ModRefSummary_->getModRefSet(index).getModRefNodes())
     {
-      if (blocklist->Contains(memoryNode))
+      if (Context_->SimpleAllocas.Contains(memoryNode) && !allowlist.Contains(memoryNode))
         return false;
     }
   }
