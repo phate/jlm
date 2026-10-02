@@ -1648,7 +1648,8 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
       // Propagate flags first, to enable skipping of doubled-up memory nodes
       bool changed = targetSet.propagateFlags(fromSet);
 
-      if (auto allowlist = Context_->ModRefSetSimpleAllocaAllowlist.find(target); allowlist != Context_->ModRefSetSimpleAllocaAllowlist.end())
+      if (auto allowlist = Context_->ModRefSetSimpleAllocaAllowlist.find(target);
+          allowlist != Context_->ModRefSetSimpleAllocaAllowlist.end())
       {
         // The target has a simple alloca allowlist, avoid propagating all other simple alloca nodes
         for (auto [memoryNode, mayMod] : fromSet.getModRefNodes())

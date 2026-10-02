@@ -152,7 +152,8 @@ private:
    * Disqualifies allocas from being regarded as simple if they are reachable
    * from the arguments of functions that call setjmp.
    */
-  void removeSimpleAllocasAroundSetjmp();
+  void
+  removeSimpleAllocasAroundSetjmp();
 
   /**
    * Uses the call graph to determine if the given function can ever be involved
