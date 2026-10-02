@@ -706,6 +706,7 @@ ROUNDTRIP_TEST(TestBitCast, ::jlm::llvm::BitCastTest)
 ROUNDTRIP_TEST(TestBits2Ptr, ::jlm::llvm::Bits2PtrTest)
 ROUNDTRIP_TEST(TestConstantPointerNull, ::jlm::llvm::ConstantPointerNullTest)
 ROUNDTRIP_TEST(TestCall1, ::jlm::llvm::CallTest1)
+ROUNDTRIP_TEST(TestCall2, ::jlm::llvm::CallTest2)
 ROUNDTRIP_TEST(TestExternalCall1, ::jlm::llvm::ExternalCallTest1)
 ROUNDTRIP_TEST(TestExternalCall2, ::jlm::llvm::ExternalCallTest2)
 ROUNDTRIP_TEST(TestIndirectCall1, ::jlm::llvm::IndirectCallTest1)
@@ -737,11 +738,20 @@ ROUNDTRIP_TEST_CNE(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
 // jlm/mlir/TestRvsdgs.cpp
 // ============================================================================
 
+ROUNDTRIP_TEST(TestComparison, ::jlm::mlir::ComparisonTest)
+ROUNDTRIP_TEST(TestConstantDelta, ::jlm::mlir::ConstantDeltaTest)
+ROUNDTRIP_TEST(TestFloatBinary, ::jlm::mlir::FloatBinaryTest)
+ROUNDTRIP_TEST(TestFloatConversion, ::jlm::mlir::FloatConversionTest)
+ROUNDTRIP_TEST(TestGlobalArray, ::jlm::mlir::GlobalArrayTest)
+ROUNDTRIP_TEST(TestIntegerConversion, ::jlm::mlir::IntegerConversionTest)
+ROUNDTRIP_TEST(TestIOBarrier, ::jlm::mlir::IOBarrierTest)
 ROUNDTRIP_TEST(TestLoadNonVolatile, ::jlm::mlir::LoadNonVolatileTest)
 ROUNDTRIP_TEST(TestLoadVolatile, ::jlm::mlir::LoadVolatileTest)
+ROUNDTRIP_TEST(TestMemoryHoistBarrier, ::jlm::mlir::MemoryHoistBarrierTest)
+ROUNDTRIP_TEST(TestRootRegionNodes, ::jlm::mlir::RootRegionNodesTest)
 ROUNDTRIP_TEST(TestStoreNonVolatile, ::jlm::mlir::StoreNonVolatileTest)
 ROUNDTRIP_TEST(TestStoreVolatile, ::jlm::mlir::StoreVolatileTest)
-ROUNDTRIP_TEST(TestMemoryHoistBarrier, ::jlm::mlir::MemoryHoistBarrierTest)
+ROUNDTRIP_TEST(TestWideMemoryNodes, ::jlm::mlir::WideMemoryNodesTest)
 
 // NAllocaNodesTest is parameterized by the number of allocas, so it cannot use the
 // default-constructing ROUNDTRIP_TEST macro.
