@@ -776,9 +776,9 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::MemoryHoistBarrier>(
         Builder_->getUnknownLoc(),
-        ConvertType(*node.output(0)->Type()), // barriered address
-        inputs[0],                            // address
-        inputs[1],                            // ioState
+        Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+        inputs[0], // address
+        inputs[1], // ioState
         hoistBarrierOp->getDereferenceableSize());
   }
   else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))

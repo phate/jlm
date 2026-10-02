@@ -170,7 +170,7 @@ MemoryHoistBarrierTest::SetupRvsdg()
 
   auto fcttype = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
-      { BitType::Create(32), MemoryStateType::Create() });
+      { BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -192,7 +192,7 @@ MemoryHoistBarrierTest::SetupRvsdg()
       BitType::Create(32),
       4);
 
-  fct->finalize({ load[0], load[1] });
+  fct->finalize({ load[0], iOStateArgument, load[1] });
 
   GraphExport::Create(*fct->output(), "f");
 
