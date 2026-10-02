@@ -11,15 +11,12 @@
 
 namespace jlm::rvsdg
 {
-class DeltaNode;
 class GammaNode;
 class LambdaNode;
 class Output;
-class PhiNode;
 class Region;
 class RvsdgModule;
 class SimpleNode;
-class StructuralNode;
 class ThetaNode;
 }
 
@@ -28,10 +25,7 @@ namespace jlm::util
 class StatisticsCollector;
 }
 
-namespace jlm::llvm
-{
-
-namespace aa
+namespace jlm::llvm::aa
 {
 
 class ModRefSummary;
@@ -80,12 +74,6 @@ private:
   EncodeRegion(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
-
-  void
-  EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode);
-
-  void
   EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
 
   void
@@ -116,36 +104,10 @@ private:
   EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
-
-  void
-  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
-
-  void
-  EncodePhi(const rvsdg::PhiNode & phiNode);
-
-  void
-  EncodeDelta(const rvsdg::DeltaNode & deltaNode);
-
-  void
   EncodeGamma(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
-
-  void
   EncodeTheta(rvsdg::ThetaNode & thetaNode);
-
-  std::vector<rvsdg::Output *>
-  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
-
-  void
-  EncodeThetaExit(
-      rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::Output *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
@@ -223,7 +185,6 @@ private:
   std::unique_ptr<Context> Context_;
 };
 
-}
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP
