@@ -121,6 +121,32 @@ public:
   jlm::rvsdg::SimpleNode * store;
 };
 
+/** \brief MemoryHoistBarrierTest class
+ *
+ * This class sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   uint32_t f(uint32_t * p)
+ *   {
+ *     return *p;
+ *   }
+ * \endcode
+ *
+ * The load's address is routed through a
+ * \ref jlm::llvm::MemoryHoistBarrierOperation together with an I/O state.
+ */
+class MemoryHoistBarrierTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::LambdaNode * lambda;
+
+  jlm::rvsdg::SimpleNode * memoryHoistBarrier;
+};
+
 }
 
 #endif
