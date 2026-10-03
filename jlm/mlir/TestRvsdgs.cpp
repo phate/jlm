@@ -240,6 +240,44 @@ IntegerConversionTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+PtrToIntTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto bitType32 = BitType::Create(32);
+  auto bitType64 = BitType::Create(64);
+  auto functionType = FunctionType::Create({ PointerType::Create() }, { bitType32, bitType64 });
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto fct = rvsdg::LambdaNode::Create(
+      graph->GetRootRegion(),
+      llvm::LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto pointerArgument = fct->GetFunctionArguments()[0];
+
+  auto & narrowNode = rvsdg::CreateOpNode<PtrToIntOperation>(
+      { pointerArgument },
+      std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
+      bitType32);
+  auto & wideNode = rvsdg::CreateOpNode<PtrToIntOperation>(
+      { pointerArgument },
+      std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
+      bitType64);
+
+  fct->finalize({ narrowNode.output(0), wideNode.output(0) });
+
+  GraphExport::Create(*fct->output(), "f");
+
+  this->lambda = fct;
+  this->ptrToIntNarrow = &narrowNode;
+  this->ptrToIntWide = &wideNode;
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
 FloatBinaryTest::SetupRvsdg()
 {
   using namespace jlm::llvm;

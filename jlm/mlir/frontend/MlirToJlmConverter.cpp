@@ -674,6 +674,18 @@ MlirToJlmConverter::ConvertOperation(
   {
     return { llvm::IntToPtrOperation::create(inputs[0]) };
   }
+  else if (auto ptrToIntOp = ::mlir::dyn_cast<::mlir::LLVM::PtrToIntOp>(&mlirOperation))
+  {
+    auto inputType = std::dynamic_pointer_cast<const llvm::PointerType>(inputs[0]->Type());
+    if (!inputType)
+      JLM_UNREACHABLE("Expected pointer type for PtrToIntOp operation.");
+
+    auto intType = ::mlir::cast<::mlir::IntegerType>(ptrToIntOp.getType());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::PtrToIntOperation>(
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
+        std::move(inputType),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
