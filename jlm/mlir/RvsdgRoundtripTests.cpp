@@ -727,11 +727,14 @@ ROUNDTRIP_TEST(TestGamma2, ::jlm::llvm::GammaTest2)
 ROUNDTRIP_TEST(TestImport, ::jlm::llvm::ImportTest)
 ROUNDTRIP_TEST(TestEscapingLocalFunction, ::jlm::llvm::EscapingLocalFunctionTest)
 ROUNDTRIP_TEST(TestLambdaCallArgumentMismatch, ::jlm::llvm::LambdaCallArgumentMismatch)
+ROUNDTRIP_TEST(TestMemcpy, ::jlm::llvm::MemcpyTest)
 
 // The constant indices of their GEPs are reconstructed as nodes that duplicate ones already
 // present.
-ROUNDTRIP_TEST_CNE(TestLinkedList, ::jlm::llvm::LinkedListTest)
 ROUNDTRIP_TEST_CNE(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
+ROUNDTRIP_TEST_CNE(TestLinkedList, ::jlm::llvm::LinkedListTest)
+ROUNDTRIP_TEST_CNE(TestMemcpy2, ::jlm::llvm::MemcpyTest2)
+ROUNDTRIP_TEST_CNE(TestMemcpy3, ::jlm::llvm::MemcpyTest3)
 
 // ============================================================================
 // Roundtrip tests from MLIR-specific RVSDG graphs defined in
@@ -747,6 +750,7 @@ ROUNDTRIP_TEST(TestIntegerConversion, ::jlm::mlir::IntegerConversionTest)
 ROUNDTRIP_TEST(TestIOBarrier, ::jlm::mlir::IOBarrierTest)
 ROUNDTRIP_TEST(TestLoadNonVolatile, ::jlm::mlir::LoadNonVolatileTest)
 ROUNDTRIP_TEST(TestLoadVolatile, ::jlm::mlir::LoadVolatileTest)
+ROUNDTRIP_TEST(TestMemcpyVolatile, ::jlm::mlir::MemcpyVolatileTest)
 ROUNDTRIP_TEST(TestMemoryHoistBarrier, ::jlm::mlir::MemoryHoistBarrierTest)
 ROUNDTRIP_TEST(TestRootRegionNodes, ::jlm::mlir::RootRegionNodesTest)
 ROUNDTRIP_TEST(TestStoreNonVolatile, ::jlm::mlir::StoreNonVolatileTest)
