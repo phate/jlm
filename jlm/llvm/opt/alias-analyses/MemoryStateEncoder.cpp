@@ -212,6 +212,9 @@ class EncodingStatistics final : public util::Statistics
   // Suffix used when counting memory states routed into call entry merges
   static constexpr auto CallEntryMergeStateSuffix_ = "sIntoCallEntryMerge";
 
+  static constexpr auto EncodingTimerLabel_ = "EncodingTime";
+  static constexpr auto PruningTimerLabel_ = "PruningTime";
+
 public:
   ~EncodingStatistics() override = default;
 
@@ -220,16 +223,28 @@ public:
   {}
 
   void
-  Start(const rvsdg::Graph & graph)
+  StartEncoding(const rvsdg::Graph & graph)
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
-    AddTimer(Label::Timer).start();
+    AddTimer(EncodingTimerLabel_).start();
   }
 
   void
-  Stop()
+  StopEncoding()
   {
-    GetTimer(Label::Timer).stop();
+    GetTimer(EncodingTimerLabel_).stop();
+  }
+
+  void
+  StartPruning()
+  {
+    AddTimer(PruningTimerLabel_).start();
+  }
+
+  void
+  StopPruning()
+  {
+    GetTimer(PruningTimerLabel_).stop();
   }
 
   void
@@ -484,13 +499,14 @@ MemoryStateEncoder::Encode(
     util::StatisticsCollector & statisticsCollector)
 {
   modRefSummary_ = &modRefSummary;
+  auto & rvsdg = rvsdgModule.Rvsdg();
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
   // The statistics gathering needs to happen before the encoding as the encoding replaces nodes in
   // the RVSDG and these new nodes would not have any ModRefSets associated with them.
   if (statisticsCollector.IsDemanded(util::Statistics::Id::MemoryStateEncoder))
   {
-    const auto counters = gatherStatistics(rvsdgModule.Rvsdg().GetRootRegion());
+    const auto counters = gatherStatistics(rvsdg.GetRootRegion());
 
     statistics->AddIntraProceduralRegionMemoryStateCounts(counters->interProceduralRegionCounter);
     statistics->AddLoadMemoryStateCounts(counters->loadCounter);
@@ -498,18 +514,18 @@ MemoryStateEncoder::Encode(
     statistics->AddCallEntryMergeStateCounts(counters->callEntryMergeCounter);
   }
 
-  statistics->Start(rvsdgModule.Rvsdg());
+  statistics->StartEncoding(rvsdg);
   // FIXME: separate handling of inter- and intra-procedural nodes to avoid stateMap parameter for
   // inter-procedural subregions
   StateMap stateMap;
-  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion(), stateMap);
-  statistics->Stop();
+  EncodeRegion(rvsdg.GetRootRegion(), stateMap);
+  statistics->StopEncoding();
+
+  statistics->StartPruning();
+  rvsdg.PruneNodes();
+  statistics->StopPruning();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  // Remove all nodes that became dead throughout the encoding.
-  DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
 void
@@ -814,6 +830,15 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
   // Redirect IO state edge
   freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
 
+  for (size_t n = 0; n < freeNode.noutputs() - 1; n++)
+  {
+    auto oldMemStateOutput = freeNode.output(n);
+    auto oldMemStateOperand =
+        FreeOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
+    oldMemStateOutput->divert_users(oldMemStateOperand);
+  }
+  JLM_ASSERT(freeNode.IsDead());
+
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
       { outputs.begin(), std::prev(outputs.end()) });
@@ -1066,6 +1091,14 @@ MemoryStateEncoder::ReplaceLoadNode(
     auto & newIOStateOutput = LoadVolatileOperation::IOStateOutput(newLoadNode);
     oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
     oldIOStateOutput.divert_users(&newIOStateOutput);
+    for (auto & oldMemStateOutput : LoadOperation::MemoryStateOutputs(node))
+    {
+      const auto oldMemStateOperand =
+          LoadOperation::MapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
+    }
+
+    JLM_ASSERT(node.IsDead());
     return newLoadNode;
   }
 
@@ -1080,6 +1113,14 @@ MemoryStateEncoder::ReplaceLoadNode(
     auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
     auto & newLoadedValueOutput = LoadNonVolatileOperation::LoadedValueOutput(newLoadNode);
     oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
+    for (auto & oldMemStateOutput : LoadOperation::MemoryStateOutputs(node))
+    {
+      const auto oldMemStateOperand =
+          LoadOperation::MapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
+    }
+
+    JLM_ASSERT(node.IsDead());
     return newLoadNode;
   }
 
@@ -1105,12 +1146,28 @@ MemoryStateEncoder::ReplaceStoreNode(
     auto & oldIOStateOutput = StoreVolatileOperation::IOStateOutput(node);
     auto & newIOStateOutput = StoreVolatileOperation::IOStateOutput(newStoreNode);
     oldIOStateOutput.divert_users(&newIOStateOutput);
+    for (auto & oldMemStateOutput : StoreOperation::MemoryStateOutputs(node))
+    {
+      const auto oldMemStateOperand =
+          StoreOperation::MapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
+    }
+
+    JLM_ASSERT(node.IsDead());
     return newStoreNode;
   }
 
   if (const auto oldStoreNonVolatileOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&node.GetOperation()))
   {
+    for (auto & oldMemStateOutput : StoreOperation::MemoryStateOutputs(node))
+    {
+      const auto oldMemStateOperand =
+          StoreOperation::MapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
+    }
+
+    JLM_ASSERT(node.IsDead());
     return StoreNonVolatileOperation::CreateNode(
         *StoreOperation::AddressInput(node).origin(),
         *StoreOperation::StoredValueInput(node).origin(),
@@ -1141,12 +1198,28 @@ MemoryStateEncoder::ReplaceMemcpyNode(
 
     // Redirect I/O state
     memcpyNode.output(0)->divert_users(results[0]);
+    for (size_t n = 1; n < memcpyNode.noutputs(); n++)
+    {
+      auto oldMemStateOutput = memcpyNode.output(n);
+      auto oldMemStateOperand =
+          MemCpyOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
+      oldMemStateOutput->divert_users(oldMemStateOperand);
+    }
 
+    JLM_ASSERT(memcpyNode.IsDead());
     // Skip I/O state and only return memory states
     return { std::next(results.begin()), results.end() };
   }
   if (is<MemCpyNonVolatileOperation>(memcpyNode.GetOperation()))
   {
+    for (size_t n = 0; n < memcpyNode.noutputs(); n++)
+    {
+      auto oldMemStateOutput = memcpyNode.output(n);
+      auto oldMemStateOperand =
+          MemCpyOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
+      oldMemStateOutput->divert_users(oldMemStateOperand);
+    }
+    JLM_ASSERT(memcpyNode.IsDead());
     return MemCpyNonVolatileOperation::create(destination, source, length, memoryStates);
   }
 
@@ -1166,6 +1239,15 @@ MemoryStateEncoder::ReplaceMemsetNode(
 
   if (is<MemSetNonVolatileOperation>(memsetNode.GetOperation()))
   {
+    for (size_t n = 0; n < memsetNode.noutputs(); n++)
+    {
+      auto oldMemStateOutput = memsetNode.output(n);
+      auto oldMemStateOperand =
+          MemSetOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
+      oldMemStateOutput->divert_users(oldMemStateOperand);
+    }
+    JLM_ASSERT(memsetNode.IsDead());
+
     return outputs(
         &MemSetNonVolatileOperation::createNode(*destination, *value, *length, memoryStates));
   }
@@ -1186,6 +1268,15 @@ MemoryStateEncoder::ReplaceMemmoveNode(
 
   if (is<MemMoveNonVolatileOperation>(memmoveNode.GetOperation()))
   {
+    for (size_t n = 0; n < memmoveNode.noutputs(); n++)
+    {
+      auto oldMemStateOutput = memmoveNode.output(n);
+      auto oldMemStateOperand =
+          MemMoveOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
+      oldMemStateOutput->divert_users(oldMemStateOperand);
+    }
+    JLM_ASSERT(memmoveNode.IsDead());
+
     return outputs(&MemMoveNonVolatileOperation::createNode(
         destOperand,
         srcOperand,
