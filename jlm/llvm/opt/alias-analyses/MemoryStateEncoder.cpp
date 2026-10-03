@@ -486,13 +486,8 @@ MemoryStateEncoder::Encode(
   modRefSummary_ = &modRefSummary;
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
-  statistics->Start(rvsdgModule.Rvsdg());
-  // FIXME: separate handling of inter- and intra-procedural nodes to avoid stateMap parameter for
-  // inter-procedural subregions
-  StateMap stateMap;
-  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion(), stateMap);
-  statistics->Stop();
-
+  // The statistics gathering needs to happen before the encoding as the encoding replaces nodes in
+  // the RVSDG and these new nodes would not have any ModRefSets associated with them.
   if (statisticsCollector.IsDemanded(util::Statistics::Id::MemoryStateEncoder))
   {
     const auto counters = gatherStatistics(rvsdgModule.Rvsdg().GetRootRegion());
@@ -502,6 +497,13 @@ MemoryStateEncoder::Encode(
     statistics->AddStoreMemoryStateCounts(counters->storeCounter);
     statistics->AddCallEntryMergeStateCounts(counters->callEntryMergeCounter);
   }
+
+  statistics->Start(rvsdgModule.Rvsdg());
+  // FIXME: separate handling of inter- and intra-procedural nodes to avoid stateMap parameter for
+  // inter-procedural subregions
+  StateMap stateMap;
+  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion(), stateMap);
+  statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
