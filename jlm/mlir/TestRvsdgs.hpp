@@ -194,7 +194,7 @@ public:
  *   }
  * \endcode
  *
- * All five \ref fpop values go through the same converter branch, so they are exercised
+ * All five \ref jlm::llvm::fpop values go through the same converter branch, so they are exercised
  * together. The lambda returns three of the values so that every binary operation is directly
  * reachable from a lambda result.
  *
