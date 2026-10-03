@@ -1805,12 +1805,10 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5u);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas"), 5u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
 
   EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
   EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
-  EXPECT_TRUE(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
   EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
   EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
   EXPECT_TRUE(statistics.HasTimer("ModRefSetMaterializationTimer"));

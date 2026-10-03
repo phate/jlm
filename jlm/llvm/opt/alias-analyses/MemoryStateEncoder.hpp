@@ -183,6 +183,7 @@ private:
       const std::vector<rvsdg::Output *> & memoryStates);
 
   std::unique_ptr<Context> Context_;
+  const ModRefSummary * modRefSummary_ = nullptr;
 };
 
 }
