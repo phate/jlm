@@ -928,7 +928,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
   ThetaTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 5u);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -955,7 +955,7 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
   ThetaTest test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
 
-  EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
+  EXPECT_EQ(test.lambda->subregion()->numNodes(), 5u);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
