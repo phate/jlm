@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -757,6 +758,62 @@ MlirToJlmConverter::ConvertOperation(
         inputs.size() - 2));
   }
 
+  else if (auto MemcpyOp = ::mlir::dyn_cast<::mlir::jlm::Memcpy>(&mlirOperation))
+  {
+    // isVolatile is a BoolAttr property of the op. The operand layout is dst(0), src(1),
+    // len(2), then, for a volatile copy, the input I/O state (3) followed by the memory
+    // states; for a non-volatile copy the memory states start at index 3.
+    const bool isVolatile = MemcpyOp.getIsVolatile();
+
+    if (isVolatile)
+    {
+      // Volatile memcpy: dst(0), src(1), len(2), ioState(3), inputMemStates(4+)
+
+      JLM_ASSERT(inputs.size() >= 4 && "Volatile memcpy needs at least 4 inputs");
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 4; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      // For volatile, we need to create a MemCpyVolatileOperation
+      auto lengthType = len->Type();
+
+      auto & node = llvm::MemCpyVolatileOperation::CreateNode(
+          *dst,
+          *src,
+          *len,
+          *inputs[3], // ioState (index 3 in inputs)
+          memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
+    else
+    {
+      // Non-volatile memcpy: dst(0), src(1), len(2), inputMemStates(3+)
+
+      JLM_ASSERT(inputs.size() >= 3 && "Non-volatile memcpy needs at least 3 inputs");
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 3; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      auto & node =
+          llvm::MemCpyNonVolatileOperation::createNode(*dst, *src, *len, memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
+  }
+
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
   {
     auto outputType = AllocaOp.getValueType();
@@ -935,7 +992,10 @@ MlirToJlmConverter::ConvertOperation(
       else
       {
         // Constant indices are not part of the inputs to a GEPOp,
-        // but they are required as explicit nodes in RVSDG
+        // but they are required as explicit nodes in RVSDG.
+        //
+        // Only 32-bit constants are ever folded into rawConstantIndices; wider index
+        // constants stay dynamic operands, so the value is materialized as 32 bits.
         indices.push_back(
             jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
       }

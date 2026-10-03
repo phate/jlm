@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/mlir/TestRvsdgs.hpp>
@@ -203,6 +204,49 @@ MemoryHoistBarrierTest::SetupRvsdg()
 
   this->lambda = fct;
   this->memoryHoistBarrier = &memoryHoistBarrierNode;
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+MemcpyVolatileTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto fcttype = rvsdg::FunctionType::Create(
+      { IOStateType::Create(),
+        MemoryStateType::Create(),
+        PointerType::Create(),
+        PointerType::Create(),
+        BitType::Create(64) },
+      { IOStateType::Create(), MemoryStateType::Create() });
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto fct = rvsdg::LambdaNode::Create(
+      graph->GetRootRegion(),
+      llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
+  auto iOStateArgument = fct->GetFunctionArguments()[0];
+  auto memoryStateArgument = fct->GetFunctionArguments()[1];
+  auto destinationArgument = fct->GetFunctionArguments()[2];
+  auto sourceArgument = fct->GetFunctionArguments()[3];
+  auto lengthArgument = fct->GetFunctionArguments()[4];
+
+  auto & memcpyNode = MemCpyVolatileOperation::CreateNode(
+      *destinationArgument,
+      *sourceArgument,
+      *lengthArgument,
+      *iOStateArgument,
+      { memoryStateArgument });
+
+  fct->finalize({ memcpyNode.output(0), memcpyNode.output(1) });
+
+  GraphExport::Create(*fct->output(), "f");
+
+  this->lambda = fct;
+  this->memcpy = &memcpyNode;
 
   return module;
 }
