@@ -34,20 +34,14 @@ using ModRefSetIndex = uint32_t;
  * any memory location, except for other simple allocas.
  * The PointsToGraph is used to determine which allocas are simple.
  *
- * 3. Create sets of non-reentrant allocas for each region.
- * The requirements are:
- *  - the alloca must be simple
- *  - the alloca must not be reachable from any of the region's arguments,
- *    when following points-to edges in the \ref PointsToGraph.
- *
- * 4. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
+ * 3. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
  * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
  * Special edges are used between function body region -> function,
  * which filter away all simple allocas defined in the function that are not recursive.
  *
- * 5. Mod/Ref Graph Solving: Mod/Ref sets and flags are propagated along edges in the graph
+ * 4. Mod/Ref Graph Solving: Mod/Ref sets and flags are propagated along edges in the graph
  *
- * 6. Mod/Ref set materialization, converting implicit memory nodes into explicit memory nodes.
+ * 5. Mod/Ref set materialization, converting implicit memory nodes into explicit memory nodes.
  * During this materialization, memory nodes are also compressed into the external memory node
  * if possible. Compression is done on a per-function basis, and is possible when a memory node's
  * effects is always a subset of the effects on the external node, across all sets in the function.
@@ -155,6 +149,13 @@ private:
   getSimpleAllocasReachableFromCallArguments(const rvsdg::SimpleNode & call);
 
   /**
+   * Disqualifies allocas from being regarded as simple if they are reachable
+   * from the arguments of functions that call setjmp.
+   */
+  void
+  removeSimpleAllocasAroundSetjmp();
+
+  /**
    * Uses the call graph to determine if the given function can ever be involved
    * in a recursive chain of function calls.
    *
@@ -165,18 +166,6 @@ private:
   IsRecursionPossible(const rvsdg::LambdaNode & lambda) const;
 
   /**
-   * Creates subsets of the allocas defined in each region in the program,
-   * containing only the allocas that are determined to be non-reentrant.
-   * The requirements are:
-   *  - The alloca is simple, i.e., not reachable from memory nodes in the \ref PointsToGraph.
-   *  - It is not possible to reach the alloca from any of the region's arguments,
-   *    by following edges in the \ref PointsToGraph.
-   * @return the total number of non-reentrant allocas in the program
-   */
-  size_t
-  CreateNonReentrantAllocaSets();
-
-  /**
    * Adds the fact that everything in the ModRefSet \p from should also be included
    * in the ModRefSet \p to.
    */
@@ -184,19 +173,18 @@ private:
   AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to);
 
   /**
-   * Defines a set of memory nodes to be blocked from the ModRefSet with the given \p index.
-   * A ModRefSet can have at most one such blocklist.
-   * The reference to the blocklist must stay valid until solving is finished.
+   * Defines a set of simple alloca memory nodes that are allowed to be added
+   * to the ModRefSet with the given \p index.
+   * When an allowlist is specified, all other simple allocas are blocked from being added.
    *
-   * Note: The blocklist only prevents propagation during solving,
-   * so the user must avoid adding blocked memory nodes manually.
-   *
-   * @see VerifyBlocklists to check that no blocked memory nodes have been added
+   * Note: The allowlist only prevents propagation during solving,
+   * so the user must avoid adding simple alloca memory nodes manually.
+   * @see verifyAllowlists()
    */
   void
-  AddModRefSetBlocklist(
+  addModRefSetSimpleAllocaAllowlist(
       ModRefSetIndex index,
-      const util::HashSet<PointsToGraph::NodeIndex> & blocklist);
+      util::HashSet<PointsToGraph::NodeIndex> allowlist);
 
   /**
    * Creates \ref ModRefSet%s for regions and nodes within the function.
@@ -275,12 +263,12 @@ private:
   SolveModRefSetConstraintGraph();
 
   /**
-   * For all ModRefSets where a blocklist is defined,
-   * checks that none of the MemoryNodes from the blocklist have been added to the ModRefSet.
-   * @return true if all blocklists are satisfied.
+   * For all ModRefSets where a simple alloca allowlist is defined,
+   * checks that no other simple allocas outside of the list are included.
+   * @return true if all allowlists are satisfied.
    */
   bool
-  VerifyBlocklists() const;
+  verifySimpleAllocaAllowlists() const;
 
   /**
    * After solving, the \ref ModRefSet representing all external functions is used to determine
