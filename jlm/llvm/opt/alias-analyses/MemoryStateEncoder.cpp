@@ -28,6 +28,8 @@
 namespace jlm::llvm::aa
 {
 
+namespace
+{
 /**
  * \brief Helper struct for counting up MemoryNodes, among some set of entities that use them
  */
@@ -478,7 +480,7 @@ public:
     JLM_ASSERT(StateMaps_.empty());
   }
 
-  explicit RegionalizedStateMap() = default;
+  RegionalizedStateMap() = default;
 
   RegionalizedStateMap(const RegionalizedStateMap &) = delete;
 
@@ -500,12 +502,6 @@ public:
   TryGetState(const rvsdg::Region & region, PointsToGraph::NodeIndex memoryNode) const
   {
     return GetStateMap(region).TryGetState(memoryNode);
-  }
-
-  bool
-  HasState(const rvsdg::Region & region, PointsToGraph::NodeIndex memoryNode) const
-  {
-    return GetStateMap(region).HasState(memoryNode);
   }
 
   StateMap::MemoryNodeStatePair *
@@ -561,12 +557,14 @@ private:
   std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
 };
 
+}
+
 /** \brief Context for the memory state encoder
  */
 class MemoryStateEncoder::Context final
 {
 public:
-  explicit Context() = default;
+  Context() = default;
 
   Context(const Context &) = delete;
 
