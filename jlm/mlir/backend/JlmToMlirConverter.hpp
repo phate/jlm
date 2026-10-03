@@ -14,6 +14,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
@@ -199,6 +201,14 @@ public:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
+   * Converts the types of a structural node's outputs to MLIR types.
+   * \param node The RVSDG structural node whose output types are converted.
+   * \result The MLIR types of the node's outputs.
+   */
+  ::llvm::SmallVector<::mlir::Type>
+  ConvertOutputTypes(const rvsdg::StructuralNode & node);
+
+  /**
    * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.
    * \param gammaNode The RVSDG gamma node to be converted
    * \param block The MLIR RVSDG block to insert the gamma node.
@@ -227,6 +237,19 @@ public:
   ::mlir::Operation *
   ConvertDelta(
       const rvsdg::DeltaNode & node,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  /**
+   * Converts an RVSDG phi node to an MLIR RVSDG PhiNode.
+   * \param phiNode The RVSDG phi node to be converted.
+   * \param block The MLIR RVSDG block to insert the phi node.
+   * \param inputs The context variables of the phi node.
+   * \return The converted MLIR RVSDG PhiNode.
+   */
+  ::mlir::Operation *
+  ConvertPhi(
+      const rvsdg::PhiNode & phiNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
