@@ -48,6 +48,7 @@ class MemoryStateEncoder final
 {
 public:
   class Context;
+  class StateMap;
 
   ~MemoryStateEncoder() noexcept;
 
@@ -71,43 +72,43 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::Region & region);
+  EncodeRegion(rvsdg::Region & region, StateMap & stateMap);
 
   void
-  EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
+  EncodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap);
 
   void
-  EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
+  EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap);
 
   void
-  EncodeLoad(const rvsdg::SimpleNode & node);
+  EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeStore(const rvsdg::SimpleNode & node);
+  EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeFree(const rvsdg::SimpleNode & freeNode);
+  EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap);
 
   void
-  EncodeCall(const rvsdg::SimpleNode & callNode);
+  EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap);
 
   void
-  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
+  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap);
 
   void
-  EncodeMemset(const rvsdg::SimpleNode & memsetNode);
+  EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap);
 
   void
-  EncodeMemmove(const rvsdg::SimpleNode & memmoveNode);
+  EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap);
 
   void
   EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeGamma(rvsdg::GammaNode & gammaNode);
+  EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap);
 
   void
-  EncodeTheta(rvsdg::ThetaNode & thetaNode);
+  EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
