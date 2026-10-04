@@ -17,6 +17,7 @@
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -928,6 +929,11 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenAgnostic)
   ThetaTest test;
   encodeStates<aa::Andersen, aa::AgnosticModRefSummarizer>(test.module());
 
+  // MemoryStateEncoding only performs pruning. However, there is a node in the lambda subregion
+  // that is indirectly dead, but only gets eliminated by DeadNodeElimination.
+  DeadNodeElimination dne;
+  dne.run(test.module().Rvsdg().GetRootRegion());
+
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -954,6 +960,11 @@ TEST(MemoryStateEncoderTests, thetaTestAndersenRegionAware)
 
   ThetaTest test;
   encodeStates<aa::Andersen, aa::RegionAwareModRefSummarizer>(test.module());
+
+  // MemoryStateEncoding only performs pruning. However, there is a node in the lambda subregion
+  // that is indirectly dead, but only gets eliminated by DeadNodeElimination.
+  DeadNodeElimination dne;
+  dne.run(test.module().Rvsdg().GetRootRegion());
 
   EXPECT_EQ(test.lambda->subregion()->numNodes(), 4u);
 

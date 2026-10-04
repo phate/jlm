@@ -133,6 +133,29 @@ public:
     JLM_ASSERT(is<MemoryStateType>(output->Type()));
     return *output;
   }
+
+  /**
+   * Returns a range over the memory state outputs of a \ref MemCpyOperation node.
+   *
+   * @param node A \ref MemCpyOperation  node.
+   * @return A range over the memory state outputs of \p node.
+   *
+   * @pre \p node is expected to be a \ref MemCpyOperation node.
+   */
+  [[nodiscard]] static rvsdg::Node::OutputIteratorRange
+  memoryStateOutputs(const rvsdg::Node & node) noexcept
+  {
+    const auto memCpyOperation = util::assertedCast<const MemCpyOperation>(&node.GetOperation());
+    if (memCpyOperation->NumMemoryStates() == 0)
+    {
+      return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateOutput =
+        node.output(memCpyOperation->nresults() - memCpyOperation->NumMemoryStates());
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
+    return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
+  }
 };
 
 /**
@@ -266,6 +289,24 @@ public:
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
+
+  [[nodiscard]] static rvsdg::Input &
+  getIOStateInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemCpyVolatileOperation>(&node));
+    const auto input = node.input(3);
+    JLM_ASSERT(is<IOStateType>(input->Type()));
+    return *input;
+  }
+
+  [[nodiscard]] static rvsdg::Output &
+  getIOStateOutput(const rvsdg::Node & node)
+  {
+    JLM_ASSERT(is<MemCpyVolatileOperation>(&node));
+    const auto output = node.output(0);
+    JLM_ASSERT(is<IOStateType>(output->Type()));
+    return *output;
+  }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   CreateThreeAddressCode(
@@ -455,6 +496,29 @@ public:
     const auto output = memsetNode->output(outputIndex);
     JLM_ASSERT(is<MemoryStateType>(output->Type()));
     return *output;
+  }
+
+  /**
+   * Returns a range over the memory state outputs of a \ref MemSetOperation node.
+   *
+   * @param node A \ref MemSetOperation  node.
+   * @return A range over the memory state outputs of \p node.
+   *
+   * @pre \p node is expected to be a \ref MemSetOperation node.
+   */
+  [[nodiscard]] static rvsdg::Node::OutputIteratorRange
+  memoryStateOutputs(const rvsdg::Node & node) noexcept
+  {
+    const auto memSetOperation = util::assertedCast<const MemSetOperation>(&node.GetOperation());
+    if (memSetOperation->numMemoryStates() == 0)
+    {
+      return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateOutput =
+        node.output(memSetOperation->nresults() - memSetOperation->numMemoryStates());
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
+    return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
   }
 };
 
@@ -673,6 +737,29 @@ public:
     const auto output = memmoveNode->output(outputIndex);
     JLM_ASSERT(is<MemoryStateType>(output->Type()));
     return *output;
+  }
+
+  /**
+   * Returns a range over the memory state outputs of a \ref MemMoveOperation node.
+   *
+   * @param node A \ref MemMoveOperation  node.
+   * @return A range over the memory state outputs of \p node.
+   *
+   * @pre \p node is expected to be a \ref MemMoveOperation node.
+   */
+  [[nodiscard]] static rvsdg::Node::OutputIteratorRange
+  memoryStateOutputs(const rvsdg::Node & node) noexcept
+  {
+    const auto memMoveOperation = util::assertedCast<const MemMoveOperation>(&node.GetOperation());
+    if (memMoveOperation->numMemoryStates() == 0)
+    {
+      return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateOutput =
+        node.output(memMoveOperation->nresults() - memMoveOperation->numMemoryStates());
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
+    return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
   }
 };
 

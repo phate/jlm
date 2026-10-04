@@ -142,18 +142,18 @@ private:
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
-   * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of
-   * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
+   * Replace \p memCpyNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memCpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param memcpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
-   * @param memoryStates The memory states the new memcpy node should consume.
+   * @param memCpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
+   * @param memoryStates The memory states the new \ref MemCpyOperation node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::Output *>
+  [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceMemcpyNode(
-      const rvsdg::SimpleNode & memcpyNode,
+      const rvsdg::SimpleNode & memCpyNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
@@ -166,7 +166,7 @@ private:
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::Output *>
+  [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceMemsetNode(
       const rvsdg::SimpleNode & memsetNode,
       const std::vector<rvsdg::Output *> & memoryStates);
@@ -181,7 +181,7 @@ private:
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::Output *>
+  [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceMemmoveNode(
       const rvsdg::SimpleNode & memmoveNode,
       const std::vector<rvsdg::Output *> & memoryStates);
