@@ -792,7 +792,6 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
-
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
       LoadOperation::MemoryStateOutputs(newLoadNode));
@@ -808,7 +807,6 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
-
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
       StoreOperation::MemoryStateOutputs(newStoreNode));
@@ -882,9 +880,10 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap 
       stateMap.GetExistingStates(modRefSummary_->GetSimpleNodeModRef(memcpyNode));
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto memoryStateResults = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+  const auto & newMemCpyNode = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      memoryNodeStatePairs,
+      MemCpyOperation::memoryStateOutputs(newMemCpyNode));
 }
 
 void
@@ -896,9 +895,10 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap 
       stateMap.GetExistingStates(modRefSummary_->GetSimpleNodeModRef(memsetNode));
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto memoryStateResults = ReplaceMemsetNode(memsetNode, memoryStateOperands);
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+  auto & newMemSetNode = ReplaceMemsetNode(memsetNode, memoryStateOperands);
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      memoryNodeStatePairs,
+      MemSetOperation::memoryStateOutputs(newMemSetNode));
 }
 
 void
@@ -910,9 +910,10 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMa
       stateMap.GetExistingStates(modRefSummary_->GetSimpleNodeModRef(memmoveNode));
   auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto memoryStateResults = ReplaceMemmoveNode(memmoveNode, memoryStateOperands);
-
-  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, memoryStateResults);
+  auto & newMemMoveNode = ReplaceMemmoveNode(memmoveNode, memoryStateOperands);
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      memoryNodeStatePairs,
+      MemMoveOperation::memoryStateOutputs(newMemMoveNode));
 }
 
 void
@@ -1178,55 +1179,58 @@ MemoryStateEncoder::ReplaceStoreNode(
   JLM_UNREACHABLE("Unhandled store node type.");
 }
 
-std::vector<rvsdg::Output *>
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceMemcpyNode(
-    const rvsdg::SimpleNode & memcpyNode,
+    const rvsdg::SimpleNode & memCpyNode,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
-  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
+  JLM_ASSERT(is<MemCpyOperation>(memCpyNode.GetOperation()));
 
-  auto destination = memcpyNode.input(0)->origin();
-  auto source = memcpyNode.input(1)->origin();
-  auto length = memcpyNode.input(2)->origin();
+  auto & destination = *MemCpyOperation::destinationInput(memCpyNode).origin();
+  auto & source = *MemCpyOperation::sourceInput(memCpyNode).origin();
+  auto & length = *MemCpyOperation::countInput(memCpyNode).origin();
 
-  if (is<MemCpyVolatileOperation>(memcpyNode.GetOperation()))
+  if (is<MemCpyVolatileOperation>(memCpyNode.GetOperation()))
   {
-    auto & ioState = *memcpyNode.input(3)->origin();
-    auto & newMemcpyNode =
-        MemCpyVolatileOperation::CreateNode(*destination, *source, *length, ioState, memoryStates);
-    auto results = rvsdg::outputs(&newMemcpyNode);
+    auto & ioStateOperand = *MemCpyVolatileOperation::getIOStateInput(memCpyNode).origin();
+    auto & newMemCpyNode = MemCpyVolatileOperation::CreateNode(
+        destination,
+        source,
+        length,
+        ioStateOperand,
+        memoryStates);
+    auto results = rvsdg::outputs(&newMemCpyNode);
 
-    // Redirect I/O state
-    memcpyNode.output(0)->divert_users(results[0]);
-    for (size_t n = 1; n < memcpyNode.noutputs(); n++)
+    MemCpyVolatileOperation::getIOStateOutput(memCpyNode)
+        .divert_users(&MemCpyVolatileOperation::getIOStateOutput(memCpyNode));
+    for (auto & oldMemStateOutput : MemCpyOperation::memoryStateOutputs(memCpyNode))
     {
-      auto oldMemStateOutput = memcpyNode.output(n);
       auto oldMemStateOperand =
-          MemCpyOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
-      oldMemStateOutput->divert_users(oldMemStateOperand);
+          MemCpyOperation::mapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
     }
+    JLM_ASSERT(memCpyNode.IsDead());
 
-    JLM_ASSERT(memcpyNode.IsDead());
-    // Skip I/O state and only return memory states
-    return { std::next(results.begin()), results.end() };
+    return newMemCpyNode;
   }
-  if (is<MemCpyNonVolatileOperation>(memcpyNode.GetOperation()))
+
+  if (is<MemCpyNonVolatileOperation>(memCpyNode.GetOperation()))
   {
-    for (size_t n = 0; n < memcpyNode.noutputs(); n++)
+    for (auto & oldMemStateOutput : MemCpyOperation::memoryStateOutputs(memCpyNode))
     {
-      auto oldMemStateOutput = memcpyNode.output(n);
       auto oldMemStateOperand =
-          MemCpyOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
-      oldMemStateOutput->divert_users(oldMemStateOperand);
+          MemCpyOperation::mapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
     }
-    JLM_ASSERT(memcpyNode.IsDead());
-    return MemCpyNonVolatileOperation::create(destination, source, length, memoryStates);
+    JLM_ASSERT(memCpyNode.IsDead());
+
+    return MemCpyNonVolatileOperation::createNode(destination, source, length, memoryStates);
   }
 
   throw std::logic_error("Unhandled memcpy operation type.");
 }
 
-std::vector<rvsdg::Output *>
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceMemsetNode(
     const rvsdg::SimpleNode & memsetNode,
     const std::vector<rvsdg::Output *> & memoryStates)
@@ -1239,49 +1243,46 @@ MemoryStateEncoder::ReplaceMemsetNode(
 
   if (is<MemSetNonVolatileOperation>(memsetNode.GetOperation()))
   {
-    for (size_t n = 0; n < memsetNode.noutputs(); n++)
+    for (auto & oldMemStateOutput : MemSetOperation::memoryStateOutputs(memsetNode))
     {
-      auto oldMemStateOutput = memsetNode.output(n);
       auto oldMemStateOperand =
-          MemSetOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
-      oldMemStateOutput->divert_users(oldMemStateOperand);
+          MemSetOperation::mapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
     }
     JLM_ASSERT(memsetNode.IsDead());
 
-    return outputs(
-        &MemSetNonVolatileOperation::createNode(*destination, *value, *length, memoryStates));
+    return MemSetNonVolatileOperation::createNode(*destination, *value, *length, memoryStates);
   }
 
   throw std::logic_error("Unhandled memset operation type.");
 }
 
-std::vector<rvsdg::Output *>
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceMemmoveNode(
     const rvsdg::SimpleNode & memmoveNode,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
   JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
 
-  auto & destOperand = *memmoveNode.input(0)->origin();
-  auto & srcOperand = *memmoveNode.input(1)->origin();
-  auto & lengthOperand = *memmoveNode.input(2)->origin();
+  auto & destOperand = *MemMoveOperation::destinationInput(memmoveNode).origin();
+  auto & srcOperand = *MemMoveOperation::sourceInput(memmoveNode).origin();
+  auto & lengthOperand = *MemMoveOperation::lengthInput(memmoveNode).origin();
 
   if (is<MemMoveNonVolatileOperation>(memmoveNode.GetOperation()))
   {
-    for (size_t n = 0; n < memmoveNode.noutputs(); n++)
+    for (auto & oldMemStateOutput : MemMoveOperation::memoryStateOutputs(memmoveNode))
     {
-      auto oldMemStateOutput = memmoveNode.output(n);
       auto oldMemStateOperand =
-          MemMoveOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
-      oldMemStateOutput->divert_users(oldMemStateOperand);
+          MemMoveOperation::mapMemoryStateOutputToInput(oldMemStateOutput).origin();
+      oldMemStateOutput.divert_users(oldMemStateOperand);
     }
     JLM_ASSERT(memmoveNode.IsDead());
 
-    return outputs(&MemMoveNonVolatileOperation::createNode(
+    return MemMoveNonVolatileOperation::createNode(
         destOperand,
         srcOperand,
         lengthOperand,
-        memoryStates));
+        memoryStates);
   }
 
   throw std::logic_error("Unhandled memmove operation type.");
