@@ -716,6 +716,45 @@ ConstantStructTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+MixedArrayTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto bitType32 = BitType::Create(32);
+  auto arrayType = ArrayType::Create(bitType32, 2);
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto arrayDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(arrayType, "array", Linkage::externalLinkage, "", false, 4));
+  auto one = &IntegerConstantOperation::Create(*arrayDelta->subregion(), { 32, 1 });
+  auto two = &IntegerConstantOperation::Create(*arrayDelta->subregion(), { 32, 2 });
+  auto constantArray = ConstantArrayOperation::Create({ one->output(0), two->output(0) });
+  auto & arrayOutput = arrayDelta->finalize(constantArray);
+  GraphExport::Create(arrayOutput, "array");
+
+  auto dataDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(arrayType, "dataArray", Linkage::externalLinkage, "", false, 4));
+  auto three = &IntegerConstantOperation::Create(*dataDelta->subregion(), { 32, 3 });
+  auto four = &IntegerConstantOperation::Create(*dataDelta->subregion(), { 32, 4 });
+  auto constantDataArray =
+      ConstantDataArrayOperation::Create({ three->output(0), four->output(0) });
+  auto & dataOutput = dataDelta->finalize(constantDataArray);
+  GraphExport::Create(dataOutput, "dataArray");
+
+  this->arrayDelta = arrayDelta;
+  this->dataDelta = dataDelta;
+  this->constantArray = rvsdg::TryGetOwnerNode<SimpleNode>(*constantArray);
+  this->constantDataArray = rvsdg::TryGetOwnerNode<SimpleNode>(*constantDataArray);
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
 WideMemoryNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;

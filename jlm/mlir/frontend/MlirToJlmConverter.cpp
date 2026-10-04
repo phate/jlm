@@ -782,6 +782,11 @@ MlirToJlmConverter::ConvertOperation(
     return { jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType) };
   }
 
+  else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantArray>(&mlirOperation))
+  {
+    return { llvm::ConstantArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
+  }
+
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
     return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
