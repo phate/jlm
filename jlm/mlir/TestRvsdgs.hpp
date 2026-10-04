@@ -357,6 +357,37 @@ public:
   jlm::rvsdg::SimpleNode * constantAggregateZero;
 };
 
+/** \brief ConstantStructTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   struct myStruct { int32_t first; void * second; } myConstantStruct = { 1, 0 };
+ *   struct { int32_t first; int32_t second; } myLiteralStruct = { 1, 2 };
+ * \endcode
+ *
+ * Both are built by \ref jlm::llvm::ConstantStructOperation, so the only difference between them is
+ * the struct type's kind: the first is identified and carries a name, the second is literal. Both
+ * kinds round-trip through an `LLVMStructType`, and the two kinds compare equal to each other on
+ * element count and element types alone, so having one of each is what catches a struct that
+ * round-trips back as the wrong kind.
+ */
+class ConstantStructTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * identifiedDelta;
+
+  jlm::rvsdg::DeltaNode * literalDelta;
+
+  jlm::rvsdg::SimpleNode * identifiedStruct;
+
+  jlm::rvsdg::SimpleNode * literalStruct;
+};
+
 /** \brief WideMemoryNodesTest class
  *
  * This class sets up an RVSDG representing the following function:

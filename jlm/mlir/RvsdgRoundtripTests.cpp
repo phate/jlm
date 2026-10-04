@@ -740,6 +740,7 @@ ROUNDTRIP_TEST_CNE(TestGetElementPtr, ::jlm::llvm::GetElementPtrTest)
 
 ROUNDTRIP_TEST(TestComparison, ::jlm::mlir::ComparisonTest)
 ROUNDTRIP_TEST(TestConstantDelta, ::jlm::mlir::ConstantDeltaTest)
+ROUNDTRIP_TEST(TestConstantStruct, ::jlm::mlir::ConstantStructTest)
 ROUNDTRIP_TEST(TestFloatBinary, ::jlm::mlir::FloatBinaryTest)
 ROUNDTRIP_TEST(TestFloatConversion, ::jlm::mlir::FloatConversionTest)
 ROUNDTRIP_TEST(TestGlobalArray, ::jlm::mlir::GlobalArrayTest)

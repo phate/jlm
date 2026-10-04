@@ -248,8 +248,12 @@ private:
   }
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
-  util::BijectiveMap<::mlir::LLVM::LLVMStructType *, std::shared_ptr<const llvm::StructType>>
-      StructTypeMap_;
+
+  /**
+   * Maps an MLIR struct type to the converted RVSDG struct type, keyed on the MLIR type's opaque
+   * pointer so that repeated conversions of the same MLIR type reuse the same RVSDG type.
+   */
+  util::BijectiveMap<const void *, std::shared_ptr<const llvm::StructType>> StructTypeMap_;
 };
 
 } // namespace jlm::mlir

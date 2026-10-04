@@ -730,6 +730,14 @@ MlirToJlmConverter::ConvertOperation(
     return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
   }
 
+  else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  {
+    return { &llvm::ConstantStructOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(StructOp.getOutput().getType())) };
+  }
+
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
@@ -1366,9 +1374,10 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
-    if (StructTypeMap_.HasKey(&structType))
+    auto key = structType.getAsOpaquePointer();
+    if (StructTypeMap_.HasKey(key))
     {
-      return StructTypeMap_.LookupKey(&structType);
+      return StructTypeMap_.LookupKey(key);
     }
 
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
@@ -1390,7 +1399,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
     }
 
-    StructTypeMap_.Insert(&structType, jlmStructType);
+    StructTypeMap_.Insert(key, jlmStructType);
     return jlmStructType;
   }
   else
