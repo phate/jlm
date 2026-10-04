@@ -831,12 +831,11 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
   FreeOperation::getIOStateOutput(freeNode).divert_users(
       &FreeOperation::getIOStateOutput(newFreeNode));
 
-  for (size_t n = 0; n < freeNode.noutputs() - 1; n++)
+  for (auto & oldMemStateOutput : FreeOperation::memoryStateOutputs(freeNode))
   {
-    auto oldMemStateOutput = freeNode.output(n);
     auto oldMemStateOperand =
-        FreeOperation::mapMemoryStateOutputToInput(*oldMemStateOutput).origin();
-    oldMemStateOutput->divert_users(oldMemStateOperand);
+        FreeOperation::mapMemoryStateOutputToInput(oldMemStateOutput).origin();
+    oldMemStateOutput.divert_users(oldMemStateOperand);
   }
   JLM_ASSERT(freeNode.IsDead());
 
