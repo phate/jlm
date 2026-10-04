@@ -75,7 +75,7 @@ static const bool ENABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST =
 
 /**
  * When creating a ModRefSet representing memory effects in external functions,
- * simple allocas can always be excluded, since they by definition can not be
+ * simple allocas can always be excluded, since they by definition cannot be
  * passed via external functions or otherwise be accessible from external modules.
  */
 static const bool ENABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST =
