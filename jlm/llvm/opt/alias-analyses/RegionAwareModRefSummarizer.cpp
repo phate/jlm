@@ -73,6 +73,14 @@ static const bool ENABLE_FUNCTION_SIMPLE_ALLOCA_ALLOWLIST =
 static const bool ENABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST =
     !std::getenv("JLM_DISABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST");
 
+/**
+ * When creating a ModRefSet representing memory effects in external functions,
+ * simple allocas can always be excluded, since they by definition cannot be
+ * passed via external functions or otherwise be accessible from external modules.
+ */
+static const bool ENABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST =
+    !std::getenv("JLM_DISABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -919,6 +927,12 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
 
   removeSimpleAllocasAroundSetjmp();
 
+  if (ENABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST)
+  {
+    // Use an empty allowlist, since all simple allocas should be blocked
+    addModRefSetSimpleAllocaAllowlist(ModRefSummary_->getExternModRefSet(), {});
+  }
+
   statistics->StartAnnotationStatistics();
   // Go through and recursively annotate all functions, regions and nodes
   for (const auto & scc : Context_->SccFunctions)
@@ -1519,7 +1533,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
   const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(freeNode, lambda);
-  const auto origin = FreeOperation::addressInput(freeNode).origin();
+  const auto origin = FreeOperation::getAddressInput(freeNode).origin();
 
   // TODO: Filter so we only free MallocMemoryNodes
   addPointerOriginTargets(nodeModRef, *origin, std::nullopt, ModRefEffect::ModOnly);

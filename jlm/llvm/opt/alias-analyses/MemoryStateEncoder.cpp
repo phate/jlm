@@ -819,16 +819,17 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
 {
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
-  auto address = freeNode.input(0)->origin();
-  auto ioState = freeNode.input(freeNode.ninputs() - 1)->origin();
+  auto addressOperand = FreeOperation::getAddressInput(freeNode).origin();
+  auto ioStateOperand = FreeOperation::getIOStateInput(freeNode).origin();
   auto memoryNodeStatePairs =
       stateMap.GetExistingStates(modRefSummary_->GetSimpleNodeModRef(freeNode));
-  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  auto memStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outputs = FreeOperation::Create(address, inStates, ioState);
+  auto & newFreeNode =
+      FreeOperation::createNode(*addressOperand, *ioStateOperand, memStateOperands);
 
-  // Redirect IO state edge
-  freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
+  FreeOperation::getIOStateOutput(freeNode).divert_users(
+      &FreeOperation::getIOStateOutput(newFreeNode));
 
   for (size_t n = 0; n < freeNode.noutputs() - 1; n++)
   {
@@ -841,7 +842,7 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      { outputs.begin(), std::prev(outputs.end()) });
+      FreeOperation::memoryStateOutputs(newFreeNode));
 }
 
 void
