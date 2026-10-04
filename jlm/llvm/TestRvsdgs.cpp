@@ -700,12 +700,12 @@ CallTest2::SetupRvsdg()
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto cast = BitCastOperation::create(pointerArgument, pointerType);
-    auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
+    auto & freeNode = FreeOperation::createNode(*cast, *iOStateArgument, { memoryStateArgument });
 
-    lambda->finalize({ freeResults[1], freeResults[0] });
+    lambda->finalize({ &FreeOperation::getIOStateOutput(freeNode),
+                       &*FreeOperation::memoryStateOutputs(freeNode).begin() });
 
-    auto freeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*freeResults[0]);
-    return std::make_tuple(lambda, freeNode);
+    return std::make_tuple(lambda, &freeNode);
   };
 
   auto SetupTest = [&](rvsdg::LambdaNode * lambdaCreate, rvsdg::LambdaNode * lambdaDestroy)
@@ -3802,10 +3802,13 @@ FreeNullTest::SetupRvsdg()
   auto constantPointerNullResult =
       ConstantPointerNullOperation::createNode(*LambdaMain_->subregion()).output(0);
 
-  auto FreeResults =
-      FreeOperation::Create(constantPointerNullResult, { memoryStateArgument }, iOStateArgument);
+  auto & freeNode = FreeOperation::createNode(
+      *constantPointerNullResult,
+      *iOStateArgument,
+      { memoryStateArgument });
 
-  LambdaMain_->finalize({ FreeResults[1], FreeResults[0] });
+  LambdaMain_->finalize({ &FreeOperation::getIOStateOutput(freeNode),
+                          &*FreeOperation::memoryStateOutputs(freeNode).begin() });
 
   GraphExport::Create(*LambdaMain_->output(), "main");
 

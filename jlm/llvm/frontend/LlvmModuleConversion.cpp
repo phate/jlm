@@ -1151,12 +1151,12 @@ convertFreeCall(
 
   const auto pointer = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
 
-  threeAddressCodes.push_back(FreeOperation::Create(pointer, { memstate }, ioState));
+  threeAddressCodes.push_back(FreeOperation::Create(pointer, ioState, { memstate }));
   const auto & freeThreeAddressCode = *threeAddressCodes.back().get();
 
   threeAddressCodes.push_back(
-      AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
-  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), ioState));
+      AssignmentOperation::create(freeThreeAddressCode.result(1), memstate));
+  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), ioState));
 
   return nullptr;
 }
