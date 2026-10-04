@@ -1,4 +1,4 @@
-  #!/bin/bash
+#!/bin/bash
 set -eu
 
 # URL to the benchmark git repository and the commit to be used
