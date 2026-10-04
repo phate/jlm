@@ -664,6 +664,50 @@ MlirToJlmConverter::ConvertOperation(
         llvm::FloatingPointType::Create(size)));
   }
 
+  else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncFOp>(&mlirOperation))
+  {
+    auto type = truncOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPTruncOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
+  else if (auto fpToSIOp = ::mlir::dyn_cast<::mlir::arith::FPToSIOp>(&mlirOperation))
+  {
+    auto type = fpToSIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToSIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto fpToUIOp = ::mlir::dyn_cast<::mlir::arith::FPToUIOp>(&mlirOperation))
+  {
+    auto type = fpToUIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToUIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto uiToFPOp = ::mlir::dyn_cast<::mlir::arith::UIToFPOp>(&mlirOperation))
+  {
+    auto type = uiToFPOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::UIToFPOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
   else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
   {
     auto type = truncOp.getResult().getType();
