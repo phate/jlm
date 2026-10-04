@@ -1199,10 +1199,9 @@ MemoryStateEncoder::ReplaceMemcpyNode(
         length,
         ioStateOperand,
         memoryStates);
-    auto results = rvsdg::outputs(&newMemCpyNode);
 
     MemCpyVolatileOperation::getIOStateOutput(memCpyNode)
-        .divert_users(&MemCpyVolatileOperation::getIOStateOutput(memCpyNode));
+        .divert_users(&MemCpyVolatileOperation::getIOStateOutput(newMemCpyNode));
     for (auto & oldMemStateOutput : MemCpyOperation::memoryStateOutputs(memCpyNode))
     {
       auto oldMemStateOperand =
