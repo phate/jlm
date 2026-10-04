@@ -274,7 +274,7 @@ AgnosticModRefSummarizer::AnnotateSimpleNode(const rvsdg::SimpleNode & node)
       [&](const FreeOperation &)
       {
         AgnosticModRefSet modRefSet;
-        const auto & freeAddress = *FreeOperation::addressInput(node).origin();
+        const auto & freeAddress = *FreeOperation::getAddressInput(node).origin();
         AddPointerTargetsToModRefSet(freeAddress, ModRefEffect::ModOnly, modRefSet);
         ModRefSummary_->SetSimpleNodeModRef(node, std::move(modRefSet));
       },

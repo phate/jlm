@@ -1519,7 +1519,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
   const auto nodeModRef = ModRefSummary_->getOrCreateSetForNode(freeNode, lambda);
-  const auto origin = FreeOperation::addressInput(freeNode).origin();
+  const auto origin = FreeOperation::getAddressInput(freeNode).origin();
 
   // TODO: Filter so we only free MallocMemoryNodes
   addPointerOriginTargets(nodeModRef, *origin, std::nullopt, ModRefEffect::ModOnly);

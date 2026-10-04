@@ -50,8 +50,8 @@ TEST(FreeOperationTests, TestThreeAddressCodeCreator)
   auto iOState = ipgModule.create_variable(IOStateType::Create(), "io");
 
   // Act
-  auto free0 = FreeOperation::Create(address, {}, iOState);
-  auto free1 = FreeOperation::Create(address, { memoryState }, iOState);
+  auto free0 = FreeOperation::Create(address, iOState, {});
+  auto free1 = FreeOperation::Create(address, iOState, { memoryState });
 
   // Assert
   EXPECT_EQ(free0->nresults(), 1u);
@@ -70,13 +70,13 @@ TEST(FreeOperationTests, TestRvsdgCreator)
   auto iOState = &jlm::rvsdg::GraphImport::Create(rvsdg, IOStateType::Create(), "io");
 
   // Act
-  auto freeResults0 = FreeOperation::Create(address, {}, iOState);
-  auto freeResults1 = FreeOperation::Create(address, { memoryState }, iOState);
+  auto freeResults0 = FreeOperation::Create(*address, *iOState, {});
+  auto freeResults1 = FreeOperation::Create(*address, *iOState, { memoryState });
 
   auto & freeNode0 = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*freeResults0[0]);
 
   // Assert
   EXPECT_EQ(freeResults0.size(), 1u);
   EXPECT_EQ(freeResults1.size(), 2u);
-  EXPECT_EQ(FreeOperation::addressInput(freeNode0).origin(), address);
+  EXPECT_EQ(FreeOperation::getAddressInput(freeNode0).origin(), address);
 }
