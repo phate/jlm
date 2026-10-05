@@ -475,6 +475,41 @@ public:
     return memoryNodeStatePairs;
   }
 
+  // FIXME: documentation
+  std::vector<rvsdg::Output *>
+  getExistingRawStates(const std::vector<MemoryNodeId> & modRefNodes)
+  {
+    std::vector<rvsdg::Output *> memoryStates;
+    for (auto & modRefNode : modRefNodes)
+    {
+      if (const auto statePair = TryGetState(modRefNode))
+        memoryStates.push_back(&statePair->State());
+    }
+
+    JLM_ASSERT(modRefNodes.size() == memoryStates.size());
+    return memoryStates;
+  }
+
+  void
+  updateStates(
+      const std::vector<MemoryNodeId> & modRefNodes,
+      const rvsdg::Node::OutputIteratorRange & memoryStates)
+  {
+    JLM_ASSERT(
+        modRefNodes.size()
+        == static_cast<size_t>(std::distance(memoryStates.begin(), memoryStates.end())));
+
+    size_t i = 0;
+    for (auto & memoryState : memoryStates)
+    {
+      auto & modRefNode = modRefNodes[i++];
+      if (const auto statePair = TryGetState(modRefNode))
+        statePair->ReplaceState(memoryState);
+      else
+        throw std::logic_error("Unknown modRefNode in StateMap");
+    }
+  }
+
   /**
    * Creates a new memory node / memory state pair in the region.
    * The memory node must not have an already associated state.
@@ -498,7 +533,7 @@ private:
 };
 
 static std::vector<MemoryNodeId>
-GetMemoryNodeIds(const ModRefSet & modRefSet)
+getModRefSetNodes(const ModRefSet & modRefSet)
 {
   std::vector<MemoryNodeId> memoryNodeIds;
   for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
@@ -830,11 +865,8 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
   else
   {
     encodingCounter_.numReplacedLoads += 1;
-    const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
-    StateMap::MemoryNodeStatePair::ReplaceStates(
-        memoryNodeStatePairs,
-        LoadOperation::MemoryStateOutputs(newLoadNode));
-  }
+    const auto & newLoadNode = ReplaceLoadNode(node, memoryStateOperands);
+  stateMap.updateStates(modRefNodes, LoadOperation::MemoryStateOutputs(newLoadNode));}
 }
 
 void
@@ -991,7 +1023,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
     auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
 
     const auto & modRefSet = modRefSummary_->GetLambdaEntryModRef(lambdaNode);
-    const auto memoryNodeIds = GetMemoryNodeIds(modRefSet);
+    const auto memoryNodeIds = getModRefSetNodes(modRefSet);
     auto & lambdaEntrySplitNode =
         LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
     const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
