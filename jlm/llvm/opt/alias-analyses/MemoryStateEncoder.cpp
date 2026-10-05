@@ -436,8 +436,11 @@ public:
 
   /**
    * Gets MemoryNodeStatePairs for each of the given memory nodes.
-   * If no memory state output exists for a given memory node,
-   * an UndefValue node is created to supply it.
+   * If no memory state output exists for a given memory node, an UndefValue node is created.
+   * This only happens when a \ref ModRefSet contains alloca whose memory state is not routed
+   * in as a function argument, and the alloca operation has not been encoded yet.
+   * This can happen when allocas are inside subregions, or when the allocation count is a
+   * runtime value that depends on a load.
    *
    * @param modRefSet the set of memory nodes to retrieve states for.
    * @param region the region in which the states are needed
@@ -460,6 +463,11 @@ public:
       }
 
       // If no memory state output exists for the memory node, create an UndefValue for it
+
+      // Using undef for memory states that do not exist yet should only be done for allocas.
+      // TODO: After refactoring, add an assert here like so:
+      // JLM_ASSERT(modRefSummary_->getPointsToGraph().getNodeKind(memoryNode) == NodeKind::Alloca);
+
       auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
       auto insertedPair = InsertState(memoryNode, undefOutput);
       memoryNodeStatePairs.push_back(insertedPair);
