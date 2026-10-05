@@ -446,7 +446,6 @@ public:
    * @param region the region in which the states are needed
    *
    * @return The MemoryNodeStatePairs for each given memory nodes.
-   * @see RegionalizedStateMap::GetStates()
    */
   std::vector<MemoryNodeStatePair *>
   GetOrCreateStates(const ModRefSet & modRefSet, rvsdg::Region & region)
