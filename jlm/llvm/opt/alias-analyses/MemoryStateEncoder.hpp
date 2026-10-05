@@ -48,6 +48,7 @@ class MemoryStateEncoder final
 {
 public:
   struct MemoryStateTypeCounters;
+  class Statistics;
   class StateMap;
 
   // FIXME: documentation
@@ -55,6 +56,9 @@ public:
   {
     size_t numReplacedLoads = 0;
     size_t numRedirectedLoads = 0;
+
+    size_t numReplacedStores = 0;
+    size_t numRedirectedStores = 0;
   };
 
   ~MemoryStateEncoder() noexcept;
@@ -91,7 +95,7 @@ private:
   EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap) const;
+  EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
   EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const;
@@ -194,6 +198,7 @@ private:
       const std::vector<rvsdg::Output *> & memoryStates);
 
   EncodingCounter encodingCounter_;
+  std::unique_ptr<Statistics> statistics_;
   const ModRefSummary * modRefSummary_ = nullptr;
 };
 
