@@ -459,18 +459,19 @@ public:
       if (const auto statePair = TryGetState(memoryNode))
       {
         memoryNodeStatePairs.push_back(statePair);
-        continue;
       }
+      else
+      {
+        // If no memory state output exists for the memory node, create an UndefValue for it
 
-      // If no memory state output exists for the memory node, create an UndefValue for it
+        // Using undef for memory states that do not exist yet should only be done for allocas.
+        // TODO: After refactoring, add an assert here like so:
+        // JLM_ASSERT(modRefSummary_->getPointsToGraph().getKind(memoryNode) == NodeKind::Alloca);
 
-      // Using undef for memory states that do not exist yet should only be done for allocas.
-      // TODO: After refactoring, add an assert here like so:
-      // JLM_ASSERT(modRefSummary_->getPointsToGraph().getNodeKind(memoryNode) == NodeKind::Alloca);
-
-      auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
-      auto insertedPair = InsertState(memoryNode, undefOutput);
-      memoryNodeStatePairs.push_back(insertedPair);
+        auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
+        auto insertedPair = InsertState(memoryNode, undefOutput);
+        memoryNodeStatePairs.push_back(insertedPair);
+      }
     }
 
     return memoryNodeStatePairs;
