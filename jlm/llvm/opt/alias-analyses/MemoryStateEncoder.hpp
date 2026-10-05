@@ -51,7 +51,6 @@ public:
   class Statistics;
   class StateMap;
 
-  // FIXME: documentation
   struct EncodingCounter
   {
     size_t numReplacedLoads = 0;
