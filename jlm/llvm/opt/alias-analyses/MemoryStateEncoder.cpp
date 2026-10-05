@@ -212,8 +212,8 @@ class EncodingStatistics final : public util::Statistics
   // Suffix used when counting memory states routed into call entry merges
   static constexpr auto CallEntryMergeStateSuffix_ = "sIntoCallEntryMerge";
 
-  static constexpr auto EncodingTimerLabel_ = "EncodingTime";
-  static constexpr auto PruningTimerLabel_ = "PruningTime";
+  static constexpr auto EncodingTimerLabel_ = "EncodingTime[ns]";
+  static constexpr auto PruningTimerLabel_ = "PruningTime[ns]";
 
 public:
   ~EncodingStatistics() override = default;
