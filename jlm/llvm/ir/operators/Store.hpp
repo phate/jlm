@@ -71,6 +71,21 @@ public:
     return NumMemoryStates_;
   }
 
+  /**
+   * Returns the number of memory states going through a \ref StoreOperation node.
+   *
+   * @param node A \ref StoreOperation node.
+   * @return the number of memory states routed through \p node.
+   *
+   * @pre \p node is expected to be a \ref StoreOperation node.
+   */
+  [[nodiscard]] static size_t
+  numMemoryStates(const rvsdg::SimpleNode & node) noexcept
+  {
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
+    return storeOperation->NumMemoryStates_;
+  }
+
   [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {

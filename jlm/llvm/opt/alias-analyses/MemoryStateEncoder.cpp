@@ -30,6 +30,7 @@ namespace jlm::llvm::aa
 
 namespace
 {
+
 /**
  * \brief Helper struct for counting up MemoryNodes, among some set of entities that use them
  */
@@ -170,10 +171,20 @@ struct MemoryStateTypeCounter final
   }
 };
 
+}
+
+struct MemoryStateEncoder::MemoryStateTypeCounters final
+{
+  MemoryStateTypeCounter interProceduralRegionCounter;
+  MemoryStateTypeCounter loadCounter;
+  MemoryStateTypeCounter storeCounter;
+  MemoryStateTypeCounter callEntryMergeCounter;
+};
+
 /** \brief Statistics class for memory state encoder encoding
  *
  */
-class EncodingStatistics final : public util::Statistics
+class MemoryStateEncoder::Statistics final : public util::Statistics
 {
   // Prefixes for statistics that count ModRef vs RefOnly
   static constexpr auto NumTotalRefOnlyStates_ = "#TotalRefOnlyState";
@@ -215,11 +226,17 @@ class EncodingStatistics final : public util::Statistics
   static constexpr auto EncodingTimerLabel_ = "EncodingTime";
   static constexpr auto PruningTimerLabel_ = "PruningTime";
 
-public:
-  ~EncodingStatistics() override = default;
+  static constexpr auto NumReplacedLoadsLabel_ = "#ReplacedLoads";
+  static constexpr auto NumRedirectedLoadsLabel_ = "#RedirectedLoads";
 
-  explicit EncodingStatistics(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile)
+  static constexpr auto NumReplacedStoresLabel_ = "#ReplacedStores";
+  static constexpr auto NumRedirectedStoresLabel_ = "#RedirectedStores";
+
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Id::MemoryStateEncoder, sourceFile)
   {}
 
   void
@@ -230,8 +247,12 @@ public:
   }
 
   void
-  StopEncoding()
+  StopEncoding(const EncodingCounter & counter)
   {
+    AddMeasurement(NumRedirectedLoadsLabel_, counter.numRedirectedLoads);
+    AddMeasurement(NumReplacedLoadsLabel_, counter.numReplacedLoads);
+    AddMeasurement(NumRedirectedStoresLabel_, counter.numRedirectedStores);
+    AddMeasurement(NumReplacedStoresLabel_, counter.numReplacedStores);
     GetTimer(EncodingTimerLabel_).stop();
   }
 
@@ -248,37 +269,25 @@ public:
   }
 
   void
-  AddIntraProceduralRegionMemoryStateCounts(const MemoryStateTypeCounter & counter)
+  AddCounters(const MemoryStateTypeCounters & counters)
   {
-    AddMeasurement(NumIntraProceduralRegions_, counter.NumEntities);
-    AddMemoryStateTypeCounter(RegionArgumentStateSuffix_, counter);
+    AddMeasurement(NumIntraProceduralRegions_, counters.interProceduralRegionCounter.NumEntities);
+    AddMemoryStateTypeCounter(RegionArgumentStateSuffix_, counters.interProceduralRegionCounter);
+
+    AddMeasurement(NumLoadOperations_, counters.loadCounter.NumEntities);
+    AddMemoryStateTypeCounter(LoadStateSuffix_, counters.loadCounter);
+
+    AddMeasurement(NumStoreOperations_, counters.storeCounter.NumEntities);
+    AddMemoryStateTypeCounter(StoreStateSuffix_, counters.storeCounter);
+
+    AddMeasurement(NumCallEntryMergeOperations_, counters.callEntryMergeCounter.NumEntities);
+    AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counters.callEntryMergeCounter);
   }
 
-  void
-  AddLoadMemoryStateCounts(const MemoryStateTypeCounter & counter)
-  {
-    AddMeasurement(NumLoadOperations_, counter.NumEntities);
-    AddMemoryStateTypeCounter(LoadStateSuffix_, counter);
-  }
-
-  void
-  AddStoreMemoryStateCounts(const MemoryStateTypeCounter & counter)
-  {
-    AddMeasurement(NumStoreOperations_, counter.NumEntities);
-    AddMemoryStateTypeCounter(StoreStateSuffix_, counter);
-  }
-
-  void
-  AddCallEntryMergeStateCounts(const MemoryStateTypeCounter & counter)
-  {
-    AddMeasurement(NumCallEntryMergeOperations_, counter.NumEntities);
-    AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counter);
-  }
-
-  static std::unique_ptr<EncodingStatistics>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<EncodingStatistics>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 
 private:
@@ -300,16 +309,6 @@ private:
     AddMeasurement(NumMaxMemoryState_ + suffix, counter.MaxMemoryStateEntity);
     AddMeasurement(NumMaxNonEscapedMemoryState_ + suffix, counter.MaxNonEscapedMemoryStateEntity);
   }
-};
-
-}
-
-struct MemoryStateEncoder::MemoryStateTypeCounters final
-{
-  MemoryStateTypeCounter interProceduralRegionCounter;
-  MemoryStateTypeCounter loadCounter;
-  MemoryStateTypeCounter storeCounter;
-  MemoryStateTypeCounter callEntryMergeCounter;
 };
 
 /** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
@@ -521,37 +520,34 @@ MemoryStateEncoder::Encode(
     util::StatisticsCollector & statisticsCollector)
 {
   modRefSummary_ = &modRefSummary;
+  statistics_ = Statistics::Create(rvsdgModule.SourceFilePath().value());
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
   // The statistics gathering needs to happen before the encoding as the encoding replaces nodes in
   // the RVSDG and these new nodes would not have any ModRefSets associated with them.
   if (statisticsCollector.IsDemanded(util::Statistics::Id::MemoryStateEncoder))
   {
-    const auto counters = gatherStatistics(rvsdg.GetRootRegion());
-
-    statistics->AddIntraProceduralRegionMemoryStateCounts(counters->interProceduralRegionCounter);
-    statistics->AddLoadMemoryStateCounts(counters->loadCounter);
-    statistics->AddStoreMemoryStateCounts(counters->storeCounter);
-    statistics->AddCallEntryMergeStateCounts(counters->callEntryMergeCounter);
+    auto counters = gatherStatistics(rvsdg.GetRootRegion());
+    statistics_->AddCounters(*counters);
   }
 
-  statistics->StartEncoding(rvsdg);
+  statistics_->StartEncoding(rvsdg);
   // FIXME: separate handling of inter- and intra-procedural nodes to avoid stateMap parameter for
   // inter-procedural subregions
   StateMap stateMap;
   EncodeRegion(rvsdg.GetRootRegion(), stateMap);
-  statistics->StopEncoding();
+  statistics_->StopEncoding(encodingCounter_);
+  encodingCounter_ = EncodingCounter();
 
-  statistics->StartPruning();
+  statistics_->StartPruning();
   rvsdg.PruneNodes();
-  statistics->StopPruning();
+  statistics_->StopPruning();
 
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
 }
 
 void
-MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, StateMap & stateMap) const
+MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, StateMap & stateMap)
 {
   for (const auto node : rvsdg::TopDownTraverser(&region))
   {
@@ -805,7 +801,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap 
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap) const
+MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap)
 {
   JLM_ASSERT(is<LoadOperation>(node.GetOperation()));
 
@@ -813,14 +809,36 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
   const auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *node.region());
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      LoadOperation::MemoryStateOutputs(newLoadNode));
+  if (memoryStates.size() == LoadOperation::numMemoryStates(node))
+  {
+    encodingCounter_.numRedirectedLoads += 1;
+    for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
+    {
+      const auto memoryStateOperand =
+          LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput).origin();
+      memoryStateOutput.divert_users(memoryStateOperand);
+    }
+
+    size_t n = 0;
+    for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(node))
+      memoryStateInput.divert_to(memoryStates[n++]);
+
+    StateMap::MemoryNodeStatePair::ReplaceStates(
+        memoryNodeStatePairs,
+        LoadOperation::MemoryStateOutputs(node));
+  }
+  else
+  {
+    encodingCounter_.numReplacedLoads += 1;
+    const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
+    StateMap::MemoryNodeStatePair::ReplaceStates(
+        memoryNodeStatePairs,
+        LoadOperation::MemoryStateOutputs(newLoadNode));
+  }
 }
 
 void
-MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap) const
+MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap)
 {
   JLM_ASSERT(is<StoreOperation>(node.GetOperation()));
 
@@ -828,10 +846,32 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
   const auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *node.region());
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      StoreOperation::MemoryStateOutputs(newStoreNode));
+  if (memoryStates.size() == StoreOperation::numMemoryStates(node))
+  {
+    encodingCounter_.numRedirectedStores++;
+    for (auto & memoryStateOutput : StoreOperation::MemoryStateOutputs(node))
+    {
+      const auto memoryStateOperand =
+          StoreOperation::MapMemoryStateOutputToInput(memoryStateOutput).origin();
+      memoryStateOutput.divert_users(memoryStateOperand);
+    }
+
+    size_t n = 0;
+    for (auto & memoryStateInput : StoreOperation::getMemoryStateInputs(node))
+      memoryStateInput.divert_to(memoryStates[n++]);
+
+    StateMap::MemoryNodeStatePair::ReplaceStates(
+        memoryNodeStatePairs,
+        StoreOperation::MemoryStateOutputs(node));
+  }
+  else
+  {
+    encodingCounter_.numReplacedStores++;
+    const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
+    StateMap::MemoryNodeStatePair::ReplaceStates(
+        memoryNodeStatePairs,
+        StoreOperation::MemoryStateOutputs(newStoreNode));
+  }
 }
 
 void
@@ -942,7 +982,7 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMa
 }
 
 void
-MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode) const
+MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   StateMap subregionStateMap;
 
@@ -1010,7 +1050,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode) const
 }
 
 void
-MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap) const
+MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap)
 {
   std::vector<StateMap> subregionStateMap(gammaNode.nsubregions());
 
@@ -1055,7 +1095,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap) const
+MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap)
 {
   StateMap subregionStateMap;
 
