@@ -996,15 +996,12 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMa
 {
   JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
 
-  auto memoryNodeStatePairs = stateMap.GetOrCreateStates(
-      modRefSummary_->GetSimpleNodeModRef(memmoveNode),
-      *memmoveNode.region());
-  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memmoveNode);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memmoveNode.region());
 
-  auto & newMemMoveNode = ReplaceMemmoveNode(memmoveNode, memoryStateOperands);
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      MemMoveOperation::memoryStateOutputs(newMemMoveNode));
+  auto & newMemMoveNode = ReplaceMemmoveNode(memmoveNode, memStateOperands);
+  stateMap.updateStates(modRefNodes, MemMoveOperation::memoryStateOutputs(newMemMoveNode));
 }
 
 void
