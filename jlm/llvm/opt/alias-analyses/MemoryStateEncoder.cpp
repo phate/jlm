@@ -983,15 +983,12 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap 
 {
   JLM_ASSERT(is<MemSetOperation>(memsetNode.GetOperation()));
 
-  auto memoryNodeStatePairs = stateMap.GetOrCreateStates(
-      modRefSummary_->GetSimpleNodeModRef(memsetNode),
-      *memsetNode.region());
-  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memsetNode);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memsetNode.region());
 
-  auto & newMemSetNode = ReplaceMemsetNode(memsetNode, memoryStateOperands);
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      MemSetOperation::memoryStateOutputs(newMemSetNode));
+  auto & newMemSetNode = ReplaceMemsetNode(memsetNode, memStateOperands);
+  stateMap.updateStates(modRefNodes, MemSetOperation::memoryStateOutputs(newMemSetNode));
 }
 
 void
