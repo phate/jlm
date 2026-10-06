@@ -970,15 +970,12 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap 
 {
   JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
-  auto memoryNodeStatePairs = stateMap.GetOrCreateStates(
-      modRefSummary_->GetSimpleNodeModRef(memcpyNode),
-      *memcpyNode.region());
-  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memcpyNode);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memcpyNode.region());
 
-  const auto & newMemCpyNode = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      MemCpyOperation::memoryStateOutputs(newMemCpyNode));
+  const auto & newMemCpyNode = ReplaceMemcpyNode(memcpyNode, memStateOperands);
+  stateMap.updateStates(modRefNodes, MemCpyOperation::memoryStateOutputs(newMemCpyNode));
 }
 
 void
