@@ -887,10 +887,10 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
   JLM_ASSERT(is<StoreOperation>(node.GetOperation()));
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(node);
-  const auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *node.region());
-  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *node.region());
 
-  if (memoryStates.size() == StoreOperation::numMemoryStates(node))
+  if (memStateOperands.size() == StoreOperation::numMemoryStates(node))
   {
     encodingCounter_.numRedirectedStores++;
     for (auto & memoryStateOutput : StoreOperation::MemoryStateOutputs(node))
@@ -902,19 +902,15 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
 
     size_t n = 0;
     for (auto & memoryStateInput : StoreOperation::getMemoryStateInputs(node))
-      memoryStateInput.divert_to(memoryStates[n++]);
+      memoryStateInput.divert_to(memStateOperands[n++]);
 
-    StateMap::MemoryNodeStatePair::ReplaceStates(
-        memoryNodeStatePairs,
-        StoreOperation::MemoryStateOutputs(node));
+    stateMap.updateStates(modRefNodes, StoreOperation::MemoryStateOutputs(node));
   }
   else
   {
     encodingCounter_.numReplacedStores++;
-    const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
-    StateMap::MemoryNodeStatePair::ReplaceStates(
-        memoryNodeStatePairs,
-        StoreOperation::MemoryStateOutputs(newStoreNode));
+    const auto & newStoreNode = ReplaceStoreNode(node, memStateOperands);
+    stateMap.updateStates(modRefNodes, StoreOperation::MemoryStateOutputs(newStoreNode));
   }
 }
 
