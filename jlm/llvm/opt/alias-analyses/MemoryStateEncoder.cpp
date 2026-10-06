@@ -1121,17 +1121,19 @@ void
 MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap)
 {
   StateMap subregionStateMap;
+  const auto & modRefSet = modRefSummary_->GetThetaModRef(thetaNode);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *thetaNode.region());
 
   // Handle theta entry
-  std::vector<rvsdg::Output *> thetaStateOutputs;
+  std::vector<rvsdg::ThetaNode::LoopVar> loopVars;
   {
-    const auto & modRefSet = modRefSummary_->GetThetaModRef(thetaNode);
-    auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *thetaNode.region());
-    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    size_t n = 0;
+    for (auto & modRefNode : modRefNodes)
     {
-      auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
-      subregionStateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
-      thetaStateOutputs.push_back(loopvar.output);
+      auto loopVar = thetaNode.AddLoopVar(memStateOperands[n++]);
+      subregionStateMap.InsertState(modRefNode, *loopVar.pre);
+      loopVars.push_back(loopVar);
     }
   }
 
@@ -1139,21 +1141,16 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
 
   // Handle theta exit
   {
-    const auto & memoryNodes = modRefSummary_->GetThetaModRef(thetaNode);
-    auto memoryNodeStatePairs = stateMap.GetStates(memoryNodes);
-
-    JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
-    for (size_t n = 0; n < thetaStateOutputs.size(); n++)
+    JLM_ASSERT(modRefNodes.size() == loopVars.size());
+    JLM_ASSERT(memStateOperands.size() == loopVars.size());
+    for (size_t n = 0; n < loopVars.size(); n++)
     {
-      auto thetaStateOutput = thetaStateOutputs[n];
-      auto & memoryNodeStatePair = memoryNodeStatePairs[n];
-      auto memoryNode = memoryNodeStatePair->MemoryNode();
-      auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
-      JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
+      const auto loopVar = loopVars[n];
+      const auto modRefNode = modRefNodes[n];
 
-      auto & subregionState = subregionStateMap.GetState(memoryNode)->State();
-      loopvar.post->divert_to(&subregionState);
-      memoryNodeStatePair->ReplaceState(*thetaStateOutput);
+      auto & subregionState = subregionStateMap.GetState(modRefNode)->State();
+      loopVar.post->divert_to(&subregionState);
+      stateMap.updateState(modRefNode, *loopVar.output);
     }
   }
 }
