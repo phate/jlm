@@ -504,6 +504,15 @@ public:
   }
 
   void
+  updateState(const MemoryNodeId modRefNode, rvsdg::Output & memoryState)
+  {
+    if (const auto statePair = TryGetState(modRefNode))
+      statePair->ReplaceState(memoryState);
+    else
+      throw std::logic_error("Unknown modRefNode in StateMap");
+  }
+
+  void
   updateStates(
       const std::vector<MemoryNodeId> & modRefNodes,
       const rvsdg::Node::OutputIteratorRange & memoryStates)
@@ -516,10 +525,7 @@ public:
     for (auto & memoryState : memoryStates)
     {
       auto & modRefNode = modRefNodes[i++];
-      if (const auto statePair = TryGetState(modRefNode))
-        statePair->ReplaceState(memoryState);
-      else
-        throw std::logic_error("Unknown modRefNode in StateMap");
+      updateState(modRefNode, memoryState);
     }
   }
 
@@ -1076,14 +1082,15 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
   // Handle gamma entry
   {
     auto & modRefSet = modRefSummary_->GetGammaEntryModRef(gammaNode);
-    auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *gammaNode.region());
-    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    const auto modRefNodes = getModRefSetNodes(modRefSet);
+    const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *gammaNode.region());
+
+    size_t n = 0;
+    for (auto & modRefNode : modRefNodes)
     {
-      auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
-      for (auto & argument : gammaInput.branchArgument)
-        subregionStateMap[argument->region()->index()].InsertState(
-            memoryNodeStatePair->MemoryNode(),
-            *argument);
+      auto gammaInput = gammaNode.AddEntryVar(memStateOperands[n++]);
+      for (auto argument : gammaInput.branchArgument)
+        subregionStateMap[argument->region()->index()].InsertState(modRefNode, *argument);
     }
   }
 
@@ -1093,22 +1100,19 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
   // Handle gamma exit
   {
     auto & modRefSet = modRefSummary_->GetGammaExitModRef(gammaNode);
-    auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *gammaNode.region());
+    const auto modRefNodes = getModRefSetNodes(modRefSet);
 
-    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    for (auto modRefNode : modRefNodes)
     {
-      std::vector<rvsdg::Output *> states;
-
+      std::vector<rvsdg::Output *> memStateOperands;
       for (auto & subregion : gammaNode.Subregions())
       {
-        auto & state = subregionStateMap[subregion.index()]
-                           .GetState(memoryNodeStatePair->MemoryNode())
-                           ->State();
-        states.push_back(&state);
+        auto & state = subregionStateMap[subregion.index()].GetState(modRefNode)->State();
+        memStateOperands.push_back(&state);
       }
 
-      auto state = gammaNode.AddExitVar(states).output;
-      memoryNodeStatePair->ReplaceState(*state);
+      auto state = gammaNode.AddExitVar(memStateOperands).output;
+      stateMap.updateState(modRefNode, *state);
     }
   }
 }
