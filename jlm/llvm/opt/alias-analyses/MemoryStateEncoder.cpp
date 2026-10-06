@@ -1011,19 +1011,19 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 
   // Handle lambda entry
   {
+    const auto & modRefSet = modRefSummary_->GetLambdaEntryModRef(lambdaNode);
+    const auto modRefNodes = getModRefSetNodes(modRefSet);
     auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
 
-    const auto & modRefSet = modRefSummary_->GetLambdaEntryModRef(lambdaNode);
-    const auto memoryNodeIds = getModRefSetNodes(modRefSet);
     auto & lambdaEntrySplitNode =
-        LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, memoryNodeIds);
-    const auto states = rvsdg::outputs(&lambdaEntrySplitNode);
+        LambdaEntryMemoryStateSplitOperation::CreateNode(memoryStateArgument, modRefNodes);
+    const auto memStates = rvsdg::outputs(&lambdaEntrySplitNode);
 
     size_t n = 0;
-    for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
-      subregionStateMap.InsertState(memoryNode, *states[n++]);
+    for (const auto modRefNode : modRefNodes)
+      subregionStateMap.InsertState(modRefNode, *memStates[n++]);
 
-    if (!states.empty())
+    if (!memStates.empty())
     {
       // This additional MemoryStateMergeOperation node makes all other nodes in the function that
       // consume the memory state dependent on this node and therefore transitively on the
@@ -1039,7 +1039,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
       //
       // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
       // should now consume a1.
-      auto state = MemoryStateMergeOperation::Create(states);
+      auto state = MemoryStateMergeOperation::Create(memStates);
       memoryStateArgument.divertUsersWhere(
           *state,
           [&lambdaEntrySplitNode](const rvsdg::Input & user)
@@ -1049,26 +1049,22 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
     }
   }
 
-  EncodeRegion(*lambdaNode.subregion(), subregionStateMap);
+  auto & lambdaSubregion = *lambdaNode.subregion();
+  EncodeRegion(lambdaSubregion, subregionStateMap);
 
   // Handle lambda exit
   {
     const auto & modRefSet = modRefSummary_->GetLambdaExitModRef(lambdaNode);
+    const auto modRefNodes = getModRefSetNodes(modRefSet);
+    const auto memStateOperands =
+        subregionStateMap.getOrCreateRawStates(modRefNodes, lambdaSubregion);
     auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
-    std::vector<rvsdg::Output *> states;
-    std::vector<MemoryNodeId> memoryNodeIds;
-    auto & subregion = *lambdaNode.subregion();
-    const auto memoryNodeStatePairs = subregionStateMap.GetStates(modRefSet);
-    for (const auto memoryNodeStatePair : memoryNodeStatePairs)
-    {
-      states.push_back(&memoryNodeStatePair->State());
-      memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode());
-    }
-
-    const auto mergedState =
-        LambdaExitMemoryStateMergeOperation::CreateNode(subregion, states, memoryNodeIds).output(0);
-    memoryStateResult.divert_to(mergedState);
+    auto & lambdaExitMergNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+        lambdaSubregion,
+        memStateOperands,
+        modRefNodes);
+    memoryStateResult.divert_to(lambdaExitMergNode.output(0));
   }
 }
 
