@@ -477,16 +477,29 @@ public:
 
   // FIXME: documentation
   std::vector<rvsdg::Output *>
-  getExistingRawStates(const std::vector<MemoryNodeId> & modRefNodes)
+  getOrCreateRawStates(const std::vector<MemoryNodeId> & modRefNodes, rvsdg::Region & region)
   {
     std::vector<rvsdg::Output *> memoryStates;
     for (auto & modRefNode : modRefNodes)
     {
       if (const auto statePair = TryGetState(modRefNode))
+      {
         memoryStates.push_back(&statePair->State());
+      }
+      else
+      {
+        // If no memory state output exists for the memory node, create an UndefValue for it
+
+        // Using undef for memory states that do not exist yet should only be done for allocas.
+        // TODO: After refactoring, add an assert here like so:
+        // JLM_ASSERT(modRefSummary_->getPointsToGraph().getKind(memoryNode) == NodeKind::Alloca);
+
+        auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
+        InsertState(modRefNode, undefOutput);
+        memoryStates.push_back(&undefOutput);
+      }
     }
 
-    JLM_ASSERT(modRefNodes.size() == memoryStates.size());
     return memoryStates;
   }
 
@@ -841,10 +854,10 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
   JLM_ASSERT(is<LoadOperation>(node.GetOperation()));
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(node);
-  const auto memoryNodeStatePairs = stateMap.GetOrCreateStates(modRefSet, *node.region());
-  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *node.region());
 
-  if (memoryStates.size() == LoadOperation::numMemoryStates(node))
+  if (memStateOperands.size() == LoadOperation::numMemoryStates(node))
   {
     encodingCounter_.numRedirectedLoads += 1;
     for (auto & memoryStateOutput : LoadOperation::MemoryStateOutputs(node))
@@ -856,17 +869,16 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
 
     size_t n = 0;
     for (auto & memoryStateInput : LoadOperation::MemoryStateInputs(node))
-      memoryStateInput.divert_to(memoryStates[n++]);
+      memoryStateInput.divert_to(memStateOperands[n++]);
 
-    StateMap::MemoryNodeStatePair::ReplaceStates(
-        memoryNodeStatePairs,
-        LoadOperation::MemoryStateOutputs(node));
+    stateMap.updateStates(modRefNodes, LoadOperation::MemoryStateOutputs(node));
   }
   else
   {
     encodingCounter_.numReplacedLoads += 1;
-    const auto & newLoadNode = ReplaceLoadNode(node, memoryStateOperands);
-  stateMap.updateStates(modRefNodes, LoadOperation::MemoryStateOutputs(newLoadNode));}
+    const auto & newLoadNode = ReplaceLoadNode(node, memStateOperands);
+    stateMap.updateStates(modRefNodes, LoadOperation::MemoryStateOutputs(newLoadNode));
+  }
 }
 
 void
