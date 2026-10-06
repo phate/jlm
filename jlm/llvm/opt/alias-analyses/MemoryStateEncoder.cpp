@@ -919,11 +919,12 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
 {
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
-  auto addressOperand = FreeOperation::getAddressInput(freeNode).origin();
-  auto ioStateOperand = FreeOperation::getIOStateInput(freeNode).origin();
-  auto memoryNodeStatePairs =
-      stateMap.GetOrCreateStates(modRefSummary_->GetSimpleNodeModRef(freeNode), *freeNode.region());
-  auto memStateOperands = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(freeNode);
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+
+  const auto addressOperand = FreeOperation::getAddressInput(freeNode).origin();
+  const auto ioStateOperand = FreeOperation::getIOStateInput(freeNode).origin();
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *freeNode.region());
 
   auto & newFreeNode =
       FreeOperation::createNode(*addressOperand, *ioStateOperand, memStateOperands);
@@ -939,9 +940,7 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
   }
   JLM_ASSERT(freeNode.IsDead());
 
-  StateMap::MemoryNodeStatePair::ReplaceStates(
-      memoryNodeStatePairs,
-      FreeOperation::memoryStateOutputs(newFreeNode));
+  stateMap.updateStates(modRefNodes, FreeOperation::memoryStateOutputs(newFreeNode));
 }
 
 void
