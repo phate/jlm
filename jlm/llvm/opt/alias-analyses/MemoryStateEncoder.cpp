@@ -316,81 +316,6 @@ private:
 class MemoryStateEncoder::StateMap final
 {
 public:
-  /**
-   * Represents the pairing of a points-to graph's memory node and a memory state.
-   */
-  class MemoryNodeStatePair final
-  {
-    friend StateMap;
-
-    MemoryNodeStatePair(PointsToGraph::NodeIndex memoryNode, rvsdg::Output & state)
-        : MemoryNode_(memoryNode),
-          State_(&state)
-    {
-      JLM_ASSERT(is<MemoryStateType>(state.Type()));
-    }
-
-  public:
-    [[nodiscard]] PointsToGraph::NodeIndex
-    MemoryNode() const noexcept
-    {
-      return MemoryNode_;
-    }
-
-    [[nodiscard]] rvsdg::Output &
-    State() const noexcept
-    {
-      return *State_;
-    }
-
-    void
-    ReplaceState(rvsdg::Output & state) noexcept
-    {
-      JLM_ASSERT(State_->region() == state.region());
-      JLM_ASSERT(is<MemoryStateType>(state.Type()));
-
-      State_ = &state;
-    }
-
-    static void
-    ReplaceStates(
-        const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const std::vector<rvsdg::Output *> & states)
-    {
-      JLM_ASSERT(memoryNodeStatePairs.size() == states.size());
-      for (size_t n = 0; n < memoryNodeStatePairs.size(); n++)
-        memoryNodeStatePairs[n]->ReplaceState(*states[n]);
-    }
-
-    static void
-    ReplaceStates(
-        const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const rvsdg::Node::OutputIteratorRange & states)
-    {
-      auto it = states.begin();
-      for (auto memoryNodeStatePair : memoryNodeStatePairs)
-      {
-        memoryNodeStatePair->ReplaceState(*it);
-        it++;
-      }
-      JLM_ASSERT(it.GetOutput() == nullptr);
-    }
-
-    static std::vector<rvsdg::Output *>
-    States(const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs)
-    {
-      std::vector<rvsdg::Output *> states;
-      for (auto & memoryNodeStatePair : memoryNodeStatePairs)
-        states.push_back(memoryNodeStatePair->State_);
-
-      return states;
-    }
-
-  private:
-    PointsToGraph::NodeIndex MemoryNode_;
-    rvsdg::Output * State_;
-  };
-
   StateMap() = default;
 
   StateMap(const StateMap &) = delete;
@@ -403,88 +328,45 @@ public:
   StateMap &
   operator=(StateMap &&) = delete;
 
-  MemoryNodeStatePair *
-  TryGetState(PointsToGraph::NodeIndex memoryNode) noexcept
+  rvsdg::Output *
+  tryGetState(const PointsToGraph::NodeIndex modRefNode) noexcept
   {
-    if (const auto it = states_.find(memoryNode); it != states_.end())
-      return &it->second;
+    if (const auto it = states_.find(modRefNode); it != states_.end())
+      return it->second;
 
     return nullptr;
   }
 
-  MemoryNodeStatePair *
-  GetState(PointsToGraph::NodeIndex memoryNode)
+  rvsdg::Output &
+  getState(const PointsToGraph::NodeIndex modRefNode)
   {
-    if (const auto statePair = TryGetState(memoryNode))
-      return statePair;
+    if (const auto state = tryGetState(modRefNode))
+      return *state;
     throw std::logic_error("Memory node does not have a state.");
   }
 
-  std::vector<MemoryNodeStatePair *>
-  GetStates(const ModRefSet & modRefSet)
-  {
-    std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
-    for (const auto [memoryNode, modRefEffect] : modRefSet.getModRefNodes())
-    {
-      JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
-      memoryNodeStatePairs.push_back(GetState(memoryNode));
-    }
-
-    return memoryNodeStatePairs;
-  }
-
   /**
-   * Gets MemoryNodeStatePairs for each of the given memory nodes.
+   * Gets the memory state for each of the given memory nodes.
    * If no memory state output exists for a given memory node, an UndefValue node is created.
    * This only happens when a \ref ModRefSet contains alloca whose memory state is not routed
    * in as a function argument, and the alloca operation has not been encoded yet.
-   * This can happen when allocas are inside subregions, or when the allocation count is a
+   * This can happen when alloca operations are inside subregions, or when the allocation count is a
    * runtime value that depends on a load.
    *
-   * @param modRefSet the set of memory nodes to retrieve states for.
+   * @param modRefNodes the set of memory nodes to retrieve states for.
    * @param region the region in which the states are needed
    *
-   * @return The MemoryNodeStatePairs for each given memory nodes.
+   * @return The memory states for each given memory nodes.
    */
-  std::vector<MemoryNodeStatePair *>
-  GetOrCreateStates(const ModRefSet & modRefSet, rvsdg::Region & region)
-  {
-    std::vector<MemoryNodeStatePair *> memoryNodeStatePairs;
-    for (auto & [memoryNode, modRefEffect] : modRefSet.getModRefNodes())
-    {
-      JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
-
-      if (const auto statePair = TryGetState(memoryNode))
-      {
-        memoryNodeStatePairs.push_back(statePair);
-      }
-      else
-      {
-        // If no memory state output exists for the memory node, create an UndefValue for it
-
-        // Using undef for memory states that do not exist yet should only be done for allocas.
-        // TODO: After refactoring, add an assert here like so:
-        // JLM_ASSERT(modRefSummary_->getPointsToGraph().getKind(memoryNode) == NodeKind::Alloca);
-
-        auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
-        auto insertedPair = InsertState(memoryNode, undefOutput);
-        memoryNodeStatePairs.push_back(insertedPair);
-      }
-    }
-
-    return memoryNodeStatePairs;
-  }
-
-  // FIXME: documentation
   std::vector<rvsdg::Output *>
-  getOrCreateRawStates(const std::vector<MemoryNodeId> & modRefNodes, rvsdg::Region & region)
+  getOrCreateStates(const std::vector<MemoryNodeId> & modRefNodes, rvsdg::Region & region)
   {
     std::vector<rvsdg::Output *> memoryStates;
     for (auto & modRefNode : modRefNodes)
     {
-      if (const auto statePair = TryGetState(modRefNode))
+      if (const auto state = tryGetState(modRefNode))
       {
-        memoryStates.push_back(&statePair->State());
+        memoryStates.push_back(state);
       }
       else
       {
@@ -495,7 +377,7 @@ public:
         // JLM_ASSERT(modRefSummary_->getPointsToGraph().getKind(memoryNode) == NodeKind::Alloca);
 
         auto & undefOutput = *UndefValueOperation::Create(region, MemoryStateType::Create());
-        InsertState(modRefNode, undefOutput);
+        insertState(modRefNode, undefOutput);
         memoryStates.push_back(&undefOutput);
       }
     }
@@ -506,10 +388,10 @@ public:
   void
   updateState(const MemoryNodeId modRefNode, rvsdg::Output & memoryState)
   {
-    if (const auto statePair = TryGetState(modRefNode))
-      statePair->ReplaceState(memoryState);
-    else
+    if (!tryGetState(modRefNode))
       throw std::logic_error("Unknown modRefNode in StateMap");
+
+    states_[modRefNode] = &memoryState;
   }
 
   void
@@ -530,25 +412,21 @@ public:
   }
 
   /**
-   * Creates a new memory node / memory state pair in the region.
+   * Inserts memory state \p state for memory node \p modRefNode in the state map.
    * The memory node must not have an already associated state.
-   * @param memoryNode the memory node
+   *
+   * @param modRefNode the memory node
    * @param state the output that produces the memory state associated with the memory node
-   * @return pointer to the new pair
    */
-  MemoryNodeStatePair *
-  InsertState(PointsToGraph::NodeIndex memoryNode, rvsdg::Output & state)
+  void
+  insertState(PointsToGraph::NodeIndex modRefNode, rvsdg::Output & state)
   {
-    auto [it, added] = states_.insert({ memoryNode, { memoryNode, state } });
-    if (!added)
+    if (auto [_, added] = states_.insert({ modRefNode, &state }); !added)
       throw std::logic_error("Memory node already has a state.");
-    return &it->second;
   }
 
 private:
-  // std::unordered_map guarantees pointers to keys and values remain valid even when
-  // new pairs are added to the container.
-  std::unordered_map<PointsToGraph::NodeIndex, MemoryNodeStatePair> states_;
+  std::unordered_map<PointsToGraph::NodeIndex, rvsdg::Output *> states_;
 };
 
 static std::vector<MemoryNodeId>
@@ -809,16 +687,15 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap 
 
   // If a state representing the alloca already exists in the region,
   // merge it with the state created by the alloca using a MemoryStateJoin node.
-  if (const auto statePair = stateMap.TryGetState(allocaMemoryNode))
+  if (const auto memoryState = stateMap.tryGetState(allocaMemoryNode))
   {
-    auto & joinNode =
-        MemoryStateJoinOperation::CreateNode({ &allocaNodeStateOutput, &statePair->State() });
+    auto & joinNode = MemoryStateJoinOperation::CreateNode({ &allocaNodeStateOutput, memoryState });
     auto & joinOutput = *joinNode.output(0);
-    statePair->ReplaceState(joinOutput);
+    stateMap.updateState(allocaMemoryNode, joinOutput);
   }
   else
   {
-    stateMap.InsertState(allocaMemoryNode, allocaNodeStateOutput);
+    stateMap.insertState(allocaMemoryNode, allocaNodeStateOutput);
   }
 }
 
@@ -841,16 +718,15 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap 
   // at runtime can refer to the same abstract memory location. We therefore need to
   // merge the previous and the current state to ensure that the previous state
   // is not just simply replaced and therefore "lost".
-  if (const auto statePair = stateMap.TryGetState(mallocMemoryNode))
+  if (const auto memoryState = stateMap.tryGetState(mallocMemoryNode))
   {
-    auto & joinNode =
-        MemoryStateJoinOperation::CreateNode({ &mallocNodeStateOutput, &statePair->State() });
+    auto & joinNode = MemoryStateJoinOperation::CreateNode({ &mallocNodeStateOutput, memoryState });
     auto & joinOutput = *joinNode.output(0);
-    statePair->ReplaceState(joinOutput);
+    stateMap.updateState(mallocMemoryNode, joinOutput);
   }
   else
   {
-    stateMap.InsertState(mallocMemoryNode, mallocNodeStateOutput);
+    stateMap.insertState(mallocMemoryNode, mallocNodeStateOutput);
   }
 }
 
@@ -861,7 +737,7 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(node);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *node.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *node.region());
 
   if (memStateOperands.size() == LoadOperation::numMemoryStates(node))
   {
@@ -894,7 +770,7 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(node);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *node.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *node.region());
 
   if (memStateOperands.size() == StoreOperation::numMemoryStates(node))
   {
@@ -930,7 +806,7 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
 
   const auto addressOperand = FreeOperation::getAddressInput(freeNode).origin();
   const auto ioStateOperand = FreeOperation::getIOStateInput(freeNode).origin();
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *freeNode.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *freeNode.region());
 
   auto & newFreeNode =
       FreeOperation::createNode(*addressOperand, *ioStateOperand, memStateOperands);
@@ -956,7 +832,7 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(callNode);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *callNode.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *callNode.region());
 
   auto & entryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
       *callNode.region(),
@@ -978,7 +854,7 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap 
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memcpyNode);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memcpyNode.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memcpyNode.region());
 
   const auto & newMemCpyNode = ReplaceMemcpyNode(memcpyNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemCpyOperation::memoryStateOutputs(newMemCpyNode));
@@ -991,7 +867,7 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap 
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memsetNode);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memsetNode.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memsetNode.region());
 
   auto & newMemSetNode = ReplaceMemsetNode(memsetNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemSetOperation::memoryStateOutputs(newMemSetNode));
@@ -1004,7 +880,7 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMa
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(memmoveNode);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *memmoveNode.region());
+  const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memmoveNode.region());
 
   auto & newMemMoveNode = ReplaceMemmoveNode(memmoveNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemMoveOperation::memoryStateOutputs(newMemMoveNode));
@@ -1027,7 +903,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 
     size_t n = 0;
     for (const auto modRefNode : modRefNodes)
-      subregionStateMap.InsertState(modRefNode, *memStates[n++]);
+      subregionStateMap.insertState(modRefNode, *memStates[n++]);
 
     if (!memStates.empty())
     {
@@ -1062,8 +938,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
   {
     const auto & modRefSet = modRefSummary_->GetLambdaExitModRef(lambdaNode);
     const auto modRefNodes = getModRefSetNodes(modRefSet);
-    const auto memStateOperands =
-        subregionStateMap.getOrCreateRawStates(modRefNodes, lambdaSubregion);
+    const auto memStateOperands = subregionStateMap.getOrCreateStates(modRefNodes, lambdaSubregion);
     auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
     auto & lambdaExitMergNode = LambdaExitMemoryStateMergeOperation::CreateNode(
@@ -1083,14 +958,14 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
   {
     auto & modRefSet = modRefSummary_->GetGammaEntryModRef(gammaNode);
     const auto modRefNodes = getModRefSetNodes(modRefSet);
-    const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *gammaNode.region());
+    const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *gammaNode.region());
 
     size_t n = 0;
     for (auto & modRefNode : modRefNodes)
     {
       auto gammaInput = gammaNode.AddEntryVar(memStateOperands[n++]);
       for (auto argument : gammaInput.branchArgument)
-        subregionStateMap[argument->region()->index()].InsertState(modRefNode, *argument);
+        subregionStateMap[argument->region()->index()].insertState(modRefNode, *argument);
     }
   }
 
@@ -1107,7 +982,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
       std::vector<rvsdg::Output *> memStateOperands;
       for (auto & subregion : gammaNode.Subregions())
       {
-        auto & state = subregionStateMap[subregion.index()].GetState(modRefNode)->State();
+        auto & state = subregionStateMap[subregion.index()].getState(modRefNode);
         memStateOperands.push_back(&state);
       }
 
@@ -1123,7 +998,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
   StateMap subregionStateMap;
   const auto & modRefSet = modRefSummary_->GetThetaModRef(thetaNode);
   const auto modRefNodes = getModRefSetNodes(modRefSet);
-  auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *thetaNode.region());
+  auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *thetaNode.region());
 
   // Handle theta entry
   std::vector<rvsdg::ThetaNode::LoopVar> loopVars;
@@ -1132,7 +1007,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
     for (auto & modRefNode : modRefNodes)
     {
       auto loopVar = thetaNode.AddLoopVar(memStateOperands[n++]);
-      subregionStateMap.InsertState(modRefNode, *loopVar.pre);
+      subregionStateMap.insertState(modRefNode, *loopVar.pre);
       loopVars.push_back(loopVar);
     }
   }
@@ -1148,7 +1023,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
       const auto loopVar = loopVars[n];
       const auto modRefNode = modRefNodes[n];
 
-      auto & subregionState = subregionStateMap.GetState(modRefNode)->State();
+      auto & subregionState = subregionStateMap.getState(modRefNode);
       loopVar.post->divert_to(&subregionState);
       stateMap.updateState(modRefNode, *loopVar.output);
     }
