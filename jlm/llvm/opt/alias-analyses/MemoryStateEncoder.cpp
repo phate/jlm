@@ -949,27 +949,20 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
   JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(callNode);
-  const auto statePairs = stateMap.GetOrCreateStates(modRefSet, *callNode.region());
-
-  std::vector<rvsdg::Output *> inputStates;
-  std::vector<MemoryNodeId> memoryNodeIds;
-  for (auto statePair : statePairs)
-  {
-    inputStates.emplace_back(&statePair->State());
-    memoryNodeIds.push_back(statePair->MemoryNode());
-  }
+  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  const auto memStateOperands = stateMap.getOrCreateRawStates(modRefNodes, *callNode.region());
 
   auto & entryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
       *callNode.region(),
-      inputStates,
-      memoryNodeIds);
+      memStateOperands,
+      modRefNodes);
   CallOperation::GetMemoryStateInput(callNode).divert_to(entryMergeNode.output(0));
 
   auto & exitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
       CallOperation::GetMemoryStateOutput(callNode),
-      memoryNodeIds);
+      modRefNodes);
 
-  StateMap::MemoryNodeStatePair::ReplaceStates(statePairs, rvsdg::outputs(&exitSplitNode));
+  stateMap.updateStates(modRefNodes, exitSplitNode.Outputs());
 }
 
 void
