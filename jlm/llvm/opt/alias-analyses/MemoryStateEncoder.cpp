@@ -224,7 +224,6 @@ class MemoryStateEncoder::Statistics final : public util::Statistics
   static constexpr auto CallEntryMergeStateSuffix_ = "sIntoCallEntryMerge";
 
   static constexpr auto EncodingTimerLabel_ = "EncodingTime";
-  static constexpr auto PruningTimerLabel_ = "PruningTime";
 
   static constexpr auto NumReplacedLoadsLabel_ = "#ReplacedLoads";
   static constexpr auto NumRedirectedLoadsLabel_ = "#RedirectedLoads";
@@ -254,18 +253,6 @@ public:
     AddMeasurement(NumRedirectedStoresLabel_, counter.numRedirectedStores);
     AddMeasurement(NumReplacedStoresLabel_, counter.numReplacedStores);
     GetTimer(EncodingTimerLabel_).stop();
-  }
-
-  void
-  StartPruning()
-  {
-    AddTimer(PruningTimerLabel_).start();
-  }
-
-  void
-  StopPruning()
-  {
-    GetTimer(PruningTimerLabel_).stop();
   }
 
   void
@@ -468,10 +455,6 @@ MemoryStateEncoder::Encode(
   statistics_->StopEncoding(encodingCounter_);
   encodingCounter_ = EncodingCounter();
 
-  statistics_->StartPruning();
-  rvsdg.PruneNodes();
-  statistics_->StopPruning();
-
   statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
 }
 
@@ -494,7 +477,7 @@ MemoryStateEncoder::encodeInterProcedural(rvsdg::Region & region)
         {
           encodeLambda(lambdaNode);
         },
-        [](const rvsdg::SimpleNode & simpleNode)
+        [](const rvsdg::SimpleNode &)
         {
           // Nothing needs to be done
         });
@@ -958,6 +941,8 @@ MemoryStateEncoder::encodeLambda(const rvsdg::LambdaNode & lambdaNode)
         modRefNodes);
     memoryStateResult.divert_to(lambdaExitMergNode.output(0));
   }
+
+  lambdaSubregion.prune(false);
 }
 
 void
@@ -1001,6 +986,9 @@ MemoryStateEncoder::encodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
       stateMap.updateState(modRefNode, *state);
     }
   }
+
+  for (auto & subregion : gammaNode.Subregions())
+    subregion.prune(false);
 }
 
 void
@@ -1039,6 +1027,8 @@ MemoryStateEncoder::encodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
       stateMap.updateState(modRefNode, *loopVar.output);
     }
   }
+
+  thetaNode.subregion()->prune(false);
 }
 
 rvsdg::SimpleNode &
