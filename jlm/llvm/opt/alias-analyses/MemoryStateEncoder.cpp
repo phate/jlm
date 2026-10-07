@@ -281,18 +281,18 @@ public:
     AddMeasurement(NumCallEntryMergeOperations_, counters.callEntryMergeCounter.NumEntities);
     AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counters.callEntryMergeCounter);
 
-    AddMeasurement("#AllocaNodes", counters.numAllocaNodes);
-    AddMeasurement("#MallocNodes", counters.numMallocNodes);
-    AddMeasurement("#LoadNodes", counters.numLoadNodes);
-    AddMeasurement("#StoreNodes", counters.numStoreNodes);
-    AddMeasurement("#CallNodes", counters.numCallNodes);
-    AddMeasurement("#FreeNodes", counters.numFreeNodes);
-    AddMeasurement("#MemCpyNodes", counters.numMemCpyNodes);
-    AddMeasurement("#MemSetNodes", counters.numMemSetNodes);
-    AddMeasurement("#MemMoveNodes", counters.numMemMoveNodes);
-    AddMeasurement("#GammaNodes", counters.numGammaNodes);
-    AddMeasurement("#ThetaNodes", counters.numThetaNodes);
-    AddMeasurement("#LambdaNodes", counters.numLambdaNodes);
+    AddMeasurement("#MSEAllocaNodes", counters.numAllocaNodes);
+    AddMeasurement("#MSEMallocNodes", counters.numMallocNodes);
+    AddMeasurement("#MSELoadNodes", counters.numLoadNodes);
+    AddMeasurement("#MSEStoreNodes", counters.numStoreNodes);
+    AddMeasurement("#MSECallNodes", counters.numCallNodes);
+    AddMeasurement("#MSEFreeNodes", counters.numFreeNodes);
+    AddMeasurement("#MSEMemCpyNodes", counters.numMemCpyNodes);
+    AddMeasurement("#MSEMemSetNodes", counters.numMemSetNodes);
+    AddMeasurement("#MSEMemMoveNodes", counters.numMemMoveNodes);
+    AddMeasurement("#MSEGammaNodes", counters.numGammaNodes);
+    AddMeasurement("#MSEThetaNodes", counters.numThetaNodes);
+    AddMeasurement("#MSELambdaNodes", counters.numLambdaNodes);
   }
 
   static std::unique_ptr<Statistics>
