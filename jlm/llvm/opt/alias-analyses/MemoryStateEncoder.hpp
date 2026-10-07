@@ -82,43 +82,46 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::Region & region, StateMap & stateMap);
+  encodeInterProcedural(rvsdg::Region & region);
 
   void
-  EncodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap) const;
+  encodeIntraProcedural(rvsdg::Region & region, StateMap & stateMap);
 
   void
-  EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap) const;
+  encodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap) const;
 
   void
-  EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap);
+  encodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap) const;
 
   void
-  EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap);
+  encodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const;
+  encodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap) const;
+  encodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const;
 
   void
-  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap) const;
+  encodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap) const;
 
   void
-  EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap) const;
+  encodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap) const;
 
   void
-  EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap) const;
+  encodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap) const;
 
   void
-  EncodeLambda(const rvsdg::LambdaNode & lambda);
+  encodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap) const;
 
   void
-  EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap);
+  encodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap);
+  encodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap);
+
+  void
+  encodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap);
 
   std::unique_ptr<MemoryStateTypeCounters>
   gatherStatistics(const rvsdg::Region & region) const;
@@ -133,7 +136,7 @@ private:
    * @return The newly created LoadNode.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceLoadNode(
+  replaceLoadNode(
       const rvsdg::SimpleNode & node,
       const std::vector<rvsdg::Output *> & memoryStates);
 
@@ -147,7 +150,7 @@ private:
    * @return The newly created StoreNode.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceStoreNode(
+  replaceStoreNode(
       const rvsdg::SimpleNode & node,
       const std::vector<rvsdg::Output *> & memoryStates);
 
@@ -162,7 +165,7 @@ private:
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceMemcpyNode(
+  replaceMemcpyNode(
       const rvsdg::SimpleNode & memCpyNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
@@ -177,7 +180,7 @@ private:
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceMemsetNode(
+  replaceMemsetNode(
       const rvsdg::SimpleNode & memsetNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
@@ -192,7 +195,7 @@ private:
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceMemmoveNode(
+  replaceMemmoveNode(
       const rvsdg::SimpleNode & memmoveNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
