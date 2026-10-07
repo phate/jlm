@@ -1674,9 +1674,8 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();
-  // Only k() is not in the same SCC as <external>
-  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
-  // g(), k() and h() are the only functions within an active setjmp
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#Functions"), 4u);
+  // Only g() calls setjmp
   EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1u);
 }
 
@@ -1805,11 +1804,12 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5u);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#Functions"), 1u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 0u);
 
-  EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
   EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
   EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
   EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
+  EXPECT_TRUE(statistics.HasTimer("ReadOnlyDetectionTimer"));
   EXPECT_TRUE(statistics.HasTimer("ModRefSetMaterializationTimer"));
 }
