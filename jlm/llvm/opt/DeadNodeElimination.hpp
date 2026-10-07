@@ -48,7 +48,7 @@ class DeadNodeElimination final : public rvsdg::Transformation
 public:
   ~DeadNodeElimination() noexcept override;
 
-  DeadNodeElimination();
+  DeadNodeElimination(bool enableInvestigation = false);
 
   DeadNodeElimination(const DeadNodeElimination &) = delete;
 
@@ -100,6 +100,7 @@ private:
   static void
   removeNode(rvsdg::Node & node);
 
+  bool enableInvestigation_ = false;
   std::unique_ptr<Context> Context_{};
 };
 

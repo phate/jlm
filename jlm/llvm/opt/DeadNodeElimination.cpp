@@ -15,9 +15,15 @@
 #include <jlm/util/time.hpp>
 
 #include <algorithm>
+#include <cstddef>
+#include <filesystem>
+#include <fstream>
+#include <string>
 
 namespace jlm::llvm
 {
+
+static std::ofstream InvestigationFile;
 
 /** \brief Dead Node Elimination context class
  *
@@ -134,8 +140,9 @@ public:
 
 DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 
-DeadNodeElimination::DeadNodeElimination()
-    : Transformation("DeadNodeElimination")
+DeadNodeElimination::DeadNodeElimination(bool enableInvestigation)
+    : Transformation("DeadNodeElimination"),
+      enableInvestigation_(enableInvestigation)
 {}
 
 void
@@ -157,6 +164,30 @@ DeadNodeElimination::Run(
 {
   Context_ = Context::create();
 
+  if (enableInvestigation_)
+  {
+    const std::filesystem::path investigationDirectory("/tmp/dne-investigation");
+    std::filesystem::create_directories(investigationDirectory);
+
+    auto sourceFile = "";
+    if (module.SourceFilePath().has_value())
+      sourceFile = module.SourceFilePath().value().to_str().c_str();
+
+    std::filesystem::path investigationFilePath;
+    for (std::size_t fileNumber = 1;; fileNumber++)
+    {
+      investigationFilePath = investigationDirectory
+                            / ("dne-investigation-" + std::string(sourceFile) + "-"
+                               + std::to_string(fileNumber) + ".log");
+      if (!std::filesystem::exists(investigationFilePath))
+      {
+        break;
+      }
+    }
+
+    InvestigationFile.open(investigationFilePath);
+  }
+
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::create(module.SourceFilePath().value());
   statistics->startMarkStatistics(rvsdg);
@@ -168,6 +199,8 @@ DeadNodeElimination::Run(
   statistics->stopSweepStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  InvestigationFile.close();
 
   // Discard internal state to free up memory after we are done
   Context_.reset();
@@ -417,6 +450,23 @@ DeadNodeElimination::sweepStructuralNode(rvsdg::StructuralNode & node) const
       });
 }
 
+static const rvsdg::LambdaNode *
+getLambdaNode(const rvsdg::Region & region)
+{
+  auto currentRegion = &region;
+  while (currentRegion->node() != nullptr)
+  {
+    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(region.node()))
+    {
+      return lambdaNode;
+    }
+
+    currentRegion = currentRegion->node()->region();
+  }
+
+  return nullptr;
+}
+
 void
 DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
 {
@@ -426,6 +476,15 @@ DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
       {
         return !Context_->isAlive(output);
       });
+
+  size_t numDeadMemStateOutputs = 0;
+  for (const auto & output : deadGammaOutputs)
+  {
+    if (is<MemoryStateType>(output->Type()))
+    {
+      numDeadMemStateOutputs++;
+    }
+  }
   gammaNode.RemoveExitVars(deadGammaOutputs);
 
   // Sweep gamma subregions
@@ -450,7 +509,25 @@ DeadNodeElimination::sweepGamma(rvsdg::GammaNode & gammaNode) const
       deadEntryVars.push_back(entryVar);
     }
   }
+
+  size_t numDeadMemStateInputs = 0;
+  for (const auto & entryVar : deadEntryVars)
+  {
+    if (is<MemoryStateType>(entryVar.input->Type()))
+    {
+      numDeadMemStateInputs++;
+    }
+  }
   gammaNode.RemoveEntryVars(deadEntryVars);
+
+  if (enableInvestigation_)
+  {
+    auto lambdaNode = getLambdaNode(*gammaNode.region());
+    auto lambdaStr = lambdaNode ? lambdaNode->DebugString() : "lambda";
+    InvestigationFile << lambdaStr << " (" << gammaNode.region()->getRegionId() << ","
+                      << gammaNode.GetNodeId() << ") " << numDeadMemStateOutputs << " "
+                      << numDeadMemStateInputs << std::endl;
+  }
 }
 
 void

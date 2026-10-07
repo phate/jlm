@@ -475,6 +475,9 @@ MemoryStateEncoder::Encode(
   rvsdg.PruneNodes();
   statistics_->StopPruning();
 
+  DeadNodeElimination dne(true);
+  dne.Run(rvsdgModule, statisticsCollector);
+
   statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
 }
 
