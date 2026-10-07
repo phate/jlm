@@ -91,10 +91,8 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
 {
   static constexpr auto NumRvsdgRegionsLabel_ = "#RvsdgRegions";
   static constexpr auto NumSimpleAllocas_ = "#SimpleAllocas";
-  static constexpr auto NumNonReentrantAllocas_ = "#NonReentrantAllocas";
-  static constexpr auto NumCallGraphSccs_ = "#CallGraphSccs";
+  static constexpr auto NumFunctions_ = "#Functions";
   static constexpr auto NumFunctionsCallingSetjmp_ = "#FunctionsCallingSetjmp";
-  static constexpr auto NumCallGraphSccsCanCallExternal_ = "#CallGraphSccsCanCallExternal";
   static constexpr auto NumReadOnlyMemoryNodesDetectedLabel_ = "#ReadOnlyMemoryNodesDetected";
 
   static constexpr auto NumModRefSetsMaterializedLabel_ = "#ModRefSetsMaterialized";
@@ -107,10 +105,7 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto ModRefSetSizeAfterMaterializationLabel_ =
       "ModRefSetSizeAfterMaterialization";
 
-  static constexpr auto CallGraphTimer_ = "CallGraphTimer";
-  static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
   static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
-  static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
   static constexpr auto ReadOnlyDetectionTimer_ = "ReadOnlyDetectionTimer";
@@ -130,20 +125,6 @@ public:
   }
 
   void
-  startCallGraphStatistics()
-  {
-    AddTimer(CallGraphTimer_).start();
-  }
-
-  void
-  stopCallGraphStatistics(size_t numSccs, size_t numFunctionsCallingSetjmp)
-  {
-    GetTimer(CallGraphTimer_).stop();
-    AddMeasurement(NumCallGraphSccs_, numSccs);
-    AddMeasurement(NumFunctionsCallingSetjmp_, numFunctionsCallingSetjmp);
-  }
-
-  void
   StartCreateSimpleAllocasSetStatistics()
   {
     AddTimer(SimpleAllocasSetTimer_).start();
@@ -157,28 +138,17 @@ public:
   }
 
   void
-  StartCreateNonReentrantAllocaSetsStatistics()
-  {
-    AddTimer(NonReentrantAllocaSetsTimer_).start();
-  }
-
-  void
-  StopCreateNonReentrantAllocaSetsStatistics(size_t numNonReentrantAllocas)
-  {
-    AddMeasurement(NumNonReentrantAllocas_, numNonReentrantAllocas);
-    GetTimer(NonReentrantAllocaSetsTimer_).stop();
-  }
-
-  void
   StartAnnotationStatistics()
   {
     AddTimer(AnnotationTimer_).start();
   }
 
   void
-  StopAnnotationStatistics()
+  StopAnnotationStatistics(size_t numFunctions, size_t numFunctionsCallingSetjmp)
   {
     GetTimer(AnnotationTimer_).stop();
+    AddMeasurement(NumFunctions_, numFunctions);
+    AddMeasurement(NumFunctionsCallingSetjmp_, numFunctionsCallingSetjmp);
   }
 
   void
@@ -796,47 +766,6 @@ struct RegionAwareModRefSummarizer::Context
   const PointsToGraph & pointsToGraph;
 
   /**
-   * The set of functions belonging to each SCC in the call graph.
-   * The SCCs are ordered in reverse topological order, so
-   * if function a() calls b(), and they are not in the same SCC,
-   * the SCC containing a() comes after the SCC containing b().
-   *
-   * External functions are not included in these sets, see \ref ExternalNodeSccIndex.
-   *
-   * Assigned in \ref createCallGraph(). Remains constant after.
-   */
-  std::vector<util::HashSet<const rvsdg::LambdaNode *>> SccFunctions;
-
-  /**
-   * The index of the SCC in the call graph that represent containing all external functions
-   *
-   * Assigned in \ref createCallGraph(). Remains constant after.
-   */
-  size_t ExternalNodeSccIndex = 0;
-
-  /**
-   * For each SCC in the call graph, the set of SCCs it targets using calls.
-   * Since SCCs are ordered in reverse topological order, an SCC never targets higher indices.
-   * If there is any possibility of recursion within an SCC, it also targets itself.
-   *
-   * Assigned in \ref createCallGraph(). Remains constant after.
-   */
-  std::vector<util::HashSet<size_t>> SccCallTargets;
-
-  /**
-   * A mapping from functions to the index of the SCC they belong to in the call graph
-   *
-   * Assigned in \ref createCallGraph(). Remains constant after.
-   */
-  std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex;
-
-  /**
-   * The set of functions that call setjmp directly.
-   * Assigned in \ref createCallGraph(). Remains constant after.
-   */
-  util::HashSet<const rvsdg::LambdaNode *> FunctionsCallingSetjmp;
-
-  /**
    * The set of all Simple Allocas in the module.
    *
    * Assigned in \ref CreateSimpleAllocaSet().
@@ -845,6 +774,19 @@ struct RegionAwareModRefSummarizer::Context
    * if the module contains any calls to setjmp.
    */
   util::HashSet<PointsToGraph::NodeIndex> SimpleAllocas;
+
+  /**
+   * A list containing all functions in the module.
+   * Assigned during \ref annotateInterproceduralRegion().
+   */
+  std::vector<const rvsdg::LambdaNode *> Functions;
+
+  /**
+   * The set of functions that call setjmp directly.
+   * Assigned during the annotation phase. Remains constant after.
+   * Used by \ref removeSimpleAllocasAroundSetjmp().
+   */
+  util::HashSet<const rvsdg::LambdaNode *> FunctionsCallingSetjmp;
 
   /**
    * Simple edges in the ModRefSet constraint graph.
@@ -915,17 +857,9 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   Context_ = std::make_unique<Context>(pointsToGraph);
   auto statistics = Statistics::Create(rvsdgModule, pointsToGraph);
 
-  statistics->startCallGraphStatistics();
-  createCallGraph(rvsdgModule);
-  statistics->stopCallGraphStatistics(
-      Context_->SccFunctions.size(),
-      Context_->FunctionsCallingSetjmp.Size());
-
   statistics->StartCreateSimpleAllocasSetStatistics();
   Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
   statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
-
-  removeSimpleAllocasAroundSetjmp();
 
   if (ENABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST)
   {
@@ -935,26 +869,16 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
 
   statistics->StartAnnotationStatistics();
   // Go through and recursively annotate all functions, regions and nodes
-  for (const auto & scc : Context_->SccFunctions)
-  {
-    for (const auto lambda : scc.Items())
-    {
-      AnnotateFunction(*lambda);
-    }
-  }
-  statistics->StopAnnotationStatistics();
+  annotateInterproceduralRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->StopAnnotationStatistics(
+      Context_->Functions.size(),
+      Context_->FunctionsCallingSetjmp.Size());
+
+  removeSimpleAllocasAroundSetjmp();
 
   statistics->StartSolvingStatistics();
   SolveModRefSetConstraintGraph();
   statistics->StopSolvingStatistics();
-
-  // Print debug output
-  // std::cerr << PointsToGraph::dumpDot(pointsToGraph) << std::endl;
-  // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
-  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
-  // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
-  // std::cerr << "After solving, before materialization: " << std::endl;
-  // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
 
   if (ENABLE_READ_ONLY_DETECTION)
   {
@@ -973,193 +897,9 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
       Context_->numModRefSetsCallingExternalFunction,
       Context_->modRefSetSizeAfterMaterialization);
 
-  // More debug output
-  // std::cerr << "ReadOnlyMemoryNodes (PtGIndex): ";
-  // for (auto ptgNodeId : Context_->ReadOnlyMemoryNodes.Items())
-  //   std::cerr << ptgNodeId << ", ";
-  // std::cerr << "After materialization: " << std::endl;
-  // std::cerr << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
-
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();
   return std::move(ModRefSummary_);
-}
-
-/**
- * Collects all lambda nodes defined in the given module, in an unspecified order.
- * @param rvsdgModule the module
- * @return a list of all lambda nodes in the module
- */
-static std::vector<const rvsdg::LambdaNode *>
-CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
-{
-  std::vector<const rvsdg::LambdaNode *> result;
-
-  // Recursively traverses all structural nodes, but does not enter into lambdas
-  const std::function<void(rvsdg::Region &)> CollectLambdasInRegion =
-      [&](rvsdg::Region & region) -> void
-  {
-    for (auto & node : region.Nodes())
-    {
-      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(&node))
-      {
-        result.push_back(lambda);
-      }
-      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
-      {
-        for (size_t i = 0; i < structural->nsubregions(); i++)
-        {
-          CollectLambdasInRegion(*structural->subregion(i));
-        }
-      }
-    }
-  };
-
-  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
-
-  return result;
-}
-
-void
-RegionAwareModRefSummarizer::createCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
-{
-  const auto & pointsToGraph = Context_->pointsToGraph;
-
-  // The list of lambdas becomes the list of nodes in the call graph
-  auto lambdaNodes = CollectLambdaNodes(rvsdgModule);
-
-  // Mapping from LambdaNode* to its index in lambdaNodes
-  std::unordered_map<const rvsdg::LambdaNode *, size_t> callGraphNodeIndex;
-  callGraphNodeIndex.reserve(lambdaNodes.size());
-  for (size_t i = 0; i < lambdaNodes.size(); i++)
-  {
-    callGraphNodeIndex.insert({ lambdaNodes[i], i });
-  }
-
-  // Add a dummy node representing all external functions, with no associated LambdaNode
-  const auto externalNodeIndex = lambdaNodes.size();
-  const auto numCallGraphNodes = externalNodeIndex + 1;
-
-  // Outgoing edges for each node in the call graph, indexed by position in lambdaNodes
-  std::vector<util::HashSet<size_t>> callGraphSuccessors(numCallGraphNodes);
-
-  // Add outgoing edges from the given caller to any function the call may target
-  const auto handleCall = [&](const rvsdg::SimpleNode & callNode, size_t callerIndex) -> void
-  {
-    const auto classification = CallOperation::ClassifyCall(callNode);
-    if (classification->isSetjmpCall())
-    {
-      Context_->FunctionsCallingSetjmp.insert(lambdaNodes[callerIndex]);
-      return;
-    }
-
-    const auto target = callNode.input(0)->origin();
-    const auto targetPtgNode = pointsToGraph.getNodeForRegister(*target);
-
-    // Go through all locations the called function pointer may target
-    for (const auto calleePtgNode : pointsToGraph.getExplicitTargets(targetPtgNode).Items())
-    {
-      const auto kind = pointsToGraph.getNodeKind(calleePtgNode);
-      if (kind == PointsToGraph::NodeKind::LambdaNode)
-      {
-        const auto & lambdaNode = pointsToGraph.getLambdaForNode(calleePtgNode);
-
-        // Look up which call graph node represents the target lambda
-        JLM_ASSERT(callGraphNodeIndex.find(&lambdaNode) != callGraphNodeIndex.end());
-        const auto calleeCallGraphNode = callGraphNodeIndex[&lambdaNode];
-
-        // Add the edge caller -> callee to the call graph
-        callGraphSuccessors[callerIndex].insert(calleeCallGraphNode);
-      }
-      else if (kind == PointsToGraph::NodeKind::ImportNode)
-      {
-        // Add the edge caller -> node representing external functions
-        callGraphSuccessors[callerIndex].insert(externalNodeIndex);
-      }
-    }
-
-    if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
-    {
-      // If the call target pointer is flagged, add an edge to external functions
-      callGraphSuccessors[callerIndex].insert(externalNodeIndex);
-    }
-  };
-
-  // Recursive function finding all call operations, adding edges to the call graph
-  const std::function<void(const rvsdg::Region &, size_t)> handleCalls =
-      [&](const rvsdg::Region & region, size_t callerIndex) -> void
-  {
-    for (auto & node : region.Nodes())
-    {
-      if (const auto [callNode, callOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(node);
-          callOp)
-      {
-        handleCall(*callNode, callerIndex);
-      }
-
-      rvsdg::MatchType(
-          node,
-          [&](const rvsdg::StructuralNode & structural)
-          {
-            for (auto & subregion : structural.Subregions())
-            {
-              handleCalls(subregion, callerIndex);
-            }
-          });
-    }
-  };
-
-  // For all functions, visit all their calls and add outgoing edges in the call graph
-  for (size_t i = 0; i < lambdaNodes.size(); i++)
-  {
-    handleCalls(*lambdaNodes[i]->subregion(), i);
-
-    // If the function has escaped, add an edge from the node representing all external functions
-    if (pointsToGraph.isExternallyAvailable(pointsToGraph.getNodeForLambda(*lambdaNodes[i])))
-    {
-      callGraphSuccessors[externalNodeIndex].insert(i);
-    }
-  }
-
-  // Finally, add the fact that the external node may call itself
-  callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
-
-  // Used by the implementation of Tarjan's SCC algorithm
-  const auto getSuccessors = [&](size_t nodeIndex)
-  {
-    return callGraphSuccessors[nodeIndex].Items();
-  };
-
-  // Find SCCs in the call graph
-  std::vector<size_t> sccIndex;
-  std::vector<size_t> reverseTopologicalOrder;
-  auto numSCCs = util::FindStronglyConnectedComponents<size_t>(
-      numCallGraphNodes,
-      getSuccessors,
-      sccIndex,
-      reverseTopologicalOrder);
-
-  // sccIndex are distributed in a reverse topological order, so the sccIndex is used
-  // when creating the list of SCCs and the functions they contain
-  Context_->SccFunctions.resize(numSCCs);
-  for (size_t i = 0; i < lambdaNodes.size(); i++)
-  {
-    Context_->SccFunctions[sccIndex[i]].insert(lambdaNodes[i]);
-    Context_->FunctionToSccIndex[lambdaNodes[i]] = sccIndex[i];
-  }
-
-  // Add edges between the SCCs for all calls
-  Context_->SccCallTargets.resize(numSCCs);
-  for (size_t i = 0; i < numCallGraphNodes; i++)
-  {
-    for (auto target : callGraphSuccessors[i].Items())
-    {
-      Context_->SccCallTargets[sccIndex[i]].insert(sccIndex[target]);
-    }
-  }
-
-  // Also note which SCC contains all external functions
-  Context_->ExternalNodeSccIndex = sccIndex[externalNodeIndex];
 }
 
 util::HashSet<PointsToGraph::NodeIndex>
@@ -1280,13 +1020,6 @@ RegionAwareModRefSummarizer::removeSimpleAllocasAroundSetjmp()
   }
 }
 
-bool
-RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda) const
-{
-  const auto scc = Context_->FunctionToSccIndex[&lambda];
-  return Context_->SccCallTargets[scc].Contains(scc);
-}
-
 void
 RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to)
 {
@@ -1308,8 +1041,28 @@ RegionAwareModRefSummarizer::addModRefSetSimpleAllocaAllowlist(
 }
 
 void
+RegionAwareModRefSummarizer::annotateInterproceduralRegion(const rvsdg::Region & region)
+{
+  for (auto & node : region.Nodes())
+  {
+    rvsdg::MatchType(
+        node,
+        [&](const rvsdg::PhiNode & phi)
+        {
+          annotateInterproceduralRegion(*phi.subregion());
+        },
+        [&](const rvsdg::LambdaNode & lambda)
+        {
+          AnnotateFunction(lambda);
+        });
+  }
+}
+
+void
 RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
 {
+  Context_->Functions.push_back(&lambda);
+
   const auto modRefSet = AnnotateStructuralNode(lambda, lambda);
 
   // Prevent memory nodes from being added to the ModRefSet of the lambda,
@@ -1635,6 +1388,13 @@ RegionAwareModRefSummarizer::AnnotateCall(
     addModRefSetSimpleAllocaAllowlist(callModRef, reachableSimpleAllocas);
   }
 
+  // If the call targets setjmp, mark the function as possibly calling setjmp
+  const auto classification = CallOperation::ClassifyCall(callNode);
+  if (classification->isSetjmpCall())
+  {
+    Context_->FunctionsCallingSetjmp.insert(&lambda);
+  }
+
   return callModRef;
 }
 
@@ -1741,12 +1501,9 @@ RegionAwareModRefSummarizer::determineReadOnlyMemory()
 void
 RegionAwareModRefSummarizer::materializeSets()
 {
-  for (auto & functions : Context_->SccFunctions)
+  for (auto function : Context_->Functions)
   {
-    for (auto function : functions.Items())
-    {
-      materializeSetsInFunction(*function);
-    }
+    materializeSetsInFunction(*function);
   }
 }
 
@@ -1872,28 +1629,6 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
     Context_->numModRefSetsWithEffectOnExternal++;
     Context_->modRefSetSizeAfterMaterialization += modRefSet.getModRefNodes().size();
   }
-}
-
-std::string
-RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer)
-{
-  std::ostringstream ss;
-  for (size_t i = 0; i < summarizer.Context_->SccFunctions.size(); i++)
-  {
-    if (i != 0)
-      ss << " <- ";
-    ss << "[" << std::endl;
-    if (i == summarizer.Context_->ExternalNodeSccIndex)
-    {
-      ss << "  " << "<external>" << std::endl;
-    }
-    for (auto function : summarizer.Context_->SccFunctions[i].Items())
-    {
-      ss << "  " << function->DebugString() << std::endl;
-    }
-    ss << "]";
-  }
-  return ss.str();
 }
 
 std::string
