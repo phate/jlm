@@ -180,18 +180,18 @@ struct MemoryStateEncoder::MemoryStateTypeCounters final
   MemoryStateTypeCounter storeCounter;
   MemoryStateTypeCounter callEntryMergeCounter;
 
-  size_t numAllocaNodes;
-  size_t numMallocNodes;
-  size_t numLoadNodes;
-  size_t numStoreNodes;
-  size_t numCallNodes;
-  size_t numFreeNodes;
-  size_t numMemCpyNodes;
-  size_t numMemSetNodes;
-  size_t numMemMoveNodes;
-  size_t numGammaNodes;
-  size_t numThetaNodes;
-  size_t numLambdaNodes;
+  size_t numAllocaNodes = 0;
+  size_t numMallocNodes = 0;
+  size_t numLoadNodes = 0;
+  size_t numStoreNodes = 0;
+  size_t numCallNodes = 0;
+  size_t numFreeNodes = 0;
+  size_t numMemCpyNodes = 0;
+  size_t numMemSetNodes = 0;
+  size_t numMemMoveNodes = 0;
+  size_t numGammaNodes = 0;
+  size_t numThetaNodes = 0;
+  size_t numLambdaNodes = 0;
 };
 
 /** \brief Statistics class for memory state encoder encoding
@@ -274,19 +274,25 @@ public:
     AddMeasurement(NumIntraProceduralRegions_, counters.interProceduralRegionCounter.NumEntities);
     AddMemoryStateTypeCounter(RegionArgumentStateSuffix_, counters.interProceduralRegionCounter);
 
-    AddMeasurement(NumLoadOperations_, counters.loadCounter.NumEntities);
     AddMemoryStateTypeCounter(LoadStateSuffix_, counters.loadCounter);
 
-    AddMeasurement(NumStoreOperations_, counters.storeCounter.NumEntities);
     AddMemoryStateTypeCounter(StoreStateSuffix_, counters.storeCounter);
 
     AddMeasurement(NumCallEntryMergeOperations_, counters.callEntryMergeCounter.NumEntities);
     AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counters.callEntryMergeCounter);
-    
-    AddMeasurement(
-        "#MemEncoderStateNodes",
-        counters.numLoadNodes + counters.numStoreNodes + counters.numCallNodes
-            + counters.numAllocaNodes + counters.numGammaNodes + counters.numThetaNodes);
+
+    AddMeasurement("#AllocaNodes", counters.numAllocaNodes);
+    AddMeasurement("#MallocNodes", counters.numMallocNodes);
+    AddMeasurement("#LoadNodes", counters.numLoadNodes);
+    AddMeasurement("#StoreNodes", counters.numStoreNodes);
+    AddMeasurement("#CallNodes", counters.numCallNodes);
+    AddMeasurement("#FreeNodes", counters.numFreeNodes);
+    AddMeasurement("#MemCpyNodes", counters.numMemCpyNodes);
+    AddMeasurement("#MemSetNodes", counters.numMemSetNodes);
+    AddMeasurement("#MemMoveNodes", counters.numMemMoveNodes);
+    AddMeasurement("#GammaNodes", counters.numGammaNodes);
+    AddMeasurement("#ThetaNodes", counters.numThetaNodes);
+    AddMeasurement("#LambdaNodes", counters.numLambdaNodes);
   }
 
   static std::unique_ptr<Statistics>
