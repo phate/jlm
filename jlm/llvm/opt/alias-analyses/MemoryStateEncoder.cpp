@@ -179,6 +179,19 @@ struct MemoryStateEncoder::MemoryStateTypeCounters final
   MemoryStateTypeCounter loadCounter;
   MemoryStateTypeCounter storeCounter;
   MemoryStateTypeCounter callEntryMergeCounter;
+
+  size_t numAllocaNodes;
+  size_t numMallocNodes;
+  size_t numLoadNodes;
+  size_t numStoreNodes;
+  size_t numCallNodes;
+  size_t numFreeNodes;
+  size_t numMemCpyNodes;
+  size_t numMemSetNodes;
+  size_t numMemMoveNodes;
+  size_t numGammaNodes;
+  size_t numThetaNodes;
+  size_t numLambdaNodes;
 };
 
 /** \brief Statistics class for memory state encoder encoding
@@ -269,6 +282,11 @@ public:
 
     AddMeasurement(NumCallEntryMergeOperations_, counters.callEntryMergeCounter.NumEntities);
     AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counters.callEntryMergeCounter);
+    
+    AddMeasurement(
+        "#MemEncoderStateNodes",
+        counters.numLoadNodes + counters.numStoreNodes + counters.numCallNodes
+            + counters.numAllocaNodes + counters.numGammaNodes + counters.numThetaNodes);
   }
 
   static std::unique_ptr<Statistics>
@@ -581,6 +599,7 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
             counters.interProceduralRegionCounter.CountEntity(
                 modRefSummary.GetPointsToGraph(),
                 modRefSet);
+            counters.numLambdaNodes++;
             gather(*lambdaNode.subregion(), modRefSummary, counters);
           },
           [&](const rvsdg::ThetaNode & thetaNode)
@@ -589,6 +608,7 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
             counters.interProceduralRegionCounter.CountEntity(
                 modRefSummary.GetPointsToGraph(),
                 modRefSet);
+            counters.numThetaNodes++;
             gather(*thetaNode.subregion(), modRefSummary, counters);
           },
           [&](const rvsdg::GammaNode & gammaNode)
@@ -599,6 +619,7 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
               counters.interProceduralRegionCounter.CountEntity(
                   modRefSummary.GetPointsToGraph(),
                   modRefSet);
+              counters.numGammaNodes++;
               gather(subregion, modRefSummary, counters);
             }
           },
@@ -606,23 +627,25 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
           {
             MatchTypeWithDefault(
                 simpleNode.GetOperation(),
-                [](const AllocaOperation &)
+                [&counters](const AllocaOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numAllocaNodes++;
                 },
-                [](const MallocOperation &)
+                [&counters](const MallocOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numMallocNodes++;
                 },
                 [&modRefSummary, &counters, &simpleNode](const LoadOperation &)
                 {
                   const auto & modRefSet = modRefSummary.GetSimpleNodeModRef(simpleNode);
                   counters.loadCounter.CountEntity(modRefSummary.GetPointsToGraph(), modRefSet);
+                  counters.numLoadNodes++;
                 },
                 [&modRefSummary, &counters, &simpleNode](const StoreOperation &)
                 {
                   const auto & modRefSet = modRefSummary.GetSimpleNodeModRef(simpleNode);
                   counters.storeCounter.CountEntity(modRefSummary.GetPointsToGraph(), modRefSet);
+                  counters.numStoreNodes++;
                 },
                 [&modRefSummary, &counters, &simpleNode](const CallOperation &)
                 {
@@ -630,22 +653,23 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
                   counters.callEntryMergeCounter.CountEntity(
                       modRefSummary.GetPointsToGraph(),
                       memoryNodes);
+                  counters.numCallNodes++;
                 },
-                [](const FreeOperation &)
+                [&counters](const FreeOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numFreeNodes++;
                 },
-                [](const MemCpyOperation &)
+                [&counters](const MemCpyOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numMemCpyNodes++;
                 },
-                [](const MemSetOperation &)
+                [&counters](const MemSetOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numMemSetNodes++;
                 },
-                [](const MemMoveOperation &)
+                [&counters](const MemMoveOperation &)
                 {
-                  // Nothing needs to be done
+                  counters.numMemMoveNodes++;
                 },
                 [](const MemoryStateOperation &)
                 {
