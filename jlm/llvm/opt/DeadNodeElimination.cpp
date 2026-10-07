@@ -456,7 +456,7 @@ getLambdaNode(const rvsdg::Region & region)
   auto currentRegion = &region;
   while (currentRegion->node() != nullptr)
   {
-    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(region.node()))
+    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(currentRegion->node()))
     {
       return lambdaNode;
     }
