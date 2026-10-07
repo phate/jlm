@@ -464,10 +464,7 @@ MemoryStateEncoder::Encode(
   }
 
   statistics_->StartEncoding(rvsdg);
-  // FIXME: separate handling of inter- and intra-procedural nodes to avoid stateMap parameter for
-  // inter-procedural subregions
-  StateMap stateMap;
-  EncodeRegion(rvsdg.GetRootRegion(), stateMap);
+  encodeInterProcedural(rvsdg.GetRootRegion());
   statistics_->StopEncoding(encodingCounter_);
   encodingCounter_ = EncodingCounter();
 
@@ -479,15 +476,15 @@ MemoryStateEncoder::Encode(
 }
 
 void
-MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, StateMap & stateMap)
+MemoryStateEncoder::encodeInterProcedural(rvsdg::Region & region)
 {
   for (const auto node : rvsdg::TopDownTraverser(&region))
   {
     MatchTypeOrFail(
         *node,
-        [this, &stateMap](rvsdg::PhiNode & phiNode)
+        [this](rvsdg::PhiNode & phiNode)
         {
-          EncodeRegion(*phiNode.subregion(), stateMap);
+          encodeInterProcedural(*phiNode.subregion());
         },
         [](rvsdg::DeltaNode &)
         {
@@ -495,15 +492,29 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, StateMap & stateMap)
         },
         [this](rvsdg::LambdaNode & lambdaNode)
         {
-          EncodeLambda(lambdaNode);
+          encodeLambda(lambdaNode);
         },
+        [](const rvsdg::SimpleNode & simpleNode)
+        {
+          // Nothing needs to be done
+        });
+  }
+}
+
+void
+MemoryStateEncoder::encodeIntraProcedural(rvsdg::Region & region, StateMap & stateMap)
+{
+  for (const auto node : rvsdg::TopDownTraverser(&region))
+  {
+    MatchTypeOrFail(
+        *node,
         [this, &stateMap](rvsdg::ThetaNode & thetaNode)
         {
-          EncodeTheta(thetaNode, stateMap);
+          encodeTheta(thetaNode, stateMap);
         },
         [this, &stateMap](rvsdg::GammaNode & gammaNode)
         {
-          EncodeGamma(gammaNode, stateMap);
+          encodeGamma(gammaNode, stateMap);
         },
         [this, &stateMap](const rvsdg::SimpleNode & simpleNode)
         {
@@ -511,39 +522,39 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region, StateMap & stateMap)
               simpleNode.GetOperation(),
               [this, &simpleNode, &stateMap](const AllocaOperation &)
               {
-                EncodeAlloca(simpleNode, stateMap);
+                encodeAlloca(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const MallocOperation &)
               {
-                EncodeMalloc(simpleNode, stateMap);
+                encodeMalloc(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const LoadOperation &)
               {
-                EncodeLoad(simpleNode, stateMap);
+                encodeLoad(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const StoreOperation &)
               {
-                EncodeStore(simpleNode, stateMap);
+                encodeStore(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const CallOperation &)
               {
-                EncodeCall(simpleNode, stateMap);
+                encodeCall(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const FreeOperation &)
               {
-                EncodeFree(simpleNode, stateMap);
+                encodeFree(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const MemCpyOperation &)
               {
-                EncodeMemcpy(simpleNode, stateMap);
+                encodeMemcpy(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const MemSetOperation &)
               {
-                EncodeMemset(simpleNode, stateMap);
+                encodeMemset(simpleNode, stateMap);
               },
               [this, &simpleNode, &stateMap](const MemMoveOperation &)
               {
-                EncodeMemmove(simpleNode, stateMap);
+                encodeMemmove(simpleNode, stateMap);
               },
               [](const MemoryStateOperation &)
               {
@@ -672,7 +683,7 @@ MemoryStateEncoder::gatherStatistics(const rvsdg::Region & region) const
 }
 
 void
-MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<AllocaOperation>(allocaNode.GetOperation()));
 
@@ -700,7 +711,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap 
 }
 
 void
-MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<MallocOperation>(mallocNode.GetOperation()));
 
@@ -731,7 +742,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap 
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap)
+MemoryStateEncoder::encodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap)
 {
   JLM_ASSERT(is<LoadOperation>(node.GetOperation()));
 
@@ -758,13 +769,13 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node, StateMap & stateM
   else
   {
     encodingCounter_.numReplacedLoads += 1;
-    const auto & newLoadNode = ReplaceLoadNode(node, memStateOperands);
+    const auto & newLoadNode = replaceLoadNode(node, memStateOperands);
     stateMap.updateStates(modRefNodes, LoadOperation::MemoryStateOutputs(newLoadNode));
   }
 }
 
 void
-MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap)
+MemoryStateEncoder::encodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap)
 {
   JLM_ASSERT(is<StoreOperation>(node.GetOperation()));
 
@@ -791,13 +802,13 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node, StateMap & state
   else
   {
     encodingCounter_.numReplacedStores++;
-    const auto & newStoreNode = ReplaceStoreNode(node, memStateOperands);
+    const auto & newStoreNode = replaceStoreNode(node, memStateOperands);
     stateMap.updateStates(modRefNodes, StoreOperation::MemoryStateOutputs(newStoreNode));
   }
 }
 
 void
-MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
@@ -826,7 +837,7 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode, StateMap & st
 }
 
 void
-MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
@@ -848,7 +859,7 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
 }
 
 void
-MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
@@ -856,12 +867,12 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap 
   const auto modRefNodes = getModRefSetNodes(modRefSet);
   const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memcpyNode.region());
 
-  const auto & newMemCpyNode = ReplaceMemcpyNode(memcpyNode, memStateOperands);
+  const auto & newMemCpyNode = replaceMemcpyNode(memcpyNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemCpyOperation::memoryStateOutputs(newMemCpyNode));
 }
 
 void
-MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<MemSetOperation>(memsetNode.GetOperation()));
 
@@ -869,12 +880,12 @@ MemoryStateEncoder::EncodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap 
   const auto modRefNodes = getModRefSetNodes(modRefSet);
   const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memsetNode.region());
 
-  auto & newMemSetNode = ReplaceMemsetNode(memsetNode, memStateOperands);
+  auto & newMemSetNode = replaceMemsetNode(memsetNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemSetOperation::memoryStateOutputs(newMemSetNode));
 }
 
 void
-MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap) const
+MemoryStateEncoder::encodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap) const
 {
   JLM_ASSERT(is<MemMoveOperation>(memmoveNode.GetOperation()));
 
@@ -882,12 +893,12 @@ MemoryStateEncoder::EncodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMa
   const auto modRefNodes = getModRefSetNodes(modRefSet);
   const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *memmoveNode.region());
 
-  auto & newMemMoveNode = ReplaceMemmoveNode(memmoveNode, memStateOperands);
+  auto & newMemMoveNode = replaceMemmoveNode(memmoveNode, memStateOperands);
   stateMap.updateStates(modRefNodes, MemMoveOperation::memoryStateOutputs(newMemMoveNode));
 }
 
 void
-MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
+MemoryStateEncoder::encodeLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   StateMap subregionStateMap;
 
@@ -932,7 +943,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
   }
 
   auto & lambdaSubregion = *lambdaNode.subregion();
-  EncodeRegion(lambdaSubregion, subregionStateMap);
+  encodeIntraProcedural(lambdaSubregion, subregionStateMap);
 
   // Handle lambda exit
   {
@@ -950,7 +961,7 @@ MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap)
+MemoryStateEncoder::encodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap)
 {
   std::vector<StateMap> subregionStateMap(gammaNode.nsubregions());
 
@@ -970,7 +981,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
   }
 
   for (auto & subregion : gammaNode.Subregions())
-    EncodeRegion(subregion, subregionStateMap[subregion.index()]);
+    encodeIntraProcedural(subregion, subregionStateMap[subregion.index()]);
 
   // Handle gamma exit
   {
@@ -993,7 +1004,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMa
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap)
+MemoryStateEncoder::encodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap)
 {
   StateMap subregionStateMap;
   const auto & modRefSet = modRefSummary_->GetThetaModRef(thetaNode);
@@ -1012,7 +1023,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
     }
   }
 
-  EncodeRegion(*thetaNode.subregion(), subregionStateMap);
+  encodeIntraProcedural(*thetaNode.subregion(), subregionStateMap);
 
   // Handle theta exit
   {
@@ -1031,7 +1042,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMa
 }
 
 rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceLoadNode(
+MemoryStateEncoder::replaceLoadNode(
     const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
@@ -1089,7 +1100,7 @@ MemoryStateEncoder::ReplaceLoadNode(
 }
 
 rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceStoreNode(
+MemoryStateEncoder::replaceStoreNode(
     const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
@@ -1140,7 +1151,7 @@ MemoryStateEncoder::ReplaceStoreNode(
 }
 
 rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceMemcpyNode(
+MemoryStateEncoder::replaceMemcpyNode(
     const rvsdg::SimpleNode & memCpyNode,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
@@ -1190,7 +1201,7 @@ MemoryStateEncoder::ReplaceMemcpyNode(
 }
 
 rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceMemsetNode(
+MemoryStateEncoder::replaceMemsetNode(
     const rvsdg::SimpleNode & memsetNode,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
@@ -1217,7 +1228,7 @@ MemoryStateEncoder::ReplaceMemsetNode(
 }
 
 rvsdg::SimpleNode &
-MemoryStateEncoder::ReplaceMemmoveNode(
+MemoryStateEncoder::replaceMemmoveNode(
     const rvsdg::SimpleNode & memmoveNode,
     const std::vector<rvsdg::Output *> & memoryStates)
 {
