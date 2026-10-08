@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <fstream>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -27,6 +28,12 @@
 
 namespace jlm::llvm::aa
 {
+
+/**
+ * Enable the gathering of the number of memory states per node
+ */
+static const bool ENABLE_MSE_NUM_MEMORY_STATE_PER_NODE =
+    std::getenv("ENABLE_MSE_NUM_MEMORY_STATE_PER_NODE");
 
 namespace
 {
@@ -440,6 +447,248 @@ private:
   std::unordered_map<PointsToGraph::NodeIndex, rvsdg::Output *> states_;
 };
 
+static void
+gatherNumMemoryStatesPerNode(rvsdg::Region & region, const util::FilePath & sourceFile)
+{
+  std::function emit = [&](rvsdg::Region::Id regionId,
+                           rvsdg::Node::Id nodeId,
+                           const std::string & nodeDebugStr,
+                           const rvsdg::LambdaNode * lambdaNode,
+                           size_t numMemoryInputStates,
+                           size_t numMemoryOutputStates,
+                           std::ofstream & out)
+  {
+    auto lambdaDebugStr = lambdaNode ? lambdaNode->DebugString() : "lambda";
+
+    out << sourceFile.to_str() << " " << lambdaDebugStr << " " << nodeDebugStr << " (" << regionId
+        << "," << nodeId << ")" << " " << numMemoryInputStates << " " << numMemoryOutputStates
+        << std::endl;
+  };
+
+  std::function numMemoryStateInputs = [](const rvsdg::Node & node)
+  {
+    return std::count_if(
+        node.Inputs().begin(),
+        node.Inputs().end(),
+        [](const rvsdg::Input & input)
+        {
+          return is<MemoryStateType>(*input.Type());
+        });
+  };
+
+  std::function numMemoryStateOutputs = [](const rvsdg::Node & node)
+  {
+    return std::count_if(
+        node.Outputs().begin(),
+        node.Outputs().end(),
+        [](const rvsdg::Output & output)
+        {
+          return is<MemoryStateType>(*output.Type());
+        });
+  };
+
+  std::function<void(const rvsdg::Region &, const rvsdg::LambdaNode *, std::ofstream &)> gather =
+      [&](const rvsdg::Region & region, const rvsdg::LambdaNode * lambdaNode, std::ofstream & out)
+  {
+    for (const auto & node : region.Nodes())
+    {
+      MatchTypeOrFail(
+          node,
+          [&](const rvsdg::PhiNode & phiNode)
+          {
+            gather(*phiNode.subregion(), lambdaNode, out);
+          },
+          [](const rvsdg::DeltaNode &)
+          {
+            // Nothing needs to be done
+          },
+          [&](const rvsdg::LambdaNode & lambdaNode)
+          {
+            auto entrySplit = tryGetMemoryStateEntrySplit(lambdaNode);
+            auto exitMerge = tryGetMemoryStateExitMerge(lambdaNode);
+
+            emit(
+                lambdaNode.region()->getRegionId(),
+                lambdaNode.GetNodeId(),
+                lambdaNode.DebugString(),
+                &lambdaNode,
+                entrySplit ? numMemoryStateOutputs(*entrySplit) : 1,
+                exitMerge ? numMemoryStateInputs(*exitMerge) : 1,
+                out);
+
+            gather(*lambdaNode.subregion(), &lambdaNode, out);
+          },
+          [&](const rvsdg::ThetaNode & thetaNode)
+          {
+            emit(
+                thetaNode.region()->getRegionId(),
+                thetaNode.GetNodeId(),
+                thetaNode.DebugString(),
+                lambdaNode,
+                numMemoryStateInputs(thetaNode),
+                numMemoryStateOutputs(thetaNode),
+                out);
+
+            gather(*thetaNode.subregion(), lambdaNode, out);
+          },
+          [&](const rvsdg::GammaNode & gammaNode)
+          {
+            emit(
+                gammaNode.region()->getRegionId(),
+                gammaNode.GetNodeId(),
+                gammaNode.DebugString(),
+                lambdaNode,
+                numMemoryStateInputs(gammaNode),
+                numMemoryStateOutputs(gammaNode),
+                out);
+
+            for (auto & subregion : gammaNode.Subregions())
+              gather(subregion, lambdaNode, out);
+          },
+          [&](const rvsdg::SimpleNode & simpleNode)
+          {
+            MatchTypeWithDefault(
+                simpleNode.GetOperation(),
+                [&](const AllocaOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      0,
+                      1,
+                      out);
+                },
+                [&](const MallocOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      0,
+                      1,
+                      out);
+                },
+                [&](const LoadOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const StoreOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const CallOperation &)
+                {
+                  auto entryMerge = CallOperation::tryGetMemoryStateEntryMerge(simpleNode);
+                  auto exitSplit = CallOperation::tryGetMemoryStateExitSplit(simpleNode);
+
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      entryMerge ? numMemoryStateInputs(*entryMerge) : 1,
+                      exitSplit ? numMemoryStateOutputs(*exitSplit) : 1,
+                      out);
+                },
+                [&](const FreeOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const MemCpyOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const MemSetOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const MemMoveOperation &)
+                {
+                  emit(
+                      simpleNode.region()->getRegionId(),
+                      simpleNode.GetNodeId(),
+                      simpleNode.DebugString(),
+                      lambdaNode,
+                      numMemoryStateInputs(simpleNode),
+                      numMemoryStateOutputs(simpleNode),
+                      out);
+                },
+                [&](const MemoryStateOperation &)
+                {
+                  // Nothing needs to be done
+                },
+                [&simpleNode]()
+                {
+                  // Ensure we took care of all memory state consuming/producing nodes
+                  JLM_ASSERT(!hasMemoryState(simpleNode));
+                });
+          });
+    }
+  };
+
+  // Perform DNE first to ensure we do not count any dead memory states
+  DeadNodeElimination dne;
+  dne.run(region);
+
+  const std::filesystem::path investigationDirectory("/tmp/numMemoryStatesPerNode");
+  std::filesystem::create_directories(investigationDirectory);
+
+  std::filesystem::path filePath;
+  for (std::size_t fileNumber = 1;; fileNumber++)
+  {
+    filePath = investigationDirectory
+             / ("numMemoryStatesPerNode-" + sourceFile.to_str() + "-" + std::to_string(fileNumber)
+                + ".log");
+    if (!std::filesystem::exists(filePath))
+    {
+      break;
+    }
+  }
+
+  std::ofstream out;
+  out.open(filePath);
+  gather(region, nullptr, out);
+  out.close();
+}
+
 static std::vector<MemoryNodeId>
 getModRefSetNodes(const ModRefSet & modRefSet)
 {
@@ -478,6 +727,11 @@ MemoryStateEncoder::Encode(
   encodeInterProcedural(rvsdg.GetRootRegion());
   statistics_->StopEncoding(encodingCounter_);
   encodingCounter_ = EncodingCounter();
+
+  if (ENABLE_MSE_NUM_MEMORY_STATE_PER_NODE)
+  {
+    gatherNumMemoryStatesPerNode(rvsdg.GetRootRegion(), rvsdgModule.SourceFilePath().value());
+  }
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
 }
