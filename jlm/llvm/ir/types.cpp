@@ -53,7 +53,7 @@ ArrayType::~ArrayType() noexcept = default;
 std::string
 ArrayType::debug_string() const
 {
-  return util::strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
+  return util::strfmt("[", nelements(), "x", type_->debug_string(), "]");
 }
 
 bool
