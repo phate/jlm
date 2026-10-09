@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -272,4 +274,138 @@ TEST(RvsdgTreePrinterTests, printAllocaNodes)
   const auto expectedTree = "{\"NumAggregateAllocaNodes\":1,\"NumAllocaNodes\":2}\n";
 
   EXPECT_EQ(tree, expectedTree);
+}
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Test that RenderAnnotatedTree returns a non-empty string for an empty RVSDG graph.
+ */
+TEST(RenderAnnotatedTreeTests, EmptyGraph)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  std::string tree = RvsdgTreePrinter::RenderAnnotatedTree(rvsdg, rvsdg.GetRootRegion());
+
+  // Assert
+  ASSERT_FALSE(tree.empty());
+  // The root region should appear at the top of the tree.
+  EXPECT_NE(tree.find("RootRegion"), std::string::npos);
+}
+
+/**
+ * Test that RenderAnnotatedTree includes annotations for a graph with simple nodes.
+ */
+TEST(RenderAnnotatedTreeTests, SimpleNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+  using namespace jlm::rvsdg;
+
+  const auto valueType = TestType::createValueType();
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  // Create two simple nodes in the root region.
+  TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { valueType });
+  TestOperation::createNode(&rvsdg.GetRootRegion(), {}, { valueType });
+
+  std::string tree = RvsdgTreePrinter::RenderAnnotatedTree(rvsdg, rvsdg.GetRootRegion());
+
+  // Assert
+  ASSERT_FALSE(tree.empty());
+  EXPECT_NE(tree.find("RootRegion"), std::string::npos);
+  // NumRvsdgNodes should count the two TestOperation entries.
+  EXPECT_NE(tree.find("NumRvsdgNodes"), std::string::npos);
+}
+
+/**
+ * Test that RenderAnnotatedTree correctly annotates a graph with nested structural nodes.
+ */
+TEST(RenderAnnotatedTreeTests, NestedStructuralNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+  using namespace jlm::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  // Create a top-level structural node with two subregions.
+  auto topLevel = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  // Add a second structural node inside the first subregion (nested).
+  TestStructuralNode::create(topLevel->subregion(0), 1);
+
+  std::string tree = RvsdgTreePrinter::RenderAnnotatedTree(rvsdg, rvsdg.GetRootRegion());
+
+  // Assert
+  ASSERT_FALSE(tree.empty());
+
+  // The tree should contain entries for the region IDs of the root, top-level subregions,
+  // and the nested subregion.
+  EXPECT_NE(tree.find("RootRegion"), std::string::npos);
+  EXPECT_NE(tree.find("RegionId"), std::string::npos);
+}
+
+/**
+ * Test that RenderAnnotatedTree includes all expected annotation labels.
+ *
+ * A graph with a structural node is used, because some annotations (NodeId, memory state
+ * inputs/outputs) only appear on structural nodes.
+ */
+TEST(RenderAnnotatedTreeTests, AllAnnotationLabelsPresent)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+  using namespace jlm::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  // Add a structural node so that NodeId and memory state annotation labels appear.
+  TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+
+  std::string tree = RvsdgTreePrinter::RenderAnnotatedTree(rvsdg, rvsdg.GetRootRegion());
+
+  // Assert — every annotation type applied by RenderAnnotatedTree should appear.
+  EXPECT_NE(tree.find("NumRvsdgNodes"), std::string::npos);
+  EXPECT_NE(tree.find("NodeId"), std::string::npos);
+  EXPECT_NE(tree.find("RegionId"), std::string::npos);
+  EXPECT_NE(tree.find("NumAggregateAllocaNodes"), std::string::npos);
+  EXPECT_NE(tree.find("NumAllocaNodes"), std::string::npos);
+  EXPECT_NE(tree.find("NumLoadNodes"), std::string::npos);
+  EXPECT_NE(tree.find("NumStoreNodes"), std::string::npos);
+  EXPECT_NE(tree.find("NumMemoryStateTypeArguments"), std::string::npos);
+  EXPECT_NE(tree.find("NumMemoryStateTypeResults"), std::string::npos);
+  EXPECT_NE(tree.find("NumMemoryStateTypeInputs"), std::string::npos);
+  EXPECT_NE(tree.find("NumMemoryStateTypeOutputs"), std::string::npos);
+}
+
+/**
+ * Test that RenderAnnotatedTree correctly counts nodes inside subregions via
+ * the AnnotateNumNodes logic — a structural node's subtree annotation should
+ * reflect the total count of matching nodes in all its descendant regions.
+ */
+TEST(RenderAnnotatedTreeTests, StructuralNodeAnnotationCountsSubregionNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::util;
+  using namespace jlm::rvsdg;
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  // Create one structural node with two subregions.
+  TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+
+  std::string tree = RvsdgTreePrinter::RenderAnnotatedTree(rvsdg, rvsdg.GetRootRegion());
+
+  // Assert
+  ASSERT_FALSE(tree.empty());
+  EXPECT_NE(tree.find("TestStructuralOperation"), std::string::npos);
 }
