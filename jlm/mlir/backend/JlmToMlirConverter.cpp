@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -935,6 +936,38 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::mlir::ValueRange(inputs));
   }
   // ** endregion structural nodes **
+  else if (auto memcpy = dynamic_cast<const llvm::MemCpyOperation *>(&operation))
+  {
+    // Convert a MemCpy to MLIR jlm.memcpy. The op is volatile iff it threads an I/O
+    // state; volatile MemCpy inputs are dst(0), src(1), len(2), ioState(3), memStates(4+),
+    // while non-volatile ones are dst(0), src(1), len(2), memStates(3+).
+    JLM_ASSERT(memcpy != nullptr);
+
+    const bool isVolatile =
+        dynamic_cast<const llvm::MemCpyVolatileOperation *>(&operation) != nullptr;
+
+    // Memory states start right after the fixed operands (dst, src, len) and, for the
+    // volatile case, the input I/O state.
+    const size_t memStateOffset = isVolatile ? 4 : 3;
+    JLM_ASSERT(inputs.size() == memStateOffset + memcpy->NumMemoryStates());
+    ::mlir::ValueRange memStates({ std::next(inputs.begin(), memStateOffset), inputs.end() });
+
+    // A volatile copy threads an I/O state in and out; a non-volatile one does not.
+    ::mlir::Value inputIoState = isVolatile ? inputs[3] : nullptr;
+    ::mlir::Type outputIoState =
+        isVolatile ? Builder_->getType<::mlir::rvsdg::IOStateEdgeType>() : nullptr;
+
+    MlirOp = Builder_->create<::mlir::jlm::Memcpy>(
+        Builder_->getUnknownLoc(),
+        outputIoState,
+        GetMemStateRange(memcpy->NumMemoryStates()),
+        inputs[0], // dst
+        inputs[1], // src
+        inputs[2], // len
+        isVolatile,
+        inputIoState,
+        memStates);
+  }
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", operation.debug_string());
