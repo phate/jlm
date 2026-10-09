@@ -590,6 +590,13 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*intToPtrOp->result(0)),
         inputs[0]);
   }
+  else if (auto ptrToIntOp = dynamic_cast<const llvm::PtrToIntOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::PtrToIntOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*ptrToIntOp->result(0)),
+        inputs[0]);
+  }
   else if (auto bitCastOp = dynamic_cast<const jlm::llvm::BitCastOperation *>(&operation))
   {
     auto srcType = bitCastOp->argument(0);
