@@ -17,6 +17,49 @@
 namespace jlm::llvm
 {
 
+std::string
+RvsdgTreePrinter::RenderAnnotatedTree(const rvsdg::Graph & graph, const rvsdg::Region & region)
+{
+  util::AnnotationMap annotationMap;
+
+  auto matchAll = [](const rvsdg::Node &)
+  {
+    return true;
+  };
+
+  AnnotateDebugIds(graph, annotationMap);
+  AnnotateNumNodes(graph, matchAll, "NumRvsdgNodes", annotationMap);
+
+  auto isAggAlloca = [](const rvsdg::Node & node) -> bool
+  {
+    const auto * op = dynamic_cast<const AllocaOperation *>(&node.GetOperation());
+    return op != nullptr && IsAggregateType(*op->allocatedType());
+  };
+  AnnotateNumNodes(graph, isAggAlloca, "NumAggregateAllocaNodes", annotationMap);
+
+  auto isAlloca = [](const rvsdg::Node & node) -> bool
+  {
+    return rvsdg::is<AllocaOperation>(&node);
+  };
+  AnnotateNumNodes(graph, isAlloca, "NumAllocaNodes", annotationMap);
+
+  auto isLoad = [](const rvsdg::Node & node) -> bool
+  {
+    return rvsdg::is<LoadOperation>(&node);
+  };
+  AnnotateNumNodes(graph, isLoad, "NumLoadNodes", annotationMap);
+
+  auto isStore = [](const rvsdg::Node & node) -> bool
+  {
+    return rvsdg::is<StoreOperation>(&node);
+  };
+  AnnotateNumNodes(graph, isStore, "NumStoreNodes", annotationMap);
+
+  AnnotateNumMemoryStateInputsOutputs(graph, annotationMap);
+
+  return rvsdg::Region::ToTree(region, annotationMap);
+}
+
 class RvsdgTreePrinter::Statistics final : public util::Statistics
 {
 public:
