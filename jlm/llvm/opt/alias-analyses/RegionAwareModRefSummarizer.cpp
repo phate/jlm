@@ -1619,9 +1619,17 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
 
   if (!ENABLE_OMEGA_FOLDING)
   {
-    // When Omega folding is disabled, mark all memory locations as worth keeping
+    // When Omega folding is disabled, mark all memory locations as worth keeping,
+    // except constant memory locations, which may never appear in any ModRefSet
+    // (when constant blocking is enabled), and which would be added by materialization
+    // of external flags in an inconsistent way between nested and enclosing ModRefSets.
     for (PointsToGraph::NodeIndex node = 0; node < pointsToGraph.numNodes(); node++)
+    {
+      if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(node))
+        continue;
+
       markToKeep(node);
+    }
   }
 
   // Go over all ModRefSets in the function twice
