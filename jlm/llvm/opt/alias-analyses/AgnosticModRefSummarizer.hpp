@@ -123,6 +123,8 @@ private:
 class AgnosticModRefSummarizer::Statistics final : public util::Statistics
 {
 public:
+  static constexpr auto memoryStateDistributionLabel = "MemoryStateDistribution";
+
   Statistics(
       const util::FilePath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
@@ -164,6 +166,55 @@ public:
       return;
 
     GetTimer(Label::Timer).stop();
+  }
+
+  struct MemoryStateSummary
+  {
+    MemoryStateSummary(
+        const rvsdg::LambdaNode * lambdaNode,
+        const rvsdg::Node * node,
+        const size_t numMemoryStates)
+        : lambdaNode(lambdaNode),
+          node(node),
+          numMemoryStates(numMemoryStates)
+    {}
+
+    const rvsdg::LambdaNode * lambdaNode = nullptr;
+    const rvsdg::Node * node = nullptr;
+    size_t numMemoryStates = 0;
+  };
+
+  void
+  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateSummaries)
+  {
+    auto toString = [](const MemoryStateSummary & memoryStateSummary)
+    {
+      constexpr char separator = '-';
+      return util::strfmt(
+          memoryStateSummary.lambdaNode->DebugString(),
+          separator,
+          memoryStateSummary.node->DebugString(),
+          separator,
+          "(",
+          memoryStateSummary.node->region()->getRegionId(),
+          ":",
+          memoryStateSummary.node->GetNodeId(),
+          ")",
+          separator,
+          memoryStateSummary.numMemoryStates);
+    };
+
+    size_t n = 0;
+    std::string summaryStr;
+    for (auto & summary : memoryStateSummaries)
+    {
+      summaryStr += toString(summary);
+      if (n != memoryStateSummaries.size() - 1)
+        summaryStr += ",";
+      n++;
+    }
+
+    AddMeasurement(memoryStateDistributionLabel, summaryStr);
   }
 
   static std::unique_ptr<Statistics>

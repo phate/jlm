@@ -131,6 +131,161 @@ private:
   AgnosticModRefSet AllMemoryNodes_;
 };
 
+static std::vector<AgnosticModRefSummarizer::Statistics::MemoryStateSummary>
+collectMemoryStateDistribution(
+    const rvsdg::Graph & rvsdg,
+    const AgnosticModRefSummary & modRefSummary)
+{
+  std::function<void(
+      const rvsdg::Region &,
+      const rvsdg::LambdaNode *,
+      std::vector<AgnosticModRefSummarizer::Statistics::MemoryStateSummary> &)>
+      collect =
+          [&](const rvsdg::Region & region,
+              const rvsdg::LambdaNode * lambdaNode,
+              std::vector<AgnosticModRefSummarizer::Statistics::MemoryStateSummary> & summaries)
+  {
+    for (auto & node : region.Nodes())
+    {
+      rvsdg::MatchTypeOrFail(
+          node,
+          [&](const rvsdg::PhiNode & phiNode)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            collect(*phiNode.subregion(), lambdaNode, summaries);
+          },
+          [&](const rvsdg::DeltaNode &)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            // Nothing needs to be done
+          },
+          [&](const rvsdg::LambdaNode & n)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            auto & lambdaEntryModRefSet = modRefSummary.GetLambdaEntryModRef(n);
+            auto & lambdaExitModRefSet = modRefSummary.GetLambdaExitModRef(n);
+            JLM_ASSERT(&lambdaEntryModRefSet == &lambdaExitModRefSet);
+            summaries.push_back({ &n, &n, lambdaEntryModRefSet.getModRefNodes().size() });
+
+            collect(*n.subregion(), &n, summaries);
+          },
+          [&](const rvsdg::ThetaNode & thetaNode)
+          {
+            JLM_ASSERT(lambdaNode != nullptr);
+            summaries.push_back(
+                { lambdaNode,
+                  &thetaNode,
+                  modRefSummary.GetThetaModRef(thetaNode).getModRefNodes().size() });
+
+            collect(*thetaNode.subregion(), lambdaNode, summaries);
+          },
+          [&](const rvsdg::GammaNode & gammaNode)
+          {
+            JLM_ASSERT(lambdaNode != nullptr);
+            auto & gammaEntryModRefSet = modRefSummary.GetGammaEntryModRef(gammaNode);
+            auto & gammaExitModRefSet = modRefSummary.GetGammaEntryModRef(gammaNode);
+            JLM_ASSERT(&gammaEntryModRefSet == &gammaExitModRefSet);
+            summaries.push_back(
+                { lambdaNode, &gammaNode, gammaEntryModRefSet.getModRefNodes().size() });
+
+            for (auto & subregion : gammaNode.Subregions())
+              collect(subregion, lambdaNode, summaries);
+          },
+          [&](const rvsdg::SimpleNode & simpleNode)
+          {
+            MatchTypeWithDefault(
+                simpleNode.GetOperation(),
+                [&](const StoreOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const LoadOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const MemCpyOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const MemMoveOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const MemSetOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const FreeOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const AllocaOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const MallocOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const CallOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back(
+                      { lambdaNode,
+                        &simpleNode,
+                        modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size() });
+                },
+                [&](const MemoryStateOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  // Nothing needs to be done
+                },
+                [&]()
+                {
+                  // Any remaining type of node should not involve any memory states
+                  JLM_ASSERT(!hasMemoryState(node));
+                });
+          });
+    }
+  };
+
+  std::vector<AgnosticModRefSummarizer::Statistics::MemoryStateSummary> summaries;
+  collect(rvsdg.GetRootRegion(), nullptr, summaries);
+  return summaries;
+}
+
 AgnosticModRefSummarizer::AgnosticModRefSummarizer() = default;
 
 AgnosticModRefSummarizer::~AgnosticModRefSummarizer() = default;
@@ -152,6 +307,15 @@ AgnosticModRefSummarizer::SummarizeModRefs(
   AnnotateRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
   statistics->StopCollecting();
+
+  // Perform the collection of the memory state distribution AFTER we invoked StopCollecting() such
+  // that it does not count into the timing measurements
+  if (statisticsCollector.IsDemanded(statistics->GetId()))
+  {
+    const auto summaries = collectMemoryStateDistribution(rvsdgModule.Rvsdg(), *ModRefSummary_);
+    statistics->addMemoryStateDistribution(summaries);
+  }
+
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   return std::move(ModRefSummary_);
