@@ -81,6 +81,22 @@ static const bool ENABLE_CALL_SIMPLE_ALLOCA_ALLOWLIST =
 static const bool ENABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST =
     !std::getenv("JLM_DISABLE_EXTERN_SIMPLE_ALLOCA_ALLOWLIST");
 
+/**
+ * When true, ModRefSets can remove (or skip materializing) memory locations that
+ * always imply Omega, in every ModRefSet within the same function.
+ * In practice this yields the same result as if the folded memory location was
+ * always represented by Omega.
+ */
+static const bool ENABLE_OMEGA_FOLDING = !std::getenv("JLM_DISABLE_OMEGA_FOLDING");
+
+/**
+ * When true, ModRefSets may use flags to represent effects on all externally available memory
+ * (optionally above a certain size), or a flag to represent calls entering external modules.
+ * When false, no flags are used, and everything is represented explicitly and with constraints.
+ */
+static const bool ENABLE_IMPLICIT_MODREF_REPRESENTATION =
+    !std::getenv("JLM_DISABLE_IMPLICIT_MODREF_REPRESENTATION");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -281,6 +297,8 @@ public:
   bool
   markAsReferencingExternal(size_t minSize)
   {
+    JLM_ASSERT(ENABLE_IMPLICIT_MODREF_REPRESENTATION);
+
     // Make sure we do not overflow or collide with the sentinel NoneSize
     minSize = std::min<size_t>(minSize, NoneSize - 1);
 
@@ -300,6 +318,8 @@ public:
   bool
   markAsModifyingExternal(size_t minSize)
   {
+    JLM_ASSERT(ENABLE_IMPLICIT_MODREF_REPRESENTATION);
+
     // Make sure we do not overflow or collide with the sentinel NoneSize
     minSize = std::min<size_t>(minSize, NoneSize - 1);
 
@@ -350,6 +370,8 @@ public:
   bool
   markAsCallingExternalFunction()
   {
+    JLM_ASSERT(ENABLE_IMPLICIT_MODREF_REPRESENTATION);
+
     if (callsExternalFunction_)
       return false;
 
@@ -490,8 +512,13 @@ public:
     // Create the ModRefSet representing eveything that can be referenced and modified,
     // directly or indirectly, from external functions.
     externModRefSet_ = createModRefSet();
-    // The ModRefSet representing external functions can call external functions
-    markSetAsCallingExternalFunction(externModRefSet_);
+
+    // When using the implicit representation, the externModRefSet has no outgoing constraint edges.
+    // Any ModRefSet flagged at calling external, is automatically also flagged with
+    // possibly affecting every externally available memory location.
+    //
+    // When not using the implicit representation, the externModRefSet does have outgoing edges,
+    // and gets all externally available memory locations added to it before solving begins.
   }
 
   RegionAwareModRefSummary(const RegionAwareModRefSummary &) = delete;
@@ -884,6 +911,19 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
 
   removeSimpleAllocasAroundSetjmp();
 
+  if (!ENABLE_IMPLICIT_MODREF_REPRESENTATION)
+  {
+    // When flags are not used, the ModRefSet representing external modules
+    // must contain explicit effects on all externally available memory locations.
+    const auto externMemoryNode = ModRefSummary_->getExternModRefSet();
+    for (auto node : pointsToGraph.getExternallyAvailableNodes())
+    {
+      if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(node))
+        continue;
+      ModRefSummary_->addExplicitMemoryNodeToSet(externMemoryNode, node, ModRefEffect::ModRef);
+    }
+  }
+
   statistics->StartSolvingStatistics();
   SolveModRefSetConstraintGraph();
   statistics->StopSolvingStatistics();
@@ -1039,8 +1079,11 @@ RegionAwareModRefSummarizer::removeSimpleAllocasAroundSetjmp()
 void
 RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to)
 {
-  // We should never add outgoing edges from the set representing all external functions
-  JLM_ASSERT(from != ModRefSummary_->getExternModRefSet());
+  if (ENABLE_IMPLICIT_MODREF_REPRESENTATION)
+  {
+    // When flags are used, we should never add outgoing edges from the extern ModRefSet
+    JLM_ASSERT(from != ModRefSummary_->getExternModRefSet());
+  }
   // Ensure the constraint vector is large enough
   Context_->ModRefSetSimpleConstraints.resize(ModRefSummary_->NumModRefSets());
   Context_->ModRefSetSimpleConstraints[from].push_back(to);
@@ -1204,14 +1247,18 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
 
   const auto registerPtgNode = pointsToGraph.getNodeForRegister(origin);
 
+  // If operation size blocking is disabled, remove the minimum target size requirement
+  if (!ENABLE_OPERATION_SIZE_BLOCKING)
+    minTargetSize = std::nullopt;
+
   const auto tryAddToModRefSet = [&](PointsToGraph::NodeIndex targetPtgNode)
   {
     if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(targetPtgNode))
       return;
-    if (ENABLE_OPERATION_SIZE_BLOCKING && minTargetSize)
+    if (minTargetSize.has_value() && *minTargetSize > 0)
     {
       const auto targetSize = pointsToGraph.tryGetNodeSize(targetPtgNode);
-      if (targetSize.has_value() && *targetSize < minTargetSize)
+      if (targetSize.has_value() && *targetSize < *minTargetSize)
         return;
     }
     ModRefSummary_->addExplicitMemoryNodeToSet(modRefSetIndex, targetPtgNode, modRefEffect);
@@ -1220,13 +1267,24 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
   // If the pointer is targeting everything external, flag the ModRefSet
   if (pointsToGraph.isTargetingAllExternallyAvailable(registerPtgNode))
   {
-    if (mayEffectReference(modRefEffect))
+    if (ENABLE_IMPLICIT_MODREF_REPRESENTATION)
     {
-      ModRefSummary_->markSetAsReferencingExternal(modRefSetIndex, minTargetSize.value_or(0));
+      if (mayEffectReference(modRefEffect))
+      {
+        ModRefSummary_->markSetAsReferencingExternal(modRefSetIndex, minTargetSize.value_or(0));
+      }
+      if (mayEffectModify(modRefEffect))
+      {
+        ModRefSummary_->markSetAsModifyingExternal(modRefSetIndex, minTargetSize.value_or(0));
+      }
     }
-    if (mayEffectModify(modRefEffect))
+    else
     {
-      ModRefSummary_->markSetAsModifyingExternal(modRefSetIndex, minTargetSize.value_or(0));
+      // Flags are disabled, add all externally available memory explicitly instead
+      for (auto targetPtgNode : pointsToGraph.getExternallyAvailableNodes())
+      {
+        tryAddToModRefSet(targetPtgNode);
+      }
     }
   }
 
@@ -1375,6 +1433,9 @@ RegionAwareModRefSummarizer::AnnotateCall(
   const auto targetPtr = callNode.input(0)->origin();
   const auto targetPtgNode = Context_->pointsToGraph.getNodeForRegister(*targetPtr);
 
+  // True if the call is possibly targeting a function defined in an external module
+  bool anyExternalCallee = pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode);
+
   // Go through all locations the called function pointer may target
   for (const auto calleePtgNode : pointsToGraph.getExplicitTargets(targetPtgNode).Items())
   {
@@ -1388,12 +1449,22 @@ RegionAwareModRefSummarizer::AnnotateCall(
     }
     else if (kind == PointsToGraph::NodeKind::ImportNode)
     {
-      ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
+      anyExternalCallee |= true;
     }
   }
-  if (pointsToGraph.isTargetingAllExternallyAvailable(targetPtgNode))
+
+  // If the call is possibly targeting an externally defined function, flag the call's ModRefSet
+  if (anyExternalCallee)
   {
-    ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
+    if (ENABLE_IMPLICIT_MODREF_REPRESENTATION)
+    {
+      ModRefSummary_->markSetAsCallingExternalFunction(callModRef);
+    }
+    else
+    {
+      // When flags are disabled, use a constraint graph edge extern -> call instead
+      AddModRefSimpleConstraint(ModRefSummary_->getExternModRefSet(), callModRef);
+    }
   }
 
   // Skip adding memory nodes to the ModRefSet of the call operation if they represent
@@ -1531,7 +1602,8 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
   const auto & externModRefNodes =
       ModRefSummary_->getModRefSet(ModRefSummary_->getExternModRefSet()).getModRefNodes();
 
-  // Only memory nodes that appear in ModRefSets without the external memory node should be kept
+  // This function materializes flags into explicit memory effects, but also does Omega-folding.
+  // Only memory nodes that appear in ModRefSets without the Omega memory node should be kept.
   util::HashSet<PointsToGraph::NodeIndex> keepMemoryNodes;
 
   // Among memory nodes that should be kept, the ones flagged externally available are added here.
@@ -1558,7 +1630,23 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
       materializeFromCallToExtern.push_back(*it);
   };
 
+  // The Omega memory node itself must not be folded into Omega
   markToKeep(aa::PointsToGraph::externalMemoryNode);
+
+  if (!ENABLE_OMEGA_FOLDING)
+  {
+    // When Omega folding is disabled, mark all memory locations as worth keeping,
+    // except constant memory locations, which may never appear in any ModRefSet
+    // (when constant blocking is enabled), and which would be added by materialization
+    // of external flags in an inconsistent way between nested and enclosing ModRefSets.
+    for (PointsToGraph::NodeIndex node = 0; node < pointsToGraph.numNodes(); node++)
+    {
+      if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(node))
+        continue;
+
+      markToKeep(node);
+    }
+  }
 
   // Go over all ModRefSets in the function twice
   // The first pass determines which memory nodes to keep
@@ -1569,20 +1657,36 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
     Context_->numModRefSetsMaterialized++;
     Context_->modRefSetSizeBeforeMaterialization += modRefSet.getModRefNodes().size();
 
-    auto effectOnExternalNode = modRefSet.getImplicitModRefEffectForExternal(std::nullopt);
+    // If Omega folding is disabled, all memory nodes are kept anyways, so we are done.
+    if (!ENABLE_OMEGA_FOLDING)
+      continue;
 
-    // If this ModRefSet may both reference and modify the external memory node,
+    // Find out what effect the current \ref ModRefSet has on the Omega node
+    ModRefEffect effectOnOmegaNode = ModRefEffect::NoEffect;
+    if (ENABLE_IMPLICIT_MODREF_REPRESENTATION)
+    {
+      effectOnOmegaNode = modRefSet.getImplicitModRefEffectForExternal(std::nullopt);
+    }
+    else
+    {
+      const auto & effects = modRefSet.getModRefNodes();
+      const auto it = effects.find(aa::PointsToGraph::externalMemoryNode);
+      if (it != effects.end())
+        effectOnOmegaNode = it->second;
+    }
+
+    // If this ModRefSet may both reference and modify the Omega memory node,
     // it will not disqualify any other memory nodes from compression
-    if (effectOnExternalNode == ModRefEffect::ModRef)
+    if (effectOnOmegaNode == ModRefEffect::ModRef)
       continue;
 
     for (auto [memoryNode, modRefEffect] : modRefSet.getModRefNodes())
     {
       JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
 
-      // If the set has an effect on the memory node that it does not have on the external node,
+      // If the set has an effect on the memory node that it does not have on the Omega node,
       // the memory node is disqualified from compression
-      if (!isEffectSubset(modRefEffect, effectOnExternalNode))
+      if (!isEffectSubset(modRefEffect, effectOnOmegaNode))
         markToKeep(memoryNode);
     }
   }
@@ -1609,6 +1713,9 @@ RegionAwareModRefSummarizer::materializeSetsInFunction(const rvsdg::LambdaNode &
       Context_->modRefSetSizeAfterMaterialization += modRefSet.getModRefNodes().size();
       continue;
     }
+
+    // When using flags is disabled, materialization should only involve filtering, no additions
+    JLM_ASSERT(ENABLE_IMPLICIT_MODREF_REPRESENTATION);
 
     // If small and large external memory nodes have the same effects,
     // we can materialize all external memory nodes with that effect.
