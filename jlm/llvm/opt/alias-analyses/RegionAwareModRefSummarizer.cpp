@@ -111,6 +111,8 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto ReadOnlyDetectionTimer_ = "ReadOnlyDetectionTimer";
   static constexpr auto ModRefSetMaterializationTimer_ = "ModRefSetMaterializationTimer";
 
+  static constexpr auto memoryStateDistributionLabel_ = "MemoryStateDistribution";
+
 public:
   ~Statistics() override = default;
 
@@ -200,6 +202,12 @@ public:
         NumModRefSetsCallingExternalFunctionLabel_,
         numModRefSetsCallingExternalFunction);
     AddMeasurement(ModRefSetSizeAfterMaterializationLabel_, modRefSetSizeAfterMaterialization);
+  }
+
+  void
+  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateDistribution)
+  {
+    AddMeasurement(memoryStateDistributionLabel_, toString(memoryStateDistribution));
   }
 
   static std::unique_ptr<Statistics>
@@ -896,6 +904,14 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
       Context_->numModRefSetsWithEffectOnExternal,
       Context_->numModRefSetsCallingExternalFunction,
       Context_->modRefSetSizeAfterMaterialization);
+
+  // Perform the collection of the memory state distribution AFTER we invoked stopped collecting
+  // everything such that it does not count into the timing measurements
+  if (statisticsCollector.IsDemanded(statistics->GetId()))
+  {
+    const auto distribution = collectMemoryStateDistribution(rvsdgModule.Rvsdg(), *ModRefSummary_);
+    statistics->addMemoryStateDistribution(distribution);
+  }
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();

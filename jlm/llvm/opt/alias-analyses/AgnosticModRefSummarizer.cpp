@@ -152,6 +152,15 @@ AgnosticModRefSummarizer::SummarizeModRefs(
   AnnotateRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
   statistics->StopCollecting();
+
+  // Perform the collection of the memory state distribution AFTER we invoked StopCollecting() such
+  // that it does not count into the timing measurements
+  if (statisticsCollector.IsDemanded(statistics->GetId()))
+  {
+    const auto summaries = collectMemoryStateDistribution(rvsdgModule.Rvsdg(), *ModRefSummary_);
+    statistics->addMemoryStateDistribution(summaries);
+  }
+
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   return std::move(ModRefSummary_);

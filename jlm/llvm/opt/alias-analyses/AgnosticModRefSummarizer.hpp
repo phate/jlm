@@ -122,6 +122,8 @@ private:
  */
 class AgnosticModRefSummarizer::Statistics final : public util::Statistics
 {
+  static constexpr auto memoryStateDistributionLabel_ = "MemoryStateDistribution";
+
 public:
   Statistics(
       const util::FilePath & sourceFile,
@@ -164,6 +166,12 @@ public:
       return;
 
     GetTimer(Label::Timer).stop();
+  }
+
+  void
+  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateDistribution)
+  {
+    AddMeasurement(memoryStateDistributionLabel_, toString(memoryStateDistribution));
   }
 
   static std::unique_ptr<Statistics>
