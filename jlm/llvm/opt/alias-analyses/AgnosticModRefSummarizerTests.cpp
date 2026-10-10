@@ -825,27 +825,32 @@ TEST(AgnosticModRefSummarizerTests, TestMemcpy)
 
 TEST(AgnosticModRefSummarizerTests, TestStatistics)
 {
+  using namespace jlm::llvm;
+  using namespace jlm::llvm::aa;
+  using namespace jlm::util;
+
   // Arrange
-  jlm::llvm::LoadTest1 test;
+  LoadTest1 test;
   auto pointsToGraph = RunAndersen(test.module());
 
-  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      { jlm::util::Statistics::Id::AgnosticModRefSummarizer });
-  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+  StatisticsCollectorSettings statisticsCollectorSettings(
+      { Statistics::Id::AgnosticModRefSummarizer });
+  StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act
-  jlm::llvm::aa::AgnosticModRefSummarizer::Create(
-      test.module(),
-      *pointsToGraph,
-      statisticsCollector);
+  AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph, statisticsCollector);
 
   // Assert
   EXPECT_EQ(statisticsCollector.NumCollectedStatistics(), 1u);
 
-  auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticModRefSummarizer::Statistics &>(
+  auto & statistics = dynamic_cast<const AgnosticModRefSummarizer::Statistics &>(
       *statisticsCollector.CollectedStatistics().begin());
 
   EXPECT_EQ(statistics.GetSourceFile(), test.module().SourceFileName());
   EXPECT_EQ(statistics.NumPointsToGraphMemoryNodes(), 2u);
   EXPECT_NE(statistics.GetTime(), 0u);
+  EXPECT_EQ(
+      statistics.GetMeasurementValue<std::string>("MemoryStateDistribution"),
+      "LAMBDA[f]-LAMBDA[f]-(0:0)-2-2,LAMBDA[f]-Load[ptr]-(1:0)-2-2,LAMBDA[f]-Load[bit32]-(1:1)-2-"
+      "2");
 }
