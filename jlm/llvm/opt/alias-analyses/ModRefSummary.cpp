@@ -143,4 +143,39 @@ collectMemoryStateDistribution(const rvsdg::Graph & rvsdg, const ModRefSummary &
   return summaries;
 }
 
+std::string
+toString(const std::vector<MemoryStateSummary> & memoryStateDistribution)
+{
+  auto toString = [](const MemoryStateSummary & memoryStateSummary)
+  {
+    constexpr char separator = '-';
+    return util::strfmt(
+        memoryStateSummary.lambdaNode->DebugString(),
+        separator,
+        memoryStateSummary.node->DebugString(),
+        separator,
+        "(",
+        memoryStateSummary.node->region()->getRegionId(),
+        ":",
+        memoryStateSummary.node->GetNodeId(),
+        ")",
+        separator,
+        memoryStateSummary.numMemoryInputStates,
+        separator,
+        memoryStateSummary.numMemoryOutputStates);
+  };
+
+  size_t n = 0;
+  std::string summaryStr;
+  for (auto & summary : memoryStateDistribution)
+  {
+    summaryStr += toString(summary);
+    if (n != memoryStateDistribution.size() - 1)
+      summaryStr += ",";
+    n++;
+  }
+
+  return summaryStr;
+}
+
 }

@@ -849,11 +849,8 @@ TEST(AgnosticModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetSourceFile(), test.module().SourceFileName());
   EXPECT_EQ(statistics.NumPointsToGraphMemoryNodes(), 2u);
   EXPECT_NE(statistics.GetTime(), 0u);
-
-  auto memoryStateDistribution = std::get_if<std::string>(&statistics.GetMeasurement(
-      std::string(AgnosticModRefSummarizer::Statistics::memoryStateDistributionLabel)));
   EXPECT_EQ(
-      *memoryStateDistribution,
+      statistics.GetMeasurementValue<std::string>("MemoryStateDistribution"),
       "LAMBDA[f]-LAMBDA[f]-(0:0)-2-2,LAMBDA[f]-Load[ptr]-(1:0)-2-2,LAMBDA[f]-Load[bit32]-(1:1)-2-"
       "2");
 }

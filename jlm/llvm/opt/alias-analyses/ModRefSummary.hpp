@@ -228,6 +228,9 @@ struct MemoryStateSummary
 std::vector<MemoryStateSummary>
 collectMemoryStateDistribution(const rvsdg::Graph & rvsdg, const ModRefSummary & modRefSummary);
 
+std::string
+toString(const std::vector<MemoryStateSummary> & memoryStateDistribution);
+
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP

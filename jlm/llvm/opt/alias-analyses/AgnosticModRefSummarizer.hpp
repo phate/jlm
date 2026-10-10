@@ -122,9 +122,9 @@ private:
  */
 class AgnosticModRefSummarizer::Statistics final : public util::Statistics
 {
-public:
-  static constexpr auto memoryStateDistributionLabel = "MemoryStateDistribution";
+  static constexpr auto memoryStateDistributionLabel_ = "MemoryStateDistribution";
 
+public:
   Statistics(
       const util::FilePath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
@@ -169,38 +169,9 @@ public:
   }
 
   void
-  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateSummaries)
+  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateDistribution)
   {
-    auto toString = [](const MemoryStateSummary & memoryStateSummary)
-    {
-      constexpr char separator = '-';
-      return util::strfmt(
-          memoryStateSummary.lambdaNode->DebugString(),
-          separator,
-          memoryStateSummary.node->DebugString(),
-          separator,
-          "(",
-          memoryStateSummary.node->region()->getRegionId(),
-          ":",
-          memoryStateSummary.node->GetNodeId(),
-          ")",
-          separator,
-          memoryStateSummary.numMemoryInputStates,
-          separator,
-          memoryStateSummary.numMemoryOutputStates);
-    };
-
-    size_t n = 0;
-    std::string summaryStr;
-    for (auto & summary : memoryStateSummaries)
-    {
-      summaryStr += toString(summary);
-      if (n != memoryStateSummaries.size() - 1)
-        summaryStr += ",";
-      n++;
-    }
-
-    AddMeasurement(memoryStateDistributionLabel, summaryStr);
+    AddMeasurement(memoryStateDistributionLabel_, toString(memoryStateDistribution));
   }
 
   static std::unique_ptr<Statistics>
