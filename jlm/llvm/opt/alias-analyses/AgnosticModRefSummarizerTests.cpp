@@ -854,5 +854,6 @@ TEST(AgnosticModRefSummarizerTests, TestStatistics)
       std::string(AgnosticModRefSummarizer::Statistics::memoryStateDistributionLabel)));
   EXPECT_EQ(
       *memoryStateDistribution,
-      "LAMBDA[f]-LAMBDA[f]-(0:0)-2,LAMBDA[f]-Load[ptr]-(1:0)-2,LAMBDA[f]-Load[bit32]-(1:1)-2");
+      "LAMBDA[f]-LAMBDA[f]-(0:0)-2-2,LAMBDA[f]-Load[ptr]-(1:0)-2-2,LAMBDA[f]-Load[bit32]-(1:1)-2-"
+      "2");
 }

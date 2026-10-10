@@ -206,6 +206,28 @@ public:
   GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const = 0;
 };
 
+struct MemoryStateSummary
+{
+  MemoryStateSummary(
+      const rvsdg::LambdaNode * lambdaNode,
+      const rvsdg::Node * node,
+      const size_t numMemoryInputStates,
+      const size_t numMemoryOutputStates)
+      : lambdaNode(lambdaNode),
+        node(node),
+        numMemoryInputStates(numMemoryInputStates),
+        numMemoryOutputStates(numMemoryOutputStates)
+  {}
+
+  const rvsdg::LambdaNode * lambdaNode = nullptr;
+  const rvsdg::Node * node = nullptr;
+  size_t numMemoryInputStates = 0;
+  size_t numMemoryOutputStates = 0;
+};
+
+std::vector<MemoryStateSummary>
+collectMemoryStateDistribution(const rvsdg::Graph & rvsdg, const ModRefSummary & modRefSummary);
+
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP

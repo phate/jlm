@@ -168,22 +168,6 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  struct MemoryStateSummary
-  {
-    MemoryStateSummary(
-        const rvsdg::LambdaNode * lambdaNode,
-        const rvsdg::Node * node,
-        const size_t numMemoryStates)
-        : lambdaNode(lambdaNode),
-          node(node),
-          numMemoryStates(numMemoryStates)
-    {}
-
-    const rvsdg::LambdaNode * lambdaNode = nullptr;
-    const rvsdg::Node * node = nullptr;
-    size_t numMemoryStates = 0;
-  };
-
   void
   addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateSummaries)
   {
@@ -201,7 +185,9 @@ public:
           memoryStateSummary.node->GetNodeId(),
           ")",
           separator,
-          memoryStateSummary.numMemoryStates);
+          memoryStateSummary.numMemoryInputStates,
+          separator,
+          memoryStateSummary.numMemoryOutputStates);
     };
 
     size_t n = 0;
