@@ -607,7 +607,10 @@ gatherNumMemoryStatesPerNode(const rvsdg::Graph & rvsdg)
                 [&simpleNode]()
                 {
                   // Ensure we took care of all memory state consuming/producing nodes
-                  JLM_ASSERT(!hasMemoryState(simpleNode));
+                  if (hasMemoryState(simpleNode))
+                    throw std::logic_error(
+                        "Memory state consuming/producing node not handled: "
+                        + simpleNode.DebugString());
                 });
           });
     }
