@@ -604,6 +604,11 @@ gatherNumMemoryStatesPerNode(const rvsdg::Graph & rvsdg)
                   JLM_ASSERT(lambdaNode != nullptr);
                   // Nothing needs to be done
                 },
+                [&](const UndefValueOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  // Nothing needs to be done
+                },
                 [&simpleNode]()
                 {
                   // Ensure we took care of all memory state consuming/producing nodes
