@@ -1808,9 +1808,9 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 0u);
   EXPECT_EQ(
       statistics.GetMeasurementValue<std::string>("MemoryStateDistribution"),
-      "LAMBDA[f]-LAMBDA[f]-(0:0)-0-0,LAMBDA[f]-ALLOCA[bit32]-(1:1)-1-1,LAMBDA[f]-ALLOCA[bit32]-(1:"
-      "2)-1-1,LAMBDA[f]-ALLOCA[ptr]-(1:3)-1-1,LAMBDA[f]-ALLOCA[ptr]-(1:4)-1-1,LAMBDA[f]-ALLOCA[ptr]"
-      "-(1:5)-1-1,LAMBDA[f]-Store[ptr]-(1:11)-1-1,LAMBDA[f]-Store[ptr]-(1:12)-1-1,LAMBDA[f]-Store["
+      "LAMBDA[f]-LAMBDA[f]-(0:0)-0-0,LAMBDA[f]-ALLOCA[bit32]-(1:1)-0-1,LAMBDA[f]-ALLOCA[bit32]-(1:"
+      "2)-0-1,LAMBDA[f]-ALLOCA[ptr]-(1:3)-0-1,LAMBDA[f]-ALLOCA[ptr]-(1:4)-0-1,LAMBDA[f]-ALLOCA[ptr]"
+      "-(1:5)-0-1,LAMBDA[f]-Store[ptr]-(1:11)-1-1,LAMBDA[f]-Store[ptr]-(1:12)-1-1,LAMBDA[f]-Store["
       "ptr]-(1:13)-1-1,LAMBDA[f]-Load[ptr]-(1:14)-1-1,LAMBDA[f]-Load[ptr]-(1:15)-1-1,LAMBDA[f]-"
       "Store[ptr]-(1:16)-1-1");
 
