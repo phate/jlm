@@ -110,13 +110,13 @@ collectMemoryStateDistribution(const rvsdg::Graph & rvsdg, const ModRefSummary &
                 {
                   JLM_ASSERT(lambdaNode != nullptr);
                   auto size = modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size();
-                  summaries.push_back({ lambdaNode, &simpleNode, size, size });
+                  summaries.push_back({ lambdaNode, &simpleNode, 0, size });
                 },
                 [&](const MallocOperation &)
                 {
                   JLM_ASSERT(lambdaNode != nullptr);
                   auto size = modRefSummary.GetSimpleNodeModRef(simpleNode).getModRefNodes().size();
-                  summaries.push_back({ lambdaNode, &simpleNode, size, size });
+                  summaries.push_back({ lambdaNode, &simpleNode, 0, size });
                 },
                 [&](const CallOperation &)
                 {
