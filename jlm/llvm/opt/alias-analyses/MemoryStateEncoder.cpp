@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <fstream>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
