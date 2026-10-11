@@ -661,6 +661,10 @@ MemoryStateEncoder::Encode(
   // that it does not count into the timing measurements
   if (statisticsCollector.IsDemanded(statistics_->GetId()))
   {
+    // Perform DNE first to ensure we do not count any dead memory states
+    DeadNodeElimination dne;
+    dne.run(rvsdg.GetRootRegion());
+
     const auto summaries = gatherNumMemoryStatesPerNode(rvsdg);
     statistics_->addMemoryStateDistribution(summaries);
   }
