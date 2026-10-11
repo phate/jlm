@@ -1251,14 +1251,15 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
   if (!ENABLE_OPERATION_SIZE_BLOCKING)
     minTargetSize = std::nullopt;
 
+  const auto minTargetSizeOrZero = minTargetSize.value_or(0);
   const auto tryAddToModRefSet = [&](PointsToGraph::NodeIndex targetPtgNode)
   {
     if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(targetPtgNode))
       return;
-    if (minTargetSize.has_value() && *minTargetSize > 0)
+    if (minTargetSizeOrZero > 0)
     {
       const auto targetSize = pointsToGraph.tryGetNodeSize(targetPtgNode);
-      if (targetSize.has_value() && *targetSize < *minTargetSize)
+      if (targetSize.has_value() && *targetSize < minTargetSizeOrZero)
         return;
     }
     ModRefSummary_->addExplicitMemoryNodeToSet(modRefSetIndex, targetPtgNode, modRefEffect);
@@ -1271,11 +1272,11 @@ RegionAwareModRefSummarizer::addPointerOriginTargets(
     {
       if (mayEffectReference(modRefEffect))
       {
-        ModRefSummary_->markSetAsReferencingExternal(modRefSetIndex, minTargetSize.value_or(0));
+        ModRefSummary_->markSetAsReferencingExternal(modRefSetIndex, minTargetSizeOrZero);
       }
       if (mayEffectModify(modRefEffect))
       {
-        ModRefSummary_->markSetAsModifyingExternal(modRefSetIndex, minTargetSize.value_or(0));
+        ModRefSummary_->markSetAsModifyingExternal(modRefSetIndex, minTargetSizeOrZero);
       }
     }
     else
