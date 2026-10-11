@@ -244,6 +244,8 @@ class MemoryStateEncoder::Statistics final : public util::Statistics
   static constexpr auto NumReplacedStoresLabel_ = "#ReplacedStores";
   static constexpr auto NumRedirectedStoresLabel_ = "#RedirectedStores";
 
+  static constexpr auto memoryStateDistributionLabel_ = "MemoryStateDistribution";
+
 public:
   ~Statistics() override = default;
 
@@ -293,6 +295,12 @@ public:
     AddMeasurement("#MSEGammaNodes", counters.numGammaNodes);
     AddMeasurement("#MSEThetaNodes", counters.numThetaNodes);
     AddMeasurement("#MSELambdaNodes", counters.numLambdaNodes);
+  }
+
+  void
+  addMemoryStateDistribution(const std::vector<MemoryStateSummary> & memoryStateDistribution)
+  {
+    AddMeasurement(memoryStateDistributionLabel_, toString(memoryStateDistribution));
   }
 
   static std::unique_ptr<Statistics>
@@ -440,6 +448,184 @@ private:
   std::unordered_map<PointsToGraph::NodeIndex, rvsdg::Output *> states_;
 };
 
+static std::vector<MemoryStateSummary>
+gatherNumMemoryStatesPerNode(const rvsdg::Graph & rvsdg)
+{
+  const std::function numMemoryStateInputs = [](const rvsdg::Node & node)
+  {
+    return static_cast<std::size_t>(std::count_if(
+        node.Inputs().begin(),
+        node.Inputs().end(),
+        [](const rvsdg::Input & input)
+        {
+          return is<MemoryStateType>(*input.Type());
+        }));
+  };
+
+  const std::function numMemoryStateOutputs = [](const rvsdg::Node & node)
+  {
+    return static_cast<std::size_t>(std::count_if(
+        node.Outputs().begin(),
+        node.Outputs().end(),
+        [](const rvsdg::Output & output)
+        {
+          return is<MemoryStateType>(*output.Type());
+        }));
+  };
+
+  std::function<
+      void(const rvsdg::Region &, const rvsdg::LambdaNode *, std::vector<MemoryStateSummary> &)>
+      gather = [&](const rvsdg::Region & region,
+                   const rvsdg::LambdaNode * lambdaNode,
+                   std::vector<MemoryStateSummary> & summaries)
+  {
+    for (const auto & node : region.Nodes())
+    {
+      MatchTypeOrFail(
+          node,
+          [&](const rvsdg::PhiNode & phiNode)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            gather(*phiNode.subregion(), lambdaNode, summaries);
+          },
+          [&](const rvsdg::DeltaNode &)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            // Nothing needs to be done
+          },
+          [&](const rvsdg::LambdaNode & n)
+          {
+            JLM_ASSERT(lambdaNode == nullptr);
+            const auto entrySplit = tryGetMemoryStateEntrySplit(n);
+            const auto exitMerge = tryGetMemoryStateExitMerge(n);
+            summaries.push_back({ &n,
+                                  &n,
+                                  entrySplit ? numMemoryStateOutputs(*entrySplit) : 1,
+                                  exitMerge ? numMemoryStateInputs(*exitMerge) : 1 });
+
+            gather(*n.subregion(), &n, summaries);
+          },
+          [&](const rvsdg::ThetaNode & thetaNode)
+          {
+            JLM_ASSERT(lambdaNode != nullptr);
+            summaries.push_back({ lambdaNode,
+                                  &thetaNode,
+                                  numMemoryStateInputs(thetaNode),
+                                  numMemoryStateOutputs(thetaNode) });
+
+            gather(*thetaNode.subregion(), lambdaNode, summaries);
+          },
+          [&](const rvsdg::GammaNode & gammaNode)
+          {
+            JLM_ASSERT(lambdaNode != nullptr);
+            summaries.push_back({ lambdaNode,
+                                  &gammaNode,
+                                  numMemoryStateInputs(gammaNode),
+                                  numMemoryStateOutputs(gammaNode) });
+
+            for (auto & subregion : gammaNode.Subregions())
+              gather(subregion, lambdaNode, summaries);
+          },
+          [&](const rvsdg::SimpleNode & simpleNode)
+          {
+            MatchTypeWithDefault(
+                simpleNode.GetOperation(),
+                [&](const AllocaOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode, &simpleNode, 0, 1 });
+                },
+                [&](const MallocOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode, &simpleNode, 0, 1 });
+                },
+                [&](const LoadOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const StoreOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const CallOperation &)
+                {
+                  const auto entryMerge = CallOperation::tryGetMemoryStateEntryMerge(simpleNode);
+                  const auto exitSplit = CallOperation::tryGetMemoryStateExitSplit(simpleNode);
+
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        entryMerge ? numMemoryStateInputs(*entryMerge) : 1,
+                                        exitSplit ? numMemoryStateOutputs(*exitSplit) : 1 });
+                },
+                [&](const FreeOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const MemCpyOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const MemSetOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const MemMoveOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  summaries.push_back({ lambdaNode,
+                                        &simpleNode,
+                                        numMemoryStateInputs(simpleNode),
+                                        numMemoryStateOutputs(simpleNode) });
+                },
+                [&](const MemoryStateOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  // Nothing needs to be done
+                },
+                [&](const UndefValueOperation &)
+                {
+                  JLM_ASSERT(lambdaNode != nullptr);
+                  // Nothing needs to be done
+                },
+                [&simpleNode]()
+                {
+                  // Ensure we took care of all memory state consuming/producing nodes
+                  if (hasMemoryState(simpleNode))
+                    throw std::logic_error(
+                        "Memory state consuming/producing node not handled: "
+                        + simpleNode.DebugString());
+                });
+          });
+    }
+  };
+
+  std::vector<MemoryStateSummary> summaries;
+  gather(rvsdg.GetRootRegion(), nullptr, summaries);
+  return summaries;
+}
+
 static std::vector<MemoryNodeId>
 getModRefSetNodes(const ModRefSet & modRefSet)
 {
@@ -478,6 +664,18 @@ MemoryStateEncoder::Encode(
   encodeInterProcedural(rvsdg.GetRootRegion());
   statistics_->StopEncoding(encodingCounter_);
   encodingCounter_ = EncodingCounter();
+
+  // Perform the collection of the memory state distribution AFTER we invoked StopEncoding() such
+  // that it does not count into the timing measurements
+  if (statisticsCollector.IsDemanded(statistics_->GetId()))
+  {
+    // Perform DNE first to ensure we do not count any dead memory states
+    DeadNodeElimination dne;
+    dne.run(rvsdg.GetRootRegion());
+
+    const auto summaries = gatherNumMemoryStatesPerNode(rvsdg);
+    statistics_->addMemoryStateDistribution(summaries);
+  }
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
 }
