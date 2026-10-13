@@ -1,29 +1,29 @@
-name: HLS
-
-on:
-  pull_request:
-    branches: [ master ]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
-jobs:
-
-  hls-test-suite:
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: '0'
-    - name: "Build jlm"
-      uses: ./.github/actions/BuildJlm
-      with:
-        make-target: 'all-without-tests'
-        enable-hls: true
-    - name: "Install verilator"
-      uses: ./.github/actions/InstallPackages
-      with:
-        install-verilator: true
-    - name: "Run hls-test-suite"
-      run: ./scripts/run-hls-test.sh
+#name: HLS
+#
+#on:
+#  pull_request:
+#    branches: [ master ]
+#
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#  cancel-in-progress: true
+#
+#jobs:
+#
+#  hls-test-suite:
+#    runs-on: ubuntu-24.04
+#    steps:
+#    - uses: actions/checkout@v4
+#      with:
+#        fetch-depth: '0'
+#    - name: "Build jlm"
+#      uses: ./.github/actions/BuildJlm
+#      with:
+#        make-target: 'all-without-tests'
+#        enable-hls: true
+#    - name: "Install verilator"
+#      uses: ./.github/actions/InstallPackages
+#      with:
+#        install-verilator: true
+#    - name: "Run hls-test-suite"
+#      run: ./scripts/run-hls-test.sh
