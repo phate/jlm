@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/util/common.hpp>
 
+#include <stdexcept>
 #include <unordered_map>
 
 namespace jlm::llvm::aa
@@ -161,7 +162,7 @@ public:
     {
       return modRefSets_[it->second];
     }
-    JLM_UNREACHABLE("No AgnosticModRefSet found for node");
+    throw std::logic_error("No AgnosticModRefSet found for node");
   }
 
   [[nodiscard]] const ModRefSet &
@@ -341,7 +342,7 @@ AgnosticModRefSummarizer::annotateFunction(const rvsdg::LambdaNode & lambda)
     auto omegaNode = pointsToGraph.getExternalMemoryNode();
 
     util::HashSet<PointsToGraph::NodeIndex> keepMemoryLocations;
-    // Always keep the Omega node, since it can not be folded into itself
+    // Always keep the Omega node, since it cannot be folded into itself
     keepMemoryLocations.insert(omegaNode);
 
     for (auto modRefSetIndex : modRefSetsInFunction)
@@ -357,7 +358,7 @@ AgnosticModRefSummarizer::annotateFunction(const rvsdg::LambdaNode & lambda)
         JLM_ASSERT(omegaEffect != ModRefEffect::NoEffect);
       }
 
-      // ModRefSets where Omega is Mod/Ref can not disqualify any memory location from folding
+      // ModRefSets where Omega is Mod/Ref cannot disqualify any memory location from folding
       if (omegaEffect == ModRefEffect::ModRef)
         continue;
 
@@ -466,7 +467,8 @@ AgnosticModRefSummarizer::annotateSimpleNode(
     AgnosticModRefSummary::ModRefSetIndex functionModRefSet,
     std::vector<size_t> & modRefSetsInFunction)
 {
-  const auto createModRefSetForNode = [&]() -> AgnosticModRefSet &
+  const auto createModRefSetForNode =
+      [this, &modRefSetsInFunction](const rvsdg::SimpleNode & node) -> AgnosticModRefSet &
   {
     auto modRefSetIndex = ModRefSummary_->CreateModRefSet();
     ModRefSummary_->AttachNodeToModRefSet(node, modRefSetIndex);
@@ -480,19 +482,19 @@ AgnosticModRefSummarizer::annotateSimpleNode(
       {
         const auto & address = *StoreOperation::AddressInput(node).origin();
         const auto storeSize = GetTypeStoreSize(storeOperation.GetStoredType());
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         addPointerTargetsToModRefSet(modRefSet, address, storeSize, ModRefEffect::ModOnly);
       },
       [&](const LoadOperation & loadOperation)
       {
         const auto & address = *LoadOperation::AddressInput(node).origin();
         const auto loadSize = GetTypeStoreSize(*loadOperation.GetLoadedType());
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         addPointerTargetsToModRefSet(modRefSet, address, loadSize, ModRefEffect::RefOnly);
       },
       [&](const MemCpyOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto & srcAddress = *MemCpyOperation::sourceInput(node).origin();
         const auto & dstAddress = *MemCpyOperation::destinationInput(node).origin();
         const auto & countOrigin = *MemCpyOperation::countInput(node).origin();
@@ -502,7 +504,7 @@ AgnosticModRefSummarizer::annotateSimpleNode(
       },
       [&](const MemMoveOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto & srcAddress = *MemMoveOperation::sourceInput(node).origin();
         const auto & dstAddress = *MemMoveOperation::destinationInput(node).origin();
         const auto & countOrigin = *MemMoveOperation::lengthInput(node).origin();
@@ -512,7 +514,7 @@ AgnosticModRefSummarizer::annotateSimpleNode(
       },
       [&](const MemSetOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto & dstAddress = *MemSetOperation::destinationInput(node).origin();
         const auto & countOrigin = *MemSetOperation::lengthInput(node).origin();
         const auto count = jlm::llvm::tryGetConstantSignedInteger(countOrigin);
@@ -520,20 +522,20 @@ AgnosticModRefSummarizer::annotateSimpleNode(
       },
       [&](const FreeOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto & freeAddress = *FreeOperation::getAddressInput(node).origin();
         addPointerTargetsToModRefSet(modRefSet, freeAddress, std::nullopt, ModRefEffect::ModOnly);
       },
       [&](const AllocaOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto allocaMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForAlloca(node);
         // The alloca operation does not assign to the allocated memory, so Ref is more precise
         modRefSet.addMemoryNode(allocaMemoryNode, ModRefEffect::RefOnly);
       },
       [&](const MallocOperation &)
       {
-        auto & modRefSet = createModRefSetForNode();
+        auto & modRefSet = createModRefSetForNode(node);
         const auto mallocMemoryNode = ModRefSummary_->GetPointsToGraph().getNodeForMalloc(node);
         // The malloc operation does not assign to the allocated memory, so Ref is more precise
         modRefSet.addMemoryNode(mallocMemoryNode, ModRefEffect::RefOnly);
