@@ -6,11 +6,10 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
 
-#include "jlm/rvsdg/lambda.hpp"
-#include "jlm/rvsdg/region.hpp"
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
+
 #include <optional>
 
 namespace jlm::llvm::aa
