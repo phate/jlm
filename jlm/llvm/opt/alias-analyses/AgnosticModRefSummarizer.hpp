@@ -115,7 +115,6 @@ private:
   /**
    * Recursively traverses the given \p region, creating Mod/Ref sets for nodes.
    * @param region the region to traverse
-   * @param lambda the function containing the region
    * @param functionModRefSetIndex the ModRefSet representing all memory effects in the function,
    * use for the lambda itself, all structural nodes and all calls in the function
    * @param modRefSetsInFunction a vector for tracking all ModRefSets created in the function.
