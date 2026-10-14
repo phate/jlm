@@ -6,9 +6,12 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
 
+#include "jlm/rvsdg/lambda.hpp"
+#include "jlm/rvsdg/region.hpp"
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
+#include <optional>
 
 namespace jlm::llvm::aa
 {
@@ -84,31 +87,60 @@ private:
 
   /**
    * Helper for adding all memory nodes the given \p output may target to a \ref ModRefSet
-   * @param output the pointer typed output
-   * @param modRefEffect the effect that is possibly performed on the targeted memory nodes
    * @param modRefSet the set of memory nodes that should be expanded with \p output's targets
+   * @param output the pointer typed output
+   * @param minSize an optional minimum size of memory locations added to the modRefSet.
+   * @param modRefEffect the effect that is possibly performed on the targeted memory nodes
    */
   void
-  AddPointerTargetsToModRefSet(
+  addPointerTargetsToModRefSet(
+      AgnosticModRefSet & modRefSet,
       const rvsdg::Output & output,
-      ModRefEffect modRefEffect,
-      AgnosticModRefSet & modRefSet) const;
+      std::optional<size_t> minSize,
+      ModRefEffect modRefEffect
+      ) const;
 
   /**
-   * Recursively traverses the given \p region, creating Mod/Ref sets for simple nodes.
+   * Recursively traverses the given \p region, creating Mod/Ref sets for all functions.
    * @param region the region to traverse
    */
   void
-  AnnotateRegion(const rvsdg::Region & region);
+  annotateInterproceduralRegion(const rvsdg::Region & region);
+
+  /**
+   * Creates ModRefSets for the given function and the nodes it contains.
+   * @param lambda the function's lambda node
+   */
+  void
+  annotateFunction(const rvsdg::LambdaNode & lambda);
+
+  /**
+   * Recursively traverses the given \p region, creating Mod/Ref sets for nodes.
+   * @param region the region to traverse
+   * @param lambda the function containing the region
+   * @param functionModRefSetIndex the ModRefSet representing all memory effects in the function,
+   * use for the lambda itself, all structural nodes and all calls in the function
+   * @param modRefSetsInFunction a vector for tracking all ModRefSets created in the function.
+   */
+  void
+  annotateIntraproceduralRegion(
+      const rvsdg::Region & region,
+      size_t functionModRefSetIndex,
+      std::vector<size_t> & modRefSetsInFunction);
 
   /**
    * Creates a Mod/Ref set for the given simple node if it belongs in the Mod/Ref set map.
    * Only nodes that affect memory are given Mod/Ref sets.
-   * \ref llvm::CallOperation nodes are not included, as calls are assumed to touch everything.
+   * \ref llvm::CallOperation nodes are not included, and are instead given the function ModRefSet.
    * @param node the simple node
+   * @param functionModRefSetIndex the index of the ModRefSet representing the function
+   * @param modRefSetsInFunction a list for tracking all created ModRefSets in the function
    */
   void
-  AnnotateSimpleNode(const rvsdg::SimpleNode & node);
+  annotateSimpleNode(
+      const rvsdg::SimpleNode & node,
+      size_t functionModRefSetIndex,
+      std::vector<size_t> & modRefSetsInFunction);
 
   // The ModRefSummary being created by this class
   std::unique_ptr<AgnosticModRefSummary> ModRefSummary_;
