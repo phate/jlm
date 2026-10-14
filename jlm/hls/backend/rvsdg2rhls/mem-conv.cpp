@@ -65,7 +65,10 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     }
     else if (rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
-      JLM_UNREACHABLE("there should be no new loops");
+      // If a loop follows before encountering a merge,
+      // then there is no merge node requiring any replacement
+      // on this path.
+      return { nullptr, encountered_muxes };
     }
     auto si = state_edge;
     auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
@@ -103,7 +106,8 @@ OptimizeResMemState(rvsdg::Output * res_mem_state)
 {
   // replace other branches with undefs, so the stateedge before the res can be killed.
   auto [merge_in, encountered_muxes] = TraceEdgeToMerge(get_mem_state_user(res_mem_state));
-  JLM_ASSERT(merge_in);
+  if (!merge_in)
+    return;
   for (auto si : encountered_muxes)
   {
     auto & sn = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
@@ -124,7 +128,8 @@ OptimizeReqMemState(rvsdg::Output * req_mem_state)
   // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
   // of this state edge
   auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
-  JLM_ASSERT(merge_in);
+  if (!merge_in)
+    return;
   auto & merge_node = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*merge_in);
   std::vector<rvsdg::Output *> merge_origins;
   for (size_t i = 0; i < merge_node.ninputs(); ++i)
