@@ -97,8 +97,7 @@ private:
       AgnosticModRefSet & modRefSet,
       const rvsdg::Output & output,
       std::optional<size_t> minSize,
-      ModRefEffect modRefEffect
-      ) const;
+      ModRefEffect modRefEffect) const;
 
   /**
    * Recursively traverses the given \p region, creating Mod/Ref sets for all functions.
