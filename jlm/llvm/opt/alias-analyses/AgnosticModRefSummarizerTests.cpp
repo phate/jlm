@@ -30,17 +30,20 @@ TEST(AgnosticModRefSummarizerTests, TestStore1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
+    auto lambdaPtgNode = pointsToGraph.getNodeForLambda(*test.lambda);
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    // The memory location representing the function itself should not be included
+    EXPECT_EQ(lambdaEntryNodes.count(lambdaPtgNode), 0);
+    // The function ModRefSets should include all other locations, however
+    EXPECT_EQ(lambdaEntryNodes.size(), pointsToGraph.numMemoryNodes() - 1);
   };
 
   jlm::llvm::StoreTest1 test;
-  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunAndersen(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::dumpGraph(*PointsToGraph);
@@ -66,13 +69,16 @@ TEST(AgnosticModRefSummarizerTests, TestStore2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
+    auto lambdaPtgNode = pointsToGraph.getNodeForLambda(*test.lambda);
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    // The memory location representing the function itself should not be included
+    EXPECT_EQ(lambdaEntryNodes.count(lambdaPtgNode), 0);
+    // The function ModRefSets should include all other locations, however
+    EXPECT_EQ(lambdaEntryNodes.size(), pointsToGraph.numMemoryNodes() - 1);
   };
 
   jlm::llvm::StoreTest2 test;
@@ -102,13 +108,16 @@ TEST(AgnosticModRefSummarizerTests, TestLoad1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
+    auto lambdaPtgNode = pointsToGraph.getNodeForLambda(*test.lambda);
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    // The memory location representing the function itself should not be included
+    EXPECT_EQ(lambdaEntryNodes.count(lambdaPtgNode), 0);
+    // The function ModRefSets should include all other locations, however
+    EXPECT_EQ(lambdaEntryNodes.size(), pointsToGraph.numMemoryNodes() - 1);
   };
 
   jlm::llvm::LoadTest1 test;
@@ -138,13 +147,16 @@ TEST(AgnosticModRefSummarizerTests, TestLoad2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
+    auto lambdaPtgNode = pointsToGraph.getNodeForLambda(*test.lambda);
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    // The memory location representing the function itself should not be included
+    EXPECT_EQ(lambdaEntryNodes.count(lambdaPtgNode), 0);
+    // The function ModRefSets should include all other locations, however
+    EXPECT_EQ(lambdaEntryNodes.size(), pointsToGraph.numMemoryNodes() - 1);
   };
 
   jlm::llvm::LoadTest2 test;
@@ -173,13 +185,16 @@ TEST(AgnosticModRefSummarizerTests, TestLoadFromUndef)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(test.Lambda()).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(test.Lambda()).getModRefNodes().size();
+    auto lambdaPtgNode = pointsToGraph.getNodeForLambda(test.Lambda());
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.Lambda()).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.Lambda()).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    // The memory location representing the function itself should not be included
+    EXPECT_EQ(lambdaEntryNodes.count(lambdaPtgNode), 0);
+    // The function ModRefSets should include all other locations, however
+    EXPECT_EQ(lambdaEntryNodes.size(), pointsToGraph.numMemoryNodes() - 1);
   };
 
   jlm::llvm::LoadFromUndefTest test;
@@ -209,49 +224,58 @@ TEST(AgnosticModRefSummarizerTests, TestCall1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto xPtgNode = pointsToGraph.getNodeForAlloca(*test.alloca_x);
+    auto yPtgNode = pointsToGraph.getNodeForAlloca(*test.alloca_y);
+    auto zPtgNode = pointsToGraph.getNodeForAlloca(*test.alloca_z);
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+
     /*
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_f).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_f).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_f).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The f() function should only contain memory affected inside it
+      EXPECT_TRUE(lambdaEntryNodes.count(xPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(yPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 3);
     }
 
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_g).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_g).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(zPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_h).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_h).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(xPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(yPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(zPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 4);
 
-      auto numCallFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).getModRefNodes().size();
-      EXPECT_EQ(numCallFNodes, pointsToGraph.numMemoryNodes());
+      auto & callFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).getModRefNodes();
+      EXPECT_EQ(callFNodes, lambdaEntryNodes);
 
-      auto numCallGNodes = modRefSummary.GetSimpleNodeModRef(test.CallG()).getModRefNodes().size();
-      EXPECT_EQ(numCallGNodes, pointsToGraph.numMemoryNodes());
+      auto & callGNodes = modRefSummary.GetSimpleNodeModRef(test.CallG()).getModRefNodes();
+      EXPECT_EQ(callGNodes, lambdaEntryNodes);
     }
   };
 
@@ -282,59 +306,68 @@ TEST(AgnosticModRefSummarizerTests, TestCall2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto mallocPtgNode = pointsToGraph.getNodeForMalloc(*test.malloc);
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+
     /*
      * Validate function create
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_create).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_create).getModRefNodes().size();
+      auto lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_create).getModRefNodes();
+      auto lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(*test.lambda_create).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(mallocPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function destroy
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_destroy).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_destroy).getModRefNodes().size();
+      auto lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_destroy).getModRefNodes();
+      auto lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(*test.lambda_destroy).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(mallocPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_test).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_test).getModRefNodes().size();
+      auto lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_test).getModRefNodes();
+      auto lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_test).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The test() function never loads or stores a pointer to the malloc,
+      // so the malloc gets Omega folded
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 1);
 
-      auto numCallCreate1Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallCreate1()).getModRefNodes().size();
-      EXPECT_EQ(numCallCreate1Nodes, pointsToGraph.numMemoryNodes());
+      auto & callCreate1Nodes =
+          modRefSummary.GetSimpleNodeModRef(test.CallCreate1()).getModRefNodes();
+      EXPECT_EQ(callCreate1Nodes, lambdaEntryNodes);
 
-      auto numCallCreate2Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallCreate2()).getModRefNodes().size();
-      EXPECT_EQ(numCallCreate2Nodes, pointsToGraph.numMemoryNodes());
+      auto & callCreate2Nodes =
+          modRefSummary.GetSimpleNodeModRef(test.CallCreate2()).getModRefNodes();
+      EXPECT_EQ(callCreate2Nodes, lambdaEntryNodes);
 
-      auto numCallDestroy1Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallDestroy1()).getModRefNodes().size();
-      EXPECT_EQ(numCallDestroy1Nodes, pointsToGraph.numMemoryNodes());
+      auto & callDestroy1Nodes =
+          modRefSummary.GetSimpleNodeModRef(test.CallDestroy1()).getModRefNodes();
+      EXPECT_EQ(callDestroy1Nodes, lambdaEntryNodes);
 
-      auto numCallDestroy2Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallDestroy2()).getModRefNodes().size();
-      EXPECT_EQ(numCallDestroy2Nodes, pointsToGraph.numMemoryNodes());
+      auto & callDestroy2Nodes =
+          modRefSummary.GetSimpleNodeModRef(test.CallDestroy2()).getModRefNodes();
+      EXPECT_EQ(callDestroy2Nodes, lambdaEntryNodes);
     }
   };
 
@@ -365,68 +398,76 @@ TEST(AgnosticModRefSummarizerTests, TestIndirectCall)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+
     /*
      * Validate function four
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.GetLambdaFour()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(test.GetLambdaFour()).getModRefNodes();
+      auto & lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(test.GetLambdaFour()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The function doesn't touch any memory, so everything gets folded into Omega
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 1);
     }
 
     /*
      * Validate function three
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.GetLambdaThree()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(test.GetLambdaThree()).getModRefNodes();
+      auto & lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(test.GetLambdaThree()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The function doesn't touch any memory, so everything gets folded into Omega
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 1);
     }
 
     /*
      * Validate function indcall
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall()).getModRefNodes();
+      auto & lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The function doesn't touch any memory, so everything gets folded into Omega
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 1);
 
-      auto numCallIndcallNodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallIndcall()).getModRefNodes().size();
-      EXPECT_EQ(numCallIndcallNodes, pointsToGraph.numMemoryNodes());
+      auto & callIndcallNodes =
+          modRefSummary.GetSimpleNodeModRef(test.CallIndcall()).getModRefNodes();
+      EXPECT_EQ(callIndcallNodes, lambdaEntryNodes);
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.GetLambdaTest()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(test.GetLambdaIndcall()).getModRefNodes();
+      auto & lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(test.GetLambdaIndcall()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      // The function doesn't touch any memory, so everything gets folded into Omega
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 1);
 
-      auto numCallThreeNodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallThree()).getModRefNodes().size();
-      EXPECT_EQ(numCallThreeNodes, pointsToGraph.numMemoryNodes());
+      auto & callThreeNodes = modRefSummary.GetSimpleNodeModRef(test.CallThree()).getModRefNodes();
+      EXPECT_EQ(callThreeNodes, lambdaEntryNodes);
 
-      auto numCallFourNodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallFour()).getModRefNodes().size();
-      EXPECT_EQ(numCallFourNodes, pointsToGraph.numMemoryNodes());
+      auto & callFourNodes = modRefSummary.GetSimpleNodeModRef(test.CallFour()).getModRefNodes();
+      EXPECT_EQ(callFourNodes, lambdaEntryNodes);
     }
   };
 
@@ -457,18 +498,20 @@ TEST(AgnosticModRefSummarizerTests, TestGamma)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
-    auto numGammaEntryNodes =
-        modRefSummary.GetGammaEntryModRef(*test.gamma).getModRefNodes().size();
-    auto numGammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma).getModRefNodes().size();
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numGammaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numGammaExitNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+    EXPECT_EQ(lambdaEntryNodes.size(), 1);
+
+    auto & gammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma).getModRefNodes();
+    auto & gammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma).getModRefNodes();
+
+    EXPECT_EQ(gammaEntryNodes, lambdaEntryNodes);
+    EXPECT_EQ(gammaExitNodes, lambdaEntryNodes);
   };
 
   jlm::llvm::GammaTest test;
@@ -498,15 +541,18 @@ TEST(AgnosticModRefSummarizerTests, TestTheta)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes =
-        modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes().size();
-    auto numLambdaExitNodes =
-        modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes().size();
-    auto numThetaNodes = modRefSummary.GetThetaModRef(*test.theta).getModRefNodes().size();
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
 
-    EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-    EXPECT_EQ(numThetaNodes, pointsToGraph.numMemoryNodes());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda).getModRefNodes();
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda).getModRefNodes();
+    EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
+
+    EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+    EXPECT_EQ(lambdaEntryNodes.size(), 1);
+
+    auto & thetaMemoryNodes = modRefSummary.GetThetaModRef(*test.theta).getModRefNodes();
+
+    EXPECT_EQ(thetaMemoryNodes, lambdaEntryNodes);
   };
 
   jlm::llvm::ThetaTest test;
@@ -536,32 +582,33 @@ TEST(AgnosticModRefSummarizerTests, TestDelta1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+    auto deltaFPtgNode = pointsToGraph.getNodeForDelta(*test.delta_f);
+
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_g).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_g).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_g).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_g).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(deltaFPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_h).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_h).getModRefNodes().size();
-      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallG()).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(deltaFPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
   };
 
@@ -592,32 +639,37 @@ TEST(AgnosticModRefSummarizerTests, TestDelta2)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+    auto d1PtgNode = pointsToGraph.getNodeForDelta(*test.delta_d1);
+    auto d2PtgNode = pointsToGraph.getNodeForDelta(*test.delta_d2);
+
     /*
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_f1).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(d1PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_f2).getModRefNodes().size();
-      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(d1PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(d2PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 3);
     }
   };
 
@@ -648,32 +700,37 @@ TEST(AgnosticModRefSummarizerTests, TestImports)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+    auto d1PtgNode = pointsToGraph.getNodeForImport(*test.import_d1);
+    auto d2PtgNode = pointsToGraph.getNodeForImport(*test.import_d2);
+
     /*
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_f1).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_f1).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f1).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(d1PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_f2).getModRefNodes().size();
-      auto numCallNodes = modRefSummary.GetSimpleNodeModRef(test.CallF1()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_f2).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_f2).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(d1PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(d2PtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 3);
     }
   };
 
@@ -704,45 +761,49 @@ TEST(AgnosticModRefSummarizerTests, TestPhi1)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+    auto resultsPtgNode = pointsToGraph.getNodeForAlloca(*test.alloca);
+
     /*
      * Validate function fib
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_fib).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_fib).getModRefNodes().size();
-      auto numGammaEntryNodes =
-          modRefSummary.GetGammaEntryModRef(*test.gamma).getModRefNodes().size();
-      auto numGammaExitNodes =
-          modRefSummary.GetGammaExitModRef(*test.gamma).getModRefNodes().size();
-      auto numCallFibm1Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallFibm1()).getModRefNodes().size();
-      auto numCallFibm2Nodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallFibm2()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_fib).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_fib).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numGammaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numGammaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallFibm1Nodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallFibm2Nodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(resultsPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
+
+      auto & gammaEntryNodes = modRefSummary.GetGammaEntryModRef(*test.gamma).getModRefNodes();
+      auto & gammaExitNodes = modRefSummary.GetGammaExitModRef(*test.gamma).getModRefNodes();
+      auto & callFibm1Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm1()).getModRefNodes();
+      auto & callFibm2Nodes = modRefSummary.GetSimpleNodeModRef(test.CallFibm2()).getModRefNodes();
+      EXPECT_EQ(gammaEntryNodes, lambdaEntryNodes);
+      EXPECT_EQ(gammaExitNodes, lambdaEntryNodes);
+      EXPECT_EQ(callFibm1Nodes, lambdaEntryNodes);
+      EXPECT_EQ(callFibm2Nodes, lambdaEntryNodes);
     }
 
     /*
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(*test.lambda_test).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(*test.lambda_test).getModRefNodes().size();
-      auto numCallFibNodes =
-          modRefSummary.GetSimpleNodeModRef(test.CallFib()).getModRefNodes().size();
+      auto & lambdaEntryNodes =
+          modRefSummary.GetLambdaEntryModRef(*test.lambda_test).getModRefNodes();
+      auto & lambdaExitNodes =
+          modRefSummary.GetLambdaExitModRef(*test.lambda_test).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallFibNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(resultsPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
+
+      auto & callFibNodes = modRefSummary.GetSimpleNodeModRef(test.CallFib()).getModRefNodes();
+
+      EXPECT_EQ(callFibNodes, lambdaEntryNodes);
     }
   };
 
@@ -773,35 +834,43 @@ TEST(AgnosticModRefSummarizerTests, TestMemcpy)
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto omegaPtgNode = pointsToGraph.getExternalMemoryNode();
+    auto initArrayPtgNode = pointsToGraph.getNodeForDelta(test.InitArray());
+    auto globalArrayPtgNode = pointsToGraph.getNodeForDelta(test.GlobalArray());
+
     /*
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.LambdaF()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.LambdaF()).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaF()).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaF()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(globalArrayPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 2);
     }
 
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes =
-          modRefSummary.GetLambdaEntryModRef(test.LambdaG()).getModRefNodes().size();
-      auto numLambdaExitNodes =
-          modRefSummary.GetLambdaExitModRef(test.LambdaG()).getModRefNodes().size();
-      auto numCallFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).getModRefNodes().size();
-      auto numMemcpyNodes =
-          modRefSummary.GetSimpleNodeModRef(test.Memcpy()).getModRefNodes().size();
+      auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaG()).getModRefNodes();
+      auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG()).getModRefNodes();
+      EXPECT_EQ(lambdaEntryNodes, lambdaExitNodes);
 
-      EXPECT_EQ(numLambdaEntryNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numLambdaExitNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numCallFNodes, pointsToGraph.numMemoryNodes());
-      EXPECT_EQ(numMemcpyNodes, 2u);
+      EXPECT_TRUE(lambdaEntryNodes.count(omegaPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(initArrayPtgNode));
+      EXPECT_TRUE(lambdaEntryNodes.count(globalArrayPtgNode));
+      EXPECT_EQ(lambdaEntryNodes.size(), 3);
+
+      auto & callFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF()).getModRefNodes();
+      EXPECT_EQ(callFNodes, lambdaEntryNodes);
+
+      auto & memcpyNodes = modRefSummary.GetSimpleNodeModRef(test.Memcpy()).getModRefNodes();
+      EXPECT_TRUE(memcpyNodes.count(initArrayPtgNode));
+      EXPECT_TRUE(memcpyNodes.count(globalArrayPtgNode));
+      EXPECT_EQ(memcpyNodes.size(), 2);
     }
   };
 
@@ -851,6 +920,7 @@ TEST(AgnosticModRefSummarizerTests, TestStatistics)
   EXPECT_NE(statistics.GetTime(), 0u);
   EXPECT_EQ(
       statistics.GetMeasurementValue<std::string>("MemoryStateDistribution"),
-      "LAMBDA[f]-LAMBDA[f]-(0:0)-2-2,LAMBDA[f]-Load[ptr]-(1:0)-2-2,LAMBDA[f]-Load[bit32]-(1:1)-2-"
-      "2");
+      "LAMBDA[f]-LAMBDA[f]-(0:0)-1-1,"
+      "LAMBDA[f]-Load[ptr]-(1:0)-1-1,"
+      "LAMBDA[f]-Load[bit32]-(1:1)-1-1");
 }
