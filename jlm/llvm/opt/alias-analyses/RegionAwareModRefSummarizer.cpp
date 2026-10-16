@@ -97,6 +97,13 @@ static const bool ENABLE_OMEGA_FOLDING = !std::getenv("JLM_DISABLE_OMEGA_FOLDING
 static const bool ENABLE_IMPLICIT_MODREF_REPRESENTATION =
     !std::getenv("JLM_DISABLE_IMPLICIT_MODREF_REPRESENTATION");
 
+/**
+ * When true, and statistics are demanded, a string describing every ModRefSet is created
+ * and added to the statistics object. It can be very long.
+ */
+static const bool ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS =
+    !std::getenv("JLM_DISABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -947,7 +954,8 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
 
   // Perform the collection of the memory state distribution AFTER we invoked stopped collecting
   // everything such that it does not count into the timing measurements
-  if (statisticsCollector.IsDemanded(statistics->GetId()))
+  if (ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS
+      && statisticsCollector.IsDemanded(statistics->GetId()))
   {
     const auto distribution = collectMemoryStateDistribution(rvsdgModule.Rvsdg(), *ModRefSummary_);
     statistics->addMemoryStateDistribution(distribution);

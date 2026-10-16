@@ -47,6 +47,13 @@ static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
  */
 static const bool ENABLE_OMEGA_FOLDING = !std::getenv("JLM_DISABLE_OMEGA_FOLDING");
 
+/**
+ * When true, and statistics are demanded, a string describing every ModRefSet is created
+ * and added to the statistics object. It can be very long.
+ */
+static const bool ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS =
+    !std::getenv("JLM_DISABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS");
+
 /** \brief class returned by the Agnostic ModRefSummarizer
  *
  */
@@ -262,7 +269,8 @@ AgnosticModRefSummarizer::SummarizeModRefs(
 
   // Perform the collection of the memory state distribution AFTER we invoked StopCollecting() such
   // that it does not count into the timing measurements
-  if (statisticsCollector.IsDemanded(statistics->GetId()))
+  if (ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS
+      && statisticsCollector.IsDemanded(statistics->GetId()))
   {
     const auto summaries = collectMemoryStateDistribution(rvsdgModule.Rvsdg(), *ModRefSummary_);
     statistics->addMemoryStateDistribution(summaries);
