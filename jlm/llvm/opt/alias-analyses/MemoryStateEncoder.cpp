@@ -28,6 +28,13 @@
 namespace jlm::llvm::aa
 {
 
+/**
+ * When true, and statistics are demanded, a string describing every ModRefSet is created
+ * and added to the statistics object. It can be very long.
+ */
+static const bool ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS =
+    !std::getenv("JLM_DISABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS");
+
 namespace
 {
 
@@ -673,8 +680,11 @@ MemoryStateEncoder::Encode(
     DeadNodeElimination dne;
     dne.run(rvsdg.GetRootRegion());
 
-    const auto summaries = gatherNumMemoryStatesPerNode(rvsdg);
-    statistics_->addMemoryStateDistribution(summaries);
+    if (ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS)
+    {
+      const auto summaries = gatherNumMemoryStatesPerNode(rvsdg);
+      statistics_->addMemoryStateDistribution(summaries);
+    }
   }
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics_));
