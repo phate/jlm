@@ -832,9 +832,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
               "Output Rvsdg Tree"),
-          CreateOutputFormatOption(
-              JlmOptCommandLineOptions::OutputFormat::Null,
-              "Disable output")),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Null, "Disable output")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
