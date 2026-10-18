@@ -17,6 +17,7 @@
 
 #include "jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp"
 #include "jlm/hls/backend/rvsdg2rhls/add-buffers.hpp"
+#include "jlm/hls/util/view.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
@@ -104,6 +105,11 @@ main(int argc, char ** argv)
       std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
       exit(1);
     }
+    jlm::hls::DotHLS dhls;
+    stringToFile(
+        dhls.run(*rvsdgModule),
+        commandLineOptions.OutputFiles_.WithSuffix(".dot"));
+    jlm::hls::dump_dot(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".alt.dot").to_str());
 
     jlm::hls::VerilatorHarnessHLS vhls(outputVerilogFile);
     stringToFile(

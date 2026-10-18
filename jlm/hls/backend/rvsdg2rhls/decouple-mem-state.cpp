@@ -214,6 +214,16 @@ handle_structural(
     rvsdg::input * state_edge_before,
     rvsdg::output * state_edge_after)
 {
+  std::cout << "handle_structural " << state_edge_before << " " << state_edge_after << " " << rvsdg::TryGetOwnerNode<rvsdg::Node>(*state_edge_before)->GetOperation().debug_string()  << " " << rvsdg::TryGetOwnerNode<rvsdg::Node>(*state_edge_before) <<  std::endl;
+  for (auto [odr, _] : outstanding_dec_reqs)
+  {
+    std::cout << "odr " << odr << std::endl;
+  }
+  for (auto m :mem_ops)
+  {
+    std::cout << (is_dec_res(m)?"DEC_RESP_":"") << (is_dec_req(m)?"DEC_REQ_":"")<< m->GetOperation().debug_string() << " " << m << std::endl;
+  }
+  std::cout << std::endl;
   JLM_ASSERT(state_edge_before->region() == state_edge_after->region());
   // the reqs we encountered
   for (auto op : mem_ops)
@@ -494,6 +504,7 @@ decouple_mem_state(rvsdg::Region * region)
   // process different pointer arg edges separately
   for (size_t i = 0; i < entry_node->noutputs(); ++i)
   {
+    std::cout << "processing mem state " << i << std::endl;
     std::vector<rvsdg::SimpleNode *> mem_ops;
     std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> dummy;
     follow_state_edge(get_mem_state_user(entry_node->output(i)), mem_ops, true);

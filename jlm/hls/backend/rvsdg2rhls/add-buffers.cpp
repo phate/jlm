@@ -1098,6 +1098,7 @@ add_buffers(llvm::RvsdgModule & rm, bool pass_through)
   auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   AddBuffers(lambda->subregion());
   MaximizeBuffers(lambda->subregion());
+  dump_dot(root, "MaximizeBuffers.dot");
   CalculateLoopDepths(lambda->subregion());
 }
 

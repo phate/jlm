@@ -83,7 +83,10 @@ void
 CommandGraph::Run() const
 {
   for (auto & node : CommandGraph::SortNodesTopological(*this))
+  {
+    std::cout << node->GetCommand().ToString() << std::endl;
     node->GetCommand().Run();
+  }
 }
 
 CommandGraph::Node::~Node() = default;

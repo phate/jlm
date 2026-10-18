@@ -438,50 +438,80 @@ rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 void
 rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
+  dump_dot(rhls, "initial.dot");
   pre_opt(rhls);
+  dump_dot(rhls, "pre_opt.dot");
 
   IOBarrierRemoval ioBarrierRemoval;
   ioBarrierRemoval.Run(rhls, collector);
 
+  dump_dot(rhls, "ioBarrierRemoval.dot");
   // TODO: do mem state separation early, so there are no false dependencies between loops
   mem_sep_argument(rhls);
+  dump_dot(rhls, "mem_sep_argument.dot");
   merge_gamma(rhls);
+  dump_dot(rhls, "merge_gamma.dot");
   remove_unused_state(rhls);
+  dump_dot(rhls, "remove_unused_state1.dot");
 
   llvm::DeadNodeElimination llvmDne;
+  dump_dot(rhls, "llvmDne.dot");
   jlm::hls::cne cne;
   cne.Run(rhls, collector);
+  dump_dot(rhls, "cne.dot");
   jlm::llvm::tginversion tgi;
+  llvmDne.Run(rhls, collector);
+  dump_dot(rhls, "before_tgi.dot");
   // simplify loops
   tgi.Run(rhls, collector);
+  dump_dot(rhls, "tginversion.dot");
   // tginversion seems to duplicate state edge inputs to gammas
   cne.Run(rhls, collector);
+  dump_dot(rhls, "cne2.dot");
   llvmDne.Run(rhls, collector);
+  dump_dot(rhls, "llvmDne2.dot");
   // merge gammas that were pulled out of loops
   merge_gamma(rhls);
+  dump_dot(rhls, "merge_gamma2.dot");
   llvmDne.Run(rhls, collector);
+  dump_dot(rhls, "llvmDne3.dot");
   //  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   remove_unused_state(rhls);
+  dump_dot(rhls, "remove_unused_state2.dot");
   // main conversion steps
   distribute_constants(rhls);
+  dump_dot(rhls, "distribute_constants.dot");
   ConvertGammaNodes(rhls);
+  dump_dot(rhls, "gamma_conv.dot");
   ConvertThetaNodes(rhls);
+  dump_dot(rhls, "theta_conv.dot");
   hls::cne hlsCne;
   hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
+  dump_dot(rhls, "dne.dot");
   alloca_conv(rhls);
+  dump_dot(rhls, "alloca_conv.dot");
   jlm::hls::stream_conv(rhls);
+  dump_dot(rhls, "stream_conv.dot");
   mem_queue(rhls);
+  dump_dot(rhls, "mem_queue.dot");
   decouple_mem_state(rhls);
+  dump_dot(rhls, "decouple_mem_state.dot");
   remove_unused_state(rhls);
+  dump_dot(rhls, "remove_unused_state3.dot");
   MemoryConverter(rhls);
+  dump_dot(rhls, "mem_conv.dot");
   memstate_conv(rhls);
-//  remove_redundant_buf(rhls);
+  dump_dot(rhls, "memstate_conv.dot");
+  //  remove_redundant_buf(rhls);
+  //  dump_dot(rhls, "remove_redundant_buf.dot");
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
+  dump_dot(rhls, "add_forks.dot");
   add_buffers(rhls, true);
+  dump_dot(rhls, "add_buffers.dot");
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }
