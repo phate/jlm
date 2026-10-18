@@ -237,8 +237,9 @@ handle_structural(
       continue;
     auto res_constant = trace_constant(resp->input(1)->origin());
     JLM_ASSERT(res_constant);
-    for (auto [req, state_edge_req] : outstanding_dec_reqs)
+    for (auto & rp : outstanding_dec_reqs)
     {
+      auto [req, state_edge_req] = rp;
       auto req_constant = trace_constant(req->input(1)->origin());
       if (*req_constant == *res_constant)
       {
@@ -254,6 +255,8 @@ handle_structural(
         after_user->divert_to(merge_out);
         trace_edge(state_edge_req, split_outputs[1], req, state_edge_after);
         trace_edge(state_edge_req, split_outputs[2], resp, state_edge_after);
+        outstanding_dec_reqs.erase(std::find(outstanding_dec_reqs.begin(), outstanding_dec_reqs.end(), rp));
+        break;
       }
     }
   }
