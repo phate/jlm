@@ -1094,7 +1094,7 @@ MemoryStateEncoder::encodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
   JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(callNode);
-  const auto [modRefNodes, mayModify] = getModRefSetNodesAndMayModifyEffect(modRefSet);
+  auto [modRefNodes, mayModify] = getModRefSetNodesAndMayModifyEffect(modRefSet);
   const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *callNode.region());
 
   auto & entryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
