@@ -57,6 +57,10 @@ static const bool ENABLE_REGION_PREDICATE_CHECK =
 // When disabled, loads are skipped during tracing, and never considered for value forwarding.
 static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
 
+// Let tracing continue through calls, if the memory state encoding has marked
+// the traced memory state as being read-only inside the call.
+static const bool ENABLE_CALL_TRACETHROUGH = !std::getenv("JLM_DISABLE_CALL_TRACETHROUGH");
+
 /**
  * Helper for counting alias analysis responses
  */
@@ -777,6 +781,37 @@ private:
       return ValueOrigin::createUninitialized();
     }
 
+    if (auto [callExitSplitNode, callExitSplitOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(tracedOutput);
+        callExitSplitOp)
+    {
+      // If call tracethrough is not enabled, give up now
+      if (!ENABLE_CALL_TRACETHROUGH)
+        return ValueOrigin::createUnknown();
+
+      // If the call may clobber the memory, value forwarding is not possible
+      if (CallExitMemoryStateSplitOperation::mayCallModifyMemoryOfOutput(tracedOutput))
+        return ValueOrigin::createUnknown();
+
+      // Otherwise, try finding the corresponding memory state input and continue tracing
+      auto memoryNodeId = CallExitMemoryStateSplitOperation::mapOutputToMemoryNodeId(tracedOutput);
+      auto & callNodeOutput = *callExitSplitNode->input(0)->origin();
+      auto [callNode, callOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(callNodeOutput);
+      if (!callOp)
+        return ValueOrigin::createUnknown();
+      auto callEntryMerge = CallOperation::tryGetMemoryStateEntryMerge(*callNode);
+      if (!callEntryMerge)
+        return ValueOrigin::createUnknown();
+      auto memoryStateInput = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+          *callEntryMerge,
+          memoryNodeId);
+      if (!memoryStateInput)
+        return ValueOrigin::createUnknown();
+
+      // Memory state input found, continue tracing
+      return getLastValueOriginBeforeInput(*memoryStateInput, loopBackEdgeTaken);
+    }
+
     // If we found an exit variable of a gamma node, trace each of its subregions
     if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(tracedOutput))
     {
@@ -914,7 +949,7 @@ private:
       return ValueOrigin::createThetaNodePre(*thetaNode);
     }
 
-    // Tracing reached something that is not handled, such as a function call
+    // Tracing reached something that is not handled
     return ValueOrigin::createUnknown();
   }
 

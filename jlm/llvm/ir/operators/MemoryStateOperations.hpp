@@ -341,11 +341,9 @@ public:
   mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
   static rvsdg::SimpleNode &
-  CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
+  CreateNode(rvsdg::Output & operand, const std::vector<MemoryNodeId> & memoryNodeIds)
   {
-    return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
-        { &operand },
-        std::move(memoryNodeIds));
+    return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &operand }, memoryNodeIds);
   }
 
 private:
@@ -536,14 +534,11 @@ public:
   CreateNode(
       rvsdg::Region & region,
       const std::vector<rvsdg::Output *> & operands,
-      std::vector<MemoryNodeId> memoryNodeIds)
+      const std::vector<MemoryNodeId> & memoryNodeIds)
   {
-    return operands.empty() ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
-                                  region,
-                                  std::move(memoryNodeIds))
-                            : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
-                                  operands,
-                                  std::move(memoryNodeIds));
+    return operands.empty()
+             ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, memoryNodeIds)
+             : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, memoryNodeIds);
   }
 
 private:
@@ -565,7 +560,9 @@ class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~CallExitMemoryStateSplitOperation() noexcept override;
 
-  explicit CallExitMemoryStateSplitOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
+  CallExitMemoryStateSplitOperation(
+      const std::vector<MemoryNodeId> & memoryNodeIds,
+      std::vector<bool> mayModify);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -615,16 +612,35 @@ public:
   [[nodiscard]] static MemoryNodeId
   mapOutputToMemoryNodeId(const rvsdg::Output & output);
 
+  /**
+   * Determines if the given output of a \ref CallExitMemoryStateSplitOperation represents a
+   * memory location that may be modified by the call.
+   *
+   * @param output an output of a \ref CallExitMemoryStateSplitOperation node.
+   * @return true if the call may modify the memory location, false if it may only read.
+   */
+  [[nodiscard]] static bool
+  mayCallModifyMemoryOfOutput(const rvsdg::Output & output);
+
   static rvsdg::SimpleNode &
-  CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
+  CreateNode(
+      rvsdg::Output & operand,
+      const std::vector<MemoryNodeId> & memoryNodeIds,
+      std::vector<bool> mayModify)
   {
     return rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>(
         { &operand },
-        std::move(memoryNodeIds));
+        memoryNodeIds,
+        std::move(mayModify));
   }
 
 private:
   util::BijectiveMap<MemoryNodeId, size_t> memoryNodeIdToIndexMap_{};
+
+  // For each memory state output, mayModify indicates the effect the call has on the memory.
+  // If mayModify is true, the call may store to the memory location represented by the state.
+  // If mayModify is false, the call may only read from the memory location.
+  std::vector<bool> mayModify_;
 };
 
 /**
