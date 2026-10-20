@@ -637,7 +637,7 @@ gatherNumMemoryStatesPerNode(const rvsdg::Graph & rvsdg)
  * Convert the set of memory nodes in the given \p modRefSet into an ordered list.
  *
  * @param modRefSet the \ref ModRefSet in question
- * @return an ordered vector of the \ref MemoryNodeId$s present in the set
+ * @return an ordered vector of the \ref MemoryNodeId present in the set
  */
 static std::vector<MemoryNodeId>
 getModRefSetNodes(const ModRefSet & modRefSet)
