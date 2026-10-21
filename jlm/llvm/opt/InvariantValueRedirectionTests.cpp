@@ -705,7 +705,8 @@ TEST(InvariantValueRedirectionTests, TestCallWithMemoryStateNodes)
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNode),
-        { 2, 1 });
+        { 2, 1 },
+        { true, true });
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
@@ -810,7 +811,8 @@ TEST(InvariantValueRedirectionTests, TestCallWithMissingMemoryStateNodes)
 
     auto & callExitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNode),
-        { 1 });
+        { 1 },
+        { true });
 
     auto & lambdaExitMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
@@ -997,7 +999,8 @@ TEST(InvariantValueRedirectionTests, TestCallWithDifferentExternalCompression)
         { ioStateArgument, callEntryMergeNodeA->output(0) });
     callExitSplitNodeA = &CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNodeA),
-        { 0, 1, 2 });
+        { 0, 1, 2 },
+        { true, true, true });
 
     callEntryMergeNodeB = &CallEntryMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),
@@ -1009,7 +1012,8 @@ TEST(InvariantValueRedirectionTests, TestCallWithDifferentExternalCompression)
         { &CallOperation::GetIOStateOutput(callNodeA), callEntryMergeNodeB->output(0) });
     callExitSplitNodeB = &CallExitMemoryStateSplitOperation::CreateNode(
         CallOperation::GetMemoryStateOutput(callNodeB),
-        { 0, 1, 2 });
+        { 0, 1, 2 },
+        { true, true, true });
 
     lambdaExitMergeNode = &LambdaExitMemoryStateMergeOperation::CreateNode(
         *lambdaNode->subregion(),

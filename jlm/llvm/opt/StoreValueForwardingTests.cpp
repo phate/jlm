@@ -2238,3 +2238,121 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaWithConstantGep)
   EXPECT_NE(intOperation, nullptr);
   EXPECT_EQ(intOperation->Representation().to_uint(), 2u);
 }
+
+TEST(StoreValueForwardingTests, TraceThroughCall)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates a graph like
+   *
+   * f = import "f()"
+   *
+   * x = lambda f [io0, mem0, f0]{
+   *   a, aMem0 = alloca[int]
+   *   five = ConstantInt(5)
+   *   aMem1 = store a, five, aMem0
+   *
+   *   // Call to f() with mayModify = true
+   *   entry0 = callEntryMemoryStateMerge[{0, 1}] mem0, aMem1
+   *   io1, callMem0 = call f0, io0, entry0
+   *   mem1, aMem2 = callExitMemoryStateSplit[{0, 1}, {true, true}] callMem0
+   *
+   *   load0, aMem3 = load a, aMem2
+   *
+   *   // Call to f() with mayModify = false
+   *   entry1 = callEntryMemoryStateMerge[{0, 1}] mem1, aMem3
+   *   io2, callMem1 = call f0, io1, entry1
+   *   mem2, aMem4 = callExitMemoryStateSplit[{0, 1}, {true, false}] callMem1
+   *
+   *   load1, aMem5 = load a, aMem4
+   * }[load0, load1, io2, mem2]
+   *
+   * After running StoreValueForwarding, the first load should remain untouched,
+   * while the second load should be removed, and redirected to the first load
+   */
+
+  // Arrange
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto memType = MemoryStateType::Create();
+  const auto ioType = IOStateType::Create();
+  const auto bits32Type = BitType::Create(32);
+
+  const auto fFunctionType = FunctionType::Create({ ioType, memType }, { ioType, memType });
+  const auto xFunctionType =
+      FunctionType::Create({ ioType, memType }, { bits32Type, bits32Type, ioType, memType });
+
+  auto & f = LlvmGraphImport::createFunctionImport(
+      graph,
+      fFunctionType,
+      "f",
+      Linkage::externalLinkage,
+      CallingConvention::Default);
+
+  auto x = LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(xFunctionType, "x", Linkage::internalLinkage));
+  auto fContextVar = x->AddContextVar(f);
+  auto & io0 = *x->GetFunctionArguments()[0];
+  auto & mem0 = *x->GetFunctionArguments()[1];
+
+  auto & one = *IntegerConstantOperation::Create(*x->subregion(), 64, 1).output(0);
+  auto & alloca = AllocaOperation::createNode(bits32Type, one, 4);
+  auto & allocaAddress = AllocaOperation::getPointerOutput(alloca);
+  auto & aMem0 = AllocaOperation::getMemoryStateOutput(alloca);
+
+  // store 5 into a
+  auto & five = *IntegerConstantOperation::Create(*x->subregion(), 64, 4).output(0);
+  auto & store = StoreNonVolatileOperation::CreateNode(allocaAddress, five, { &aMem0 }, 4);
+  auto & aMem1 = *StoreNonVolatileOperation::MemoryStateOutputs(store).begin();
+
+  // call f() for the first time
+  auto & entry0 =
+      CallEntryMemoryStateMergeOperation::CreateNode(*x->subregion(), { &mem0, &aMem1 }, { 0, 1 });
+  auto & call0 =
+      CallOperation::CreateNode(fContextVar.inner, fFunctionType, { &io0, entry0.output(0) });
+  auto & io1 = *call0.output(0);
+  auto & callMem0 = *call0.output(1);
+  auto & exit0 = CallExitMemoryStateSplitOperation::CreateNode(callMem0, { 0, 1 }, { true, true });
+  auto & mem1 = *exit0.output(0);
+  auto & aMem2 = *exit0.output(1);
+
+  // load from a
+  auto & load0 = LoadNonVolatileOperation::CreateNode(allocaAddress, { &aMem2 }, bits32Type, 4);
+  auto & loadedValue0 = LoadNonVolatileOperation::LoadedValueOutput(load0);
+  auto & aMem3 = *LoadNonVolatileOperation::MemoryStateOutputs(load0).begin();
+
+  // call f() for the second time
+  auto & entry1 =
+      CallEntryMemoryStateMergeOperation::CreateNode(*x->subregion(), { &mem1, &aMem3 }, { 0, 1 });
+  auto & call1 =
+      CallOperation::CreateNode(fContextVar.inner, fFunctionType, { &io1, entry1.output(0) });
+  auto & io2 = *call1.output(0);
+  auto & callMem1 = *call1.output(1);
+  auto & exit1 = CallExitMemoryStateSplitOperation::CreateNode(callMem1, { 0, 1 }, { true, false });
+  auto & mem2 = *exit1.output(0);
+  auto & aMem4 = *exit1.output(1);
+
+  // load from a again
+  auto & load1 = LoadNonVolatileOperation::CreateNode(allocaAddress, { &aMem4 }, bits32Type, 4);
+  auto & loadedValue1 = LoadNonVolatileOperation::LoadedValueOutput(load1);
+
+  x->finalize({ &loadedValue0, &loadedValue1, &io2, &mem2 });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // The first load should still be there, as it cannot be elided
+  auto results = x->GetFunctionResults();
+  auto firstResultOrigin = TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*results[0]->origin());
+  ASSERT_EQ(firstResultOrigin, &load0);
+
+  // The second load should no longer exist, and its users should refer to load0 instead
+  auto secondResultOrigin = TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*results[1]->origin());
+  ASSERT_EQ(secondResultOrigin, &load0);
+}

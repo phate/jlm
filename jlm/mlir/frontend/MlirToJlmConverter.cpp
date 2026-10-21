@@ -822,11 +822,15 @@ MlirToJlmConverter::ConvertOperation(
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
     auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+    // TODO: Add support for storing the mayModify attribute in the MLIR operation.
+    // Here we conservatively assume that the call may modify
+    std::vector<bool> mayModify(memoryNodeIds.size(), true);
 
     auto operands = std::vector(inputs.begin(), inputs.end());
     return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        std::move(memoryNodeIds)));
+        std::move(memoryNodeIds),
+        std::move(mayModify)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {

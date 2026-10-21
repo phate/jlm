@@ -633,16 +633,47 @@ gatherNumMemoryStatesPerNode(const rvsdg::Graph & rvsdg)
   return summaries;
 }
 
+/**
+ * Convert the set of memory nodes in the given \p modRefSet into an ordered list.
+ *
+ * @param modRefSet the \ref ModRefSet in question
+ * @return an ordered vector of the \ref MemoryNodeId present in the set
+ */
 static std::vector<MemoryNodeId>
 getModRefSetNodes(const ModRefSet & modRefSet)
 {
   std::vector<MemoryNodeId> memoryNodeIds;
+  memoryNodeIds.reserve(modRefSet.getModRefNodes().size());
   for (const auto [memoryNode, _] : modRefSet.getModRefNodes())
   {
     memoryNodeIds.push_back(memoryNode);
   }
 
   return memoryNodeIds;
+}
+
+/**
+ * Convert the set of memory nodes in the given \p modRefSet into a pair of ordered lists.
+ * Indexing the lists gives each \ref MemoryNodeId and its corresponding effect.
+ * The effects are represented as booleans: true = memory may be modified, false = read only.
+ *
+ * @param modRefSet the \ref ModRefSet in question
+ * @return a pair of vectors (memoryNodeIds, mayModify)
+ */
+static std::pair<std::vector<MemoryNodeId>, std::vector<bool>>
+getModRefSetNodesAndMayModifyEffect(const ModRefSet & modRefSet)
+{
+  std::vector<MemoryNodeId> memoryNodeIds;
+  std::vector<bool> mayModify;
+  memoryNodeIds.reserve(modRefSet.getModRefNodes().size());
+  mayModify.reserve(modRefSet.getModRefNodes().size());
+  for (const auto [memoryNode, effect] : modRefSet.getModRefNodes())
+  {
+    memoryNodeIds.push_back(memoryNode);
+    mayModify.push_back(mayEffectModify(effect));
+  }
+
+  return std::make_pair(std::move(memoryNodeIds), std::move(mayModify));
 }
 
 MemoryStateEncoder::~MemoryStateEncoder() noexcept = default;
@@ -1063,7 +1094,7 @@ MemoryStateEncoder::encodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
   JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   const auto & modRefSet = modRefSummary_->GetSimpleNodeModRef(callNode);
-  const auto modRefNodes = getModRefSetNodes(modRefSet);
+  auto [modRefNodes, mayModify] = getModRefSetNodesAndMayModifyEffect(modRefSet);
   const auto memStateOperands = stateMap.getOrCreateStates(modRefNodes, *callNode.region());
 
   auto & entryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
@@ -1074,7 +1105,8 @@ MemoryStateEncoder::encodeCall(const rvsdg::SimpleNode & callNode, StateMap & st
 
   auto & exitSplitNode = CallExitMemoryStateSplitOperation::CreateNode(
       CallOperation::GetMemoryStateOutput(callNode),
-      modRefNodes);
+      modRefNodes,
+      std::move(mayModify));
 
   stateMap.updateStates(modRefNodes, exitSplitNode.Outputs());
 }
