@@ -53,7 +53,7 @@ struct NodeCounts
  * @see NodeCounts struct for the types of nodes being counted.
  *
  * @param region the region to traverse
- * @param nodeCount the struct containing the counter values being incremented.
+ * @param nodeCounts the struct containing the counter values being incremented.
  */
 static void
 countNodes(const rvsdg::Region & region, NodeCounts & nodeCounts);
