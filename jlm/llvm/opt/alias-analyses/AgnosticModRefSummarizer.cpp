@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/MemoryStateOperations.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
