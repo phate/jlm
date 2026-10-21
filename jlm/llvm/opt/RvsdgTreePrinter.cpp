@@ -4,21 +4,77 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <algorithm>
-#include <fstream>
 
 namespace jlm::llvm
 {
 
+/**
+ * Struct used for tracking the total counts of selected types of nodes.
+ */
+struct NodeCounts
+{
+  // The total number of regions
+  size_t numRegions = 0;
+
+  // Counts of structural nodes
+  size_t numPhiNodes = 0;
+  size_t numDeltaNodes = 0;
+  size_t numLambdaNodes = 0;
+  size_t numGammaNodes = 0;
+  size_t numThetaNodes = 0;
+
+  // Count of all simple nodes
+  size_t numSimpleNodes = 0;
+
+  // Includes volatile loads
+  size_t numLoadNodes = 0;
+  // Includes volatile stores
+  size_t numStoreNodes = 0;
+  size_t numAllocaNodes = 0;
+  size_t numCallNodes = 0;
+};
+
+/**
+ * Recursively traverses the given \p region to count the number of nodes of selected kinds.
+ * @see NodeCounts struct for the types of nodes being counted.
+ *
+ * @param region the region to traverse
+ * @param nodeCounts the struct containing the counter values being incremented.
+ */
+static void
+countNodes(const rvsdg::Region & region, NodeCounts & nodeCounts);
+
 class RvsdgTreePrinter::Statistics final : public util::Statistics
 {
+  static constexpr auto OutputFileNameLabel_ = "OutputFileName";
+
+  static constexpr auto NumRegions_ = "#Regions";
+  static constexpr auto NumPhiNodes_ = "#PhiNodes";
+  static constexpr auto NumLambdaNodes_ = "#LambdaNodes";
+  static constexpr auto NumDeltaNodes_ = "#DeltaNodes";
+  static constexpr auto NumGammaNodes_ = "#GammaNodes";
+  static constexpr auto NumThetaNodes_ = "#ThetaNodes";
+
+  static constexpr auto NumSimpleNodes_ = "#SimpleNodes";
+  static constexpr auto NumLoadNodes_ = "#LoadNodes";
+  static constexpr auto NumStoreNodes_ = "#StoreNodes";
+  static constexpr auto NumAllocaNodes_ = "#AllocaNodes";
+  static constexpr auto NumCallNodes_ = "#CallNodes";
+
 public:
   ~Statistics() override = default;
 
@@ -30,6 +86,29 @@ public:
   Start() noexcept
   {
     AddTimer(Label::Timer).start();
+  }
+
+  void
+  addOutputFileName(std::string name)
+  {
+    AddMeasurement(OutputFileNameLabel_, std::move(name));
+  }
+
+  void
+  addNodeCounts(const NodeCounts & nodeCounts)
+  {
+    AddMeasurement(NumRegions_, nodeCounts.numRegions);
+    AddMeasurement(NumPhiNodes_, nodeCounts.numPhiNodes);
+    AddMeasurement(NumLambdaNodes_, nodeCounts.numLambdaNodes);
+    AddMeasurement(NumDeltaNodes_, nodeCounts.numDeltaNodes);
+    AddMeasurement(NumGammaNodes_, nodeCounts.numGammaNodes);
+    AddMeasurement(NumThetaNodes_, nodeCounts.numThetaNodes);
+
+    AddMeasurement(NumSimpleNodes_, nodeCounts.numSimpleNodes);
+    AddMeasurement(NumLoadNodes_, nodeCounts.numLoadNodes);
+    AddMeasurement(NumStoreNodes_, nodeCounts.numStoreNodes);
+    AddMeasurement(NumAllocaNodes_, nodeCounts.numAllocaNodes);
+    AddMeasurement(NumCallNodes_, nodeCounts.numCallNodes);
   }
 
   void
@@ -55,13 +134,26 @@ RvsdgTreePrinter::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
-  auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  const auto json = rvsdg::Region::toJson(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
+  // Only create the tree if there are any required annotations
+  if (!Configuration_.RequiredAnnotations().IsEmpty())
+  {
+    auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
+    const auto json = rvsdg::Region::toJson(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
 
-  auto file = statisticsCollector.createOutputFile("rvsdgTree.txt", true);
-  file.open("w");
-  fprintf(file.fd(), "%s\n", json.c_str());
-  file.close();
+    auto file = statisticsCollector.createOutputFile("rvsdgTree.txt", true);
+    file.open("w");
+    fprintf(file.fd(), "%s\n", json.c_str());
+    file.close();
+    statistics->addOutputFileName(file.path().to_str());
+  }
+
+  if (statisticsCollector.IsDemanded(*statistics))
+  {
+    // Create additional statistics containing the node counts of selected node types
+    NodeCounts nodeCounts;
+    countNodes(rvsdgModule.Rvsdg().GetRootRegion(), nodeCounts);
+    statistics->addNodeCounts(nodeCounts);
+  }
 
   statistics->Stop();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -286,6 +378,69 @@ bool
 RvsdgTreePrinter::IsMemoryStateOutput(const rvsdg::Output * output) noexcept
 {
   return rvsdg::is<MemoryStateType>(output->Type());
+}
+
+static void
+countNodes(const rvsdg::Region & region, NodeCounts & nodeCounts)
+{
+  nodeCounts.numRegions++;
+
+  for (const auto & node : region.Nodes())
+  {
+    rvsdg::MatchTypeOrFail(
+        node,
+        [&nodeCounts](const rvsdg::PhiNode & phiNode)
+        {
+          nodeCounts.numPhiNodes++;
+          countNodes(*phiNode.subregion(), nodeCounts);
+        },
+        [&nodeCounts](const rvsdg::DeltaNode & deltaNode)
+        {
+          nodeCounts.numDeltaNodes++;
+          countNodes(*deltaNode.subregion(), nodeCounts);
+        },
+        [&nodeCounts](const rvsdg::LambdaNode & lambdaNode)
+        {
+          nodeCounts.numLambdaNodes++;
+          countNodes(*lambdaNode.subregion(), nodeCounts);
+        },
+        [&nodeCounts](const rvsdg::GammaNode & gammaNode)
+        {
+          nodeCounts.numGammaNodes++;
+          for (auto & subregion : gammaNode.Subregions())
+          {
+            countNodes(subregion, nodeCounts);
+          }
+        },
+        [&nodeCounts](const rvsdg::ThetaNode & thetaNode)
+        {
+          nodeCounts.numThetaNodes++;
+          countNodes(*thetaNode.subregion(), nodeCounts);
+        },
+        [&nodeCounts](const rvsdg::SimpleNode & simpleNode)
+        {
+          nodeCounts.numSimpleNodes++;
+
+          rvsdg::MatchType(
+              simpleNode.GetOperation(),
+              [&nodeCounts]([[maybe_unused]] const llvm::LoadOperation & _)
+              {
+                nodeCounts.numLoadNodes++;
+              },
+              [&nodeCounts]([[maybe_unused]] const llvm::StoreOperation & _)
+              {
+                nodeCounts.numStoreNodes++;
+              },
+              [&nodeCounts]([[maybe_unused]] const llvm::AllocaOperation & _)
+              {
+                nodeCounts.numAllocaNodes++;
+              },
+              [&nodeCounts]([[maybe_unused]] const llvm::CallOperation & _)
+              {
+                nodeCounts.numCallNodes++;
+              });
+        });
+  }
 }
 
 }
