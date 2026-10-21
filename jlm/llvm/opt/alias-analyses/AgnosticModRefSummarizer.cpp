@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/MemoryStateOperations.hpp"
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -285,24 +286,30 @@ AgnosticModRefSet
 AgnosticModRefSummarizer::GetAllMemoryNodes(const PointsToGraph & pointsToGraph)
 {
   AgnosticModRefSet modRefSet;
+
+  auto addMemoryNode = [&pointsToGraph, &modRefSet](MemoryNodeId memoryNode)
+  {
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && pointsToGraph.isNodeConstant(memoryNode))
+      return;
+    modRefSet.addMemoryNode(memoryNode, ModRefEffect::ModRef);
+  };
+
   for (const auto allocaNode : pointsToGraph.allocaNodes())
-    modRefSet.addMemoryNode(allocaNode, ModRefEffect::ModRef);
+    addMemoryNode(allocaNode);
 
   for (const auto deltaNode : pointsToGraph.deltaNodes())
-    modRefSet.addMemoryNode(deltaNode, ModRefEffect::ModRef);
+    addMemoryNode(deltaNode);
 
   for (const auto lambdaNode : pointsToGraph.lambdaNodes())
-    modRefSet.addMemoryNode(lambdaNode, ModRefEffect::ModRef);
+    addMemoryNode(lambdaNode);
 
   for (const auto mallocNode : pointsToGraph.mallocNodes())
-    modRefSet.addMemoryNode(mallocNode, ModRefEffect::ModRef);
+    addMemoryNode(mallocNode);
 
   for (const auto importNode : pointsToGraph.importNodes())
-    modRefSet.addMemoryNode(importNode, ModRefEffect::ModRef);
+    addMemoryNode(importNode);
 
-  modRefSet.addMemoryNode(pointsToGraph.getExternalMemoryNode(), ModRefEffect::ModRef);
-
-  JLM_ASSERT(modRefSet.getModRefNodes().size() == pointsToGraph.numMemoryNodes());
+  addMemoryNode(pointsToGraph.getExternalMemoryNode());
 
   return modRefSet;
 }
