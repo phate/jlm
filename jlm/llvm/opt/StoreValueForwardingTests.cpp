@@ -2269,7 +2269,7 @@ TEST(StoreValueForwardingTests, TraceThroughCall)
    *   load1, aMem5 = load a, aMem4
    * }[load0, load1, io2, mem2]
    *
-   * After running StoreValueForwarding, the first load should remain untouced,
+   * After running StoreValueForwarding, the first load should remain untouched,
    * while the second load should be removed, and redirected to the first load
    */
 
@@ -2347,7 +2347,7 @@ TEST(StoreValueForwardingTests, TraceThroughCall)
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert
-  // The first load should still be there, as it can not be elided
+  // The first load should still be there, as it cannot be elided
   auto results = x->GetFunctionResults();
   auto firstResultOrigin = TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*results[0]->origin());
   ASSERT_EQ(firstResultOrigin, &load0);
