@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/util/common.hpp>
 
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -142,6 +143,19 @@ public:
     return index;
   }
 
+  /**
+   * Gets a ModRefSet that is designated to represent operations that do not affect memory.
+   * @return the index of the empty ModRefSet
+   */
+  ModRefSetIndex
+  getEmptyModRefSet()
+  {
+    if (!emptyModRefSet_.has_value())
+      emptyModRefSet_ = CreateModRefSet();
+
+    return *emptyModRefSet_;
+  }
+
   [[nodiscard]] AgnosticModRefSet &
   GetModRefSet(ModRefSetIndex modRefSetIndex)
   {
@@ -229,6 +243,12 @@ private:
    * Some nodes may share ModRefSet, e.g., all structural nodes and calls in a function.
    */
   std::unordered_map<const rvsdg::Node *, ModRefSetIndex> nodeModRefSets_;
+
+  /**
+   * This ModRefSet is created once and re-used whenever a node needs an empty ModRefSet.
+   * @see getEmptyModRefSet()
+   */
+  std::optional<ModRefSetIndex> emptyModRefSet_;
 };
 
 /**
@@ -556,8 +576,19 @@ AgnosticModRefSummarizer::annotateSimpleNode(
       },
       [&](const CallOperation &)
       {
-        // Calls use the same ModRefSet as all structural nodes in the the function
-        ModRefSummary_->AttachNodeToModRefSet(node, functionModRefSet);
+        auto & memStateOutput = CallOperation::GetMemoryStateOutput(node);
+        if (memStateOutput.IsDead())
+        {
+          // If a previous pass, like InvariantValueRedirection, found out that this call does
+          // not read from or write to memory, it can be detached from the memory state chain.
+          // In that case, prevent memory state encoding from re-attaching it.
+          ModRefSummary_->AttachNodeToModRefSet(node, ModRefSummary_->getEmptyModRefSet());
+        }
+        else
+        {
+          // Calls use the same ModRefSet as all structural nodes in the the function
+          ModRefSummary_->AttachNodeToModRefSet(node, functionModRefSet);
+        }
       },
       [&](const MemoryStateOperation &)
       {
