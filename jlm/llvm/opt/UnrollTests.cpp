@@ -18,7 +18,7 @@
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static size_t
-nthetas(jlm::rvsdg::Region * region)
+numThetas(jlm::rvsdg::Region * region)
 {
   size_t n = 0;
   for (const auto & node : region->Nodes())
@@ -31,7 +31,7 @@ nthetas(jlm::rvsdg::Region * region)
 }
 
 static jlm::rvsdg::ThetaNode *
-create_theta(
+createTheta(
     const jlm::llvm::IntegerBinaryOperation & cop,
     const jlm::llvm::IntegerBinaryOperation & aop,
     jlm::rvsdg::Output * init,
@@ -108,13 +108,13 @@ TEST(LoopUnrollingTests, test_unrollinfo)
   {
     jlm::rvsdg::Graph graph;
     auto x = &jlm::rvsdg::GraphImport::Create(graph, bt32, "x");
-    auto theta = create_theta(slt, add, x, x, x);
+    auto theta = createTheta(slt, add, x, x, x);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
 
     EXPECT_NE(ui, nullptr);
-    EXPECT_TRUE(ui->is_additive());
-    EXPECT_FALSE(ui->is_subtractive());
-    EXPECT_FALSE(ui->is_known());
+    EXPECT_TRUE(ui->isAdditive());
+    EXPECT_FALSE(ui->isSubtractive());
+    EXPECT_FALSE(ui->isKnown());
     EXPECT_FALSE(ui->niterations());
     EXPECT_EQ(ui->theta(), theta);
     EXPECT_EQ(theta->MapPreLoopVar(*ui->idv()).input->origin(), x);
@@ -142,31 +142,31 @@ TEST(LoopUnrollingTests, test_unrollinfo)
     auto end100 =
         jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
-    auto theta = create_theta(ult, add, init0, step1, end100);
+    auto theta = createTheta(ult, add, init0, step1, end100);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && *ui->niterations() == 100);
 
-    theta = create_theta(ule, add, init0, step1, end100);
+    theta = createTheta(ule, add, init0, step1, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && *ui->niterations() == 101);
 
-    theta = create_theta(ugt, sub, end100, stepm1, init0);
+    theta = createTheta(ugt, sub, end100, stepm1, init0);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && *ui->niterations() == 100);
 
-    theta = create_theta(sge, sub, end100, stepm1, init0);
+    theta = createTheta(sge, sub, end100, stepm1, init0);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && *ui->niterations() == 101);
 
-    theta = create_theta(ult, add, init0, step0, end100);
+    theta = createTheta(ult, add, init0, step0, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && !ui->niterations());
 
-    theta = create_theta(eq, add, initm1, step1, end100);
+    theta = createTheta(eq, add, initm1, step1, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && *ui->niterations() == 101);
 
-    theta = create_theta(eq, add, init1, step2, end100);
+    theta = createTheta(eq, add, init1, step2, end100);
     ui = jlm::llvm::LoopUnrollInfo::create(theta);
     EXPECT_TRUE(ui && !ui->niterations());
   }
@@ -188,7 +188,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
     auto step = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
     auto end = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 4).output(0);
 
-    auto theta = create_theta(ult, add, init, step, end);
+    auto theta = createTheta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
     jlm::llvm::unroll(theta, 4);
     //		jlm::rvsdg::view(graph, stdout);
@@ -196,7 +196,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       The unroll factor is greater than or equal the number of iterations.
       The loop should be fully unrolled and the theta removed.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 0u);
   }
 
   {
@@ -206,7 +206,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
     auto step = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
     auto end = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
-    auto theta = create_theta(ult, add, init, step, end);
+    auto theta = createTheta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
     jlm::llvm::unroll(theta, 2);
     //		jlm::rvsdg::view(graph, stdout);
@@ -214,7 +214,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       The unroll factor is a multiple of the number of iterations.
       We should only find one (unrolled) theta.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -224,7 +224,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
     auto step = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
     auto end = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
-    auto theta = create_theta(ult, add, init, step, end);
+    auto theta = createTheta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
     jlm::llvm::unroll(theta, 3);
     //		jlm::rvsdg::view(graph, stdout);
@@ -233,7 +233,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       and we have one remaining iteration. We should find only the
       unrolled theta and the body of the old theta as epilogue.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -243,7 +243,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
     auto step = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, -1).output(0);
     auto end = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
 
-    auto theta = create_theta(sgt, sub, init, step, end);
+    auto theta = createTheta(sgt, sub, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
     jlm::llvm::unroll(theta, 6);
     //		jlm::rvsdg::view(graph, stdout);
@@ -252,7 +252,7 @@ TEST(LoopUnrollingTests, test_known_boundaries)
       and we have four remaining iterations. We should find two thetas:
       one unrolled theta and one theta for the residual iterations.
     */
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 2u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 2u);
   }
 }
 
@@ -302,7 +302,7 @@ TEST(LoopUnrollingTests, test_unknown_boundaries)
 }
 
 static std::vector<jlm::rvsdg::ThetaNode *>
-find_thetas(jlm::rvsdg::Region * region)
+findThetas(jlm::rvsdg::Region * region)
 {
   std::vector<jlm::rvsdg::ThetaNode *> thetas;
   for (auto & node : jlm::rvsdg::TopDownTraverser(region))
@@ -398,7 +398,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
   /*
     The outher theta should contain two inner thetas
   */
-  EXPECT_EQ(nthetas(otheta->subregion()), 2u);
+  EXPECT_EQ(numThetas(otheta->subregion()), 2u);
   /*
     The outer theta should not be unrolled and since the
     original graph contains 7 nodes and the unroll factor
@@ -425,7 +425,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
     unroll algorithm would hoist code from the inner
     thetas.
   */
-  auto thetas = find_thetas(inner_theta->subregion());
+  auto thetas = findThetas(inner_theta->subregion());
   EXPECT_EQ(thetas.size(), 1u);
   EXPECT_GE(thetas[0]->subregion()->numNodes(), 7u);
   /*
@@ -436,7 +436,7 @@ TEST(LoopUnrollingTests, test_nested_theta)
     updated unroll algorithm would hoist code from the
     innner thetas.
   */
-  thetas = find_thetas(otheta->subregion());
+  thetas = findThetas(otheta->subregion());
   EXPECT_EQ(thetas.size(), 2u);
   EXPECT_GE(thetas[1]->subregion()->numNodes(), 7u);
   //	jlm::rvsdg::view(graph, stdout);
@@ -446,9 +446,9 @@ TEST(LoopUnrollingTests, test_nested_theta)
     After unrolling the outher theta four times it should
     now contain 8 thetas.
   */
-  thetas = find_thetas(&graph.GetRootRegion());
+  thetas = findThetas(&graph.GetRootRegion());
   EXPECT_EQ(thetas.size(), 3u);
-  EXPECT_EQ(nthetas(thetas[0]->subregion()), 8u);
+  EXPECT_EQ(numThetas(thetas[0]->subregion()), 8u);
 }
 
 /**
@@ -728,7 +728,7 @@ captureBoundExpectation(jlm::rvsdg::Output & bound)
  *
  * The same bound legitimately appears as a constant in the enclosing region and as a region
  * argument inside the loop, so both forms are accepted. What must not happen is a *different*
- * constant, i.e. the folded `end - factor*step` value that the transformation used to synthesise.
+ * constant, i.e. the folded `end - factor*step` value of the closed-form guard.
  */
 static bool
 comparesAgainstLoopBound(jlm::rvsdg::SimpleNode & comparison, const BoundExpectation & expected)
@@ -829,9 +829,9 @@ TEST(LoopUnrollingTests, test_integer_loop_unrollinfo)
     auto ui = LoopUnrollInfo::create(theta);
 
     ASSERT_NE(ui, nullptr);
-    EXPECT_TRUE(ui->is_additive());
-    EXPECT_FALSE(ui->is_subtractive());
-    EXPECT_FALSE(ui->is_known());
+    EXPECT_TRUE(ui->isAdditive());
+    EXPECT_FALSE(ui->isSubtractive());
+    EXPECT_FALSE(ui->isKnown());
     EXPECT_FALSE(ui->niterations());
     EXPECT_EQ(ui->nbits(), 32u);
     EXPECT_EQ(ui->theta(), theta);
@@ -847,7 +847,7 @@ TEST(LoopUnrollingTests, test_integer_loop_unrollinfo)
     auto ui = LoopUnrollInfo::create(theta);
 
     ASSERT_NE(ui, nullptr);
-    EXPECT_TRUE(ui->is_known());
+    EXPECT_TRUE(ui->isKnown());
     ASSERT_NE(ui->niterations(), nullptr);
     EXPECT_EQ(*ui->niterations(), 100u);
   }
@@ -862,8 +862,8 @@ TEST(LoopUnrollingTests, test_integer_loop_unrollinfo)
     auto ui = LoopUnrollInfo::create(theta);
 
     ASSERT_NE(ui, nullptr);
-    EXPECT_TRUE(ui->is_subtractive());
-    EXPECT_FALSE(ui->is_additive());
+    EXPECT_TRUE(ui->isSubtractive());
+    EXPECT_FALSE(ui->isAdditive());
   }
 }
 
@@ -885,7 +885,7 @@ TEST(LoopUnrollingTests, test_integer_loop_known_boundaries)
       fully unrolled and the theta removed.
     */
     unroll(theta, 4);
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 0u);
   }
 
   {
@@ -897,7 +897,7 @@ TEST(LoopUnrollingTests, test_integer_loop_known_boundaries)
     auto theta = createIntegerTheta(32, init, step, end);
 
     unroll(theta, 2);
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u);
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 1u);
   }
 
   {
@@ -913,7 +913,7 @@ TEST(LoopUnrollingTests, test_integer_loop_known_boundaries)
     auto theta = createIntegerTheta(32, init, step, end);
 
     unroll(theta, 2);
-    EXPECT_LE(nthetas(&graph.GetRootRegion()), 2u);
+    EXPECT_LE(numThetas(&graph.GetRootRegion()), 2u);
   }
 }
 
@@ -962,7 +962,7 @@ TEST(LoopUnrollingTests, test_integer_loop_unknown_boundary)
   */
   auto outerGamma = TryGetOwnerNode<GammaNode>(*loopResult.origin());
   ASSERT_NE(outerGamma, nullptr);
-  EXPECT_EQ(nthetas(outerGamma->subregion(1)), 1u);
+  EXPECT_EQ(numThetas(outerGamma->subregion(1)), 1u);
 
   /*
     The export points at the residual gamma, whose theta correctly keeps the loop's original
@@ -976,7 +976,7 @@ TEST(LoopUnrollingTests, test_integer_loop_unknown_boundary)
   }
   ASSERT_NE(unrolledGamma, nullptr);
 
-  auto thetas = find_thetas(unrolledGamma->subregion(1));
+  auto thetas = findThetas(unrolledGamma->subregion(1));
   ASSERT_EQ(thetas.size(), 1u);
 
   /*
@@ -1045,7 +1045,7 @@ TEST(LoopUnrollingTests, test_integer_loop_zero_iterations_is_rejected)
 
   auto ui = LoopUnrollInfo::create(theta);
   ASSERT_NE(ui, nullptr);
-  EXPECT_TRUE(ui->is_known());
+  EXPECT_TRUE(ui->isKnown());
   ASSERT_NE(ui->niterations(), nullptr);
   EXPECT_EQ(ui->niterations()->to_uint(), 0u);
 
@@ -1056,7 +1056,7 @@ TEST(LoopUnrollingTests, test_integer_loop_zero_iterations_is_rejected)
   */
   unroll(theta, 4);
 
-  EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u)
+  EXPECT_EQ(numThetas(&graph.GetRootRegion()), 1u)
       << "A theta with zero reported iterations must be left alone";
   EXPECT_EQ(nnodes(&graph.GetRootRegion()), nodesBefore)
       << "Unrolling a zero-iteration theta must not copy the loop body";
@@ -1084,7 +1084,7 @@ TEST(LoopUnrollingTests, test_integer_loop_zero_iterations_is_rejected_any_facto
 
     unroll(theta, factor);
 
-    EXPECT_EQ(nthetas(&graph.GetRootRegion()), 1u) << "factor=" << factor;
+    EXPECT_EQ(numThetas(&graph.GetRootRegion()), 1u) << "factor=" << factor;
     EXPECT_EQ(nnodes(&graph.GetRootRegion()), nodesBefore) << "factor=" << factor;
   }
 }
@@ -1114,7 +1114,7 @@ TEST(LoopUnrollingTests, test_integer_loop_single_iteration)
 
   unroll(theta, 4);
 
-  EXPECT_EQ(nthetas(&graph.GetRootRegion()), 0u);
+  EXPECT_EQ(numThetas(&graph.GetRootRegion()), 0u);
 
   /*
     The single iteration adds the step to the initial value, so the exported value is that sum
@@ -1275,21 +1275,16 @@ guardCondition(jlm::rvsdg::GammaNode & gamma)
 /**
  * A theta is a do-while construct: its body always executes at least once, and the predicate is
  * evaluated afterwards. The residual loop therefore cannot be guarded by the loop's original
- * predicate \code cmp(i_0, end) \endcode, because that comparison is never evaluated by the
- * original loop when the loop is entered.
+ * predicate \code cmp(i_0, end) \endcode alone, because that comparison never decides the first
+ * body execution: the body runs even when the predicate already fails at the entry value.
  *
- * This is the miscompile that broke `GCC-C-execute-loop-4b` in the region-aware llvm-test-suite
- * job: \code int j = 1; long i = 0x60000000L; do { j <<= 1; i += 0x10000000L; } while (i <
- * -0x60000000L); return j;   // must be 2, since exactly one iteration runs \endcode The first
- * check fails, so no batch is possible, yet the original loop still runs one iteration. With the
- * residual loop guarded by `cmp(i_0, end)` it was skipped entirely and `j` stayed 1.
- *
- * The invariant that must hold is that the residual guard is the negation of the batch guard, so
- * the residual loop runs exactly when the batch is declined and the body always runs at least once.
- * The guard is not folded to a constant here because it reads the batch gamma's exit values, which
- * is a phi over both branches and therefore not a constant.
+ * The residual guard must be \code !batchGuard || cmp(idv, end) \endcode: the residual loop runs
+ * when the first batch was declined, in which case it reproduces the entire loop from the entry
+ * value, or when the loop predicate still holds at the value the unrolled loop exited at. The
+ * declined-batch decision must be taken from the first batch guard rather than from the induction
+ * variable's value, because no comparison against that value can identify the declined case.
  */
-TEST(LoopUnrollingTests, test_integer_loop_residual_guard_is_negated_batch_guard)
+TEST(LoopUnrollingTests, test_integer_loop_residual_guard_is_negated_batch_guard_or_loop_comparison)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::llvm;
@@ -1324,58 +1319,162 @@ TEST(LoopUnrollingTests, test_integer_loop_residual_guard_is_negated_batch_guard
   ASSERT_NE(batchGamma, nullptr);
   ASSERT_NE(residualGamma, nullptr);
 
+  auto residualCondition = guardCondition(*residualGamma);
+  ASSERT_NE(residualCondition, nullptr);
+
+  /*
+    The residual guard must be `!batchGuard || cmp(idv, end)`.
+  */
+  auto orNode = TryGetOwnerNode<SimpleNode>(*residualCondition);
+  ASSERT_NE(orNode, nullptr) << "The residual guard must be an or";
+  ASSERT_TRUE(is<IntegerOrOperation>(orNode))
+      << "The residual guard must be `!batchGuard || cmp(idv, end)`";
+
+  /*
+    With `init = 0` and `end = 1000` the first batch guard folds to 1, so its negation must fold
+    to 0. The comparison operand reads the induction variable from the batch gamma's exit value,
+    which is a phi over both branches and therefore does not fold.
+  */
+  const std::unordered_map<std::string, uint64_t> environment = { { "init", 0 }, { "end", 1000 } };
+  const size_t numBits = 32;
+
+  bool hasNegatedBatchGuard = false;
+  bool hasLoopComparison = false;
+  for (const auto & input : orNode->Inputs())
+  {
+    auto folded = evaluateConstantDataflow(input.origin(), environment, numBits);
+    if (folded.has_value())
+    {
+      EXPECT_EQ(folded->to_uint(), 0u)
+          << "The foldable operand of the residual guard is the negated batch guard, which is "
+             "false while the batch is taken";
+      hasNegatedBatchGuard = true;
+      continue;
+    }
+
+    auto operand = TryGetOwnerNode<SimpleNode>(*input.origin());
+    ASSERT_NE(operand, nullptr);
+    EXPECT_TRUE(is<IntegerUltOperation>(operand))
+        << "The value-dependent operand of the residual guard must be the loop's own comparison";
+    hasLoopComparison = true;
+  }
+
+  EXPECT_TRUE(hasNegatedBatchGuard)
+      << "The residual guard must run when the first batch is declined, because a theta executes "
+         "its body at least once";
+  EXPECT_TRUE(hasLoopComparison)
+      << "The residual guard must run while the loop predicate still holds, which covers the state "
+         "after the unrolled loop exits";
+}
+
+/**
+ * The residual loop must not run a loop that already finished, even when the induction variable
+ * wraps around to its initial value.
+ *
+ * In 8-bit wrapping arithmetic, \code do { i += 128; } while (i < 100) \endcode started at 200 runs
+ * exactly two iterations: 200 -> 72 -> 200. The first batch of two copies is admitted, since the
+ * predicate holds at 72, and it leaves the induction variable at 200, where the predicate fails.
+ * The residual loop must therefore be skipped. A residual guard that detects the declined first
+ * batch by comparing the induction variable against its initial value cannot do this: the wrapped
+ * value equals the initial value, so it would re-enter the residual loop and run the entire loop a
+ * second time. The guard must instead reuse the first batch guard's decision, which is false here.
+ */
+TEST(LoopUnrollingTests, test_integer_loop_residual_guard_handles_wraparound_to_initial_value)
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::llvm;
+
+  const size_t factor = 2;
+  const size_t numBits = 8;
+
+  LlvmRvsdgModule module(jlm::util::FilePath(""), "", "");
+  auto theta = createRuntimeBoundTheta(module.Rvsdg(), numBits);
+  GraphExport::Create(*theta->GetLoopVars()[0].output, "result");
+
+  LoopUnrolling loopUnrolling(factor);
+  loopUnrolling.Run(module, statisticsCollector);
+
+  const std::unordered_map<std::string, uint64_t> environment = { { "init", 200 },
+                                                                  { "end", 100 },
+                                                                  { "step", 128 } };
+
+  auto batchGamma = findBatchGamma(module.Rvsdg());
+  auto residualGamma = findResidualGamma(module.Rvsdg());
+  ASSERT_NE(batchGamma, nullptr);
+  ASSERT_NE(residualGamma, nullptr);
+
+  /*
+    The batch is admitted: the predicate holds at 72, the value the first copy leaves behind.
+  */
+  EXPECT_TRUE(evaluateUnrolledGuard(module.Rvsdg(), environment, numBits));
+
   auto batchCondition = guardCondition(*batchGamma);
   auto residualCondition = guardCondition(*residualGamma);
   ASSERT_NE(batchCondition, nullptr);
   ASSERT_NE(residualCondition, nullptr);
 
   /*
-    The residual guard must be `cmp(v, end) || (v == init)`: the loop is not finished while the
-    predicate holds, and the entry value must run one iteration unconditionally because a theta is a
-    do-while construct.
+    The residual guard must be `!batchGuard || cmp(idv, end)`.
   */
   auto orNode = TryGetOwnerNode<SimpleNode>(*residualCondition);
   ASSERT_NE(orNode, nullptr) << "The residual guard must be an or";
   ASSERT_TRUE(is<IntegerOrOperation>(orNode))
-      << "The residual guard must be `cmp(v) || (v == init)`";
+      << "The residual guard must be `!batchGuard || cmp(idv, end)`";
 
-  bool hasComparison = false;
-  bool hasEntryEquality = false;
+  bool hasNegatedBatchGuard = false;
+  bool hasLoopComparison = false;
   for (const auto & input : orNode->Inputs())
   {
-    auto operand = TryGetOwnerNode<SimpleNode>(*input.origin());
-    if (operand == nullptr)
+    auto folded = evaluateConstantDataflow(input.origin(), environment, numBits);
+    if (folded.has_value())
+    {
+      EXPECT_EQ(folded->to_uint(), 0u)
+          << "The foldable operand of the residual guard is the negated batch guard, which is "
+             "false while the batch is taken";
+      hasNegatedBatchGuard = true;
       continue;
+    }
 
-    if (is<IntegerUltOperation>(operand))
-      hasComparison = true;
+    auto operand = TryGetOwnerNode<SimpleNode>(*input.origin());
+    ASSERT_NE(operand, nullptr);
+    EXPECT_TRUE(is<IntegerUltOperation>(operand))
+        << "The value-dependent operand of the residual guard must be the loop's own comparison";
 
     /*
-      The entry check compares the induction variable against the loop's initial value.
+      The comparison must be evaluated at the value the batch left behind, i.e. the induction
+      variable must come from the batch gamma's exit value rather than from the loop's entry value.
     */
-    if (is<IntegerEqOperation>(operand))
-      hasEntryEquality = true;
+    for (const auto & comparisonInput : operand->Inputs())
+    {
+      auto origin = comparisonInput.origin();
+      if (dynamic_cast<GraphImport *>(origin) != nullptr)
+        continue;
+
+      EXPECT_EQ(TryGetOwnerNode<GammaNode>(*origin), batchGamma)
+          << "The residual comparison must read the induction variable from the value the batch "
+             "left behind";
+    }
+
+    hasLoopComparison = true;
   }
 
-  EXPECT_TRUE(hasComparison)
+  EXPECT_TRUE(hasNegatedBatchGuard)
+      << "The residual guard must reuse the batch guard's decision, which is the only reliable "
+         "record of whether a batch ran";
+  EXPECT_TRUE(hasLoopComparison)
       << "The residual guard must run while the loop predicate still holds, which covers the state "
          "after the unrolled loop exits";
-  EXPECT_TRUE(hasEntryEquality)
-      << "The residual guard must run at the entry value even when the predicate already fails, "
-         "because a theta executes its body at least once";
 }
 
 /**
  * The guard of an unrolled loop must only admit a batch whose copies are all legal for the
  * original loop predicate.
  *
- * The pass builds the guard as `cmp(idv, end - factor*step)`. For an unsigned comparison that
- * subtraction underflows whenever fewer than `factor*step` values remain, which turns the bound
- * into a huge value and the guard into an unconditional "enter the unrolled body". The body then
- * executes iterations the original loop was not supposed to run. That is what made the
- * region-aware llvm-test-suite job fail: `nsieve-bits`, `fannkuch`, `chomp` and `lowercase` all
- * segfault, and bounded loops became effectively unbounded, which is why the job took four hours
- * instead of ten minutes.
+ * A guard built from a closed form such as `cmp(idv, end - factor*step)` is unsound: for an
+ * unsigned comparison the subtraction underflows whenever fewer than `factor*step` values remain,
+ * which turns the bound into a huge value and the guard into an unconditional "enter the unrolled
+ * body". The body then executes iterations the original loop was not supposed to run, and bounded
+ * loops become effectively unbounded.
  *
  * This test states the property the guard has to satisfy rather than one particular formula:
  * whenever the guard is taken, all `factor` copies must be legal. Being more conservative than

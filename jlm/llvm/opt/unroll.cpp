@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2017 Nico Reißmann <nico.reißmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -52,7 +52,7 @@ public:
  * \code do { } while (idv < end) \endcode.
  */
 static bool
-is_eqcmp(const rvsdg::Operation & op)
+isInclusiveComparison(const rvsdg::Operation & op)
 {
   return dynamic_cast<const IntegerUgeOperation *>(&op)
       || dynamic_cast<const IntegerSgeOperation *>(&op)
@@ -65,7 +65,7 @@ is_eqcmp(const rvsdg::Operation & op)
  * between iterations.
  */
 static bool
-is_theta_invariant(const jlm::rvsdg::Output * output)
+isThetaInvariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
@@ -86,26 +86,26 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
  * defined inside the loop body are copied out and turned into a loop variable.
  */
 static rvsdg::Output *
-push_from_theta(jlm::rvsdg::Output * output)
+pushFromTheta(jlm::rvsdg::Output * output)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (argument)
     return argument;
 
-  auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<IntegerConstantOperation>(tmp));
-  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
-  auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
+  auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
+  JLM_ASSERT(jlm::rvsdg::is<IntegerConstantOperation>(node));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
+  auto theta = static_cast<rvsdg::ThetaNode *>(node->region()->node());
 
-  auto node = tmp->copy(theta->region(), {});
-  auto lv = theta->AddLoopVar(node->output(0));
-  output->divert_users(lv.pre);
+  auto constant = node->copy(theta->region(), {});
+  auto loopVar = theta->AddLoopVar(constant->output(0));
+  output->divert_users(loopVar.pre);
 
-  return lv.pre;
+  return loopVar.pre;
 }
 
 static bool
-is_idv(jlm::rvsdg::Input * input)
+isInductionVariable(jlm::rvsdg::Input * input)
 {
   using namespace jlm::rvsdg;
 
@@ -114,8 +114,8 @@ is_idv(jlm::rvsdg::Input * input)
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))
   {
-    auto loopvar = theta->MapPreLoopVar(*input->origin());
-    return rvsdg::TryGetOwnerNode<Node>(*loopvar.post->origin()) == node;
+    auto loopVar = theta->MapPreLoopVar(*input->origin());
+    return rvsdg::TryGetOwnerNode<Node>(*loopVar.post->origin()) == node;
   }
 
   return false;
@@ -124,14 +124,14 @@ is_idv(jlm::rvsdg::Input * input)
 std::unique_ptr<jlm::llvm::IntegerValueRepresentation>
 LoopUnrollInfo::niterations() const noexcept
 {
-  if (!is_known() || step_value() == 0)
+  if (!isKnown() || stepValue()->isZero())
     return nullptr;
 
-  auto start = is_additive() ? *init_value() : *end_value();
-  auto step = is_additive() ? *step_value() : step_value()->neg();
-  auto end = is_additive() ? *end_value() : *init_value();
+  auto start = isAdditive() ? *initValue() : *endValue();
+  auto step = isAdditive() ? *stepValue() : stepValue()->neg();
+  auto end = isAdditive() ? *endValue() : *initValue();
 
-  if (is_eqcmp(cmpnode()->GetOperation()))
+  if (isInclusiveComparison(cmpNode()->GetOperation()))
     end = end.add({ nbits(), 1 });
 
   auto range = end.sub(start);
@@ -153,43 +153,45 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
   if (!is<MatchOperation>(matchNode))
     return nullptr;
 
-  auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<IntegerBinaryOperation>(cmpnode))
+  auto cmpNode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
+  if (!is<IntegerBinaryOperation>(cmpNode))
     return nullptr;
 
-  auto o0 = cmpnode->input(0)->origin();
-  auto o1 = cmpnode->input(1)->origin();
-  auto end = is_theta_invariant(o0) ? o0 : (is_theta_invariant(o1) ? o1 : nullptr);
+  auto operand0 = cmpNode->input(0)->origin();
+  auto operand1 = cmpNode->input(1)->origin();
+  auto end =
+      isThetaInvariant(operand0) ? operand0 : (isThetaInvariant(operand1) ? operand1 : nullptr);
   if (!end)
     return nullptr;
 
-  auto armnode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == o0 ? o1 : o0));
-  if (!is<IntegerAddOperation>(armnode) && !is<IntegerSubOperation>(armnode))
+  auto armNode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == operand0 ? operand1 : operand0));
+  if (!is<IntegerAddOperation>(armNode) && !is<IntegerSubOperation>(armNode))
     return nullptr;
-  if (armnode->ninputs() != 2)
-    return nullptr;
-
-  auto i0 = armnode->input(0);
-  auto i1 = armnode->input(1);
-  if (!is_idv(i0) && !is_idv(i1))
+  if (armNode->ninputs() != 2)
     return nullptr;
 
-  auto idv = static_cast<rvsdg::RegionArgument *>(is_idv(i0) ? i0->origin() : i1->origin());
-
-  auto step = idv == i0->origin() ? i1->origin() : i0->origin();
-  if (!is_theta_invariant(step))
+  auto input0 = armNode->input(0);
+  auto input1 = armNode->input(1);
+  if (!isInductionVariable(input0) && !isInductionVariable(input1))
     return nullptr;
 
-  auto endarg = push_from_theta(end);
-  auto steparg = push_from_theta(step);
+  auto idv = static_cast<rvsdg::RegionArgument *>(
+      isInductionVariable(input0) ? input0->origin() : input1->origin());
+
+  auto step = idv == input0->origin() ? input1->origin() : input0->origin();
+  if (!isThetaInvariant(step))
+    return nullptr;
+
+  auto endArgument = pushFromTheta(end);
+  auto stepArgument = pushFromTheta(step);
   return std::unique_ptr<LoopUnrollInfo>(
-      new LoopUnrollInfo(cmpnode, armnode, idv, steparg, endarg));
+      new LoopUnrollInfo(cmpNode, armNode, idv, stepArgument, endArgument));
 }
 
 /* loop unrolling */
 
 static void
-unroll_body(
+unrollBody(
     const rvsdg::ThetaNode * theta,
     rvsdg::Region * target,
     rvsdg::SubstitutionMap & smap,
@@ -199,7 +201,6 @@ unroll_body(
     `factor` is the number of body copies, so it must be at least one: the loop bound `factor - 1`
     is evaluated on an unsigned value and would wrap around for zero.
   */
-  JLM_ASSERT(factor != 0);
   if (factor == 0)
     return;
 
@@ -207,8 +208,8 @@ unroll_body(
   {
     theta->subregion()->copy(target, smap);
     rvsdg::SubstitutionMap tmap;
-    for (const auto & olv : theta->GetLoopVars())
-      tmap.insert(olv.pre, &smap.lookup(*olv.post->origin()));
+    for (const auto & oldLoopVar : theta->GetLoopVars())
+      tmap.insert(oldLoopVar.pre, &smap.lookup(*oldLoopVar.post->origin()));
     smap = tmap;
   }
   theta->subregion()->copy(target, smap);
@@ -220,46 +221,46 @@ unroll_body(
   The theta itself is not deleted.
 */
 static void
-copy_body_and_unroll(const rvsdg::ThetaNode * theta, size_t factor)
+copyBodyAndUnroll(const rvsdg::ThetaNode * theta, size_t factor)
 {
   rvsdg::SubstitutionMap smap;
-  for (const auto & olv : theta->GetLoopVars())
-    smap.insert(olv.pre, olv.input->origin());
+  for (const auto & oldLoopVar : theta->GetLoopVars())
+    smap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
 
-  unroll_body(theta, theta->region(), smap, factor);
+  unrollBody(theta, theta->region(), smap, factor);
 
-  for (const auto & olv : theta->GetLoopVars())
-    olv.output->divert_users(&smap.lookup(*olv.post->origin()));
+  for (const auto & oldLoopVar : theta->GetLoopVars())
+    oldLoopVar.output->divert_users(&smap.lookup(*oldLoopVar.post->origin()));
 }
 
 /*
   Unroll theta node by given factor.
 */
 static void
-unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+unrollTheta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
-  auto unrolled_theta = rvsdg::ThetaNode::create(theta->region());
+  auto unrolledTheta = rvsdg::ThetaNode::create(theta->region());
 
   auto oldLoopVars = theta->GetLoopVars();
-  for (const auto & olv : oldLoopVars)
+  for (const auto & oldLoopVar : oldLoopVars)
   {
-    auto nlv = unrolled_theta->AddLoopVar(olv.input->origin());
-    smap.insert(olv.pre, nlv.pre);
+    auto newLoopVar = unrolledTheta->AddLoopVar(oldLoopVar.input->origin());
+    smap.insert(oldLoopVar.pre, newLoopVar.pre);
   }
 
-  unroll_body(theta, unrolled_theta->subregion(), smap, factor);
-  unrolled_theta->set_predicate(&smap.lookup(*theta->predicate()->origin()));
+  unrollBody(theta, unrolledTheta->subregion(), smap, factor);
+  unrolledTheta->set_predicate(&smap.lookup(*theta->predicate()->origin()));
 
-  auto newLoopVars = unrolled_theta->GetLoopVars();
+  auto newLoopVars = unrolledTheta->GetLoopVars();
   for (size_t i = 0; i < oldLoopVars.size(); ++i)
   {
-    const auto & olv = oldLoopVars[i];
-    const auto & nlv = newLoopVars[i];
-    auto origin = &smap.lookup(*olv.post->origin());
-    nlv.post->divert_to(origin);
-    smap.insert(olv.output, nlv.output);
+    const auto & oldLoopVar = oldLoopVars[i];
+    const auto & newLoopVar = newLoopVars[i];
+    auto origin = &smap.lookup(*oldLoopVar.post->origin());
+    newLoopVar.post->divert_to(origin);
+    smap.insert(oldLoopVar.output, newLoopVar.output);
   }
 
   if (remainder != 0)
@@ -268,25 +269,26 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
       We have residual iterations. Adjust the end value of the unrolled loop
       to a multiple of the step value.
     */
-    auto cmpnode = ui.cmpnode();
-    auto cmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(smap.lookup(*cmpnode->output(0)));
+    auto cmpNode = ui.cmpNode();
+    auto cmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(smap.lookup(*cmpNode->output(0)));
     auto input = cmp->input(0)->origin() == &smap.lookup(*ui.end()) ? cmp->input(0) : cmp->input(1);
     JLM_ASSERT(input->origin() == &smap.lookup(*ui.end()));
 
-    auto sv = ui.is_additive() ? *ui.step_value() : ui.step_value()->neg();
-    auto end = remainder.mul(sv);
-    auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
+    auto stepValue = ui.isAdditive() ? *ui.stepValue() : ui.stepValue()->neg();
+    auto endAdjustment = remainder.mul(stepValue);
+    auto adjustedEnd =
+        ui.isAdditive() ? ui.endValue()->sub(endAdjustment) : ui.endValue()->add(endAdjustment);
 
-    auto c = IntegerConstantOperation::Create(*unrolled_theta->subregion(), ev).output(0);
+    auto c = IntegerConstantOperation::Create(*unrolledTheta->subregion(), adjustedEnd).output(0);
     input->divert_to(c);
   }
 }
 
 /*
-  Adde the reminder for the lopp if any
+  Add the old theta node as an epilogue for the residual iterations, if any.
 */
 static void
-add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+addRemainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
@@ -297,8 +299,8 @@ add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t f
       We only need to redirect the users of the outputs of the old theta node
       to the outputs of the new theta node, as there are no residual iterations.
     */
-    for (const auto & olv : theta->GetLoopVars())
-      olv.output->divert_users(&smap.lookup(*olv.output));
+    for (const auto & oldLoopVar : theta->GetLoopVars())
+      oldLoopVar.output->divert_users(&smap.lookup(*oldLoopVar.output));
     return remove(theta);
   }
 
@@ -307,8 +309,8 @@ add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t f
     redirecting the inputs of the old theta to the outputs of the unrolled
     theta.
   */
-  for (const auto & olv : theta->GetLoopVars())
-    olv.input->divert_to(&smap.lookup(*olv.output));
+  for (const auto & oldLoopVar : theta->GetLoopVars())
+    oldLoopVar.input->divert_to(&smap.lookup(*oldLoopVar.output));
 
   if (remainder == 1)
   {
@@ -316,17 +318,17 @@ add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t f
       There is only one loop iteration remaining.
       Simply copy the body of the theta to replace it.
     */
-    copy_body_and_unroll(theta, 1);
+    copyBodyAndUnroll(theta, 1);
     remove(theta);
   }
 }
 
 static void
-unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
+unrollKnownTheta(const LoopUnrollInfo & ui, size_t factor)
 {
-  JLM_ASSERT(ui.is_known() && ui.niterations());
+  JLM_ASSERT(ui.isKnown() && ui.niterations());
   auto niterations = ui.niterations();
-  auto original_theta = ui.theta();
+  auto originalTheta = ui.theta();
   auto nbits = ui.nbits();
 
   /*
@@ -343,8 +345,8 @@ unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
       Completely unroll the loop body and then remove the theta node,
       as the number of iterations is smaller than the unroll factor.
     */
-    copy_body_and_unroll(original_theta, niterations->to_uint());
-    return remove(original_theta);
+    copyBodyAndUnroll(originalTheta, niterations->to_uint());
+    return remove(originalTheta);
   }
 
   JLM_ASSERT(niterations->ugt({ nbits, (int64_t)factor }) == '1');
@@ -353,12 +355,12 @@ unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
     Unroll the theta
   */
   rvsdg::SubstitutionMap smap;
-  unroll_theta(ui, smap, factor);
+  unrollTheta(ui, smap, factor);
 
   /*
     Add code for any potential iterations that remains
   */
-  add_remainder(ui, smap, factor);
+  addRemainder(ui, smap, factor);
 }
 
 /**
@@ -374,14 +376,14 @@ advanceInductionVariable(
     rvsdg::Output & value,
     rvsdg::Output & step)
 {
-  auto armnode = ui.armnode();
-  auto idvIsFirstOperand = armnode->input(0)->origin() == ui.idv();
+  auto armNode = ui.armNode();
+  auto idvIsFirstOperand = armNode->input(0)->origin() == ui.idv();
 
   std::vector<rvsdg::Output *> operands = idvIsFirstOperand
                                             ? std::vector<rvsdg::Output *>{ &value, &step }
                                             : std::vector<rvsdg::Output *>{ &step, &value };
 
-  return rvsdg::SimpleNode::Create(region, ui.armoperation().copy(), operands).output(0);
+  return rvsdg::SimpleNode::Create(region, ui.armOperation().copy(), operands).output(0);
 }
 
 /**
@@ -400,12 +402,12 @@ createLoopComparison(
                                             ? std::vector<rvsdg::Output *>{ &bound, &value }
                                             : std::vector<rvsdg::Output *>{ &value, &bound };
 
-  return rvsdg::SimpleNode::Create(region, ui.cmpoperation().copy(), operands).output(0);
+  return rvsdg::SimpleNode::Create(region, ui.cmpOperation().copy(), operands).output(0);
 }
 
 /**
- * Creates the guard that checks \p numComparisons consecutive iterations, starting with the
- * iteration decided by the loop predicate at \p firstComparisonValue.
+ * Creates the guard condition that checks \p numComparisons consecutive iterations, starting with
+ * the iteration decided by the loop predicate at \p firstComparisonValue.
  *
  * A theta evaluates its predicate after each body execution, and the predicate decides whether the
  * next iteration runs. Iteration \c k+1 therefore runs exactly when the loop's comparison holds at
@@ -415,8 +417,8 @@ createLoopComparison(
  * for \p numComparisons terms, where \c i_a is \p firstComparisonValue.
  *
  * Computing each term by repeatedly applying the loop's own arm operation guarantees that the
- * values are exactly the ones the original loop would have seen. This is why the guard is immune to
- * the overflow and underflow that plague the two tempting closed forms:
+ * values are exactly the ones the original loop would have seen. This is why the guard is immune
+ * to the overflow and underflow that plague the two tempting closed forms:
  *
  *  - \code cmp(i_0, end - factor*step) \endcode underflows whenever fewer than
  *    \code factor*step \endcode values remain, turning the bound into a huge unsigned value and
@@ -467,7 +469,8 @@ createBatchGuardCondition(
 }
 
 /**
- * Turns a 1-bit condition into a gamma predicate, mapping a set bit to the gamma's then-branch.
+ * Turns a 1-bit condition into a gamma or theta predicate, mapping a set bit to the then-branch or
+ * to another loop iteration.
  */
 static rvsdg::Output *
 createGammaPredicate(rvsdg::Output & condition)
@@ -478,18 +481,18 @@ createGammaPredicate(rvsdg::Output & condition)
 }
 
 /**
- * Creates the guard that admits the first batch, i.e. the guard of the gamma that encloses the
- * unrolled loop.
+ * Creates the guard condition that admits the first batch, i.e. the condition of the gamma that
+ * encloses the unrolled loop.
  */
-static jlm::rvsdg::Output *
-create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
+static rvsdg::Output *
+createFirstBatchGuard(const LoopUnrollInfo & ui, size_t factor)
 {
   JLM_ASSERT(factor >= 2);
 
   auto region = ui.theta()->region();
   auto step = ui.theta()->MapPreLoopVar(*ui.step()).input->origin();
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
-  auto boundIsFirstOperand = ui.cmpnode()->input(0)->origin() == ui.end();
+  auto boundIsFirstOperand = ui.cmpNode()->input(0)->origin() == ui.end();
 
   /*
     Iteration 1 of the batch is unconditional, since a theta always executes its body at least once.
@@ -498,7 +501,7 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
   */
   auto firstComparisonValue = advanceInductionVariable(ui, *region, *ui.init(), *step);
 
-  auto condition = createBatchGuardCondition(
+  return createBatchGuardCondition(
       ui,
       *region,
       *firstComparisonValue,
@@ -506,39 +509,34 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
       *end,
       boundIsFirstOperand,
       factor - 1);
-
-  return createGammaPredicate(*condition);
 }
 
 /**
- * Creates the predicate of the unrolled loop, i.e. the guard deciding whether another batch may run
- * after the one that just finished. It is the same batch guard, evaluated at the value the
- * induction variable holds after the batch.
+ * Creates the guard condition of the unrolled loop, i.e. the condition deciding whether another
+ * batch may run after the one that just finished. It is the same batch guard, evaluated at the
+ * value the induction variable holds after the batch.
  */
-static jlm::rvsdg::Output *
-create_unrolled_theta_predicate(
-    rvsdg::Region *,
-    const rvsdg::SubstitutionMap & smap,
-    const LoopUnrollInfo & ui,
-    size_t factor)
+static rvsdg::Output *
+createNextBatchGuard(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui, size_t factor)
 {
   using namespace jlm::rvsdg;
 
-  auto region = smap.lookup(*ui.cmpnode()->output(0)).region();
-  auto cmpnode = rvsdg::TryGetOwnerNode<Node>(smap.lookup(*ui.cmpnode()->output(0)));
+  auto cmpOutput = &smap.lookup(*ui.cmpNode()->output(0));
+  auto region = cmpOutput->region();
+  auto cmpNode = rvsdg::TryGetOwnerNode<Node>(*cmpOutput);
   auto step = &smap.lookup(*ui.step());
   auto end = &smap.lookup(*ui.end());
 
-  auto i0 = cmpnode->input(0);
-  auto i1 = cmpnode->input(1);
-  auto boundIsFirstOperand = i0->origin() == end;
-  auto idv = boundIsFirstOperand ? i1 : i0;
+  auto input0 = cmpNode->input(0);
+  auto input1 = cmpNode->input(1);
+  auto boundIsFirstOperand = input0->origin() == end;
+  auto idv = boundIsFirstOperand ? input1 : input0;
 
   /*
-    This predicate is evaluated after a batch, so all `factor` copies of the next batch are
-    conditional and each needs its own comparison.
+    This guard is evaluated after a batch, so all `factor` copies of the next batch are conditional
+    and each needs its own comparison.
   */
-  auto condition = createBatchGuardCondition(
+  return createBatchGuardCondition(
       ui,
       *region,
       *idv->origin(),
@@ -546,40 +544,42 @@ create_unrolled_theta_predicate(
       *end,
       boundIsFirstOperand,
       factor);
-
-  return createGammaPredicate(*condition);
 }
 
 /**
- * Creates the guard predicate for the residual loop, i.e. the loop that runs the leftover
+ * Creates the guard condition for the residual loop, i.e. the loop that runs the leftover
  * iterations after the unrolled batches.
  *
  * The residual theta is a do-while, so entering it at a value \c v runs one body and then loops
- * while \code cmp(v) \endcode. That is exactly "the rest of the original loop from \c v", so the
- * residual loop must be entered whenever the loop is not already finished. Two situations reach it:
+ * while \code cmp(v) \endcode. That is exactly "the rest of the original loop from \c v". Two
+ * situations reach it:
  *
- *  - The batch was declined at the entry value \c i_0. A theta runs its body unconditionally, so
- * the original loop executes one iteration here even when \code cmp(i_0) \endcode is false. This is
- *    the case that broke `GCC-C-execute-loop-4b`:
+ *  - The first batch was declined. The original loop still executes its body at least once, and
+ *    the residual loop reproduces the entire original loop from the entry value, so it must be
+ *    entered even when the comparison already fails at the entry value:
  *    \code
  *      int j = 1; long i = 0x60000000L;
  *      do { j <<= 1; i += 0x10000000L; } while (i < -0x60000000L);   // one iteration
  *    \endcode
- *    Guarding with \code cmp(i_0, end) \endcode skipped the residual loop here and the body never
- *    ran.
- *  - The unrolled loop exited at \c i_k. The loop is finished exactly when \code cmp(i_k) \endcode
- * is false, so the residual loop runs iff \code cmp(i_k) \endcode holds.
+ *  - The unrolled loop exited at \c i_k. The remaining iterations are exactly the ones the original
+ *    loop would run from \c i_k, and the first of them runs precisely when \code cmp(i_k) \endcode
+ *    holds.
  *
- * The guard is therefore \code cmp(v) || (v == init) \endcode. Negating the batch guard instead
- * would be wrong in the second case, because the batch guard asks whether a further batch of copies
- * fits, not whether the loop is finished.
+ * The guard is therefore \code !batchGuard || cmp(idv) \endcode. The declined-batch decision must
+ * be taken from \p batchGuard rather than from the induction variable's value: wrapping arithmetic
+ * can bring the variable back to its initial value with the comparison already failing, so no
+ * comparison against that value can identify the declined case, and such a guard would run the
+ * entire loop a second time.
  */
-static jlm::rvsdg::Output *
-create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
+static rvsdg::Output *
+createResidualLoopGuard(
+    const rvsdg::SubstitutionMap & smap,
+    const LoopUnrollInfo & ui,
+    rvsdg::Output & batchGuard)
 {
   auto region = ui.theta()->region();
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
-  auto boundIsFirstOperand = ui.cmpnode()->input(0)->origin() == ui.end();
+  auto boundIsFirstOperand = ui.cmpNode()->input(0)->origin() == ui.end();
   auto idv = &smap.lookup(*ui.theta()->MapPreLoopVar(*ui.idv()).output);
 
   /*
@@ -589,111 +589,113 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopU
   auto notFinished = createLoopComparison(ui, *region, *idv, *end, boundIsFirstOperand);
 
   /*
-    At the entry value the body runs unconditionally, so the residual loop must be entered even when
-    the predicate already fails. Detecting the entry value is enough, since the unrolled loop only
-    ever exits after at least one batch.
+    A set bit in \p batchGuard means the first batch was taken, so its negation records whether the
+    residual loop must reproduce the entire original loop.
   */
-  auto atEntryValue = IntegerEqOperation::createNode(ui.nbits(), *idv, *ui.init()).output(0);
+  auto one = IntegerConstantOperation::Create(*region, 1, 1).output(0);
+  auto batchDeclined = IntegerXorOperation::createNode(1, batchGuard, *one).output(0);
 
-  auto condition = IntegerOrOperation::createNode(1, *notFinished, *atEntryValue).output(0);
-
-  return createGammaPredicate(*condition);
+  return IntegerOrOperation::createNode(1, *notFinished, *batchDeclined).output(0);
 }
 
 static void
-unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
+unrollUnknownTheta(const LoopUnrollInfo & ui, size_t factor)
 {
-  auto otheta = ui.theta();
+  auto oldTheta = ui.theta();
 
   /* handle gamma with unrolled loop */
   rvsdg::SubstitutionMap smap;
+  auto batchGuard = createFirstBatchGuard(ui, factor);
   {
-    auto pred = create_unrolled_gamma_predicate(ui, factor);
-    auto ngamma = rvsdg::GammaNode::create(pred, 2);
-    auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
+    auto pred = createGammaPredicate(*batchGuard);
+    auto newGamma = rvsdg::GammaNode::create(pred, 2);
+    auto newTheta = rvsdg::ThetaNode::create(newGamma->subregion(1));
 
     rvsdg::SubstitutionMap rmap[2];
-    for (const auto & olv : otheta->GetLoopVars())
+    for (const auto & oldLoopVar : oldTheta->GetLoopVars())
     {
-      auto ev = ngamma->AddEntryVar(olv.input->origin());
-      auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
-      rmap[0].insert(olv.output, ev.branchArgument[0]);
-      rmap[1].insert(olv.pre, nlv.pre);
+      auto entryVar = newGamma->AddEntryVar(oldLoopVar.input->origin());
+      auto newLoopVar = newTheta->AddLoopVar(entryVar.branchArgument[1]);
+      rmap[0].insert(oldLoopVar.output, entryVar.branchArgument[0]);
+      rmap[1].insert(oldLoopVar.pre, newLoopVar.pre);
     }
 
-    unroll_body(otheta, ntheta->subregion(), rmap[1], factor);
-    pred = create_unrolled_theta_predicate(ntheta->subregion(), rmap[1], ui, factor);
-    ntheta->set_predicate(pred);
+    unrollBody(oldTheta, newTheta->subregion(), rmap[1], factor);
+    pred = createGammaPredicate(*createNextBatchGuard(rmap[1], ui, factor));
+    newTheta->set_predicate(pred);
 
-    auto oldLoopVars = otheta->GetLoopVars();
-    auto newLoopVars = ntheta->GetLoopVars();
+    auto oldLoopVars = oldTheta->GetLoopVars();
+    auto newLoopVars = newTheta->GetLoopVars();
     for (std::size_t n = 0; n < oldLoopVars.size(); ++n)
     {
-      auto & olv = oldLoopVars[n];
-      auto & nlv = newLoopVars[n];
-      auto origin = &rmap[1].lookup(*olv.post->origin());
-      nlv.post->divert_to(origin);
-      rmap[1].insert(olv.output, nlv.output);
+      auto & oldLoopVar = oldLoopVars[n];
+      auto & newLoopVar = newLoopVars[n];
+      auto origin = &rmap[1].lookup(*oldLoopVar.post->origin());
+      newLoopVar.post->divert_to(origin);
+      rmap[1].insert(oldLoopVar.output, newLoopVar.output);
     }
 
-    for (const auto & olv : oldLoopVars)
+    for (const auto & oldLoopVar : oldLoopVars)
     {
-      auto xv =
-          ngamma->AddExitVar({ &rmap[0].lookup(*olv.output), &rmap[1].lookup(*olv.output) }).output;
-      smap.insert(olv.output, xv);
+      auto exitVar = newGamma
+                         ->AddExitVar({ &rmap[0].lookup(*oldLoopVar.output),
+                                        &rmap[1].lookup(*oldLoopVar.output) })
+                         .output;
+      smap.insert(oldLoopVar.output, exitVar);
     }
   }
 
   /* handle gamma for residual iterations */
   {
-    auto pred = create_residual_gamma_predicate(smap, ui);
-    auto ngamma = rvsdg::GammaNode::create(pred, 2);
-    auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
+    auto pred = createGammaPredicate(*createResidualLoopGuard(smap, ui, *batchGuard));
+    auto newGamma = rvsdg::GammaNode::create(pred, 2);
+    auto newTheta = rvsdg::ThetaNode::create(newGamma->subregion(1));
 
     rvsdg::SubstitutionMap rmap[2];
-    auto oldLoopVars = otheta->GetLoopVars();
-    for (const auto & olv : oldLoopVars)
+    auto oldLoopVars = oldTheta->GetLoopVars();
+    for (const auto & oldLoopVar : oldLoopVars)
     {
-      auto ev = ngamma->AddEntryVar(&smap.lookup(*olv.output));
-      auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
-      rmap[0].insert(olv.output, ev.branchArgument[0]);
-      rmap[1].insert(olv.pre, nlv.pre);
+      auto entryVar = newGamma->AddEntryVar(&smap.lookup(*oldLoopVar.output));
+      auto newLoopVar = newTheta->AddLoopVar(entryVar.branchArgument[1]);
+      rmap[0].insert(oldLoopVar.output, entryVar.branchArgument[0]);
+      rmap[1].insert(oldLoopVar.pre, newLoopVar.pre);
     }
 
-    otheta->subregion()->copy(ntheta->subregion(), rmap[1]);
-    ntheta->set_predicate(&rmap[1].lookup(*otheta->predicate()->origin()));
+    oldTheta->subregion()->copy(newTheta->subregion(), rmap[1]);
+    newTheta->set_predicate(&rmap[1].lookup(*oldTheta->predicate()->origin()));
 
-    auto newLoopVars = ntheta->GetLoopVars();
+    auto newLoopVars = newTheta->GetLoopVars();
 
     for (std::size_t n = 0; n < oldLoopVars.size(); ++n)
     {
-      auto & olv = oldLoopVars[n];
-      auto & nlv = newLoopVars[n];
-      auto origin = &rmap[1].lookup(*olv.post->origin());
-      nlv.post->divert_to(origin);
-      auto xv = ngamma->AddExitVar({ &rmap[0].lookup(*olv.output), nlv.output }).output;
-      smap.insert(olv.output, xv);
+      auto & oldLoopVar = oldLoopVars[n];
+      auto & newLoopVar = newLoopVars[n];
+      auto origin = &rmap[1].lookup(*oldLoopVar.post->origin());
+      newLoopVar.post->divert_to(origin);
+      auto exitVar =
+          newGamma->AddExitVar({ &rmap[0].lookup(*oldLoopVar.output), newLoopVar.output }).output;
+      smap.insert(oldLoopVar.output, exitVar);
     }
   }
-  for (const auto & olv : otheta->GetLoopVars())
-    olv.output->divert_users(&smap.lookup(*olv.output));
-  remove(otheta);
+  for (const auto & oldLoopVar : oldTheta->GetLoopVars())
+    oldLoopVar.output->divert_users(&smap.lookup(*oldLoopVar.output));
+  remove(oldTheta);
 }
 
 void
-unroll(rvsdg::ThetaNode * otheta, size_t factor)
+unroll(rvsdg::ThetaNode * oldTheta, size_t factor)
 {
   if (factor < 2)
     return;
 
-  auto ui = LoopUnrollInfo::create(otheta);
+  auto ui = LoopUnrollInfo::create(oldTheta);
   if (!ui)
     return;
 
-  if (ui->is_known() && ui->niterations())
-    unroll_known_theta(*ui, factor);
+  if (ui->isKnown() && ui->niterations())
+    unrollKnownTheta(*ui, factor);
   else
-    unroll_unknown_theta(*ui, factor);
+    unrollUnknownTheta(*ui, factor);
 }
 
 static bool
@@ -702,10 +704,10 @@ unroll(rvsdg::Region * region, size_t factor)
   bool unrolled = false;
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    if (auto structNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        unrolled = unroll(structnode->subregion(n), factor);
+      for (size_t n = 0; n < structNode->nsubregions(); n++)
+        unrolled = unroll(structNode->subregion(n), factor);
 
       /* Try to unroll if an inner loop hasn't already been found */
       if (!unrolled)
