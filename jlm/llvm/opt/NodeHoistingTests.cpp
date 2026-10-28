@@ -562,15 +562,16 @@ TEST(NodeHoistingTests, hoistLoadNodesOutOfGamma)
   nodeHoisting.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  // We expect the load node from gamma subregion 1 to be hoisted out
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
+  // Loads must not be hoisted out of gamma nodes: the gamma's predicate may be guarding the
+  // validity of the load's address (e.g., a null check), as demonstrated by the cpugcc_r
+  // miscompilation. Loads therefore stay in their subregions. The lambda subregion only contains
+  // the gamma node itself.
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 1u);
   EXPECT_EQ(gammaNode->subregion(0)->numNodes(), 2u);
-  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 1u);
+  EXPECT_EQ(gammaNode->subregion(1)->numNodes(), 2u);
 
-  // We expect that only one input was added to the gamma node: the loaded value of the hoisted load
-  // node. We do not expect that a new input for the memory state of the load node was added as the
-  // load node should have been "hoisted along" its state edge.
-  EXPECT_EQ(gammaNode->ninputs(), 5u);
+  // No inputs are added to the gamma node, as no node was hoisted out of it
+  EXPECT_EQ(gammaNode->ninputs(), 4u);
 }
 
 TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
@@ -659,41 +660,28 @@ TEST(NodeHoistingTests, hoistLoadNodesOutofNestedGamma)
   nodeHoisting.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  // We expect the following to happen:
-  // 1. loadNode1 is hoisted into subregion 0 of outerGammaNode, where the hoisting is stopped by
-  // the MemoryHoistBarrierOperation node
-  // 2. loadNode2 is hoisted into the lambda subregion
-  // 3. The hoisting of loadNode2 needs get past the already hoisted loadNode1. As loadNode1 is
-  // hoisted out first, its outgoing memory state is indirectly connected to loadNode2, which is
-  // still in subregion 1 of the innerGammaNode. Once loadNode2 is hoisted, it is first hoisted into
-  // subregion 0 of the outerGammaNode, where it is sequentialized behind loadNode1, and then needs
-  // to be hoisted above loadNode1 into the lambda subregion.
-  EXPECT_FALSE(
+  // Loads must not be hoisted out of gamma nodes: the gamma's predicate may be guarding the
+  // validity of the load's address (e.g., a null check), as demonstrated by the cpugcc_r
+  // miscompilation. Both loads therefore stay in the inner gamma node's subregions.
+  EXPECT_TRUE(
       Region::containsOperation<LoadNonVolatileOperation>(*innerGammaNode->subregion(0), false));
-  EXPECT_FALSE(
+  EXPECT_TRUE(
       Region::containsOperation<LoadNonVolatileOperation>(*innerGammaNode->subregion(1), false));
 
-  EXPECT_TRUE(
+  EXPECT_FALSE(
       Region::containsOperation<LoadNonVolatileOperation>(*outerGammaNode->subregion(0), false));
-  EXPECT_EQ(outerGammaNode->subregion(0)->numNodes(), 3u);
+  // The subregion contains the MemoryHoistBarrier and the inner gamma node
+  EXPECT_EQ(outerGammaNode->subregion(0)->numNodes(), 2u);
 
-  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
-  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 3u);
-
-  {
-    auto [hoistedLoadNode1, loadOp] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-            *innerMemoryStateEntryVar.input->origin());
-    EXPECT_NE(loadOp, nullptr);
-    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode1).origin(), hoistBarrierNode.output(0));
-  }
+  EXPECT_FALSE(
+      Region::containsOperation<LoadNonVolatileOperation>(*lambdaNode->subregion(), false));
+  // The lambda subregion contains the outer gamma node and the TestOperation
+  EXPECT_EQ(lambdaNode->subregion()->numNodes(), 2u);
 
   {
-    auto [hoistedLoadNode2, loadOp] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
-            *outerMemoryStateEntryVar.input->origin());
-    EXPECT_NE(loadOp, nullptr);
-    EXPECT_EQ(LoadOperation::AddressInput(*hoistedLoadNode2).origin(), ptrArgument2);
+    // The load still reads through the inner gamma's entry variable, i.e., the hoist barrier's
+    // output routed into the subregion
+    EXPECT_EQ(LoadOperation::AddressInput(loadNode1).origin(), innerPtr1EntryVar.branchArgument[0]);
   }
 }
 
@@ -754,12 +742,16 @@ TEST(NodeHoistingTests, hoistLoadNodeOutOfGammaInTheta)
   nodeHoisting.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  // We expect the load node from gamma subregion 1 to be hoisted out to the theta subregion
-  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(*thetaNode->subregion(), false));
+  // Loads must not be hoisted out of gamma nodes: the gamma's predicate may be guarding the
+  // validity of the load's address (e.g., a null check), as demonstrated by the cpugcc_r
+  // miscompilation. The load therefore stays in the gamma node's subregion 1.
+  EXPECT_FALSE(
+      Region::containsOperation<LoadNonVolatileOperation>(*thetaNode->subregion(), false));
+  EXPECT_TRUE(
+      Region::containsOperation<LoadNonVolatileOperation>(*gammaNode->subregion(1), false));
 
-  // We expect that two inputs was added to the gamma node: the loaded value of the hoisted load
-  // node and the result of the test node.
-  EXPECT_EQ(gammaNode->ninputs(), 5u);
+  // No inputs are added to the gamma node, as no node was hoisted out of it
+  EXPECT_EQ(gammaNode->ninputs(), 4u);
 }
 
 }
