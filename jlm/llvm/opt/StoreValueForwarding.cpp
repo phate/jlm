@@ -1102,6 +1102,16 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
     return std::nullopt;
   }
 
+  // Tracing may cross structural node boundaries, so the traced delta might live in a region
+  // that is not an ancestor of the load's region. For example, the delta might be a constant
+  // declared inside the subregion of a phi node, referencing values local to that recursion.
+  // The delta's slice can then not be copied to the load's region, as its context variables
+  // cannot be routed there. Only forward loads to deltas that are visible from the load.
+  if (!rvsdg::IsAncestorOfRegion(*deltaNode->region(), *loadNode.region()))
+  {
+    return std::nullopt;
+  }
+
   context_->numLoadsTracedToDeltaNode++;
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
