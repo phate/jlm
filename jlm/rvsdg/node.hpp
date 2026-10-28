@@ -540,6 +540,18 @@ private:
 Output &
 RouteToRegion(Output & output, Region & region);
 
+/**
+ * Checks whether \p ancestorRegion is the \p region itself, or one of the regions that \p region
+ * is transitively nested within. This is a necessary condition for being able to route an output
+ * from \p ancestorRegion to \p region using \ref RouteToRegion.
+ *
+ * @param ancestorRegion The region that is supposed to be an ancestor of \p region.
+ * @param region The region that is supposed to be nested within \p ancestorRegion.
+ * @return True if \p ancestorRegion is \p region or an ancestor of \p region, otherwise false.
+ */
+bool
+IsAncestorOfRegion(const Region & ancestorRegion, const Region & region);
+
 template<class T>
 static inline bool
 is(const jlm::rvsdg::Output * output) noexcept
