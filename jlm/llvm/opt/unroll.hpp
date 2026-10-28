@@ -1,13 +1,13 @@
 /*
- * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2017 Nico Reißmann <nico.reißmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #ifndef JLM_LLVM_OPT_UNROLL_HPP
 #define JLM_LLVM_OPT_UNROLL_HPP
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
-#include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/common.hpp>
@@ -54,15 +54,15 @@ public:
 
 private:
   LoopUnrollInfo(
-      rvsdg::SimpleNode * cmpnode,
-      rvsdg::SimpleNode * armnode,
+      rvsdg::SimpleNode * cmpNode,
+      rvsdg::SimpleNode * armNode,
       rvsdg::Output * idv,
       rvsdg::Output * step,
       rvsdg::Output * end)
       : end_(end),
         step_(step),
-        cmpnode_(cmpnode),
-        armnode_(armnode),
+        cmpNode_(cmpNode),
+        armNode_(armNode),
         idv_(idv)
   {}
 
@@ -85,54 +85,54 @@ public:
   }
 
   inline bool
-  has_known_init() const noexcept
+  hasKnownInit() const noexcept
   {
-    return is_known(init());
+    return isKnown(init());
   }
 
   inline bool
-  has_known_step() const noexcept
+  hasKnownStep() const noexcept
   {
-    return is_known(step());
+    return isKnown(step());
   }
 
   inline bool
-  has_known_end() const noexcept
+  hasKnownEnd() const noexcept
   {
-    return is_known(end());
+    return isKnown(end());
   }
 
   inline bool
-  is_known() const noexcept
+  isKnown() const noexcept
   {
-    return has_known_init() && has_known_step() && has_known_end();
+    return hasKnownInit() && hasKnownStep() && hasKnownEnd();
   }
 
-  std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
+  std::unique_ptr<jlm::llvm::IntegerValueRepresentation>
   niterations() const noexcept;
 
   rvsdg::SimpleNode *
-  cmpnode() const noexcept
+  cmpNode() const noexcept
   {
-    return cmpnode_;
+    return cmpNode_;
   }
 
   [[nodiscard]] const rvsdg::SimpleOperation &
-  cmpoperation() const noexcept
+  cmpOperation() const noexcept
   {
-    return cmpnode()->GetOperation();
+    return cmpNode()->GetOperation();
   }
 
   inline rvsdg::SimpleNode *
-  armnode() const noexcept
+  armNode() const noexcept
   {
-    return armnode_;
+    return armNode_;
   }
 
   [[nodiscard]] const rvsdg::SimpleOperation &
-  armoperation() const noexcept
+  armOperation() const noexcept
   {
-    return armnode()->GetOperation();
+    return armNode()->GetOperation();
   }
 
   inline rvsdg::Output *
@@ -147,8 +147,8 @@ public:
     return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
-  init_value() const noexcept
+  inline const jlm::llvm::IntegerValueRepresentation *
+  initValue() const noexcept
   {
     return value(init());
   }
@@ -159,8 +159,8 @@ public:
     return step_;
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
-  step_value() const noexcept
+  inline const jlm::llvm::IntegerValueRepresentation *
+  stepValue() const noexcept
   {
     return value(step());
   }
@@ -171,34 +171,32 @@ public:
     return end_;
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
-  end_value() const noexcept
+  inline const jlm::llvm::IntegerValueRepresentation *
+  endValue() const noexcept
   {
     return value(end());
   }
 
   inline bool
-  is_additive() const noexcept
+  isAdditive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(armnode());
+    return jlm::rvsdg::is<IntegerAddOperation>(armNode());
   }
 
   inline bool
-  is_subtractive() const noexcept
+  isSubtractive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitsub_op>(armnode());
+    return jlm::rvsdg::is<IntegerSubOperation>(armNode());
   }
 
   inline size_t
   nbits() const noexcept
   {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation()));
-    return static_cast<const rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation())
-        ->type()
-        .nbits();
+    JLM_ASSERT(dynamic_cast<const IntegerBinaryOperation *>(&cmpNode()->GetOperation()));
+    return static_cast<const IntegerBinaryOperation *>(&cmpNode()->GetOperation())->Type().nbits();
   }
 
-  inline jlm::rvsdg::BitValueRepresentation
+  inline jlm::llvm::IntegerValueRepresentation
   remainder(size_t factor) const noexcept
   {
     return niterations()->umod({ nbits(), (int64_t)factor });
@@ -208,31 +206,33 @@ public:
   create(rvsdg::ThetaNode * theta);
 
 private:
-  bool
-  is_known(const rvsdg::Output * output) const noexcept
-  {
-    auto & tracedOutput = llvm::traceOutput(*output, false);
-    auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    return constantOperation && constantOperation->value().is_known();
-  }
-
-  const rvsdg::BitValueRepresentation *
+  /**
+   * Returns the constant value behind the given output, if it is known.
+   */
+  const IntegerValueRepresentation *
   value(const rvsdg::Output * output) const noexcept
   {
-    if (!is_known(output))
+    auto & tracedOutput = llvm::traceOutput(*output, false);
+
+    const auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOutput);
+    if (!constantOperation)
       return nullptr;
 
-    auto & tracedOutput = llvm::traceOutput(*output, false);
-    auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    return constantOperation == nullptr ? nullptr : &constantOperation->value();
+    return constantOperation->Representation().is_known() ? &constantOperation->Representation()
+                                                          : nullptr;
+  }
+
+  bool
+  isKnown(const rvsdg::Output * output) const noexcept
+  {
+    return value(output) != nullptr;
   }
 
   rvsdg::Output * end_;
   rvsdg::Output * step_;
-  rvsdg::SimpleNode * cmpnode_;
-  rvsdg::SimpleNode * armnode_;
+  rvsdg::SimpleNode * cmpNode_;
+  rvsdg::SimpleNode * armNode_;
   rvsdg::Output * idv_;
 };
 
