@@ -1258,48 +1258,6 @@ findBatchGamma(jlm::rvsdg::Graph & graph)
 }
 
 /**
- * Returns true when \p a and \p b are the same dataflow expression.
- *
- * Two outputs are considered equal when they are the same output, or when they are the same output
- * index of the same node and all their operands are pairwise structurally equal. Constants compare
- * by value and graph imports by name.
- */
-static bool
-structurallyEqual(jlm::rvsdg::Output * a, jlm::rvsdg::Output * b, std::size_t depth = 0)
-{
-  using namespace jlm::rvsdg;
-  using namespace jlm::llvm;
-
-  if (a == b)
-    return true;
-
-  if (a == nullptr || b == nullptr || depth > 64)
-    return false;
-
-  if (a->index() != b->index())
-    return false;
-
-  auto nodeA = TryGetOwnerNode<SimpleNode>(*a);
-  auto nodeB = TryGetOwnerNode<SimpleNode>(*b);
-  if (nodeA == nullptr || nodeB == nullptr)
-    return false;
-
-  if (!(nodeA->GetOperation() == nodeB->GetOperation()))
-    return false;
-
-  if (nodeA->ninputs() != nodeB->ninputs())
-    return false;
-
-  for (size_t n = 0; n < nodeA->ninputs(); ++n)
-  {
-    if (!structurallyEqual(nodeA->input(n)->origin(), nodeB->input(n)->origin(), depth + 1))
-      return false;
-  }
-
-  return true;
-}
-
-/**
  * Returns the 1-bit condition that feeds a gamma's MatchOperation predicate.
  */
 static jlm::rvsdg::Output *
@@ -1569,15 +1527,17 @@ TEST(LoopUnrollingTests, test_integer_loop_guard_matches_loop_semantics)
 }
 
 /**
- * A loop with an equality predicate cannot be unrolled behind a batch guard.
+ * A loop with an equality predicate can be unrolled behind a batch guard.
  *
- * `for (i = 0; i != n; ++i)` advances by a step that need not divide the remaining range, so the
- * loop may pass through `n` in the *middle* of a batch and stop there. A single guard on the value
- * after `factor` copies cannot express that: it would admit batches that run past the exit value.
+ * `for (i = 0; i != n; ++i)` may pass through `n` in the *middle* of a batch, so a guard that only
+ * looked at the value after `factor` copies would admit batches that run past the exit value. The
+ * batch guard does not do that: it evaluates the loop's own comparison at every intermediate value,
+ * so it declines a batch as soon as one of its copies would reach `n`.
  *
- * The transformation must therefore leave such loops alone instead of emitting a guard.
+ * This test guards against reintroducing a rejection of equality-bounded loops, which would
+ * silently disable unrolling for a whole class of loops.
  */
-TEST(LoopUnrollingTests, test_integer_loop_equality_bound_is_not_unrolled)
+TEST(LoopUnrollingTests, test_integer_loop_equality_bound_guard_stops_before_exit_value)
 {
   using namespace jlm::rvsdg;
   using namespace jlm::llvm;
@@ -1601,12 +1561,28 @@ TEST(LoopUnrollingTests, test_integer_loop_equality_bound_is_not_unrolled)
   theta->set_predicate(matchNode.output(0));
   GraphExport::Create(*theta->GetLoopVars()[0].output, "result");
 
-  LoopUnrolling loopUnrolling(4);
+  const size_t factor = 4;
+  LoopUnrolling loopUnrolling(factor);
   loopUnrolling.Run(module, statisticsCollector);
 
-  EXPECT_TRUE(findGammas(&graph.GetRootRegion()).empty())
-      << "An equality-bounded loop must not be unrolled: a batch guard cannot express stopping "
-         "in the middle of a batch";
-  EXPECT_EQ(find_thetas(&graph.GetRootRegion()).size(), 1u)
-      << "The original loop must be left in place";
+  /*
+    The loop is unrolled like any other, so a batch gamma must exist.
+  */
+  EXPECT_FALSE(findGammas(&graph.GetRootRegion()).empty())
+      << "An equality-bounded loop must be unrolled like any other";
+
+  for (const uint64_t value : { 0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 100u })
+  {
+    /*
+      Copy 1 is unconditional, so the batch is legal exactly when none of the values after 1 to
+      `factor - 1` steps equals `n`.
+    */
+    bool expected = true;
+    for (uint64_t step = 1; step < factor; ++step)
+      expected = expected && (step != value);
+
+    EXPECT_EQ(evaluateUnrolledGuard(graph, { { "n", value } }, 32), expected)
+        << "n=" << value
+        << ": the guard must decline a batch whose copies would pass through the exit value";
+  }
 }

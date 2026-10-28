@@ -61,19 +61,6 @@ is_eqcmp(const rvsdg::Operation & op)
 }
 
 /**
- * Returns true if the operation is an equality or inequality comparison.
- *
- * Such loops are not unrolled: they can exit in the middle of a batch, e.g. when the step does not
- * divide the remaining range, and no guard over a whole batch can express stopping there.
- */
-static bool
-is_equality_comparison(const rvsdg::Operation & op)
-{
-  return dynamic_cast<const IntegerEqOperation *>(&op)
-      || dynamic_cast<const IntegerNeOperation *>(&op);
-}
-
-/**
  * Returns true if the output is constant and defined outside of the loop, i.e. it does not change
  * between iterations.
  */
@@ -201,15 +188,6 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
 
 /* loop unrolling */
 
-/**
- * Creates a constant in the loop's operation family.
- */
-static rvsdg::Output *
-createConstant(rvsdg::Region & region, const IntegerValueRepresentation & value)
-{
-  return IntegerConstantOperation::Create(region, value).output(0);
-}
-
 static void
 unroll_body(
     const rvsdg::ThetaNode * theta,
@@ -299,7 +277,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = createConstant(*unrolled_theta->subregion(), ev);
+    auto c = IntegerConstantOperation::Create(*unrolled_theta->subregion(), ev).output(0);
     input->divert_to(c);
   }
 }
@@ -715,18 +693,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (ui->is_known() && ui->niterations())
     unroll_known_theta(*ui, factor);
   else
-  {
-    /*
-      The unknown-bound path unrolls behind a batch guard, which decides up front whether a whole
-      batch may run. A loop bounded by `==` or `!=` can exit in the middle of a batch, e.g. when the
-      step does not divide the remaining range, and no batch guard can express stopping there. Such
-      loops are therefore left alone.
-    */
-    if (is_equality_comparison(ui->cmpoperation()))
-      return;
-
     unroll_unknown_theta(*ui, factor);
-  }
 }
 
 static bool
