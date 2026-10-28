@@ -508,9 +508,10 @@ findGammas(jlm::rvsdg::Region * region)
 }
 
 /**
- * Evaluates the dataflow graph rooted at \p output, taking every \ref IntegerConstantOperation at
- * face value and every \ref GraphImport from \p environment. Returns std::nullopt as soon as a node
- * is reached that the evaluator does not understand.
+ * Evaluates the dataflow graph rooted at \p output, taking every
+ * \ref jlm::llvm::IntegerConstantOperation at face value and every \ref jlm::rvsdg::GraphImport
+ * from \p environment. Returns std::nullopt as soon as a node is reached that the evaluator does
+ * not understand.
  *
  * The guard of an unrolled loop is pure dataflow over the loop's initial value, bound and step, so
  * folding it is enough to ask whether the guard is taken for a concrete set of inputs. That is
@@ -1219,6 +1220,191 @@ evaluateUnrolledGuard(
     taken exactly when the folded conjunction yields 1.
   */
   return predicateValue.has_value() && *predicateValue == 1;
+}
+
+/**
+ * Returns the gamma that guards the residual loop, i.e. the gamma the graph export comes from.
+ */
+static jlm::rvsdg::GammaNode *
+findResidualGamma(jlm::rvsdg::Graph & graph)
+{
+  using namespace jlm::rvsdg;
+
+  for (auto result : graph.GetRootRegion().Results())
+  {
+    if (auto gamma = TryGetOwnerNode<GammaNode>(*result->origin()))
+      return gamma;
+  }
+
+  return nullptr;
+}
+
+/**
+ * Returns the gamma that guards the unrolled batch, i.e. the gamma in the root region that is not
+ * the residual gamma.
+ */
+static jlm::rvsdg::GammaNode *
+findBatchGamma(jlm::rvsdg::Graph & graph)
+{
+  auto residualGamma = findResidualGamma(graph);
+
+  for (auto gamma : findGammas(&graph.GetRootRegion()))
+  {
+    if (gamma != residualGamma)
+      return gamma;
+  }
+
+  return nullptr;
+}
+
+/**
+ * Returns true when \p a and \p b are the same dataflow expression.
+ *
+ * Two outputs are considered equal when they are the same output, or when they are the same output
+ * index of the same node and all their operands are pairwise structurally equal. Constants compare
+ * by value and graph imports by name.
+ */
+static bool
+structurallyEqual(jlm::rvsdg::Output * a, jlm::rvsdg::Output * b, std::size_t depth = 0)
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::llvm;
+
+  if (a == b)
+    return true;
+
+  if (a == nullptr || b == nullptr || depth > 64)
+    return false;
+
+  if (a->index() != b->index())
+    return false;
+
+  auto nodeA = TryGetOwnerNode<SimpleNode>(*a);
+  auto nodeB = TryGetOwnerNode<SimpleNode>(*b);
+  if (nodeA == nullptr || nodeB == nullptr)
+    return false;
+
+  if (!(nodeA->GetOperation() == nodeB->GetOperation()))
+    return false;
+
+  if (nodeA->ninputs() != nodeB->ninputs())
+    return false;
+
+  for (size_t n = 0; n < nodeA->ninputs(); ++n)
+  {
+    if (!structurallyEqual(nodeA->input(n)->origin(), nodeB->input(n)->origin(), depth + 1))
+      return false;
+  }
+
+  return true;
+}
+
+/**
+ * Returns the 1-bit condition that feeds a gamma's MatchOperation predicate.
+ */
+static jlm::rvsdg::Output *
+guardCondition(jlm::rvsdg::GammaNode & gamma)
+{
+  using namespace jlm::rvsdg;
+
+  auto matchNode = TryGetOwnerNode<SimpleNode>(*gamma.predicate()->origin());
+  if (matchNode == nullptr || !is<MatchOperation>(matchNode))
+    return nullptr;
+
+  return matchNode->input(0)->origin();
+}
+
+/**
+ * A theta is a do-while construct: its body always executes at least once, and the predicate is
+ * evaluated afterwards. The residual loop therefore cannot be guarded by the loop's original
+ * predicate \code cmp(i_0, end) \endcode, because that comparison is never evaluated by the
+ * original loop when the loop is entered.
+ *
+ * This is the miscompile that broke `GCC-C-execute-loop-4b` in the region-aware llvm-test-suite
+ * job: \code int j = 1; long i = 0x60000000L; do { j <<= 1; i += 0x10000000L; } while (i <
+ * -0x60000000L); return j;   // must be 2, since exactly one iteration runs \endcode The first
+ * check fails, so no batch is possible, yet the original loop still runs one iteration. With the
+ * residual loop guarded by `cmp(i_0, end)` it was skipped entirely and `j` stayed 1.
+ *
+ * The invariant that must hold is that the residual guard is the negation of the batch guard, so
+ * the residual loop runs exactly when the batch is declined and the body always runs at least once.
+ * The guard is not folded to a constant here because it reads the batch gamma's exit values, which
+ * is a phi over both branches and therefore not a constant.
+ */
+TEST(LoopUnrollingTests, test_integer_loop_residual_guard_is_negated_batch_guard)
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::llvm;
+
+  LlvmRvsdgModule module(jlm::util::FilePath(""), "", "");
+  auto & graph = module.Rvsdg();
+
+  auto bitType = BitType::Create(32);
+  auto init = &GraphImport::Create(graph, bitType, "init");
+  auto end = &GraphImport::Create(graph, bitType, "end");
+
+  /*
+    `do { idv += 1; } while (idv < end)`: an ascending loop whose very first check may already fail.
+  */
+  auto theta = ThetaNode::create(&graph.GetRootRegion());
+  auto subregion = theta->subregion();
+  auto idv = theta->AddLoopVar(init);
+  auto bound = theta->AddLoopVar(end);
+  auto & one = IntegerConstantOperation::Create(*subregion, 32, 1);
+  auto & arm = IntegerAddOperation::createNode(32, *idv.pre, *one.output(0));
+  auto & cmp = IntegerUltOperation::createNode(32, *arm.output(0), *bound.pre);
+  auto & matchNode = MatchOperation::CreateNode(*cmp.output(0), { { 1, 1 } }, 0, 2);
+  idv.post->divert_to(arm.output(0));
+  theta->set_predicate(matchNode.output(0));
+  GraphExport::Create(*theta->GetLoopVars()[0].output, "result");
+
+  LoopUnrolling loopUnrolling(4);
+  loopUnrolling.Run(module, statisticsCollector);
+
+  auto batchGamma = findBatchGamma(graph);
+  auto residualGamma = findResidualGamma(graph);
+  ASSERT_NE(batchGamma, nullptr);
+  ASSERT_NE(residualGamma, nullptr);
+
+  auto batchCondition = guardCondition(*batchGamma);
+  auto residualCondition = guardCondition(*residualGamma);
+  ASSERT_NE(batchCondition, nullptr);
+  ASSERT_NE(residualCondition, nullptr);
+
+  /*
+    The residual guard must be `cmp(v, end) || (v == init)`: the loop is not finished while the
+    predicate holds, and the entry value must run one iteration unconditionally because a theta is a
+    do-while construct.
+  */
+  auto orNode = TryGetOwnerNode<SimpleNode>(*residualCondition);
+  ASSERT_NE(orNode, nullptr) << "The residual guard must be an or";
+  ASSERT_TRUE(is<IntegerOrOperation>(orNode))
+      << "The residual guard must be `cmp(v) || (v == init)`";
+
+  bool hasComparison = false;
+  bool hasEntryEquality = false;
+  for (const auto & input : orNode->Inputs())
+  {
+    auto operand = TryGetOwnerNode<SimpleNode>(*input.origin());
+    if (operand == nullptr)
+      continue;
+
+    if (is<IntegerUltOperation>(operand))
+      hasComparison = true;
+
+    /*
+      The entry check compares the induction variable against the loop's initial value.
+    */
+    if (is<IntegerEqOperation>(operand))
+      hasEntryEquality = true;
+  }
+
+  EXPECT_TRUE(hasComparison)
+      << "The residual guard must run while the loop predicate still holds, which covers the state "
+         "after the unrolled loop exits";
+  EXPECT_TRUE(hasEntryEquality)
+      << "The residual guard must run at the entry value even when the predicate already fails, "
+         "because a theta executes its body at least once";
 }
 
 /**

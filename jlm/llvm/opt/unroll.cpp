@@ -460,7 +460,7 @@ createLoopComparison(
  *    \c factor copies of the next batch need a comparison.
  */
 static rvsdg::Output *
-createBatchGuard(
+createBatchGuardCondition(
     const LoopUnrollInfo & ui,
     rvsdg::Region & region,
     rvsdg::Output & firstComparisonValue,
@@ -485,7 +485,16 @@ createBatchGuard(
     value = advanceInductionVariable(ui, region, *value, step);
   }
 
-  auto & predNode = rvsdg::MatchOperation::CreateNode(*guard, { { 1, 1 } }, 0, 2);
+  return guard;
+}
+
+/**
+ * Turns a 1-bit condition into a gamma predicate, mapping a set bit to the gamma's then-branch.
+ */
+static rvsdg::Output *
+createGammaPredicate(rvsdg::Output & condition)
+{
+  auto & predNode = rvsdg::MatchOperation::CreateNode(condition, { { 1, 1 } }, 0, 2);
 
   return predNode.output(0);
 }
@@ -511,7 +520,7 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
   */
   auto firstComparisonValue = advanceInductionVariable(ui, *region, *ui.init(), *step);
 
-  return createBatchGuard(
+  auto condition = createBatchGuardCondition(
       ui,
       *region,
       *firstComparisonValue,
@@ -519,6 +528,8 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
       *end,
       boundIsFirstOperand,
       factor - 1);
+
+  return createGammaPredicate(*condition);
 }
 
 /**
@@ -549,26 +560,66 @@ create_unrolled_theta_predicate(
     This predicate is evaluated after a batch, so all `factor` copies of the next batch are
     conditional and each needs its own comparison.
   */
-  return createBatchGuard(ui, *region, *idv->origin(), *step, *end, boundIsFirstOperand, factor);
+  auto condition = createBatchGuardCondition(
+      ui,
+      *region,
+      *idv->origin(),
+      *step,
+      *end,
+      boundIsFirstOperand,
+      factor);
+
+  return createGammaPredicate(*condition);
 }
 
 /**
  * Creates the guard predicate for the residual loop, i.e. the loop that runs the leftover
- * iterations after the unrolled batches. It handles fewer than \p factor iterations, so it is
- * guarded by the loop's original predicate, unchanged.
+ * iterations after the unrolled batches.
+ *
+ * The residual theta is a do-while, so entering it at a value \c v runs one body and then loops
+ * while \code cmp(v) \endcode. That is exactly "the rest of the original loop from \c v", so the
+ * residual loop must be entered whenever the loop is not already finished. Two situations reach it:
+ *
+ *  - The batch was declined at the entry value \c i_0. A theta runs its body unconditionally, so
+ * the original loop executes one iteration here even when \code cmp(i_0) \endcode is false. This is
+ *    the case that broke `GCC-C-execute-loop-4b`:
+ *    \code
+ *      int j = 1; long i = 0x60000000L;
+ *      do { j <<= 1; i += 0x10000000L; } while (i < -0x60000000L);   // one iteration
+ *    \endcode
+ *    Guarding with \code cmp(i_0, end) \endcode skipped the residual loop here and the body never
+ *    ran.
+ *  - The unrolled loop exited at \c i_k. The loop is finished exactly when \code cmp(i_k) \endcode
+ * is false, so the residual loop runs iff \code cmp(i_k) \endcode holds.
+ *
+ * The guard is therefore \code cmp(v) || (v == init) \endcode. Negating the batch guard instead
+ * would be wrong in the second case, because the batch guard asks whether a further batch of copies
+ * fits, not whether the loop is finished.
  */
 static jlm::rvsdg::Output *
 create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
 {
   auto region = ui.theta()->region();
-  auto idv = &smap.lookup(*ui.theta()->MapPreLoopVar(*ui.idv()).output);
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
   auto boundIsFirstOperand = ui.cmpnode()->input(0)->origin() == ui.end();
+  auto idv = &smap.lookup(*ui.theta()->MapPreLoopVar(*ui.idv()).output);
 
-  auto comparison = createLoopComparison(ui, *region, *idv, *end, boundIsFirstOperand);
-  auto & predNode = rvsdg::MatchOperation::CreateNode(*comparison, { { 1, 1 } }, 0, 2);
+  /*
+    The loop is not finished while the predicate still holds, which covers the state after the
+    unrolled loop exits.
+  */
+  auto notFinished = createLoopComparison(ui, *region, *idv, *end, boundIsFirstOperand);
 
-  return predNode.output(0);
+  /*
+    At the entry value the body runs unconditionally, so the residual loop must be entered even when
+    the predicate already fails. Detecting the entry value is enough, since the unrolled loop only
+    ever exits after at least one batch.
+  */
+  auto atEntryValue = IntegerEqOperation::createNode(ui.nbits(), *idv, *ui.init()).output(0);
+
+  auto condition = IntegerOrOperation::createNode(1, *notFinished, *atEntryValue).output(0);
+
+  return createGammaPredicate(*condition);
 }
 
 static void
