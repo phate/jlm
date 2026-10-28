@@ -377,6 +377,20 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
   return copy(region, smap);
 }
 
+bool
+IsAncestorOfRegion(const Region & ancestorRegion, const Region & region)
+{
+  auto current = &region;
+  while (current != &ancestorRegion)
+  {
+    // The root region has no parent region, so ancestorRegion cannot be an ancestor of region.
+    if (!current->node())
+      return false;
+    current = current->node()->region();
+  }
+  return true;
+}
+
 Output &
 RouteToRegion(Output & output, Region & region)
 {

@@ -20,6 +20,7 @@
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -2355,4 +2356,64 @@ TEST(StoreValueForwardingTests, TraceThroughCall)
   // The second load should no longer exist, and its users should refer to load0 instead
   auto secondResultOrigin = TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*results[1]->origin());
   ASSERT_EQ(secondResultOrigin, &load0);
+}
+
+TEST(StoreValueForwardingTests, LoadForwardingFromDeltaInsidePhiRegion)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  // A constant delta declared inside the subregion of a phi node, like the frontend does for
+  // recursively defined data. The delta references the phi's recursion variable through a context
+  // variable. A load in a lambda outside the phi traces to the delta, but the delta's context
+  // variables only exist inside the phi's subregion, and can not be routed to the lambda.
+  // StoreValueForwarding must leave the load alone instead of crashing.
+  LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto bits32Type = BitType::Create(32);
+  const auto structType = StructType::CreateIdentified("struct", { pointerType }, false);
+  const auto functionType = FunctionType::Create({}, { pointerType });
+
+  PhiBuilder phiBuilder;
+  phiBuilder.begin(&graph.GetRootRegion());
+  auto & phiSubregion = *phiBuilder.subregion();
+  auto fixVar = phiBuilder.AddFixVar(pointerType);
+
+  auto deltaNode =
+      DeltaNode::Create(&phiSubregion, DeltaOperation::Create(structType, true, pointerType));
+  auto deltaCtxVar = deltaNode->AddContextVar(*fixVar.recref);
+
+  auto & constantStruct =
+      ConstantStructOperation::Create(phiSubregion, { deltaCtxVar.inner }, structType);
+  auto & deltaOutput = deltaNode->finalize(&constantStruct);
+  fixVar.result->divert_to(&deltaOutput);
+
+  phiBuilder.end();
+
+  auto & lambdaNode = *LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "func", Linkage::internalLinkage));
+  auto lambdaCtxVar = lambdaNode.AddContextVar(*fixVar.output);
+
+  auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0);
+  auto & gepNode = GetElementPtrOperation::createNode(
+      *lambdaCtxVar.inner,
+      { zeroNode.output(0), zeroNode.output(0) },
+      structType);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*gepNode.output(0), {}, pointerType, 8);
+
+  lambdaNode.finalize({ &LoadOperation::LoadedValueOutput(loadNode) });
+
+  // Act
+  RunStoreValueForwarding(rvsdgModule);
+
+  // Assert
+  // The load must not have been forwarded, as the delta is not visible from the lambda
+  auto [resultNode, resultOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+      *lambdaNode.GetFunctionResults()[0]->origin());
+  EXPECT_NE(resultNode, nullptr);
+  EXPECT_NE(resultOperation, nullptr);
 }
