@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/AggregateAllocaSplitting.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -21,7 +22,9 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <algorithm>
 #include <deque>
+#include <iterator>
 #include <vector>
 
 namespace jlm::llvm
@@ -113,6 +116,22 @@ AggregateAllocaSplitting::isSplitableType(const rvsdg::Type & type)
   }
 
   return true;
+}
+
+static const rvsdg::Type &
+GetElementTypeAtPath(const StructType & structType, const std::vector<uint64_t> & indices)
+{
+  // The first index steps through the pointer, the remaining indices select
+  // the struct field, recursively for nested structs.
+  JLM_ASSERT(indices.size() >= 2);
+  const rvsdg::Type * type = &structType;
+  for (size_t i = 1; i < indices.size(); i++)
+  {
+    auto & elementType =
+        *std::next(util::assertedCast<const StructType>(type)->elementTypes().begin(), indices[i]);
+    type = elementType.get();
+  }
+  return *type;
 }
 
 std::optional<AggregateAllocaSplitting::AllocaTraceInfo>
@@ -229,8 +248,17 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
               auto & operation = simpleNode.GetOperation();
               return rvsdg::MatchTypeWithDefault(
                   operation,
-                  [&](const GetElementPtrOperation &)
+                  [&](const GetElementPtrOperation & gepOperation)
                   {
+                    // The indices of the GEP are interpreted relative to the alloca's own type
+                    // when mapping accesses onto the individual field allocas. A GEP with a
+                    // different pointee type views the alloca through a different type, and may
+                    // for example combine several small struct fields into a single larger
+                    // access. Such accesses cannot be mapped onto the field allocas, so the
+                    // alloca is not splitable in that case.
+                    if (*gepOperation.getPointeeType() != *allocaOperation->allocatedType())
+                      return false;
+
                     JLM_ASSERT(userNode->input(0) == &user);
                     JLM_ASSERT(GetElementPtrOperation::tryGetAsConstant(simpleNode).has_value());
                     allocaTraceInfo.allocaConsumers.push_back(&simpleNode);
@@ -261,7 +289,13 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
 
   for (const auto allocaConsumer : allocaTraceInfo.allocaConsumers)
   {
-    if (!checkGetElementPtrUsers(*allocaConsumer))
+    // Determine the element type that the GEP points at, and check that all
+    // accesses through the GEP stay within that element.
+    const auto gepConstant = GetElementPtrOperation::tryGetAsConstant(*allocaConsumer).value();
+    auto & elementType = GetElementTypeAtPath(
+        *util::assertedCast<const StructType>(allocaOperation->allocatedType().get()),
+        gepConstant.indices);
+    if (!checkGetElementPtrUsers(*allocaConsumer, elementType))
       return std::nullopt;
   }
 
@@ -269,7 +303,9 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
 }
 
 bool
-AggregateAllocaSplitting::checkGetElementPtrUsers(const rvsdg::SimpleNode & gepNode)
+AggregateAllocaSplitting::checkGetElementPtrUsers(
+    const rvsdg::SimpleNode & gepNode,
+    const rvsdg::Type & elementType)
 {
   [[maybe_unused]] auto gepOperation =
       dynamic_cast<const GetElementPtrOperation *>(&gepNode.GetOperation());
@@ -370,16 +406,23 @@ AggregateAllocaSplitting::checkGetElementPtrUsers(const rvsdg::SimpleNode & gepN
               auto & operation = simpleNode.GetOperation();
               return rvsdg::MatchTypeWithDefault(
                   operation,
-                  [&](const LoadOperation &)
+                  [&](const LoadOperation & loadOperation)
                   {
-                    return true;
+                    // The load must not read beyond the element alloca that the
+                    // access is redirected to.
+                    return GetTypeAllocSize(*loadOperation.GetLoadedType())
+                        <= GetTypeAllocSize(elementType);
                   },
-                  [&](const StoreOperation &)
+                  [&](const StoreOperation & storeOperation)
                   {
                     if (&user != &StoreOperation::AddressInput(simpleNode))
                       return false;
 
-                    return true;
+                    // The store must not write beyond the element alloca that the
+                    // access is redirected to.
+                    auto & storedValueType =
+                        *StoreOperation::StoredValueInput(simpleNode).origin()->Type();
+                    return GetTypeAllocSize(storedValueType) <= GetTypeAllocSize(elementType);
                   },
                   [&](const MemoryHoistBarrierOperation &)
                   {
