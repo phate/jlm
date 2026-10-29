@@ -342,10 +342,98 @@ RegionPredicateTrace::CheckPredicatesSatisfiable(Region & originRegion, Region &
 
 AlternativeRegionPredicateTracer::AlternativeRegionPredicateTracer() = default;
 
+AlternativeRegionPredicateTracer::~AlternativeRegionPredicateTracer() = default;
+
+// Observes changes to regions that may invalidate the tracer's cached
+// reachability guarantees.
+class AlternativeRegionPredicateTracer::Observer final : public RegionObserver
+{
+public:
+  Observer(const Region & region, AlternativeRegionPredicateTracer * tracer)
+      : RegionObserver(region),
+        region_(region),
+        tracer_(tracer)
+  {}
+
+  [[nodiscard]] bool
+  isObserving(const Region & region) const noexcept
+  {
+    return &region == &region_;
+  }
+
+  void
+  onNodeCreate(Node * node) override
+  {}
+
+  void
+  onNodeDestroy(Node * node) override
+  {
+    // The destruction of any node may free memory that is later reused by new nodes,
+    // making the cached output pointers stale. MatchType is used since only the
+    // destruction of structural nodes is otherwise relevant: it also tears down
+    // the node's subregions.
+    MatchType(
+        *node,
+        [&](const StructuralNode &)
+        {
+          // Drop the observer registrations of all other regions: registrations are
+          // re-created lazily as regions are queried again, so no registration of a
+          // destroyed region can prevent a new region from being observed.
+          // The observers of this region are kept, as their list is being iterated.
+          tracer_->dropObserversExceptIn(region_);
+        });
+    tracer_->clearCaches();
+  }
+
+  void
+  onInputCreate(Input * input) override
+  {}
+
+  void
+  onInputChange(Input * input, Output * /* old_origin */, Output * /* new_origin */) override
+  {
+    // Only changes of control edges can change the static reachability guarantees
+    if (std::dynamic_pointer_cast<const ControlType>(input->Type()))
+      tracer_->clearCaches();
+  }
+
+  void
+  onInputDestroy(Input * input) override
+  {
+    if (std::dynamic_pointer_cast<const ControlType>(input->Type()))
+      tracer_->clearCaches();
+  }
+
+private:
+  const Region & region_;
+  AlternativeRegionPredicateTracer * tracer_;
+};
+
+void
+AlternativeRegionPredicateTracer::observeRegion(Region & region)
+{
+  auto & observer = observers_[region.getRegionId()];
+  if (!observer)
+    observer = std::make_unique<Observer>(region, this);
+}
+
+void
+AlternativeRegionPredicateTracer::dropObserversExceptIn(const Region & region)
+{
+  for (auto it = observers_.begin(); it != observers_.end();)
+  {
+    if (it->second->isObserving(region))
+      ++it;
+    else
+      it = observers_.erase(it);
+  }
+}
+
 PredicateValueRange &
 AlternativeRegionPredicateTracer::getPossibleValues(rvsdg::Output & output)
 {
   auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(output, false);
+  observeRegion(*tracedOutput.region());
   if (auto it = predicateValueRanges_.find(&tracedOutput); it != predicateValueRanges_.end())
   {
     return it->second;
@@ -405,6 +493,10 @@ AlternativeRegionPredicateTracer::markRequiredPredicateValue(
     size_t value,
     std::vector<Region *> & impossibleRegions)
 {
+  // The cached reachability guarantees of the output's region may be invalidated by
+  // changes to the region or its ancestors
+  observeRegion(*output.region());
+
   bool satisfiable = markRequiredPredicateValueInternal(output, value, impossibleRegions);
 
   // If the output is never able to provide the required value, its region can not be an origin
@@ -504,6 +596,11 @@ AlternativeRegionPredicateTracer::isReachableFromRegion(
   auto targetAncestor = &targetRegion;
   auto originAncestor = &originRegion;
 
+  // The reachability guarantee depends on the predicates of the traversed region chain,
+  // so observers are registered on all of its regions
+  observeRegion(*targetAncestor);
+  observeRegion(*originAncestor);
+
   // While traversing, add all ancestors of the origin region to this set
   currentOriginRegionAncestors_.Clear();
   currentOriginRegionAncestors_.insert(originAncestor);
@@ -517,6 +614,7 @@ AlternativeRegionPredicateTracer::isReachableFromRegion(
     if (targetDepth >= originDepth)
     {
       targetAncestor = targetAncestor->node()->region();
+      observeRegion(*targetAncestor);
     }
 
     // Move one region up along the origin region ancestors
@@ -534,6 +632,7 @@ AlternativeRegionPredicateTracer::isReachableFromRegion(
       // move one region up and add it to the set of origin region ancestors
       originAncestor = node->region();
       currentOriginRegionAncestors_.insert(originAncestor);
+      observeRegion(*originAncestor);
     }
   }
   // Lowest common ancestor found

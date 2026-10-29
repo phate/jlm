@@ -7,6 +7,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 
@@ -26,11 +27,6 @@ OutputTracer::trace(Output & output)
 Output &
 OutputTracer::trace(Output & output, const Region * withinRegion)
 {
-  // FIXME(perf): Querying the region predication checker class causes repeated re-traversal of
-  // the same paths through the region hierarchy that the tracer is already taking.
-  // Performance could be improved by adding a way of extracting impossible regions directy.
-  regionPredicateTracer_.clearCaches();
-
   // Mark this as the starting output, which becomes the target for region predicate reachability
   startingOutput_ = &output;
   // Since the current output is the starting output, no back-edges have been followed
@@ -124,7 +120,7 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
     {
       // If control flow cannot go from the gamma subregion to the region of the starting output,
       // it cannot be the origin of the traced value.
-      if (!regionPredicateTracer_.isReachableFromRegion(
+      if (!startingOutput_->region()->graph()->getRegionPredicateTracer().isReachableFromRegion(
               *startingOutput_->region(),
               *branchResult->region()))
         continue;
