@@ -745,10 +745,8 @@ TEST(NodeHoistingTests, hoistLoadNodeOutOfGammaInTheta)
   // Loads must not be hoisted out of gamma nodes: the gamma's predicate may be guarding the
   // validity of the load's address (e.g., a null check), as demonstrated by the cpugcc_r
   // miscompilation. The load therefore stays in the gamma node's subregion 1.
-  EXPECT_FALSE(
-      Region::containsOperation<LoadNonVolatileOperation>(*thetaNode->subregion(), false));
-  EXPECT_TRUE(
-      Region::containsOperation<LoadNonVolatileOperation>(*gammaNode->subregion(1), false));
+  EXPECT_FALSE(Region::containsOperation<LoadNonVolatileOperation>(*thetaNode->subregion(), false));
+  EXPECT_TRUE(Region::containsOperation<LoadNonVolatileOperation>(*gammaNode->subregion(1), false));
 
   // No inputs are added to the gamma node, as no node was hoisted out of it
   EXPECT_EQ(gammaNode->ninputs(), 4u);
