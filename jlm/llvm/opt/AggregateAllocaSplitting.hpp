@@ -44,7 +44,7 @@ private:
   splitAllocaNode(const AllocaTraceInfo & allocaTraceInfo);
 
   static bool
-  checkGetElementPtrUsers(const rvsdg::SimpleNode & gepNode);
+  checkGetElementPtrUsers(const rvsdg::SimpleNode & gepNode, const rvsdg::Type & elementType);
 
   static std::optional<AllocaTraceInfo>
   isSplitable(rvsdg::SimpleNode & allocaNode);
