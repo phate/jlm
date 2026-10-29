@@ -208,12 +208,6 @@ limitTargetRegion(const rvsdg::Node & node, rvsdg::Region & targetRegion)
     return targetRegion;
   }
 
-  if (is<LoadNonVolatileOperation>(node.GetOperation()))
-  {
-    // LoadNonVolatileOperation nodes can also be hoisted out of gamma and theta nodes.
-    return targetRegion;
-  }
-
   // For all other nodes, we want to limit the target region to the lowest gamma node.
   auto currentRegion = node.region();
   do
@@ -394,6 +388,12 @@ mapStateOutputToInput(rvsdg::Output & output)
       },
       [](const CallEntryMemoryStateMergeOperation &) -> rvsdg::Input *
       {
+        return nullptr;
+      },
+      [](const MemoryStateJoinOperation &) -> rvsdg::Input *
+      {
+        // A memory state join has multiple state inputs, so there is no single input to map the
+        // output state to.
         return nullptr;
       },
       [](const AllocaOperation &) -> rvsdg::Input *
