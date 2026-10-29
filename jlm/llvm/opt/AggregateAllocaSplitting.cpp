@@ -423,7 +423,7 @@ AggregateAllocaSplitting::checkGetElementPtrUsers(
                     return GetTypeAllocSize(*loadOperation.GetLoadedType())
                         <= GetTypeAllocSize(elementType);
                   },
-                  [&](const StoreOperation & storeOperation)
+                  [&](const StoreOperation &)
                   {
                     if (&user != &StoreOperation::AddressInput(simpleNode))
                       return false;
