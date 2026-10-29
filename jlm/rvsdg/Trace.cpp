@@ -120,9 +120,9 @@ OutputTracer::traceGammaOutput(GammaNode & gammaNode, Output & output, BackEdgeS
     {
       // If control flow cannot go from the gamma subregion to the region of the starting output,
       // it cannot be the origin of the traced value.
-      if (!startingOutput_->region()->graph()
-               ->getRegionPredicateTracer()
-               .isReachableFromRegion(*startingOutput_->region(), *branchResult->region()))
+      if (!startingOutput_->region()->graph()->getRegionPredicateTracer().isReachableFromRegion(
+              *startingOutput_->region(),
+              *branchResult->region()))
         continue;
     }
 
