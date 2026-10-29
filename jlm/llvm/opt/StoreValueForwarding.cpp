@@ -194,8 +194,12 @@ public:
  */
 struct StoreValueForwarding::Context final
 {
-  explicit Context(aa::AliasAnalysis & aliasAnalysis, Statistics & statistics) noexcept
+  explicit Context(
+      rvsdg::Graph & rvsdg,
+      aa::AliasAnalysis & aliasAnalysis,
+      Statistics & statistics) noexcept
       : outputTracer(),
+        regionPredicateTracer(rvsdg.getRegionPredicateTracer()),
         aliasAnalysis(aliasAnalysis),
         statistics(statistics)
   {
@@ -234,7 +238,8 @@ struct StoreValueForwarding::Context final
 
   OutputTracer outputTracer;
 
-  rvsdg::AlternativeRegionPredicateTracer regionPredicateTracer;
+  // Shared for the entire graph, so its caches are also reused by tracing performed elsewhere
+  rvsdg::AlternativeRegionPredicateTracer & regionPredicateTracer;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -1649,11 +1654,11 @@ StoreValueForwarding::Run(
   auto aliasAnalysis = createAliasAnalysis(module, statisticsCollector);
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  context_ = std::make_unique<Context>(*aliasAnalysis, *statistics);
+  auto & rvsdg = module.Rvsdg();
+  context_ = std::make_unique<Context>(rvsdg, *aliasAnalysis, *statistics);
 
   statistics->StartStatistics();
 
-  auto & rvsdg = module.Rvsdg();
   traverseInterProceduralRegion(rvsdg.GetRootRegion());
 
   statistics->StopStatistics(

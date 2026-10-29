@@ -5,6 +5,7 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/strfmt.hpp>
 
@@ -74,6 +75,14 @@ Graph::Graph()
     : nextRegionId_(0),
       RootRegion_(new Region(this))
 {}
+
+AlternativeRegionPredicateTracer &
+Graph::getRegionPredicateTracer() const noexcept
+{
+  if (!regionPredicateTracer_)
+    regionPredicateTracer_ = std::make_unique<AlternativeRegionPredicateTracer>();
+  return *regionPredicateTracer_;
+}
 
 std::unique_ptr<Graph>
 Graph::Copy() const

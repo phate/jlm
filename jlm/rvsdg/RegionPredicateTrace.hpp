@@ -239,14 +239,17 @@ private:
 /**
  * \brief class providing guarantees about unreachability of regions from other regions.
  *
- * If any control type edges are modified, or if any regions are deleted,
- * during the lifetime of the tracer, the tracer's caches must be cleared manually.
- * @see clearCaches()
+ * The tracer registers observers on the regions it queries, so its caches are invalidated
+ * automatically whenever the graph is modified in a way that could change the static
+ * reachability guarantees between regions. Caches may therefore safely be reused across
+ * queries, even as the graph is being transformed.
  */
 class AlternativeRegionPredicateTracer final
 {
 public:
   AlternativeRegionPredicateTracer();
+
+  ~AlternativeRegionPredicateTracer();
 
   /**
    * Determines if it is possible for control flow to go from the given
@@ -260,15 +263,31 @@ public:
 
   /**
    * Removes all cached information from the tracer.
-   * This must be done if edges or constants of ControlType have been modified in
-   * a way that changes the static reachability guarantees between regions.
-   * Also, if regions get removed from the graph, the caches must be cleared
-   * to prevent new regions re-useing the address from causing cache collisions.
+   * The tracer invalidates its caches automatically via region observers, so calling
+   * this manually is normally not needed. It can still be used to force recomputation,
+   * e.g. to reclaim memory after heavy graph modifications.
    */
   void
   clearCaches();
 
 private:
+  class Observer;
+
+  /**
+   * Registers an observer for the given region, unless one is already registered.
+   * @param region the region to observe.
+   */
+  void
+  observeRegion(Region & region);
+
+  /**
+   * Removes the observer registrations for all regions except \p region.
+   * Registrations are re-created lazily as regions are queried again.
+   * @param region the region whose observers are kept.
+   */
+  void
+  dropObserversExceptIn(const Region & region);
+
   /**
    * Determines the set of possible values for the given \p output.
    * @param output the output in question, must be of type ControlType.
@@ -329,6 +348,11 @@ private:
   // The ancestors of the current origin region.
   // Not a cache, updates for every call to \ref isReachableFromRegion.
   util::HashSet<Region *> currentOriginRegionAncestors_;
+
+  // Observers registered on queried regions to invalidate caches when the graph is modified.
+  // Keyed by region id rather than address, as the addresses of destroyed regions may be
+  // reused by new regions.
+  std::unordered_map<Region::Id, std::unique_ptr<Observer>> observers_;
 };
 
 }
