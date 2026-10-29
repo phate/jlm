@@ -107,6 +107,10 @@ AggregateAllocaSplitting::isSplitableType(const rvsdg::Type & type)
   if (!structType)
     return false;
 
+  // An empty struct has no fields that the alloca could be split into.
+  if (structType->numElements() == 0)
+    return false;
+
   for (const auto & elementType : structType->elementTypes())
   {
     if (IsAggregateType(*elementType))
@@ -295,6 +299,12 @@ AggregateAllocaSplitting::isSplitable(rvsdg::SimpleNode & allocaNode)
     auto & elementType = GetElementTypeAtPath(
         *util::assertedCast<const StructType>(allocaOperation->allocatedType().get()),
         gepConstant.indices);
+    if (IsAggregateType(elementType))
+    {
+      // Element allocas are only created for the leaves of the struct, so a GEP pointing at a
+      // nested aggregate cannot be mapped onto any of them.
+      return std::nullopt;
+    }
     if (!checkGetElementPtrUsers(*allocaConsumer, elementType))
       return std::nullopt;
   }
