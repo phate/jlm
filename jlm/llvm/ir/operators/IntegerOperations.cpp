@@ -321,6 +321,34 @@ IntegerMulOperation::foldConstants(
   return foldBinaryOperationConstants<IntegerMulOperation>(operands);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+IntegerMulOperation::normalizeIdempotent(
+    const IntegerMulOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 2);
+  auto & operand1 = *operands[0];
+  auto & operand2 = *operands[1];
+
+  const auto & tracedOperand1 = llvm::traceOutput(operand1, true);
+  auto [c1Node, c1Operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand1);
+  if (c1Operation && c1Operation->Representation().to_uint() == 1)
+  {
+    return std::vector({ &operand2 });
+  }
+
+  const auto & tracedOperand2 = llvm::traceOutput(operand2, true);
+  auto [c2Node, c2Operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand2);
+  if (c2Operation && c2Operation->Representation().to_uint() == 1)
+  {
+    return std::vector({ &operand1 });
+  }
+
+  return std::nullopt;
+}
+
 IntegerSDivOperation::~IntegerSDivOperation() noexcept = default;
 
 bool
