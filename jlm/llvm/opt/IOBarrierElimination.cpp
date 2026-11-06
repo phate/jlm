@@ -3,15 +3,19 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -398,12 +402,53 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
           }
 
           // Mark lambda context variables
-          for (const auto [_, inner] : lambdaNode.GetContextVars())
+          for (const auto ctxVar : lambdaNode.GetContextVars())
           {
-            if (rvsdg::is<PointerType>(inner->Type()))
+            if (rvsdg::is<PointerType>(ctxVar.input->Type()))
             {
-              // FIXME: We can do better here
-              context_->markDereferenceable(*inner, 0);
+              auto & tracedOrigin = llvm::traceOutput(*ctxVar.input->origin(), false);
+
+              rvsdg::MatchVariant(
+                  tracedOrigin.GetOwner(),
+                  [this, &ctxVar, &tracedOrigin](const rvsdg::Region * ownerRegion)
+                  {
+                    if (ownerRegion->IsRootRegion())
+                    {
+                      const auto llvmImport =
+                          util::assertedCast<const LlvmGraphImport>(&tracedOrigin);
+                      const auto size = GetTypeAllocSize(*llvmImport->ValueType());
+                      context_->markDereferenceable(*ctxVar.inner, size);
+                    }
+                    else
+                    {
+                      rvsdg::MatchTypeOrFail(
+                          *ownerRegion->node(),
+                          [&tracedOrigin](const rvsdg::PhiNode & phiNode)
+                          {
+                            JLM_ASSERT(phiNode.MapArgumentFixVar(tracedOrigin) != std::nullopt);
+                          });
+                    }
+                  },
+                  [this, &ctxVar](const rvsdg::Node * ownerNode)
+                  {
+                    rvsdg::MatchTypeOrFail(
+                        *ownerNode,
+                        [this, &ctxVar](const rvsdg::DeltaNode & deltaNode)
+                        {
+                          const auto deltaOperation = util::assertedCast<const LlvmDeltaOperation>(
+                              &deltaNode.GetOperation());
+                          const auto size = GetTypeAllocSize(*deltaOperation->Type());
+                          context_->markDereferenceable(*ctxVar.inner, size);
+                        },
+                        [](const rvsdg::LambdaNode &)
+                        {
+                          // Nothing needs to be done
+                        },
+                        [](const rvsdg::PhiNode &)
+                        {
+                          // Nothing needs to be done
+                        });
+                  });
             }
           }
 
@@ -450,6 +495,20 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
         {
           rvsdg::MatchType(
               simpleNode.GetOperation(),
+              [this, &simpleNode](const AllocaOperation & allocaOperation)
+              {
+                auto sizeInBytes = GetTypeAllocSize(*allocaOperation.allocatedType());
+
+                const auto & countOperand = *AllocaOperation::getCountInput(simpleNode).origin();
+                if (const auto countOpt = tryGetConstantSignedInteger(countOperand);
+                    const auto count = *countOpt)
+                {
+                  sizeInBytes *= count;
+                }
+
+                const auto & addressResult = AllocaOperation::getPointerOutput(simpleNode);
+                context_->markDereferenceable(addressResult, sizeInBytes);
+              },
               [this, &simpleNode](const LoadNonVolatileOperation & loadOperation)
               {
                 const auto & addressOperand = *LoadOperation::AddressInput(simpleNode).origin();
@@ -599,6 +658,26 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
                   if (const auto size = context_->getDereferenceableSize(*barredInput.origin());
                       size > 0)
                     context_->markDereferenceable(*simpleNode.output(0), size);
+                },
+                [this, &simpleNode](const GetElementPtrOperation &)
+                {
+                  const auto & baseAddress =
+                      *GetElementPtrOperation::getBaseAddressInput(simpleNode).origin();
+                  const auto baseAddressSize = context_->getDereferenceableSize(baseAddress);
+                  if (baseAddressSize == 0)
+                    return;
+
+                  const auto gepConstant = GetElementPtrOperation::tryGetAsConstant(simpleNode);
+                  if (!gepConstant)
+                    return;
+
+                  const auto offsetInBytes = gepConstant->getOffsetInBytes();
+                  if (static_cast<int64_t>(baseAddressSize) > offsetInBytes)
+                  {
+                    context_->markDereferenceable(
+                        *simpleNode.output(0),
+                        baseAddressSize - offsetInBytes);
+                  }
                 });
           },
           []()
