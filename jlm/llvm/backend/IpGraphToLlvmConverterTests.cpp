@@ -919,11 +919,12 @@ TEST(IpGraphToLlvmConverterTests, SsaPhiWithFunctionType)
     bb3->add_outedge(cfg->exit());
 
     auto constantTac = bb0->append_last(ThreeAddressCode::create(
-        std::make_unique<IntegerConstantOperation>(jlm::rvsdg::BitValueRepresentation(1, 1)), {}));
+        std::make_unique<IntegerConstantOperation>(jlm::rvsdg::BitValueRepresentation(1, 1)),
+        {}));
     auto matchTac = bb0->append_last(ThreeAddressCode::create(
         std::make_unique<jlm::rvsdg::MatchOperation>(
             1,
-            std::unordered_map<uint64_t, uint64_t>({{1, 1}}),
+            std::unordered_map<uint64_t, uint64_t>({ { 1, 1 } }),
             0,
             2),
         { constantTac->result(0) }));
@@ -966,9 +967,7 @@ TEST(IpGraphToLlvmConverterTests, SsaPhiWithFunctionType)
     // types of its incoming values.
     EXPECT_TRUE(phiInstruction->getType()->isPointerTy());
     for (size_t n = 0; n < phiInstruction->getNumIncomingValues(); n++)
-      EXPECT_EQ(
-          phiInstruction->getIncomingValue(n)->getType(),
-          phiInstruction->getType());
+      EXPECT_EQ(phiInstruction->getIncomingValue(n)->getType(), phiInstruction->getType());
 
     EXPECT_TRUE(!::llvm::verifyFunction(*llvmFunction, &llvm::errs()));
   }
