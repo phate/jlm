@@ -36,6 +36,11 @@ class AgnosticModRefSummarizer final : public ModRefSummarizer
 public:
   class Statistics;
 
+  /**
+   * Environment variable that will trigger dumping VennDAG graphs to /tmp/VennDAGDump.
+   */
+  static inline const char * const ENV_DUMP_VENNDAG = "JLM_DUMP_VENNDAG";
+
   ~AgnosticModRefSummarizer() override;
 
   AgnosticModRefSummarizer();

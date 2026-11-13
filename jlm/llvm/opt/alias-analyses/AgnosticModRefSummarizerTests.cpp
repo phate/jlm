@@ -11,6 +11,10 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
 RunAndersen(const jlm::llvm::LlvmRvsdgModule & module)
 {
@@ -923,4 +927,168 @@ TEST(AgnosticModRefSummarizerTests, TestStatistics)
       "LAMBDA[f]-LAMBDA[f]-(0:0)-1-1,"
       "LAMBDA[f]-Load[ptr]-(1:0)-1-1,"
       "LAMBDA[f]-Load[bit32]-(1:1)-1-1");
+}
+
+TEST(AgnosticModRefSummarizerTests, TestVennDAGDump)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::llvm::aa;
+
+  const std::filesystem::path dumpPath = "/tmp/VennDAGDump";
+
+  auto getExpectedPrefix = [](const jlm::rvsdg::RvsdgModule & module) -> std::string
+  {
+    if (module.SourceFilePath().has_value() && !module.SourceFilePath()->base().empty())
+    {
+      return module.SourceFilePath()->base() + "-";
+    }
+    return "module-";
+  };
+
+  auto findDumpedFiles = [&dumpPath](const std::string & prefix) -> std::vector<std::filesystem::path>
+  {
+    std::vector<std::filesystem::path> result;
+    if (!std::filesystem::exists(dumpPath))
+      return result;
+    for (const auto & entry : std::filesystem::directory_iterator(dumpPath))
+    {
+      if (entry.is_regular_file())
+      {
+        std::string filename = entry.path().filename().string();
+        if (filename.rfind(prefix, 0) == 0 && entry.path().extension() == ".dot")
+        {
+          result.push_back(entry.path());
+        }
+      }
+    }
+    return result;
+  };
+
+  // 1. When environment variable is not set, no files should be dumped
+  {
+    unsetenv(AgnosticModRefSummarizer::ENV_DUMP_VENNDAG);
+    if (std::filesystem::exists(dumpPath))
+    {
+      std::filesystem::remove_all(dumpPath);
+    }
+
+    LoadTest1 test;
+    auto ptg = RunAndersen(test.module());
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+
+    auto files = findDumpedFiles(getExpectedPrefix(test.module()));
+    EXPECT_TRUE(files.empty());
+  }
+
+  // Set environment variable to enable dumping
+  setenv(AgnosticModRefSummarizer::ENV_DUMP_VENNDAG, "1", 1);
+
+  // 2. Test LoadTest1 dump (with explicit source file name)
+  {
+    LoadTest1 test;
+    auto ptg = RunAndersen(test.module());
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+
+    auto files = findDumpedFiles(getExpectedPrefix(test.module()));
+    ASSERT_FALSE(files.empty());
+
+    std::ifstream in(files.back());
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    std::string content = buffer.str();
+
+    EXPECT_NE(content.find("lambda_entry"), std::string::npos);
+    EXPECT_NE(content.find("lambda_exit"), std::string::npos);
+    EXPECT_NE(content.find("node_r"), std::string::npos);
+  }
+
+  // 3. Test Gamma dump
+  {
+    if (std::filesystem::exists(dumpPath))
+    {
+      std::filesystem::remove_all(dumpPath);
+    }
+
+    GammaTest test;
+    auto ptg = RunAndersen(test.module());
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+
+    auto files = findDumpedFiles(getExpectedPrefix(test.module()));
+    ASSERT_FALSE(files.empty());
+
+    std::ifstream in(files.back());
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    std::string content = buffer.str();
+
+    EXPECT_NE(content.find("lambda_entry"), std::string::npos);
+    EXPECT_NE(content.find("lambda_exit"), std::string::npos);
+    EXPECT_NE(content.find("gamma_"), std::string::npos);
+    EXPECT_NE(content.find("_entry"), std::string::npos);
+    EXPECT_NE(content.find("_exit"), std::string::npos);
+  }
+
+  // 4. Test Theta dump
+  {
+    if (std::filesystem::exists(dumpPath))
+    {
+      std::filesystem::remove_all(dumpPath);
+    }
+
+    ThetaTest test;
+    auto ptg = RunAndersen(test.module());
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+
+    auto files = findDumpedFiles(getExpectedPrefix(test.module()));
+    ASSERT_FALSE(files.empty());
+
+    std::ifstream in(files.back());
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    std::string content = buffer.str();
+
+    EXPECT_NE(content.find("lambda_entry"), std::string::npos);
+    EXPECT_NE(content.find("lambda_exit"), std::string::npos);
+    EXPECT_NE(content.find("theta_"), std::string::npos);
+    EXPECT_NE(content.find("_entry"), std::string::npos);
+    EXPECT_NE(content.find("_exit"), std::string::npos);
+  }
+
+  // 5. Test Multiple Lambdas in single module
+  {
+    if (std::filesystem::exists(dumpPath))
+    {
+      std::filesystem::remove_all(dumpPath);
+    }
+
+    MemcpyTest test;
+    auto ptg = RunAndersen(test.module());
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+
+    auto files = findDumpedFiles(getExpectedPrefix(test.module()));
+    ASSERT_FALSE(files.empty());
+
+    std::ifstream in(files.back());
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    std::string content = buffer.str();
+
+    // Verify both LAMBDA[f] and LAMBDA[g] graphs are present in the single module file
+    EXPECT_NE(content.find("digraph \"LAMBDA[f]\""), std::string::npos);
+    EXPECT_NE(content.find("digraph \"LAMBDA[g]\""), std::string::npos);
+  }
+
+  // 6. Test uniqueness: running multiple times does not overwrite previous files
+  {
+    LoadTest1 test;
+    auto ptg = RunAndersen(test.module());
+    auto prefix = getExpectedPrefix(test.module());
+    auto countBefore = findDumpedFiles(prefix).size();
+    AgnosticModRefSummarizer::Create(test.module(), *ptg);
+    auto countAfter = findDumpedFiles(prefix).size();
+    EXPECT_EQ(countAfter, countBefore + 1);
+  }
+
+  // Clean up environment variable
+  unsetenv(AgnosticModRefSummarizer::ENV_DUMP_VENNDAG);
 }

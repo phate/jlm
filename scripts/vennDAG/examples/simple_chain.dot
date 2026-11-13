@@ -1,0 +1,8 @@
+digraph SimpleChain {
+  n1 [members="A, B", label="n1\n{A, B}"];
+  n2 [members="A, B, C", label="n2\n{A, B, C}"];
+  n3 [members="B, C", label="n3\n{B, C}"];
+
+  n1 -> n2;
+  n2 -> n3;
+}

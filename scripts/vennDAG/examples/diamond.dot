@@ -1,0 +1,11 @@
+digraph DiamondGraph {
+  top    [members="x, y, z", label="top\n{x, y, z}"];
+  left   [members="x, w", label="left\n{x, w}"];
+  right  [members="y, k", label="right\n{y, k}"];
+  bottom [members="x, y, z, w, k", label="bottom\n{x, y, z, w, k}"];
+
+  top -> left;
+  top -> right;
+  left -> bottom;
+  right -> bottom;
+}

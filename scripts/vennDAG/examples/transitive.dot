@@ -1,0 +1,10 @@
+digraph TransitiveGraph {
+  n0 [members="a, b, c"];
+  n1 [members="b, d"];
+  n2 [members="a, e"];
+  n3 [members="a, b, f"];
+  
+  n0 -> n1;
+  n1 -> n2;
+  n2 -> n3;
+}
