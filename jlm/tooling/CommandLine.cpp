@@ -638,7 +638,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     CommandLineOptions_.Compilations_.push_back(
         { inputFilePath,
           mF.empty() ? ToDependencyFile(inputFilePath) : util::FilePath(mF),
-          ToObjectFile(inputFilePath),
+          noLinking ? ToObjectFile(inputFilePath)
+                    : util::FilePath::createUniqueFileName(
+                          util::FilePath::TempDirectoryPath(),
+                          inputFilePath.base() + "-",
+                          ".o"),
           mT.empty() ? ToObjectFile(inputFilePath).name() : mT,
           true,
           true,
