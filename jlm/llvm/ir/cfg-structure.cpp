@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <algorithm>
+#include <deque>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -286,7 +287,7 @@ is_T2(const jlm::llvm::ControlFlowGraphNode * node) noexcept
   return true;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_loop(
     jlm::llvm::ControlFlowGraphNode * node,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
@@ -310,9 +311,10 @@ reduce_loop(
 
   to_visit.erase(node);
   to_visit.insert(reduction);
+  return reduction;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_linear(
     jlm::llvm::ControlFlowGraphNode * entry,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
@@ -330,9 +332,10 @@ reduce_linear(
   to_visit.erase(entry);
   to_visit.erase(exit);
   to_visit.insert(reduction);
+  return reduction;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_branch(
     jlm::llvm::ControlFlowGraphNode * split,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
@@ -356,9 +359,10 @@ reduce_branch(
 
   to_visit.erase(split);
   to_visit.insert(reduction);
+  return reduction;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_proper_branch(
     jlm::llvm::ControlFlowGraphNode * split,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
@@ -375,9 +379,10 @@ reduce_proper_branch(
 
   to_visit.erase(split);
   to_visit.insert(reduction);
+  return reduction;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_T1(jlm::llvm::ControlFlowGraphNode * node)
 {
   JLM_ASSERT(is_T1(node));
@@ -390,9 +395,10 @@ reduce_T1(jlm::llvm::ControlFlowGraphNode * node)
       break;
     }
   }
+  return node;
 }
 
-static inline void
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_T2(
     jlm::llvm::ControlFlowGraphNode * node,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
@@ -403,78 +409,55 @@ reduce_T2(
   p->divert_inedges(node);
   p->remove_outedges();
   to_visit.erase(p);
+  return node;
 }
 
-static inline bool
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_proper_structured(
     jlm::llvm::ControlFlowGraphNode * node,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
 {
   if (is_loop(node))
-  {
-    reduce_loop(node, to_visit);
-    return true;
-  }
+    return reduce_loop(node, to_visit);
 
   if (is_proper_branch(node))
-  {
-    reduce_proper_branch(node, to_visit);
-    return true;
-  }
+    return reduce_proper_branch(node, to_visit);
 
   if (is_linear_reduction(node))
-  {
-    reduce_linear(node, to_visit);
-    return true;
-  }
+    return reduce_linear(node, to_visit);
 
-  return false;
+  return nullptr;
 }
 
-static inline bool
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_structured(
     jlm::llvm::ControlFlowGraphNode * node,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
 {
   if (is_loop(node))
-  {
-    reduce_loop(node, to_visit);
-    return true;
-  }
+    return reduce_loop(node, to_visit);
 
   if (is_branch(node))
-  {
-    reduce_branch(node, to_visit);
-    return true;
-  }
+    return reduce_branch(node, to_visit);
 
   if (is_linear_reduction(node))
-  {
-    reduce_linear(node, to_visit);
-    return true;
-  }
+    return reduce_linear(node, to_visit);
 
-  return false;
+  return nullptr;
 }
 
-static inline bool
+static inline jlm::llvm::ControlFlowGraphNode *
 reduce_reducible(
     jlm::llvm::ControlFlowGraphNode * node,
     std::unordered_set<jlm::llvm::ControlFlowGraphNode *> & to_visit)
 {
   if (is_T1(node))
-  {
-    reduce_T1(node);
-    return true;
-  }
+    return reduce_T1(node);
 
   if (is_T2(node))
-  {
-    reduce_T2(node, to_visit);
-    return true;
-  }
+    return reduce_T2(node, to_visit);
 
-  return false;
+  return nullptr;
 }
 
 static bool
@@ -593,8 +576,9 @@ is_linear(const ControlFlowGraph & cfg)
 static inline bool
 reduce(
     const ControlFlowGraph & cfg,
-    const std::function<
-        bool(llvm::ControlFlowGraphNode *, std::unordered_set<llvm::ControlFlowGraphNode *> &)> & f)
+    const std::function<llvm::ControlFlowGraphNode *(
+        llvm::ControlFlowGraphNode *,
+        std::unordered_set<llvm::ControlFlowGraphNode *> &)> & f)
 {
   JLM_ASSERT(is_closed(cfg));
   auto c = copy_structural(cfg);
@@ -603,11 +587,33 @@ reduce(
   for (auto & node : *c)
     to_visit.insert(&node);
 
-  auto it = to_visit.begin();
-  while (it != to_visit.end())
+  // Worklist of nodes whose reducibility still needs to be checked. A reduction
+  // only changes the graph in the immediate neighborhood of the reduced node,
+  // so only the reduction node itself and its immediate neighbors need to be
+  // re-examined, instead of restarting the scan from the beginning after every
+  // reduction, which is quadratic in the number of nodes.
+  std::deque<ControlFlowGraphNode *> worklist(to_visit.begin(), to_visit.end());
+
+  while (!worklist.empty())
   {
-    bool reduced = f(*it, to_visit);
-    it = reduced ? to_visit.begin() : std::next(it);
+    auto node = worklist.front();
+    worklist.pop_front();
+
+    // The node may have been consumed by a reduction since it was enqueued
+    if (to_visit.find(node) == to_visit.end())
+      continue;
+
+    auto reduction = f(node, to_visit);
+    if (reduction == nullptr)
+      continue;
+
+    // The reduction may have made the reduction node itself or any of its
+    // immediate neighbors reducible, so enqueue them for re-examination
+    worklist.push_back(reduction);
+    for (auto & inEdge : reduction->InEdges())
+      worklist.push_back(inEdge.source());
+    for (auto & outEdge : reduction->OutEdges())
+      worklist.push_back(outEdge.sink());
   }
 
   return to_visit.size() == 1;
