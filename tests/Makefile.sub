@@ -18,6 +18,7 @@ JLC_COMPILE_TESTS = \
 	tests/c-tests/test-fctarray \
 	tests/c-tests/test-fctptr \
 	tests/c-tests/test-fibonacci \
+	tests/c-tests/test-fnptr-loop \
 	tests/c-tests/test-fp-arithmetic \
 	tests/c-tests/test-fp-comparison \
 	tests/c-tests/test-fprintf \

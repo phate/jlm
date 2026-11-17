@@ -366,7 +366,15 @@ IpGraphToLlvmConverter::convert_phi(
   if (rvsdg::is<MemoryStateType>(phi.Type()))
     return nullptr;
 
-  auto t = typeConverter.ConvertJlmType(*phi.Type(), llvmContext);
+  // Functions are represented as pointers in LLVM IR, so a phi over function
+  // values must be created as a phi over pointers. Creating it with the
+  // function's FunctionType would mismatch the types of the incoming values,
+  // which are the pointer-typed LLVM functions.
+  std::shared_ptr<const rvsdg::Type> phiType = phi.Type();
+  if (rvsdg::is<rvsdg::FunctionType>(phiType))
+    phiType = PointerType::Create();
+
+  auto t = typeConverter.ConvertJlmType(*phiType, llvmContext);
   return builder.CreatePHI(t, op.narguments());
 }
 
