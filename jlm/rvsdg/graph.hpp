@@ -7,11 +7,15 @@
 #ifndef JLM_RVSDG_GRAPH_HPP
 #define JLM_RVSDG_GRAPH_HPP
 
+#include <memory>
+
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 
 namespace jlm::rvsdg
 {
+
+class AlternativeRegionPredicateTracer;
 
 /**
  * Represents an import into the RVSDG of an external entity.
@@ -130,9 +134,20 @@ public:
   static std::vector<Node *>
   ExtractTailNodes(const Graph & rvsdg);
 
+  /**
+   * @return The tracer for region predicate reachability queries, shared by the entire graph.
+   *
+   * Sharing a single tracer instance for the whole graph lets its caches persist across the
+   * many tracing queries performed on the graph. Its caches are invalidated automatically via
+   * region observers, so they remain correct even as the graph is modified.
+   */
+  [[nodiscard]] AlternativeRegionPredicateTracer &
+  getRegionPredicateTracer() const noexcept;
+
 private:
   Region::Id nextRegionId_;
   std::unique_ptr<Region> RootRegion_;
+  mutable std::unique_ptr<AlternativeRegionPredicateTracer> regionPredicateTracer_;
 };
 
 }

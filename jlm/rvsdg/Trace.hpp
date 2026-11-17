@@ -7,7 +7,6 @@
 #define JLM_RVSDG_TRACE_HPP
 
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/RegionPredicateTrace.hpp>
 
 namespace jlm::rvsdg
 {
@@ -474,8 +473,6 @@ protected:
   // When true, gamma subregions are ignored when it is impossible for control flow to go
   // from the gamma subregion to the region containing the output tracing started from
   bool enableRegionPredicateChecking_ = false;
-  // The region predicate checker used to disqualify regions
-  AlternativeRegionPredicateTracer regionPredicateTracer_;
   // The output from which the current tracing operation started.
   // Used for region predication checks.
   // This is the starting output referenced by the enum \ref BackEdgeState.
