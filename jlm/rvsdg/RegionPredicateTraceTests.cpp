@@ -12,7 +12,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>

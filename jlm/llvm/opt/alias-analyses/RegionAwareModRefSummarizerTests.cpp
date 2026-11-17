@@ -17,7 +17,7 @@
 #include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/common.hpp>

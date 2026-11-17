@@ -25,7 +25,7 @@
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>

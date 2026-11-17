@@ -13,7 +13,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/Phi.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::llvm
 {

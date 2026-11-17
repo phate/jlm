@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
