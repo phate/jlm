@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 
 namespace jlm::llvm

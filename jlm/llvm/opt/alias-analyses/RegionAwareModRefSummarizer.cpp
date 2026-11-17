@@ -20,7 +20,7 @@
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>

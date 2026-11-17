@@ -13,7 +13,7 @@
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 

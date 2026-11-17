@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/operation.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::llvm
 {

@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/util/common.hpp>

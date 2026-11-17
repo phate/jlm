@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_NODEREDUCTION_HPP
 #define JLM_LLVM_OPT_NODEREDUCTION_HPP
 
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
