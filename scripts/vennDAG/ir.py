@@ -24,7 +24,7 @@ class Node:
             members=set(self.members),
             label=self.label,
             attributes=dict(self.attributes),
-            original_members=set(self.original_members) if self.original_members is not None else set(self.members)
+            original_members=set(self.original_members) if self.original_members is not None else None
         )
 
 
@@ -89,18 +89,22 @@ class DAGGraph:
         self._invalidate_cache()
         return edge
 
-    def _invalidate_cache(self) -> None:
+    def clear_cache(self) -> None:
+        """Clear cached transitive closure and active overlap pairs to free memory."""
         self._reachability_cache = None
         self._active_pairs_cache = None
+
+    def _invalidate_cache(self) -> None:
+        self.clear_cache()
 
     def copy(self) -> 'DAGGraph':
         """Create a deep copy of the graph."""
         new_g = DAGGraph(name=self.name, is_directed=self.is_directed)
         new_g.graph_attributes = dict(self.graph_attributes)
-        for nid, node in self.nodes.items():
-            new_g.nodes[nid] = node.copy()
-        for edge in self.edges:
-            new_g.add_edge(edge.src, edge.dst, edge.attributes)
+        new_g.nodes = {nid: node.copy() for nid, node in self.nodes.items()}
+        new_g.edges = [Edge(src=e.src, dst=e.dst, attributes=dict(e.attributes)) for e in self.edges]
+        new_g._adj = {nid: list(adj) for nid, adj in self._adj.items()}
+        new_g._in_degree = dict(self._in_degree)
         return new_g
 
     def successors(self, node_id: str) -> List[str]:
@@ -173,6 +177,96 @@ class DAGGraph:
             self._reachability_cache = reachable
             return reachable
 
+    def compute_reachability_bitmasks(self) -> Tuple[List[str], Dict[str, int], List[int], List[int], Dict[str, int], List[int]]:
+        """
+        Compute compact integer bitmasks for reachability and element support:
+        Returns:
+            (topo_nodes, node_to_idx, reach_mask, rev_reach_mask, elem_masks, node_elem_nodes)
+        Where:
+            topo_nodes: List of node IDs in topological order (or arbitrary order if cyclic)
+            node_to_idx: Dict mapping node_id -> integer index [0 .. N-1]
+            reach_mask: List of size N where reach_mask[i] has bit j set if i reaches j
+            rev_reach_mask: List of size N where rev_reach_mask[j] has bit i set if i reaches j
+            elem_masks: Dict mapping element -> bitmask of nodes that contain it
+            node_elem_nodes: List of size N where node_elem_nodes[i] has bit j set if i and j share an element
+        """
+        try:
+            topo = self.topological_sort()
+        except ValueError:
+            topo = list(self.nodes.keys())
+
+        node_to_idx = {nid: i for i, nid in enumerate(topo)}
+        N = len(topo)
+
+        adj_idx: List[List[int]] = [[] for _ in range(N)]
+        for edge in self.edges:
+            if edge.src in node_to_idx and edge.dst in node_to_idx:
+                adj_idx[node_to_idx[edge.src]].append(node_to_idx[edge.dst])
+
+        # Forward reachability
+        reach: List[int] = [0] * N
+        for i in reversed(range(N)):
+            mask = 0
+            for j in adj_idx[i]:
+                mask |= (1 << j) | reach[j]
+            reach[i] = mask
+
+        # Reverse reachability (nodes that reach node j)
+        rev_reach: List[int] = [0] * N
+        for i in range(N):
+            i_mask = (1 << i) | rev_reach[i]
+            for j in adj_idx[i]:
+                rev_reach[j] |= i_mask
+
+        # Element support bitmasks
+        elem_masks: Dict[str, int] = {}
+        for nid, node in self.nodes.items():
+            i = node_to_idx[nid]
+            for elem in node.members:
+                elem_masks[elem] = elem_masks.get(elem, 0) | (1 << i)
+
+        # Node element overlap mask: which nodes share >= 1 element with node i
+        node_elem_nodes: List[int] = [0] * N
+        for elem, e_mask in elem_masks.items():
+            cur = e_mask
+            while cur:
+                lsb = cur & -cur
+                i = (lsb.bit_length() - 1)
+                node_elem_nodes[i] |= e_mask
+                cur ^= lsb
+
+        return topo, node_to_idx, reach, rev_reach, elem_masks, node_elem_nodes
+
+    def count_active_overlap_pairs(self) -> int:
+        """
+        Count active requirement pairs (u, v) with reachability and member overlap
+        using O(V) bitwise operations with zero pair tuple allocations.
+        """
+        if self._active_pairs_cache is not None:
+            return len(self._active_pairs_cache)
+        _, _, reach, _, _, node_elem_nodes = self.compute_reachability_bitmasks()
+        return sum((reach[i] & node_elem_nodes[i]).bit_count() for i in range(len(reach)))
+
+    def iter_active_overlap_pairs(self) -> Iterator[Tuple[str, str, Set[str]]]:
+        """
+        Generator yielding active requirement pairs (u, v, common_set)
+        lazily without pre-allocating millions of tuples into memory.
+        """
+        if self._active_pairs_cache is not None:
+            yield from self._active_pairs_cache
+            return
+
+        reach = self.compute_reachability()
+        for u, targets in reach.items():
+            u_members = self.nodes[u].members
+            if not u_members:
+                continue
+            for v in targets:
+                v_members = self.nodes[v].members
+                common = u_members & v_members
+                if common:
+                    yield (u, v, common)
+
     def get_active_overlap_pairs(self) -> List[Tuple[str, str, Set[str]]]:
         """
         Find all active requirement pairs (u, v) where:
@@ -184,18 +278,7 @@ class DAGGraph:
         if self._active_pairs_cache is not None:
             return self._active_pairs_cache
 
-        reach = self.compute_reachability()
-        active_pairs = []
-        for u, targets in reach.items():
-            u_members = self.nodes[u].members
-            if not u_members:
-                continue
-            for v in targets:
-                v_members = self.nodes[v].members
-                common = u_members & v_members
-                if common:
-                    active_pairs.append((u, v, common))
-
+        active_pairs = list(self.iter_active_overlap_pairs())
         self._active_pairs_cache = active_pairs
         return active_pairs
 
@@ -216,6 +299,7 @@ class DAGGraph:
         1. S'(v) is a subset of S(v) for all v.
         2. For all pairs (u, v) with u ->...-> v and S(u) & S(v) != empty,
            S'(u) & S'(v) != empty.
+        Uses fast bitset validation to verify millions of pairs in milliseconds.
         Returns (is_valid, list_of_error_messages).
         """
         errors = []
@@ -232,17 +316,55 @@ class DAGGraph:
                     f"Node {nid} has elements {invalid_members} not present in original set {orig_node.members}."
                 )
 
-        # 2. Reachability overlap preservation check
-        active_pairs = original_graph.get_active_overlap_pairs()
-        for u, v, orig_common in active_pairs:
-            u_red = self.nodes[u].members if u in self.nodes else set()
-            v_red = self.nodes[v].members if v in self.nodes else set()
-            new_common = u_red & v_red
-            if not new_common:
-                errors.append(
-                    f"Overlap broken between '{u}' and '{v}': originally overlapped on {orig_common}, "
-                    f"now S'({u})={u_red} and S'({v})={v_red}."
-                )
+        # 2. Fast Bitset Reachability Overlap Check
+        topo, node_to_idx, reach, _, orig_elem_masks, orig_node_elem_nodes = original_graph.compute_reachability_bitmasks()
+        N = len(topo)
+
+        # Compute reduced element bitmasks
+        red_node_elem_nodes: List[int] = [0] * N
+        for nid, node in self.nodes.items():
+            if nid not in node_to_idx:
+                continue
+            i = node_to_idx[nid]
+            for elem in node.members:
+                # Bitmask of all nodes in this reduction containing elem
+                # Build per-elem masks
+                pass
+
+        # Build reduced node overlap masks
+        red_elem_masks: Dict[str, int] = {}
+        for nid, node in self.nodes.items():
+            if nid in node_to_idx:
+                i = node_to_idx[nid]
+                for elem in node.members:
+                    red_elem_masks[elem] = red_elem_masks.get(elem, 0) | (1 << i)
+
+        for elem, e_mask in red_elem_masks.items():
+            cur = e_mask
+            while cur:
+                lsb = cur & -cur
+                i = (lsb.bit_length() - 1)
+                red_node_elem_nodes[i] |= e_mask
+                cur ^= lsb
+
+        for i in range(N):
+            needed = reach[i] & orig_node_elem_nodes[i]
+            broken = needed & ~red_node_elem_nodes[i]
+            if broken:
+                u_id = topo[i]
+                cur = broken
+                while cur:
+                    lsb = cur & -cur
+                    j = (lsb.bit_length() - 1)
+                    cur ^= lsb
+                    v_id = topo[j]
+                    orig_common = original_graph.nodes[u_id].members & original_graph.nodes[v_id].members
+                    u_red = self.nodes[u_id].members if u_id in self.nodes else set()
+                    v_red = self.nodes[v_id].members if v_id in self.nodes else set()
+                    errors.append(
+                        f"Overlap broken between '{u_id}' and '{v_id}': originally overlapped on {orig_common}, "
+                        f"now S'({u_id})={u_red} and S'({v_id})={v_red}."
+                    )
 
         return (len(errors) == 0, errors)
 
@@ -253,7 +375,7 @@ class DAGGraph:
             "num_edges": len(self.edges),
             "total_elements": self.total_member_count(),
             "unique_elements": len(self.unique_elements()),
-            "active_pairs": len(self.get_active_overlap_pairs()),
+            "active_pairs": self.count_active_overlap_pairs(),
         }
         if original_graph is not None:
             orig_total = original_graph.total_member_count()

@@ -30,6 +30,37 @@
 namespace jlm::llvm::aa
 {
 
+/** \brief class returned by the Agnostic ModRefSummarizer
+ *
+ */
+class AgnosticModRefSet final : public ModRefSet
+{
+public:
+  void
+  addMemoryNode(PointsToGraph::NodeIndex memoryNode, ModRefEffect modRefEffect)
+  {
+    JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
+    modRefNodes_[memoryNode] |= modRefEffect;
+  }
+
+  /**
+   * Removes all memory effects on nodes not included in the given \p filter
+   * @param filter the set of memory locations that can be kept
+   */
+  void
+  filterMemoryNodes(util::HashSet<PointsToGraph::NodeIndex> & filter)
+  {
+    auto it = modRefNodes_.begin();
+    while (it != modRefNodes_.end())
+    {
+      if (filter.Contains(it->first))
+        ++it;
+      else
+        it = modRefNodes_.erase(it);
+    }
+  }
+};
+
 namespace
 {
 
@@ -117,7 +148,7 @@ private:
   {
     std::string escapedLabel = escapeDotString(label);
     std::string decl = "\"" + id + "\" [members=\"" + members + "\", label=\"" + escapedLabel
-                       + "\\n{" + members + "}\"];";
+                     + "\\n{" + members + "}\"];";
     nodeDeclarations_.push_back(decl);
   }
 
@@ -141,27 +172,27 @@ private:
         [&](const rvsdg::SimpleNode & simpleNode)
         {
           result = "node_r" + std::to_string(simpleNode.region()->getRegionId()) + "_n"
-                   + std::to_string(simpleNode.GetNodeId());
+                 + std::to_string(simpleNode.GetNodeId());
         },
         [&](const rvsdg::GammaNode & gammaNode)
         {
           result = "gamma_r" + std::to_string(gammaNode.region()->getRegionId()) + "_n"
-                   + std::to_string(gammaNode.GetNodeId()) + "_exit";
+                 + std::to_string(gammaNode.GetNodeId()) + "_exit";
         },
         [&](const rvsdg::ThetaNode & thetaNode)
         {
           result = "theta_r" + std::to_string(thetaNode.region()->getRegionId()) + "_n"
-                   + std::to_string(thetaNode.GetNodeId()) + "_exit";
+                 + std::to_string(thetaNode.GetNodeId()) + "_exit";
         },
         [&](const rvsdg::LambdaNode & lambdaNode)
         {
           result = "lambda_r" + std::to_string(lambdaNode.region()->getRegionId()) + "_n"
-                   + std::to_string(lambdaNode.GetNodeId()) + "_exit";
+                 + std::to_string(lambdaNode.GetNodeId()) + "_exit";
         },
         [&](const rvsdg::Node & otherNode)
         {
           result = "node_r" + std::to_string(otherNode.region()->getRegionId()) + "_n"
-                   + std::to_string(otherNode.GetNodeId());
+                 + std::to_string(otherNode.GetNodeId());
         });
     return result;
   }
@@ -179,7 +210,7 @@ private:
           [&](const rvsdg::SimpleNode & simpleNode)
           {
             std::string id = "node_r" + std::to_string(region.getRegionId()) + "_n"
-                             + std::to_string(simpleNode.GetNodeId());
+                           + std::to_string(simpleNode.GetNodeId());
 
             std::string members;
             try
@@ -204,15 +235,12 @@ private:
           [&](const rvsdg::GammaNode & gammaNode)
           {
             std::string gammaEntryId = "gamma_r" + std::to_string(region.getRegionId()) + "_n"
-                                       + std::to_string(gammaNode.GetNodeId()) + "_entry";
+                                     + std::to_string(gammaNode.GetNodeId()) + "_entry";
             std::string gammaExitId = "gamma_r" + std::to_string(region.getRegionId()) + "_n"
-                                      + std::to_string(gammaNode.GetNodeId()) + "_exit";
+                                    + std::to_string(gammaNode.GetNodeId()) + "_exit";
 
-            std::string entryMembers = formatMembers(summary_.GetGammaEntryModRef(gammaNode));
-            std::string exitMembers = formatMembers(summary_.GetGammaExitModRef(gammaNode));
-
-            addNode(gammaEntryId, entryMembers, "GAMMA ENTRY " + gammaNode.DebugString());
-            addNode(gammaExitId, exitMembers, "GAMMA EXIT " + gammaNode.DebugString());
+            addNode(gammaEntryId, "", "GAMMA ENTRY " + gammaNode.DebugString());
+            addNode(gammaExitId, "", "GAMMA EXIT " + gammaNode.DebugString());
 
             for (size_t i = 0; i < gammaNode.ninputs(); ++i)
             {
@@ -229,14 +257,12 @@ private:
           [&](const rvsdg::ThetaNode & thetaNode)
           {
             std::string thetaEntryId = "theta_r" + std::to_string(region.getRegionId()) + "_n"
-                                       + std::to_string(thetaNode.GetNodeId()) + "_entry";
+                                     + std::to_string(thetaNode.GetNodeId()) + "_entry";
             std::string thetaExitId = "theta_r" + std::to_string(region.getRegionId()) + "_n"
-                                      + std::to_string(thetaNode.GetNodeId()) + "_exit";
+                                    + std::to_string(thetaNode.GetNodeId()) + "_exit";
 
-            std::string thetaMembers = formatMembers(summary_.GetThetaModRef(thetaNode));
-
-            addNode(thetaEntryId, thetaMembers, "THETA ENTRY " + thetaNode.DebugString());
-            addNode(thetaExitId, thetaMembers, "THETA EXIT " + thetaNode.DebugString());
+            addNode(thetaEntryId, "", "THETA ENTRY " + thetaNode.DebugString());
+            addNode(thetaExitId, "", "THETA EXIT " + thetaNode.DebugString());
 
             for (size_t i = 0; i < thetaNode.ninputs(); ++i)
             {
@@ -250,9 +276,9 @@ private:
           [&](const rvsdg::LambdaNode & nestedLambda)
           {
             std::string lambdaEntryId = "lambda_r" + std::to_string(region.getRegionId()) + "_n"
-                                        + std::to_string(nestedLambda.GetNodeId()) + "_entry";
+                                      + std::to_string(nestedLambda.GetNodeId()) + "_entry";
             std::string lambdaExitId = "lambda_r" + std::to_string(region.getRegionId()) + "_n"
-                                       + std::to_string(nestedLambda.GetNodeId()) + "_exit";
+                                     + std::to_string(nestedLambda.GetNodeId()) + "_exit";
 
             std::string entryMembers = formatMembers(summary_.GetLambdaEntryModRef(nestedLambda));
             std::string exitMembers = formatMembers(summary_.GetLambdaExitModRef(nestedLambda));
@@ -314,6 +340,304 @@ collectLambdas(const rvsdg::Region & region, std::vector<const rvsdg::LambdaNode
 }
 
 void
+collectIntraproceduralRegions(
+    const rvsdg::Region & region,
+    std::vector<const rvsdg::Region *> & regions)
+{
+  for (const auto & node : region.Nodes())
+  {
+    if (const auto * structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+    {
+      for (const auto & subregion : structuralNode->Subregions())
+      {
+        regions.push_back(&subregion);
+        collectIntraproceduralRegions(subregion, regions);
+      }
+    }
+  }
+}
+
+void
+collectAllRegions(const rvsdg::Region & region, std::vector<const rvsdg::Region *> & regions)
+{
+  for (const auto & node : region.Nodes())
+  {
+    rvsdg::MatchType(
+        node,
+        [&](const rvsdg::LambdaNode & lambda)
+        {
+          regions.push_back(lambda.subregion());
+          collectIntraproceduralRegions(*lambda.subregion(), regions);
+        },
+        [&](const rvsdg::PhiNode & phiNode)
+        {
+          collectAllRegions(*phiNode.subregion(), regions);
+        });
+  }
+}
+
+class VennDAGPerRegionGraphBuilder
+{
+public:
+  VennDAGPerRegionGraphBuilder(const rvsdg::Region & region, const ModRefSummary & summary)
+      : region_(region),
+        summary_(summary)
+  {}
+
+  void
+  Build()
+  {
+    auto regionEntryId = "region_entry";
+    auto regionExitId = "region_exit";
+
+    std::string regionMembers = formatMembers(getRegionModRef(region_, summary_));
+    std::string graphName = getRegionGraphName(region_);
+
+    addNode(regionEntryId, regionMembers, "REGION ENTRY " + graphName);
+    addNode(regionExitId, regionMembers, "REGION EXIT " + graphName);
+
+    processRegion(regionEntryId, regionExitId);
+  }
+
+  void
+  Output(std::ostream & out) const
+  {
+    std::string graphName = getRegionGraphName(region_);
+    out << "digraph \"" << escapeDotString(graphName) << "\" {\n";
+    for (const auto & nodeDecl : nodeDeclarations_)
+    {
+      out << "  " << nodeDecl << "\n";
+    }
+    for (const auto & [src, dst] : edges_)
+    {
+      out << "  \"" << src << "\" -> \"" << dst << "\";\n";
+    }
+    out << "}\n";
+  }
+
+private:
+  static const ModRefSet &
+  getRegionModRef(const rvsdg::Region & region, const ModRefSummary & summary)
+  {
+    static const AgnosticModRefSet emptySet;
+    if (!region.node())
+    {
+      return emptySet;
+    }
+    const ModRefSet * result = &emptySet;
+    rvsdg::MatchType(
+        *region.node(),
+        [&](const rvsdg::LambdaNode & lambda)
+        {
+          result = &summary.GetLambdaEntryModRef(lambda);
+        },
+        [&](const rvsdg::GammaNode & gamma)
+        {
+          result = &summary.GetGammaEntryModRef(gamma);
+        },
+        [&](const rvsdg::ThetaNode & theta)
+        {
+          result = &summary.GetThetaModRef(theta);
+        },
+        [&](const rvsdg::StructuralNode &)
+        {
+          result = &emptySet;
+        });
+    return *result;
+  }
+
+  static std::string
+  getRegionGraphName(const rvsdg::Region & region)
+  {
+    if (region.node())
+    {
+      std::string name;
+      rvsdg::MatchType(
+          *region.node(),
+          [&](const rvsdg::LambdaNode & lambda)
+          {
+            name = lambda.DebugString();
+          },
+          [&](const rvsdg::GammaNode & gamma)
+          {
+            name = gamma.DebugString() + "_r" + std::to_string(region.getRegionId()) + "_b"
+                 + std::to_string(region.index());
+          },
+          [&](const rvsdg::ThetaNode & theta)
+          {
+            name = theta.DebugString() + "_r" + std::to_string(region.getRegionId());
+          },
+          [&](const rvsdg::StructuralNode & structuralNode)
+          {
+            name = structuralNode.DebugString() + "_r" + std::to_string(region.getRegionId());
+          });
+      return name;
+    }
+    return "REGION_r" + std::to_string(region.getRegionId());
+  }
+
+  void
+  addNode(const std::string & id, const std::string & members, const std::string & label)
+  {
+    std::string escapedLabel = escapeDotString(label);
+    std::string decl = "\"" + id + "\" [members=\"" + members + "\", label=\"" + escapedLabel
+                     + "\\n{" + members + "}\"];";
+    nodeDeclarations_.push_back(decl);
+  }
+
+  void
+  addEdge(const std::string & src, const std::string & dst)
+  {
+    edges_.insert({ src, dst });
+  }
+
+  std::string
+  getSourceId(const rvsdg::Output & output, const std::string & regionEntryId) const
+  {
+    const auto * node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
+    if (!node || node->region() != &region_)
+    {
+      return regionEntryId;
+    }
+    std::string result;
+    rvsdg::MatchType(
+        *node,
+        [&](const rvsdg::SimpleNode & simpleNode)
+        {
+          result = "node_r" + std::to_string(region_.getRegionId()) + "_n"
+                 + std::to_string(simpleNode.GetNodeId());
+        },
+        [&](const rvsdg::GammaNode & gammaNode)
+        {
+          result = "gamma_r" + std::to_string(region_.getRegionId()) + "_n"
+                 + std::to_string(gammaNode.GetNodeId());
+        },
+        [&](const rvsdg::ThetaNode & thetaNode)
+        {
+          result = "theta_r" + std::to_string(region_.getRegionId()) + "_n"
+                 + std::to_string(thetaNode.GetNodeId());
+        },
+        [&](const rvsdg::LambdaNode & lambdaNode)
+        {
+          result = "lambda_r" + std::to_string(region_.getRegionId()) + "_n"
+                 + std::to_string(lambdaNode.GetNodeId());
+        },
+        [&](const rvsdg::Node & otherNode)
+        {
+          result = "node_r" + std::to_string(region_.getRegionId()) + "_n"
+                 + std::to_string(otherNode.GetNodeId());
+        });
+    return result;
+  }
+
+  void
+  processRegion(const std::string & regionEntryId, const std::string & regionExitId)
+  {
+    for (const auto & node : region_.Nodes())
+    {
+      rvsdg::MatchType(
+          node,
+          [&](const rvsdg::SimpleNode & simpleNode)
+          {
+            std::string id = "node_r" + std::to_string(region_.getRegionId()) + "_n"
+                           + std::to_string(simpleNode.GetNodeId());
+
+            std::string members;
+            try
+            {
+              members = formatMembers(summary_.GetSimpleNodeModRef(simpleNode));
+            }
+            catch (const std::exception &)
+            {
+              members = "";
+            }
+
+            std::string label = simpleNode.DebugString();
+            addNode(id, members, label);
+
+            for (size_t i = 0; i < simpleNode.ninputs(); ++i)
+            {
+              const auto & origin = *simpleNode.input(i)->origin();
+              std::string srcId = getSourceId(origin, regionEntryId);
+              addEdge(srcId, id);
+            }
+          },
+          [&](const rvsdg::GammaNode & gammaNode)
+          {
+            std::string id = "gamma_r" + std::to_string(region_.getRegionId()) + "_n"
+                           + std::to_string(gammaNode.GetNodeId());
+            std::string members = formatMembers(summary_.GetGammaEntryModRef(gammaNode));
+            std::string label = gammaNode.DebugString();
+            addNode(id, members, label);
+
+            for (size_t i = 0; i < gammaNode.ninputs(); ++i)
+            {
+              const auto & origin = *gammaNode.input(i)->origin();
+              std::string srcId = getSourceId(origin, regionEntryId);
+              addEdge(srcId, id);
+            }
+          },
+          [&](const rvsdg::ThetaNode & thetaNode)
+          {
+            std::string id = "theta_r" + std::to_string(region_.getRegionId()) + "_n"
+                           + std::to_string(thetaNode.GetNodeId());
+            std::string members = formatMembers(summary_.GetThetaModRef(thetaNode));
+            std::string label = thetaNode.DebugString();
+            addNode(id, members, label);
+
+            for (size_t i = 0; i < thetaNode.ninputs(); ++i)
+            {
+              const auto & origin = *thetaNode.input(i)->origin();
+              std::string srcId = getSourceId(origin, regionEntryId);
+              addEdge(srcId, id);
+            }
+          },
+          [&](const rvsdg::LambdaNode & nestedLambda)
+          {
+            std::string id = "lambda_r" + std::to_string(region_.getRegionId()) + "_n"
+                           + std::to_string(nestedLambda.GetNodeId());
+            std::string members = formatMembers(summary_.GetLambdaEntryModRef(nestedLambda));
+            std::string label = nestedLambda.DebugString();
+            addNode(id, members, label);
+
+            for (size_t i = 0; i < nestedLambda.ninputs(); ++i)
+            {
+              const auto & origin = *nestedLambda.input(i)->origin();
+              std::string srcId = getSourceId(origin, regionEntryId);
+              addEdge(srcId, id);
+            }
+          },
+          [&](const rvsdg::Node & otherNode)
+          {
+            std::string id = "node_r" + std::to_string(region_.getRegionId()) + "_n"
+                           + std::to_string(otherNode.GetNodeId());
+            std::string label = otherNode.DebugString();
+            addNode(id, "", label);
+
+            for (size_t i = 0; i < otherNode.ninputs(); ++i)
+            {
+              const auto & origin = *otherNode.input(i)->origin();
+              std::string srcId = getSourceId(origin, regionEntryId);
+              addEdge(srcId, id);
+            }
+          });
+    }
+
+    for (size_t i = 0; i < region_.nresults(); ++i)
+    {
+      const auto & origin = *region_.result(i)->origin();
+      std::string srcId = getSourceId(origin, regionEntryId);
+      addEdge(srcId, regionExitId);
+    }
+  }
+
+  const rvsdg::Region & region_;
+  const ModRefSummary & summary_;
+  std::vector<std::string> nodeDeclarations_;
+  std::set<std::pair<std::string, std::string>> edges_;
+};
+
+void
 dumpVennDAGGraphs(const rvsdg::RvsdgModule & rvsdgModule, const ModRefSummary & summary)
 {
   std::filesystem::create_directories("/tmp/VennDAGDump");
@@ -324,10 +648,8 @@ dumpVennDAGGraphs(const rvsdg::RvsdgModule & rvsdgModule, const ModRefSummary & 
     base = rvsdgModule.SourceFilePath()->base();
   }
 
-  auto outputFilePath = util::FilePath::createUniqueFileName(
-      util::FilePath("/tmp/VennDAGDump"),
-      base + "-",
-      ".dot");
+  auto outputFilePath =
+      util::FilePath::createUniqueFileName(util::FilePath("/tmp/VennDAGDump"), base + "-", ".dot");
 
   std::ofstream out(outputFilePath.to_str());
   if (!out.is_open())
@@ -341,6 +663,37 @@ dumpVennDAGGraphs(const rvsdg::RvsdgModule & rvsdgModule, const ModRefSummary & 
   for (const auto * lambda : lambdas)
   {
     VennDAGGraphBuilder builder(*lambda, summary);
+    builder.Build();
+    builder.Output(out);
+  }
+}
+
+void
+dumpVennDAGGraphsPerRegion(const rvsdg::RvsdgModule & rvsdgModule, const ModRefSummary & summary)
+{
+  std::filesystem::create_directories("/tmp/VennDAGDump");
+
+  std::string base = "module";
+  if (rvsdgModule.SourceFilePath().has_value() && !rvsdgModule.SourceFilePath()->base().empty())
+  {
+    base = rvsdgModule.SourceFilePath()->base();
+  }
+
+  std::vector<const rvsdg::Region *> regions;
+  collectAllRegions(rvsdgModule.Rvsdg().GetRootRegion(), regions);
+
+  for (const auto * region : regions)
+  {
+    auto outputFilePath =
+        util::FilePath::createUniqueFileName(util::FilePath("/tmp/VennDAGDump"), base + "-", ".dot");
+
+    std::ofstream out(outputFilePath.to_str());
+    if (!out.is_open())
+    {
+      continue;
+    }
+
+    VennDAGPerRegionGraphBuilder builder(*region, summary);
     builder.Build();
     builder.Output(out);
   }
@@ -377,37 +730,6 @@ static const bool ENABLE_OMEGA_FOLDING = !std::getenv("JLM_DISABLE_OMEGA_FOLDING
  */
 static const bool ENABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS =
     !std::getenv("JLM_DISABLE_MEMORY_STATE_DISTRIBUTION_STATISTICS");
-
-/** \brief class returned by the Agnostic ModRefSummarizer
- *
- */
-class AgnosticModRefSet final : public ModRefSet
-{
-public:
-  void
-  addMemoryNode(PointsToGraph::NodeIndex memoryNode, ModRefEffect modRefEffect)
-  {
-    JLM_ASSERT(modRefEffect != ModRefEffect::NoEffect);
-    modRefNodes_[memoryNode] |= modRefEffect;
-  }
-
-  /**
-   * Removes all memory effects on nodes not included in the given \p filter
-   * @param filter the set of memory locations that can be kept
-   */
-  void
-  filterMemoryNodes(util::HashSet<PointsToGraph::NodeIndex> & filter)
-  {
-    auto it = modRefNodes_.begin();
-    while (it != modRefNodes_.end())
-    {
-      if (filter.Contains(it->first))
-        ++it;
-      else
-        it = modRefNodes_.erase(it);
-    }
-  }
-};
 
 /** \brief Mod/Ref summary of agnostic mod/ref summarizer
  *
@@ -624,6 +946,11 @@ AgnosticModRefSummarizer::SummarizeModRefs(
   if (std::getenv(ENV_DUMP_VENNDAG))
   {
     dumpVennDAGGraphs(rvsdgModule, *ModRefSummary_);
+  }
+
+  if (std::getenv(ENV_DUMP_VENNDAG_PER_REGION))
+  {
+    dumpVennDAGGraphsPerRegion(rvsdgModule, *ModRefSummary_);
   }
 
   return std::move(ModRefSummary_);

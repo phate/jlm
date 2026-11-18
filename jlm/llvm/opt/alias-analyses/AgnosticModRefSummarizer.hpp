@@ -41,6 +41,11 @@ public:
    */
   static inline const char * const ENV_DUMP_VENNDAG = "JLM_DUMP_VENNDAG";
 
+  /**
+   * Environment variable that will trigger dumping VennDAG graphs per region to /tmp/VennDAGDump.
+   */
+  static inline const char * const ENV_DUMP_VENNDAG_PER_REGION = "JLM_DUMP_VENNDAG_PER_REGION";
+
   ~AgnosticModRefSummarizer() override;
 
   AgnosticModRefSummarizer();
