@@ -84,16 +84,16 @@ private:
 };
 
 /**
- * \brief class providing guarantees about unreachability of regions from other regions.
+ * \brief Provides guarantees about unreachability of regions from other regions.
  *
  * If any control type edges are modified, or if any regions are deleted,
  * during the lifetime of the tracer, the tracer's caches must be cleared manually.
  * @see clearCaches()
  */
-class AlternativeRegionPredicateTracer final
+class RegionPredicateTracer final
 {
 public:
-  AlternativeRegionPredicateTracer();
+  RegionPredicateTracer();
 
   /**
    * Determines if it is possible for control flow to go from the given

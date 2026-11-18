@@ -234,7 +234,7 @@ struct StoreValueForwarding::Context final
 
   OutputTracer outputTracer;
 
-  rvsdg::AlternativeRegionPredicateTracer regionPredicateTracer;
+  rvsdg::RegionPredicateTracer regionPredicateTracer;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -422,7 +422,7 @@ public:
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
       aa::AliasAnalysis & aliasAnalysis,
-      rvsdg::AlternativeRegionPredicateTracer & regionPredicateTracer)
+      rvsdg::RegionPredicateTracer & regionPredicateTracer)
       : loadNode(loadNode),
         tracer(tracer),
         aliasAnalysis(aliasAnalysis),
@@ -968,7 +968,7 @@ private:
 
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
-  rvsdg::AlternativeRegionPredicateTracer & regionPredicateTracer;
+  rvsdg::RegionPredicateTracer & regionPredicateTracer;
 
   // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
