@@ -49,10 +49,10 @@ public:
 static bool
 is_eqcmp(const rvsdg::Operation & op)
 {
-  return dynamic_cast<const jlm::rvsdg::bituge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitule_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsle_op *>(&op);
+  return dynamic_cast<const IntegerUgeOperation *>(&op)
+      || dynamic_cast<const IntegerSgeOperation *>(&op)
+      || dynamic_cast<const IntegerUleOperation *>(&op)
+      || dynamic_cast<const IntegerSleOperation *>(&op);
 }
 
 static bool
@@ -60,8 +60,7 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
-  if (jlm::rvsdg::is<rvsdg::BitConstantOperation>(
-          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
+  if (jlm::rvsdg::is<IntegerConstantOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
     return true;
 
   auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
@@ -80,7 +79,7 @@ push_from_theta(jlm::rvsdg::Output * output)
     return argument;
 
   auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp));
+  JLM_ASSERT(jlm::rvsdg::is<IntegerConstantOperation>(tmp));
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
 
@@ -97,7 +96,7 @@ is_idv(jlm::rvsdg::Input * input)
   using namespace jlm::rvsdg;
 
   auto node = TryGetOwnerNode<SimpleNode>(*input);
-  JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
+  JLM_ASSERT(is<IntegerAddOperation>(node) || is<IntegerSubOperation>(node));
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))
   {
@@ -108,7 +107,7 @@ is_idv(jlm::rvsdg::Input * input)
   return false;
 }
 
-std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
+std::unique_ptr<IntegerValueRepresentation>
 LoopUnrollInfo::niterations() const noexcept
 {
   if (!is_known() || step_value() == 0)
@@ -128,7 +127,25 @@ LoopUnrollInfo::niterations() const noexcept
   if (range.umod(step) != 0)
     return nullptr;
 
-  return std::make_unique<jlm::rvsdg::BitValueRepresentation>(range.udiv(step));
+  return std::make_unique<IntegerValueRepresentation>(range.udiv(step));
+}
+
+static bool
+is_integer_comparison(const rvsdg::SimpleNode * node)
+{
+  using namespace jlm::rvsdg;
+  return is<IntegerEqOperation>(node) || is<IntegerNeOperation>(node)
+      || is<IntegerSgeOperation>(node) || is<IntegerSgtOperation>(node)
+      || is<IntegerSleOperation>(node) || is<IntegerSltOperation>(node)
+      || is<IntegerUgeOperation>(node) || is<IntegerUgtOperation>(node)
+      || is<IntegerUleOperation>(node) || is<IntegerUltOperation>(node);
+}
+
+size_t
+LoopUnrollInfo::nbits() const noexcept
+{
+  JLM_ASSERT(is_integer_comparison(cmpnode()));
+  return static_cast<const IntegerBinaryOperation &>(cmpnode()->GetOperation()).Type().nbits();
 }
 
 std::unique_ptr<LoopUnrollInfo>
@@ -141,7 +158,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<BitCompareOperation>(cmpnode))
+  if (!is_integer_comparison(cmpnode))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();
@@ -151,7 +168,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto armnode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == o0 ? o1 : o0));
-  if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
+  if (!is<IntegerAddOperation>(armnode) && !is<IntegerSubOperation>(armnode))
     return nullptr;
   if (armnode->ninputs() != 2)
     return nullptr;
@@ -256,7 +273,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = &rvsdg::BitConstantOperation::create(*unrolled_theta->subregion(), ev);
+    auto c = IntegerConstantOperation::Create(*unrolled_theta->subregion(), ev).output(0);
     input->divert_to(c);
   }
 }
@@ -341,8 +358,9 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
   auto step = ui.theta()->MapPreLoopVar(*ui.step()).input->origin();
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
-  auto uf = &rvsdg::BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
-  auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
+  auto uf =
+      IntegerConstantOperation::Create(*region, nbits, static_cast<int64_t>(factor)).output(0);
+  auto mul = IntegerMulOperation::createNode(nbits, *step, *uf).output(0);
   auto arm =
       rvsdg::SimpleNode::Create(*region, ui.armoperation().copy(), { ui.init(), mul }).output(0);
   /* FIXME: order of operands */
@@ -372,8 +390,9 @@ create_unrolled_theta_predicate(
   auto iend = i0->origin() == end ? i0 : i1;
   auto idv = i0->origin() == end ? i1 : i0;
 
-  auto uf = &BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
-  auto mul = bitmul_op::create(nbits, step, uf);
+  auto uf =
+      IntegerConstantOperation::Create(*region, nbits, static_cast<int64_t>(factor)).output(0);
+  auto mul = IntegerMulOperation::createNode(nbits, *step, *uf).output(0);
   auto arm =
       SimpleNode::Create(*region, ui.armoperation().copy(), { idv->origin(), mul }).output(0);
   /* FIXME: order of operands */
