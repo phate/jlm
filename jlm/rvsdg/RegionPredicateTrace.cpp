@@ -23,10 +23,10 @@
 namespace jlm::rvsdg
 {
 
-AlternativeRegionPredicateTracer::AlternativeRegionPredicateTracer() = default;
+RegionPredicateTracer::RegionPredicateTracer() = default;
 
 PredicateValueRange &
-AlternativeRegionPredicateTracer::getPossibleValues(rvsdg::Output & output)
+RegionPredicateTracer::getPossibleValues(rvsdg::Output & output)
 {
   auto & tracedOutput = rvsdg::traceOutputIntraProcedurally(output, false);
   if (auto it = predicateValueRanges_.find(&tracedOutput); it != predicateValueRanges_.end())
@@ -41,7 +41,7 @@ AlternativeRegionPredicateTracer::getPossibleValues(rvsdg::Output & output)
 }
 
 PredicateValueRange
-AlternativeRegionPredicateTracer::getPossibleValuesInternal(rvsdg::Output & output)
+RegionPredicateTracer::getPossibleValuesInternal(rvsdg::Output & output)
 {
   auto & controlType = *util::assertedCast<const ControlType>(output.Type().get());
 
@@ -83,7 +83,7 @@ AlternativeRegionPredicateTracer::getPossibleValuesInternal(rvsdg::Output & outp
 }
 
 bool
-AlternativeRegionPredicateTracer::markRequiredPredicateValue(
+RegionPredicateTracer::markRequiredPredicateValue(
     Output & output,
     size_t value,
     std::vector<Region *> & impossibleRegions)
@@ -106,7 +106,7 @@ AlternativeRegionPredicateTracer::markRequiredPredicateValue(
 }
 
 bool
-AlternativeRegionPredicateTracer::markRequiredPredicateValueInternal(
+RegionPredicateTracer::markRequiredPredicateValueInternal(
     rvsdg::Output & output,
     size_t value,
     std::vector<Region *> & impossibleRegions)
@@ -154,7 +154,7 @@ AlternativeRegionPredicateTracer::markRequiredPredicateValueInternal(
 }
 
 bool
-AlternativeRegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & output, size_t value)
+RegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & output, size_t value)
 {
   auto key = std::make_pair(&output, value);
 
@@ -179,7 +179,7 @@ AlternativeRegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & ou
 }
 
 bool
-AlternativeRegionPredicateTracer::isReachableFromRegion(
+RegionPredicateTracer::isReachableFromRegion(
     Region & targetRegion,
     Region & originRegion)
 {
@@ -246,7 +246,7 @@ AlternativeRegionPredicateTracer::isReachableFromRegion(
 }
 
 void
-AlternativeRegionPredicateTracer::clearCaches()
+RegionPredicateTracer::clearCaches()
 {
   predicateValueRanges_.clear();
   impossibleOriginRegions_.clear();
