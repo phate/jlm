@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/ArithmeticWithOverflowIntrinsicOperations.hpp>

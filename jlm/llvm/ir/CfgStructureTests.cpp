@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/basic-block.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>

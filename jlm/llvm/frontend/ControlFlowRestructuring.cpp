@@ -4,7 +4,6 @@
  */
 
 #include <jlm/llvm/ir/basic-block.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <deque>
