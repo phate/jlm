@@ -179,9 +179,7 @@ RegionPredicateTracer::canCurrentOriginSatisfyRequirement(Output & output, size_
 }
 
 bool
-RegionPredicateTracer::isReachableFromRegion(
-    Region & targetRegion,
-    Region & originRegion)
+RegionPredicateTracer::isReachableFromRegion(Region & targetRegion, Region & originRegion)
 {
   // find the common ancestor of the origin and target regions
   auto targetAncestor = &targetRegion;
