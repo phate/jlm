@@ -1,21 +1,9 @@
-# Define a library and its build rules, register unit
-# tests for it.
+# Define a library and its build rules.
 #
 # Basic usage :
 #   libfoo_SOURCES = a.cpp b.cpp ...
 #   libfoo_HEADERS = a.h b.h ...
 #   $(eval $(call common_library,libfoo))
-#
-# additional attributes supported (define before calling the macro):
-#   - libfoo_TESTS:
-#     list of tests for this library; each must compile to a binary
-#     by itself, and for each test there must be a single source file
-#   - libfoo_TEST_LIBS:
-#     extra libraries built in this project linked into each test
-#     (just specify the name without extension)
-#   - libfoo_TEST_EXTRA_LDFLAGS:
-#     additional LDFLAGS to be passed to link each test binary;
-#     use this to pull in external libraries (not built in this project)
 #
 # Depending on configuration builds only static or both
 # static and dynamic library. Depending on configuration
