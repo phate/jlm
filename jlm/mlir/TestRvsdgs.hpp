@@ -154,7 +154,7 @@ public:
  * \code{.c}
  *   void f(char * dst, char * src)
  *   {
- *     volatile copy(dst, src, 16);
+ *     volatile memcpy(dst, src, 16);
  *   }
  * \endcode
  *

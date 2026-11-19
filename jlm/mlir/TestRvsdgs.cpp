@@ -218,8 +218,7 @@ MemcpyVolatileTest::SetupRvsdg()
       { IOStateType::Create(),
         MemoryStateType::Create(),
         PointerType::Create(),
-        PointerType::Create(),
-        BitType::Create(64) },
+        PointerType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -232,12 +231,13 @@ MemcpyVolatileTest::SetupRvsdg()
   auto memoryStateArgument = fct->GetFunctionArguments()[1];
   auto destinationArgument = fct->GetFunctionArguments()[2];
   auto sourceArgument = fct->GetFunctionArguments()[3];
-  auto lengthArgument = fct->GetFunctionArguments()[4];
+
+  auto length = IntegerConstantOperation::Create(*fct->subregion(), { 64, 16 }).output(0);
 
   auto & memcpyNode = MemCpyVolatileOperation::CreateNode(
       *destinationArgument,
       *sourceArgument,
-      *lengthArgument,
+      *length,
       *iOStateArgument,
       { memoryStateArgument });
 
