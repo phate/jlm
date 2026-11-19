@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -48,37 +49,6 @@ RunAndExtractFile(jlm::llvm::LlvmRvsdgModule & module, jlm::llvm::RvsdgTreePrint
   std::filesystem::remove(fileName.to_str());
 
   return result;
-}
-
-TEST(RvsdgTreePrinterTests, PrintRvsdgTree)
-{
-  using namespace jlm::llvm;
-  using namespace jlm::util;
-
-  // Arrange
-  auto rvsdgModule = LlvmRvsdgModule::Create(FilePath(""), "", "");
-
-  auto functionType = jlm::rvsdg::FunctionType::Create(
-      { MemoryStateType::Create() },
-      { MemoryStateType::Create() });
-  auto lambda = jlm::rvsdg::LambdaNode::Create(
-      rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
-  auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
-
-  RvsdgTreePrinter::Configuration configuration({});
-  RvsdgTreePrinter printer(configuration);
-
-  // Act
-  auto tree = RunAndExtractFile(*rvsdgModule, printer);
-  std::cout << tree;
-
-  // Assert
-  auto expectedTree =
-      "{\"StructuralNodes\":[{\"DebugString\":\"LAMBDA[f]\",\"Subregions\":[{}]}]}\n";
-
-  EXPECT_EQ(tree, expectedTree);
 }
 
 TEST(RvsdgTreePrinterTests, PrintNumRvsdgNodesAnnotation)
@@ -272,4 +242,43 @@ TEST(RvsdgTreePrinterTests, printAllocaNodes)
   const auto expectedTree = "{\"NumAggregateAllocaNodes\":1,\"NumAllocaNodes\":2}\n";
 
   EXPECT_EQ(tree, expectedTree);
+}
+
+TEST(RvsdgTreePrinterTests, nodeCountStatistics)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  LoadTest1 test;
+
+  // Act
+  StatisticsCollectorSettings settings({ Statistics::Id::RvsdgTreePrinter });
+  StatisticsCollector collector(settings);
+
+  // Create a tree printer with no demanded annotations
+  RvsdgTreePrinter::Configuration configuration({});
+  RvsdgTreePrinter printer(configuration);
+  printer.Run(test.module(), collector);
+
+  auto & statistics = *collector.CollectedStatistics().begin();
+
+  // Assert
+
+  // Since no annotations were requested, there should be no output file
+  ASSERT_FALSE(statistics.HasMeasurement("OutputFileName"));
+
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#Regions")), 2);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#PhiNodes")), 0);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#LambdaNodes")), 1);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#DeltaNodes")), 0);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#GammaNodes")), 0);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#ThetaNodes")), 0);
+
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#SimpleNodes")), 2);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#LoadNodes")), 2);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#StoreNodes")), 0);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#AllocaNodes")), 0);
+  ASSERT_EQ(std::get<uint64_t>(statistics.GetMeasurement("#CallNodes")), 0);
 }

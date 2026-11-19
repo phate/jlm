@@ -38,7 +38,8 @@ LlvmLambdaOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const LlvmLambdaOperation *>(&other);
   return op && op->type() == type() && op->name() == name() && op->linkage() == linkage()
-      && op->callingConvention() == callingConvention() && op->attributes() == attributes();
+      && op->callingConvention() == callingConvention() && op->attributes() == attributes()
+      && op->ArgumentAttributes_ == ArgumentAttributes_;
 }
 
 std::unique_ptr<rvsdg::Operation>

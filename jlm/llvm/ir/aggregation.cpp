@@ -4,7 +4,6 @@
  */
 
 #include <jlm/llvm/ir/aggregation.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 
 #include <deque>
 #include <functional>

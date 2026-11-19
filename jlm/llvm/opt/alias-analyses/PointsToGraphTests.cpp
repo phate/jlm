@@ -12,7 +12,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/rvsdg/delta.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/util/Statistics.hpp>
 
 /**

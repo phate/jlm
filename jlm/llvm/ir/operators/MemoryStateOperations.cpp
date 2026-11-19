@@ -282,16 +282,6 @@ MemoryStateSplitOperation::NormalizeSplitMerge(
   return { rvsdg::operands(mergeNode) };
 }
 
-static void
-CheckMemoryNodeIds(const std::vector<MemoryNodeId> & memoryNodeIds)
-{
-  const util::HashSet<MemoryNodeId> memoryNodeIdsSet(
-      { memoryNodeIds.begin(), memoryNodeIds.end() });
-
-  if (memoryNodeIdsSet.Size() != memoryNodeIds.size())
-    throw std::logic_error("Found duplicated memory node identifiers.");
-}
-
 static std::string
 ToString(const std::vector<MemoryNodeId> & memoryNodeIds)
 {
@@ -310,10 +300,9 @@ LambdaEntryMemoryStateSplitOperation::LambdaEntryMemoryStateSplitOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(1, memoryNodeIds.size())
 {
-  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
+    memoryNodeIdToIndexMap_.InsertOrThrow(memoryNodeIds[n], n);
   }
 }
 
@@ -374,10 +363,9 @@ LambdaExitMemoryStateMergeOperation::LambdaExitMemoryStateMergeOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(memoryNodeIds.size(), 1)
 {
-  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
+    MemoryNodeIdToIndex_.InsertOrThrow(memoryNodeIds[n], n);
   }
 }
 
@@ -554,10 +542,9 @@ CallEntryMemoryStateMergeOperation::CallEntryMemoryStateMergeOperation(
     const std::vector<MemoryNodeId> & memoryNodeIds)
     : MemoryStateOperation(memoryNodeIds.size(), 1)
 {
-  CheckMemoryNodeIds(memoryNodeIds);
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
+    MemoryNodeIdToIndex_.InsertOrThrow(memoryNodeIds[n], n);
   }
 }
 
@@ -605,13 +592,17 @@ CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
 CallExitMemoryStateSplitOperation::~CallExitMemoryStateSplitOperation() noexcept = default;
 
 CallExitMemoryStateSplitOperation::CallExitMemoryStateSplitOperation(
-    const std::vector<MemoryNodeId> & memoryNodeIds)
-    : MemoryStateOperation(1, memoryNodeIds.size())
+    const std::vector<MemoryNodeId> & memoryNodeIds,
+    std::vector<bool> mayModify)
+    : MemoryStateOperation(1, memoryNodeIds.size()),
+      mayModify_(std::move(mayModify))
 {
-  CheckMemoryNodeIds(memoryNodeIds);
+  if (mayModify_.size() != memoryNodeIds.size())
+    throw std::logic_error("Length of memoryNodeIds and mayModify must match");
+
   for (size_t n = 0; n < memoryNodeIds.size(); n++)
   {
-    memoryNodeIdToIndexMap_.Insert(memoryNodeIds[n], n);
+    memoryNodeIdToIndexMap_.InsertOrThrow(memoryNodeIds[n], n);
   }
 }
 
@@ -619,7 +610,8 @@ bool
 CallExitMemoryStateSplitOperation::operator==(const Operation & other) const noexcept
 {
   const auto operation = dynamic_cast<const CallExitMemoryStateSplitOperation *>(&other);
-  return operation && operation->memoryNodeIdToIndexMap_ == memoryNodeIdToIndexMap_;
+  return operation && operation->memoryNodeIdToIndexMap_ == memoryNodeIdToIndexMap_
+      && operation->mayModify_ == mayModify_;
 }
 
 std::string
@@ -664,6 +656,16 @@ CallExitMemoryStateSplitOperation::mapOutputToMemoryNodeId(const rvsdg::Output &
   JLM_ASSERT(operation != nullptr);
 
   return operation->memoryNodeIdToIndexMap_.LookupValue(output.index());
+}
+
+bool
+CallExitMemoryStateSplitOperation::mayCallModifyMemoryOfOutput(const rvsdg::Output & output)
+{
+  auto [_, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(output);
+  JLM_ASSERT(operation != nullptr);
+
+  return operation->mayModify_.at(output.index());
 }
 
 bool

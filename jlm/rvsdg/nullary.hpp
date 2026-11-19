@@ -8,7 +8,7 @@
 #define JLM_RVSDG_NULLARY_HPP
 
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::rvsdg
 {

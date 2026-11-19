@@ -8,7 +8,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/util/common.hpp>
 
 #include <functional>

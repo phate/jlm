@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 

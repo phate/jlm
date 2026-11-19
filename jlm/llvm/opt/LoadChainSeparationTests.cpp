@@ -679,7 +679,7 @@ TEST(LoadChainSeparationTests, ExternalCall)
       { &ioStateArgument, callEntryMergeNode.output(0) });
 
   auto & callExitSplitNode =
-      CallExitMemoryStateSplitOperation::CreateNode(*callNode.output(1), { 0, 1 });
+      CallExitMemoryStateSplitOperation::CreateNode(*callNode.output(1), { 0, 1 }, { true, true });
 
   auto & loadNode5 = LoadNonVolatileOperation::CreateNode(
       addressArgument,

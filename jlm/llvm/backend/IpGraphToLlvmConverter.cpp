@@ -7,7 +7,6 @@
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg-node.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
