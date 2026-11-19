@@ -297,8 +297,10 @@ FloatConversionTest::SetupRvsdg()
   auto doubleType = FloatingPointType::Create(fpsize::dbl);
   auto floatType = FloatingPointType::Create(fpsize::flt);
   auto bitType64 = BitType::Create(64);
-  auto functionType =
-      FunctionType::Create({ doubleType, floatType, bitType64 }, { doubleType, doubleType });
+  auto bitType32 = BitType::Create(32);
+  auto functionType = FunctionType::Create(
+      { doubleType, floatType, bitType64 },
+      { doubleType, doubleType, floatType, bitType32, bitType32, doubleType });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -336,7 +338,21 @@ FloatConversionTest::SetupRvsdg()
       fpop::add,
       doubleType);
 
-  fct->finalize({ first.output(0), second.output(0) });
+  auto & truncated = CreateOpNode<FPTruncOperation>({ doubleArgument }, doubleType, floatType);
+
+  auto & toSigned = CreateOpNode<FPToSIOperation>({ floatArgument }, floatType, bitType32);
+
+  auto & toUnsigned = CreateOpNode<FPToUIOperation>({ doubleArgument }, doubleType, bitType32);
+
+  auto & unsignedConverted =
+      CreateOpNode<UIToFPOperation>({ integerArgument }, bitType64, doubleType);
+
+  fct->finalize({ first.output(0),
+                  second.output(0),
+                  truncated.output(0),
+                  toSigned.output(0),
+                  toUnsigned.output(0),
+                  unsignedConverted.output(0) });
 
   GraphExport::Create(*fct->output(), "f");
 
