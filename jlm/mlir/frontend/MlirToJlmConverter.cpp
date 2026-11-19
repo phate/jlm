@@ -774,6 +774,14 @@ MlirToJlmConverter::ConvertOperation(
     return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
   }
 
+  else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  {
+    return { &llvm::ConstantStructOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(StructOp.getOutput().getType())) };
+  }
+
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
@@ -866,11 +874,15 @@ MlirToJlmConverter::ConvertOperation(
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
     auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+    // TODO: Add support for storing the mayModify attribute in the MLIR operation.
+    // Here we conservatively assume that the call may modify
+    std::vector<bool> mayModify(memoryNodeIds.size(), true);
 
     auto operands = std::vector(inputs.begin(), inputs.end());
     return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        std::move(memoryNodeIds)));
+        std::move(memoryNodeIds),
+        std::move(mayModify)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {
@@ -1410,9 +1422,10 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
-    if (StructTypeMap_.HasKey(&structType))
+    auto key = structType.getAsOpaquePointer();
+    if (StructTypeMap_.HasKey(key))
     {
-      return StructTypeMap_.LookupKey(&structType);
+      return StructTypeMap_.LookupKey(key);
     }
 
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
@@ -1434,7 +1447,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
     }
 
-    StructTypeMap_.Insert(&structType, jlmStructType);
+    StructTypeMap_.Insert(key, jlmStructType);
     return jlmStructType;
   }
   else

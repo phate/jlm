@@ -16,7 +16,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <llvm/IR/DerivedTypes.h>

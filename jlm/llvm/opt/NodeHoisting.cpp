@@ -400,6 +400,10 @@ mapStateOutputToInput(rvsdg::Output & output)
       {
         return nullptr;
       },
+      [](const UndefValueOperation &) -> rvsdg::Input *
+      {
+        return nullptr;
+      },
       [&simpleNode]() -> rvsdg::Input *
       {
         throw std::logic_error(

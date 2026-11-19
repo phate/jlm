@@ -7,7 +7,7 @@
 #define JLM_RVSDG_BITSTRING_ARITHMETIC_HPP
 
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::rvsdg
 {
