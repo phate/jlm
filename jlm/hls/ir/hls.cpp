@@ -3,10 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/ir/hls.hpp>
+#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/util/Hash.hpp>
+
 #include <algorithm>
 #include <cmath>
-#include <jlm/hls/ir/hls.hpp>
-#include <jlm/util/Hash.hpp>
 
 namespace jlm::hls
 {

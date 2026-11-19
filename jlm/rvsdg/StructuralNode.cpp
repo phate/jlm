@@ -3,8 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
 namespace jlm::rvsdg

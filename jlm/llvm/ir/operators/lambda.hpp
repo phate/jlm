@@ -10,12 +10,7 @@
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/substitution.hpp>
-#include <jlm/util/iterator_range.hpp>
 
 #include <utility>
 
