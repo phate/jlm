@@ -665,6 +665,50 @@ MlirToJlmConverter::ConvertOperation(
         llvm::FloatingPointType::Create(size)));
   }
 
+  else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncFOp>(&mlirOperation))
+  {
+    auto type = truncOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPTruncOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
+  else if (auto fpToSIOp = ::mlir::dyn_cast<::mlir::arith::FPToSIOp>(&mlirOperation))
+  {
+    auto type = fpToSIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToSIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto fpToUIOp = ::mlir::dyn_cast<::mlir::arith::FPToUIOp>(&mlirOperation))
+  {
+    auto type = fpToUIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToUIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto uiToFPOp = ::mlir::dyn_cast<::mlir::arith::UIToFPOp>(&mlirOperation))
+  {
+    auto type = uiToFPOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::UIToFPOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
   else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
   {
     auto type = truncOp.getResult().getType();
@@ -729,6 +773,14 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
     return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
+  }
+
+  else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  {
+    return { &llvm::ConstantStructOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(StructOp.getOutput().getType())) };
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
@@ -1427,9 +1479,10 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
-    if (StructTypeMap_.HasKey(&structType))
+    auto key = structType.getAsOpaquePointer();
+    if (StructTypeMap_.HasKey(key))
     {
-      return StructTypeMap_.LookupKey(&structType);
+      return StructTypeMap_.LookupKey(key);
     }
 
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
@@ -1451,7 +1504,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
     }
 
-    StructTypeMap_.Insert(&structType, jlmStructType);
+    StructTypeMap_.Insert(key, jlmStructType);
     return jlmStructType;
   }
   else
