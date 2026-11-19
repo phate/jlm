@@ -510,6 +510,14 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
+  else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
+  {
+    auto structType = ConvertType(*structOp->result(0));
+    MlirOp = Builder_->create<::mlir::jlm::ConstantStruct>(
+        Builder_->getUnknownLoc(),
+        structType,
+        inputs);
+  }
   else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
   {
     auto type = ConvertType(*zeroOp->result(0));
@@ -540,6 +548,34 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::arith::ExtFOp>(
         Builder_->getUnknownLoc(),
         ConvertType(*fpextOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto fptruncOp = dynamic_cast<const jlm::llvm::FPTruncOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::TruncFOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fptruncOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto fptosiOp = dynamic_cast<const jlm::llvm::FPToSIOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::FPToSIOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fptosiOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto fptouiOp = dynamic_cast<const jlm::llvm::FPToUIOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::FPToUIOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fptouiOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto uitofpOp = dynamic_cast<const jlm::llvm::UIToFPOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::UIToFPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*uitofpOp->result(0)),
         inputs[0]);
   }
 
