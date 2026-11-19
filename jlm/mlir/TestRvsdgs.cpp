@@ -247,7 +247,7 @@ PtrToIntTest::SetupRvsdg()
 
   auto bitType32 = BitType::Create(32);
   auto bitType64 = BitType::Create(64);
-  auto functionType = FunctionType::Create({ PointerType::Create() }, { bitType32, bitType64 });
+  auto functionType = FunctionType::Create({ PointerType::Create() }, { bitType64 });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -257,22 +257,28 @@ PtrToIntTest::SetupRvsdg()
       llvm::LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto pointerArgument = fct->GetFunctionArguments()[0];
 
-  auto & narrowNode = rvsdg::CreateOpNode<PtrToIntOperation>(
-      { pointerArgument },
-      std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
-      bitType32);
   auto & wideNode = rvsdg::CreateOpNode<PtrToIntOperation>(
       { pointerArgument },
       std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
       bitType64);
+  auto & narrowNode = rvsdg::CreateOpNode<PtrToIntOperation>(
+      { pointerArgument },
+      std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
+      bitType32);
+  auto & sextNode = SExtOperation::createNode(64, *narrowNode.output(0));
+  auto & addNode = rvsdg::CreateOpNode<IntegerAddOperation>(
+      { wideNode.output(0), sextNode.output(0) },
+      64);
 
-  fct->finalize({ narrowNode.output(0), wideNode.output(0) });
+  fct->finalize({ addNode.output(0) });
 
   GraphExport::Create(*fct->output(), "f");
 
   this->lambda = fct;
   this->ptrToIntNarrow = &narrowNode;
   this->ptrToIntWide = &wideNode;
+  this->sext = &sextNode;
+  this->add = &addNode;
 
   return module;
 }
