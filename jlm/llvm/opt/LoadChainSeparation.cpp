@@ -18,7 +18,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 

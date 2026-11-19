@@ -8,7 +8,7 @@
 #include <jlm/rvsdg/reduction-helpers.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/strfmt.hpp>
 

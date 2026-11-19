@@ -9,7 +9,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/ir/variable.hpp>
 #include <jlm/rvsdg/delta.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
 
 namespace jlm::llvm
 {

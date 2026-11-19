@@ -10,8 +10,7 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/operation.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/util/common.hpp>
 
 #include <memory>

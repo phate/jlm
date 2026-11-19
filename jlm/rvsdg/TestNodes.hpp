@@ -7,7 +7,7 @@
 #define JLM_RVSDG_TESTNODES_HPP
 
 #include <jlm/rvsdg/operation.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 
 namespace jlm::rvsdg
 {

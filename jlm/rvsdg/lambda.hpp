@@ -8,13 +8,10 @@
 #define JLM_RVSDG_LAMBDA_HPP
 
 #include <jlm/rvsdg/FunctionType.hpp>
-#include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/substitution.hpp>
-#include <jlm/util/iterator_range.hpp>
 
 #include <optional>
-#include <utility>
 
 namespace jlm::rvsdg
 {

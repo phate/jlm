@@ -4,7 +4,7 @@
  */
 
 #include <jlm/rvsdg/DotWriter.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/strfmt.hpp>
 
