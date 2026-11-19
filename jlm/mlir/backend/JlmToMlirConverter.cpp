@@ -510,6 +510,14 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
+  else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
+  {
+    auto structType = ConvertType(*structOp->result(0));
+    MlirOp = Builder_->create<::mlir::jlm::ConstantStruct>(
+        Builder_->getUnknownLoc(),
+        structType,
+        inputs);
+  }
   else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
   {
     auto type = ConvertType(*zeroOp->result(0));

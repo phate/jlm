@@ -519,6 +519,65 @@ GlobalArrayTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+ConstantStructTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto identifiedType = StructType::CreateIdentified(
+      "myStruct",
+      { BitType::Create(32), PointerType::Create() },
+      false);
+  auto literalType = StructType::CreateLiteral({ BitType::Create(32), BitType::Create(32) }, false);
+
+  auto identifiedDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(
+          identifiedType,
+          "identifiedStruct",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
+  auto first = &IntegerConstantOperation::Create(*identifiedDelta->subregion(), { 32, 1 });
+  auto second = &ConstantPointerNullOperation::createNode(*identifiedDelta->subregion());
+  auto & identifiedConstant = ConstantStructOperation::Create(
+      *identifiedDelta->subregion(),
+      { first->output(0), second->output(0) },
+      identifiedType);
+  auto & identifiedOutput = identifiedDelta->finalize(&identifiedConstant);
+  GraphExport::Create(identifiedOutput, "identifiedStruct");
+
+  auto literalDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(
+          literalType,
+          "literalStruct",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
+  auto literalFirst = &IntegerConstantOperation::Create(*literalDelta->subregion(), { 32, 1 });
+  auto literalSecond = &IntegerConstantOperation::Create(*literalDelta->subregion(), { 32, 2 });
+  auto & literalConstant = ConstantStructOperation::Create(
+      *literalDelta->subregion(),
+      { literalFirst->output(0), literalSecond->output(0) },
+      literalType);
+  auto & literalOutput = literalDelta->finalize(&literalConstant);
+  GraphExport::Create(literalOutput, "literalStruct");
+
+  this->identifiedDelta = identifiedDelta;
+  this->literalDelta = literalDelta;
+  this->identifiedStruct = TryGetOwnerNode<SimpleNode>(identifiedConstant);
+  this->literalStruct = TryGetOwnerNode<SimpleNode>(literalConstant);
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
 WideMemoryNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
