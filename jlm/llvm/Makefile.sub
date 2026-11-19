@@ -62,6 +62,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
+    jlm/llvm/opt/alias-analyses/ModRefSetFolding.cpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.cpp \
@@ -108,6 +109,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
+    jlm/llvm/opt/alias-analyses/ModRefSetFolding.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
