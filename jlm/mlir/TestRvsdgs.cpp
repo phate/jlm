@@ -310,9 +310,8 @@ PtrToIntTest::SetupRvsdg()
       std::dynamic_pointer_cast<const PointerType>(pointerArgument->Type()),
       bitType32);
   auto & sextNode = SExtOperation::createNode(64, *narrowNode.output(0));
-  auto & addNode = rvsdg::CreateOpNode<IntegerAddOperation>(
-      { wideNode.output(0), sextNode.output(0) },
-      64);
+  auto & addNode =
+      rvsdg::CreateOpNode<IntegerAddOperation>({ wideNode.output(0), sextNode.output(0) }, 64);
 
   fct->finalize({ addNode.output(0) });
 
