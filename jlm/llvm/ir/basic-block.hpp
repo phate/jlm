@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_IR_BASIC_BLOCK_HPP
 #define JLM_LLVM_IR_BASIC_BLOCK_HPP
 
-#include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
