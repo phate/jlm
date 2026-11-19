@@ -7,7 +7,7 @@
 #define JLM_LLVM_OPT_STOREVALUEFORWARDING_HPP
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg

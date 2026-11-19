@@ -475,7 +475,7 @@ protected:
   // from the gamma subregion to the region containing the output tracing started from
   bool enableRegionPredicateChecking_ = false;
   // The region predicate checker used to disqualify regions
-  AlternativeRegionPredicateTracer regionPredicateTracer_;
+  RegionPredicateTracer regionPredicateTracer_;
   // The output from which the current tracing operation started.
   // Used for region predication checks.
   // This is the starting output referenced by the enum \ref BackEdgeState.

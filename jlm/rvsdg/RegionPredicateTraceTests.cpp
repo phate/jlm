@@ -12,7 +12,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -55,7 +55,7 @@ TEST(RegionPredicateTraceTests, TestTracing)
   auto s = gamma3->AddExitVar({ s0->output(0), s1->output(0) }).output;
   rvsdg::GraphExport::Create(*s, "result2");
 
-  rvsdg::AlternativeRegionPredicateTracer trace;
+  rvsdg::RegionPredicateTracer trace;
 
   // Since gamma1 dominates gamma2, not all cross-paths are possible.
   EXPECT_TRUE(trace.isReachableFromRegion(*g2_right, *g1_left));
@@ -156,7 +156,7 @@ TEST(RegionPredicateTraceTests, TraceOutOfTheta)
   rvsdg::GraphExport::Create(*loopVar0.output, "x");
 
   // Assert
-  rvsdg::AlternativeRegionPredicateTracer trace;
+  rvsdg::RegionPredicateTracer trace;
 
   // Every region can be reached from the root region
   EXPECT_TRUE(trace.isReachableFromRegion(*theta0->subregion(), rvsdg.GetRootRegion()));
@@ -245,7 +245,7 @@ TEST(RegionPredicateTraceTests, TraceIntoGamma)
   auto & gamma2 = *rvsdg::GammaNode::create(gamma0Exit.output, 2);
 
   // Assert
-  rvsdg::AlternativeRegionPredicateTracer trace;
+  rvsdg::RegionPredicateTracer trace;
 
   // targeting gamma2's left subregion
   ASSERT_TRUE(trace.isReachableFromRegion(*gamma2.subregion(0), *gamma1.subregion(0)));
@@ -317,7 +317,7 @@ TEST(RegionPredicateTraceTests, TraceThroughGammas)
   auto & gamma2 = *rvsdg::GammaNode::create(gamma1ExitVar.output, 3);
 
   // Assert
-  rvsdg::AlternativeRegionPredicateTracer tracer;
+  rvsdg::RegionPredicateTracer tracer;
 
   // gamma0 has no effect on the subregions of gamma1
   ASSERT_TRUE(tracer.isReachableFromRegion(*gamma1.subregion(0), *gamma0.subregion(0)));

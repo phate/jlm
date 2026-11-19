@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/ArithmeticWithOverflowIntrinsicOperations.hpp>
@@ -1151,12 +1150,12 @@ convertFreeCall(
 
   const auto pointer = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
 
-  threeAddressCodes.push_back(FreeOperation::Create(pointer, { memstate }, ioState));
+  threeAddressCodes.push_back(FreeOperation::Create(pointer, ioState, { memstate }));
   const auto & freeThreeAddressCode = *threeAddressCodes.back().get();
 
   threeAddressCodes.push_back(
-      AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
-  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), ioState));
+      AssignmentOperation::create(freeThreeAddressCode.result(1), memstate));
+  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), ioState));
 
   return nullptr;
 }

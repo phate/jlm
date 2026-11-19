@@ -8,7 +8,6 @@
 #include <jlm/llvm/ir/aggregation.hpp>
 #include <jlm/llvm/ir/Annotation.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
