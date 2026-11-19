@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 #include <optional>
 
@@ -69,6 +69,21 @@ public:
   NumMemoryStates() const noexcept
   {
     return NumMemoryStates_;
+  }
+
+  /**
+   * Returns the number of memory states going through a \ref StoreOperation node.
+   *
+   * @param node A \ref StoreOperation node.
+   * @return the number of memory states routed through \p node.
+   *
+   * @pre \p node is expected to be a \ref StoreOperation node.
+   */
+  [[nodiscard]] static size_t
+  numMemoryStates(const rvsdg::SimpleNode & node) noexcept
+  {
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
+    return storeOperation->NumMemoryStates_;
   }
 
   [[nodiscard]] static rvsdg::Input &

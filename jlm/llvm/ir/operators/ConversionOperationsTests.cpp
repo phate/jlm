@@ -10,7 +10,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
 

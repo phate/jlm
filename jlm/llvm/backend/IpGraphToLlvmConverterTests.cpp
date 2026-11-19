@@ -615,10 +615,10 @@ TEST(IpGraphToLlvmConverterTests, Free)
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
-    bb->append_last(FreeOperation::Create(arg0, { arg1 }, arg2));
+    bb->append_last(FreeOperation::Create(arg0, arg2, { arg1 }));
 
-    cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
+    cfg->exit()->append_result(bb->last()->result(0));
 
     f->add_cfg(std::move(cfg));
 

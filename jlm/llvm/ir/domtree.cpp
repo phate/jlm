@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/domtree.hpp>
 

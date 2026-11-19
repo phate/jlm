@@ -103,15 +103,6 @@ public:
 
 private:
   /**
-   * Creates a call graph including all functions in the module, and groups all functions into SCCs.
-   * The resulting SCCs and topological order will be stored in the Context_ field.
-   *
-   * @param rvsdgModule the module for which a mod/ref summary is computed.
-   */
-  void
-  createCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
-
-  /**
    * Creates a set containing all simple Allocas is the \ref PointsToGraph.
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
@@ -156,16 +147,6 @@ private:
   removeSimpleAllocasAroundSetjmp();
 
   /**
-   * Uses the call graph to determine if the given function can ever be involved
-   * in a recursive chain of function calls.
-   *
-   * @param lambda the function in question.
-   * @return true if it is possible for lambda to be involved in recursion, false otherwise
-   */
-  bool
-  IsRecursionPossible(const rvsdg::LambdaNode & lambda) const;
-
-  /**
    * Adds the fact that everything in the ModRefSet \p from should also be included
    * in the ModRefSet \p to.
    */
@@ -185,6 +166,13 @@ private:
   addModRefSetSimpleAllocaAllowlist(
       ModRefSetIndex index,
       util::HashSet<PointsToGraph::NodeIndex> allowlist);
+
+  /**
+   * Recursively traverses the given \p region to find and annotate all contained lambda nodes.
+   * @param region the interprocedural region to annotate
+   */
+  void
+  annotateInterproceduralRegion(const rvsdg::Region & region);
 
   /**
    * Creates \ref ModRefSet%s for regions and nodes within the function.
@@ -298,12 +286,6 @@ private:
    */
   void
   materializeSetsInFunction(const rvsdg::LambdaNode & lambda);
-
-  /**
-   * Helper function for debugging, listing out all functions, grouped by call graph SCC.
-   */
-  static std::string
-  CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer);
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the

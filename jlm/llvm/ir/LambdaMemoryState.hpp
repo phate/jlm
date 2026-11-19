@@ -16,7 +16,7 @@
  */
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::llvm
 {

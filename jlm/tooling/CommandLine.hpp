@@ -58,6 +58,7 @@ public:
     Llvm,
     Mlir,
     Tree,
+    Null, // Do not output anything
 
     LastEnumValue // must always be the last enum value, used for iteration
   };

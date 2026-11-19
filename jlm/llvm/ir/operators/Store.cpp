@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/delta.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm

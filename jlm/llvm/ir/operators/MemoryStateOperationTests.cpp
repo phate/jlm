@@ -674,14 +674,16 @@ TEST(MemoryStateOperationTests, CallExitMemStateOperatorEquality)
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  const CallExitMemoryStateSplitOperation operation1({ 1, 2 });
-  const CallExitMemoryStateSplitOperation operation2({ 3, 4 });
-  const CallExitMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
-  const TestOperation operation4({ memoryStateType }, { memoryStateType, memoryStateType });
+  const CallExitMemoryStateSplitOperation operation1({ 1, 2 }, { true, true });
+  const CallExitMemoryStateSplitOperation operation2({ 3, 4 }, { true, true });
+  const CallExitMemoryStateSplitOperation operation3({ 1, 2 }, { true, false });
+  const CallExitMemoryStateSplitOperation operation4({ 1, 2, 3, 4 }, { true, true, true, true });
+  const TestOperation operation5({ memoryStateType }, { memoryStateType, memoryStateType });
 
   // Act & Assert
   EXPECT_EQ(operation1, operation1);
   EXPECT_NE(operation1, operation2); // Memory node identifiers differ
-  EXPECT_NE(operation1, operation3); // Number of memory node identifiers differ
-  EXPECT_NE(operation1, operation4); // Operation differs
+  EXPECT_NE(operation1, operation3); // May modify effects differ
+  EXPECT_NE(operation1, operation4); // Number of memory node identifiers differ
+  EXPECT_NE(operation1, operation5); // Operation differs
 }

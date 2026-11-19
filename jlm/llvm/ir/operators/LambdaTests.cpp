@@ -206,3 +206,42 @@ TEST(LambdaTests, TestPruneLambdaInputs)
   EXPECT_EQ(lambdaInput1.input->index(), 0u);
   EXPECT_EQ(lambdaInput1.inner->index(), 0u);
 }
+
+/**
+ * Test that attribute sets on the function arguments are part of the equality of two lambda
+ * operations.
+ *
+ * Two operations built the same way are equal to begin with, and then are separated only by what
+ * is put on their arguments: an attribute on one side, the empty set on the other, and one
+ * attribute more on both sides.
+ */
+TEST(LambdaTests, TestArgumentAttributesInEquality)
+{
+  using namespace jlm::llvm;
+
+  auto valueType = jlm::rvsdg::TestType::createValueType();
+  auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
+
+  auto op1 = LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage);
+  auto op2 = LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage);
+
+  ASSERT_TRUE(*op1 == *op2);
+
+  AttributeSet attributes;
+  attributes.InsertIntAttribute(IntAttribute(Attribute::kind::Alignment, 16));
+  op1->SetArgumentAttributes(0, attributes);
+
+  EXPECT_TRUE(*op1 != *op2) << "op1 carries an attribute on argument 0 that op2 does not";
+
+  op2->SetArgumentAttributes(0, AttributeSet());
+  EXPECT_TRUE(*op1 != *op2) << "an empty set on op2 is not the same as op1 carrying the attribute";
+
+  AttributeSet aligned;
+  aligned.InsertIntAttribute(IntAttribute(Attribute::kind::Alignment, 16));
+  aligned.InsertEnumAttribute(EnumAttribute(Attribute::kind::NoCapture));
+  op2->SetArgumentAttributes(0, attributes);
+  EXPECT_TRUE(*op1 == *op2);
+
+  op2->SetArgumentAttributes(0, aligned);
+  EXPECT_TRUE(*op1 != *op2) << "the two sides now differ by one attribute on argument 0";
+}

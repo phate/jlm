@@ -242,7 +242,7 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
     { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
     { OutputFormat::Json, "json" },   { OutputFormat::JsonTree, "jsonTree" },
     { OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
-    { OutputFormat::Tree, "tree" },
+    { OutputFormat::Tree, "tree" },   { OutputFormat::Null, "null" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -312,6 +312,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::StoreValueForwarding,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
@@ -637,7 +638,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     CommandLineOptions_.Compilations_.push_back(
         { inputFilePath,
           mF.empty() ? ToDependencyFile(inputFilePath) : util::FilePath(mF),
-          ToObjectFile(inputFilePath),
+          noLinking ? ToObjectFile(inputFilePath)
+                    : util::FilePath::createUniqueFileName(
+                          util::FilePath::TempDirectoryPath(),
+                          inputFilePath.base() + "-",
+                          ".o"),
           mT.empty() ? ToObjectFile(inputFilePath).name() : mT,
           true,
           true,
@@ -830,7 +835,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 #endif
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
-              "Output Rvsdg Tree")),
+              "Output Rvsdg Tree"),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Null, "Disable output")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;

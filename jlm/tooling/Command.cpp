@@ -684,6 +684,10 @@ JlmOptCommand::PrintRvsdgModule(
   {
     printAsRvsdgJsonTree(rvsdgModule, outputFile, statisticsCollector);
   }
+  else if (outputFormat == JlmOptCommandLineOptions::OutputFormat::Null)
+  {
+    // No need to output anything
+  }
   else
   {
     JLM_UNREACHABLE("Unhandled output format.");
