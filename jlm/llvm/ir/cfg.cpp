@@ -17,6 +17,117 @@
 namespace jlm::llvm
 {
 
+ControlFlowGraphEdge::ControlFlowGraphEdge(
+    ControlFlowGraphNode * source,
+    ControlFlowGraphNode * sink,
+    size_t index) noexcept
+    : source_(source),
+      sink_(sink),
+      index_(index)
+{}
+
+void
+ControlFlowGraphEdge::divert(ControlFlowGraphNode * new_sink)
+{
+  if (sink_ == new_sink)
+    return;
+
+  sink_->inedges_.erase(this);
+  sink_ = new_sink;
+  new_sink->inedges_.insert(this);
+}
+
+BasicBlock *
+ControlFlowGraphEdge::split()
+{
+  auto sink = sink_;
+  auto bb = BasicBlock::create(source_->cfg());
+  divert(bb);
+  bb->add_outedge(sink);
+  return bb;
+}
+
+ControlFlowGraphNode::~ControlFlowGraphNode() noexcept = default;
+
+size_t
+ControlFlowGraphNode::NumOutEdges() const noexcept
+{
+  return outedges_.size();
+}
+
+void
+ControlFlowGraphNode::remove_inedges()
+{
+  while (inedges_.size() != 0)
+  {
+    ControlFlowGraphEdge * edge = *inedges_.begin();
+    JLM_ASSERT(edge->sink() == this);
+    edge->source()->remove_outedge(edge->index());
+  }
+}
+
+size_t
+ControlFlowGraphNode::NumInEdges() const noexcept
+{
+  return inedges_.size();
+}
+
+bool
+ControlFlowGraphNode::no_predecessor() const noexcept
+{
+  return NumInEdges() == 0;
+}
+
+bool
+ControlFlowGraphNode::single_predecessor() const noexcept
+{
+  if (NumInEdges() == 0)
+    return false;
+
+  for (auto i = inedges_.begin(); i != inedges_.end(); i++)
+  {
+    JLM_ASSERT((*i)->sink() == this);
+    if ((*i)->source() != (*inedges_.begin())->source())
+      return false;
+  }
+
+  return true;
+}
+
+bool
+ControlFlowGraphNode::no_successor() const noexcept
+{
+  return NumOutEdges() == 0;
+}
+
+bool
+ControlFlowGraphNode::single_successor() const noexcept
+{
+  if (NumOutEdges() == 0)
+    return false;
+
+  for (auto & edge : OutEdges())
+  {
+    JLM_ASSERT(edge.source() == this);
+    if (edge.sink() != OutEdge(0)->sink())
+      return false;
+  }
+
+  return true;
+}
+
+bool
+ControlFlowGraphNode::has_selfloop_edge() const noexcept
+{
+  for (auto & edge : OutEdges())
+  {
+    if (edge.is_selfloop())
+      return true;
+  }
+
+  return false;
+}
+
 Argument::~Argument() noexcept = default;
 
 EntryNode::~EntryNode() noexcept = default;
@@ -29,6 +140,23 @@ ControlFlowGraph::ControlFlowGraph(InterProceduralGraphModule & im)
   entry_ = std::make_unique<EntryNode>(*this);
   exit_ = std::make_unique<ExitNode>(*this);
   entry_->add_outedge(exit_.get());
+}
+
+BasicBlock *
+ControlFlowGraph::add_node(std::unique_ptr<BasicBlock> bb)
+{
+  auto tmp = bb.get();
+  nodes_.insert(std::move(bb));
+  return tmp;
+}
+
+ControlFlowGraph::iterator
+ControlFlowGraph::find_node(BasicBlock * bb)
+{
+  std::unique_ptr<BasicBlock> up(bb);
+  auto it = nodes_.find(up);
+  up.release();
+  return iterator(it);
 }
 
 ControlFlowGraph::iterator
@@ -276,6 +404,12 @@ ControlFlowGraph::CreateLabels(const std::vector<ControlFlowGraphNode *> & nodes
   }
 
   return map;
+}
+
+std::unique_ptr<ControlFlowGraph>
+ControlFlowGraph::create(InterProceduralGraphModule & im)
+{
+  return std::make_unique<ControlFlowGraph>(im);
 }
 
 std::vector<ControlFlowGraphNode *>
