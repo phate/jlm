@@ -5,12 +5,10 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -34,8 +32,8 @@ nthetas(jlm::rvsdg::Region * region)
 
 static jlm::rvsdg::ThetaNode *
 create_theta(
-    const jlm::rvsdg::BitCompareOperation & cop,
-    const jlm::rvsdg::BitBinaryOperation & aop,
+    const jlm::llvm::IntegerBinaryOperation & cop,
+    const jlm::llvm::IntegerBinaryOperation & aop,
     jlm::rvsdg::Output * init,
     jlm::rvsdg::Output * step,
     jlm::rvsdg::Output * end)
@@ -63,15 +61,15 @@ create_theta(
 TEST(LoopUnrollingTests, test_unrollinfo)
 {
   auto bt32 = jlm::rvsdg::BitType::Create(32);
-  jlm::rvsdg::bitslt_op slt(32);
-  jlm::rvsdg::bitult_op ult(32);
-  jlm::rvsdg::bitule_op ule(32);
-  jlm::rvsdg::bitugt_op ugt(32);
-  jlm::rvsdg::bitsge_op sge(32);
-  jlm::rvsdg::biteq_op eq(32);
+  jlm::llvm::IntegerSltOperation slt(32);
+  jlm::llvm::IntegerUltOperation ult(32);
+  jlm::llvm::IntegerUleOperation ule(32);
+  jlm::llvm::IntegerUgtOperation ugt(32);
+  jlm::llvm::IntegerSgeOperation sge(32);
+  jlm::llvm::IntegerEqOperation eq(32);
 
-  jlm::rvsdg::bitadd_op add(32);
-  jlm::rvsdg::bitsub_op sub(32);
+  jlm::llvm::IntegerAddOperation add(32);
+  jlm::llvm::IntegerSubOperation sub(32);
 
   {
     jlm::rvsdg::Graph graph;
@@ -91,18 +89,24 @@ TEST(LoopUnrollingTests, test_unrollinfo)
   {
     jlm::rvsdg::Graph graph;
 
-    auto init0 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-    auto init1 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-    auto initm1 =
-        &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0xFFFFFFFF });
+    auto init0 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+    auto init1 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+    auto initm1 = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0xFFFFFFFF)
+                      .output(0);
 
-    auto step1 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-    auto step0 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-    auto stepm1 =
-        &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0xFFFFFFFF });
-    auto step2 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 2 });
+    auto step1 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+    auto step0 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+    auto stepm1 = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0xFFFFFFFF)
+                      .output(0);
+    auto step2 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2).output(0);
 
-    auto end100 = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 100 });
+    auto end100 =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
     auto theta = create_theta(ult, add, init0, step1, end100);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
@@ -136,17 +140,17 @@ TEST(LoopUnrollingTests, test_unrollinfo)
 
 TEST(LoopUnrollingTests, test_known_boundaries)
 {
-  jlm::rvsdg::bitult_op ult(32);
-  jlm::rvsdg::bitsgt_op sgt(32);
-  jlm::rvsdg::bitadd_op add(32);
-  jlm::rvsdg::bitsub_op sub(32);
+  jlm::llvm::IntegerUltOperation ult(32);
+  jlm::llvm::IntegerSgtOperation sgt(32);
+  jlm::llvm::IntegerAddOperation add(32);
+  jlm::llvm::IntegerSubOperation sub(32);
 
   {
     jlm::rvsdg::Graph graph;
 
-    auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-    auto step = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-    auto end = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 4 });
+    auto init = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+    auto step = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+    auto end = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 4).output(0);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -162,9 +166,10 @@ TEST(LoopUnrollingTests, test_known_boundaries)
   {
     jlm::rvsdg::Graph graph;
 
-    auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-    auto step = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-    auto end = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 100 });
+    auto init = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+    auto step = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+    auto end =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -180,9 +185,10 @@ TEST(LoopUnrollingTests, test_known_boundaries)
   {
     jlm::rvsdg::Graph graph;
 
-    auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-    auto step = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-    auto end = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 100 });
+    auto init = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+    auto step = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+    auto end =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -199,9 +205,11 @@ TEST(LoopUnrollingTests, test_known_boundaries)
   {
     jlm::rvsdg::Graph graph;
 
-    auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 100 });
-    auto step = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, -1 });
-    auto end = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
+    auto init =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100).output(0);
+    auto step =
+        jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, -1).output(0);
+    auto end = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
 
     auto theta = create_theta(sgt, sub, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -234,9 +242,9 @@ TEST(LoopUnrollingTests, test_unknown_boundaries)
   auto lv1 = theta->AddLoopVar(x);
   auto lv2 = theta->AddLoopVar(y);
 
-  auto one = &BitConstantOperation::create(*theta->subregion(), { 32, 1 });
-  auto add = jlm::rvsdg::bitadd_op::create(32, lv1.pre, one);
-  auto cmp = jlm::rvsdg::bitult_op::create(32, add, lv2.pre);
+  auto one = IntegerConstantOperation::Create(*theta->subregion(), 32, 1).output(0);
+  auto add = IntegerAddOperation::createNode(32, *lv1.pre, *one).output(0);
+  auto cmp = IntegerUltOperation::createNode(32, *add, *lv2.pre).output(0);
   auto & matchNode = MatchOperation::CreateNode(*cmp, { { 1, 0 } }, 1, 2);
 
   lv1.post->divert_to(add);
@@ -279,9 +287,9 @@ TEST(LoopUnrollingTests, test_nested_theta)
   jlm::llvm::LlvmRvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto init = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 0 });
-  auto step = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 1 });
-  auto end = &jlm::rvsdg::BitConstantOperation::create(graph.GetRootRegion(), { 32, 97 });
+  auto init = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0).output(0);
+  auto step = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1).output(0);
+  auto end = jlm::llvm::IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 97).output(0);
 
   /* Outer loop */
   auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
@@ -290,8 +298,8 @@ TEST(LoopUnrollingTests, test_nested_theta)
   auto lvo_step = otheta->AddLoopVar(step);
   auto lvo_end = otheta->AddLoopVar(end);
 
-  auto add = jlm::rvsdg::bitadd_op::create(32, lvo_init.pre, lvo_step.pre);
-  auto compare = jlm::rvsdg::bitult_op::create(32, add, lvo_end.pre);
+  auto add = jlm::llvm::IntegerAddOperation::createNode(32, *lvo_init.pre, *lvo_step.pre).output(0);
+  auto compare = jlm::llvm::IntegerUltOperation::createNode(32, *add, *lvo_end.pre).output(0);
   auto & matchNode = jlm::rvsdg::MatchOperation::CreateNode(*compare, { { 1, 1 } }, 0, 2);
   otheta->set_predicate(matchNode.output(0));
   lvo_init.post->divert_to(add);
@@ -299,13 +307,16 @@ TEST(LoopUnrollingTests, test_nested_theta)
   /* First inner loop in the original loop */
   auto inner_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
-  auto inner_init = &jlm::rvsdg::BitConstantOperation::create(*otheta->subregion(), { 32, 0 });
+  auto inner_init =
+      jlm::llvm::IntegerConstantOperation::Create(*otheta->subregion(), 32, 0).output(0);
   auto lvi_init = inner_theta->AddLoopVar(inner_init);
   auto lvi_step = inner_theta->AddLoopVar(lvo_step.pre);
   auto lvi_end = inner_theta->AddLoopVar(lvo_end.pre);
 
-  auto inner_add = jlm::rvsdg::bitadd_op::create(32, lvi_init.pre, lvi_step.pre);
-  auto inner_compare = jlm::rvsdg::bitult_op::create(32, inner_add, lvi_end.pre);
+  auto inner_add =
+      jlm::llvm::IntegerAddOperation::createNode(32, *lvi_init.pre, *lvi_step.pre).output(0);
+  auto inner_compare =
+      jlm::llvm::IntegerUltOperation::createNode(32, *inner_add, *lvi_end.pre).output(0);
   auto & innerMatchNode =
       jlm::rvsdg::MatchOperation::CreateNode(*inner_compare, { { 1, 1 } }, 0, 2);
   inner_theta->set_predicate(innerMatchNode.output(0));
@@ -315,15 +326,17 @@ TEST(LoopUnrollingTests, test_nested_theta)
   auto inner_nested_theta = jlm::rvsdg::ThetaNode::create(inner_theta->subregion());
 
   auto inner_nested_init =
-      &jlm::rvsdg::BitConstantOperation::create(*inner_theta->subregion(), { 32, 0 });
+      jlm::llvm::IntegerConstantOperation::Create(*inner_theta->subregion(), 32, 0).output(0);
   auto lvi_nested_init = inner_nested_theta->AddLoopVar(inner_nested_init);
   auto lvi_nested_step = inner_nested_theta->AddLoopVar(lvi_step.pre);
   auto lvi_nested_end = inner_nested_theta->AddLoopVar(lvi_end.pre);
 
   auto inner_nested_add =
-      jlm::rvsdg::bitadd_op::create(32, lvi_nested_init.pre, lvi_nested_step.pre);
+      jlm::llvm::IntegerAddOperation::createNode(32, *lvi_nested_init.pre, *lvi_nested_step.pre)
+          .output(0);
   auto inner_nested_compare =
-      jlm::rvsdg::bitult_op::create(32, inner_nested_add, lvi_nested_end.pre);
+      jlm::llvm::IntegerUltOperation::createNode(32, *inner_nested_add, *lvi_nested_end.pre)
+          .output(0);
   auto & innerNestedMatchNode =
       jlm::rvsdg::MatchOperation::CreateNode(*inner_nested_compare, { { 1, 1 } }, 0, 2);
   inner_nested_theta->set_predicate(innerNestedMatchNode.output(0));
@@ -332,13 +345,16 @@ TEST(LoopUnrollingTests, test_nested_theta)
   /* Second inner loop in the original loop */
   auto inner2_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
-  auto inner2_init = &jlm::rvsdg::BitConstantOperation::create(*otheta->subregion(), { 32, 0 });
+  auto inner2_init =
+      jlm::llvm::IntegerConstantOperation::Create(*otheta->subregion(), 32, 0).output(0);
   auto lvi2_init = inner2_theta->AddLoopVar(inner2_init);
   auto lvi2_step = inner2_theta->AddLoopVar(lvo_step.pre);
   auto lvi2_end = inner2_theta->AddLoopVar(lvo_end.pre);
 
-  auto inner2_add = jlm::rvsdg::bitadd_op::create(32, lvi2_init.pre, lvi2_step.pre);
-  auto inner2_compare = jlm::rvsdg::bitult_op::create(32, inner2_add, lvi2_end.pre);
+  auto inner2_add =
+      jlm::llvm::IntegerAddOperation::createNode(32, *lvi2_init.pre, *lvi2_step.pre).output(0);
+  auto inner2_compare =
+      jlm::llvm::IntegerUltOperation::createNode(32, *inner2_add, *lvi2_end.pre).output(0);
   auto & inner2MatchNode =
       jlm::rvsdg::MatchOperation::CreateNode(*inner2_compare, { { 1, 1 } }, 0, 2);
   inner2_theta->set_predicate(inner2MatchNode.output(0));
