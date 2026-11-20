@@ -45,26 +45,6 @@ print(const InterProceduralGraphModule & im, FILE * out)
   fflush(out);
 }
 
-/* aggregation tree */
-
-std::string
-to_str(const AggregationNode & n, const AnnotationMap & dm);
-
-static inline std::string
-to_str(const AggregationNode & n)
-{
-  return to_str(n, {});
-}
-
-void
-print(const AggregationNode & n, const AnnotationMap & dm, FILE * out);
-
-static inline void
-print(const AggregationNode & n, FILE * out)
-{
-  print(n, {}, out);
-}
-
 }
 
 #endif

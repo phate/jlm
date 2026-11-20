@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/aggregation.hpp>
+#include <jlm/llvm/ir/Annotation.hpp>
 
 #include <deque>
 #include <functional>
@@ -52,6 +53,33 @@ AggregationNode::normalize(AggregationNode & node)
 
   for (auto & child : node)
     normalize(child);
+}
+
+std::string
+AggregationNode::toAscii(const AggregationNode & node, const AnnotationMap & map)
+{
+  std::function<std::string(const AggregationNode &, size_t)> f =
+      [&](const AggregationNode & n, const size_t depth)
+  {
+    std::string subtree(depth, '-');
+    subtree += n.debug_string();
+
+    if (map.Contains(n))
+      subtree += " " + map.Lookup<AnnotationSet>(n).DebugString() + "\n";
+
+    for (const auto & child : n)
+      subtree += f(child, depth + 1);
+
+    return subtree;
+  };
+
+  return f(node, 0);
+}
+
+std::string
+AggregationNode::toAscii(const AggregationNode & node)
+{
+  return toAscii(node, {});
 }
 
 EntryAggregationNode::~EntryAggregationNode() noexcept = default;

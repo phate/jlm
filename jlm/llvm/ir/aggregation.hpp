@@ -13,6 +13,7 @@
 namespace jlm::llvm
 {
 
+class AnnotationMap;
 class ControlFlowGraph;
 
 class AggregationNode
@@ -145,6 +146,12 @@ public:
   */
   static void
   normalize(AggregationNode & node);
+
+  static std::string
+  toAscii(const AggregationNode & node, const AnnotationMap & map);
+
+  static std::string
+  toAscii(const AggregationNode & node);
 
 private:
   void

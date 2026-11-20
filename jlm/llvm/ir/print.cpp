@@ -93,34 +93,4 @@ to_str(const InterProceduralGraph & clg)
   return str;
 }
 
-/* aggregation node */
-
-std::string
-to_str(const AggregationNode & n, const AnnotationMap & dm)
-{
-  std::function<std::string(const AggregationNode &, size_t)> f =
-      [&](const AggregationNode & n, size_t depth)
-  {
-    std::string subtree(depth, '-');
-    subtree += n.debug_string();
-
-    if (dm.Contains(n))
-      subtree += " " + dm.Lookup<AnnotationSet>(n).DebugString() + "\n";
-
-    for (const auto & child : n)
-      subtree += f(child, depth + 1);
-
-    return subtree;
-  };
-
-  return f(n, 0);
-}
-
-void
-print(const AggregationNode & n, const AnnotationMap & dm, FILE * out)
-{
-  fputs(to_str(n, dm).c_str(), out);
-  fflush(out);
-}
-
 }
