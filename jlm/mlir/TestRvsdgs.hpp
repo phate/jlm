@@ -205,6 +205,45 @@ public:
   jlm::rvsdg::SimpleNode * trunc;
 };
 
+/** \brief PtrToIntTest class
+ *
+ * This class sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   int64_t f(void * p)
+ *   {
+ *     return (int64_t) p + (int32_t) p;
+ *   }
+ * \endcode
+ *
+ * The same pointer is converted twice, to 64 and to 32 bits, so the fixture covers both the
+ * common case where the destination matches the address size and one where it does not. The
+ * 32-bit result is sign extended and added to the 64-bit result, which makes both conversions
+ * reachable from the lambda result. The width of a conversion is only visible through the
+ * operation's result type, and \ref jlm::llvm::PtrToIntOperation compares both of its types for
+ * equality where the reverse \ref jlm::llvm::IntToPtrOperation ignores its argument type, so a
+ * conversion that dropped the width fails here rather than passing silently.
+ *
+ * \see jlm::llvm::Bits2PtrTest
+ */
+class PtrToIntTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::LambdaNode * lambda;
+
+  jlm::rvsdg::SimpleNode * ptrToIntNarrow;
+
+  jlm::rvsdg::SimpleNode * ptrToIntWide;
+
+  jlm::rvsdg::SimpleNode * sext;
+
+  jlm::rvsdg::SimpleNode * add;
+};
+
 /** \brief FloatBinaryTest class
  *
  * This class sets up an RVSDG representing the following function:
