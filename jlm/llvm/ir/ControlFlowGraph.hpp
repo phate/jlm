@@ -2,8 +2,8 @@
  * Copyright 2013 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
-#ifndef JLM_LLVM_IR_CFG_HPP
-#define JLM_LLVM_IR_CFG_HPP
+#ifndef JLM_LLVM_IR_CONTROL_FLOW_GRAPH_HPP
+#define JLM_LLVM_IR_CONTROL_FLOW_GRAPH_HPP
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/types.hpp>
