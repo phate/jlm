@@ -9,7 +9,6 @@
 #include <jlm/llvm/ir/Annotation.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
@@ -40,15 +39,11 @@ TEST(AnnotationTests, TestBasicBlockAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v0, v1, v2] = SetupAggregationTree(module);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot),
       BasicBlockAnnotationSet({ v0 }, { v1, v2 }, { v1, v2 }));
@@ -93,15 +88,11 @@ TEST(AnnotationTests, TestLinearSubgraphAnnotation)
   jlm::llvm::Argument argument("argument", jlm::rvsdg::TestType::createValueType());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
       LinearAnnotationSet({}, { v1, &argument, v2 }, { v1, &argument, v2 }));
@@ -186,15 +177,11 @@ TEST(AnnotationTests, TestBranchAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
       LinearAnnotationSet({ argument, v2 }, { v1, v2, v3, v4 }, { v1, v3 }));
@@ -254,15 +241,11 @@ TEST(AnnotationTests, TestLoopAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
-  /*
-   * Assert
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Act
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
       LinearAnnotationSet({ v1, v4 }, { v2, v3 }, { v2, v3 }));
@@ -328,15 +311,11 @@ TEST(AnnotationTests, TestBranchInLoopAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
       LinearAnnotationSet({ v1, v2, v4 }, { v2, v3, v4 }, { v3 }));
@@ -393,15 +372,11 @@ TEST(AnnotationTests, TestAssignmentAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<BasicBlockAnnotationSet>(*aggregationTreeRoot),
       BasicBlockAnnotationSet({ v1 }, { v2 }, { v2 }));
@@ -453,15 +428,11 @@ TEST(AnnotationTests, TestBranchPassByAnnotation)
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3] = SetupAggregationTree(module);
 
-  /*
-   * Act
-   */
+  // Act
   auto demandMap = Annotate(*aggregationTreeRoot);
-  print(*aggregationTreeRoot, *demandMap, stdout);
+  std::cout << AggregationNode::toAscii(*aggregationTreeRoot, *demandMap);
 
-  /*
-   * Assert
-   */
+  // Assert
   EXPECT_EQ(
       demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot),
       LinearAnnotationSet({}, { v1, v2, v3 }, { v1, v2, v3 }));
