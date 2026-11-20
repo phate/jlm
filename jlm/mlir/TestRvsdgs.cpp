@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
 #include <jlm/mlir/TestRvsdgs.hpp>
@@ -208,6 +209,49 @@ MemoryHoistBarrierTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+MemcpyVolatileTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto fcttype = rvsdg::FunctionType::Create(
+      { IOStateType::Create(),
+        MemoryStateType::Create(),
+        PointerType::Create(),
+        PointerType::Create() },
+      { IOStateType::Create(), MemoryStateType::Create() });
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto fct = rvsdg::LambdaNode::Create(
+      graph->GetRootRegion(),
+      llvm::LlvmLambdaOperation::Create(fcttype, "f", Linkage::externalLinkage));
+  auto iOStateArgument = fct->GetFunctionArguments()[0];
+  auto memoryStateArgument = fct->GetFunctionArguments()[1];
+  auto destinationArgument = fct->GetFunctionArguments()[2];
+  auto sourceArgument = fct->GetFunctionArguments()[3];
+
+  auto length = IntegerConstantOperation::Create(*fct->subregion(), { 64, 16 }).output(0);
+
+  auto & memcpyNode = MemCpyVolatileOperation::CreateNode(
+      *destinationArgument,
+      *sourceArgument,
+      *length,
+      *iOStateArgument,
+      { memoryStateArgument });
+
+  fct->finalize({ memcpyNode.output(0), memcpyNode.output(1) });
+
+  GraphExport::Create(*fct->output(), "f");
+
+  this->lambda = fct;
+  this->memcpy = &memcpyNode;
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
 IntegerConversionTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
@@ -297,8 +341,10 @@ FloatConversionTest::SetupRvsdg()
   auto doubleType = FloatingPointType::Create(fpsize::dbl);
   auto floatType = FloatingPointType::Create(fpsize::flt);
   auto bitType64 = BitType::Create(64);
-  auto functionType =
-      FunctionType::Create({ doubleType, floatType, bitType64 }, { doubleType, doubleType });
+  auto bitType32 = BitType::Create(32);
+  auto functionType = FunctionType::Create(
+      { doubleType, floatType, bitType64 },
+      { doubleType, doubleType, floatType, bitType32, bitType32, doubleType });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -336,7 +382,21 @@ FloatConversionTest::SetupRvsdg()
       fpop::add,
       doubleType);
 
-  fct->finalize({ first.output(0), second.output(0) });
+  auto & truncated = CreateOpNode<FPTruncOperation>({ doubleArgument }, doubleType, floatType);
+
+  auto & toSigned = CreateOpNode<FPToSIOperation>({ floatArgument }, floatType, bitType32);
+
+  auto & toUnsigned = CreateOpNode<FPToUIOperation>({ doubleArgument }, doubleType, bitType32);
+
+  auto & unsignedConverted =
+      CreateOpNode<UIToFPOperation>({ integerArgument }, bitType64, doubleType);
+
+  fct->finalize({ first.output(0),
+                  second.output(0),
+                  truncated.output(0),
+                  toSigned.output(0),
+                  toUnsigned.output(0),
+                  unsignedConverted.output(0) });
 
   GraphExport::Create(*fct->output(), "f");
 
@@ -514,6 +574,65 @@ GlobalArrayTest::SetupRvsdg()
   this->zeroDelta = zeroDelta;
   this->constantDataArray = rvsdg::TryGetOwnerNode<SimpleNode>(*constantDataArray);
   this->constantAggregateZero = rvsdg::TryGetOwnerNode<SimpleNode>(*constantAggregateZero);
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+ConstantStructTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto identifiedType = StructType::CreateIdentified(
+      "myStruct",
+      { BitType::Create(32), PointerType::Create() },
+      false);
+  auto literalType = StructType::CreateLiteral({ BitType::Create(32), BitType::Create(32) }, false);
+
+  auto identifiedDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(
+          identifiedType,
+          "identifiedStruct",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
+  auto first = &IntegerConstantOperation::Create(*identifiedDelta->subregion(), { 32, 1 });
+  auto second = &ConstantPointerNullOperation::createNode(*identifiedDelta->subregion());
+  auto & identifiedConstant = ConstantStructOperation::Create(
+      *identifiedDelta->subregion(),
+      { first->output(0), second->output(0) },
+      identifiedType);
+  auto & identifiedOutput = identifiedDelta->finalize(&identifiedConstant);
+  GraphExport::Create(identifiedOutput, "identifiedStruct");
+
+  auto literalDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(
+          literalType,
+          "literalStruct",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
+  auto literalFirst = &IntegerConstantOperation::Create(*literalDelta->subregion(), { 32, 1 });
+  auto literalSecond = &IntegerConstantOperation::Create(*literalDelta->subregion(), { 32, 2 });
+  auto & literalConstant = ConstantStructOperation::Create(
+      *literalDelta->subregion(),
+      { literalFirst->output(0), literalSecond->output(0) },
+      literalType);
+  auto & literalOutput = literalDelta->finalize(&literalConstant);
+  GraphExport::Create(literalOutput, "literalStruct");
+
+  this->identifiedDelta = identifiedDelta;
+  this->literalDelta = literalDelta;
+  this->identifiedStruct = TryGetOwnerNode<SimpleNode>(identifiedConstant);
+  this->literalStruct = TryGetOwnerNode<SimpleNode>(literalConstant);
 
   return module;
 }

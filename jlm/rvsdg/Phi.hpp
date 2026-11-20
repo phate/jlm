@@ -7,12 +7,10 @@
 #ifndef JLM_RVSDG_PHI_HPP
 #define JLM_RVSDG_PHI_HPP
 
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/util/common.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 
 namespace jlm::rvsdg
 {
