@@ -8,6 +8,7 @@ TARGET="release"
 ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-"${LLVM_VERSION}
 ENABLE_COVERAGE="no"
+LIT_BIN=""
 ENABLE_HLS=
 CIRCT_PATH="./usr"
 CIRCT_LDFLAGS=
@@ -30,6 +31,7 @@ function usage()
 	echo "  --enable-mlir[=PATH]  Enables the MLIR Dialect, and optionally sets a custom"
 	echo "                        path to the MLIR dialect installation. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
+	echo "  --lit[=PATH]          Sets the path to the lit executable."
 	echo "  --help                Prints this message and stops."
 	echo
 	echo "Influential variables that can be set:"
@@ -73,6 +75,15 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--enable-coverage)
 			ENABLE_COVERAGE="yes"
+			shift
+			;;
+		--lit)
+			shift
+			LIT_BIN="$1"
+			shift
+			;;
+		--lit=*)
+			LIT_BIN="${1#*=}"
 			shift
 			;;
 		-*) # Any unknown option triggers the usage text. This includes --help and -h
@@ -170,6 +181,19 @@ if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
 	fi
 fi
 
+if [ -z "${LIT_BIN}" ] ; then
+	for candidate in lit llvm-lit "lit-${LLVM_VERSION}" "llvm-lit-${LLVM_VERSION}" ; do
+		if command -v "$candidate" >/dev/null 2>&1 ; then
+			LIT_BIN="$(command -v "$candidate")"
+			break
+		fi
+	done
+fi
+
+if [ -z "${LIT_BIN}" ] ; then
+	echo "Warning: lit could not be found on search path. Install it via 'pip install lit' or pass --lit=<path>."
+fi
+
 mkdir -p build-"${TARGET}"
 rm -rf build ; ln -sf build-"${TARGET}" build
 
@@ -188,6 +212,7 @@ MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 LLVM_VERSION=${LLVM_VERSION}
+LIT=${LIT_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 GTEST_LDFLAGS=${GTEST_LDFLAGS-}
 export LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
