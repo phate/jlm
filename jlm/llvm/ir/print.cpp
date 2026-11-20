@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/aggregation.hpp>
-#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>

@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/domtree.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 

@@ -18,7 +18,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/basic-block.cpp \
     jlm/llvm/ir/CallingConvention.cpp \
     jlm/llvm/ir/CallSummary.cpp \
-    jlm/llvm/ir/cfg.cpp \
+    jlm/llvm/ir/ControlFlowGraph.cpp \
     jlm/llvm/ir/domtree.cpp \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
@@ -142,7 +142,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/tac.hpp \
     jlm/llvm/ir/domtree.hpp \
     jlm/llvm/ir/ipgraph.hpp \
-    jlm/llvm/ir/cfg.hpp \
+    jlm/llvm/ir/ControlFlowGraph.hpp \
     jlm/llvm/ir/ssa.hpp \
     jlm/llvm/ir/TypeConverter.hpp \
     jlm/llvm/ir/variable.hpp \

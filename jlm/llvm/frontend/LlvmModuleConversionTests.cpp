@@ -7,7 +7,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
