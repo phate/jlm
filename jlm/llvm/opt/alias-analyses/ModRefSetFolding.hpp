@@ -6,18 +6,22 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSETFOLDING_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSETFOLDING_HPP
 
+#include <memory>
+
 namespace jlm::rvsdg
 {
+class Region;
 class RvsdgModule;
 }
 
 namespace jlm::llvm::aa
 {
 
+class MemoryStateGraph;
 class ModRefSummary;
 
-void
-foldModRefSets(ModRefSummary & modRefSummary, const rvsdg::RvsdgModule & rvsdgModule);
+std::unique_ptr<MemoryStateGraph>
+constructMemoryStateGraph(const rvsdg::Region & region, const ModRefSummary & modRefSummary);
 
 }
 
