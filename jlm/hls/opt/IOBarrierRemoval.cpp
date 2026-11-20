@@ -7,7 +7,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 
 namespace jlm::hls
 {

@@ -15,7 +15,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/RegionPredicateTrace.cpp \
     jlm/rvsdg/RvsdgModule.cpp \
     jlm/rvsdg/SimpleNode.cpp \
-    jlm/rvsdg/structural-node.cpp \
+    jlm/rvsdg/StructuralNode.cpp \
     jlm/rvsdg/TestNodes.cpp \
     jlm/rvsdg/TestOperations.cpp \
     jlm/rvsdg/theta.cpp \
@@ -79,7 +79,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/NodeNormalization.hpp \
     jlm/rvsdg/nullary.hpp \
     jlm/rvsdg/Phi.hpp \
-    jlm/rvsdg/structural-node.hpp \
+    jlm/rvsdg/StructuralNode.hpp \
     jlm/rvsdg/control.hpp \
     jlm/rvsdg/region.hpp \
 

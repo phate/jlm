@@ -6,7 +6,7 @@
 
 #include <jlm/rvsdg/DotWriter.hpp>
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/AnnotationMap.hpp>

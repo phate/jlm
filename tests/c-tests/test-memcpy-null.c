@@ -1,3 +1,5 @@
+// RUN: %jlc -Wall -Werror -O3 %s -o %t && %t
+
 #include <string.h>
 
 static char * buffer = NULL;

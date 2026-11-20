@@ -1,3 +1,5 @@
+// RUN: %jlc -Wall -Werror -O3 %s -o %t && %t
+
 #include <stdlib.h>
 #include <string.h>
 

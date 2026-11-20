@@ -1,3 +1,5 @@
+// RUN: %jlc -Wall -Werror -O3 %s -o %t && %t
+
 #include <assert.h>
 
 float test_fltadd(float x, float y){ return x + y; }

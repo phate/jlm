@@ -7,7 +7,7 @@
 #define JLM_RVSDG_DELTA_HPP
 
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 
 namespace jlm::rvsdg
 {

@@ -1,3 +1,5 @@
+// RUN: %jlc -Wall -Werror -O3 %s -o %t && %t
+
 struct struct1 {
 	int x;
 };

@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_IPGRAPH_HPP
 #define JLM_LLVM_IR_IPGRAPH_HPP
 
+#include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/tac.hpp>

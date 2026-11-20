@@ -9,7 +9,7 @@
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/util/HashSet.hpp>
 
 #include <optional>

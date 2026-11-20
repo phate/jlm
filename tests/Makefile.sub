@@ -1,68 +1,50 @@
-JLC ?= $(BUILD_OUT_PREFIX)jlc
+.PHONY: check-lit
 
-################################################################################
-# Rules to compile test cases with jlc and run them
+LIT_TESTS = \
+	tests/c-tests/test-array-struct.c \
+	tests/c-tests/test-assertion.c \
+	tests/c-tests/test-binary.c \
+	tests/c-tests/test-call-by-value.c \
+	tests/c-tests/test-casts.c \
+	tests/c-tests/test-complex.c \
+	tests/c-tests/test-conditional.c \
+	tests/c-tests/test-constant-array.c \
+	tests/c-tests/test-do-while.c \
+	tests/c-tests/test-extractvalue.c \
+	tests/c-tests/test-factorial.c \
+	tests/c-tests/test-fctarray.c \
+	tests/c-tests/test-fctptr.c \
+	tests/c-tests/test-fibonacci.c \
+	tests/c-tests/test-fp-arithmetic.c \
+	tests/c-tests/test-fp-comparison.c \
+	tests/c-tests/test-fprintf.c \
+	tests/c-tests/test-gblfctarray.c \
+	tests/c-tests/test-global-variable.c \
+	tests/c-tests/test-irreducible.c \
+	tests/c-tests/test-long-double.c \
+	tests/c-tests/test-loop-return.c \
+	tests/c-tests/test-main.c \
+	tests/c-tests/test-memcpy.c \
+	tests/c-tests/test-memcpy-null.c \
+	tests/c-tests/test-printf.c \
+	tests/c-tests/test-ptr-comparison.c \
+	tests/c-tests/test-recfct.c \
+	tests/c-tests/test-static-array.c \
+	tests/c-tests/test-struct2.c \
+	tests/c-tests/test-struct.c \
+	tests/c-tests/test-switch.c \
+	tests/c-tests/test-valist.c \
+	tests/c-tests/test-vector-bitcast.c \
+	tests/c-tests/test-vector-signextend.c \
+	tests/c-tests/test-while-with-break.c \
+	tests/c-tests/test-zeroinitialization.c
 
-JLC_COMPILE_TESTS = \
-	tests/c-tests/test-array-struct \
-	tests/c-tests/test-assertion \
-	tests/c-tests/test-binary \
-	tests/c-tests/test-call-by-value \
-	tests/c-tests/test-casts \
-	tests/c-tests/test-complex \
-	tests/c-tests/test-conditional \
-	tests/c-tests/test-constant-array \
-	tests/c-tests/test-do-while \
-	tests/c-tests/test-extractvalue \
-	tests/c-tests/test-factorial \
-	tests/c-tests/test-fctarray \
-	tests/c-tests/test-fctptr \
-	tests/c-tests/test-fibonacci \
-	tests/c-tests/test-fp-arithmetic \
-	tests/c-tests/test-fp-comparison \
-	tests/c-tests/test-fprintf \
-	tests/c-tests/test-gblfctarray \
-	tests/c-tests/test-global-variable \
-	tests/c-tests/test-irreducible \
-	tests/c-tests/test-long-double \
-	tests/c-tests/test-loop-return \
-	tests/c-tests/test-main \
-	tests/c-tests/test-memcpy \
-	tests/c-tests/test-memcpy-null \
-	tests/c-tests/test-printf \
-	tests/c-tests/test-ptr-comparison \
-	tests/c-tests/test-recfct \
-	tests/c-tests/test-static-array \
-	tests/c-tests/test-struct2 \
-	tests/c-tests/test-struct \
-	tests/c-tests/test-switch \
-	tests/c-tests/test-valist \
-	tests/c-tests/test-vector-bitcast \
-	tests/c-tests/test-vector-signextend \
-	tests/c-tests/test-while-with-break \
-	tests/c-tests/test-zeroinitialization
+check-lit: $(BUILD_OUT_PREFIX)jlc $(BUILD_OUT_PREFIX)jlm-opt tests/lit.cfg.py $(LIT_TESTS)
+ifeq ($(LIT),)
+	@echo "Error: lit is required to run tests. Please install lit (e.g. 'pip install lit' or 'apt install python3-lit') or specify its path with ./configure.sh --lit=<path>." >&2
+	@exit 1
+else
+	$(LIT) -v $(LIT_ARGS) $(LIT_TESTS)
+endif
 
-$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS)): $(BUILD_OUT_PREFIX)%.jlm : %.c $(BUILD_OUT_PREFIX)jlc
-	@mkdir -p $(dir $@)
-	@cp $< $$(dirname $@)/$$(basename $<)
-	$(JLC) -Wall -Werror -O3 -o $@ $$(dirname $@)/$$(basename $<)
-
-GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
-GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.c, $(JLC_COMPILE_TESTS))
-GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
-GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.o, $(JLC_COMPILE_TESTS))
-
-$(patsubst %, run-%, $(JLC_COMPILE_TESTS)): run-%: $(BUILD_OUT_PREFIX)%.jlm
-	@echo -n "Running ctest $^ ... " ; \
-	if $^ >$^.log 2>&1 ; then \
-		echo "success" ; \
-	else \
-		EXIT_CODE="$$?" ; \
-		echo "failed. See $^.log:" ; cat $^.log ; \
-		exit "$$EXIT_CODE" ; \
-	fi
-
-# Run the jlc-compiled binaries as part of tests. This may
-# be problematic when cross-compiling for foreign targets,
-# but leave this to be addressed another day.
-check: $(patsubst %, run-%, $(JLC_COMPILE_TESTS))
+check: check-lit
