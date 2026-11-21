@@ -208,6 +208,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/GammaTests.cpp \
     jlm/llvm/ir/operators/GetElementPtrTests.cpp \
     jlm/llvm/ir/operators/IntegerOperationsTests.cpp \
+    jlm/llvm/ir/operators/IntegerValueRepresentationTests.cpp \
     jlm/llvm/ir/operators/IOBarrierTests.cpp \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \

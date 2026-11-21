@@ -103,7 +103,7 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
       constant)
   {
     const auto & rep = constant->Representation();
-    if (rep.is_known() && rep.nbits() <= 64)
+    if (rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
   }
