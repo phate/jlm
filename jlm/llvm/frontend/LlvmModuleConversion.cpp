@@ -225,17 +225,13 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, Context & ctx)
   return var;
 }
 
-static rvsdg::BitValueRepresentation
+static IntegerValueRepresentation
 convert_apint(const ::llvm::APInt & value)
 {
-  ::llvm::APInt v;
-  if (value.isNegative())
-    v = -value;
-
   auto str = toString(value, 2, false);
   std::reverse(str.begin(), str.end());
 
-  rvsdg::BitValueRepresentation vr(str.c_str());
+  IntegerValueRepresentation vr(str.c_str());
   if (value.isNegative())
     vr = vr.sext(value.getBitWidth() - str.size());
   else
