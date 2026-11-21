@@ -169,10 +169,8 @@ IpGraphToLlvmConverter::CreateICmpInstruction(
 }
 
 static ::llvm::APInt
-convert_bitvalue_repr(const rvsdg::BitValueRepresentation & vr)
+convert_bitvalue_repr(const IntegerValueRepresentation & vr)
 {
-  JLM_ASSERT(vr.is_defined());
-
   std::string str = vr.str();
   std::reverse(str.begin(), str.end());
 
@@ -189,10 +187,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
       util::assertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
-  if (representation.is_defined())
-    return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
-
-  return ::llvm::UndefValue::get(type);
+  return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
 }
 
 ::llvm::Value *
