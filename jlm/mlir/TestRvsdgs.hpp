@@ -205,6 +205,35 @@ public:
   jlm::rvsdg::SimpleNode * trunc;
 };
 
+/** \brief PtrToIntTest class
+ *
+ * This class sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   int64_t f(void * p)
+ *   {
+ *     return (int64_t) p + (int64_t)(int32_t) p;
+ *   }
+ * \endcode
+ *
+ * The pointer is converted to both 64 and 32 bits.
+ *
+ * \see jlm::llvm::Bits2PtrTest
+ */
+class PtrToIntTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::LambdaNode * lambda;
+
+  jlm::rvsdg::SimpleNode * ptrToIntNarrow;
+
+  jlm::rvsdg::SimpleNode * ptrToIntWide;
+};
+
 /** \brief FloatBinaryTest class
  *
  * This class sets up an RVSDG representing the following function:
