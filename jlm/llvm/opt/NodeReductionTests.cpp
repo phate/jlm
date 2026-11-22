@@ -13,7 +13,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -41,13 +40,13 @@ TEST(NodeReductionTests, MultipleReductionsPerRegion)
 
   auto allocaResults = AllocaOperation::create(bitType, inputVar.argument[0], 4);
 
-  auto & c3 = IntegerConstantOperation::Create(subregion, BitValueRepresentation(32, 3));
+  auto & c3 = IntegerConstantOperation::Create(subregion, IntegerValueRepresentation(32, 3));
   auto storeResults =
       StoreNonVolatileOperation::Create(allocaResults[0], c3.output(0), { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 = &IntegerConstantOperation::Create(subregion, BitValueRepresentation(32, 5));
+  const auto c5 = &IntegerConstantOperation::Create(subregion, IntegerValueRepresentation(32, 5));
   auto & eqNode = IntegerEqOperation::createNode(32, *loadResults[0], *c5->output(0));
 
   auto outputVar = testStructuralNode->addOutputWithResults({ eqNode.output(0) });

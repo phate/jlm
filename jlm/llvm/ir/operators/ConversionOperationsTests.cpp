@@ -8,7 +8,6 @@
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -24,9 +23,9 @@ TEST(ConversionOperationsTests, SExtConstantFolding)
   Graph graph;
 
   auto & zero =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 0));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(1, 0));
   auto & one =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 1));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(1, 1));
 
   auto & node1 = SExtOperation::createNode(32, *zero.output(0));
   auto & node2 = SExtOperation::createNode(32, *one.output(0));
@@ -68,9 +67,9 @@ TEST(ConversionOperationsTests, ZExtConstantFolding)
   Graph graph;
 
   auto & zero =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 0));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(1, 0));
   auto & one =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(1, 1));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(1, 1));
 
   auto & node1 = ZExtOperation::createNode(32, *zero.output(0));
   auto & node2 = ZExtOperation::createNode(32, *one.output(0));
@@ -114,9 +113,9 @@ TEST(ConversionOperationsTests, TruncConstantFolding)
   Graph graph;
 
   auto & eight =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 8));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(32, 8));
   auto & one =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 1));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(32, 1));
 
   auto & node1 = TruncOperation::createNode(*eight.output(0), i1Type);
   auto & node2 = TruncOperation::createNode(*one.output(0), i1Type);

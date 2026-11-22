@@ -24,11 +24,11 @@ TEST(ControlOperationsTests, foldConstants)
   auto bitType32 = BitType::Create(32);
 
   auto & zeroNode =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 0));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(32, 0));
   auto & matchNode1 = MatchOperation::CreateNode(*zeroNode.output(0), { { 0, 0 } }, 1, 2);
 
   auto & fourNode =
-      IntegerConstantOperation::Create(graph.GetRootRegion(), BitValueRepresentation(32, 4));
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(32, 4));
   auto & matchNode2 = MatchOperation::CreateNode(*fourNode.output(0), { { 0, 0 } }, 1, 2);
 
   auto & x1 = GraphExport::Create(*matchNode1.output(0), "x1");
