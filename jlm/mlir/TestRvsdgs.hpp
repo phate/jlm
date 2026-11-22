@@ -210,19 +210,13 @@ public:
  * This class sets up an RVSDG representing the following function:
  *
  * \code{.c}
- *   void f(void * p, int32_t * r1, int64_t * r2)
+ *   int64_t f(void * p)
  *   {
- *     *r1 = (int32_t) p;
- *     *r2 = (int64_t) p;
+ *     return (int64_t) p + (int64_t)(int32_t) p;
  *   }
  * \endcode
  *
- * The same pointer is converted twice, to 32 and to 64 bits, so the fixture covers both the
- * common case where the destination matches the address size and one where it does not. That
- * difference is only visible through the operation's result type, and \ref
- * jlm::llvm::PtrToIntOperation compares both of its types for equality where the reverse \ref
- * jlm::llvm::IntToPtrOperation ignores its argument type, so a conversion that dropped the width
- * fails here rather than passing silently.
+ * The pointer is converted to both 64 and 32 bits.
  *
  * \see jlm::llvm::Bits2PtrTest
  */
