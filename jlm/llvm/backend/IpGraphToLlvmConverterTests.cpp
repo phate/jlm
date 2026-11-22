@@ -507,7 +507,7 @@ TEST(IpGraphToLlvmConverterTests, IntegerConstant)
 
   auto ft = jlm::rvsdg::FunctionType::Create({}, { jlm::rvsdg::BitType::Create(65) });
 
-  jlm::rvsdg::BitValueRepresentation vr(bs);
+  IntegerValueRepresentation vr(bs);
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 

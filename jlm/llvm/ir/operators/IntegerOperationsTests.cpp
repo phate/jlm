@@ -39,10 +39,10 @@ TestFoldConstants(const FoldConstantsTestInput & input)
 
   auto & c1 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC1, input.c1));
+      IntegerValueRepresentation(input.numBitsC1, input.c1));
   auto & c2 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC2, input.c2));
+      IntegerValueRepresentation(input.numBitsC2, input.c2));
 
   auto & node1 = Operation::createNode(32, *c1.output(0), *c2.output(0));
 
