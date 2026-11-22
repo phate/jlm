@@ -208,6 +208,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/GammaTests.cpp \
     jlm/llvm/ir/operators/GetElementPtrTests.cpp \
     jlm/llvm/ir/operators/IntegerOperationsTests.cpp \
+    jlm/llvm/ir/operators/IntegerValueRepresentationTests.cpp \
     jlm/llvm/ir/operators/IOBarrierTests.cpp \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \
@@ -221,13 +222,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/AnnotationTests.cpp \
     jlm/llvm/ir/AttributeSetTests.cpp \
     jlm/llvm/ir/CallSummaryTests.cpp \
-    jlm/llvm/ir/CfgNodeTests.cpp \
-    jlm/llvm/ir/CfgOrderingsTests.cpp \
-    jlm/llvm/ir/CfgPruneTests.cpp \
-    jlm/llvm/ir/CfgPurgeTests.cpp \
-    jlm/llvm/ir/CfgStructureTests.cpp \
-    jlm/llvm/ir/CfgTests.cpp \
-    jlm/llvm/ir/CfgValidityTests.cpp \
+    jlm/llvm/ir/ControlFlowGraphTests.cpp \
     jlm/llvm/ir/DomTreeTests.cpp \
     jlm/llvm/ir/SsaDestructionTests.cpp \
     jlm/llvm/ir/ThreeAddressCodeTests.cpp \
