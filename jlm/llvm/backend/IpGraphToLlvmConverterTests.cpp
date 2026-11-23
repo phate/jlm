@@ -20,6 +20,7 @@
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
 
 TEST(IpGraphToLlvmConverterTests, LoadConversion)
 {
@@ -856,5 +857,117 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
     EXPECT_EQ(callInstructions[0]->getCallingConv(), ::llvm::CallingConv::Fast);
     EXPECT_EQ(callInstructions[1]->getCalledFunction()->getName(), "callee");
     EXPECT_EQ(callInstructions[1]->getCallingConv(), ::llvm::CallingConv::Cold);
+  }
+}
+
+TEST(IpGraphToLlvmConverterTests, SsaPhiWithFunctionType)
+{
+  // Arrange
+  // An SSA phi merging the values of two functions, followed by an indirect call through it.
+  // Functions are first-class values at the RVSDG level, so the phi is function-typed. In LLVM
+  // IR, functions are represented as pointers, so the converted phi must be pointer-typed.
+  using namespace jlm::llvm;
+
+  auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { bit32Type, ioStateType, memoryStateType },
+      { bit32Type, ioStateType, memoryStateType });
+
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
+
+  auto g = FunctionNode::create(ipgModule.ipgraph(), "g", functionType, Linkage::externalLinkage);
+  auto gVariable = ipgModule.create_variable(g);
+  auto h = FunctionNode::create(ipgModule.ipgraph(), "h", functionType, Linkage::externalLinkage);
+  auto hVariable = ipgModule.create_variable(h);
+
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
+  ipgModule.create_variable(f);
+
+  // Create the body of f
+  //
+  //   entry
+  //     |
+  //    bb0 (branch)
+  //   0/  1|
+  //  bb1   bb2
+  //   |    /
+  //   |   /
+  //   bb3 %phi = phi functionType [g, bb1], [h, bb2]
+  //       %call = call %phi(value, ioState, memoryState)
+  //     |
+  //   exit
+  {
+    auto cfg = ControlFlowGraph::create(ipgModule);
+    auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit32Type));
+    auto ioStateArgument = cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
+    auto memoryStateArgument =
+        cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+    auto bb0 = BasicBlock::create(*cfg);
+    auto bb1 = BasicBlock::create(*cfg);
+    auto bb2 = BasicBlock::create(*cfg);
+    auto bb3 = BasicBlock::create(*cfg);
+
+    cfg->exit()->divert_inedges(bb0);
+    bb0->add_outedge(bb1);
+    bb0->add_outedge(bb2);
+    bb1->add_outedge(bb3);
+    bb2->add_outedge(bb3);
+    bb3->add_outedge(cfg->exit());
+
+    auto constantTac = bb0->append_last(ThreeAddressCode::create(
+        std::make_unique<IntegerConstantOperation>(jlm::rvsdg::BitValueRepresentation(1, 1)),
+        {}));
+    auto matchTac = bb0->append_last(ThreeAddressCode::create(
+        std::make_unique<jlm::rvsdg::MatchOperation>(
+            1,
+            std::unordered_map<uint64_t, uint64_t>({ { 1, 1 } }),
+            0,
+            2),
+        { constantTac->result(0) }));
+    bb0->append_last(BranchOperation::create(2, matchTac->result(0)));
+
+    auto phiTac = bb3->append_last(
+        SsaPhiOperation::create({ { gVariable, bb1 }, { hVariable, bb2 } }, functionType));
+    auto callTac = bb3->append_last(CallOperation::create(
+        phiTac->result(0),
+        functionType,
+        CallingConvention::Default,
+        AttributeList::createEmptyList(),
+        { valueArgument, ioStateArgument, memoryStateArgument }));
+
+    cfg->exit()->append_result(callTac->result(0));
+    cfg->exit()->append_result(callTac->result(1));
+    cfg->exit()->append_result(callTac->result(2));
+
+    f->add_cfg(std::move(cfg));
+  }
+
+  // Act
+  llvm::LLVMContext ctx;
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
+
+  // Assert
+  {
+    auto llvmFunction = llvmModule->getFunction("f");
+    ASSERT_NE(llvmFunction, nullptr);
+
+    ::llvm::PHINode * phiInstruction = nullptr;
+    for (auto & basicBlock : *llvmFunction)
+    {
+      if ((phiInstruction = ::llvm::dyn_cast<::llvm::PHINode>(&basicBlock.front())))
+        break;
+    }
+    ASSERT_NE(phiInstruction, nullptr);
+
+    // Functions are pointers in LLVM IR, so the phi must be pointer-typed and agree with the
+    // types of its incoming values.
+    EXPECT_TRUE(phiInstruction->getType()->isPointerTy());
+    for (size_t n = 0; n < phiInstruction->getNumIncomingValues(); n++)
+      EXPECT_EQ(phiInstruction->getIncomingValue(n)->getType(), phiInstruction->getType());
+
+    EXPECT_TRUE(!::llvm::verifyFunction(*llvmFunction, &llvm::errs()));
   }
 }
