@@ -2364,11 +2364,10 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaInsidePhiRegion)
   using namespace jlm::rvsdg;
 
   // Arrange
-  // A constant delta declared inside the subregion of a phi node, like the frontend does for
-  // recursively defined data. The delta references the phi's recursion variable through a context
-  // variable. A load in a lambda outside the phi traces to the delta, but the delta's context
-  // variables only exist inside the phi's subregion, and can not be routed to the lambda.
-  // StoreValueForwarding must leave the load alone instead of crashing.
+  // A constant delta declared inside the subregion of a phi node. The delta references the phi's
+  // recursion variable through a context variable. A load in a lambda outside the phi traces to the
+  // delta, but the delta's context variables only exist inside the phi's subregion, and cannot be
+  // routed to the lambda. StoreValueForwarding must leave the load alone.
   LlvmRvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
@@ -2411,7 +2410,7 @@ TEST(StoreValueForwardingTests, LoadForwardingFromDeltaInsidePhiRegion)
   RunStoreValueForwarding(rvsdgModule);
 
   // Assert
-  // The load must not have been forwarded, as the delta is not visible from the lambda
+  // The load must not have been forwarded, as the delta is in a recursive environment
   auto [resultNode, resultOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
       *lambdaNode.GetFunctionResults()[0]->origin());
   EXPECT_NE(resultNode, nullptr);
