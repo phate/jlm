@@ -345,30 +345,28 @@ IpGraphToLlvmConverter::convert_branch(
 }
 
 ::llvm::Value *
-IpGraphToLlvmConverter::convert_phi(
-    const rvsdg::SimpleOperation & op,
+IpGraphToLlvmConverter::convertSsaPhiOperation(
+    const SsaPhiOperation & phiOp,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & phi = *util::assertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
+  auto phiType = phiOp.Type();
 
-  if (rvsdg::is<IOStateType>(phi.Type()))
+  if (rvsdg::is<IOStateType>(phiType))
     return nullptr;
-  if (rvsdg::is<MemoryStateType>(phi.Type()))
+  if (rvsdg::is<MemoryStateType>(phiType))
     return nullptr;
 
   // Functions are represented as pointers in LLVM IR, so a phi over function
   // values must be created as a phi over pointers. Creating it with the
   // function's FunctionType would mismatch the types of the incoming values,
   // which are the pointer-typed LLVM functions.
-  std::shared_ptr<const rvsdg::Type> phiType = phi.Type();
   if (rvsdg::is<rvsdg::FunctionType>(phiType))
     phiType = PointerType::Create();
 
-  auto t = typeConverter.ConvertJlmType(*phiType, llvmContext);
-  return builder.CreatePHI(t, op.narguments());
+  return builder.CreatePHI(typeConverter.ConvertJlmType(*phiType, llvmContext), phiOp.narguments());
 }
 
 ::llvm::Value *
@@ -1251,9 +1249,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_branch(op, arguments, builder);
   }
-  if (is<SsaPhiOperation>(op))
+  if (const auto ssaPhiOperation = dynamic_cast<const SsaPhiOperation *>(&op))
   {
-    return convert_phi(op, arguments, builder);
+    return convertSsaPhiOperation(*ssaPhiOperation, arguments, builder);
   }
   if (is<LoadNonVolatileOperation>(op))
   {
