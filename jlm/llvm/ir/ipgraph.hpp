@@ -80,6 +80,15 @@ public:
   toDot(util::graph::Writer & writer, const InterProceduralGraph & interProceduralGraph);
 
   /**
+   * Converts the inter-procedural graph to a string.
+   *
+   * @param interProceduralGraph Inter-procedural graph that is converted.
+   * @return A string representation of the inter-procedural graph.
+   */
+  static std::string
+  toAscii(const InterProceduralGraph & interProceduralGraph);
+
+  /**
    * This function is meant to be used from the debugger. You can just
    * invoke it and a xdot window should pop up with a DOT visualization of the control flow graph.
    * This depends on xdot being in the PATH.

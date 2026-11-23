@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/print.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -41,5 +41,5 @@ TEST(EndlessLoopTests, test)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 }

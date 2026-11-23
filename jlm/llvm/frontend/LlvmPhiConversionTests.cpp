@@ -9,8 +9,6 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -206,8 +204,7 @@ TEST(LlvmPhiConversionTests, TestPhiOperandElision)
 
   // Act
   auto ipgmod = jlm::llvm::ConvertLlvmModule(module);
-
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   // Assert
   // Get the CFG of the function

@@ -47,7 +47,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
-    jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
@@ -147,7 +146,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/TypeConverter.hpp \
     jlm/llvm/ir/variable.hpp \
     jlm/llvm/ir/basic-block.hpp \
-    jlm/llvm/ir/print.hpp \
     jlm/llvm/ir/Trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \

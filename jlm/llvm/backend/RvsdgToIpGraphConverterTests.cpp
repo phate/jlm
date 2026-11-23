@@ -13,7 +13,6 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
@@ -55,7 +54,7 @@ TEST(RvsdgToIpGraphConverterTests, GammaWithMatch)
   // Act
   StatisticsCollector statisticsCollector;
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   auto & ipg = module->ipgraph();
@@ -97,7 +96,7 @@ TEST(RvsdgToIpGraphConverterTests, GammaWithoutMatch)
   // Act
   StatisticsCollector statisticsCollector;
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   auto & ipg = module->ipgraph();
@@ -145,7 +144,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregionsAndMatch)
   StatisticsCollector statisticsCollector;
   const auto module =
       RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   const auto & ipGraph = module->ipgraph();
@@ -201,7 +200,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithTwoSubregions)
   StatisticsCollector statisticsCollector;
   const auto module =
       RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   const auto & ipGraph = module->ipgraph();
@@ -250,7 +249,7 @@ TEST(RvsdgToIpGraphConverterTests, EmptyGammaWithThreeSubregions)
   // Act
   StatisticsCollector statisticsCollector;
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   auto & ipg = module->ipgraph();
@@ -368,7 +367,7 @@ TEST(RvsdgToIpGraphConverterTests, RecursiveData)
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rm, statisticsCollector);
-  print(*module, stdout);
+  std::cout << InterProceduralGraph::toAscii(module->ipgraph()) << std::endl;
 
   // Assert
   auto & ipGraph = module->ipgraph();
@@ -472,7 +471,7 @@ TEST(RvsdgToIpGraphConverterTests, NestedLoopWithCall)
   auto ipGraphModule =
       RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
-  print(*ipGraphModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipGraphModule->ipgraph()) << std::endl;
 
   // Assert
   // We expect that we only create SSA phi operations for the IO and memory state edges, but NOT
@@ -534,7 +533,7 @@ TEST_P(DataImportConversionTest, Test)
   const auto ipGraphModule =
       RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
-  print(*ipGraphModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipGraphModule->ipgraph()) << std::endl;
 
   // Assert
   const auto & ipGraph = ipGraphModule->ipgraph();
