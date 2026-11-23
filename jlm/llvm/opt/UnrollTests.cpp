@@ -17,6 +17,9 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <optional>
+#include <unordered_map>
+
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static size_t
@@ -401,4 +404,134 @@ TEST(LoopUnrollingTests, test_nested_theta)
   thetas = find_thetas(&graph.GetRootRegion());
   EXPECT_EQ(thetas.size(), 3u);
   EXPECT_EQ(nthetas(thetas[0]->subregion()), 8u);
+}
+
+TEST(LoopUnrollingTests, test_zero_iterations_is_rejected_any_factor)
+{
+  using namespace jlm::rvsdg;
+
+  for (const size_t factor : { 2u, 3u, 4u, 8u })
+  {
+    Graph graph;
+    auto & region = graph.GetRootRegion();
+    auto init = &BitConstantOperation::create(region, { 32, 7 });
+    auto step = &BitConstantOperation::create(region, { 32, 1 });
+    auto end = &BitConstantOperation::create(region, { 32, 7 });
+    auto theta = create_theta(bitult_op(32), bitadd_op(32), init, step, end);
+    auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
+    ASSERT_NE(ui, nullptr);
+    ASSERT_NE(ui->niterations(), nullptr);
+    EXPECT_EQ(*ui->niterations(), BitValueRepresentation(32, 0));
+    const auto nodesBefore = region.numNodes();
+
+    jlm::llvm::unroll(theta, factor);
+
+    EXPECT_EQ(nthetas(&region), 1u) << "factor=" << factor;
+    EXPECT_EQ(region.numNodes(), nodesBefore) << "factor=" << factor;
+  }
+}
+
+static std::optional<jlm::rvsdg::BitValueRepresentation>
+evaluate_guard(
+    jlm::rvsdg::Output * output,
+    const std::unordered_map<jlm::rvsdg::Output *, jlm::rvsdg::BitValueRepresentation> & inputs)
+{
+  using namespace jlm::rvsdg;
+  const auto it = inputs.find(output);
+  if (it != inputs.end())
+    return it->second;
+  auto node = TryGetOwnerNode<SimpleNode>(*output);
+  if (!node)
+    return std::nullopt;
+  if (auto constant = dynamic_cast<const BitConstantOperation *>(&node->GetOperation()))
+    return constant->value();
+  if (node->ninputs() != 2)
+    return std::nullopt;
+  auto a = evaluate_guard(node->input(0)->origin(), inputs);
+  auto b = evaluate_guard(node->input(1)->origin(), inputs);
+  if (!a || !b)
+    return std::nullopt;
+  if (is<bitadd_op>(node))
+    return a->add(*b);
+  if (is<bitsub_op>(node))
+    return a->sub(*b);
+  if (is<bitmul_op>(node))
+    return a->mul(*b);
+  if (is<bitand_op>(node))
+    return a->land(*b);
+  if (is<bitor_op>(node))
+    return a->lor(*b);
+  if (is<bitxor_op>(node))
+    return a->lxor(*b);
+  if (is<bitult_op>(node))
+    return BitValueRepresentation(a->ult(*b));
+  return std::nullopt;
+}
+
+TEST(LoopUnrollingTests, test_runtime_batch_guard_matches_loop_semantics)
+{
+  using namespace jlm::rvsdg;
+  jlm::llvm::LlvmRvsdgModule module(jlm::util::FilePath(""), "", "");
+  auto & graph = module.Rvsdg();
+  auto type = BitType::Create(8);
+  auto init = &GraphImport::Create(graph, type, "init");
+  auto step = &GraphImport::Create(graph, type, "step");
+  auto end = &GraphImport::Create(graph, type, "end");
+  auto theta = create_theta(bitult_op(8), bitadd_op(8), init, step, end);
+  auto & result = GraphExport::Create(*theta->GetLoopVars()[0].output, "result");
+  jlm::llvm::LoopUnrolling(4).Run(module, statisticsCollector);
+
+  auto residual = TryGetOwnerNode<GammaNode>(*result.origin());
+  ASSERT_NE(residual, nullptr);
+  GammaNode * batch = nullptr;
+  for (auto & node : graph.GetRootRegion().Nodes())
+    if (auto gamma = dynamic_cast<GammaNode *>(&node); gamma && gamma != residual)
+      batch = gamma;
+  ASSERT_NE(batch, nullptr);
+  auto match = TryGetOwnerNode<SimpleNode>(*batch->predicate()->origin());
+  ASSERT_NE(match, nullptr);
+  ASSERT_TRUE(is<MatchOperation>(match));
+
+  for (int initial : { 0, 1, 200 })
+    for (int increment : { 1, 3, 30, 128 })
+      for (int bound : { 0, 1, 4, 100, 255 })
+      {
+        BitValueRepresentation value(8, initial), stride(8, increment), limit(8, bound);
+        bool expected = true;
+        for (size_t copy = 1; copy < 4; ++copy)
+        {
+          value = value.add(stride);
+          expected = expected && value.ult(limit) == '1';
+        }
+        auto actual = evaluate_guard(
+            match->input(0)->origin(),
+            { { init, { 8, initial } }, { step, stride }, { end, limit } });
+        ASSERT_TRUE(actual.has_value());
+        EXPECT_EQ((*actual)[0], expected ? '1' : '0')
+            << "init=" << initial << " step=" << increment << " end=" << bound;
+      }
+}
+
+TEST(LoopUnrollingTests, test_residual_guard_includes_batch_decision)
+{
+  using namespace jlm::rvsdg;
+  jlm::llvm::LlvmRvsdgModule module(jlm::util::FilePath(""), "", "");
+  auto & graph = module.Rvsdg();
+  auto type = BitType::Create(8);
+  auto init = &GraphImport::Create(graph, type, "init");
+  auto step = &GraphImport::Create(graph, type, "step");
+  auto end = &GraphImport::Create(graph, type, "end");
+  auto theta = create_theta(bitult_op(8), bitadd_op(8), init, step, end);
+  auto & result = GraphExport::Create(*theta->GetLoopVars()[0].output, "result");
+  jlm::llvm::LoopUnrolling(2).Run(module, statisticsCollector);
+
+  auto residual = TryGetOwnerNode<GammaNode>(*result.origin());
+  ASSERT_NE(residual, nullptr);
+  auto match = TryGetOwnerNode<SimpleNode>(*residual->predicate()->origin());
+  ASSERT_NE(match, nullptr);
+  ASSERT_TRUE(is<MatchOperation>(match));
+  auto condition = TryGetOwnerNode<SimpleNode>(*match->input(0)->origin());
+  ASSERT_NE(condition, nullptr);
+  EXPECT_TRUE(is<bitor_op>(condition))
+      << "The residual guard must combine the negated batch decision with the loop comparison";
 }
