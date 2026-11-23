@@ -8,7 +8,6 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -59,7 +58,7 @@ TEST(FNegTests, TestFNegScalar)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   EXPECT_TRUE(Contains<jlm::llvm::FNegOperation>(*ipgModule, "f"));
 }
@@ -92,7 +91,7 @@ TEST(FNegTests, TestFNegVector)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   EXPECT_TRUE(Contains<jlm::llvm::VectorUnaryOperation>(*ipgModule, "f"));
 }

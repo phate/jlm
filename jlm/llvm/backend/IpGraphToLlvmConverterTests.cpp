@@ -15,7 +15,6 @@
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Intrinsics.h>
@@ -56,7 +55,7 @@ TEST(IpGraphToLlvmConverterTests, LoadConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -115,7 +114,7 @@ TEST(IpGraphToLlvmConverterTests, LoadVolatileConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -174,7 +173,7 @@ TEST(IpGraphToLlvmConverterTests, MemCpyConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -238,7 +237,7 @@ TEST(IpGraphToLlvmConverterTests, MemCpyVolatileConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -295,7 +294,7 @@ TEST(IpGraphToLlvmConverterTests, MemSetConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -350,7 +349,7 @@ TEST(IpGraphToLlvmConverterTests, StoreConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -412,7 +411,7 @@ TEST(IpGraphToLlvmConverterTests, StoreVolatileConversion)
   auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -475,7 +474,7 @@ TEST(IpGraphToLlvmConverterTests, FMulAddConversion)
     f->add_cfg(std::move(cfg));
   }
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;
@@ -524,7 +523,7 @@ TEST(IpGraphToLlvmConverterTests, IntegerConstant)
   auto f = FunctionNode::create(im.ipgraph(), "f", ft, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(im, stdout);
+  std::cout << InterProceduralGraph::toAscii(im.ipgraph()) << std::endl;
 
   llvm::LLVMContext ctx;
   auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
@@ -581,7 +580,7 @@ TEST(IpGraphToLlvmConverterTests, Malloc)
   };
 
   auto im = setup();
-  print(*im, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(im->ipgraph()) << std::endl;
 
   llvm::LLVMContext ctx;
   auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*im, ctx);
@@ -639,7 +638,7 @@ TEST(IpGraphToLlvmConverterTests, Free)
   };
 
   auto ipgmod = setup();
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   llvm::LLVMContext ctx;
   auto llvmModule = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipgmod, ctx);
@@ -704,7 +703,7 @@ TEST(IpGraphToLlvmConverterTests, SelectWithState)
   auto f = FunctionNode::create(m.ipgraph(), "f", ft, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
-  print(m, stdout);
+  std::cout << InterProceduralGraph::toAscii(m.ipgraph()) << std::endl;
 
   llvm::LLVMContext ctx;
   IpGraphToLlvmConverter::CreateAndConvertModule(m, ctx);
@@ -819,7 +818,7 @@ TEST(IpGraphToLlvmConverterTests, CallingConvConversion)
     caller->add_cfg(std::move(cfg));
   }
 
-  print(ipgModule, stdout);
+  std::cout << InterProceduralGraph::toAscii(ipgModule.ipgraph()) << std::endl;
 
   // Act
   llvm::LLVMContext ctx;

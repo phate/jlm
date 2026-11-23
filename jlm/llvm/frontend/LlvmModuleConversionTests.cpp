@@ -14,7 +14,6 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 
 #include <llvm/IR/BasicBlock.h>
@@ -74,7 +73,7 @@ TEST(LlvmModuleConversionTests, SwitchConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -119,7 +118,7 @@ TEST(LlvmModuleConversionTests, FreezeConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -182,7 +181,7 @@ TEST(LlvmModuleConversionTests, InsertValueConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -385,7 +384,7 @@ TEST(LlvmModuleConversionTests, MemCpyConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -458,7 +457,7 @@ TEST(LlvmModuleConversionTests, MemSetConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {

@@ -1102,6 +1102,12 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
     return std::nullopt;
   }
 
+  if (!deltaNode->region()->IsRootRegion())
+  {
+    // FIXME: Let's ignore delta nodes that are not defined in the root region for now.
+    return std::nullopt;
+  }
+
   context_->numLoadsTracedToDeltaNode++;
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }

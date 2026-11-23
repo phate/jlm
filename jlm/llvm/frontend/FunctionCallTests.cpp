@@ -9,7 +9,6 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -63,7 +62,7 @@ TEST(FunctionCallTests, test_function_call)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   verify(*ipgmod);
 }
@@ -120,7 +119,7 @@ TEST(FunctionCallTests, test_malloc_call)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   verify(*ipgmod);
 }
@@ -176,7 +175,7 @@ TEST(FunctionCallTests, test_free_call)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   verify(*ipgmod);
 }

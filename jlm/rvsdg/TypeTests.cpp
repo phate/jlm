@@ -10,7 +10,7 @@
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 
-TEST(TypeMismatchTests, test_main)
+TEST(TypeTests, test_main)
 {
   using namespace jlm::rvsdg;
 

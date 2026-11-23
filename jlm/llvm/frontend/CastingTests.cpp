@@ -8,7 +8,6 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
@@ -89,7 +88,7 @@ TEST_P(LlvmFrontendCastingFixture, AllIntegerCasts)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
