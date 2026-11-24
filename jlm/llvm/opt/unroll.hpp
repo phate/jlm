@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_OPT_UNROLL_HPP
 #define JLM_LLVM_OPT_UNROLL_HPP
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
-#include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/common.hpp>
@@ -108,7 +108,7 @@ public:
     return has_known_init() && has_known_step() && has_known_end();
   }
 
-  std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
+  std::unique_ptr<IntegerValueRepresentation>
   niterations() const noexcept;
 
   rvsdg::SimpleNode *
@@ -147,7 +147,7 @@ public:
     return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
+  const IntegerValueRepresentation *
   init_value() const noexcept
   {
     return value(init());
@@ -159,7 +159,7 @@ public:
     return step_;
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
+  const IntegerValueRepresentation *
   step_value() const noexcept
   {
     return value(step());
@@ -171,34 +171,28 @@ public:
     return end_;
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
+  const IntegerValueRepresentation *
   end_value() const noexcept
   {
     return value(end());
   }
 
-  inline bool
+  bool
   is_additive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(armnode());
+    return jlm::rvsdg::is<IntegerAddOperation>(armnode());
   }
 
   inline bool
   is_subtractive() const noexcept
   {
-    return jlm::rvsdg::is<jlm::rvsdg::bitsub_op>(armnode());
+    return jlm::rvsdg::is<IntegerSubOperation>(armnode());
   }
 
-  inline size_t
-  nbits() const noexcept
-  {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation()));
-    return static_cast<const rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation())
-        ->type()
-        .nbits();
-  }
+  [[nodiscard]] size_t
+  nbits() const noexcept;
 
-  inline jlm::rvsdg::BitValueRepresentation
+  IntegerValueRepresentation
   remainder(size_t factor) const noexcept
   {
     return niterations()->umod({ nbits(), (int64_t)factor });
@@ -213,11 +207,11 @@ private:
   {
     auto & tracedOutput = llvm::traceOutput(*output, false);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    return constantOperation && constantOperation->value().is_known();
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOutput);
+    return constantOperation != nullptr;
   }
 
-  const rvsdg::BitValueRepresentation *
+  const IntegerValueRepresentation *
   value(const rvsdg::Output * output) const noexcept
   {
     if (!is_known(output))
@@ -225,8 +219,8 @@ private:
 
     auto & tracedOutput = llvm::traceOutput(*output, false);
     auto [_, constantOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(tracedOutput);
-    return constantOperation == nullptr ? nullptr : &constantOperation->value();
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOutput);
+    return constantOperation == nullptr ? nullptr : &constantOperation->Representation();
   }
 
   rvsdg::Output * end_;

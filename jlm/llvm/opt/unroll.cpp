@@ -49,10 +49,10 @@ public:
 static bool
 is_eqcmp(const rvsdg::Operation & op)
 {
-  return dynamic_cast<const jlm::rvsdg::bituge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitule_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsle_op *>(&op);
+  return dynamic_cast<const IntegerUgeOperation *>(&op)
+      || dynamic_cast<const IntegerSgeOperation *>(&op)
+      || dynamic_cast<const IntegerUleOperation *>(&op)
+      || dynamic_cast<const IntegerSleOperation *>(&op);
 }
 
 static bool
@@ -60,8 +60,7 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
-  if (jlm::rvsdg::is<rvsdg::BitConstantOperation>(
-          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
+  if (jlm::rvsdg::is<IntegerConstantOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
     return true;
 
   auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
@@ -80,7 +79,7 @@ push_from_theta(jlm::rvsdg::Output * output)
     return argument;
 
   auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp));
+  JLM_ASSERT(jlm::rvsdg::is<IntegerConstantOperation>(tmp));
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
 
@@ -97,7 +96,7 @@ is_idv(jlm::rvsdg::Input * input)
   using namespace jlm::rvsdg;
 
   auto node = TryGetOwnerNode<SimpleNode>(*input);
-  JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
+  JLM_ASSERT(is<IntegerAddOperation>(node) || is<IntegerSubOperation>(node));
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))
   {
@@ -108,10 +107,10 @@ is_idv(jlm::rvsdg::Input * input)
   return false;
 }
 
-std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
+std::unique_ptr<IntegerValueRepresentation>
 LoopUnrollInfo::niterations() const noexcept
 {
-  if (!is_known() || step_value() == 0)
+  if (!is_known() || *step_value() == 0)
     return nullptr;
 
   auto start = is_additive() ? *init_value() : *end_value();
@@ -128,7 +127,25 @@ LoopUnrollInfo::niterations() const noexcept
   if (range.umod(step) != 0)
     return nullptr;
 
-  return std::make_unique<jlm::rvsdg::BitValueRepresentation>(range.udiv(step));
+  return std::make_unique<IntegerValueRepresentation>(range.udiv(step));
+}
+
+static bool
+is_integer_comparison(const rvsdg::SimpleNode * node)
+{
+  using namespace jlm::rvsdg;
+  return is<IntegerEqOperation>(node) || is<IntegerNeOperation>(node)
+      || is<IntegerSgeOperation>(node) || is<IntegerSgtOperation>(node)
+      || is<IntegerSleOperation>(node) || is<IntegerSltOperation>(node)
+      || is<IntegerUgeOperation>(node) || is<IntegerUgtOperation>(node)
+      || is<IntegerUleOperation>(node) || is<IntegerUltOperation>(node);
+}
+
+size_t
+LoopUnrollInfo::nbits() const noexcept
+{
+  JLM_ASSERT(is_integer_comparison(cmpnode()));
+  return static_cast<const IntegerBinaryOperation &>(cmpnode()->GetOperation()).Type().nbits();
 }
 
 std::unique_ptr<LoopUnrollInfo>
@@ -141,7 +158,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<BitCompareOperation>(cmpnode))
+  if (!is_integer_comparison(cmpnode))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();
@@ -151,7 +168,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto armnode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == o0 ? o1 : o0));
-  if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
+  if (!is<IntegerAddOperation>(armnode) && !is<IntegerSubOperation>(armnode))
     return nullptr;
   if (armnode->ninputs() != 2)
     return nullptr;
@@ -256,7 +273,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = &rvsdg::BitConstantOperation::create(*unrolled_theta->subregion(), ev);
+    auto c = IntegerConstantOperation::Create(*unrolled_theta->subregion(), ev).output(0);
     input->divert_to(c);
   }
 }
@@ -382,7 +399,7 @@ batch_guard(
   for (size_t i = 0; i < count; ++i)
   {
     auto cmp = loop_comparison(ui, region, value, end);
-    guard = guard ? rvsdg::bitand_op::create(1, guard, cmp) : cmp;
+    guard = guard ? IntegerAndOperation::createNode(1, *guard, *cmp).output(0) : cmp;
     if (i + 1 < count)
       value = advance_idv(ui, region, value, step);
   }
@@ -429,9 +446,9 @@ residual_guard(
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
   auto cmp = loop_comparison(ui, *region, idv, end);
   // A declined first batch must still execute the original do-while loop.
-  auto one = &rvsdg::BitConstantOperation::create(*region, { 1, 1 });
-  auto declined = rvsdg::bitxor_op::create(1, firstGuard, one);
-  return rvsdg::bitor_op::create(1, cmp, declined);
+  auto one = IntegerConstantOperation::Create(*region, 1, 1).output(0);
+  auto declined = IntegerXorOperation::createNode(1, *firstGuard, *one).output(0);
+  return IntegerOrOperation::createNode(1, *cmp, *declined).output(0);
 }
 
 static void
