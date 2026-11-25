@@ -47,7 +47,7 @@ IntegerType::Kind() const noexcept
 std::shared_ptr<const IntegerType>
 IntegerType::create(std::size_t numBits)
 {
-  static const IntegerType static_instances[65] = {
+  static const std::array<IntegerType, 65> static_instances = {
     IntegerType(0),  IntegerType(1),  IntegerType(2),  IntegerType(3),  IntegerType(4),
     IntegerType(5),  IntegerType(6),  IntegerType(7),  IntegerType(8),  IntegerType(9),
     IntegerType(10), IntegerType(11), IntegerType(12), IntegerType(13), IntegerType(14),
@@ -63,7 +63,7 @@ IntegerType::create(std::size_t numBits)
     IntegerType(60), IntegerType(61), IntegerType(62), IntegerType(63), IntegerType(64)
   };
 
-  if (numBits <= 64)
+  if (numBits < static_instances.size())
   {
     if (numBits == 0)
     {
