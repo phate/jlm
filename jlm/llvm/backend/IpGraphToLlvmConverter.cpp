@@ -548,10 +548,10 @@ IpGraphToLlvmConverter::convert(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()->element_type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataArray::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)
@@ -804,10 +804,10 @@ IpGraphToLlvmConverter::convert_constantdatavector(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataVector::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)

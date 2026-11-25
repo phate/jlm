@@ -216,6 +216,8 @@ mapToLlvmFltSemantics(const fpsize size)
   {
   case fpsize::half:
     return ::llvm::APFloat::IEEEhalf();
+  case fpsize::bfloat:
+    return ::llvm::APFloat::BFloat();
   case fpsize::flt:
     return ::llvm::APFloat::IEEEsingle();
   case fpsize::dbl:

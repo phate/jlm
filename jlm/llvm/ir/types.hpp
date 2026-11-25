@@ -110,6 +110,7 @@ private:
 enum class fpsize
 {
   half,
+  bfloat,
   flt,
   dbl,
   x86fp80,

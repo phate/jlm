@@ -144,6 +144,7 @@ TEST(TypeConverterTests, LlvmFloatingPointTypeConversion)
   TypeConverter typeConverter;
 
   const auto halfTypeLlvm = ::llvm::Type::getHalfTy(context);
+  const auto bfloatTypeLlvm = ::llvm::Type::getBFloatTy(context);
   const auto floatTypeLlvm = ::llvm::Type::getFloatTy(context);
   const auto doubleTypeLlvm = ::llvm::Type::getDoubleTy(context);
   const auto x86fp80TypeLlvm = ::llvm::Type::getX86_FP80Ty(context);
@@ -152,6 +153,8 @@ TEST(TypeConverterTests, LlvmFloatingPointTypeConversion)
   // Act
   const auto halfTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
       typeConverter.ConvertLlvmType(*halfTypeLlvm));
+  const auto bfloatTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*bfloatTypeLlvm));
   const auto floatTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
       typeConverter.ConvertLlvmType(*floatTypeLlvm));
   const auto doubleTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
@@ -163,6 +166,10 @@ TEST(TypeConverterTests, LlvmFloatingPointTypeConversion)
 
   // Assert
   EXPECT_TRUE(halfTypeJlm && halfTypeJlm->size() == fpsize::half);
+  ASSERT_NE(bfloatTypeJlm, nullptr);
+  EXPECT_EQ(bfloatTypeJlm->size(), fpsize::bfloat);
+  EXPECT_NE(*bfloatTypeJlm, *halfTypeJlm);
+  EXPECT_EQ(typeConverter.ConvertJlmType(*bfloatTypeJlm, context), bfloatTypeLlvm);
   EXPECT_TRUE(floatTypeJlm && floatTypeJlm->size() == fpsize::flt);
   EXPECT_TRUE(doubleTypeJlm && doubleTypeJlm->size() == fpsize::dbl);
   EXPECT_TRUE(x86fp80TypeJlm && x86fp80TypeJlm->size() == fpsize::x86fp80);
@@ -469,6 +476,7 @@ TEST(TypeConverterTests, JlmFloatingPointTypeConversion)
   TypeConverter typeConverter;
 
   const auto halfTypeJlm = FloatingPointType::Create(fpsize::half);
+  const auto bfloatTypeJlm = FloatingPointType::Create(fpsize::bfloat);
   const auto floatTypeJlm = FloatingPointType::Create(fpsize::flt);
   const auto doubleTypeJlm = FloatingPointType::Create(fpsize::dbl);
   const auto x86fp80TypeJlm = FloatingPointType::Create(fpsize::x86fp80);
@@ -476,6 +484,7 @@ TEST(TypeConverterTests, JlmFloatingPointTypeConversion)
 
   // Act
   const auto halfTypeLlvm = typeConverter.ConvertJlmType(*halfTypeJlm, context);
+  const auto bfloatTypeLlvm = typeConverter.ConvertJlmType(*bfloatTypeJlm, context);
   const auto floatTypeLlvm = typeConverter.ConvertJlmType(*floatTypeJlm, context);
   const auto doubleTypeLlvm = typeConverter.ConvertJlmType(*doubleTypeJlm, context);
   const auto x86fp80TypeLlvm = typeConverter.ConvertJlmType(*x86fp80TypeJlm, context);
@@ -483,6 +492,7 @@ TEST(TypeConverterTests, JlmFloatingPointTypeConversion)
 
   // Assert
   EXPECT_EQ(halfTypeLlvm->getTypeID(), llvm::Type::HalfTyID);
+  EXPECT_EQ(bfloatTypeLlvm->getTypeID(), llvm::Type::BFloatTyID);
   EXPECT_EQ(floatTypeLlvm->getTypeID(), llvm::Type::FloatTyID);
   EXPECT_EQ(doubleTypeLlvm->getTypeID(), llvm::Type::DoubleTyID);
   EXPECT_EQ(x86fp80TypeLlvm->getTypeID(), llvm::Type::X86_FP80TyID);
