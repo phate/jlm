@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -555,4 +556,98 @@ TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
   // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
   // bigger than one.
   EXPECT_TRUE(Region::containsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+}
+
+TEST(AggregateAllocaSplittingTests, allocaAccessedThroughDifferentGepPointeeType)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  // A struct alloca that is accessed both field-wise through the struct's own type, and through a
+  // GEP with a different pointee type, like when multiple small fields are combined into a single
+  // larger load, e.g., for passing the struct by value to a function. Such an alloca must not be
+  // split, as the wider accesses cannot be mapped onto the individual field allocas.
+  auto bit32Type = BitType::Create(32);
+  auto bit64Type = BitType::Create(64);
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto structType = StructType::CreateIdentified({ bit32Type, bit32Type, bit64Type }, false);
+  const auto eightbyteType = StructType::CreateIdentified({ bit64Type, bit64Type }, false);
+  const auto functionType = FunctionType::Create({}, { bit64Type, memoryStateType });
+
+  LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+
+  auto & zero32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+  auto & one32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+  auto & two32Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
+  auto & zero64Node = IntegerConstantOperation::Create(*lambdaNode->subregion(), 64, 0);
+  auto & allocaNode = AllocaOperation::createNode(structType, *one32Node.output(0), 8);
+  auto & allocaMemoryState = AllocaOperation::getMemoryStateOutput(allocaNode);
+
+  // Field-wise accesses through the struct's own type
+  auto & gepTypeNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), zero32Node.output(0) },
+      structType);
+  auto & storeTypeNode = StoreNonVolatileOperation::CreateNode(
+      *gepTypeNode.output(0),
+      *zero32Node.output(0),
+      { &allocaMemoryState },
+      4);
+
+  auto & gepVarNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), one32Node.output(0) },
+      structType);
+  auto & storeVarNode = StoreNonVolatileOperation::CreateNode(
+      *gepVarNode.output(0),
+      *one32Node.output(0),
+      { storeTypeNode.output(0) },
+      4);
+
+  auto & gepOffsetNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), two32Node.output(0) },
+      structType);
+  auto & storeOffsetNode = StoreNonVolatileOperation::CreateNode(
+      *gepOffsetNode.output(0),
+      *zero64Node.output(0),
+      { storeVarNode.output(0) },
+      8);
+
+  // A wider access through a GEP with a different pointee type, combining the two 32-bit fields
+  auto & gepEightbyteNode = GetElementPtrOperation::createNode(
+      *allocaNode.output(0),
+      { zero32Node.output(0), zero32Node.output(0) },
+      eightbyteType);
+  auto & loadEightbyteNode =
+      LoadNonVolatileOperation::CreateNode(*gepEightbyteNode.output(0), {}, bit64Type, 8);
+
+  auto lambdaOutput = lambdaNode->finalize(
+      { &LoadOperation::LoadedValueOutput(loadEightbyteNode), storeOffsetNode.output(0) });
+  GraphExport::Create(*lambdaOutput, "f");
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  AggregateAllocaSplitting aggregateAllocaSplitting;
+  aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+  // Assert
+  // The alloca must not have been split, as the wider access through the differently typed GEP
+  // cannot be mapped onto the individual field allocas.
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryStateMergeOperation>(*lambdaNode->subregion(), false));
+  EXPECT_TRUE(Region::containsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+
+  // The wider load must still read from the original alloca through the eightbyte GEP
+  auto [loadNode, loadOperation] = TryGetSimpleNodeAndOptionalOp<LoadNonVolatileOperation>(
+      *lambdaNode->GetFunctionResults()[0]->origin());
+  EXPECT_NE(loadOperation, nullptr);
+  EXPECT_EQ(LoadOperation::AddressInput(*loadNode).origin(), gepEightbyteNode.output(0));
 }
