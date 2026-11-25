@@ -119,6 +119,18 @@ public:
     return modRefNodes_;
   }
 
+  bool
+  operator==(const ModRefSet & other) const
+  {
+    return modRefNodes_ == other.modRefNodes_;
+  }
+
+  bool
+  operator!=(const ModRefSet & other) const
+  {
+    return !operator==(other);
+  }
+
 protected:
   // Prevent users of the ModRefSummary base class from accidentally copying sets by value,
   // or constructing empty ModRefSets. Instances should always be summarizer-specific subclasses.

@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSetFolding.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
@@ -693,9 +694,8 @@ dumpVennDAGGraphsPerRegion(const rvsdg::RvsdgModule & rvsdgModule, const ModRefS
       continue;
     }
 
-    VennDAGPerRegionGraphBuilder builder(*region, summary);
-    builder.Build();
-    builder.Output(out);
+    auto memoryStateGraph = constructMemoryStateGraph(*region, summary);
+    out << toDot(*memoryStateGraph);
   }
 }
 
