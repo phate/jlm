@@ -21,6 +21,7 @@ LIT_TESTS = \
 	tests/c-tests/test-fprintf.c \
 	tests/c-tests/test-gblfctarray.c \
 	tests/c-tests/test-global-variable.c \
+	tests/c-tests/test-global-alignment.c \
 	tests/c-tests/test-irreducible.c \
 	tests/c-tests/test-long-double.c \
 	tests/c-tests/test-loop-return.c \
