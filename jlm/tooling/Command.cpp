@@ -23,6 +23,7 @@
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/NodeHoisting.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
@@ -31,7 +32,6 @@
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
