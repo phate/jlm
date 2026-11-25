@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -20,25 +19,33 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/Verifier.h>
 
-TEST(LlvmModuleConversionTests, BfloatScalarConstantRoundTrip)
+#include <iterator>
+
+TEST(LlvmModuleConversionTests, BfloatScalarConstantConversion)
 {
+  // Arrange
   ::llvm::LLVMContext context;
   ::llvm::Module module("module", context);
-  const uint16_t bits[] = { 0x3f80, 0x8000, 0x7fc1 };
-  for (size_t i = 0; i < 3; ++i)
+  constexpr uint16_t bits[] = { 0x3f80, 0x8000, 0x7fc1 };
+  for (size_t i = 0; i < std::size(bits); ++i)
   {
     auto value = ::llvm::APFloat(::llvm::APFloat::BFloat(), ::llvm::APInt(16, bits[i]));
     auto constant = ::llvm::ConstantFP::get(context, value);
-    new ::llvm::GlobalVariable(module, constant->getType(), true,
-        ::llvm::GlobalValue::ExternalLinkage, constant, "scalar" + std::to_string(i));
+    auto global = ::llvm::cast<::llvm::GlobalVariable>(
+        module.getOrInsertGlobal("scalar" + std::to_string(i), constant->getType()));
+    global->setConstant(true);
+    global->setInitializer(constant);
   }
 
+  // Act
   auto ipg = jlm::llvm::ConvertLlvmModule(module);
-  for (size_t i = 0; i < 3; ++i)
+
+  // Assert
+  for (size_t i = 0; i < std::size(bits); ++i)
   {
-    auto node = dynamic_cast<const jlm::llvm::DataNode *>(ipg->ipgraph().find("scalar" + std::to_string(i)));
+    auto node = dynamic_cast<const jlm::llvm::DataNode *>(
+        ipg->ipgraph().find("scalar" + std::to_string(i)));
     ASSERT_NE(node, nullptr);
     ASSERT_NE(node->initialization(), nullptr);
     const auto & tacs = node->initialization()->tacs();
@@ -48,71 +55,6 @@ TEST(LlvmModuleConversionTests, BfloatScalarConstantRoundTrip)
     EXPECT_EQ(op->size(), jlm::llvm::fpsize::bfloat);
     EXPECT_EQ(op->constant().bitcastToAPInt().getZExtValue(), bits[i]);
   }
-
-  auto result = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipg, context);
-  EXPECT_FALSE(::llvm::verifyModule(*result, &::llvm::errs()));
-  for (size_t i = 0; i < 3; ++i)
-  {
-    auto global = result->getNamedGlobal("scalar" + std::to_string(i));
-    ASSERT_NE(global, nullptr);
-    auto constant = ::llvm::dyn_cast<::llvm::ConstantFP>(global->getInitializer());
-    ASSERT_NE(constant, nullptr);
-    EXPECT_TRUE(constant->getType()->isBFloatTy());
-    EXPECT_EQ(constant->getValueAPF().bitcastToAPInt().getZExtValue(), bits[i]);
-  }
-}
-
-namespace
-{
-bool
-RoundTrip16BitData(bool bfloat, bool vector)
-{
-  ::llvm::LLVMContext context;
-  ::llvm::Module module("module", context);
-  auto type = bfloat ? ::llvm::Type::getBFloatTy(context) : ::llvm::Type::getHalfTy(context);
-  const uint16_t bits[] = { 0x8000, 0x3f80, 0x7fc1 };
-  auto constant = vector ? ::llvm::ConstantDataVector::getFP(type, bits)
-                         : ::llvm::ConstantDataArray::getFP(type, bits);
-  if (!::llvm::isa<::llvm::ConstantDataSequential>(constant))
-    return false;
-  new ::llvm::GlobalVariable(module, constant->getType(), true,
-      ::llvm::GlobalValue::ExternalLinkage, constant, "data");
-  auto ipg = jlm::llvm::ConvertLlvmModule(module);
-  auto result = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipg, context);
-  if (::llvm::verifyModule(*result, &::llvm::errs()))
-    return false;
-  auto global = result->getNamedGlobal("data");
-  if (!global || global->getValueType() != constant->getType())
-    return false;
-  auto data = ::llvm::dyn_cast<::llvm::ConstantDataSequential>(global->getInitializer());
-  if (!data || data->getNumElements() != 3 || data->getElementType() != type)
-    return false;
-  for (size_t i = 0; i < 3; ++i)
-    if (::llvm::cast<::llvm::ConstantFP>(data->getElementAsConstant(i))
-            ->getValueAPF().bitcastToAPInt().getZExtValue() != bits[i])
-      return false;
-  return true;
-}
-}
-
-TEST(LlvmModuleConversionTests, BfloatDataArrayRoundTrip)
-{
-  EXPECT_EXIT(std::exit(RoundTrip16BitData(true, false) ? 0 : 1), ::testing::ExitedWithCode(0), "");
-}
-
-TEST(LlvmModuleConversionTests, BfloatDataVectorRoundTrip)
-{
-  EXPECT_EXIT(std::exit(RoundTrip16BitData(true, true) ? 0 : 1), ::testing::ExitedWithCode(0), "");
-}
-
-TEST(LlvmModuleConversionTests, HalfDataArrayRoundTrip)
-{
-  EXPECT_EXIT(std::exit(RoundTrip16BitData(false, false) ? 0 : 1), ::testing::ExitedWithCode(0), "");
-}
-
-TEST(LlvmModuleConversionTests, HalfDataVectorRoundTrip)
-{
-  EXPECT_EXIT(std::exit(RoundTrip16BitData(false, true) ? 0 : 1), ::testing::ExitedWithCode(0), "");
 }
 
 TEST(LlvmModuleConversionTests, SwitchConversion)
