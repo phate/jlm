@@ -411,7 +411,8 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
     auto two = IntegerConstantOperation::Create(*lambda->subregion(), 64, 2).output(0);
-    auto bitult = jlm::rvsdg::CreateOpNode<IntegerUltOperation>({ valueArgument, two }, 64).output(0);
+    auto bitult =
+        jlm::rvsdg::CreateOpNode<IntegerUltOperation>({ valueArgument, two }, 64).output(0);
     auto & predicateNode = jlm::rvsdg::MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(predicateNode.output(0), 2);

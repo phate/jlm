@@ -83,9 +83,15 @@ setupMatchConstantCorrelationTest(
   auto gammaNode = GammaNode::create(predicate, 2);
 
   auto constant0 = IntegerConstantOperation::Create(
-      *gammaNode->subregion(0), 64, gammaSubregionAlternatives.first).output(0);
+                       *gammaNode->subregion(0),
+                       64,
+                       gammaSubregionAlternatives.first)
+                       .output(0);
   auto constant1 = IntegerConstantOperation::Create(
-      *gammaNode->subregion(1), 64, gammaSubregionAlternatives.second).output(0);
+                       *gammaNode->subregion(1),
+                       64,
+                       gammaSubregionAlternatives.second)
+                       .output(0);
 
   auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
 

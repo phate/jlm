@@ -654,9 +654,11 @@ private:
           StoreNonVolatileOperation::Create(Outputs_.QInLoop, i.pre, { storeP[0] }, 4);
       const auto nextP = GetElementPtrOperation::create(p.pre, { constantOneTheta }, intType);
       const auto nextQ = GetElementPtrOperation::create(q.pre, { constantOneTheta }, intType);
-      const auto increment = IntegerAddOperation::createNode(32, *i.pre, *constantOneTheta).output(0);
-      const auto continueLoop = rvsdg::CreateOpNode<IntegerUltOperation>(
-          { increment, constantHundredTheta }, 32).output(0);
+      const auto increment =
+          IntegerAddOperation::createNode(32, *i.pre, *constantOneTheta).output(0);
+      const auto continueLoop =
+          rvsdg::CreateOpNode<IntegerUltOperation>({ increment, constantHundredTheta }, 32)
+              .output(0);
       auto & predicateNode = rvsdg::MatchOperation::CreateNode(*continueLoop, { { 1, 1 } }, 0, 2);
 
       i.post->divert_to(increment);
