@@ -26,8 +26,8 @@
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/NodeHoisting.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
+#include <jlm/llvm/opt/NodeSinking.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
