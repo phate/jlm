@@ -15,7 +15,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/aggregation.cpp \
     jlm/llvm/ir/Annotation.cpp \
     jlm/llvm/ir/attribute.cpp \
-    jlm/llvm/ir/basic-block.cpp \
+    jlm/llvm/ir/BasicBlock.cpp \
     jlm/llvm/ir/CallingConvention.cpp \
     jlm/llvm/ir/CallSummary.cpp \
     jlm/llvm/ir/ControlFlowGraph.cpp \
@@ -130,6 +130,7 @@ libllvm_HEADERS = \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
+    jlm/llvm/ir/BasicBlock.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
     jlm/llvm/ir/RvsdgModule.hpp \
     jlm/llvm/ir/Linkage.hpp \
@@ -145,7 +146,6 @@ libllvm_HEADERS = \
     jlm/llvm/ir/ssa.hpp \
     jlm/llvm/ir/TypeConverter.hpp \
     jlm/llvm/ir/variable.hpp \
-    jlm/llvm/ir/basic-block.hpp \
     jlm/llvm/ir/Trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
