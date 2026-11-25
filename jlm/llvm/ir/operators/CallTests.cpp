@@ -9,12 +9,10 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/TestType.hpp>
@@ -129,7 +127,7 @@ TEST(CallOperationTests, TestCallTypeClassifierIndirectCall)
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto one = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 32, 1 });
+    auto one = IntegerConstantOperation::Create(*lambda->subregion(), 32, 1).output(0);
 
     auto alloca = AllocaOperation::create(PointerType::Create(), one, 8);
 
@@ -412,8 +410,8 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
     auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
-    auto two = &jlm::rvsdg::BitConstantOperation::create(*lambda->subregion(), { 64, 2 });
-    auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
+    auto two = IntegerConstantOperation::Create(*lambda->subregion(), 64, 2).output(0);
+    auto bitult = jlm::rvsdg::CreateOpNode<IntegerUltOperation>({ valueArgument, two }, 64).output(0);
     auto & predicateNode = jlm::rvsdg::MatchOperation::CreateNode(*bitult, { { 0, 1 } }, 0, 2);
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(predicateNode.output(0), 2);
@@ -424,8 +422,8 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto gIMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
 
     /* gamma subregion 0 */
-    auto one = &jlm::rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 1 });
-    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
+    auto one = IntegerConstantOperation::Create(*gammaNode->subregion(0), 64, 1).output(0);
+    auto nm1 = IntegerSubOperation::createNode(64, *nev.branchArgument[0], *one).output(0);
     auto callfibm1Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
@@ -434,8 +432,8 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
           gIIoState.branchArgument[0],
           gIMemoryState.branchArgument[0] });
 
-    two = &jlm::rvsdg::BitConstantOperation::create(*gammaNode->subregion(0), { 64, 2 });
-    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
+    two = IntegerConstantOperation::Create(*gammaNode->subregion(0), 64, 2).output(0);
+    auto nm2 = IntegerSubOperation::createNode(64, *nev.branchArgument[0], *two).output(0);
     auto callfibm2Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
@@ -458,7 +456,7 @@ TEST(CallOperationTests, TestCallTypeClassifierRecursiveDirectCall)
     auto ldnm2 =
         LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
+    auto sum = IntegerAddOperation::createNode(64, *ldnm1[0], *ldnm2[0]).output(0);
 
     /* gamma subregion 1 */
     /* Nothing needs to be done */

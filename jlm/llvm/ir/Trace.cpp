@@ -11,7 +11,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
