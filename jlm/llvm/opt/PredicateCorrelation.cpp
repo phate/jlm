@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -49,11 +48,10 @@ extractConstantAlternatives(const rvsdg::Output & gammaOutput)
 
     {
       auto [constantNode, constantOperation] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::BitConstantOperation>(
-              *branchResult->origin());
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*branchResult->origin());
       if (constantOperation)
       {
-        alternatives.push_back(constantOperation->value().to_uint());
+        alternatives.push_back(constantOperation->Representation().to_uint());
         continue;
       }
     }

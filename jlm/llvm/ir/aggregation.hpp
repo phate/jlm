@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_AGGREGATION_HPP
 #define JLM_LLVM_IR_AGGREGATION_HPP
 
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 
 #include <memory>
 

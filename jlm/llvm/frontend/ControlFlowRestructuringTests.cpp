@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/ControlFlowRestructuring.hpp>
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>

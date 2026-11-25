@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>

@@ -6,14 +6,13 @@
 #ifndef JLM_LLVM_IR_IPGRAPH_HPP
 #define JLM_LLVM_IR_IPGRAPH_HPP
 
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/ir/variable.hpp>
 
-#include <unordered_map>
 #include <unordered_set>
 
 namespace jlm::llvm

@@ -8,13 +8,13 @@
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 /**
@@ -175,7 +175,7 @@ private:
       const auto importedCtxVar = lambdaNode.AddContextVar(*Outputs_.Imported).inner;
 
       const auto constantOne =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
 
       const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
