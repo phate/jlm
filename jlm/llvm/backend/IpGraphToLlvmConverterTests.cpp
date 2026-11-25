@@ -918,7 +918,7 @@ TEST(IpGraphToLlvmConverterTests, SsaPhiWithFunctionType)
     bb3->add_outedge(cfg->exit());
 
     auto constantTac = bb0->append_last(ThreeAddressCode::create(
-        std::make_unique<IntegerConstantOperation>(jlm::rvsdg::BitValueRepresentation(1, 1)),
+        std::make_unique<IntegerConstantOperation>(IntegerValueRepresentation(1, 1)),
         {}));
     auto matchTac = bb0->append_last(ThreeAddressCode::create(
         std::make_unique<jlm::rvsdg::MatchOperation>(

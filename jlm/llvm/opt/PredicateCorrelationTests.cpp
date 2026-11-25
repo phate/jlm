@@ -5,9 +5,9 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -82,12 +82,16 @@ setupMatchConstantCorrelationTest(
       TestOperation::createNode(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode = GammaNode::create(predicate, 2);
 
-  auto constant0 = &BitConstantOperation::create(
-      *gammaNode->subregion(0),
-      { 64, gammaSubregionAlternatives.first });
-  auto constant1 = &BitConstantOperation::create(
-      *gammaNode->subregion(1),
-      { 64, gammaSubregionAlternatives.second });
+  auto constant0 = IntegerConstantOperation::Create(
+                       *gammaNode->subregion(0),
+                       64,
+                       gammaSubregionAlternatives.first)
+                       .output(0);
+  auto constant1 = IntegerConstantOperation::Create(
+                       *gammaNode->subregion(1),
+                       64,
+                       gammaSubregionAlternatives.second)
+                       .output(0);
 
   auto exitVar = gammaNode->AddExitVar({ constant0, constant1 });
 
@@ -296,8 +300,8 @@ TEST(PredicateCorrelationTests, testThetaGammaCorrelationFixPoint)
       TestOperation::createNode(thetaNode->subregion(), {}, { controlType })->output(0);
   auto gammaNode1 = GammaNode::create(predicate, 2);
 
-  auto constant0 = &BitConstantOperation::create(*gammaNode1->subregion(0), { 64, 0 });
-  auto constant1 = &BitConstantOperation::create(*gammaNode1->subregion(1), { 64, 1 });
+  auto constant0 = IntegerConstantOperation::Create(*gammaNode1->subregion(0), 64, 0).output(0);
+  auto constant1 = IntegerConstantOperation::Create(*gammaNode1->subregion(1), 64, 1).output(0);
 
   auto exitVar = gammaNode1->AddExitVar({ constant0, constant1 });
   auto & matchNode = MatchOperation::CreateNode(*exitVar.output, { { 1, 1 } }, 0, 2);
