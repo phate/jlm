@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_INLINE_HPP
-#define JLM_LLVM_OPT_INLINE_HPP
+#ifndef JLM_LLVM_OPT_FUNCTION_INLINING_HPP
+#define JLM_LLVM_OPT_FUNCTION_INLINING_HPP
 
 #include <jlm/rvsdg/Transformation.hpp>
 

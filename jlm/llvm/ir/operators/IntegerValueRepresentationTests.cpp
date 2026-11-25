@@ -57,8 +57,6 @@ TEST(IntegerValueRepresentationTest, RejectsNonBinaryBits)
   EXPECT_DEATH(IntegerValueRepresentation("10D1"), "");
   EXPECT_DEATH(IntegerValueRepresentation::repeat(8, 'X'), "");
   EXPECT_DEATH(IntegerValueRepresentation::repeat(8, 'D'), "");
-  EXPECT_DEATH(IntegerValueRepresentation(rvsdg::BitValueRepresentation("X")), "");
-  EXPECT_DEATH(IntegerValueRepresentation(rvsdg::BitValueRepresentation("D")), "");
 #endif
 }
 

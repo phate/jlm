@@ -20,7 +20,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -185,15 +184,15 @@ private:
       const auto globalCtxVar = lambdaNode.AddContextVar(*Outputs_.Global).inner;
 
       const auto constantOne =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
       const auto constantTwo =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 2 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
       const auto constantThree =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 3 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3).output(0);
       const auto constantFour =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 4 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
       const auto constantMinusTwo =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, -2 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, -2).output(0);
 
       const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
@@ -419,9 +418,9 @@ private:
       auto memoryState = lambdaNode.GetFunctionArguments()[3];
 
       const auto constantZero =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 0 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
       const auto constantOne =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
 
       const auto alloca1Outputs = AllocaOperation::create(int32Type, constantOne, 4);
       const auto alloca2Outputs = AllocaOperation::create(int64Type, constantOne, 4);
@@ -618,9 +617,9 @@ private:
       const auto globalArrayCtxVar = lambdaNode.AddContextVar(*Outputs_.GlobalArray).inner;
 
       const auto constantZero =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 0 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
       const auto constantOne =
-          &rvsdg::BitConstantOperation::create(*lambdaNode.subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
 
       const auto allocaArrayOutputs = AllocaOperation::create(intArrayType, constantOne, 4);
       Outputs_.Array = allocaArrayOutputs[0];
@@ -643,9 +642,9 @@ private:
       auto m = thetaNode->AddLoopVar(memoryState);
 
       const auto constantOneTheta =
-          &rvsdg::BitConstantOperation::create(*thetaNode->subregion(), { 32, 1 });
+          IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1).output(0);
       const auto constantHundredTheta =
-          &rvsdg::BitConstantOperation::create(*thetaNode->subregion(), { 32, 100 });
+          IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 100).output(0);
 
       Outputs_.PInLoop = p.pre;
       Outputs_.QInLoop = q.pre;
@@ -655,8 +654,11 @@ private:
           StoreNonVolatileOperation::Create(Outputs_.QInLoop, i.pre, { storeP[0] }, 4);
       const auto nextP = GetElementPtrOperation::create(p.pre, { constantOneTheta }, intType);
       const auto nextQ = GetElementPtrOperation::create(q.pre, { constantOneTheta }, intType);
-      const auto increment = jlm::rvsdg::bitadd_op::create(32, i.pre, constantOneTheta);
-      const auto continueLoop = jlm::rvsdg::bitult_op::create(32, increment, constantHundredTheta);
+      const auto increment =
+          IntegerAddOperation::createNode(32, *i.pre, *constantOneTheta).output(0);
+      const auto continueLoop =
+          rvsdg::CreateOpNode<IntegerUltOperation>({ increment, constantHundredTheta }, 32)
+              .output(0);
       auto & predicateNode = rvsdg::MatchOperation::CreateNode(*continueLoop, { { 1, 1 } }, 0, 2);
 
       i.post->divert_to(increment);
@@ -672,7 +674,7 @@ private:
           LoadNonVolatileOperation::Create(Outputs_.PAfterLoop, { m.output }, intType, 4);
       const auto loadQ =
           LoadNonVolatileOperation::Create(Outputs_.QAfterLoop, { loadP[1] }, intType, 4);
-      const auto sum = jlm::rvsdg::bitadd_op::create(32, loadP[0], loadQ[0]);
+      const auto sum = IntegerAddOperation::createNode(32, *loadP[0], *loadQ[0]).output(0);
 
       lambdaNode.finalize({ sum, loadQ[1] });
       Outputs_.Func = lambdaNode.output();

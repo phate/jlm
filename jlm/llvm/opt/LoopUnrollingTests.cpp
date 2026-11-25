@@ -8,7 +8,7 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
 #include <jlm/rvsdg/theta.hpp>
