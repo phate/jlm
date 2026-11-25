@@ -751,4 +751,48 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
   EXPECT_EQ(ptrEntryVar.input->origin(), hoistBarrierNode1.output(0));
 }
 
+TEST(IOBarrierEliminationTests, testBarrierInsideThetaFixedPoint)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG that looks like
+   * f = lambda
+   *   [ptr, io0, mem0]{
+   *     l, mem1 = load[bit32] ptr, mem0
+   *     _, io5, mem7, value2 = theta ptr, io0, mem1, _
+   *       [ptr1, io1, mem2, _]{
+   *         nullPtr1 = ConstantPointerNullOperation
+   *         isNull = PtrCmp[eq] ptr1, nullPtr1
+   *         gammaControl = Match[1->1, 0] isNull
+   *         value, io4, mem6, c2 = gamma gammaControl, ptr1, io1, mem2
+   *           [ptr2, io2, mem3] {
+   *             barred = MemoryHoistBarrier ptr2, io2
+   *             l2, mem4 = load[bit32] barred, mem3
+   *             c1 = Control(1)
+   *           }[l2, io2, mem4, c1]
+   *           [ptr3, io3, mem5] {
+   *             imm = IntegerValue(5)
+   *             c0 = Control(0)
+   *           }[imm, io3, mem5, c0]
+   *         nullPtr2 = ConstantPointerNullOperation
+   *       }[c2, nullPtr2, io4, mem6, value]
+   *   }[value2, io5, mem7]
+   *
+   * After running IOBarrierElimination, the inner MemoryHoistBarrier should still be present.
+   */
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto memStateType = IOStateType::Create();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({ pointerType, ioStateType, memStateType }, { i32Type, ioStateType, memStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+}
+
 }
