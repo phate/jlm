@@ -69,12 +69,13 @@ libllvm_SOURCES = \
     jlm/llvm/opt/AggregateAllocaSplitting.cpp \
     jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
+    jlm/llvm/opt/FunctionInlining.cpp \
     jlm/llvm/opt/IfConversion.cpp \
-    jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/IOBarrierElimination.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
+    jlm/llvm/opt/LoopUnrolling.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/NodeHoisting.cpp \
     jlm/llvm/opt/NodeReduction.cpp \
@@ -83,7 +84,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
     jlm/llvm/opt/StoreValueForwarding.cpp \
-    jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
@@ -92,9 +92,7 @@ libllvm_HEADERS = \
     jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
     \
-    jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
-    jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/CommonNodeElimination.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
@@ -114,12 +112,14 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/AggregateAllocaSplitting.hpp \
+    jlm/llvm/opt/FunctionInlining.hpp \
     jlm/llvm/opt/pull.hpp \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/IOBarrierElimination.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopStrengthReduction.hpp \
+    jlm/llvm/opt/LoopUnrolling.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/NodeHoisting.hpp \
     jlm/llvm/opt/NodeReduction.hpp \
@@ -242,12 +242,13 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/AggregateAllocaSplittingTests.cpp \
     jlm/llvm/opt/CommonNodeEliminationTests.cpp \
     jlm/llvm/opt/DeadNodeEliminationTests.cpp \
+    jlm/llvm/opt/FunctionInliningTests.cpp \
     jlm/llvm/opt/IfConversionTests.cpp \
-    jlm/llvm/opt/InliningTests.cpp \
     jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
     jlm/llvm/opt/IOBarrierEliminationTests.cpp \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
+    jlm/llvm/opt/LoopUnrollingTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \
     jlm/llvm/opt/NodeHoistingTests.cpp \
     jlm/llvm/opt/NodeReductionTests.cpp \
@@ -256,7 +257,6 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
     jlm/llvm/opt/ScalarEvolutionTests.cpp \
     jlm/llvm/opt/StoreValueForwardingTests.cpp \
-    jlm/llvm/opt/UnrollTests.cpp \
 
 run-libllvm-tests_LIBS = libllvm librvsdg libutil
 run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)

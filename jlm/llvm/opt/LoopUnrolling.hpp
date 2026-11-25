@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_UNROLL_HPP
-#define JLM_LLVM_OPT_UNROLL_HPP
+#ifndef JLM_LLVM_OPT_LOOP_UNROLLING_HPP
+#define JLM_LLVM_OPT_LOOP_UNROLLING_HPP
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
