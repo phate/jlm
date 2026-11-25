@@ -17,6 +17,56 @@
 namespace jlm::llvm
 {
 
+/**
+ * JLM's equivalent of LLVM's IntegerType class.
+ */
+class IntegerType final : public rvsdg::Type
+{
+public:
+  ~IntegerType() noexcept override;
+
+  explicit constexpr IntegerType(const size_t numBits)
+      : numBits_(numBits)
+  {}
+
+  size_t
+  numBits() const noexcept
+  {
+    return numBits_;
+  }
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  bool
+  operator==(const Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
+  /**
+   * \brief Creates integer type of specified width
+   *
+   * \param numBits
+   *    Width of type
+   *
+   * \returns
+   *    Type representing integer of specified width.
+   *
+   * Returns an instance of an integer type with specified
+   * width. Usually this returns a singleton object instance
+   * for the type.
+   */
+  static std::shared_ptr<const IntegerType>
+  create(std::size_t numBits);
+
+private:
+  size_t numBits_;
+};
+
 /** \brief PointerType class
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
