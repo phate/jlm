@@ -8,7 +8,6 @@
 
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 
 #include <cstring>
@@ -44,13 +43,6 @@ public:
   IntegerValueRepresentation(const uint8_t bit)
       : IntegerValueRepresentation(1, bit, 0)
   {}
-
-  IntegerValueRepresentation(const rvsdg::BitValueRepresentation & value)
-      : IntegerValueRepresentation(value.nbits(), '0', 0)
-  {
-    for (size_t i = 0; i < numBits_; ++i)
-      setBit(i, value[i]);
-  }
 
   size_t
   nbits() const noexcept
