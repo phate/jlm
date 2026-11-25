@@ -144,6 +144,7 @@ std::string
 FloatingPointType::debug_string() const
 {
   static std::unordered_map<fpsize, std::string> map({ { fpsize::half, "half" },
+                                                       { fpsize::bfloat, "bfloat" },
                                                        { fpsize::flt, "float" },
                                                        { fpsize::dbl, "double" },
                                                        { fpsize::x86fp80, "x86fp80" },
@@ -182,6 +183,11 @@ FloatingPointType::Create(fpsize size)
   case fpsize::half:
   {
     static const FloatingPointType instance(fpsize::half);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::bfloat:
+  {
+    static const FloatingPointType instance(fpsize::bfloat);
     return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::flt:

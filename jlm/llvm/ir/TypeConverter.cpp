@@ -22,6 +22,8 @@ TypeConverter::ExtractFloatingPointSize(const ::llvm::Type & type)
   {
   case ::llvm::Type::HalfTyID:
     return fpsize::half;
+  case ::llvm::Type::BFloatTyID:
+    return fpsize::bfloat;
   case ::llvm::Type::FloatTyID:
     return fpsize::flt;
   case ::llvm::Type::DoubleTyID:
@@ -124,6 +126,8 @@ TypeConverter::ConvertFloatingPointType(
   {
   case fpsize::half:
     return ::llvm::Type::getHalfTy(context);
+  case fpsize::bfloat:
+    return ::llvm::Type::getBFloatTy(context);
   case fpsize::flt:
     return ::llvm::Type::getFloatTy(context);
   case fpsize::dbl:
@@ -238,6 +242,8 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
     return ConvertFunctionType(*::llvm::cast<::llvm::FunctionType>(&type));
   case ::llvm::Type::HalfTyID:
     return FloatingPointType::Create(fpsize::half);
+  case ::llvm::Type::BFloatTyID:
+    return FloatingPointType::Create(fpsize::bfloat);
   case ::llvm::Type::FloatTyID:
     return FloatingPointType::Create(fpsize::flt);
   case ::llvm::Type::DoubleTyID:
