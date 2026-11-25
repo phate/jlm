@@ -1200,7 +1200,7 @@ MlirToJlmConverter::ConvertOperation(
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
             mlirDeltaNode.getConstant(),
-            4)); // FIXME: the MLIR delta node does not support the alignment attribute
+            mlirDeltaNode.getAlignment().value_or(1)));
 
     // Add context variables from inputs to delta's subregion
     for (auto input : inputs)
