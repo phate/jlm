@@ -387,6 +387,31 @@ public:
   jlm::rvsdg::DeltaNode * constantDelta;
 };
 
+/** \brief DeltaAlignmentTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   __attribute__((aligned(16))) int narrowGlobal = 1;
+ *   __attribute__((aligned(64))) int wideGlobal = 1;
+ * \endcode
+ *
+ * We use alignments other than the default of 4, which is for all other deltas.
+ *
+ * \see ConstantDeltaTest
+ */
+class DeltaAlignmentTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * narrowDelta;
+
+  jlm::rvsdg::DeltaNode * wideDelta;
+};
+
 /** \brief GlobalArrayTest class
  *
  * This class sets up an RVSDG representing the following declarations:
