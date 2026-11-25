@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/pull.hpp>
+#include <jlm/llvm/opt/NodeSinking.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>

@@ -30,6 +30,42 @@ assertAllocaWithType(const jlm::rvsdg::Output & output, const jlm::rvsdg::Type &
   EXPECT_EQ(*allocaOperation->allocatedType(), type);
 }
 
+TEST(AggregateAllocaSplittingTests, emptyStructIsNotSplit)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  const auto bit32Type = BitType::Create(32);
+  const auto emptyStruct = StructType::CreateIdentified({}, false);
+  const auto nonEmptyStruct = StructType::CreateIdentified({ bit32Type }, false);
+  const auto nestedEmptyStruct =
+      StructType::CreateIdentified({ nonEmptyStruct, emptyStruct }, false);
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto functionType = FunctionType::Create({}, { memoryStateType });
+
+  // Act & Assert
+  for (const auto & structType : { emptyStruct, nestedEmptyStruct })
+  {
+    LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+    auto lambdaNode = LambdaNode::Create(
+        rvsdgModule.Rvsdg().GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+    auto & oneNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+    auto & allocaNode = AllocaOperation::createNode(structType, *oneNode.output(0), 4);
+    auto lambdaOutput =
+        lambdaNode->finalize({ &AllocaOperation::getMemoryStateOutput(allocaNode) });
+    GraphExport::Create(*lambdaOutput, "f");
+
+    StatisticsCollector statisticsCollector;
+    AggregateAllocaSplitting aggregateAllocaSplitting;
+    aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+    assertAllocaWithType(*lambdaNode->GetFunctionResults()[0]->origin(), *structType);
+  }
+}
+
 TEST(AggregateAllocaSplittingTests, getElementPtrTest)
 {
   using namespace jlm::llvm;
