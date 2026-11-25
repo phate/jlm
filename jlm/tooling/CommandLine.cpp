@@ -4,9 +4,9 @@
  */
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/Support/CommandLine.h>

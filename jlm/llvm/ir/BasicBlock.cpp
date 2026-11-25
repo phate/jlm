@@ -3,10 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-
-#include <sstream>
 
 namespace jlm::llvm
 {
