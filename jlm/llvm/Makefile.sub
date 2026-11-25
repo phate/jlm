@@ -75,6 +75,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/IOBarrierElimination.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
+    jlm/llvm/opt/LoopUnrolling.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/NodeHoisting.cpp \
     jlm/llvm/opt/NodeReduction.cpp \
@@ -83,7 +84,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
     jlm/llvm/opt/StoreValueForwarding.cpp \
-    jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
@@ -92,7 +92,6 @@ libllvm_HEADERS = \
     jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
     \
-    jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/CommonNodeElimination.hpp \
@@ -120,6 +119,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/IOBarrierElimination.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopStrengthReduction.hpp \
+    jlm/llvm/opt/LoopUnrolling.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/NodeHoisting.hpp \
     jlm/llvm/opt/NodeReduction.hpp \
@@ -248,6 +248,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/IOBarrierEliminationTests.cpp \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
+    jlm/llvm/opt/LoopUnrollingTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \
     jlm/llvm/opt/NodeHoistingTests.cpp \
     jlm/llvm/opt/NodeReductionTests.cpp \
@@ -256,7 +257,6 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
     jlm/llvm/opt/ScalarEvolutionTests.cpp \
     jlm/llvm/opt/StoreValueForwardingTests.cpp \
-    jlm/llvm/opt/UnrollTests.cpp \
 
 run-libllvm-tests_LIBS = libllvm librvsdg libutil
 run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
